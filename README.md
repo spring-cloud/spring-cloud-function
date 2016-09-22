@@ -18,4 +18,14 @@ Example REST Application:
         --function.code="f -> f.map(s -> s.toString().toUpperCase())"
 ```
 
+Using Scripts:
+
+```
+./stream.fun -i words -o uppercaseWords -f "f->f.map(s->s.toString().toUpperCase())"
+```
+
+```
+./web.fun -p "/words" -f "f->f.map(s->s.toString().toUpperCase())"
+```
+
 (more docs soon)
