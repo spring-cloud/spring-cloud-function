@@ -17,91 +17,20 @@
 package org.springframework.cloud.function.gateway;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
-
-import org.springframework.cloud.function.invoker.FunctionInvokingRunnable;
-import org.springframework.cloud.function.registry.FunctionRegistry;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
-import org.springframework.util.Assert;
 
 /**
  * @author Mark Fisher
  */
-public class FunctionGateway {
+public interface FunctionGateway {
 
-	private final FunctionRegistry registry;
+	<T, R> R invoke(String functionName, T request);
 
-	private final TaskScheduler scheduler;
+	<T, R> void schedule(String functionName, Trigger trigger, Supplier<T> supplier, Consumer<R> consumer);
 
-	public FunctionGateway(FunctionRegistry registry, TaskScheduler scheduler) {
-		Assert.notNull(registry, "FunctionRegistry must not be null");
-		Assert.notNull(scheduler, "TaskScheduler must not be null");
-		this.registry = registry;
-		this.scheduler = scheduler;
-	}
+	<T, R> void subscribe(Publisher<T> publisher, String functionName, final Consumer<R> consumer);
 
-	@SuppressWarnings("unchecked")
-	public void compose(String name, Function<?, ?>... functions) {
-		Assert.isTrue(functions != null && functions.length > 1, "more than one Function is required");
-		@SuppressWarnings("rawtypes")
-		Function function = functions[0];
-		for (int i = 1; i < functions.length; i++) {
-			function = function.andThen(functions[i]);
-		}
-		this.registry.register(name, function);
-	}
-
-	@SuppressWarnings("unchecked")
-	public void compose(String composedFunctionName, String... functionNames) {
-		Assert.isTrue(functionNames != null && functionNames.length > 1, "more than one Function is required");
-		@SuppressWarnings("rawtypes")
-		Function function = this.registry.lookup(functionNames[0]);
-		for (int i = 1; i < functionNames.length; i++) {
-			function = function.andThen(this.registry.lookup(functionNames[i]));
-		}
-		this.registry.register(composedFunctionName, function);
-	}
-
-	public <T, R> R invoke(String functionName, T request) {
-		Function<T, R> function = this.registry.lookup(functionName);
-		return function.apply(request);
-	}
-
-	public <T, R> void schedule(String functionName, Trigger trigger, Supplier<T> supplier, Consumer<R> consumer) {
-		Function<T, R> function = this.registry.lookup(functionName);
-		this.scheduler.schedule(new FunctionInvokingRunnable(supplier, function, consumer), trigger);
-	}
-
-	public <T, R> void subscribe(Publisher<T> publisher, String functionName, final Consumer<R> consumer) {
-		final Function<T, R> function = this.registry.lookup(functionName);
-		publisher.subscribe(new Subscriber<T>() {
-
-			@Override
-			public void onComplete() {}
-
-			@Override
-			public void onError(Throwable error) {}
-
-			@Override
-			public void onNext(T next) {
-				if (consumer != null) {
-					consumer.accept(function.apply(next));
-				}
-				else {
-					function.apply(next);
-				}
-			}
-
-			@Override
-			public void onSubscribe(Subscription subscription) {
-				subscription.request(Long.MAX_VALUE);
-			}
-		});
-	}
 }

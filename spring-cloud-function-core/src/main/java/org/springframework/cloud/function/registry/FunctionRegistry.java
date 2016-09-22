@@ -29,4 +29,8 @@ public interface FunctionRegistry {
 
 	void register(String name, String function);
 
+	void compose(String composedFunctionName, Function<?, ?>... functions);
+
+	void compose(String composedFunctionName, String... functionNames);
+
 }

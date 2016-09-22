@@ -19,6 +19,7 @@ package org.springframework.cloud.function.registry;
 import java.util.function.Function;
 
 import org.springframework.cloud.function.compiler.FunctionCompiler;
+import org.springframework.util.Assert;
 
 /**
  * @author Mark Fisher
@@ -31,5 +32,27 @@ public abstract class FunctionRegistrySupport implements FunctionRegistry {
 	public void register(String name, String code) {
 		Function<?, ?> function = compiler.compile(code);
 		this.register(name, function);
+	}
+
+	@SuppressWarnings("unchecked")
+	public void compose(String name, Function<?, ?>... functions) {
+		Assert.isTrue(functions != null && functions.length > 1, "more than one Function is required");
+		@SuppressWarnings("rawtypes")
+		Function function = functions[0];
+		for (int i = 1; i < functions.length; i++) {
+			function = function.andThen(functions[i]);
+		}
+		this.register(name, function);
+	}
+
+	@SuppressWarnings("unchecked")
+	public void compose(String composedFunctionName, String... functionNames) {
+		Assert.isTrue(functionNames != null && functionNames.length > 1, "more than one Function is required");
+		@SuppressWarnings("rawtypes")
+		Function function = this.lookup(functionNames[0]);
+		for (int i = 1; i < functionNames.length; i++) {
+			function = function.andThen(this.lookup(functionNames[i]));
+		}
+		this.register(composedFunctionName, function);
 	}
 }
