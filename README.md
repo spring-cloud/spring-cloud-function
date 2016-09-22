@@ -1,31 +1,31 @@
 Example Stream Application:
 
 ```
-> java -jar spring-cloud-function-stream-1.0.0.BUILD-SNAPSHOT.jar
-        --server.port=8081
-        --spring.cloud.stream.bindings.input.destination=words
-        --spring.cloud.stream.bindings.output.destination=uppercaseWords
-        --function.name=uppercase
-        --function.code="f -> f.map(s -> s.toString().toUpperCase())"
+java -jar spring-cloud-function-stream-1.0.0.BUILD-SNAPSHOT.jar
+     --server.port=8081
+     --spring.cloud.stream.bindings.input.destination=words
+     --spring.cloud.stream.bindings.output.destination=uppercaseWords
+     --function.name=uppercase
+     --function.code="f -> f.map(s -> s.toString().toUpperCase())"
 ```
 
 Example REST Application:
 
 ```
-> java -jar spring-cloud-function-web-1.0.0.BUILD-SNAPSHOT.jar
-        --web.path=/demo
-        --function.name=uppercase
-        --function.code="f -> f.map(s -> s.toString().toUpperCase())"
+java -jar spring-cloud-function-web-1.0.0.BUILD-SNAPSHOT.jar
+     --web.path=/demo
+     --function.name=uppercase
+     --function.code="f -> f.map(s -> s.toString().toUpperCase())"
 ```
 
 Using Scripts:
 
 ```
-./stream.fun -i words -o uppercaseWords -f "f->f.map(s->s.toString().toUpperCase())"
-```
+FUN="f->f.map(s->s.toString().toUpperCase())"
 
-```
-./web.fun -p "/words" -f "f->f.map(s->s.toString().toUpperCase())"
+./stream.fun -i words -o uppercaseWords -f $FUN
+
+./web.fun -p /words -f $FUN
 ```
 
 (more docs soon)
