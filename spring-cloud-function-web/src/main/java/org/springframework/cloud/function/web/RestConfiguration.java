@@ -22,6 +22,7 @@ import static org.springframework.web.reactive.function.BodyInserters.fromPublis
 import static org.springframework.web.reactive.function.RequestPredicates.contentType;
 import static org.springframework.web.reactive.function.RequestPredicates.POST;
 
+import java.io.File;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
 import org.springframework.cloud.function.registry.FunctionRegistry;
 import org.springframework.cloud.function.registry.InMemoryFunctionRegistry;
 import org.springframework.context.annotation.Bean;
@@ -59,7 +61,7 @@ public class RestConfiguration {
 
 	@Bean
 	public FunctionRegistry registry() {
-		FunctionRegistry registry = new InMemoryFunctionRegistry();
+		FunctionRegistry registry = new FileSystemFunctionRegistry(new File("/tmp/function-registry"));
 		registry.register(functionProperties.getName(), functionProperties.getCode());
 		return registry;
 	}

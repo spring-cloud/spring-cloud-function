@@ -51,6 +51,7 @@ public class FunctionCompiler {
 	 */
 	private static String SOURCE_CODE_TEMPLATE =
 			"package " + PACKAGE + ";\n" +
+			"import java.io.Serializable;\n" +
 			"import java.util.*;\n" + // Helpful to include this
 			"import java.util.function.*;\n" +
 			"import reactor.core.publisher.Flux;\n" +
@@ -81,7 +82,7 @@ public class FunctionCompiler {
  			code = code.substring(1,code.length()-1);
  		}
  		if (!code.startsWith("return ") && !code.endsWith(";")) {
- 			code = "return " + code + ";";
+ 			code = "return (Function<Flux<Object>, Flux<Object>> & Serializable) " + code + ";";
  		}
 		logger.info("Processed code property value :\n{}\n", code);
 		CompilationResult compilationResult = buildAndCompileSourceCode(code);
