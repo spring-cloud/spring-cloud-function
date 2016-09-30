@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.compiler;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 
 import org.slf4j.Logger;
@@ -34,6 +33,10 @@ import org.springframework.cloud.function.compiler.java.RuntimeJavaCompiler;
  */
 public class FunctionCompiler {
 
+	private final static String PACKAGE = "org.springframework.cloud.function.compiler";
+
+	public final static String GENERATED_FUNCTION_FACTORY_CLASS_NAME = PACKAGE + ".GeneratedFunctionFactory";
+
 	private static Logger logger = LoggerFactory.getLogger(FunctionCompiler.class);
 
 	// Newlines in the property are escaped
@@ -41,10 +44,6 @@ public class FunctionCompiler {
 
 	// Individual double-quote characters are represented by two double quotes in the DSL
 	private static final String DOUBLE_DOUBLE_QUOTE = Matcher.quoteReplacement("\"\"");
-
-	private final static String PACKAGE = "org.springframework.cloud.function.compiler";
-
-	private final static String MAIN_COMPILED_CLASS_NAME = PACKAGE + ".GeneratedFunctionFactory";
 
 	/**
 	 * The user supplied code snippet is inserted into the template and then the result is compiled
@@ -63,7 +62,7 @@ public class FunctionCompiler {
 	private final RuntimeJavaCompiler compiler = new RuntimeJavaCompiler();
 
 	/**
-	 * Produce a Function instance by:<ul>
+	 * Produce a CompiledFunctionFactory instance by:<ul>
 	 * <li>Decoding the code String to process any newlines/double-double-quotes
 	 * <li>Insert the code into the source code template for a class
 	 * <li>Compiling the class using the JDK provided Java Compiler
@@ -72,35 +71,21 @@ public class FunctionCompiler {
 	 * <li>Returning that instance.
 	 * </ul>
 	 *
-	 * @return a Function instance
+	 * @return a CompiledFunctionFactory instance
 	 */
-	public <T, R> Function<T, R> compile(String code) {
+	public <T, R> CompiledFunctionFactory<T, R> compile(String code) {
 		logger.info("Initial code property value :'{}'", code);
  		code = decode(code);
  		if (code.startsWith("\"") && code.endsWith("\"")) {
  			code = code.substring(1,code.length()-1);
  		}
  		if (!code.startsWith("return ") && !code.endsWith(";")) {
- 			code = "return " + code + ";";
+ 			code = "return (Function<Flux<Object>,Flux<Object>> & java.io.Serializable) " + code + ";";
  		}
 		logger.info("Processed code property value :\n{}\n", code);
 		CompilationResult compilationResult = buildAndCompileSourceCode(code);
 		if (compilationResult.wasSuccessful()) {
-			List<Class<?>> clazzes = compilationResult.getCompiledClasses();
-			logger.info("Compilation resulted in #{} classes", clazzes.size());
-			for (Class<?> clazz: clazzes) {
-				if (clazz.getName().equals(MAIN_COMPILED_CLASS_NAME)) {
-					try {
-						FunctionFactory functionFactory = (FunctionFactory) clazz.newInstance();
-						return functionFactory.getFunction();
-					}
-					catch (Exception e) {
-						logger.error("Unexpected problem during retrieval of Function from compiled class", e);
-					}
-				}
-				System.out.println(clazz.getName());
-			}
-			logger.error("Failed to find the expected compiled class");
+			return new CompiledFunctionFactory<>(compilationResult);
 		}
 		List<CompilationMessage> compilationMessages = compilationResult.getCompilationMessages();
 		throw new CompilationFailedException(compilationMessages);
@@ -119,7 +104,7 @@ public class FunctionCompiler {
 	 */
 	private CompilationResult buildAndCompileSourceCode(String methodBody) {
 		String sourceCode = makeSourceClassDefinition(methodBody);
-		return compiler.compile(MAIN_COMPILED_CLASS_NAME, sourceCode);
+		return compiler.compile(GENERATED_FUNCTION_FACTORY_CLASS_NAME, sourceCode);
 	}
 
 	private static String decode(String input) {
@@ -133,7 +118,7 @@ public class FunctionCompiler {
 	 * @param methodBody the code to insert into the Reactive source class template
 	 * @return a complete Java Class definition
 	 */
-	public static String makeSourceClassDefinition(String methodBody) {
+	private static String makeSourceClassDefinition(String methodBody) {
 		return String.format(SOURCE_CODE_TEMPLATE, methodBody);
 	}
 

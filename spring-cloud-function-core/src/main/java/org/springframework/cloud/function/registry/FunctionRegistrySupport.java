@@ -30,7 +30,7 @@ public abstract class FunctionRegistrySupport implements FunctionRegistry {
 
 	@Override
 	public void register(String name, String code) {
-		Function<?, ?> function = compiler.compile(code);
+		Function<?, ?> function = compiler.compile(code).getFunction();
 		this.register(name, function);
 	}
 

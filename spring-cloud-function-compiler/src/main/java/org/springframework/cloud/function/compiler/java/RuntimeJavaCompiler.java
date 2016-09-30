@@ -94,6 +94,7 @@ public class RuntimeJavaCompiler {
 				for (CompiledClassDefinition ccd: ccds) {
 					Class<?> clazz = ccl.defineClass(ccd.getClassName(), ccd.getBytes());
 					classes.add(clazz);
+					compilationResult.addClassBytes(ccd.getClassName(), ccd.getBytes());
 				}
 			} catch (IOException ioe) {
 				logger.debug("Unexpected exception defining classes",ioe);
