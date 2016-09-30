@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.compiler;
+package org.springframework.cloud.function.stream;
 
-import java.util.function.Function;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author Mark Fisher
  */
-public interface FunctionFactory<T, R> {
+@ConfigurationProperties(prefix = "function")
+public class FunctionConfigurationProperties {
 
-	Function<T, R> getFunction();
+	private String name;
 
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
 }

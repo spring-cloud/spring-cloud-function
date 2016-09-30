@@ -30,6 +30,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
 import org.springframework.cloud.function.registry.FunctionRegistry;
 import org.springframework.cloud.function.registry.InMemoryFunctionRegistry;
 import org.springframework.context.annotation.Bean;
@@ -59,9 +60,7 @@ public class RestConfiguration {
 
 	@Bean
 	public FunctionRegistry registry() {
-		FunctionRegistry registry = new InMemoryFunctionRegistry();
-		registry.register(functionProperties.getName(), functionProperties.getCode());
-		return registry;
+		return new FileSystemFunctionRegistry();
 	}
 
 	@Bean

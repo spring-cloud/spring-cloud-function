@@ -23,14 +23,10 @@ import java.util.function.Function;
  */
 public interface FunctionRegistry {
 
-	<T, R> Function<T, R> lookup(String name);
-
-	void register(String name, Function<?, ?> function);
-
 	void register(String name, String function);
 
-	void compose(String composedFunctionName, Function<?, ?>... functions);
+	<T, R> Function<T, R> lookup(String name);
 
-	void compose(String composedFunctionName, String... functionNames);
+	<T, R> Function<T, R> compose(String... functionNames);
 
 }

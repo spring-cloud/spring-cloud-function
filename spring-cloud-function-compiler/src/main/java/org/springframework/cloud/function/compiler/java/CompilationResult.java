@@ -18,7 +18,9 @@ package org.springframework.cloud.function.compiler.java;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Holder for the results of compilation. If compilation was successful the set
@@ -28,6 +30,7 @@ import java.util.List;
  * warning messages collected.
  * 
  * @author Andy Clement
+ * @author Mark Fisher
  */
 public class CompilationResult {
 
@@ -37,8 +40,18 @@ public class CompilationResult {
 
 	List<Class<?>> compiledClasses = new ArrayList<>();
 
+	private Map<String, byte[]> classBytes = new HashMap<>();
+
 	public CompilationResult(boolean successfulCompilation) {
 		this.successfulCompilation = successfulCompilation;
+	}
+
+	public void addClassBytes(String name, byte[] bytes) {
+		this.classBytes.put(name, bytes);
+	}
+
+	public byte[] getClassBytes(String classname) {
+		return this.classBytes.get(classname);
 	}
 
 	public boolean wasSuccessful() {

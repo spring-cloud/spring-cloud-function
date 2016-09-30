@@ -18,8 +18,10 @@ package org.springframework.cloud.function.registry;
 
 import java.util.function.Function;
 
+import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
-import org.springframework.util.Assert;
+import org.springframework.cloud.function.compiler.FunctionFactory;
+import org.springframework.cloud.function.compiler.java.SimpleClassLoader;
 
 /**
  * @author Mark Fisher
@@ -28,31 +30,31 @@ public abstract class FunctionRegistrySupport implements FunctionRegistry {
 
 	private final FunctionCompiler compiler = new FunctionCompiler();
 
+	private final SimpleClassLoader classLoader = new SimpleClassLoader(FunctionRegistrySupport.class.getClassLoader());
+
 	@Override
-	public void register(String name, String code) {
-		Function<?, ?> function = compiler.compile(code);
-		this.register(name, function);
-	}
-
 	@SuppressWarnings("unchecked")
-	public void compose(String name, Function<?, ?>... functions) {
-		Assert.isTrue(functions != null && functions.length > 1, "more than one Function is required");
-		@SuppressWarnings("rawtypes")
-		Function function = functions[0];
-		for (int i = 1; i < functions.length; i++) {
-			function = function.andThen(functions[i]);
-		}
-		this.register(name, function);
-	}
-
-	@SuppressWarnings("unchecked")
-	public void compose(String composedFunctionName, String... functionNames) {
-		Assert.isTrue(functionNames != null && functionNames.length > 1, "more than one Function is required");
+	public <T, R> Function<T, R> compose(String... functionNames) {
 		@SuppressWarnings("rawtypes")
 		Function function = this.lookup(functionNames[0]);
 		for (int i = 1; i < functionNames.length; i++) {
 			function = function.andThen(this.lookup(functionNames[i]));
 		}
-		this.register(composedFunctionName, function);
+		return function;
+	}
+
+	protected <T, R> CompiledFunctionFactory<T, R> compile(String code) {
+		return this.compiler.compile(code);
+	}
+
+	@SuppressWarnings("unchecked")
+	protected <T, R> Function<T, R> deserialize(byte[] bytes) {
+		Class<?> factoryClass = this.classLoader.defineClass(FunctionCompiler.GENERATED_FUNCTION_FACTORY_CLASS_NAME, bytes);
+		try {
+			return ((FunctionFactory<T, R>) factoryClass.newInstance()).getFunction();
+		}
+		catch (InstantiationException | IllegalAccessException e) {
+			throw new IllegalArgumentException("failed to deserialize function", e);
+		}
 	}
 }

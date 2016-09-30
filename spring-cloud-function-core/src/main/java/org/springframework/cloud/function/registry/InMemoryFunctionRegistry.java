@@ -27,12 +27,13 @@ public class InMemoryFunctionRegistry extends FunctionRegistrySupport {
 	private final ConcurrentHashMap<String, Function<?, ?>> map = new ConcurrentHashMap<>();
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public Function<?, ?> lookup(String name) {
 		return this.map.get(name);
 	}
 
 	@Override
-	public void register(String name, Function<?, ?> function) {
-		this.map.put(name, function);
+	public void register(String name, String function) {
+		this.map.put(name, this.compile(function).getFunction());
 	}
 }
