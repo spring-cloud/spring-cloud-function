@@ -30,11 +30,11 @@ public class CompiledFunctionFactory<T, R> implements FunctionFactory<T, R> {
 
 	private final byte[] generatedClassBytes;
 
-	public CompiledFunctionFactory(CompilationResult compilationResult) {
+	public CompiledFunctionFactory(String className, CompilationResult compilationResult) {
 		List<Class<?>> clazzes = compilationResult.getCompiledClasses();
 		Function<T, R> function = null;
 		for (Class<?> clazz: clazzes) {
-			if (clazz.getName().equals(FunctionCompiler.GENERATED_FUNCTION_FACTORY_CLASS_NAME)) {
+			if (clazz.getName().equals(className)) {
 				try {
 					@SuppressWarnings("unchecked")
 					FunctionFactory<T, R> functionFactory = (FunctionFactory<T, R>) clazz.newInstance();
@@ -49,7 +49,7 @@ public class CompiledFunctionFactory<T, R> implements FunctionFactory<T, R> {
 			throw new IllegalArgumentException("Failed to extract Function from compilation result.");
 		}
 		this.function = function;
-		this.generatedClassBytes = compilationResult.getClassBytes(FunctionCompiler.GENERATED_FUNCTION_FACTORY_CLASS_NAME);
+		this.generatedClassBytes = compilationResult.getClassBytes(className);
 	}
 
 	public Function<T, R> getFunction() {

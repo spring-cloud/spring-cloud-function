@@ -22,6 +22,7 @@ import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.FunctionFactory;
 import org.springframework.cloud.function.compiler.java.SimpleClassLoader;
+import org.springframework.util.Assert;
 
 /**
  * @author Mark Fisher
@@ -43,13 +44,17 @@ public abstract class FunctionRegistrySupport implements FunctionRegistry {
 		return function;
 	}
 
-	protected <T, R> CompiledFunctionFactory<T, R> compile(String code) {
-		return this.compiler.compile(code);
+	protected <T, R> CompiledFunctionFactory<T, R> compile(String name, String code) {
+		return this.compiler.compile(name, code);
 	}
 
 	@SuppressWarnings("unchecked")
-	protected <T, R> Function<T, R> deserialize(byte[] bytes) {
-		Class<?> factoryClass = this.classLoader.defineClass(FunctionCompiler.GENERATED_FUNCTION_FACTORY_CLASS_NAME, bytes);
+	protected <T, R> Function<T, R> deserialize(String name, byte[] bytes) {
+		Assert.hasLength(name, "name must not be empty");
+		String firstLetter = name.substring(0, 1).toUpperCase();
+		name = (name.length() > 1) ? firstLetter + name.substring(1) : firstLetter;
+		String className = String.format("%s.%sFunctionFactory", FunctionCompiler.class.getPackage().getName(), name); 
+		Class<?> factoryClass = this.classLoader.defineClass(className, bytes);
 		try {
 			return ((FunctionFactory<T, R>) factoryClass.newInstance()).getFunction();
 		}

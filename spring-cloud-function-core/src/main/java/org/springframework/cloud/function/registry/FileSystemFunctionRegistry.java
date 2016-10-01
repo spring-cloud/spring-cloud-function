@@ -51,7 +51,7 @@ public class FileSystemFunctionRegistry extends FunctionRegistrySupport {
 	public <T, R> Function<T, R> lookup(String name) {
 		try {
 			byte[] bytes = FileCopyUtils.copyToByteArray(new File(this.directory, fileName(name)));
-			return this.deserialize(bytes);
+			return this.deserialize(name, bytes);
 		}
 		catch (IOException e) {
 			throw new IllegalArgumentException(String.format("failed to lookup function: %s", name), e); 
@@ -59,7 +59,7 @@ public class FileSystemFunctionRegistry extends FunctionRegistrySupport {
 	}
 
 	public void register(String name, String function) {
-		CompiledFunctionFactory<?, ?> factory = this.compile(function);
+		CompiledFunctionFactory<?, ?> factory = this.compile(name, function);
 		File file = new File(this.directory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);

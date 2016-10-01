@@ -34,6 +34,6 @@ public class InMemoryFunctionRegistry extends FunctionRegistrySupport {
 
 	@Override
 	public void register(String name, String function) {
-		this.map.put(name, this.compile(function).getFunction());
+		this.map.put(name, this.compile(name, function).getFunction());
 	}
 }

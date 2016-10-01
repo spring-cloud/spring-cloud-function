@@ -33,10 +33,6 @@ import org.springframework.cloud.function.compiler.java.RuntimeJavaCompiler;
  */
 public class FunctionCompiler {
 
-	private final static String PACKAGE = "org.springframework.cloud.function.compiler";
-
-	public final static String GENERATED_FUNCTION_FACTORY_CLASS_NAME = PACKAGE + ".GeneratedFunctionFactory";
-
 	private static Logger logger = LoggerFactory.getLogger(FunctionCompiler.class);
 
 	// Newlines in the property are escaped
@@ -49,11 +45,11 @@ public class FunctionCompiler {
 	 * The user supplied code snippet is inserted into the template and then the result is compiled
 	 */
 	private static String SOURCE_CODE_TEMPLATE =
-			"package " + PACKAGE + ";\n" +
+			"package " + FunctionCompiler.class.getPackage().getName() + ";\n" +
 			"import java.util.*;\n" + // Helpful to include this
 			"import java.util.function.*;\n" +
 			"import reactor.core.publisher.Flux;\n" +
-			"public class GeneratedFunctionFactory implements FunctionFactory {\n" +
+			"public class %s implements FunctionFactory {\n" +
 			" public Function<Flux<Object>, Flux<Object>> getFunction() {\n" +
 			"  %s\n" +
 			" }\n" +
@@ -73,7 +69,10 @@ public class FunctionCompiler {
 	 *
 	 * @return a CompiledFunctionFactory instance
 	 */
-	public <T, R> CompiledFunctionFactory<T, R> compile(String code) {
+	public <T, R> CompiledFunctionFactory<T, R> compile(String name, String code) {
+		if (name == null || name.length() == 0) {
+			throw new IllegalArgumentException("name must not be empty");
+		}
 		logger.info("Initial code property value :'{}'", code);
  		code = decode(code);
  		if (code.startsWith("\"") && code.endsWith("\"")) {
@@ -83,9 +82,12 @@ public class FunctionCompiler {
  			code = "return (Function<Flux<Object>,Flux<Object>> & java.io.Serializable) " + code + ";";
  		}
 		logger.info("Processed code property value :\n{}\n", code);
-		CompilationResult compilationResult = buildAndCompileSourceCode(code);
+		String firstLetter = name.substring(0, 1).toUpperCase();
+		name = (name.length() > 1) ? firstLetter + name.substring(1) : firstLetter;
+		String className = String.format("%s.%sFunctionFactory", this.getClass().getPackage().getName(), name); 
+		CompilationResult compilationResult = buildAndCompileSourceCode(className, code);
 		if (compilationResult.wasSuccessful()) {
-			return new CompiledFunctionFactory<>(compilationResult);
+			return new CompiledFunctionFactory<>(className, compilationResult);
 		}
 		List<CompilationMessage> compilationMessages = compilationResult.getCompilationMessages();
 		throw new CompilationFailedException(compilationMessages);
@@ -98,13 +100,14 @@ public class FunctionCompiler {
 	 * This method can return more than one class if the method body includes local class
 	 * declarations. An example methodBody would be <tt>return input -> input.buffer(5).map(list->list.get(0));</tt>.
 	 *
+	 * @param className the name of the class
 	 * @param methodBody the source code for a method that should return a
 	 * <tt>Function&lt;Flux&lt;Object&gt;,Flux&lt;Object&gt;&gt;</tt>
 	 * @return the list of Classes produced by compiling and then loading the snippet of code
 	 */
-	private CompilationResult buildAndCompileSourceCode(String methodBody) {
-		String sourceCode = makeSourceClassDefinition(methodBody);
-		return compiler.compile(GENERATED_FUNCTION_FACTORY_CLASS_NAME, sourceCode);
+	private CompilationResult buildAndCompileSourceCode(String className, String methodBody) {
+		String sourceCode = makeSourceClassDefinition(className, methodBody);
+		return compiler.compile(className, sourceCode);
 	}
 
 	private static String decode(String input) {
@@ -115,11 +118,13 @@ public class FunctionCompiler {
 	 * Make a full source code definition for a class by applying the specified method body
 	 * to the Reactive template.
 	 *
+	 * @param className the name of the class
 	 * @param methodBody the code to insert into the Reactive source class template
 	 * @return a complete Java Class definition
 	 */
-	private static String makeSourceClassDefinition(String methodBody) {
-		return String.format(SOURCE_CODE_TEMPLATE, methodBody);
+	private static String makeSourceClassDefinition(String className, String methodBody) {
+		String shortClassName = className.substring(className.lastIndexOf('.') + 1);
+		return String.format(SOURCE_CODE_TEMPLATE, shortClassName, methodBody);
 	}
 
 }
