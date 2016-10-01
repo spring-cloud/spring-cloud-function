@@ -19,8 +19,8 @@ package org.springframework.cloud.function.stream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
+import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
 import org.springframework.cloud.function.registry.FunctionRegistry;
-import org.springframework.cloud.function.registry.InMemoryFunctionRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.annotation.Bean;
@@ -29,17 +29,15 @@ import org.springframework.context.annotation.Bean;
  * @author Mark Fisher
  */
 @EnableBinding(Processor.class)
-@EnableConfigurationProperties(StreamConfigurationProperties.class)
+@EnableConfigurationProperties(FunctionConfigurationProperties.class)
 public class StreamConfiguration {
 
 	@Autowired
-	private StreamConfigurationProperties properties;
+	private FunctionConfigurationProperties properties;
 
 	@Bean
 	public FunctionRegistry registry() {
-		FunctionRegistry registry = new InMemoryFunctionRegistry();
-		registry.register(properties.getName(), properties.getCode());
-		return registry;
+		return new FileSystemFunctionRegistry();
 	}
 
 	@Bean

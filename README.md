@@ -1,31 +1,19 @@
-Example Stream Application:
+Register a Function:
 
 ```
-java -jar spring-cloud-function-stream-1.0.0.BUILD-SNAPSHOT.jar
-     --server.port=8081
-     --spring.cloud.stream.bindings.input.destination=words
-     --spring.cloud.stream.bindings.output.destination=uppercaseWords
-     --function.name=uppercase
-     --function.code="f -> f.map(s -> s.toString().toUpperCase())"
+./register.sh -n uppercase -f "f->f.map(s->s.toString().toUpperCase())"
 ```
 
-Example REST Application:
+Run a Stream Processing Microservice using that Function:
 
 ```
-java -jar spring-cloud-function-web-1.0.0.BUILD-SNAPSHOT.jar
-     --web.path=/demo
-     --function.name=uppercase
-     --function.code="f -> f.map(s -> s.toString().toUpperCase())"
+./stream.sh -i words -o uppercaseWords -f uppercase
 ```
 
-Using Scripts:
+Run a REST Microservice using that Function:
 
 ```
-FUN="f->f.map(s->s.toString().toUpperCase())"
-
-./stream.fun -i words -o uppercaseWords -f $FUN
-
-./web.fun -p /words -f $FUN
+./web.sh -p /words -f uppercase
 ```
 
 (more docs soon)
