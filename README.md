@@ -16,4 +16,14 @@ Run a REST Microservice using that Function:
 ./web.sh -p /words -f uppercase
 ```
 
+To compose Functions:
+
+(assuming the `uppercase` function was already registered as above)
+
+```
+./register.sh -n pluralize -f "f->f.map(s->s+\"S\")"
+
+./web.sh -p /words -f uppercase,pluralize
+```
+
 (more docs soon)

@@ -19,24 +19,25 @@ package org.springframework.cloud.function.web;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.web.reactive.function.BodyExtractors.toFlux;
 import static org.springframework.web.reactive.function.BodyInserters.fromPublisher;
-import static org.springframework.web.reactive.function.RequestPredicates.contentType;
 import static org.springframework.web.reactive.function.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.RequestPredicates.contentType;
 
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 import org.reactivestreams.Publisher;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
 import org.springframework.cloud.function.registry.FunctionRegistry;
-import org.springframework.cloud.function.registry.InMemoryFunctionRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.Request;
 import org.springframework.web.reactive.function.Response;
 import org.springframework.web.reactive.function.RouterFunction;
@@ -65,7 +66,10 @@ public class RestConfiguration {
 
 	@Bean
 	public HttpHandler httpHandler(FunctionRegistry registry) {
-		Function<Flux<String>, Flux<String>> function = registry.lookup(functionProperties.getName());
+		String name = functionProperties.getName();
+		Function<Flux<String>, Flux<String>> function = (name.indexOf(',') == -1)
+				? registry.lookup(name)
+				: registry.compose(StringUtils.commaDelimitedListToStringArray(name));
 		FunctionInvokingHandler handler = new FunctionInvokingHandler(function);
 		RouterFunction<Publisher<String>> route = RouterFunctions.route(
 				POST(webProperties.getPath()).and(contentType(TEXT_PLAIN)), handler::handleText);
