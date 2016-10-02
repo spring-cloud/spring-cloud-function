@@ -27,7 +27,7 @@ import org.springframework.util.FileCopyUtils;
 /**
  * @author Mark Fisher
  */
-public class FileSystemFunctionRegistry extends FunctionRegistrySupport {
+public class FileSystemFunctionRegistry extends AbstractFunctionRegistry {
 
 	private final File directory;
 
@@ -48,7 +48,7 @@ public class FileSystemFunctionRegistry extends FunctionRegistrySupport {
 	}
 
 	@Override
-	public <T, R> Function<T, R> lookup(String name) {
+	public <T, R> Function<T, R> doLookup(String name) {
 		try {
 			byte[] bytes = FileCopyUtils.copyToByteArray(new File(this.directory, fileName(name)));
 			return this.deserialize(name, bytes);

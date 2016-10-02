@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.registry;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
@@ -27,11 +29,13 @@ import org.springframework.util.Assert;
 /**
  * @author Mark Fisher
  */
-public abstract class FunctionRegistrySupport implements FunctionRegistry {
+public abstract class AbstractFunctionRegistry implements FunctionRegistry {
+
+	private static final Map<String, FunctionFactory<?, ?>> FACTORY_CACHE = new HashMap<>();
 
 	private final FunctionCompiler compiler = new FunctionCompiler();
 
-	private final SimpleClassLoader classLoader = new SimpleClassLoader(FunctionRegistrySupport.class.getClassLoader());
+	private final SimpleClassLoader classLoader = new SimpleClassLoader(AbstractFunctionRegistry.class.getClassLoader());
 
 	@Override
 	@SuppressWarnings("unchecked")
@@ -44,19 +48,33 @@ public abstract class FunctionRegistrySupport implements FunctionRegistry {
 		return function;
 	}
 
+	@Override
+	public final <T, R> Function<T, R> lookup(String name) {
+		@SuppressWarnings("unchecked")
+		FunctionFactory<T, R> factory = (FunctionFactory<T, R>) FACTORY_CACHE.get(name);
+		if (factory != null) {
+			return factory.getFunction();
+		}
+		return this.doLookup(name);
+	}
+
+	protected abstract <T, R> Function<T, R> doLookup(String name);
+
 	protected <T, R> CompiledFunctionFactory<T, R> compile(String name, String code) {
 		return this.compiler.compile(name, code);
 	}
 
 	@SuppressWarnings("unchecked")
-	protected <T, R> Function<T, R> deserialize(String name, byte[] bytes) {
+	protected <T, R> Function<T, R> deserialize(final String name, byte[] bytes) {
 		Assert.hasLength(name, "name must not be empty");
 		String firstLetter = name.substring(0, 1).toUpperCase();
-		name = (name.length() > 1) ? firstLetter + name.substring(1) : firstLetter;
-		String className = String.format("%s.%sFunctionFactory", FunctionCompiler.class.getPackage().getName(), name); 
+		String upperCasedName = (name.length() > 1) ? firstLetter + name.substring(1) : firstLetter;
+		String className = String.format("%s.%sFunctionFactory", FunctionCompiler.class.getPackage().getName(), upperCasedName); 
 		Class<?> factoryClass = this.classLoader.defineClass(className, bytes);
 		try {
-			return ((FunctionFactory<T, R>) factoryClass.newInstance()).getFunction();
+			FunctionFactory<T, R> factory = ((FunctionFactory<T, R>) factoryClass.newInstance());
+			FACTORY_CACHE.put(name, factory);
+			return factory.getFunction();
 		}
 		catch (InstantiationException | IllegalAccessException e) {
 			throw new IllegalArgumentException("failed to deserialize function", e);

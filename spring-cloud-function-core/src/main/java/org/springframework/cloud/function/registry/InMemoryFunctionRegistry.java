@@ -22,13 +22,13 @@ import java.util.function.Function;
 /**
  * @author Mark Fisher
  */
-public class InMemoryFunctionRegistry extends FunctionRegistrySupport {
+public class InMemoryFunctionRegistry extends AbstractFunctionRegistry {
 
 	private final ConcurrentHashMap<String, Function<?, ?>> map = new ConcurrentHashMap<>();
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Function<?, ?> lookup(String name) {
+	public Function<?, ?> doLookup(String name) {
 		return this.map.get(name);
 	}
 
