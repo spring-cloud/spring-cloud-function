@@ -21,8 +21,6 @@ import java.util.function.Function;
 /**
  * @author Mark Fisher
  */
-public interface FunctionFactory<T, R> {
-
-	Function<T, R> getFunction();
-
+public interface FunctionFactory<T, R> extends CompilationResultFactory<Function<T, R>> {
+	
 }

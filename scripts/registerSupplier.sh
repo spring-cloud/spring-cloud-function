@@ -11,6 +11,6 @@ while getopts ":n:f:" opt; do
     esac
 done
 
-java -jar ../spring-cloud-function-core/target/spring-cloud-function-core-1.0.0.BUILD-SNAPSHOT-registrar.jar\
+java -jar ../spring-cloud-function-core/target/spring-cloud-function-core-1.0.0.BUILD-SNAPSHOT-registrar.jar supplier\
  $NAME\
  $FUNC

@@ -68,8 +68,8 @@ public class RestConfiguration {
 	public HttpHandler httpHandler(FunctionRegistry registry) {
 		String name = functionProperties.getName();
 		Function<Flux<String>, Flux<String>> function = (name.indexOf(',') == -1)
-				? registry.lookup(name)
-				: registry.compose(StringUtils.commaDelimitedListToStringArray(name));
+				? registry.lookupFunction(name)
+				: registry.composeFunction(StringUtils.commaDelimitedListToStringArray(name));
 		FunctionInvokingHandler handler = new FunctionInvokingHandler(function);
 		RouterFunction<Publisher<String>> route = RouterFunctions.route(
 				POST(webProperties.getPath()).and(contentType(TEXT_PLAIN)), handler::handleText);

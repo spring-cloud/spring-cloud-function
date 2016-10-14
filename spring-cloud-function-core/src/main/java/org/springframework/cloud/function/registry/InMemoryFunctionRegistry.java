@@ -17,23 +17,51 @@
 package org.springframework.cloud.function.registry;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author Mark Fisher
  */
 public class InMemoryFunctionRegistry extends AbstractFunctionRegistry {
 
-	private final ConcurrentHashMap<String, Function<?, ?>> map = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Consumer<?>> consumerMap = new ConcurrentHashMap<>();
+
+	private final ConcurrentHashMap<String, Function<?, ?>> functionMap = new ConcurrentHashMap<>();
+
+	private final ConcurrentHashMap<String, Supplier<?>> supplierMap = new ConcurrentHashMap<>();
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Function<?, ?> doLookup(String name) {
-		return this.map.get(name);
+	protected Consumer<?> doLookupConsumer(String name) {
+		return this.consumerMap.get(name);
 	}
 
 	@Override
-	public void register(String name, String function) {
-		this.map.put(name, this.compile(name, function).getFunction());
+	@SuppressWarnings("unchecked")
+	public Function<?, ?> doLookupFunction(String name) {
+		return this.functionMap.get(name);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	protected Supplier<?> doLookupSupplier(String name) {
+		return this.supplierMap.get(name);
+	}
+
+	@Override
+	public void registerConsumer(String name, String consumer) {
+		this.consumerMap.put(name, this.compileConsumer(name, consumer).getResult());
+	}
+
+	@Override
+	public void registerFunction(String name, String function) {
+		this.functionMap.put(name, this.compileFunction(name, function).getResult());
+	}
+
+	@Override
+	public void registerSupplier(String name, String supplier) {
+		this.supplierMap.put(name, this.compileSupplier(name, supplier).getResult());
 	}
 }

@@ -14,28 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.registry;
-
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+package org.springframework.cloud.function.compiler;
 
 /**
  * @author Mark Fisher
  */
-public interface FunctionRegistry {
+public interface CompilationResultFactory<T> {
 
-	void registerConsumer(String name, String consumer);
+	T getResult();
 
-	void registerFunction(String name, String function);
-
-	void registerSupplier(String name, String supplier);
-
-	<T> Consumer<T> lookupConsumer(String name);
-
-	<T, R> Function<T, R> lookupFunction(String name);
-
-	<T, R> Function<T, R> composeFunction(String... functionNames);
-
-	<T> Supplier<T> lookupSupplier(String name);
 }

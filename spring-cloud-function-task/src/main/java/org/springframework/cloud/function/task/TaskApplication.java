@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.compiler;
+package org.springframework.cloud.function.task;
 
-import java.util.function.Function;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * @author Mark Fisher
  */
-public class FunctionCompiler<T, R> extends AbstractFunctionCompiler<Function<T, R>> {
+@SpringBootApplication
+public class TaskApplication {
 
-	public FunctionCompiler() {
-		super(ResultType.Function, "Flux<Object>, Flux<Object>");
+	public static void main(String[] args) {
+		SpringApplication.run(TaskApplication.class, args);
 	}
 }

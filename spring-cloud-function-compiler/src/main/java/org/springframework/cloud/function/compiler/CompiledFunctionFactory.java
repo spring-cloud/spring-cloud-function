@@ -17,43 +17,42 @@
 package org.springframework.cloud.function.compiler;
 
 import java.util.List;
-import java.util.function.Function;
 
 import org.springframework.cloud.function.compiler.java.CompilationResult;
 
 /**
  * @author Mark Fisher
  */
-public class CompiledFunctionFactory<T, R> implements FunctionFactory<T, R> {
+public class CompiledFunctionFactory<T> implements CompilationResultFactory<T> {
 
-	private final Function<T, R> function;
+	private final T result;
 
 	private final byte[] generatedClassBytes;
 
 	public CompiledFunctionFactory(String className, CompilationResult compilationResult) {
 		List<Class<?>> clazzes = compilationResult.getCompiledClasses();
-		Function<T, R> function = null;
+		T result = null;
 		for (Class<?> clazz: clazzes) {
 			if (clazz.getName().equals(className)) {
 				try {
 					@SuppressWarnings("unchecked")
-					FunctionFactory<T, R> functionFactory = (FunctionFactory<T, R>) clazz.newInstance();
-					function = functionFactory.getFunction();
+					CompilationResultFactory<T> factory = (CompilationResultFactory<T>) clazz.newInstance();
+					result = factory.getResult();
 				}
 				catch (Exception e) {
 					throw new IllegalArgumentException("Unexpected problem during retrieval of Function from compiled class", e);
 				}
 			}
 		}
-		if (function == null) {
-			throw new IllegalArgumentException("Failed to extract Function from compilation result.");
+		if (result == null) {
+			throw new IllegalArgumentException("Failed to extract compilation result.");
 		}
-		this.function = function;
+		this.result = result;
 		this.generatedClassBytes = compilationResult.getClassBytes(className);
 	}
 
-	public Function<T, R> getFunction() {
-		return function;
+	public T getResult() {
+		return result;
 	}
 
 	public byte[] getGeneratedClassBytes() {

@@ -48,19 +48,19 @@ public class LocalFunctionGateway implements FunctionGateway {
 
 	@Override
 	public <T, R> R invoke(String functionName, T request) {
-		Function<T, R> function = this.registry.lookup(functionName);
+		Function<T, R> function = this.registry.lookupFunction(functionName);
 		return function.apply(request);
 	}
 
 	@Override
 	public <T, R> void schedule(String functionName, Trigger trigger, Supplier<T> supplier, Consumer<R> consumer) {
-		Function<T, R> function = this.registry.lookup(functionName);
+		Function<T, R> function = this.registry.lookupFunction(functionName);
 		this.scheduler.schedule(new FunctionInvokingRunnable(supplier, function, consumer), trigger);
 	}
 
 	@Override
 	public <T, R> void subscribe(Publisher<T> publisher, String functionName, final Consumer<R> consumer) {
-		final Function<T, R> function = this.registry.lookup(functionName);
+		final Function<T, R> function = this.registry.lookupFunction(functionName);
 		publisher.subscribe(new Subscriber<T>() {
 
 			@Override

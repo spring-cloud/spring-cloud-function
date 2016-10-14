@@ -40,6 +40,7 @@ public class LocalFunctionGatewayTests {
 
 	@Before
 	public void init() {
+		registry.registerFunction("uppercase", "f->f.map(s->s.toString().toUpperCase())");
 		this.scheduler.initialize();
 	}
 

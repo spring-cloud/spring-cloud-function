@@ -49,8 +49,8 @@ public class StreamConfiguration {
 	public AbstractFunctionInvoker<?,?> invoker(FunctionRegistry registry) {
 		String name = properties.getName();
 		Function<Flux<Object>, Flux<Object>> function = (name.indexOf(',') == -1)
-				? registry.lookup(name)
-				: registry.compose(StringUtils.commaDelimitedListToStringArray(name));
+				? registry.lookupFunction(name)
+				: registry.composeFunction(StringUtils.commaDelimitedListToStringArray(name));
 		return new StreamListeningFunctionInvoker(function);
 	}
 }

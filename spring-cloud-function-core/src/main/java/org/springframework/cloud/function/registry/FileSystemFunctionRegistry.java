@@ -18,7 +18,9 @@ package org.springframework.cloud.function.registry;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.util.Assert;
@@ -29,7 +31,17 @@ import org.springframework.util.FileCopyUtils;
  */
 public class FileSystemFunctionRegistry extends AbstractFunctionRegistry {
 
-	private final File directory;
+	private static final String CONSUMER_DIRECTORY = "consumers";
+
+	private static final String FUNCTION_DIRECTORY = "functions";
+
+	private static final String SUPPLIER_DIRECTORY = "suppliers";
+
+	private final File consumerDirectory;
+
+	private final File functionDirectory;
+
+	private final File supplierDirectory;
 
 	public FileSystemFunctionRegistry() {
 		this(new File("/tmp/function-registry"));
@@ -44,28 +56,80 @@ public class FileSystemFunctionRegistry extends AbstractFunctionRegistry {
 			Assert.isTrue(directory.isDirectory(),
 					String.format("%s is not a directory.", directory.getAbsolutePath()));
 		}
-		this.directory = directory;
+		this.consumerDirectory = new File(directory, CONSUMER_DIRECTORY);
+		this.functionDirectory = new File(directory, FUNCTION_DIRECTORY);
+		this.supplierDirectory = new File(directory, SUPPLIER_DIRECTORY);
+		this.consumerDirectory.mkdir();
+		this.functionDirectory.mkdir();
+		this.supplierDirectory.mkdir();
 	}
 
 	@Override
-	public <T, R> Function<T, R> doLookup(String name) {
+	public <T> Consumer<T> doLookupConsumer(String name) {
 		try {
-			byte[] bytes = FileCopyUtils.copyToByteArray(new File(this.directory, fileName(name)));
-			return this.deserialize(name, bytes);
+			byte[] bytes = FileCopyUtils.copyToByteArray(new File(this.consumerDirectory, fileName(name)));
+			return this.deserializeConsumer(name, bytes);
 		}
 		catch (IOException e) {
-			throw new IllegalArgumentException(String.format("failed to lookup function: %s", name), e); 
+			throw new IllegalArgumentException(String.format("failed to lookup Consumer: %s", name), e); 
 		}
 	}
 
-	public void register(String name, String function) {
-		CompiledFunctionFactory<?, ?> factory = this.compile(name, function);
-		File file = new File(this.directory, fileName(name));
+	@Override
+	public <T, R> Function<T, R> doLookupFunction(String name) {
+		try {
+			byte[] bytes = FileCopyUtils.copyToByteArray(new File(this.functionDirectory, fileName(name)));
+			return this.deserializeFunction(name, bytes);
+		}
+		catch (IOException e) {
+			throw new IllegalArgumentException(String.format("failed to lookup Function: %s", name), e); 
+		}
+	}
+
+	@Override
+	public <T> Supplier<T> doLookupSupplier(String name) {
+		try {
+			byte[] bytes = FileCopyUtils.copyToByteArray(new File(this.supplierDirectory, fileName(name)));
+			return this.deserializeSupplier(name, bytes);
+		}
+		catch (IOException e) {
+			throw new IllegalArgumentException(String.format("failed to lookup Supplier: %s", name), e); 
+		}
+	}
+
+	@Override
+	public void registerConsumer(String name, String consumer) {
+		CompiledFunctionFactory<?> factory = this.compileConsumer(name, consumer);
+		File file = new File(this.consumerDirectory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
 		}
 		catch (IOException e) {
-			throw new IllegalArgumentException(String.format("failed to register function: %s", name), e);
+			throw new IllegalArgumentException(String.format("failed to register Consumer: %s", name), e);
+		}
+	}
+
+	@Override
+	public void registerFunction(String name, String function) {
+		CompiledFunctionFactory<?> factory = this.compileFunction(name, function);
+		File file = new File(this.functionDirectory, fileName(name));
+		try {
+			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
+		}
+		catch (IOException e) {
+			throw new IllegalArgumentException(String.format("failed to register Function: %s", name), e);
+		}
+	}
+
+	@Override
+	public void registerSupplier(String name, String supplier) {
+		CompiledFunctionFactory<?> factory = this.compileSupplier(name, supplier);
+		File file = new File(this.supplierDirectory, fileName(name));
+		try {
+			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
+		}
+		catch (IOException e) {
+			throw new IllegalArgumentException(String.format("failed to register Supplier: %s", name), e);
 		}
 	}
 

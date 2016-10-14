@@ -1,7 +1,7 @@
 == Register a Function:
 
 ----
-./register.sh -n uppercase -f "f->f.map(s->s.toString().toUpperCase())"
+./registerFunction.sh -n uppercase -f "f->f.map(s->s.toString().toUpperCase())"
 ----
 
 == Run a Stream Processing Microservice using that Function:
@@ -21,9 +21,21 @@
 (assuming the `uppercase` function was already registered as above)
 
 ----
-./register.sh -n pluralize -f "f->f.map(s->s+\"S\")"
+./registerFunction.sh -n pluralize -f "f->f.map(s->s+\"S\")"
 
 ./web.sh -p /words -f uppercase,pluralize
+----
+
+== Run a Task Microservice using a Supplier, Function, and Consumer:
+
+(assuming the `uppercase` function was already registered as above)
+
+----
+./registerSupplier.sh -n words -f "()->Flux.just(\"foo\",\"bar\")"
+
+./registerConsumer.sh -n print -f "System.out::println"
+
+./task.sh -s words -f uppercase -c print
 ----
 
 (more docs soon)

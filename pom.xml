@@ -39,6 +39,7 @@
 		<module>spring-cloud-function-compiler</module>
 		<module>spring-cloud-function-core</module>
 		<module>spring-cloud-function-stream</module>
+		<module>spring-cloud-function-task</module>
 		<module>spring-cloud-function-web</module>
 	</modules>
 

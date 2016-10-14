@@ -43,10 +43,10 @@ public class FileSystemFunctionRegistryTests {
 	}
 
 	@Test
-	public void registerAndLookup() throws IOException {
+	public void registerAndLookupFunction() throws IOException {
 		FileSystemFunctionRegistry registry = new FileSystemFunctionRegistry(this.directory);
-		registry.register("uppercase", "f->f.map(s->s.toString().toUpperCase())");
-		Function<Flux<String>, Flux<String>> function = registry.lookup("uppercase");
+		registry.registerFunction("uppercase", "f->f.map(s->s.toString().toUpperCase())");
+		Function<Flux<String>, Flux<String>> function = registry.lookupFunction("uppercase");
 		Flux<String> output = function.apply(Flux.just("foo", "bar"));
 		List<String> results = output.collectList().block();
 		assertEquals("FOO", results.get(0));
@@ -54,11 +54,11 @@ public class FileSystemFunctionRegistryTests {
 	}
 
 	@Test
-	public void compose() throws IOException {
+	public void composeFunction() throws IOException {
 		FileSystemFunctionRegistry registry = new FileSystemFunctionRegistry(this.directory);
-		registry.register("uppercase", "f->f.map(s->s.toString().toUpperCase())");
-		registry.register("exclaim", "f->f.map(s->s+\"!!!\")");
-		Function<Flux<String>, Flux<String>> function = registry.compose("uppercase", "exclaim");
+		registry.registerFunction("uppercase", "f->f.map(s->s.toString().toUpperCase())");
+		registry.registerFunction("exclaim", "f->f.map(s->s+\"!!!\")");
+		Function<Flux<String>, Flux<String>> function = registry.composeFunction("uppercase", "exclaim");
 		Flux<String> output = function.apply(Flux.just("foo", "bar"));
 		List<String> results = output.collectList().block();
 		assertEquals("FOO!!!", results.get(0));

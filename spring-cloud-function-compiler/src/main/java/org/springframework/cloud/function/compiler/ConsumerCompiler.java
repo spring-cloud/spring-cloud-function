@@ -1,12 +1,12 @@
 /*
  * Copyright 2016 the original author or authors.
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.registry;
+package org.springframework.cloud.function.compiler;
 
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * @author Mark Fisher
  */
-public interface FunctionRegistry {
+public class ConsumerCompiler<T> extends AbstractFunctionCompiler<Consumer<T>> {
 
-	void registerConsumer(String name, String consumer);
-
-	void registerFunction(String name, String function);
-
-	void registerSupplier(String name, String supplier);
-
-	<T> Consumer<T> lookupConsumer(String name);
-
-	<T, R> Function<T, R> lookupFunction(String name);
-
-	<T, R> Function<T, R> composeFunction(String... functionNames);
-
-	<T> Supplier<T> lookupSupplier(String name);
+	public ConsumerCompiler() {
+		super(ResultType.Consumer, "Object");
+	}
 }

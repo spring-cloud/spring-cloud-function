@@ -24,11 +24,25 @@ import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
 public class FunctionRegistrar {
 
 	public static void main(String[] args) {
-		if (args.length != 2) {
-			System.err.println("USAGE: java FunctionRegistrar functionName functionBody");
+		String usage = "USAGE: java FunctionRegistrar [supplier|function|consumer] name lambda";
+		if (args.length != 3) {
+			System.err.println(usage);
 			System.exit(1);
 		}
 		FileSystemFunctionRegistry registry = new FileSystemFunctionRegistry();
-		registry.register(args[0], args[1]);
+		String type = args[0];
+		if ("supplier".equalsIgnoreCase(type)) {
+			registry.registerSupplier(args[1], args[2]);
+		}
+		else if ("function".equalsIgnoreCase(type)) {
+			registry.registerFunction(args[1], args[2]);
+		}
+		else if ("consumer".equalsIgnoreCase(type)) {
+			registry.registerConsumer(args[1], args[2]);
+		}
+		else {
+			System.err.println(usage);
+			System.exit(1);
+		}
 	}
 }
