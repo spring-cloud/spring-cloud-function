@@ -36,8 +36,8 @@ public class Example {
 		CompiledFunctionFactory<Function<Flux<String>,Flux<String>>> functionFactory = functionCompiler.compile("f", "f->f.map(s->s.toString().toUpperCase())");
 		Flux<String> output = functionFactory.getResult().apply(input);
 
-		ConsumerCompiler<Flux<String>> consumerCompiler = new ConsumerCompiler<>();
-		CompiledFunctionFactory<Consumer<Flux<String>>> consumerFactory = consumerCompiler.compile("c", "f->f.subscribe(System.out::println)");
-		consumerFactory.getResult().accept(output);
+		ConsumerCompiler<String> consumerCompiler = new ConsumerCompiler<>();
+		CompiledFunctionFactory<Consumer<String>> consumerFactory = consumerCompiler.compile("c", "System.out::println");
+		output.subscribe(consumerFactory.getResult());
 	}
 }
