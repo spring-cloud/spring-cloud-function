@@ -30,6 +30,7 @@ import org.springframework.cloud.function.registry.FunctionRegistry;
 import org.springframework.cloud.task.configuration.EnableTask;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 
@@ -51,9 +52,12 @@ public class TaskConfiguration {
 
 	@Bean
 	public CommandLineRunner commandLineRunner(FunctionRegistry registry) {
-		final Supplier<Flux<String>> supplier = registry.lookupSupplier(properties.getSupplier());
-		final Function<Flux<String>, Flux<String>> function = registry.lookupFunction(properties.getFunction());
-		final Consumer<String> consumer = registry.lookupConsumer(properties.getConsumer());
+		final Supplier<Flux<Object>> supplier = registry.lookupSupplier(properties.getSupplier());
+		String functionName = properties.getFunction();
+		Function<Flux<Object>, Flux<Object>> function = (functionName.indexOf(',') == -1)
+				? registry.lookupFunction(functionName)
+				: registry.composeFunction(StringUtils.commaDelimitedListToStringArray(functionName));
+		final Consumer<Object> consumer = registry.lookupConsumer(properties.getConsumer());
 		final CountDownLatch latch = new CountDownLatch(1);
 		final AtomicBoolean status = new AtomicBoolean();
 		CommandLineRunner runner = new CommandLineRunner() {
