@@ -32,16 +32,17 @@ import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
 import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.RequestPredicates;
-import org.springframework.web.reactive.function.RouterFunction;
-import org.springframework.web.reactive.function.RouterFunctions;
-import org.springframework.web.reactive.function.ServerRequest;
-import org.springframework.web.reactive.function.ServerResponse;
+import org.springframework.web.reactive.function.server.RequestPredicates;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
 
-import static org.springframework.http.codec.BodyExtractors.toFlux;
-import static org.springframework.http.codec.BodyInserters.fromPublisher;
+import static org.springframework.web.reactive.function.BodyExtractors.toFlux;
+import static org.springframework.web.reactive.function.BodyInserters.fromPublisher;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.ipc.netty.NettyContext;
 import reactor.ipc.netty.http.server.HttpServer;
 
@@ -72,7 +73,7 @@ public class RestConfiguration {
 				: registry.composeFunction(
 						StringUtils.commaDelimitedListToStringArray(name));
 		FunctionInvokingHandler handler = new FunctionInvokingHandler(function);
-		RouterFunction<Publisher<String>> route = RouterFunctions.route(
+		RouterFunction<ServerResponse> route = RouterFunctions.route(
 				RequestPredicates.POST(webProperties.getPath())
 						.and(RequestPredicates.contentType(MediaType.TEXT_PLAIN)),
 				handler::handleText);
@@ -92,7 +93,7 @@ public class RestConfiguration {
 			this.function = function;
 		}
 
-		private ServerResponse<Publisher<String>> handleText(ServerRequest request) {
+		private Mono<ServerResponse> handleText(ServerRequest request) {
 			Flux<String> input = request.body(toFlux(String.class));
 			Publisher<String> output = this.function.apply(input);
 			return ServerResponse.ok().body(fromPublisher(output, String.class));
