@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream;
+package org.springframework.cloud.function.stream.host;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.stream.binder.BinderFactory;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.messaging.MessageChannel;
 
 /**
  * @author Mark Fisher
@@ -26,6 +29,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class StreamApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(StreamApplication.class, args);
+		ConfigurableApplicationContext context = SpringApplication.run(StreamApplication.class, args);
+		// eagerly initialize the Binder
+		context.getBean(BinderFactory.class).getBinder(null, MessageChannel.class);
 	}
 }

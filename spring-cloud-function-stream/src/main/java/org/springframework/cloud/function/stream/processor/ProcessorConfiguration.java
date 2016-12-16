@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream;
+package org.springframework.cloud.function.stream.processor;
 
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
-import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
 import org.springframework.cloud.function.registry.FunctionRegistry;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -31,23 +29,14 @@ import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 
-/**
- * @author Mark Fisher
- */
 @EnableBinding(Processor.class)
 @EnableConfigurationProperties(FunctionConfigurationProperties.class)
-public class StreamConfiguration {
+public class ProcessorConfiguration {
 
 	@Autowired
 	private FunctionConfigurationProperties properties;
 
 	@Bean
-	public FunctionRegistry registry() {
-		return new FileSystemFunctionRegistry();
-	}
-
-	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
 	public AbstractFunctionInvoker<?,?> invoker(FunctionRegistry registry) {
 		String name = properties.getName();
 		Function<Flux<Object>, Flux<Object>> function = (name.indexOf(',') == -1)
@@ -55,5 +44,4 @@ public class StreamConfiguration {
 				: registry.composeFunction(StringUtils.commaDelimitedListToStringArray(name));
 		return new StreamListeningFunctionInvoker(function);
 	}
-
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream;
+package org.springframework.cloud.function.stream.processor;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -24,7 +24,27 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "function")
 public class FunctionConfigurationProperties {
 
+	private String input;
+
+	private String output;
+
 	private String name;
+
+	public String getInput() {
+		return input;
+	}
+
+	public void setInput(String input) {
+		this.input = input;
+	}
+
+	public String getOutput() {
+		return output;
+	}
+
+	public void setOutput(String output) {
+		this.output = output;
+	}
 
 	public String getName() {
 		return name;
