@@ -19,12 +19,13 @@ package org.springframework.cloud.function.stream;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
-import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
-import org.springframework.cloud.function.registry.FunctionRegistry;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.StringUtils;
@@ -36,23 +37,20 @@ import reactor.core.publisher.Flux;
  */
 @EnableBinding(Processor.class)
 @EnableConfigurationProperties(FunctionConfigurationProperties.class)
+@ConditionalOnClass({ Binder.class, AbstractFunctionInvoker.class })
 public class StreamConfiguration {
 
 	@Autowired
 	private FunctionConfigurationProperties properties;
 
 	@Bean
-	public FunctionRegistry registry() {
-		return new FileSystemFunctionRegistry();
-	}
-
-	@Bean
 	@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
-	public AbstractFunctionInvoker<?,?> invoker(FunctionRegistry registry) {
+	public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry) {
 		String name = properties.getName();
 		Function<Flux<Object>, Flux<Object>> function = (name.indexOf(',') == -1)
 				? registry.lookupFunction(name)
-				: registry.composeFunction(StringUtils.commaDelimitedListToStringArray(name));
+				: registry.composeFunction(
+						StringUtils.commaDelimitedListToStringArray(name));
 		return new StreamListeningFunctionInvoker(function);
 	}
 

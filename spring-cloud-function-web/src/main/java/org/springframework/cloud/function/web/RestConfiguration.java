@@ -17,15 +17,16 @@
 package org.springframework.cloud.function.web;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
-import org.springframework.cloud.function.registry.FunctionRegistry;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -50,33 +51,22 @@ import reactor.ipc.netty.http.server.HttpServer;
  * @author Mark Fisher
  */
 @Configuration
-@EnableConfigurationProperties({ FunctionConfigurationProperties.class,
-		WebConfigurationProperties.class })
+@EnableConfigurationProperties({ WebConfigurationProperties.class })
+@ConditionalOnClass({ HttpHandler.class, NettyContext.class })
 public class RestConfiguration {
-
-	@Autowired
-	private FunctionConfigurationProperties functionProperties;
 
 	@Autowired
 	private WebConfigurationProperties webProperties;
 
 	@Bean
-	public FunctionRegistry registry() {
-		return new FileSystemFunctionRegistry();
-	}
-
-	@Bean
-	public HttpHandler httpHandler(FunctionRegistry registry) {
-		String name = functionProperties.getName();
-		Function<Flux<String>, Flux<String>> function = (name.indexOf(',') == -1)
-				? registry.lookupFunction(name)
-				: registry.composeFunction(
-						StringUtils.commaDelimitedListToStringArray(name));
-		FunctionInvokingHandler handler = new FunctionInvokingHandler(function);
-		RouterFunction<ServerResponse> route = RouterFunctions.route(
-				RequestPredicates.POST(webProperties.getPath())
+	public HttpHandler httpHandler(FunctionCatalog registry) {
+		FunctionInvokingHandler handler = new FunctionInvokingHandler(registry);
+		RouterFunction<?> route = RouterFunctions
+				.route(RequestPredicates.POST(webProperties.getPath() + "/{name}")
 						.and(RequestPredicates.contentType(MediaType.TEXT_PLAIN)),
-				handler::handleText);
+						handler::handlePost)
+				.andRoute(RequestPredicates.GET(webProperties.getPath() + "/{name}"),
+						handler::handleGet);
 		return RouterFunctions.toHttpHandler(route);
 	}
 
@@ -87,15 +77,27 @@ public class RestConfiguration {
 
 	private static class FunctionInvokingHandler {
 
-		private final Function<Flux<String>, Flux<String>> function;
+		private final FunctionCatalog registry;
 
-		private FunctionInvokingHandler(Function<Flux<String>, Flux<String>> function) {
-			this.function = function;
+		private FunctionInvokingHandler(FunctionCatalog registry) {
+			this.registry = registry;
 		}
 
-		private Mono<ServerResponse> handleText(ServerRequest request) {
+		private Mono<ServerResponse> handlePost(ServerRequest request) {
 			Flux<String> input = request.body(toFlux(String.class));
-			Publisher<String> output = this.function.apply(input);
+			String name = request.pathVariable("name");
+			Function<Flux<String>, Flux<String>> function = (name.indexOf(',') == -1)
+					? registry.lookupFunction(name)
+					: registry.composeFunction(
+							StringUtils.commaDelimitedListToStringArray(name));
+			Publisher<String> output = function.apply(input);
+			return ServerResponse.ok().body(fromPublisher(output, String.class));
+		}
+
+		private Mono<ServerResponse> handleGet(ServerRequest request) {
+			String name = request.pathVariable("name");
+			Supplier<Flux<String>> function = registry.lookupSupplier(name);
+			Publisher<String> output = function.get();
 			return ServerResponse.ok().body(fromPublisher(output, String.class));
 		}
 	}

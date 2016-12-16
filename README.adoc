@@ -13,7 +13,8 @@
 == Run a REST Microservice using that Function:
 
 ----
-./web.sh -p /words -f uppercase
+./web.sh 
+curl -H "Content-Type=text/plain" localhost:8080/uppercase -d foo
 ----
 
 == Compose Functions:
@@ -23,7 +24,7 @@
 ----
 ./registerFunction.sh -n pluralize -f "f->f.map(s->s+\"S\")"
 
-./web.sh -p /words -f uppercase,pluralize
+curl -H "Content-Type=text/plain" localhost:8080/uppercase,pluralize -d foo
 ----
 
 == Run a Task Microservice using a Supplier, Function, and Consumer:
