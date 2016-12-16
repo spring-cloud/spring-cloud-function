@@ -11,7 +11,7 @@ while getopts ":p:f:" opt; do
     esac
 done
 
-java -jar ../spring-cloud-function-web/target/spring-cloud-function-web-1.0.0.BUILD-SNAPSHOT.jar\
+java -noverify -XX:TieredStopAtLevel=1 -Xss256K -Xms16M -Xmx256M -XX:MaxMetaspaceSize=128M -jar ../spring-cloud-function-web/target/spring-cloud-function-web-1.0.0.BUILD-SNAPSHOT.jar\
  --web.path=$WEBPATH\
  --function.name=$FUNC
 
