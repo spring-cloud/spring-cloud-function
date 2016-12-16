@@ -16,15 +16,20 @@
 
 package org.springframework.cloud.function.registry;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 /**
- * @author Mark Fisher
+ * @author Dave Syer
  */
-public interface FunctionRegistry extends FunctionCatalog {
+public interface FunctionCatalog {
 
-	void registerConsumer(String name, String consumer);
+	<T> Consumer<T> lookupConsumer(String name);
 
-	void registerFunction(String name, String function);
+	<T, R> Function<T, R> lookupFunction(String name);
 
-	void registerSupplier(String name, String supplier);
+	<T, R> Function<T, R> composeFunction(String... functionNames);
 
+	<T> Supplier<T> lookupSupplier(String name);
 }

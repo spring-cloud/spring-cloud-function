@@ -13,33 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.deployer;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@ConfigurationProperties("server")
-public class WebConfigurationProperties {
-
-	private int port = 8080;
-
-	private String path = "";
-
-	public int getPort() {
-		return port;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		while (path.endsWith("/")) {
-			path = path.substring(0, path.length() - 1);
-		}
-		this.path = path;
-	}
+/**
+ * @author Dave Syer
+ *
+ */
+@SpringBootApplication
+public class DeployedFunctionApplication {
 }

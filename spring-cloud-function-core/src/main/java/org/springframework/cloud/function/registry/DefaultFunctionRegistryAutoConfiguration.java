@@ -13,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.cloud.function.registry;
 
-/**
- * @author Mark Fisher
- */
-public interface FunctionRegistry extends FunctionCatalog {
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-	void registerConsumer(String name, String consumer);
+@Configuration
+@ConditionalOnClass(FileSystemFunctionRegistry.class)
+@ConditionalOnMissingBean(FunctionCatalog.class)
+public class DefaultFunctionRegistryAutoConfiguration {
 
-	void registerFunction(String name, String function);
-
-	void registerSupplier(String name, String supplier);
+	@Bean
+	public FunctionRegistry functionRegistry() {
+		return new FileSystemFunctionRegistry();
+	}
 
 }

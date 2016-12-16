@@ -19,6 +19,7 @@
 		<reactor.version>3.0.4.RELEASE</reactor.version>
 		<spring-cloud-stream.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
 		<wrapper.version>0.0.1.BUILD-SNAPSHOT</wrapper.version>
+		<spring-boot.version>1.5.0.BUILD-SNAPSHOT</spring-boot.version>
 	</properties>
 
 	<dependencyManagement>
@@ -39,9 +40,12 @@
 	<modules>
 		<module>spring-cloud-function-compiler</module>
 		<module>spring-cloud-function-core</module>
+		<module>spring-cloud-function-context</module>
 		<module>spring-cloud-function-stream</module>
 		<module>spring-cloud-function-task</module>
 		<module>spring-cloud-function-web</module>
+		<module>spring-cloud-function-samples</module>
+		<module>spring-cloud-function-deployer</module>
 	</modules>
 
 	<build>

@@ -24,9 +24,9 @@ import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
-import org.springframework.cloud.function.registry.FunctionRegistry;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.task.configuration.EnableTask;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,24 +40,23 @@ import reactor.core.publisher.Flux;
 @Configuration
 @EnableTask
 @EnableConfigurationProperties(LambdaConfigurationProperties.class)
+@ConditionalOnClass({ EnableTask.class })
 public class TaskConfiguration {
 
 	@Autowired
 	private LambdaConfigurationProperties properties;
 
 	@Bean
-	public FunctionRegistry registry() {
-		return new FileSystemFunctionRegistry();
-	}
-
-	@Bean
-	public CommandLineRunner commandLineRunner(FunctionRegistry registry) {
-		final Supplier<Flux<Object>> supplier = registry.lookupSupplier(properties.getSupplier());
+	public CommandLineRunner commandLineRunner(FunctionCatalog registry) {
+		final Supplier<Flux<Object>> supplier = registry
+				.lookupSupplier(properties.getSupplier());
 		String functionName = properties.getFunction();
 		Function<Flux<Object>, Flux<Object>> function = (functionName.indexOf(',') == -1)
 				? registry.lookupFunction(functionName)
-				: registry.composeFunction(StringUtils.commaDelimitedListToStringArray(functionName));
-		final Consumer<Object> consumer = registry.lookupConsumer(properties.getConsumer());
+				: registry.composeFunction(
+						StringUtils.commaDelimitedListToStringArray(functionName));
+		final Consumer<Object> consumer = registry
+				.lookupConsumer(properties.getConsumer());
 		final CountDownLatch latch = new CountDownLatch(1);
 		final AtomicBoolean status = new AtomicBoolean();
 		CommandLineRunner runner = new CommandLineRunner() {
@@ -81,7 +80,8 @@ public class TaskConfiguration {
 
 		private final boolean value;
 
-		private CompletionConsumer(CountDownLatch latch, AtomicBoolean status, boolean value) {
+		private CompletionConsumer(CountDownLatch latch, AtomicBoolean status,
+				boolean value) {
 			this.latch = latch;
 			this.status = status;
 			this.value = value;
