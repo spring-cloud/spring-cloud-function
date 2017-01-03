@@ -58,7 +58,7 @@ import reactor.core.publisher.Flux;
 // NOT a @Component (to prevent it from being scanned by the "main" application).
 public class ApplicationRunner implements CommandLineRunner {
 
-	private static final String DEFAULT_REACTOR_VERSION = "3.0.3.RELEASE";
+	private static final String DEFAULT_REACTOR_VERSION = "3.0.4.RELEASE";
 
 	private static Log logger = LogFactory.getLog(ApplicationRunner.class);
 

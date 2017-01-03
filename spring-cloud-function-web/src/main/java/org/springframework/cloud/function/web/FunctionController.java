@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.deployer;
+package org.springframework.cloud.function.web;
 
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.context.embedded.ReactiveServerProperties;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,13 +35,14 @@ import reactor.core.publisher.Flux;
  *
  */
 @RestController
-public class DeployedFunctionController {
+@ConditionalOnClass({ RestController.class, ReactiveServerProperties.class })
+public class FunctionController {
 
-	private final FunctionExtractingAppDeployer deployer;
+	private final FunctionCatalog functions;
 
 	@Autowired
-	public DeployedFunctionController(FunctionExtractingAppDeployer deployer) {
-		this.deployer = deployer;
+	public FunctionController(FunctionCatalog catalog) {
+		this.functions = catalog;
 	}
 
 	@PostMapping(path = "/{name}", consumes = MediaType.TEXT_PLAIN_VALUE)
@@ -46,10 +50,10 @@ public class DeployedFunctionController {
 			@RequestBody Flux<String> body) {
 		Function<Object, Object> function;
 		if (name.contains(",")) {
-			function = deployer.composeFunction(name.split(","));
+			function = functions.composeFunction(name.split(","));
 		}
 		else {
-			function = deployer.lookupFunction(name);
+			function = functions.lookupFunction(name);
 		}
 		@SuppressWarnings("unchecked")
 		Flux<String> result = (Flux<String>) function.apply(body);
@@ -59,7 +63,7 @@ public class DeployedFunctionController {
 	@GetMapping("/{name}")
 	public Flux<String> supplier(@PathVariable String name) {
 		@SuppressWarnings("unchecked")
-		Flux<String> result = (Flux<String>) deployer.lookupSupplier(name).get();
+		Flux<String> result = (Flux<String>) functions.lookupSupplier(name).get();
 		return result;
 	}
 

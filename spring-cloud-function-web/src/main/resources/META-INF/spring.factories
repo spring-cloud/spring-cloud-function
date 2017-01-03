@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.function.web.RestConfiguration
+org.springframework.cloud.function.web.FunctionController
