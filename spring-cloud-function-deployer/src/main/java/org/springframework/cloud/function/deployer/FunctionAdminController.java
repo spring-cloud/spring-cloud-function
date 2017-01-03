@@ -86,7 +86,7 @@ public class FunctionAdminController implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		deploy("sample", "maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT");
+		deploy("sample", "maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
 	}
 
 	private String deploy(String name, String path, String... args) throws Exception {

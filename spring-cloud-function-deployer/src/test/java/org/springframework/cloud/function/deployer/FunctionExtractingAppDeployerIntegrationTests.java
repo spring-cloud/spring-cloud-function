@@ -37,6 +37,7 @@ public class FunctionExtractingAppDeployerIntegrationTests {
 	@BeforeClass
 	public static void open() {
 		port = SocketUtils.findAvailableTcpPort();
+		System.setProperty("debug", "true");
 		context = new ApplicationRunner().start("--server.port=" + port);
 	}
 
@@ -48,10 +49,17 @@ public class FunctionExtractingAppDeployerIntegrationTests {
 	}
 
 	@Test
-	public void test() {
+	public void words() {
 		assertThat(new TestRestTemplate()
 				.getForObject("http://localhost:" + port + "/words", String.class))
-						.isEqualTo("foobar");
+						.isEqualTo("{\"value\":\"foo\"}{\"value\":\"bar\"}");
+	}
+
+	@Test
+	public void uppercase() {
+		assertThat(new TestRestTemplate().postForObject(
+				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",
+				String.class)).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 }
