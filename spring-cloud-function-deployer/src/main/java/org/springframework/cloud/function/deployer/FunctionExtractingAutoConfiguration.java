@@ -26,13 +26,13 @@ import org.springframework.context.annotation.Configuration;
  *
  */
 @Configuration
-@ConditionalOnClass(FunctionExtractingAppDeployer.class)
+@ConditionalOnClass(FunctionExtractingFunctionCatalog.class)
 @AutoConfigureBefore(DefaultFunctionRegistryAutoConfiguration.class)
 public class FunctionExtractingAutoConfiguration {
 
 	@Bean
-	public FunctionExtractingAppDeployer functionCatalog() {
-		return new FunctionExtractingAppDeployer();
+	public FunctionExtractingFunctionCatalog functionCatalog() {
+		return new FunctionExtractingFunctionCatalog();
 	}
 
 }

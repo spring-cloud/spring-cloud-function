@@ -43,14 +43,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin")
 public class FunctionAdminController implements CommandLineRunner {
 
-	private final FunctionExtractingAppDeployer deployer;
+	private final FunctionExtractingFunctionCatalog deployer;
 
 	private Map<String, String> deployed = new LinkedHashMap<>();
 
 	private Map<String, String> names = new LinkedHashMap<>();
 
 	@Autowired
-	public FunctionAdminController(FunctionExtractingAppDeployer deployer) {
+	public FunctionAdminController(FunctionExtractingFunctionCatalog deployer) {
 		this.deployer = deployer;
 	}
 

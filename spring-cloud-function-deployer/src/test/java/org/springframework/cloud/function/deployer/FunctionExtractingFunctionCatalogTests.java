@@ -25,7 +25,6 @@ import org.junit.rules.ExpectedException;
 
 import org.springframework.boot.loader.thin.ArchiveUtils;
 import org.springframework.boot.loader.tools.LogbackInitializer;
-import org.springframework.cloud.deployer.spi.app.DeploymentState;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.core.io.FileSystemResource;
@@ -39,7 +38,7 @@ import reactor.core.publisher.Flux;
  * @author Dave Syer
  *
  */
-public class FunctionExtractingAppDeployerTests {
+public class FunctionExtractingFunctionCatalogTests {
 
 	private static String id;
 
@@ -47,7 +46,7 @@ public class FunctionExtractingAppDeployerTests {
 		LogbackInitializer.initialize();
 	}
 
-	private static FunctionExtractingAppDeployer deployer = new FunctionExtractingAppDeployer();
+	private static FunctionExtractingFunctionCatalog deployer = new FunctionExtractingFunctionCatalog();
 
 	@Rule
 	public ExpectedException expected = ExpectedException.none();
@@ -58,7 +57,6 @@ public class FunctionExtractingAppDeployerTests {
 			id = deploy("maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT");
 			// "--debug");
 		}
-		assertThat(deployer.status(id).getState()).isEqualTo(DeploymentState.deployed);
 	}
 
 	@Test

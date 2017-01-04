@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-public class FunctionExtractingAppDeployerIntegrationTests {
+public class FunctionExtractingFunctionCatalogIntegrationTests {
 
 	private static ConfigurableApplicationContext context;
 	private static int port;
@@ -37,7 +37,7 @@ public class FunctionExtractingAppDeployerIntegrationTests {
 	@BeforeClass
 	public static void open() {
 		port = SocketUtils.findAvailableTcpPort();
-		System.setProperty("debug", "true");
+		// System.setProperty("debug", "true");
 		context = new ApplicationRunner().start("--server.port=" + port);
 	}
 
