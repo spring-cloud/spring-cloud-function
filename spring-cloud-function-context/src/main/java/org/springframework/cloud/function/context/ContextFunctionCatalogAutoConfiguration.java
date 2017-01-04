@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -91,6 +92,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 				else if (isGenericSupplier(factory, name)) {
 					wrapSupplier(factory, name);
 				}
+				else if (isGenericConsumer(factory, name)) {
+					wrapConsumer(factory, name);
+				}
 			}
 		}
 
@@ -117,49 +121,75 @@ public class ContextFunctionCatalogAutoConfiguration {
 											String.class)));
 		}
 
+		private boolean isGenericConsumer(ConfigurableListableBeanFactory factory,
+				String name) {
+			return factory.isTypeMatch(name,
+					ResolvableType.forClassWithGenerics(Consumer.class, Flux.class))
+					&& !factory.isTypeMatch(name,
+							ResolvableType.forClassWithGenerics(Consumer.class,
+									ResolvableType.forClassWithGenerics(Flux.class,
+											String.class)));
+		}
+
 		private void wrapFunction(ConfigurableListableBeanFactory factory, String name) {
-			BeanDefinition definition = registry.getBeanDefinition(name);
-			BeanDefinitionBuilder builder = BeanDefinitionBuilder
-					.genericBeanDefinition(ProxyFunction.class);
-			builder.addPropertyValue("delegate", definition);
-			builder.addPropertyValue("name", name);
-			targets.registerBeanDefinition(name, definition);
-			builder.addPropertyValue("registry", targets);
-			registry.registerBeanDefinition(name, builder.getRawBeanDefinition());
+			AbstractBeanDefinition wrapped = getInputAwareWrappedBean(name,
+					ProxyFunction.class).getBeanDefinition();
+			registry.registerBeanDefinition(name, wrapped);
 		}
 
 		private void wrapSupplier(ConfigurableListableBeanFactory factory, String name) {
+			AbstractBeanDefinition wrapped = getWrappedBean(name, ProxySupplier.class)
+					.getBeanDefinition();
+			registry.registerBeanDefinition(name, wrapped);
+		}
+
+		private void wrapConsumer(ConfigurableListableBeanFactory factory, String name) {
+			AbstractBeanDefinition wrapped = getInputAwareWrappedBean(name,
+					ProxyConsumer.class).getBeanDefinition();
+			registry.registerBeanDefinition(name, wrapped);
+		}
+
+		private BeanDefinitionBuilder getInputAwareWrappedBean(String name,
+				Class<?> type) {
+			BeanDefinitionBuilder builder = getWrappedBean(name, type);
+			builder.addPropertyValue("name", name);
+			targets.registerBeanDefinition(name, registry.getBeanDefinition(name));
+			builder.addPropertyValue("registry", targets);
+			return builder;
+		}
+
+		private BeanDefinitionBuilder getWrappedBean(String name, Class<?> type) {
 			BeanDefinition definition = registry.getBeanDefinition(name);
 			BeanDefinitionBuilder builder = BeanDefinitionBuilder
-					.genericBeanDefinition(ProxySupplier.class);
+					.genericBeanDefinition(type);
 			builder.addPropertyValue("delegate", definition);
-			builder.addPropertyValue("name", name);
-			targets.registerBeanDefinition(name, definition);
-			builder.addPropertyValue("registry", targets);
-			registry.registerBeanDefinition(name, builder.getRawBeanDefinition());
+			return builder;
 		}
 	}
 }
 
-class ProxyFunction implements Function<Flux<String>, Flux<String>> {
+abstract class ProxyWrapper<S, T> {
 
 	private ObjectMapper mapper;
 
-	private Function<Flux<Object>, Flux<Object>> delegate;
+	private T delegate;
 
 	private String name;
 
-	private Class<?> type;
+	private Class<S> type;
 
 	private BeanDefinitionRegistry registry;
 
-	@Autowired
-	public ProxyFunction(ObjectMapper mapper) {
+	public ProxyWrapper(ObjectMapper mapper) {
 		this.mapper = mapper;
 	}
 
-	public void setDelegate(Function<Flux<Object>, Flux<Object>> delegate) {
+	public void setDelegate(T delegate) {
 		this.delegate = delegate;
+	}
+
+	public T getDelegate() {
+		return delegate;
 	}
 
 	public void setName(String name) {
@@ -170,92 +200,86 @@ class ProxyFunction implements Function<Flux<String>, Flux<String>> {
 		this.registry = registry;
 	}
 
-	private Class<?> findType(RootBeanDefinition definition) {
+	private Class<S> findType(RootBeanDefinition definition) {
 		StandardMethodMetadata source = (StandardMethodMetadata) definition.getSource();
 		ParameterizedType type = (ParameterizedType) (source.getIntrospectedMethod()
 				.getGenericReturnType());
 		type = (ParameterizedType) type.getActualTypeArguments()[0];
 		Type param = type.getActualTypeArguments()[0];
-		return ClassUtils.resolveClassName(param.getTypeName(),
+		@SuppressWarnings("unchecked")
+		Class<S> resolved = (Class<S>) ClassUtils.resolveClassName(param.getTypeName(),
 				registry.getClass().getClassLoader());
+		return resolved;
+	}
+
+	public Class<S> getType() {
+		if (type == null) {
+			type = findType((RootBeanDefinition) registry.getBeanDefinition(name));
+		}
+		return type;
+	}
+
+	public S fromJson(String value) {
+		try {
+			return mapper.readValue(value, getType());
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Cannot convert from JSON: " + value);
+		}
+	}
+
+	public String toJson(Object value) {
+		try {
+			return mapper.writeValueAsString(value);
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Cannot convert to JSON: " + value);
+		}
+	}
+
+}
+
+class ProxyFunction extends ProxyWrapper<Object, Function<Flux<Object>, Flux<Object>>>
+		implements Function<Flux<String>, Flux<String>> {
+
+	@Autowired
+	public ProxyFunction(ObjectMapper mapper) {
+		super(mapper);
 	}
 
 	@Override
 	public Flux<String> apply(Flux<String> input) {
-		if (type == null) {
-			type = findType((RootBeanDefinition) registry.getBeanDefinition(name));
-		}
-		return delegate.apply(input.map(value -> {
-			try {
-				return mapper.readValue(value, type);
-			}
-			catch (Exception e) {
-				throw new IllegalStateException("Cannot convert from JSON: " + input);
-			}
-		})).map(value -> {
-			try {
-				return mapper.writeValueAsString(value);
-			}
-			catch (Exception e) {
-				throw new IllegalStateException("Cannot convert to JSON: " + input);
-			}
-		});
+		return getDelegate().apply(input.map(this::fromJson)).map(this::toJson);
 	}
 
 }
 
-class ProxySupplier implements Supplier<Flux<String>> {
-
-	private ObjectMapper mapper;
-
-	private Supplier<Flux<Object>> delegate;
-
-	private String name;
-
-	private Class<?> type;
-
-	private BeanDefinitionRegistry registry;
+class ProxySupplier extends ProxyWrapper<Object, Supplier<Flux<Object>>>
+		implements Supplier<Flux<String>> {
 
 	@Autowired
 	public ProxySupplier(ObjectMapper mapper) {
-		this.mapper = mapper;
-	}
-
-	public void setDelegate(Supplier<Flux<Object>> delegate) {
-		this.delegate = delegate;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public void setRegistry(BeanDefinitionRegistry registry) {
-		this.registry = registry;
-	}
-
-	private Class<?> findType(RootBeanDefinition definition) {
-		StandardMethodMetadata source = (StandardMethodMetadata) definition.getSource();
-		ParameterizedType type = (ParameterizedType) (source.getIntrospectedMethod()
-				.getGenericReturnType());
-		type = (ParameterizedType) type.getActualTypeArguments()[0];
-		Type param = type.getActualTypeArguments()[0];
-		return ClassUtils.resolveClassName(param.getTypeName(),
-				registry.getClass().getClassLoader());
+		super(mapper);
 	}
 
 	@Override
 	public Flux<String> get() {
-		if (type == null) {
-			type = findType((RootBeanDefinition) registry.getBeanDefinition(name));
-		}
-		return delegate.get().map(value -> {
-			try {
-				return mapper.writeValueAsString(value);
-			}
-			catch (Exception e) {
-				throw new IllegalStateException("Cannot convert to JSON: " + value);
-			}
-		});
+		return getDelegate().get().map(this::toJson);
+	}
+
+}
+
+class ProxyConsumer extends ProxyWrapper<Object, Consumer<Flux<Object>>>
+		implements Consumer<Flux<String>> {
+
+	@Autowired
+	public ProxyConsumer(ObjectMapper mapper) {
+		super(mapper);
+	}
+
+	@Override
+	public void accept(Flux<String> input) {
+		getDelegate().accept(input.map(this::fromJson));
 	}
 
 }
