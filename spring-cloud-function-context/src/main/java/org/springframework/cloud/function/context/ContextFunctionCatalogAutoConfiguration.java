@@ -168,7 +168,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 }
 
-abstract class ProxyWrapper<S, T> {
+abstract class ProxyWrapper<T> {
 
 	private ObjectMapper mapper;
 
@@ -176,7 +176,7 @@ abstract class ProxyWrapper<S, T> {
 
 	private String name;
 
-	private Class<S> type;
+	private Class<?> type;
 
 	private BeanDefinitionRegistry registry;
 
@@ -200,26 +200,24 @@ abstract class ProxyWrapper<S, T> {
 		this.registry = registry;
 	}
 
-	private Class<S> findType(RootBeanDefinition definition) {
+	private Class<?> findType(RootBeanDefinition definition) {
 		StandardMethodMetadata source = (StandardMethodMetadata) definition.getSource();
 		ParameterizedType type = (ParameterizedType) (source.getIntrospectedMethod()
 				.getGenericReturnType());
 		type = (ParameterizedType) type.getActualTypeArguments()[0];
 		Type param = type.getActualTypeArguments()[0];
-		@SuppressWarnings("unchecked")
-		Class<S> resolved = (Class<S>) ClassUtils.resolveClassName(param.getTypeName(),
+		return ClassUtils.resolveClassName(param.getTypeName(),
 				registry.getClass().getClassLoader());
-		return resolved;
 	}
 
-	public Class<S> getType() {
+	public Class<?> getType() {
 		if (type == null) {
 			type = findType((RootBeanDefinition) registry.getBeanDefinition(name));
 		}
 		return type;
 	}
 
-	public S fromJson(String value) {
+	public Object fromJson(String value) {
 		try {
 			return mapper.readValue(value, getType());
 		}
@@ -239,7 +237,7 @@ abstract class ProxyWrapper<S, T> {
 
 }
 
-class ProxyFunction extends ProxyWrapper<Object, Function<Flux<Object>, Flux<Object>>>
+class ProxyFunction extends ProxyWrapper<Function<Flux<?>, Flux<?>>>
 		implements Function<Flux<String>, Flux<String>> {
 
 	@Autowired
@@ -254,7 +252,7 @@ class ProxyFunction extends ProxyWrapper<Object, Function<Flux<Object>, Flux<Obj
 
 }
 
-class ProxySupplier extends ProxyWrapper<Object, Supplier<Flux<Object>>>
+class ProxySupplier extends ProxyWrapper<Supplier<Flux<?>>>
 		implements Supplier<Flux<String>> {
 
 	@Autowired
@@ -269,7 +267,7 @@ class ProxySupplier extends ProxyWrapper<Object, Supplier<Flux<Object>>>
 
 }
 
-class ProxyConsumer extends ProxyWrapper<Object, Consumer<Flux<Object>>>
+class ProxyConsumer extends ProxyWrapper<Consumer<Flux<?>>>
 		implements Consumer<Flux<String>> {
 
 	@Autowired
