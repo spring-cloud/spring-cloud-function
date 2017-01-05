@@ -18,6 +18,7 @@ package org.springframework.cloud.function.deployer;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,6 +60,13 @@ public class FunctionExtractingFunctionCatalogTests {
 		}
 	}
 
+	@AfterClass
+	public static void close() {
+		if (id != null) {
+			deployer.undeploy(id);
+		}
+	}
+
 	@Test
 	public void deployAndExtractFunctions() throws Exception {
 		// This one can only work if you change the boot classpath to contain reactor-core
@@ -80,7 +88,7 @@ public class FunctionExtractingFunctionCatalogTests {
 		assertThat(deployer.lookupSupplier("words")).isNotNull();
 	}
 
-	private String deploy(String jarName, String... args) throws Exception {
+	private static String deploy(String jarName, String... args) throws Exception {
 		Resource resource = new FileSystemResource(
 				ArchiveUtils.getArchiveRoot(ArchiveUtils.getArchive(jarName)));
 		AppDefinition definition = new AppDefinition(resource.getFilename(),
