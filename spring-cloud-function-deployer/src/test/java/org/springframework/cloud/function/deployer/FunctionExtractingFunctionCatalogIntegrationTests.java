@@ -38,7 +38,8 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 	public static void open() {
 		port = SocketUtils.findAvailableTcpPort();
 		// System.setProperty("debug", "true");
-		context = new ApplicationRunner().start("--server.port=" + port);
+		context = new ApplicationRunner().start("--server.port=" + port,
+				"--spring.cloud.stream.enabled=false");
 	}
 
 	@AfterClass

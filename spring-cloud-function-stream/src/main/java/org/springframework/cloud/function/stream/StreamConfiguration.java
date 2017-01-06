@@ -38,6 +38,7 @@ import reactor.core.publisher.Flux;
 @EnableBinding(Processor.class)
 @EnableConfigurationProperties(FunctionConfigurationProperties.class)
 @ConditionalOnClass({ Binder.class, AbstractFunctionInvoker.class })
+@ConditionalOnProperty(name = "spring.cloud.stream.enabled", havingValue = "true", matchIfMissing = true)
 public class StreamConfiguration {
 
 	@Autowired

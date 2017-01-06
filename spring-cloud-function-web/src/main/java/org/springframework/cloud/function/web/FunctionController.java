@@ -18,10 +18,10 @@ package org.springframework.cloud.function.web;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.embedded.ReactiveServerProperties;
 import org.springframework.cloud.function.registry.FunctionCatalog;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,6 +38,9 @@ import reactor.core.publisher.Flux;
 @ConditionalOnClass({ RestController.class, ReactiveServerProperties.class })
 public class FunctionController {
 
+	@Value("${debug:${DEBUG:false}}")
+	private boolean debug = false;
+
 	private final FunctionCatalog functions;
 
 	@Autowired
@@ -45,7 +48,7 @@ public class FunctionController {
 		this.functions = catalog;
 	}
 
-	@PostMapping(path = "/{name}", consumes = MediaType.TEXT_PLAIN_VALUE)
+	@PostMapping(path = "/{name}")
 	public Flux<String> function(@PathVariable String name,
 			@RequestBody Flux<String> body) {
 		Function<Object, Object> function;
@@ -57,14 +60,14 @@ public class FunctionController {
 		}
 		@SuppressWarnings("unchecked")
 		Flux<String> result = (Flux<String>) function.apply(body);
-		return result;
+		return debug ? result.log() : result;
 	}
 
-	@GetMapping("/{name}")
+	@GetMapping(path = "/{name}")
 	public Flux<String> supplier(@PathVariable String name) {
 		@SuppressWarnings("unchecked")
 		Flux<String> result = (Flux<String>) functions.lookupSupplier(name).get();
-		return result;
+		return debug ? result.log() : result;
 	}
 
 }

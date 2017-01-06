@@ -45,6 +45,8 @@ import org.springframework.boot.loader.thin.ArchiveUtils;
 import org.springframework.cloud.deployer.thin.ContextRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.SpringVersion;
+import org.springframework.messaging.Message;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -59,6 +61,8 @@ import reactor.core.publisher.Flux;
 public class ApplicationRunner implements CommandLineRunner {
 
 	private static final String DEFAULT_REACTOR_VERSION = "3.0.4.RELEASE";
+
+	private static final String DEFAULT_SPRING_VERSION = SpringVersion.getVersion();
 
 	private static Log logger = LogFactory.getLog(ApplicationRunner.class);
 
@@ -125,14 +129,18 @@ public class ApplicationRunner implements CommandLineRunner {
 		for (URL url : urls) {
 			child.add(url);
 		}
-		String reactor = getReactorCoordinates();
 		DependencyResolutionContext context = new DependencyResolutionContext();
 		AetherEngine engine = AetherEngine.create(
 				RepositoryConfigurationFactory.createDefaultRepositoryConfiguration(),
 				context);
+		String reactor = getReactorCoordinates();
+		// spring-core is OK, spring-context is not, spring-messaging depends on
+		// spring-context (so it is not OK)
+		String spring = getSpringCoordinates();
 		try {
-			List<File> resolved = engine.resolve(Arrays
-					.asList(new Dependency(new DefaultArtifact(reactor), "runtime")));
+			List<File> resolved = engine.resolve(
+					Arrays.asList(new Dependency(new DefaultArtifact(reactor), "runtime"),
+							new Dependency(new DefaultArtifact(spring), "runtime")));
 			for (File archive : resolved) {
 				try {
 					URL url = archive.toURI().toURL();
@@ -153,6 +161,13 @@ public class ApplicationRunner implements CommandLineRunner {
 			base = new URLClassLoader(parent.toArray(new URL[0]), base.getParent());
 		}
 		return new URLClassLoader(child.toArray(new URL[0]), base);
+	}
+
+	private String getSpringCoordinates() {
+		Package pkg = Message.class.getPackage();
+		String version = null;
+		version = (pkg != null ? pkg.getImplementationVersion() : DEFAULT_SPRING_VERSION);
+		return "org.springframework:spring-core:" + version;
 	}
 
 	private String getReactorCoordinates() {
