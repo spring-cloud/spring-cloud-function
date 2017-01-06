@@ -16,9 +16,12 @@
 package org.springframework.cloud.function.web;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -59,6 +62,16 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void wordsJson() throws Exception {
+		assertThat(rest
+				.exchange(
+						RequestEntity.get(new URI("http://localhost:" + port + "/words"))
+								.accept(MediaType.APPLICATION_JSON).build(),
+						String.class)
+				.getBody()).isEqualTo("[\"foo\",\"bar\"]");
+	}
+
+	@Test
 	public void words() throws Exception {
 		assertThat(rest.exchange(
 				RequestEntity.get(new URI("http://localhost:" + port + "/words")).build(),
@@ -69,6 +82,32 @@ public class RestApplicationTests {
 	public void uppercase() {
 		assertThat(rest.postForObject("http://localhost:" + port + "/uppercase",
 				"foo\nbar", String.class)).isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	@Ignore("Not working even though the JSON stream is")
+	// Not working because we convert the JSON to objects in
+	// FunctionExtractingFunctionCatalog, so all we need from Spring Reactive is a String,
+	// and the StringDecoder splits on newlines
+	public void uppercaseJsonArray() throws Exception {
+		assertThat(rest
+				.exchange(
+						RequestEntity.post(new URI("http://localhost:" + port + "/maps"))
+								.contentType(MediaType.APPLICATION_JSON)
+								.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"),
+						String.class)
+				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
+	}
+
+	@Test
+	public void uppercaseJsonStream() throws Exception {
+		assertThat(rest
+				.exchange(
+						RequestEntity.post(new URI("http://localhost:" + port + "/maps"))
+								.contentType(MediaType.APPLICATION_JSON)
+								.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"),
+						String.class)
+				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
 	}
 
 	@Test
@@ -90,6 +129,14 @@ public class RestApplicationTests {
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.map(value -> "[" + value.trim().toUpperCase() + "]");
+		}
+
+		@Bean
+		public Function<Flux<HashMap<String, String>>, Flux<Map<String, String>>> maps() {
+			return flux -> flux.map(value -> {
+				value.put("value", value.get("value").trim().toUpperCase());
+				return value;
+			});
 		}
 
 		@Bean

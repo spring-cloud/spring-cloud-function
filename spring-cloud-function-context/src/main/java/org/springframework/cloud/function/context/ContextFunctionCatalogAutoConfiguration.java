@@ -215,6 +215,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 					.getGenericReturnType());
 			type = (ParameterizedType) type.getActualTypeArguments()[0];
 			Type param = type.getActualTypeArguments()[0];
+			if (param instanceof ParameterizedType) {
+				ParameterizedType concrete = (ParameterizedType) param;
+				param = concrete.getRawType();
+			}
 			return ClassUtils.resolveClassName(param.getTypeName(),
 					registry.getClass().getClassLoader());
 		}
