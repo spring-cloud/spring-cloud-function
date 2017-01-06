@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -85,18 +84,14 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	@Ignore("Not working even though the JSON stream is")
-	// Not working because we convert the JSON to objects in
-	// FunctionExtractingFunctionCatalog, so all we need from Spring Reactive is a String,
-	// and the StringDecoder splits on newlines
 	public void uppercaseJsonArray() throws Exception {
-		assertThat(rest
-				.exchange(
-						RequestEntity.post(new URI("http://localhost:" + port + "/maps"))
-								.contentType(MediaType.APPLICATION_JSON)
-								.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"),
-						String.class)
-				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
+		assertThat(rest.exchange(
+				RequestEntity.post(new URI("http://localhost:" + port + "/maps"))
+						.contentType(MediaType.APPLICATION_JSON)
+						// The new line in the middle is optional
+						.body("[{\"value\":\"foo\"},\n{\"value\":\"bar\"}]"),
+				String.class).getBody())
+						.isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
 	}
 
 	@Test
@@ -105,7 +100,7 @@ public class RestApplicationTests {
 				.exchange(
 						RequestEntity.post(new URI("http://localhost:" + port + "/maps"))
 								.contentType(MediaType.APPLICATION_JSON)
-								.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"),
+								.body("{\"value\":\"foo\"}{\"value\":\"bar\"}"),
 						String.class)
 				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
 	}
