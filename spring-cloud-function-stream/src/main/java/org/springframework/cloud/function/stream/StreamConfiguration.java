@@ -48,10 +48,7 @@ public class StreamConfiguration {
 	@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
 	public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry) {
 		String name = properties.getName();
-		Function<Flux<Object>, Flux<Object>> function = (name.indexOf(',') == -1)
-				? registry.lookupFunction(name)
-				: registry.composeFunction(
-						StringUtils.commaDelimitedListToStringArray(name));
+		Function<Flux<Object>, Flux<Object>> function = registry.lookupFunction(name);
 		return new StreamListeningFunctionInvoker(function);
 	}
 

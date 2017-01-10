@@ -51,10 +51,8 @@ public class TaskConfiguration {
 		final Supplier<Flux<Object>> supplier = registry
 				.lookupSupplier(properties.getSupplier());
 		String functionName = properties.getFunction();
-		Function<Flux<Object>, Flux<Object>> function = (functionName.indexOf(',') == -1)
-				? registry.lookupFunction(functionName)
-				: registry.composeFunction(
-						StringUtils.commaDelimitedListToStringArray(functionName));
+		Function<Flux<Object>, Flux<Object>> function = registry
+				.lookupFunction(functionName);
 		final Consumer<Object> consumer = registry
 				.lookupConsumer(properties.getConsumer());
 		final CountDownLatch latch = new CountDownLatch(1);

@@ -47,15 +47,6 @@ public class ApplicationContextFunctionCatalog implements FunctionCatalog {
 		return (Function<T, R>) functions.get(name);
 	}
 
-	@Override
-	public <T, R> Function<T, R> composeFunction(String... functionNames) {
-		Function<T, R> function = this.lookupFunction(functionNames[0]);
-		for (int i = 1; i < functionNames.length; i++) {
-			function = function.andThen(this.lookupFunction(functionNames[i]));
-		}
-		return function;
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> Supplier<T> lookupSupplier(String name) {

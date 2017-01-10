@@ -17,6 +17,7 @@ package org.springframework.cloud.function.deployer;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -29,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
+@Ignore
+// TODO: Salvage some stuff from this project
 public class FunctionExtractingFunctionCatalogIntegrationTests {
 
 	private static ConfigurableApplicationContext context;

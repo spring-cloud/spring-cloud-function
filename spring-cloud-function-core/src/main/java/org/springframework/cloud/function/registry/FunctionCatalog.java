@@ -29,7 +29,5 @@ public interface FunctionCatalog {
 
 	<T, R> Function<T, R> lookupFunction(String name);
 
-	<T, R> Function<T, R> composeFunction(String... functionNames);
-
 	<T> Supplier<T> lookupSupplier(String name);
 }

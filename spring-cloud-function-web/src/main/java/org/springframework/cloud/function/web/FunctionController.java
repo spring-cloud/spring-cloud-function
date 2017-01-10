@@ -51,13 +51,7 @@ public class FunctionController {
 	@PostMapping(path = "/{name}")
 	public Flux<String> function(@PathVariable String name,
 			@RequestBody Flux<String> body) {
-		Function<Object, Object> function;
-		if (name.contains(",")) {
-			function = functions.composeFunction(name.split(","));
-		}
-		else {
-			function = functions.lookupFunction(name);
-		}
+		Function<Object, Object> function = functions.lookupFunction(name);
 		@SuppressWarnings("unchecked")
 		Flux<String> result = (Flux<String>) function.apply(body);
 		return debug ? result.log() : result;

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.registry;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -25,6 +23,8 @@ import java.util.function.Function;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 import reactor.core.publisher.Flux;
 
@@ -53,15 +53,4 @@ public class FileSystemFunctionRegistryTests {
 		assertEquals("BAR", results.get(1));
 	}
 
-	@Test
-	public void composeFunction() throws IOException {
-		FileSystemFunctionRegistry registry = new FileSystemFunctionRegistry(this.directory);
-		registry.registerFunction("uppercase", "f->f.map(s->s.toString().toUpperCase())");
-		registry.registerFunction("exclaim", "f->f.map(s->s+\"!!!\")");
-		Function<Flux<String>, Flux<String>> function = registry.composeFunction("uppercase", "exclaim");
-		Flux<String> output = function.apply(Flux.just("foo", "bar"));
-		List<String> results = output.collectList().block();
-		assertEquals("FOO!!!", results.get(0));
-		assertEquals("BAR!!!", results.get(1));
-	}
 }

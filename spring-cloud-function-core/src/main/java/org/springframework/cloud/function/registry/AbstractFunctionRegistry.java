@@ -52,17 +52,6 @@ public abstract class AbstractFunctionRegistry implements FunctionRegistry {
 	private final SimpleClassLoader classLoader = new SimpleClassLoader(AbstractFunctionRegistry.class.getClassLoader());
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public <T, R> Function<T, R> composeFunction(String... functionNames) {
-		@SuppressWarnings("rawtypes")
-		Function function = this.lookupFunction(functionNames[0]);
-		for (int i = 1; i < functionNames.length; i++) {
-			function = function.andThen(this.lookupFunction(functionNames[i]));
-		}
-		return function;
-	}
-
-	@Override
 	public <T> Consumer<T> lookupConsumer(String name) {
 		@SuppressWarnings("unchecked")
 		ConsumerFactory<T> factory = (ConsumerFactory<T>) CONSUMER_FACTORY_CACHE.get(name);
