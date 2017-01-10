@@ -259,6 +259,9 @@ abstract class ProxyWrapper<T> {
 	}
 
 	public Object fromJson(String value) {
+		if (getType().equals(String.class)) {
+			return value;
+		}
 		try {
 			return mapper.readValue(value, getType());
 		}
