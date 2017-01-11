@@ -48,10 +48,10 @@ public class ReactorAutoConfiguration extends WebMvcConfigurerAdapter {
 	}
 
 	@Configuration
-	protected static class MessageConverters {
+	protected static class FluxMessageConverterConfiguration {
 		@Bean
-		public HttpMessageConverters httpMessageConverters() {
-			return new HttpMessageConverters(new FluxHttpMessageConverter());
+		public FluxHttpMessageConverter fluxHttpMessageConverter() {
+			return new FluxHttpMessageConverter();
 		}
 	}
 

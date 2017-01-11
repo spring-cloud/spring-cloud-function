@@ -1,2 +1,3 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.function.web.FunctionController
+org.springframework.cloud.function.web.FunctionController,\
+org.springframework.cloud.function.web.flux.ReactorAutoConfiguration
