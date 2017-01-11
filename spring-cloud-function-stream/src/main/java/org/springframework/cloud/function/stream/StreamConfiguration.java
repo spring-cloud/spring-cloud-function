@@ -16,40 +16,155 @@
 
 package org.springframework.cloud.function.stream;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
-import org.springframework.util.StringUtils;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.ConfigurationCondition;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 
 import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
  */
-@EnableBinding(Processor.class)
 @EnableConfigurationProperties(FunctionConfigurationProperties.class)
 @ConditionalOnClass({ Binder.class, AbstractFunctionInvoker.class })
 @ConditionalOnProperty(name = "spring.cloud.stream.enabled", havingValue = "true", matchIfMissing = true)
 public class StreamConfiguration {
 
-	@Autowired
-	private FunctionConfigurationProperties properties;
+	@ConditionalOnSupplier
+	@EnableBinding(Source.class)
+	protected static class SupplierConfiguration {
 
-	@Bean
-	@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
-	public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry) {
-		String name = properties.getName();
-		Function<Flux<Object>, Flux<Object>> function = registry.lookupFunction(name);
-		return new StreamListeningFunctionInvoker(function);
+		@Autowired
+		private FunctionConfigurationProperties properties;
+
+		@Bean
+		@ConditionalOnProperty("spring.cloud.stream.bindings.output.destination")
+		public SupplierInvokingMessageProducer<Object> invoker(FunctionCatalog registry) {
+			String name = properties.getName();
+			Supplier<Flux<Object>> supplier = registry.lookupSupplier(name);
+			return new SupplierInvokingMessageProducer<Object>(supplier);
+		}		
 	}
 
+	@ConditionalOnFunction
+	@EnableBinding(Processor.class)
+	protected static class FunctionConfiguration {
+
+		@Autowired
+		private FunctionConfigurationProperties properties;
+
+		@Bean
+		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
+		public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry) {
+			String name = properties.getName();
+			Function<Flux<Object>, Flux<Object>> function = registry.lookupFunction(name);
+			return new StreamListeningFunctionInvoker(function);
+		}		
+	}
+
+	@ConditionalOnConsumer
+	@EnableBinding(Sink.class)
+	protected static class ConsumerConfiguration {
+
+		@Autowired
+		private FunctionConfigurationProperties properties;
+
+		@Bean
+		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
+		public StreamListeningConsumerInvoker<Object> invoker(FunctionCatalog registry) {
+			String name = properties.getName();
+			Consumer<Object> consumer = registry.lookupConsumer(name);
+			return new StreamListeningConsumerInvoker<Object>(consumer);
+		}		
+	}
+
+	@Conditional(SupplierCondition.class)
+	@Target(ElementType.TYPE)
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	private @interface ConditionalOnSupplier {
+	}
+
+	@Conditional(FunctionCondition.class)
+	@Target(ElementType.TYPE)
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	private @interface ConditionalOnFunction {
+	}
+
+	@Conditional(ConsumerCondition.class)
+	@Target(ElementType.TYPE)
+	@Retention(RetentionPolicy.RUNTIME)
+	@Documented
+	private @interface ConditionalOnConsumer {
+	}
+
+	private static abstract class AbstractFunctionCondition extends SpringBootCondition implements ConfigurationCondition {
+
+		private final Class<?> type;
+
+		private AbstractFunctionCondition(Class<?> type) {
+			this.type = type;
+		}
+
+		@Override
+		public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+			String functionName = context.getEnvironment().getProperty("function.name");
+			Class<?> beanType = context.getBeanFactory().getType(functionName);
+			if (type.isAssignableFrom(beanType)) {
+				return ConditionOutcome.match(String.format("bean '%s' is a %s", functionName, type));
+			}
+			return ConditionOutcome.noMatch(String.format("bean '%s' is not a %s", functionName, type));
+		}
+
+		@Override
+		public ConfigurationPhase getConfigurationPhase() {
+			return ConfigurationPhase.REGISTER_BEAN;
+		}		
+	}
+
+	private static class SupplierCondition extends AbstractFunctionCondition {
+
+		public SupplierCondition() {
+			super(Supplier.class);
+		}
+	}
+
+	private static class FunctionCondition extends AbstractFunctionCondition {
+
+		public FunctionCondition() {
+			super(Function.class);
+		}
+	}
+
+	private static class ConsumerCondition extends AbstractFunctionCondition {
+
+		public ConsumerCondition() {
+			super(Consumer.class);
+		}
+	}
 }
