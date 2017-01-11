@@ -20,7 +20,6 @@ import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.context.embedded.ReactiveServerProperties;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,7 +34,7 @@ import reactor.core.publisher.Flux;
  *
  */
 @RestController
-@ConditionalOnClass({ RestController.class, ReactiveServerProperties.class })
+@ConditionalOnClass(RestController.class)
 public class FunctionController {
 
 	@Value("${debug:${DEBUG:false}}")

@@ -47,17 +47,17 @@ import reactor.core.publisher.Flux;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class RestApplicationTests {
 
+	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");
 	@LocalServerPort
 	private int port;
 	private TestRestTemplate rest = new TestRestTemplate();
 
 	@Test
 	public void wordsSSE() throws Exception {
-		assertThat(
-				rest.exchange(
-						RequestEntity.get(new URI("http://localhost:" + port + "/words"))
-								.accept(MediaType.TEXT_EVENT_STREAM).build(),
-						String.class).getBody()).isEqualTo(sse("foo", "bar"));
+		assertThat(rest.exchange(
+				RequestEntity.get(new URI("http://localhost:" + port + "/words"))
+						.accept(EVENT_STREAM).build(),
+				String.class).getBody()).isEqualTo(sse("foo", "bar"));
 	}
 
 	@Test
@@ -100,17 +100,17 @@ public class RestApplicationTests {
 				.exchange(
 						RequestEntity.post(new URI("http://localhost:" + port + "/maps"))
 								.contentType(MediaType.APPLICATION_JSON)
-								.body("{\"value\":\"foo\"}{\"value\":\"bar\"}"),
+								// TODO: make this work without newline separator
+								.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"),
 						String.class)
 				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
 	}
 
 	@Test
 	public void uppercaseSSE() throws Exception {
-		assertThat(rest.exchange(
-				RequestEntity.post(new URI("http://localhost:" + port + "/uppercase"))
-						.accept(MediaType.TEXT_EVENT_STREAM)
-						.contentType(MediaType.TEXT_EVENT_STREAM).body(sse("foo", "bar")),
+		assertThat(rest.exchange(RequestEntity
+				.post(new URI("http://localhost:" + port + "/uppercase"))
+				.accept(EVENT_STREAM).contentType(EVENT_STREAM).body(sse("foo", "bar")),
 				String.class).getBody()).isEqualTo(sse("[FOO]", "[BAR]"));
 	}
 
@@ -123,7 +123,7 @@ public class RestApplicationTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercase() {
-			return flux -> flux.map(value -> "[" + value.trim().toUpperCase() + "]");
+			return flux -> flux.log().map(value -> "[" + value.trim().toUpperCase() + "]");
 		}
 
 		@Bean
