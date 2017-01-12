@@ -25,7 +25,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import org.springframework.cloud.function.invoker.FunctionInvokingRunnable;
-import org.springframework.cloud.function.registry.FunctionRegistry;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import org.springframework.util.Assert;
@@ -35,32 +35,32 @@ import org.springframework.util.Assert;
  */
 public class LocalFunctionGateway implements FunctionGateway {
 
-	private final FunctionRegistry registry;
+	private final FunctionCatalog catalog;
 
 	private final TaskScheduler scheduler;
 
-	public LocalFunctionGateway(FunctionRegistry registry, TaskScheduler scheduler) {
-		Assert.notNull(registry, "FunctionRegistry must not be null");
+	public LocalFunctionGateway(FunctionCatalog catalog, TaskScheduler scheduler) {
+		Assert.notNull(catalog, "FunctionCatalog must not be null");
 		Assert.notNull(scheduler, "TaskScheduler must not be null");
-		this.registry = registry;
+		this.catalog = catalog;
 		this.scheduler = scheduler;
 	}
 
 	@Override
 	public <T, R> R invoke(String functionName, T request) {
-		Function<T, R> function = this.registry.lookupFunction(functionName);
+		Function<T, R> function = this.catalog.lookupFunction(functionName);
 		return function.apply(request);
 	}
 
 	@Override
 	public <T, R> void schedule(String functionName, Trigger trigger, Supplier<T> supplier, Consumer<R> consumer) {
-		Function<T, R> function = this.registry.lookupFunction(functionName);
+		Function<T, R> function = this.catalog.lookupFunction(functionName);
 		this.scheduler.schedule(new FunctionInvokingRunnable(supplier, function, consumer), trigger);
 	}
 
 	@Override
 	public <T, R> void subscribe(Publisher<T> publisher, String functionName, final Consumer<R> consumer) {
-		final Function<T, R> function = this.registry.lookupFunction(functionName);
+		final Function<T, R> function = this.catalog.lookupFunction(functionName);
 		publisher.subscribe(new Subscriber<T>() {
 
 			@Override

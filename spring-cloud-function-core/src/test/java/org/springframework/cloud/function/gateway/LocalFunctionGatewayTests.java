@@ -19,12 +19,14 @@ package org.springframework.cloud.function.gateway;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.cloud.function.registry.FunctionRegistry;
-import org.springframework.cloud.function.registry.InMemoryFunctionRegistry;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import reactor.core.publisher.Flux;
@@ -34,19 +36,35 @@ import reactor.core.publisher.Flux;
  */
 public class LocalFunctionGatewayTests {
 
-	private final FunctionRegistry registry = new InMemoryFunctionRegistry();
+	private final FunctionCatalog catalog = new FunctionCatalog() {
+
+		@Override
+		public <T> Supplier<T> lookupSupplier(String name) {
+			return null;
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public Function<Flux<String>, Flux<String>> lookupFunction(String name) {
+			return ("uppercase".equals(name) ? f->f.map(s->s.toString().toUpperCase()) : null);
+		}
+
+		@Override
+		public <T> Consumer<T> lookupConsumer(String name) {
+			return null;
+		}
+	};
 
 	private final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 
 	@Before
 	public void init() {
-		registry.registerFunction("uppercase", "f->f.map(s->s.toString().toUpperCase())");
 		this.scheduler.initialize();
 	}
 
 	@Test
 	public void test() {
-		LocalFunctionGateway gateway = new LocalFunctionGateway(registry, scheduler);
+		LocalFunctionGateway gateway = new LocalFunctionGateway(catalog, scheduler);
 		Flux<String> output = gateway.invoke("uppercase", Flux.just("foo", "bar"));
 		List<String> results = output.collectList().block();
 		assertEquals("FOO", results.get(0));

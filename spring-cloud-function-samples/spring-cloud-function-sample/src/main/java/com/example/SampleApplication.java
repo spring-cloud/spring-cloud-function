@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
-import org.springframework.cloud.function.support.LambdaCompilingFunction;
+import org.springframework.cloud.function.compiler.LambdaCompilingFunction;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ByteArrayResource;
 

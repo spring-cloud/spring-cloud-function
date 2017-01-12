@@ -31,7 +31,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-function-context</artifactId>
+			<artifactId>spring-cloud-function-compiler</artifactId>
 			<version>${spring-cloud-function.version}</version>
 		</dependency>
 		<dependency>
