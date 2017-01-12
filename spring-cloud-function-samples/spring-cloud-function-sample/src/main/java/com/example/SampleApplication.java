@@ -20,7 +20,10 @@ import java.util.function.Supplier;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.function.compiler.FunctionCompiler;
+import org.springframework.cloud.function.support.LambdaCompilingFunction;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ByteArrayResource;
 
 import reactor.core.publisher.Flux;
 
@@ -40,6 +43,17 @@ public class SampleApplication {
 	@Bean
 	public Function<Flux<String>, Flux<String>> lowercase() {
 		return flux -> flux.map(value -> value.toLowerCase());
+	}
+
+	@Bean
+	public <T, R> FunctionCompiler<T, R> compiler() {
+		return new FunctionCompiler<>();
+	}
+
+	@Bean
+	public Function<Flux<String>, Flux<String>> compiledUppercase(FunctionCompiler<Flux<String>, Flux<String>> compiler) {
+		String lambda = "f -> f.map(o -> o.toString().toUpperCase())";
+		return new LambdaCompilingFunction<>(new ByteArrayResource(lambda.getBytes()), compiler);
 	}
 
 	public static void main(String[] args) throws Exception {
