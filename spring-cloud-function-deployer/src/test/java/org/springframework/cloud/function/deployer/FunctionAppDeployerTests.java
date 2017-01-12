@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
- *
+ * @author Mark Fisher
  */
 @RunWith(Parameterized.class)
 public class FunctionAppDeployerTests {
@@ -54,7 +54,7 @@ public class FunctionAppDeployerTests {
 	public static void skip() {
 		try {
 			ArchiveUtils.getArchiveRoot(ArchiveUtils.getArchive(
-					"maven://org.springframework.cloud:spring-cloud-function-web:1.0.0.BUILD-SNAPSHOT"));
+					"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT"));
 		}
 		catch (Exception e) {
 			Assume.assumeNoException(
@@ -72,8 +72,8 @@ public class FunctionAppDeployerTests {
 	@Test
 	public void web() throws Exception {
 		String first = deploy(
-				"maven://org.springframework.cloud:spring-cloud-function-web:1.0.0.BUILD-SNAPSHOT",
-				"--web.path=/words", "--function.name=uppercase");
+				"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
+				"--function.name=uppercase");
 		// Deployment is blocking so it either failed or succeeded.
 		assertThat(deployer.status(first).getState()).isEqualTo(DeploymentState.deployed);
 		deployer.undeploy(first);
@@ -82,7 +82,7 @@ public class FunctionAppDeployerTests {
 	@Test
 	public void stream() throws Exception {
 		String first = deploy(
-				"maven://org.springframework.cloud:spring-cloud-function-stream:1.0.0.BUILD-SNAPSHOT",
+				"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
 				"--spring.cloud.stream.bindings.input.destination=words",
 				"--spring.cloud.stream.bindings.output.destination=uppercaseWords",
 				"--function.name=uppercase");

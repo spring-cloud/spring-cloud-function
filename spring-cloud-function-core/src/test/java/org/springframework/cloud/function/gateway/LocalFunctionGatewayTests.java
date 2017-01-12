@@ -23,8 +23,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.springframework.cloud.function.registry.FileSystemFunctionRegistry;
 import org.springframework.cloud.function.registry.FunctionRegistry;
+import org.springframework.cloud.function.registry.InMemoryFunctionRegistry;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import reactor.core.publisher.Flux;
@@ -34,7 +34,7 @@ import reactor.core.publisher.Flux;
  */
 public class LocalFunctionGatewayTests {
 
-	private final FunctionRegistry registry = new FileSystemFunctionRegistry();
+	private final FunctionRegistry registry = new InMemoryFunctionRegistry();
 
 	private final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 
