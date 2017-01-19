@@ -1,25 +1,35 @@
 #!/bin/bash
 
-while getopts ":i:f:o:" opt; do
+while getopts ":i:s:f:c:o:p:" opt; do
   case $opt in
     i)
-      IN=$OPTARG
+      IN=--spring.cloud.stream.bindings.input.destination=$OPTARG
+      ;;
+    s)
+      FUNC=$OPTARG
+      TYPE=supplier
       ;;
     f)
       FUNC=$OPTARG
       TYPE=function
       ;;
+    c)
+      FUNC=$OPTARG
+      TYPE=consumer
+      ;;
     o)
-      OUT=$OPTARG
+      OUT=--spring.cloud.stream.bindings.output.destination=$OPTARG
+      ;;
+    p)
+      PORT=$OPTARG
       ;;
     esac
 done
 
 java -jar ../spring-cloud-function-samples/spring-cloud-function-sample-bytecode/target/function-sample-bytecode-1.0.0.BUILD-SNAPSHOT.jar\
- --management.security.enabled=false\
- --server.port=9999\
- --spring.cloud.stream.bindings.input.destination=$IN\
- --spring.cloud.stream.bindings.output.destination=$OUT\
+ --server.port=$PORT\
+ $IN\
+ $OUT\
  --function.name=$TYPE\
  --function.type=$TYPE\
  --function.resource=file:///tmp/function-registry/$TYPE's'/$FUNC.fun
