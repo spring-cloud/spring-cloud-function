@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.web;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +33,7 @@ import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
- *
+ * @author Mark Fisher
  */
 @RestController
 @ConditionalOnClass(RestController.class)
@@ -51,9 +53,14 @@ public class FunctionController {
 	public Flux<String> function(@PathVariable String name,
 			@RequestBody Flux<String> body) {
 		Function<Object, Object> function = functions.lookupFunction(name);
-		@SuppressWarnings("unchecked")
-		Flux<String> result = (Flux<String>) function.apply(body);
-		return debug ? result.log() : result;
+		if (function != null) {
+			@SuppressWarnings("unchecked")
+			Flux<String> result = (Flux<String>) function.apply(body);
+			return debug ? result.log() : result;
+		}
+		Consumer<String> consumer = functions.lookupConsumer(name);
+		body.subscribe(consumer::accept);
+		return null;
 	}
 
 	@GetMapping(path = "/{name}")
@@ -62,5 +69,4 @@ public class FunctionController {
 		Flux<String> result = (Flux<String>) functions.lookupSupplier(name).get();
 		return debug ? result.log() : result;
 	}
-
 }

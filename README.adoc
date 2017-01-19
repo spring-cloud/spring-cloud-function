@@ -1,42 +1,56 @@
+To run these examples, change into the `scripts` directory:
+
+----
+cd scripts
+----
+
+== Start the Function Registry Service:
+
+----
+./function-registry.sh
+----
+
 == Register a Function:
 
 ----
 ./registerFunction.sh -n uppercase -f "f->f.map(s->s.toString().toUpperCase())"
 ----
 
-== Run a Stream Processing Microservice using that Function:
+== Run a REST Microservice using that Function:
+
+----
+./web.sh -f uppercase -p 9000
+curl -H "Content-Type: text/plain" -H "Accept: text/plain" :9000/function -d foo
+----
+
+== Register a Supplier:
+
+----
+./registerSupplier.sh -n words -f "()->Flux.just(\"foo\",\"bar\")"
+----
+
+== Run a REST Microservice using that Supplier:
+
+----
+./web.sh -s words -p 9001
+curl -H "Accept: application/json" :9001/supplier
+----
+
+== Register a Consumer:
+
+----
+./registerConsumer.sh -n print -f "System.out::println"
+----
+
+== Run a REST Microservice using that Consumer:
+
+----
+./web.sh -c print -p 9002
+curl -X POST -H "Content-Type: text/plain" -d foo :9002/consumer
+----
+
+== Run a Stream Processing Microservice using the Function:
 
 ----
 ./stream.sh -i words -o uppercaseWords -f uppercase
 ----
-
-== Run a REST Microservice using that Function:
-
-----
-./web.sh 
-curl -H "Content-Type=text/plain" localhost:8080/uppercase -d foo
-----
-
-== Compose Functions:
-
-(assuming the `uppercase` function was already registered as above)
-
-----
-./registerFunction.sh -n pluralize -f "f->f.map(s->s+\"S\")"
-
-curl -H "Content-Type=text/plain" localhost:8080/uppercase,pluralize -d foo
-----
-
-== Run a Task Microservice using a Supplier, Function, and Consumer:
-
-(assuming the `uppercase` function was already registered as above)
-
-----
-./registerSupplier.sh -n words -f "()->Flux.just(\"foo\",\"bar\")"
-
-./registerConsumer.sh -n print -f "System.out::println"
-
-./task.sh -s words -f uppercase -c print
-----
-
-(more docs soon)

@@ -7,6 +7,7 @@ while getopts ":i:f:o:" opt; do
       ;;
     f)
       FUNC=$OPTARG
+      TYPE=function
       ;;
     o)
       OUT=$OPTARG
@@ -14,7 +15,11 @@ while getopts ":i:f:o:" opt; do
     esac
 done
 
-java -noverify -XX:TieredStopAtLevel=1 -Xss256K -Xms16M -Xmx256M -XX:MaxMetaspaceSize=128M -jar ../spring-cloud-function-stream/target/spring-cloud-function-stream-1.0.0.BUILD-SNAPSHOT.jar\
+java -jar ../spring-cloud-function-samples/spring-cloud-function-sample-bytecode/target/function-sample-bytecode-1.0.0.BUILD-SNAPSHOT.jar\
+ --management.security.enabled=false\
+ --server.port=9999\
  --spring.cloud.stream.bindings.input.destination=$IN\
  --spring.cloud.stream.bindings.output.destination=$OUT\
- --function.name=$FUNC
+ --function.name=$TYPE\
+ --function.type=$TYPE\
+ --function.resource=file:///tmp/function-registry/$TYPE's'/$FUNC.fun

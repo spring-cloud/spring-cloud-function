@@ -11,6 +11,4 @@ while getopts ":n:f:" opt; do
     esac
 done
 
-java -jar ../spring-cloud-function-core/target/spring-cloud-function-core-1.0.0.BUILD-SNAPSHOT-registrar.jar supplier\
- $NAME\
- $FUNC
+curl -X POST -H "Content-Type: text/plain" -d $FUNC :8080/supplier/$NAME

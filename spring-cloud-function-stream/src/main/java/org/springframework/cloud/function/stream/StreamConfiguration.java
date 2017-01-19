@@ -43,6 +43,7 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.ConfigurationCondition;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 
@@ -134,6 +135,9 @@ public class StreamConfiguration {
 		@Override
 		public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 			String functionName = context.getEnvironment().getProperty("function.name");
+			if (!StringUtils.hasText(functionName)) {
+				return ConditionOutcome.noMatch("no function name available");
+			}
 			Class<?> beanType = context.getBeanFactory().getType(functionName);
 			if (type.isAssignableFrom(beanType)) {
 				return ConditionOutcome.match(String.format("bean '%s' is a %s", functionName, type));

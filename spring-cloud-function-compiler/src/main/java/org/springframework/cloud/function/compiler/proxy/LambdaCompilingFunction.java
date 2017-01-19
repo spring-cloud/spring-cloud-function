@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.compiler;
+package org.springframework.cloud.function.compiler.proxy;
 
 import java.io.InputStreamReader;
 import java.util.function.Function;
