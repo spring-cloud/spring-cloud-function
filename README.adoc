@@ -1,6 +1,6 @@
 Spring Cloud Function provides a new programming model for Spring Boot
 applications, abstracting away all of the transport details and
-infrastructure, allowing the developer to keep all the familar tools
+infrastructure, allowing the developer to keep all the familiar tools
 and processes, and focus firmly on business logic.
 
 Here's a complete, executable, testable Spring Boot application
@@ -12,13 +12,12 @@ public class Application {
 
   @Bean
   public Function<Flux<String>, Flux<String>> uppercase() {
-    return value -> value.toUppercase();
+    return flux -> flux.map(value -> value.toUpperCase());
   }
 
   public static void main(String[] args) {
     SpringApplication.run(Application.class, args);
   }
-
 }
 ```
 
@@ -33,7 +32,7 @@ Spring Cloud Function has 4 main features:
 
 1. Wrappers for `@Beans` of type `Function`, `Consumer` and
 `Supplier`, exposing them to the outside world as either HTTP
-endpoints and/or message Streams with RabbitMQ, Kafka etc.
+endpoints and/or message stream listeners/publishers with RabbitMQ, Kafka etc.
 
 2. Compiling strings which are Java function bodies into bytecode, and
 then turning them into `@Beans` that can be wrapped as above.
@@ -50,7 +49,7 @@ service providers.
 Build from the command line (and "install" the samples):
 
 ```
-$ mvn clean install
+$ ./mvnw clean install
 ```
 
 (If you like to YOLO add `-DskipTests`.)
@@ -59,7 +58,6 @@ Run one of the samples, e.g.
 
 ```
 $ java -jar spring-cloud-function-samples/spring-cloud-function-sample/target/*.jar
-...
 ```
 
 This runs the app and exposes its functions over HTTP, so you can
@@ -75,9 +73,8 @@ with new lines
 
 ```
 $ curl -H "Content-Type: text/plain" localhost:8080/uppercase -d 'Hello
-World'
-HELLO
-WORLD
+> World'
+HELLOWORLD
 ```
 
 (You can use `^Q^J` in a terminal to insert a new line in a literal
@@ -94,16 +91,16 @@ The `@Beans` can be `Function`, `Consumer` or `Supplier` (all from
 `java.util`), and their parametric types can be String or POJO. A
 `Function` is exposed as an HTTP POST if `spring-cloud-function-web`
 is on the classpath, and as a Spring Cloud Stream `Processor` if
-`spring-cloud-function-stream` is on the classpath, and a
+`spring-cloud-function-stream` is on the classpath and a
 `function.name` is configured in the Spring environment. A `Consumer`
 is also exposed as an HTTP POST, or as a Stream `Sink`. A `Supplier`
-translates to am HTTP GET, or a Stream `Source`.
+translates to an HTTP GET, or a Stream `Source`.
 
 Functions can be of `Flux<String>` or `Flux<Pojo>` and Spring Cloud
 Function takes care of converting the data to and from the desired
-types, and long as it comes in as plain text or (in the case of the
+types, as long as it comes in as plain text or (in the case of the
 POJO) JSON. TBD: support for `Flux<Message<Pojo>>` and maybe plain
-`Pojo` types (fluxes implied and implemented by the framework).
+`Pojo` types (Fluxes implied and implemented by the framework).
 
 Functions can be grouped together in a single application, or deployed
 one-per-jar. It's up to the developer to choose. An app with multiple
