@@ -119,6 +119,8 @@ To run these examples, change into the `scripts` directory:
 cd scripts
 ----
 
+Also, start a RabbitMQ server locally (e.g. execute `rabbitmq-server`).
+
 === Start the Function Registry Service:
 
 ----
@@ -169,7 +171,7 @@ curl -X POST -H "Content-Type: text/plain" -d foo :9002/consumer
 First register a streaming words supplier:
 
 ----
-./registerSupplier.sh -n wordstream -f "()->Flux.intervalMillis(1000).map(i->\"message-\"+i)
+./registerSupplier.sh -n wordstream -f "()->Flux.intervalMillis(1000).map(i->\"message-\"+i)"
 ----
 
 Then start the source (supplier), processor (function), and sink (consumer) apps:
