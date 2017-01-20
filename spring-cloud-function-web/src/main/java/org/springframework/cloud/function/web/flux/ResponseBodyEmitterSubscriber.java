@@ -81,7 +81,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 				else {
 					responseBodyEmitter.send(",");
 				}
-				if (value.getClass()==String.class) {
+				if (value.getClass()==String.class && !((String)value).contains("\"")) {
 					object = "\"" + value + "\"";
 				}
 			}

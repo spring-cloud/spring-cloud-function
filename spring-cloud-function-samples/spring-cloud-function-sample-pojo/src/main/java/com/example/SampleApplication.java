@@ -27,7 +27,7 @@ import reactor.core.publisher.Flux;
 @SpringBootApplication
 public class SampleApplication {
 
-	@Bean
+	@Bean 
 	public Function<Flux<Foo>, Flux<Bar>> uppercase() {
 		return flux -> flux.map(value -> new Bar(value.uppercase()));
 	}
