@@ -65,7 +65,7 @@ public class FluxHttpMessageConverter implements HttpMessageConverter<Flux<Objec
 
 		MediaType mediaType = inputMessage.getHeaders().getContentType();
 		if (mediaType != null) {
-			if (mediaType.includes(MediaType.APPLICATION_JSON)) {
+			if (!MediaType.ALL.equals(mediaType) && mediaType.includes(MediaType.APPLICATION_JSON)) {
 				return new JsonObjectDecoder().decode(inputMessage.getBody());
 			}
 			if (mediaType.includes(EVENT_STREAM)) {

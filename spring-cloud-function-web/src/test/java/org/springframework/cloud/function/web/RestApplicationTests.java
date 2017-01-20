@@ -34,6 +34,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.StringUtils;
 
@@ -97,12 +98,23 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void sentencesAcceptJson() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.get(new URI("http://localhost:" + port + "/sentences"))
+						.accept(MediaType.APPLICATION_JSON).build(),
+				String.class);
+		assertThat(result.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+		// TODO: test this
+		// assertThat(result.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+	}
+
+	@Test
 	public void sentencesAcceptSse() throws Exception {
 		assertThat(rest.exchange(
 				RequestEntity.get(new URI("http://localhost:" + port + "/sentences"))
 						.accept(EVENT_STREAM).build(),
 				String.class).getBody())
-						.isEqualTo(sse("[\"go\",\"home\"]","[\"come\",\"back\"]"));
+						.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
 	}
 
 	@Test
