@@ -84,7 +84,7 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 	}
 
 	private ResponseBodyEmitter getEmitter(Long timeout, Flux<?> flux, MediaType mediaType) {
-		if (EVENT_STREAM.isCompatibleWith(mediaType)) {
+		if (!MediaType.ALL.equals(mediaType) && EVENT_STREAM.isCompatibleWith(mediaType)) {
 			return new FluxResponseSseEmitter<>(timeout, mediaType, flux);
 		}
 		return new FluxResponseBodyEmitter<>(timeout, mediaType, flux);

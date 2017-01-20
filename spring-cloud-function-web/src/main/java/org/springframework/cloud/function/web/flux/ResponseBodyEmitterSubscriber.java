@@ -56,7 +56,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 
 	@Override
 	public void onSubscribe(Subscription subscription) {
-		if (MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+		if (!MediaType.ALL.equals(mediaType) && MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 			try {
 				this.responseBodyEmitter.send("[");
 			}
@@ -74,7 +74,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 		Object object = value;
 
 		try {
-			if (MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+			if (!MediaType.ALL.equals(mediaType) && MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 				if (!this.firstElementWritten) {
 					this.firstElementWritten = true;
 				}
@@ -106,7 +106,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 		if (!completed) {
 			completed = true;
 			try {
-				if (MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+				if (!MediaType.ALL.equals(mediaType) && MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 					if (!this.firstElementWritten) {
 
 						this.firstElementWritten = true;

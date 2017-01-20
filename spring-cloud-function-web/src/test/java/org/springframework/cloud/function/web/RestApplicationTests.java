@@ -16,7 +16,9 @@
 package org.springframework.cloud.function.web;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -78,6 +80,32 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void sentences() throws Exception {
+		assertThat(rest.exchange(RequestEntity
+				.get(new URI("http://localhost:" + port + "/sentences")).build(),
+				String.class).getBody())
+						.isEqualTo("[\"go\",\"home\"][\"come\",\"back\"]");
+	}
+
+	@Test
+	public void sentencesAcceptAny() throws Exception {
+		assertThat(rest.exchange(
+				RequestEntity.get(new URI("http://localhost:" + port + "/sentences"))
+						.accept(MediaType.ALL).build(),
+				String.class).getBody())
+						.isEqualTo("[\"go\",\"home\"][\"come\",\"back\"]");
+	}
+
+	@Test
+	public void sentencesAcceptSse() throws Exception {
+		assertThat(rest.exchange(
+				RequestEntity.get(new URI("http://localhost:" + port + "/sentences"))
+						.accept(EVENT_STREAM).build(),
+				String.class).getBody())
+						.isEqualTo(sse("[\"go\",\"home\"]","[\"come\",\"back\"]"));
+	}
+
+	@Test
 	public void uppercase() {
 		assertThat(rest.postForObject("http://localhost:" + port + "/uppercase",
 				"foo\nbar", String.class)).isEqualTo("[FOO][BAR]");
@@ -123,7 +151,8 @@ public class RestApplicationTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercase() {
-			return flux -> flux.log().map(value -> "[" + value.trim().toUpperCase() + "]");
+			return flux -> flux.log()
+					.map(value -> "[" + value.trim().toUpperCase() + "]");
 		}
 
 		@Bean
@@ -137,6 +166,12 @@ public class RestApplicationTests {
 		@Bean
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
+		}
+
+		@Bean
+		public Supplier<Flux<List<String>>> sentences() {
+			return () -> Flux.just(Arrays.asList("go", "home"),
+					Arrays.asList("come", "back"));
 		}
 
 	}
