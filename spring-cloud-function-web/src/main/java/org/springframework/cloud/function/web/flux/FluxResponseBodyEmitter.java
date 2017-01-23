@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import reactor.core.publisher.Flux;
  */
 class FluxResponseBodyEmitter<T> extends ResponseBodyEmitter {
 
-	private MediaType mediaType;
+	private final MediaType mediaType;
 
 	public FluxResponseBodyEmitter(Flux<T> observable) {
 		this(null, null, observable);
