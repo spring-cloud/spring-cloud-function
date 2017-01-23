@@ -104,17 +104,18 @@ public class RestApplicationTests {
 						.accept(MediaType.APPLICATION_JSON).build(),
 				String.class);
 		assertThat(result.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
-		// TODO: test this
-		// assertThat(result.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+		assertThat(result.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
 	}
 
 	@Test
 	public void sentencesAcceptSse() throws Exception {
-		assertThat(rest.exchange(
+		ResponseEntity<String> result = rest.exchange(
 				RequestEntity.get(new URI("http://localhost:" + port + "/sentences"))
 						.accept(EVENT_STREAM).build(),
-				String.class).getBody())
+				String.class);
+		assertThat(result.getBody())
 						.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
+		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM)).isTrue();
 	}
 
 	@Test
