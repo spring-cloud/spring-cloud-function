@@ -47,7 +47,7 @@
 		<module>spring-cloud-function-task</module>
 		<module>spring-cloud-function-web</module>
 		<module>spring-cloud-function-samples</module>
-		<module>spring-cloud-function-deployer</module>
+		<!-- module>spring-cloud-function-deployer</module -->
 	</modules>
 
 	<build>
