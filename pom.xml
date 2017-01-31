@@ -19,7 +19,7 @@
 		<reactor.version>3.0.4.RELEASE</reactor.version>
 		<spring-cloud-stream.version>Brooklyn.BUILD-SNAPSHOT</spring-cloud-stream.version>
 		<wrapper.version>0.0.1.BUILD-SNAPSHOT</wrapper.version>
-		<spring-boot.version>1.5.0.BUILD-SNAPSHOT</spring-boot.version>
+		<spring-boot.version>1.5.1.RELEASE</spring-boot.version>
 	</properties>
 
 	<dependencyManagement>
@@ -47,7 +47,7 @@
 		<module>spring-cloud-function-task</module>
 		<module>spring-cloud-function-web</module>
 		<module>spring-cloud-function-samples</module>
-		<!-- module>spring-cloud-function-deployer</module -->
+		<module>spring-cloud-function-deployer</module>
 	</modules>
 
 	<build>

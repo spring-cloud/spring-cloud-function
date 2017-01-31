@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.0.BUILD-SNAPSHOT</version>
+		<version>1.5.1.RELEASE</version>
 		<relativePath/>
 	</parent>
 
@@ -22,7 +22,7 @@
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<wrapper.version>0.0.1.BUILD-SNAPSHOT</wrapper.version>
 		<reactor.version>3.0.4.RELEASE</reactor.version>
-		<spring-boot.version>1.5.0.BUILD-SNAPSHOT</spring-boot.version>
+		<spring-boot.version>1.5.1.RELEASE</spring-boot.version>
 	</properties>
 
 	<dependencies>
