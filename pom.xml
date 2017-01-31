@@ -17,8 +17,8 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<reactor.version>3.0.4.RELEASE</reactor.version>
-		<spring-cloud-stream.version>Brooklyn.BUILD-SNAPSHOT</spring-cloud-stream.version>
-		<wrapper.version>0.0.1.BUILD-SNAPSHOT</wrapper.version>
+		<spring-cloud-stream.version>Brooklyn.SR1</spring-cloud-stream.version>
+		<wrapper.version>1.0.0.M1</wrapper.version>
 		<spring-boot.version>1.5.1.RELEASE</spring-boot.version>
 	</properties>
 
