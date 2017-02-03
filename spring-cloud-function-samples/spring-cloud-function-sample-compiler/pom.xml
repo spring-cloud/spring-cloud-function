@@ -26,12 +26,6 @@
 
 	<dependencies>
 		<dependency>
-			<!-- TODO: this shouldn't be needed (bug in thin launcher) -->
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
-			<version>${reactor.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-web</artifactId>
 			<version>${spring-cloud-function.version}</version>
@@ -40,11 +34,6 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-compiler</artifactId>
 			<version>${spring-cloud-function.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
-			<optional>true</optional>
 		</dependency>
 	</dependencies>
 

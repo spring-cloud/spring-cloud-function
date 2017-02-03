@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = "function.lambda=f->f.map(s->s.toString().toLowerCase())")
+		properties = "spring.cloud.function.proxy.test.lambda=f->f.map(s->s+\"!!!\")")
 public class SampleApplicationTests {
 
 	@LocalServerPort
@@ -41,8 +41,8 @@ public class SampleApplicationTests {
 	@Test
 	public void lowercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/function", "{\"VALUE\":\"FOO\"}",
-				String.class)).isEqualTo("{\"value\":\"foo\"}");
+				"http://localhost:" + port + "/test", "it works",
+				String.class)).isEqualTo("it works!!!");
 	}
 
 }

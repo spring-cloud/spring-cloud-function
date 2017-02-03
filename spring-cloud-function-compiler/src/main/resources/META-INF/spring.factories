@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationListener=\
+org.springframework.cloud.function.compiler.config.FunctionProxyApplicationListener

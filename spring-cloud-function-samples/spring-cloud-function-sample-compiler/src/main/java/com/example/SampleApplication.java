@@ -16,54 +16,13 @@
 
 package com.example;
 
-import java.util.function.Function;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.function.compiler.FunctionCompiler;
-import org.springframework.cloud.function.compiler.proxy.LambdaCompilingFunction;
-import org.springframework.context.annotation.Bean;
-import org.springframework.core.io.ByteArrayResource;
-
-import reactor.core.publisher.Flux;
 
 @SpringBootApplication
-@EnableConfigurationProperties(FunctionProperties.class)
 public class SampleApplication {
-
-	@Autowired
-	private FunctionProperties properties;
-
-	@Bean
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Function<Flux<String>, Flux<String>> function(FunctionCompiler<?, ?> compiler) {
-		ByteArrayResource resource = new ByteArrayResource(properties.getLambda().getBytes());
-		return new LambdaCompilingFunction(resource, compiler);
-	}
-
-	@Bean
-	public FunctionCompiler<?, ?> compiler() {
-		return new FunctionCompiler<>();
-	}
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(SampleApplication.class, args);
-	}
-}
-
-@ConfigurationProperties("function")
-class FunctionProperties {
-
-	private String lambda;
-
-	public String getLambda() {
-		return lambda;
-	}
-
-	public void setLambda(String lambda) {
-		this.lambda = lambda;
 	}
 }
