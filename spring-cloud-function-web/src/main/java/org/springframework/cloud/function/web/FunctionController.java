@@ -59,8 +59,11 @@ public class FunctionController {
 			return debug ? result.log() : result;
 		}
 		Consumer<String> consumer = functions.lookupConsumer(name);
-		body.subscribe(consumer::accept);
-		return null;
+		if (consumer != null) {
+			body.subscribe(consumer::accept);
+			return null;
+		}
+		throw new IllegalArgumentException("no such function: " + name);
 	}
 
 	@GetMapping(path = "/{name}")
