@@ -16,22 +16,22 @@
 
 package org.springframework.cloud.function.compiler.proxy;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
 
-import org.springframework.cloud.function.compiler.FunctionCompiler;
+import org.springframework.cloud.function.compiler.ConsumerCompiler;
 import org.springframework.core.io.Resource;
 
 /**
  * @author Mark Fisher
  */
-public class LambdaCompilingFunction<T, R> extends AbstractLambdaCompilingProxy<Function<T, R>> implements Function<T, R> {
+public class LambdaCompilingConsumer<T> extends AbstractLambdaCompilingProxy<Consumer<T>> implements Consumer<T> {
 
-	public LambdaCompilingFunction(Resource resource, FunctionCompiler<T, R> compiler) {
+	public LambdaCompilingConsumer(Resource resource, ConsumerCompiler<T> compiler) {
 		super(resource, compiler);
 	}
 
 	@Override
-	public R apply(T input) {
-		return this.getTarget().apply(input);
+	public void accept(T input) {
+		this.getTarget().accept(input);
 	}
 }

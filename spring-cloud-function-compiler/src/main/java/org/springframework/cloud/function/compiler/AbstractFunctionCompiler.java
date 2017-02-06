@@ -31,7 +31,7 @@ import org.springframework.cloud.function.compiler.java.RuntimeJavaCompiler;
  * @author Andy Clement
  * @author Mark Fisher
  */
-abstract class AbstractFunctionCompiler<F> {
+public abstract class AbstractFunctionCompiler<F> {
 
 	private static Logger logger = LoggerFactory.getLogger(AbstractFunctionCompiler.class);
 
