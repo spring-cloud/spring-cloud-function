@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -49,9 +50,18 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <T, R> Function<T, R> lookupFunction(String name) {
-		return (Function<T, R>) functions.get(name);
+		if (name.indexOf(',') == -1) {
+			return (Function<T, R>) functions.get(name);
+		}
+		String[] tokens = StringUtils.tokenizeToStringArray(name, ",");
+		Function function = null;
+		for (String token : tokens) {
+			Function next = lookupFunction(token);
+			function = (function == null) ? next : function.andThen(next);
+		}
+		return function;
 	}
 
 	@Override

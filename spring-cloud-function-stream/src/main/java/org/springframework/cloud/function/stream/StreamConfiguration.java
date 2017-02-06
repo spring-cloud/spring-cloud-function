@@ -138,6 +138,11 @@ public class StreamConfiguration {
 			if (!StringUtils.hasText(functionName)) {
 				return ConditionOutcome.noMatch("no function name available");
 			}
+			if (functionName.indexOf(',') != -1) {
+				// for now we will just check the first, but later may support:
+				// supplier[,function]+ or [function,]+consumer
+				functionName = functionName.substring(0, functionName.indexOf(','));
+			}
 			Class<?> beanType = context.getBeanFactory().getType(functionName);
 			if (type.isAssignableFrom(beanType)) {
 				return ConditionOutcome.match(String.format("bean '%s' is a %s", functionName, type));
