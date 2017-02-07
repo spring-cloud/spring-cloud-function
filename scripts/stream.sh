@@ -26,10 +26,11 @@ while getopts ":i:s:f:c:o:p:" opt; do
     esac
 done
 
-java -jar ../spring-cloud-function-samples/spring-cloud-function-sample-bytecode/target/function-sample-bytecode-1.0.0.BUILD-SNAPSHOT.jar\
+java -jar ../spring-cloud-function-samples/spring-cloud-function-sample-compiler/target/function-sample-compiler-1.0.0.BUILD-SNAPSHOT.jar\
+ --management.security.enabled=false\
  --server.port=$PORT\
  $IN\
  $OUT\
- --function.name=$TYPE\
- --function.type=$TYPE\
- --function.resource=file:///tmp/function-registry/$TYPE's'/$FUNC.fun
+ --function.name=$FUNC\
+ --spring.cloud.function.proxy.$FUNC.type=$TYPE\
+ --spring.cloud.function.proxy.$FUNC.resource=file:///tmp/function-registry/$TYPE's'/$FUNC.fun
