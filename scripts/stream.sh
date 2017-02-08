@@ -1,5 +1,14 @@
 #!/bin/bash
 
+PREFIX="--spring.cloud.function.proxy"
+DIR="file:///tmp/function-registry"
+
+tokenize() {
+  local IFS=,
+  local TOKENS=($1)
+  echo ${TOKENS[@]}
+}
+
 while getopts ":i:s:f:c:o:p:" opt; do
   case $opt in
     i)
@@ -7,15 +16,20 @@ while getopts ":i:s:f:c:o:p:" opt; do
       ;;
     s)
       FUNC=$OPTARG
-      TYPE=supplier
+      TYPE="$PREFIX.$FUNC.type=supplier"
+      RESOURCE="$PREFIX.$FUNC.resource=$DIR/suppliers/$FUNC.fun"
       ;;
     f)
       FUNC=$OPTARG
-      TYPE=function
+      for i in `tokenize $OPTARG`; do
+        RESOURCE="$RESOURCE $PREFIX.${i}.resource=$DIR/functions/${i}.fun"
+        TYPE="$TYPE $PREFIX.${i}.type=function"
+      done
       ;;
     c)
       FUNC=$OPTARG
-      TYPE=consumer
+      TYPE="$PREFIX.$FUNC.type=consumer"
+      RESOURCE="$PREFIX.$FUNC.resource=$DIR/consumers/$FUNC.fun"
       ;;
     o)
       OUT=--spring.cloud.stream.bindings.output.destination=$OPTARG
@@ -29,8 +43,8 @@ done
 java -jar ../spring-cloud-function-samples/spring-cloud-function-sample-compiler/target/function-sample-compiler-1.0.0.BUILD-SNAPSHOT.jar\
  --management.security.enabled=false\
  --server.port=$PORT\
+ --function.name=$FUNC\
  $IN\
  $OUT\
- --function.name=$FUNC\
- --spring.cloud.function.proxy.$FUNC.type=$TYPE\
- --spring.cloud.function.proxy.$FUNC.resource=file:///tmp/function-registry/$TYPE's'/$FUNC.fun
+ $RESOURCE\
+ $TYPE
