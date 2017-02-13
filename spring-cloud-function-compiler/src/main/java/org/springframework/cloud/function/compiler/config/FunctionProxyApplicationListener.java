@@ -59,13 +59,13 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
 			String type = (properties.get("type") != null) ? properties.get("type") : "function";
-			String resource = properties.get("resource");
+			String bytecodeResource = properties.get("bytecode");
 			String lambda = properties.get("lambda");
-			if (!(null == resource ^ null == lambda)) {
-				throw new IllegalArgumentException("Exactly one of 'resource' or 'lambda' is required for a Function proxy");
+			if (!(null == bytecodeResource ^ null == lambda)) {
+				throw new IllegalArgumentException("Exactly one of 'bytecode' or 'lambda' is required for a Function proxy");
 			}
-			if (resource != null) {
-				registerByteCodeLoadingProxy(name, type, context.getResource(resource), beanFactory);
+			if (bytecodeResource != null) {
+				registerByteCodeLoadingProxy(name, type, context.getResource(bytecodeResource), beanFactory);
 			}
 			else {
 				registerLambdaCompilingProxy(name, type, lambda, beanFactory);

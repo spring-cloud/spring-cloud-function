@@ -17,19 +17,19 @@ while getopts ":i:s:f:c:o:p:" opt; do
     s)
       FUNC=$OPTARG
       TYPE="$PREFIX.$FUNC.type=supplier"
-      RESOURCE="$PREFIX.$FUNC.resource=$DIR/suppliers/$FUNC.fun"
+      RESOURCE="$PREFIX.$FUNC.bytecode=$DIR/suppliers/$FUNC.fun"
       ;;
     f)
       FUNC=$OPTARG
       for i in `tokenize $OPTARG`; do
-        RESOURCE="$RESOURCE $PREFIX.${i}.resource=$DIR/functions/${i}.fun"
+        RESOURCE="$RESOURCE $PREFIX.${i}.bytecode=$DIR/functions/${i}.fun"
         TYPE="$TYPE $PREFIX.${i}.type=function"
       done
       ;;
     c)
       FUNC=$OPTARG
       TYPE="$PREFIX.$FUNC.type=consumer"
-      RESOURCE="$PREFIX.$FUNC.resource=$DIR/consumers/$FUNC.fun"
+      RESOURCE="$PREFIX.$FUNC.bytecode=$DIR/consumers/$FUNC.fun"
       ;;
     o)
       OUT=--spring.cloud.stream.bindings.output.destination=$OPTARG
