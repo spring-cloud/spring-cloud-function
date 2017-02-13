@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ import reactor.core.publisher.Flux;
 /**
  * @author Mark Fisher
  */
-@EnableConfigurationProperties(FunctionConfigurationProperties.class)
+@EnableConfigurationProperties(StreamConfigurationProperties.class)
 @ConditionalOnClass({ Binder.class, AbstractFunctionInvoker.class })
 @ConditionalOnProperty(name = "spring.cloud.stream.enabled", havingValue = "true", matchIfMissing = true)
 public class StreamConfiguration {
@@ -60,12 +60,12 @@ public class StreamConfiguration {
 	protected static class SupplierConfiguration {
 
 		@Autowired
-		private FunctionConfigurationProperties properties;
+		private StreamConfigurationProperties properties;
 
 		@Bean
 		@ConditionalOnProperty("spring.cloud.stream.bindings.output.destination")
 		public SupplierInvokingMessageProducer<Object> invoker(FunctionCatalog registry) {
-			String name = properties.getName();
+			String name = properties.getEndpoint();
 			Supplier<Flux<Object>> supplier = registry.lookupSupplier(name);
 			return new SupplierInvokingMessageProducer<Object>(supplier);
 		}		
@@ -76,12 +76,12 @@ public class StreamConfiguration {
 	protected static class FunctionConfiguration {
 
 		@Autowired
-		private FunctionConfigurationProperties properties;
+		private StreamConfigurationProperties properties;
 
 		@Bean
 		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
 		public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry) {
-			String name = properties.getName();
+			String name = properties.getEndpoint();
 			Function<Flux<Object>, Flux<Object>> function = registry.lookupFunction(name);
 			return new StreamListeningFunctionInvoker(function);
 		}		
@@ -92,12 +92,12 @@ public class StreamConfiguration {
 	protected static class ConsumerConfiguration {
 
 		@Autowired
-		private FunctionConfigurationProperties properties;
+		private StreamConfigurationProperties properties;
 
 		@Bean
 		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
 		public StreamListeningConsumerInvoker<Object> invoker(FunctionCatalog registry) {
-			String name = properties.getName();
+			String name = properties.getEndpoint();
 			Consumer<Object> consumer = registry.lookupConsumer(name);
 			return new StreamListeningConsumerInvoker<Object>(consumer);
 		}		
@@ -134,9 +134,9 @@ public class StreamConfiguration {
 
 		@Override
 		public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
-			String functionName = context.getEnvironment().getProperty("function.name");
+			String functionName = context.getEnvironment().getProperty("spring.cloud.function.stream.endpoint");
 			if (!StringUtils.hasText(functionName)) {
-				return ConditionOutcome.noMatch("no function name available");
+				return ConditionOutcome.noMatch("no endpoint function name available");
 			}
 			if (functionName.indexOf(',') != -1) {
 				// for now we will just check the first, but later may support:

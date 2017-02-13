@@ -43,7 +43,7 @@ done
 java -jar ../spring-cloud-function-samples/spring-cloud-function-sample-compiler/target/function-sample-compiler-1.0.0.BUILD-SNAPSHOT.jar\
  --management.security.enabled=false\
  --server.port=$PORT\
- --function.name=$FUNC\
+ --spring.cloud.function.stream.endpoint=$FUNC\
  $IN\
  $OUT\
  $RESOURCE\
