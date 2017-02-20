@@ -19,12 +19,14 @@ package org.springframework.cloud.function.compiler.proxy;
 import java.util.function.Function;
 
 import org.springframework.cloud.function.compiler.FunctionCompiler;
+import org.springframework.cloud.function.util.FunctionProxy;
+import org.springframework.cloud.function.util.FunctionUtils;
 import org.springframework.core.io.Resource;
 
 /**
  * @author Mark Fisher
  */
-public class LambdaCompilingFunction<T, R> extends AbstractLambdaCompilingProxy<Function<T, R>> implements Function<T, R> {
+public class LambdaCompilingFunction<T, R> extends AbstractLambdaCompilingProxy<Function<T, R>> implements FunctionProxy<T, R> {
 
 	public LambdaCompilingFunction(Resource resource, FunctionCompiler<T, R> compiler) {
 		super(resource, compiler);
@@ -33,5 +35,10 @@ public class LambdaCompilingFunction<T, R> extends AbstractLambdaCompilingProxy<
 	@Override
 	public R apply(T input) {
 		return this.getTarget().apply(input);
+	}
+
+	@Override
+	public boolean isFluxFunction() {
+		return FunctionUtils.isFluxFunction(this.getTarget());
 	}
 }

@@ -39,6 +39,8 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 
 	private T target;
 
+	private String[] typeParameterizations;
+
 	public AbstractLambdaCompilingProxy(Resource resource, AbstractFunctionCompiler<T> compiler) {
 		Assert.notNull(resource, "Resource must not be null");
 		Assert.notNull(compiler, "Compiler must not be null");
@@ -51,10 +53,16 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 		this.beanName = beanName;
 	}
 
+	public void setTypeParameterizations(String... typeParameterizations) {
+		this.typeParameterizations = typeParameterizations;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		String lambda = FileCopyUtils.copyToString(new InputStreamReader(this.resource.getInputStream()));
-		CompiledFunctionFactory<T> factory = this.compiler.compile(this.beanName, lambda);
+		CompiledFunctionFactory<T> factory = (this.typeParameterizations != null && this.typeParameterizations.length > 0)
+				? this.compiler.compile(this.beanName, lambda, this.typeParameterizations)
+				: this.compiler.compile(this.beanName, lambda);
 		this.target = factory.getResult();
 	}
 

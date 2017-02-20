@@ -22,7 +22,9 @@ import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.cloud.function.fluxify.FluxFunction;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.util.FunctionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,6 +55,9 @@ public class FunctionController {
 	public Flux<String> function(@PathVariable String name,
 			@RequestBody Flux<String> body) {
 		Function<Object, Object> function = functions.lookupFunction(name);
+		if (!FunctionUtils.isFluxFunction(function)) {
+			function = new FluxFunction(function);
+		}
 		if (function != null) {
 			@SuppressWarnings("unchecked")
 			Flux<String> result = (Flux<String>) function.apply(body);
