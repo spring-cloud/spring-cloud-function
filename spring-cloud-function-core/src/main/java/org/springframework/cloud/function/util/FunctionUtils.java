@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
 import reactor.core.publisher.Flux;
@@ -46,8 +47,10 @@ public abstract class FunctionUtils {
 			return ((FunctionProxy) function).isFluxFunction();
 		}
 		String[] types = getFunctionParameterizedTypes(function);
-		Assert.isTrue(types.length == 2, "failed to resolved input and output types");
-		return (FLUX_CLASS_NAME.equals(types[0]) && FLUX_CLASS_NAME.equals(types[1]));
+		if (ObjectUtils.isEmpty(types) || types.length != 2) {
+			return true;
+		}
+		return (types[0].startsWith(FLUX_CLASS_NAME) && types[1].startsWith(FLUX_CLASS_NAME));
 	}
 
 	private static String[] getFunctionParameterizedTypes(Function<?, ?> function) {
@@ -65,6 +68,9 @@ public abstract class FunctionUtils {
 
 	private static String[] getSerializedLambdaParameterizedTypes(Function<?, ?> function) {
 		Method method = ReflectionUtils.findMethod(function.getClass(), "writeReplace");
+		if (method == null) {
+			return null;
+		}
 		ReflectionUtils.makeAccessible(method);
 		SerializedLambda serializedLambda = (SerializedLambda) ReflectionUtils.invokeMethod(method, function);
 		String signature = serializedLambda.getImplMethodSignature();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.http.converter.ObjectToStringHttpMessageConverter;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
@@ -32,6 +35,7 @@ import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
+ * @author Mark Fisher
  */
 @Configuration
 @ConditionalOnWebApplication
@@ -39,7 +43,12 @@ import reactor.core.publisher.Flux;
 public class ReactorAutoConfiguration extends WebMvcConfigurerAdapter {
 
 	@Autowired
-	private FluxReturnValueHandler returnValueHandler;
+	private ApplicationContext context;
+
+	@Bean
+	public ObjectToStringHttpMessageConverter objectToStringHttpMessageConverter() {
+		return new ObjectToStringHttpMessageConverter(new DefaultConversionService());
+	}
 
 	@Bean
 	public FluxReturnValueHandler fluxReturnValueHandler(
@@ -49,6 +58,7 @@ public class ReactorAutoConfiguration extends WebMvcConfigurerAdapter {
 
 	@Configuration
 	protected static class FluxMessageConverterConfiguration {
+
 		@Bean
 		public FluxHttpMessageConverter fluxHttpMessageConverter() {
 			return new FluxHttpMessageConverter();
@@ -58,7 +68,6 @@ public class ReactorAutoConfiguration extends WebMvcConfigurerAdapter {
 	@Override
 	public void addReturnValueHandlers(
 			List<HandlerMethodReturnValueHandler> returnValueHandlers) {
-		returnValueHandlers.add(returnValueHandler);
+		returnValueHandlers.add(context.getBean(FluxReturnValueHandler.class));
 	}
-
 }
