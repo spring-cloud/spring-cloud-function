@@ -18,9 +18,12 @@ package org.springframework.cloud.function.stream;
 
 import java.util.function.Supplier;
 
+import org.springframework.cloud.function.support.FluxSupplier;
+import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.Assert;
 
 import reactor.core.publisher.Flux;
 
@@ -31,8 +34,12 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
 	private final Supplier<Flux<T>> supplier;
 
-	public SupplierInvokingMessageProducer(Supplier<Flux<T>> supplier) {
-		this.supplier = supplier;
+	public SupplierInvokingMessageProducer(Supplier<?> supplier) {
+		Assert.notNull(supplier, "Supplier must not be null");
+		if (!FunctionUtils.isFluxSupplier(supplier)) {
+			supplier = new FluxSupplier<>(supplier);
+		}
+		this.supplier = (Supplier<Flux<T>>) supplier;
 		this.setOutputChannelName(Source.OUTPUT);
 	}
 

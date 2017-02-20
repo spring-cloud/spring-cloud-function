@@ -18,11 +18,15 @@ package org.springframework.cloud.function.web;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.support.FluxFunction;
+import org.springframework.cloud.function.support.FluxSupplier;
+import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -54,6 +58,9 @@ public class FunctionController {
 			@RequestBody Flux<String> body) {
 		Function<Object, Object> function = functions.lookupFunction(name);
 		if (function != null) {
+			if (!FunctionUtils.isFluxFunction(function)) {
+				function = new FluxFunction(function);
+			}
 			@SuppressWarnings("unchecked")
 			Flux<String> result = (Flux<String>) function.apply(body);
 			return debug ? result.log() : result;
@@ -68,8 +75,11 @@ public class FunctionController {
 
 	@GetMapping(path = "/{name}")
 	public Flux<String> supplier(@PathVariable String name) {
-		@SuppressWarnings("unchecked")
-		Flux<String> result = (Flux<String>) functions.lookupSupplier(name).get();
+		Supplier<Object> supplier = functions.lookupSupplier(name);
+		if (!FunctionUtils.isFluxSupplier(supplier)) {
+			supplier = new FluxSupplier(supplier);
+		}
+		Flux<String> result = (Flux<String>) supplier.get();
 		return debug ? result.log() : result;
 	}
 }

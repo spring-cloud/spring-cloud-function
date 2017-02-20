@@ -19,25 +19,36 @@ package org.springframework.cloud.function.stream;
 import java.util.function.Function;
 
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
+import org.springframework.cloud.function.support.FluxFunction;
+import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.util.Assert;
 
 import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
  */
-public class StreamListeningFunctionInvoker extends AbstractFunctionInvoker<Flux<Object>, Flux<Object>> {
+public class StreamListeningFunctionInvoker extends AbstractFunctionInvoker<Flux<?>, Flux<?>> {
 
-	public StreamListeningFunctionInvoker(Function<Flux<Object>, Flux<Object>> function) {
-		super(function);
+	public StreamListeningFunctionInvoker(Function<?, ?> function) {
+		super(wrapIfNecessary(function));
 	}
 
 	@StreamListener
 	@Output(Processor.OUTPUT)
-	public Flux<Object> handle(@Input(Processor.INPUT) Flux<Object> input) {
+	public Flux<?> handle(@Input(Processor.INPUT) Flux<?> input) {
 		return this.doInvoke(input);
+	}
+
+	private static Function<Flux<?>, Flux<?>> wrapIfNecessary(Function function) {
+		Assert.notNull(function, "Function must not be null");
+		if (!FunctionUtils.isFluxFunction(function)) {
+			function = new FluxFunction(function);
+		}
+		return function;
 	}
 }

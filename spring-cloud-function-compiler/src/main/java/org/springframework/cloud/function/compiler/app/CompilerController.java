@@ -19,6 +19,7 @@ package org.springframework.cloud.function.compiler.app;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -29,20 +30,21 @@ public class CompilerController {
 
 	private final CompiledFunctionRegistry registry = new CompiledFunctionRegistry();
 
-	@PostMapping(path = "/{type}/{name}")
-	public void registerFunction(@PathVariable String type, @PathVariable String name, @RequestBody String lambda) {
-		switch (type) {
-		case "supplier":
-			registry.registerSupplier(name, lambda);
-			break;
-		case "function":
-			registry.registerFunction(name, lambda);
-			break;
-		case "consumer":
-			registry.registerConsumer(name, lambda);
-			break;
-		default:
-			throw new IllegalArgumentException("unknown type: " + type);
-		}
+	@PostMapping(path = "/supplier/{name}")
+	public void registerSupplier(@PathVariable String name, @RequestBody String lambda,
+			@RequestParam(defaultValue="Flux<String>") String type) {
+		this.registry.registerSupplier(name, lambda, type);
+	}
+
+	@PostMapping(path = "/function/{name}")
+	public void registerFunction(@PathVariable String name, @RequestBody String lambda,
+			@RequestParam(defaultValue="Flux<String>") String inputType,
+			@RequestParam(defaultValue="Flux<String>") String outputType) {
+		this.registry.registerFunction(name, lambda, inputType, outputType);
+	}
+
+	@PostMapping(path = "/consumer/{name}")
+	public void registerConsumer(@PathVariable String name, @RequestBody String lambda) {
+		this.registry.registerConsumer(name, lambda);
 	}
 }

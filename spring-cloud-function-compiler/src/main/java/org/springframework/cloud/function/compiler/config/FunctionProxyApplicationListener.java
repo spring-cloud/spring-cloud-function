@@ -18,6 +18,7 @@ package org.springframework.cloud.function.compiler.config;
 
 import java.util.Map;
 
+import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -68,7 +69,9 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 				registerByteCodeLoadingProxy(name, type, context.getResource(bytecodeResource), beanFactory);
 			}
 			else {
-				registerLambdaCompilingProxy(name, type, lambda, beanFactory);
+				String inputType = properties.get("inputType");
+				String outputType = properties.get("outputType");
+				registerLambdaCompilingProxy(name, type, inputType, outputType, lambda, beanFactory);
 			}
 		}
 	}
@@ -91,14 +94,18 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 		beanFactory.registerBeanDefinition(name, beanDefinition);
 	}
 
-	private void registerLambdaCompilingProxy(String name, String type, String lambda, DefaultListableBeanFactory beanFactory) {
+	private void registerLambdaCompilingProxy(String name, String type, String inputType, String outputType, String lambda, DefaultListableBeanFactory beanFactory) {
 		Resource resource = new ByteArrayResource(lambda.getBytes());
 		ConstructorArgumentValues args = new ConstructorArgumentValues();
+		MutablePropertyValues props = new MutablePropertyValues();
 		args.addGenericArgumentValue(resource);
 		Class<?> proxyClass = null;
 		if ("supplier".equals(type.toLowerCase())) {
 			proxyClass = LambdaCompilingSupplier.class;
 			args.addGenericArgumentValue(this.supplierCompiler);
+			if (outputType != null) {
+				props.add("typeParameterizations", outputType);
+			}
 		}
 		else if ("consumer".equals(type.toLowerCase())) {
 			proxyClass = LambdaCompilingConsumer.class;
@@ -107,9 +114,16 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 		else {
 			proxyClass = LambdaCompilingFunction.class;
 			args.addGenericArgumentValue(this.functionCompiler);
+			if ((inputType == null && outputType != null) || (outputType == null && inputType != null)) {
+				throw new IllegalArgumentException("if either input or output type is set, the other is also required");
+			}
+			if (inputType != null) {
+				props.add("typeParameterizations", new String[] { inputType, outputType });
+			}
 		}
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(proxyClass);
 		beanDefinition.setConstructorArgumentValues(args);
+		beanDefinition.setPropertyValues(props);
 		beanFactory.registerBeanDefinition(name, beanDefinition);
 	}
 }

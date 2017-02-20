@@ -72,8 +72,8 @@ public class CompiledFunctionRegistry {
 		this.consumerDirectory.mkdir();
 	}
 
-	public void registerSupplier(String name, String supplier) {
-		CompiledFunctionFactory<?> factory = this.supplierCompiler.compile(name, supplier);
+	public void registerSupplier(String name, String supplier, String type) {
+		CompiledFunctionFactory<?> factory = this.supplierCompiler.compile(name, supplier, type);
 		File file = new File(this.supplierDirectory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
@@ -83,8 +83,8 @@ public class CompiledFunctionRegistry {
 		}
 	}
 
-	public void registerFunction(String name, String function) {
-		CompiledFunctionFactory<?> factory = this.functionCompiler.compile(name, function);
+	public void registerFunction(String name, String function, String... types) {
+		CompiledFunctionFactory<?> factory = this.functionCompiler.compile(name, function, types);
 		File file = new File(this.functionDirectory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);

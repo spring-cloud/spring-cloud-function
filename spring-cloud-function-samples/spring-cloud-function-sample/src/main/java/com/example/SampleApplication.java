@@ -23,22 +23,19 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.proxy.LambdaCompilingFunction;
+import org.springframework.cloud.function.context.FunctionScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ByteArrayResource;
 
 import reactor.core.publisher.Flux;
 
+@FunctionScan
 @SpringBootApplication
 public class SampleApplication {
 
 	@Bean
-	public Function<Flux<String>, Flux<String>> uppercase() {
-		return flux -> flux.map(value -> value.toUpperCase());
-	}
-
-	@Bean
-	public Supplier<Flux<String>> words() {
-		return () -> Flux.fromArray(new String[] { "foo", "bar" });
+	public Function<String, String> uppercase() {
+		return value -> value.toUpperCase();
 	}
 
 	@Bean
@@ -47,18 +44,35 @@ public class SampleApplication {
 	}
 
 	@Bean
-	public <T, R> FunctionCompiler<T, R> compiler() {
-		return new FunctionCompiler<>();
+	public Supplier<String> hello() {
+		return () -> "hello";
 	}
 
 	@Bean
-	public Function<Flux<String>, Flux<String>> compiledUppercase(FunctionCompiler<Flux<String>, Flux<String>> compiler) {
-		String lambda = "f -> f.map(o -> o.toString().toUpperCase())";
+	public Supplier<Flux<String>> words() {
+		return () -> Flux.fromArray(new String[] { "foo", "bar" });
+	}
+
+	@Bean
+	public Function<String, String> compiledUppercase(FunctionCompiler<String, String> compiler) {
+		String lambda = "s -> s.toUpperCase()";
+		LambdaCompilingFunction<String, String> function = new LambdaCompilingFunction<>(new ByteArrayResource(lambda.getBytes()), compiler);
+		function.setTypeParameterizations("String", "String");
+		return function;
+	}
+
+	@Bean
+	public Function<Flux<String>, Flux<String>> compiledLowercase(FunctionCompiler<Flux<String>, Flux<String>> compiler) {
+		String lambda = "f->f.map(o->o.toString().toLowerCase())";
 		return new LambdaCompilingFunction<>(new ByteArrayResource(lambda.getBytes()), compiler);
+	}
+
+	@Bean
+	public <T, R> FunctionCompiler<T, R> compiler() {
+		return new FunctionCompiler<>();
 	}
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(SampleApplication.class, args);
 	}
-
 }

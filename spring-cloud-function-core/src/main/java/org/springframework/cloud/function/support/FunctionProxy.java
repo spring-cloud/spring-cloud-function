@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.compiler.proxy;
+package org.springframework.cloud.function.support;
 
-import java.util.function.Supplier;
-
-import org.springframework.cloud.function.support.SupplierProxy;
-import org.springframework.core.io.Resource;
+import java.util.function.Function;
 
 /**
  * @author Mark Fisher
  *
- * @param <T> type
+ * @param <T> input type of target Function
+ * @param <R> output type of target Function
  */
-public class ByteCodeLoadingSupplier<T> extends AbstractByteCodeLoadingProxy<Supplier<T>> implements SupplierProxy<T> {
+public interface FunctionProxy<T, R> extends Function<T, R> {
 
-	public ByteCodeLoadingSupplier(Resource resource) {
-		super(resource, Supplier.class);
+	default boolean isFluxFunction() {
+		return FunctionUtils.isFluxFunction(getTarget());
 	}
 
-	@Override
-	public T get() {
-		return this.getTarget().get();
-	}
+	Function<T, R> getTarget();
 }

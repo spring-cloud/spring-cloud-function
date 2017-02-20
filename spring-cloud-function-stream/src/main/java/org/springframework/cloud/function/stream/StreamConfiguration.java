@@ -33,6 +33,8 @@ import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.support.FluxFunction;
+import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -43,6 +45,7 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.ConfigurationCondition;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
@@ -82,7 +85,8 @@ public class StreamConfiguration {
 		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
 		public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry) {
 			String name = properties.getEndpoint();
-			Function<Flux<Object>, Flux<Object>> function = registry.lookupFunction(name);
+			Function<Object, Object> function = registry.lookupFunction(name);
+			Assert.notNull(function, "no such function: " + name);
 			return new StreamListeningFunctionInvoker(function);
 		}		
 	}

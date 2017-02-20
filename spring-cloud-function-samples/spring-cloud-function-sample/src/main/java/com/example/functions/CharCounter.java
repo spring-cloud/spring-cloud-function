@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.compiler.proxy;
+package com.example.functions;
 
-import java.util.function.Supplier;
-
-import org.springframework.cloud.function.support.SupplierProxy;
-import org.springframework.core.io.Resource;
+import java.util.function.Function;
 
 /**
  * @author Mark Fisher
- *
- * @param <T> type
  */
-public class ByteCodeLoadingSupplier<T> extends AbstractByteCodeLoadingProxy<Supplier<T>> implements SupplierProxy<T> {
-
-	public ByteCodeLoadingSupplier(Resource resource) {
-		super(resource, Supplier.class);
-	}
+public class CharCounter implements Function<String, Integer> {
 
 	@Override
-	public T get() {
-		return this.getTarget().get();
+	public Integer apply(String word) {
+		return word.length();
 	}
 }

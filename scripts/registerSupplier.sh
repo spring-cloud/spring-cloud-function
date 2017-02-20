@@ -1,6 +1,6 @@
 #!/bin/bash
 
-while getopts ":n:f:" opt; do
+while getopts ":n:f:t:" opt; do
   case $opt in
     n)
       NAME=$OPTARG
@@ -8,7 +8,10 @@ while getopts ":n:f:" opt; do
     f)
       FUNC=$OPTARG
       ;;
+    t)
+      TYPE=$OPTARG
+      ;;
     esac
 done
 
-curl -X POST -H "Content-Type: text/plain" -d $FUNC :8080/supplier/$NAME
+curl -X POST -H "Content-Type: text/plain" -d $FUNC :8080/supplier/$NAME?type=$TYPE
