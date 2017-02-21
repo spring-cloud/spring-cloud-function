@@ -83,8 +83,8 @@ public class CompiledFunctionRegistry {
 		}
 	}
 
-	public void registerFunction(String name, String function) {
-		CompiledFunctionFactory<?> factory = this.functionCompiler.compile(name, function);
+	public void registerFunction(String name, String function, String... types) {
+		CompiledFunctionFactory<?> factory = this.functionCompiler.compile(name, function, types);
 		File file = new File(this.functionDirectory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);

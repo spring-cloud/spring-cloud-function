@@ -19,6 +19,7 @@ package org.springframework.cloud.function.compiler.app;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -30,13 +31,14 @@ public class CompilerController {
 	private final CompiledFunctionRegistry registry = new CompiledFunctionRegistry();
 
 	@PostMapping(path = "/{type}/{name}")
-	public void registerFunction(@PathVariable String type, @PathVariable String name, @RequestBody String lambda) {
+	public void registerFunction(@PathVariable String type, @PathVariable String name, @RequestBody String lambda,
+			@RequestParam(defaultValue="Flux<String>") String inputType, @RequestParam(defaultValue="Flux<String>") String outputType) {
 		switch (type) {
 		case "supplier":
 			registry.registerSupplier(name, lambda);
 			break;
 		case "function":
-			registry.registerFunction(name, lambda);
+			registry.registerFunction(name, lambda, inputType, outputType);
 			break;
 		case "consumer":
 			registry.registerConsumer(name, lambda);

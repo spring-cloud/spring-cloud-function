@@ -26,7 +26,7 @@ import org.springframework.cloud.function.compiler.java.CompilationFailedExcepti
 import org.springframework.cloud.function.compiler.java.CompilationMessage;
 import org.springframework.cloud.function.compiler.java.CompilationResult;
 import org.springframework.cloud.function.compiler.java.RuntimeJavaCompiler;
-import org.springframework.util.ClassUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -70,10 +70,6 @@ public abstract class AbstractFunctionCompiler<F> {
 		this.defaultResultTypeParameterizations = defaultResultTypeParameterizations;
 	}
 
-	public CompiledFunctionFactory<F> compile(String name, String code) {
-		return this.compile(name, code, this.defaultResultTypeParameterizations);
-	}
-
 	/**
 	 * Produce a factory instance by:<ul>
 	 * <li>Decoding the code String to process any newlines/double-double-quotes
@@ -91,7 +87,8 @@ public abstract class AbstractFunctionCompiler<F> {
 			throw new IllegalArgumentException("name must not be empty");
 		}
 		logger.info("Initial code property value :'{}'", code);
-		String parameterizations = StringUtils.arrayToCommaDelimitedString(resultTypeParameterizations);
+		String parameterizations =  StringUtils.arrayToCommaDelimitedString(
+				(!ObjectUtils.isEmpty(resultTypeParameterizations)) ? resultTypeParameterizations : this.defaultResultTypeParameterizations);
  		code = decode(code);
  		if (code.startsWith("\"") && code.endsWith("\"")) {
  			code = code.substring(1,code.length()-1);
