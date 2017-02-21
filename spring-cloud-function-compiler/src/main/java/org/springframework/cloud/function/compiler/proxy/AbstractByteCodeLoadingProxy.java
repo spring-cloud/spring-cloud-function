@@ -59,7 +59,7 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 		}
 	}
 
-	protected final T getTarget() {
+	public final T getTarget() {
 		return this.target;
 	}
 }

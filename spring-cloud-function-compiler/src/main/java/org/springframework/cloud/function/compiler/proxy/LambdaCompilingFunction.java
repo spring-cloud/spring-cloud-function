@@ -20,7 +20,6 @@ import java.util.function.Function;
 
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.util.FunctionProxy;
-import org.springframework.cloud.function.util.FunctionUtils;
 import org.springframework.core.io.Resource;
 
 /**
@@ -35,10 +34,5 @@ public class LambdaCompilingFunction<T, R> extends AbstractLambdaCompilingProxy<
 	@Override
 	public R apply(T input) {
 		return this.getTarget().apply(input);
-	}
-
-	@Override
-	public boolean isFluxFunction() {
-		return FunctionUtils.isFluxFunction(this.getTarget());
 	}
 }

@@ -26,5 +26,9 @@ import java.util.function.Function;
  */
 public interface FunctionProxy<T, R> extends Function<T, R> {
 
-	boolean isFluxFunction();
+	default boolean isFluxFunction() {
+		return FunctionUtils.isFluxFunction(getTarget());
+	}
+
+	Function<T, R> getTarget();
 }

@@ -66,7 +66,7 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 		this.target = factory.getResult();
 	}
 
-	protected final T getTarget() {
+	public final T getTarget() {
 		return this.target;
 	}
 }

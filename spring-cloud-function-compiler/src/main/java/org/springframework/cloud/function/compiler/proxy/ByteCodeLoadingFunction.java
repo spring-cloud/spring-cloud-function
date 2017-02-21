@@ -19,6 +19,7 @@ package org.springframework.cloud.function.compiler.proxy;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.cloud.function.util.FunctionProxy;
 import org.springframework.core.io.Resource;
 
 /**
@@ -27,7 +28,7 @@ import org.springframework.core.io.Resource;
  * @param <T> Function input type
  * @param <R> Function result type
  */
-public class ByteCodeLoadingFunction<T, R> extends AbstractByteCodeLoadingProxy<Function<T, R>> implements Function<T, R>, InitializingBean {
+public class ByteCodeLoadingFunction<T, R> extends AbstractByteCodeLoadingProxy<Function<T, R>> implements FunctionProxy<T, R>, InitializingBean {
 
 	public ByteCodeLoadingFunction(Resource resource) {
 		super(resource, Function.class);
