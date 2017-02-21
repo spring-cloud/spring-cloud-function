@@ -72,8 +72,8 @@ public class CompiledFunctionRegistry {
 		this.consumerDirectory.mkdir();
 	}
 
-	public void registerSupplier(String name, String supplier) {
-		CompiledFunctionFactory<?> factory = this.supplierCompiler.compile(name, supplier);
+	public void registerSupplier(String name, String supplier, String type) {
+		CompiledFunctionFactory<?> factory = this.supplierCompiler.compile(name, supplier, type);
 		File file = new File(this.supplierDirectory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);

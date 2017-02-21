@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,45 +41,61 @@ public abstract class FunctionUtils {
 
 	private FunctionUtils() {}
 
+	public static boolean isFluxSupplier(Supplier<?> supplier) {
+		String[] types = getParameterizedTypeNames(supplier, Supplier.class);
+		if (ObjectUtils.isEmpty(types)) {
+			return true;
+		}
+		return (types[0].startsWith(FLUX_CLASS_NAME));
+	}
+
 	@SuppressWarnings("rawtypes")
 	public static boolean isFluxFunction(Function<?, ?> function) {
 		if (function instanceof FunctionProxy) {
 			return ((FunctionProxy) function).isFluxFunction();
 		}
-		String[] types = getFunctionParameterizedTypes(function);
+		String[] types = getParameterizedTypeNames(function, Function.class);
 		if (ObjectUtils.isEmpty(types) || types.length != 2) {
 			return true;
 		}
 		return (types[0].startsWith(FLUX_CLASS_NAME) && types[1].startsWith(FLUX_CLASS_NAME));
 	}
 
-	private static String[] getFunctionParameterizedTypes(Function<?, ?> function) {
-		Type[] genericInterfaces = function.getClass().getGenericInterfaces();
+	private static String[] getParameterizedTypeNames(Object source, Class<?> interfaceClass) {
+		Type[] genericInterfaces = source.getClass().getGenericInterfaces();
 		for (Type genericInterface : genericInterfaces) {
 			if ((genericInterface instanceof ParameterizedType)
-					&& Function.class.getTypeName().equals(((ParameterizedType) genericInterface).getRawType().getTypeName())) {
+					&& interfaceClass.getTypeName().equals(((ParameterizedType) genericInterface).getRawType().getTypeName())) {
 				ParameterizedType type = (ParameterizedType) genericInterface;
 				Type[] args = type.getActualTypeArguments();
-				return new String[] { args[0].getTypeName(), args[1].getTypeName() };
+				if (args != null) {
+					String[] typeNames = new String[args.length];
+					for (int i = 0; i < args.length; i++) {
+						typeNames[i] = args[i].getTypeName();
+					}
+					return typeNames;
+				}
 			}
 		}
-		return getSerializedLambdaParameterizedTypes(function);
+		return getSerializedLambdaParameterizedTypeNames(source);
 	}
 
-	private static String[] getSerializedLambdaParameterizedTypes(Function<?, ?> function) {
-		Method method = ReflectionUtils.findMethod(function.getClass(), "writeReplace");
+	private static String[] getSerializedLambdaParameterizedTypeNames(Object source) {
+		Method method = ReflectionUtils.findMethod(source.getClass(), "writeReplace");
 		if (method == null) {
 			return null;
 		}
 		ReflectionUtils.makeAccessible(method);
-		SerializedLambda serializedLambda = (SerializedLambda) ReflectionUtils.invokeMethod(method, function);
+		SerializedLambda serializedLambda = (SerializedLambda) ReflectionUtils.invokeMethod(method, source);
 		String signature = serializedLambda.getImplMethodSignature();
 		Matcher matcher = FUNCTION_METHOD_SIGNATURE_TYPE_PATTERN.matcher(signature);
 		if (!matcher.matches()) {
 			return new String[0];
 		}
-		String inputType = matcher.group(1).replace('/', '.');
-		String outputType = matcher.group(2).replace('/', '.');
-		return new String[] { inputType, outputType };
+		String[] typeNames = new String[matcher.groupCount()];
+		for (int i = 0; i < matcher.groupCount(); i++) {
+			typeNames[i] = matcher.group(i + 1).replace('/', '.');
+		}
+		return typeNames;
 	}
 }
