@@ -14,21 +14,31 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.util;
+package org.springframework.cloud.function.support;
 
 import java.util.function.Function;
 
+import reactor.core.publisher.Flux;
+
 /**
+ * {@link Function} implementation that wraps a target Function so that the target's
+ * simple input and output types will be wrapped as {@link Flux} instances.
+ *
  * @author Mark Fisher
  *
- * @param <T> input type of target Function
- * @param <R> output type of target Function
+ * @param <T> input type of target function
+ * @param <R> output type of target function
  */
-public interface FunctionProxy<T, R> extends Function<T, R> {
+public class FluxFunction<T, R> implements Function<Flux<T>, Flux<R>> {
 
-	default boolean isFluxFunction() {
-		return FunctionUtils.isFluxFunction(getTarget());
+	private final Function<T, R> function;
+
+	public FluxFunction(Function<T, R> function) {
+		this.function = function;
 	}
 
-	Function<T, R> getTarget();
+	@Override
+	public Flux<R> apply(Flux<T> input) {
+		return input.map(i->this.function.apply(i));
+	}
 }

@@ -19,7 +19,7 @@ package org.springframework.cloud.function.compiler.proxy;
 import java.util.function.Function;
 
 import org.springframework.cloud.function.compiler.FunctionCompiler;
-import org.springframework.cloud.function.util.FunctionProxy;
+import org.springframework.cloud.function.support.FunctionProxy;
 import org.springframework.core.io.Resource;
 
 /**
