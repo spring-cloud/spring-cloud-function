@@ -20,7 +20,7 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
-		<wrapper.version>1.0.0.M1</wrapper.version>
+		<wrapper.version>1.0.0.BUILD-SNAPSHOT</wrapper.version>
 		<reactor.version>3.0.4.RELEASE</reactor.version>
 	</properties>
 
@@ -52,11 +52,10 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>1.5.1.RELEASE</version>
 				<dependencies>
 					<dependency>
 						<groupId>org.springframework.boot.experimental</groupId>
-						<artifactId>spring-boot-thin-launcher</artifactId>
+						<artifactId>spring-boot-thin-layout</artifactId>
 						<version>${wrapper.version}</version>
 					</dependency>
 				</dependencies>

@@ -16,7 +16,7 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-cloud-deployer-thin.version>1.0.0.M1</spring-cloud-deployer-thin.version>
+		<spring-cloud-deployer-thin.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-deployer-thin.version>
 		<reactor.version>3.0.4.RELEASE</reactor.version>
 	</properties>
 
@@ -82,6 +82,13 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.boot.experimental</groupId>
+						<artifactId>spring-boot-thin-layout</artifactId>
+						<version>${wrapper.version}</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>
