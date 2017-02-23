@@ -32,16 +32,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.cli.compiler.RepositoryConfigurationFactory;
-import org.springframework.boot.cli.compiler.grape.DependencyResolutionContext;
 import org.springframework.boot.loader.archive.Archive;
-import org.springframework.boot.loader.thin.AetherEngine;
 import org.springframework.boot.loader.thin.ArchiveUtils;
+import org.springframework.boot.loader.thin.DependencyResolver;
 import org.springframework.cloud.deployer.thin.ContextRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -129,31 +125,23 @@ public class ApplicationRunner implements CommandLineRunner {
 		for (URL url : urls) {
 			child.add(url);
 		}
-		DependencyResolutionContext context = new DependencyResolutionContext();
-		AetherEngine engine = AetherEngine.create(
-				RepositoryConfigurationFactory.createDefaultRepositoryConfiguration(),
-				context);
+		DependencyResolver resolver = DependencyResolver.instance();
 		String reactor = getReactorCoordinates();
 		// spring-core is OK, spring-context is not, spring-messaging depends on
 		// spring-context (so it is not OK)
 		String spring = getSpringCoordinates();
-		try {
-			List<File> resolved = engine.resolve(
-					Arrays.asList(new Dependency(new DefaultArtifact(reactor), "runtime"),
-							new Dependency(new DefaultArtifact(spring), "runtime")));
-			for (File archive : resolved) {
-				try {
-					URL url = archive.toURI().toURL();
-					parent.add(url);
-					child.remove(url);
-				}
-				catch (MalformedURLException e) {
-					throw new IllegalStateException("Cannot locate jar for: " + archive);
-				}
+		List<File> resolved = Arrays.asList(
+				resolver.resolve(new Dependency(new DefaultArtifact(reactor), "runtime")),
+				resolver.resolve(new Dependency(new DefaultArtifact(spring), "runtime")));
+		for (File archive : resolved) {
+			try {
+				URL url = archive.toURI().toURL();
+				parent.add(url);
+				child.remove(url);
 			}
-		}
-		catch (ArtifactResolutionException e) {
-			throw new IllegalStateException("Cannot resolve archive for " + reactor, e);
+			catch (MalformedURLException e) {
+				throw new IllegalStateException("Cannot locate jar for: " + archive);
+			}
 		}
 		logger.info("Parent: " + parent);
 		logger.info("Child: " + child);

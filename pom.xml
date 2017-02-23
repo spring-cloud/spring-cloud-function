@@ -16,7 +16,7 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<reactor.version>3.0.4.RELEASE</reactor.version>
+		<reactor-bom.version>Aluminium-SR1</reactor-bom.version>
 		<spring-cloud-stream.version>Brooklyn.SR2</spring-cloud-stream.version>
 		<wrapper.version>1.0.0.BUILD-SNAPSHOT</wrapper.version>
 		<spring-boot.version>1.5.1.RELEASE</spring-boot.version>
@@ -26,8 +26,10 @@
 		<dependencies>
 			<dependency>
 				<groupId>io.projectreactor</groupId>
-				<artifactId>reactor-core</artifactId>
-				<version>${reactor.version}</version>
+				<artifactId>reactor-bom</artifactId>
+				<version>${reactor-bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>

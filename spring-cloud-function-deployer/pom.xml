@@ -17,10 +17,14 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring-cloud-deployer-thin.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-deployer-thin.version>
-		<reactor.version>3.0.4.RELEASE</reactor.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-aether-provider</artifactId>
+			<version>3.3.9</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-core</artifactId>
