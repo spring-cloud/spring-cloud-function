@@ -26,11 +26,25 @@ public class StreamConfigurationProperties {
 
 	private String endpoint;
 
+	/**
+	 * Interval to be used for the Duration (in milliseconds) of a non-Flux producing Supplier.
+	 * Default is 0, which means the Supplier will only be invoked once. 
+	 */
+	private long interval = 0L;
+
 	public String getEndpoint() {
 		return endpoint;
 	}
 
 	public void setEndpoint(String endpoint) {
 		this.endpoint = endpoint;
+	}
+
+	public long getInterval() {
+		return interval;
+	}
+
+	public void setInterval(long interval) {
+		this.interval = interval;
 	}
 }

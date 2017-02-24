@@ -69,8 +69,9 @@ public class StreamConfiguration {
 		@ConditionalOnProperty("spring.cloud.stream.bindings.output.destination")
 		public SupplierInvokingMessageProducer<Object> invoker(FunctionCatalog registry) {
 			String name = properties.getEndpoint();
+			long interval = properties.getInterval();
 			Supplier<Flux<Object>> supplier = registry.lookupSupplier(name);
-			return new SupplierInvokingMessageProducer<Object>(supplier);
+			return new SupplierInvokingMessageProducer<Object>(supplier, interval);
 		}		
 	}
 

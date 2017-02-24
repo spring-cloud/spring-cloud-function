@@ -9,7 +9,9 @@ tokenize() {
   echo ${TOKENS[@]}
 }
 
-while getopts ":i:s:f:c:o:p:" opt; do
+DURATION=0
+
+while getopts ":i:s:f:c:o:p:d:" opt; do
   case $opt in
     i)
       IN=--spring.cloud.stream.bindings.input.destination=$OPTARG
@@ -37,6 +39,9 @@ while getopts ":i:s:f:c:o:p:" opt; do
     p)
       PORT=$OPTARG
       ;;
+    d)
+      DURATION=$OPTARG
+      ;;
     esac
 done
 
@@ -44,6 +49,7 @@ java -jar ../spring-cloud-function-samples/spring-cloud-function-sample-compiler
  --management.security.enabled=false\
  --server.port=$PORT\
  --spring.cloud.function.stream.endpoint=$FUNC\
+ --spring.cloud.function.stream.interval=$DURATION\
  $IN\
  $OUT\
  $RESOURCE\

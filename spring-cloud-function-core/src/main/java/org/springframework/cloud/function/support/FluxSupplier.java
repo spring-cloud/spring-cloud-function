@@ -18,6 +18,7 @@ package org.springframework.cloud.function.support;
 
 import java.time.Duration;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
 
@@ -48,10 +49,18 @@ public class FluxSupplier<T> implements Supplier<Flux<T>> {
 	}
 
 	@Override
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Flux<T> get() {
 		if (this.period != null) {
 			return Flux.interval(this.period).map(i->this.supplier.get());
 		}
-		return Flux.just(this.supplier.get());
+		Object result = this.supplier.get();
+		if (result instanceof Stream) {
+			return Flux.fromStream((Stream) result);
+		}
+		if (result instanceof Iterable) {
+			return Flux.fromIterable((Iterable) result);
+		}
+		return Flux.just((T) result);
 	}
 }

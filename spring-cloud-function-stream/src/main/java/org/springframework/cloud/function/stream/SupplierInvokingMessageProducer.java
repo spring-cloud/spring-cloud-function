@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.stream;
 
+import java.time.Duration;
 import java.util.function.Supplier;
 
 import org.springframework.cloud.function.support.FluxSupplier;
@@ -34,10 +35,12 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
 	private final Supplier<Flux<T>> supplier;
 
-	public SupplierInvokingMessageProducer(Supplier<?> supplier) {
+	public SupplierInvokingMessageProducer(Supplier<?> supplier, long interval) {
 		Assert.notNull(supplier, "Supplier must not be null");
 		if (!FunctionUtils.isFluxSupplier(supplier)) {
-			supplier = new FluxSupplier<>(supplier);
+			supplier = (interval > 0)
+					? new FluxSupplier<>(supplier, Duration.ofMillis(interval))
+					: new FluxSupplier<>(supplier);
 		}
 		this.supplier = (Supplier<Flux<T>>) supplier;
 		this.setOutputChannelName(Source.OUTPUT);
