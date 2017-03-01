@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.registry.FunctionCatalog;
-import org.springframework.cloud.function.support.FluxFunction;
 import org.springframework.cloud.function.support.FluxSupplier;
 import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,11 +55,8 @@ public class FunctionController {
 	@PostMapping(path = "/{name}")
 	public Flux<String> function(@PathVariable String name,
 			@RequestBody Flux<String> body) {
-		Function<Object, Object> function = functions.lookupFunction(name);
+		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
-			if (!FunctionUtils.isFluxFunction(function)) {
-				function = new FluxFunction(function);
-			}
 			@SuppressWarnings("unchecked")
 			Flux<String> result = (Flux<String>) function.apply(body);
 			return debug ? result.log() : result;

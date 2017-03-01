@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -37,6 +38,8 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.support.FluxFunction;
+import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
@@ -115,6 +118,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 							.get(key);
 					result.put(key, wrapFunction(function, mapper, key));
 				}
+				else if (!isFluxFunction(key, functions.get(key))) {
+					result.put(key, new FluxFunction(functions.get(key)));
+				}
 				else {
 					result.put(key, functions.get(key));
 				}
@@ -152,6 +158,25 @@ public class ContextFunctionCatalogAutoConfiguration {
 					this.consumers.add(name);
 				}
 			}
+		}
+
+		private boolean isFluxFunction(String name, Function<?, ?> function) {
+			if (this.registry.containsBeanDefinition(name)) {
+				BeanDefinition beanDefinition = this.registry.getBeanDefinition(name);
+				Object source = beanDefinition.getSource();
+				if (source instanceof StandardMethodMetadata) {
+					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
+					Type returnType = metadata.getIntrospectedMethod().getGenericReturnType();
+					if (returnType instanceof ParameterizedType) {
+						Type[] types = ((ParameterizedType) returnType).getActualTypeArguments();
+						if (types != null && types.length == 2) {
+							return (types[0].getTypeName().startsWith(Flux.class.getName())
+									&& types[1].getTypeName().startsWith(Flux.class.getName()));
+						}
+					}
+				}
+			}
+			return FunctionUtils.isFluxFunction(function);
 		}
 
 		private boolean isGenericSupplier(ConfigurableListableBeanFactory factory,

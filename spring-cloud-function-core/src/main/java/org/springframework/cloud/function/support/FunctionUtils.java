@@ -58,7 +58,7 @@ public abstract class FunctionUtils {
 		}
 		String[] types = getParameterizedTypeNames(function, Function.class);
 		if (ObjectUtils.isEmpty(types) || types.length != 2) {
-			return true;
+			return false;
 		}
 		return (types[0].startsWith(FLUX_CLASS_NAME) && types[1].startsWith(FLUX_CLASS_NAME));
 	}
