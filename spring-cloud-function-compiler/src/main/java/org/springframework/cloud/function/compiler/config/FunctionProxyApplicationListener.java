@@ -37,6 +37,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.util.Assert;
 
 /**
  * @author Mark Fisher
@@ -54,25 +55,29 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 		ConfigurableApplicationContext context = event.getApplicationContext();
 		DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context.getBeanFactory();
 		PropertySourcesBinder binder = new PropertySourcesBinder(context.getEnvironment());
-		Map<String, Object> extracted = binder.extractAll("spring.cloud.function.proxy");
-		for (Map.Entry<String, Object> entry : extracted.entrySet()) {
+		Map<String, Object> toCompile = binder.extractAll("spring.cloud.function.compile");
+		for (Map.Entry<String, Object> entry : toCompile.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
 			String type = (properties.get("type") != null) ? properties.get("type") : "function";
-			String bytecodeResource = properties.get("bytecode");
 			String lambda = properties.get("lambda");
-			if (!(null == bytecodeResource ^ null == lambda)) {
-				throw new IllegalArgumentException("Exactly one of 'bytecode' or 'lambda' is required for a Function proxy");
-			}
-			if (bytecodeResource != null) {
-				registerByteCodeLoadingProxy(name, type, context.getResource(bytecodeResource), beanFactory);
-			}
-			else {
-				String inputType = properties.get("inputType");
-				String outputType = properties.get("outputType");
-				registerLambdaCompilingProxy(name, type, inputType, outputType, lambda, beanFactory);
-			}
+			Assert.notNull(lambda,
+					String.format("The 'lambda' property is required for compiling Function: %s", name));
+			String inputType = properties.get("inputType");
+			String outputType = properties.get("outputType");
+			registerLambdaCompilingProxy(name, type, inputType, outputType, lambda, beanFactory);
+		}
+		Map<String, Object> toImport = binder.extractAll("spring.cloud.function.import");
+		for (Map.Entry<String, Object> entry : toImport.entrySet()) {
+			String name = entry.getKey();
+			@SuppressWarnings("unchecked")
+			Map<String, String> properties = (Map<String, String>) entry.getValue();
+			String type = (properties.get("type") != null) ? properties.get("type") : "function";
+			String location = properties.get("location");
+			Assert.notNull(location,
+					String.format("The 'location' property is required for importing Function: %s", name));
+			registerByteCodeLoadingProxy(name, type, context.getResource(location), beanFactory);
 		}
 	}
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PREFIX="--spring.cloud.function.proxy"
+PREFIX="--spring.cloud.function.import"
 DIR="file:///tmp/function-registry"
 
 tokenize() {
@@ -19,19 +19,19 @@ while getopts ":i:s:f:c:o:p:d:" opt; do
     s)
       FUNC=$OPTARG
       TYPE="$PREFIX.$FUNC.type=supplier"
-      RESOURCE="$PREFIX.$FUNC.bytecode=$DIR/suppliers/$FUNC.fun"
+      RESOURCE="$PREFIX.$FUNC.location=$DIR/suppliers/$FUNC.fun"
       ;;
     f)
       FUNC=$OPTARG
       for i in `tokenize $OPTARG`; do
-        RESOURCE="$RESOURCE $PREFIX.${i}.bytecode=$DIR/functions/${i}.fun"
+        RESOURCE="$RESOURCE $PREFIX.${i}.location=$DIR/functions/${i}.fun"
         TYPE="$TYPE $PREFIX.${i}.type=function"
       done
       ;;
     c)
       FUNC=$OPTARG
       TYPE="$PREFIX.$FUNC.type=consumer"
-      RESOURCE="$PREFIX.$FUNC.bytecode=$DIR/consumers/$FUNC.fun"
+      RESOURCE="$PREFIX.$FUNC.location=$DIR/consumers/$FUNC.fun"
       ;;
     o)
       OUT=--spring.cloud.stream.bindings.output.destination=$OPTARG

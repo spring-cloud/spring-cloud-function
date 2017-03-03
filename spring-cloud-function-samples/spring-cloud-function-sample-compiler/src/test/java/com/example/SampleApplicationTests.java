@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = "spring.cloud.function.proxy.test.lambda=f->f.map(s->s+\"!!!\")")
+		properties = "spring.cloud.function.compile.test.lambda=f->f.map(s->s+\"!!!\")")
 public class SampleApplicationTests {
 
 	@LocalServerPort
