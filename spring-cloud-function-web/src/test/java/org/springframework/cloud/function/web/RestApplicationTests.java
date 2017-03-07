@@ -17,6 +17,7 @@ package org.springframework.cloud.function.web;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,16 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void emptyJson() throws Exception {
+		assertThat(rest
+				.exchange(
+						RequestEntity.get(new URI("http://localhost:" + port + "/empty"))
+								.accept(MediaType.APPLICATION_JSON).build(),
+						String.class)
+				.getBody()).isEqualTo("[]");
+	}
+
+	@Test
 	public void sentences() throws Exception {
 		assertThat(rest.exchange(RequestEntity
 				.get(new URI("http://localhost:" + port + "/sentences")).build(),
@@ -104,7 +115,8 @@ public class RestApplicationTests {
 						.accept(MediaType.APPLICATION_JSON).build(),
 				String.class);
 		assertThat(result.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
-		assertThat(result.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+		assertThat(result.getHeaders().getContentType())
+				.isEqualTo(MediaType.APPLICATION_JSON);
 	}
 
 	@Test
@@ -114,8 +126,9 @@ public class RestApplicationTests {
 						.accept(EVENT_STREAM).build(),
 				String.class);
 		assertThat(result.getBody())
-						.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
-		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM)).isTrue();
+				.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
+		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM))
+				.isTrue();
 	}
 
 	@Test
@@ -179,6 +192,11 @@ public class RestApplicationTests {
 		@Bean
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
+		}
+
+		@Bean
+		public Supplier<Flux<String>> empty() {
+			return () -> Flux.fromIterable(Collections.emptyList());
 		}
 
 		@Bean

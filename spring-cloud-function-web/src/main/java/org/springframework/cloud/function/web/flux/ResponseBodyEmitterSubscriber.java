@@ -56,7 +56,8 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 
 	@Override
 	public void onSubscribe(Subscription subscription) {
-		if (!MediaType.ALL.equals(mediaType) && MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+		if (!MediaType.ALL.equals(mediaType)
+				&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 			try {
 				this.responseBodyEmitter.send("[");
 			}
@@ -70,18 +71,20 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 
 	@Override
 	public void onNext(T value) {
-		
+
 		Object object = value;
 
 		try {
-			if (!MediaType.ALL.equals(mediaType) && MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+			if (!MediaType.ALL.equals(mediaType)
+					&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 				if (!this.firstElementWritten) {
 					this.firstElementWritten = true;
 				}
 				else {
 					responseBodyEmitter.send(",");
 				}
-				if (value.getClass()==String.class && !((String)value).contains("\"")) {
+				if (value.getClass() == String.class
+						&& !((String) value).contains("\"")) {
 					object = "\"" + value + "\"";
 				}
 			}
@@ -106,14 +109,12 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 		if (!completed) {
 			completed = true;
 			try {
-				if (!MediaType.ALL.equals(mediaType) && MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+				if (!MediaType.ALL.equals(mediaType)
+						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 					if (!this.firstElementWritten) {
-
 						this.firstElementWritten = true;
 					}
-					else {
-						responseBodyEmitter.send("]");
-					}
+					responseBodyEmitter.send("]");
 				}
 			}
 			catch (IOException e) {
