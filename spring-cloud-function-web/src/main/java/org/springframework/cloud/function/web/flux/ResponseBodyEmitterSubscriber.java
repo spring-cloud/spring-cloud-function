@@ -56,15 +56,6 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 
 	@Override
 	public void onSubscribe(Subscription subscription) {
-		if (!MediaType.ALL.equals(mediaType)
-				&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
-			try {
-				this.responseBodyEmitter.send("[");
-			}
-			catch (IOException e) {
-				// Urgh?
-			}
-		}
 		this.subscription = subscription;
 		subscription.request(Long.MAX_VALUE);
 	}
@@ -78,6 +69,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 			if (!MediaType.ALL.equals(mediaType)
 					&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 				if (!this.firstElementWritten) {
+					responseBodyEmitter.send("[");
 					this.firstElementWritten = true;
 				}
 				else {
@@ -101,7 +93,21 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 
 	@Override
 	public void onError(Throwable e) {
-		responseBodyEmitter.completeWithError(e);
+		if (!completed) {
+			completed = true;
+			try {
+				if (!MediaType.ALL.equals(mediaType)
+						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+					if (this.firstElementWritten) {
+						responseBodyEmitter.send("]");
+					}
+				}
+				responseBodyEmitter.completeWithError(e);
+			}
+			catch (IOException ex) {
+				throw new RuntimeException(ex.getMessage(), ex);
+			}
+		}
 	}
 
 	@Override
@@ -112,7 +118,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 				if (!MediaType.ALL.equals(mediaType)
 						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 					if (!this.firstElementWritten) {
-						this.firstElementWritten = true;
+						responseBodyEmitter.send("[");
 					}
 					responseBodyEmitter.send("]");
 				}
