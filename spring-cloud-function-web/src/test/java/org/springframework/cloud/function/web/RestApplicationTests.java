@@ -91,6 +91,14 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void timeoutJson() throws Exception {
+		assertThat(rest
+				.exchange(RequestEntity.get(new URI("/timeout"))
+						.accept(MediaType.APPLICATION_JSON).build(), String.class)
+				.getBody()).isEqualTo("[\"foo\"]");
+	}
+
+	@Test
 	public void emptyJson() throws Exception {
 		assertThat(rest
 				.exchange(RequestEntity.get(new URI("/empty"))
@@ -211,6 +219,13 @@ public class RestApplicationTests {
 		@Bean
 		public Supplier<Flux<String>> empty() {
 			return () -> Flux.fromIterable(Collections.emptyList());
+		}
+
+		@Bean
+		public Supplier<Flux<String>> timeout() {
+			return () -> Flux.create(emitter -> {
+				emitter.next("foo");
+			});
 		}
 
 		@Bean

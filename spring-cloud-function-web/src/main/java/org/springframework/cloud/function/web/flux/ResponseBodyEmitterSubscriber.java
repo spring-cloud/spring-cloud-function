@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.flux;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -32,7 +33,7 @@ import reactor.core.publisher.Flux;
  *
  * @author Dave Syer
  */
-class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
+class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 
 	private final MediaType mediaType;
 
@@ -49,8 +50,8 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 
 		this.mediaType = mediaType;
 		this.responseBodyEmitter = responseBodyEmitter;
-		this.responseBodyEmitter.onTimeout(this);
-		this.responseBodyEmitter.onCompletion(this);
+		this.responseBodyEmitter.onTimeout(new Timeout());
+		this.responseBodyEmitter.onCompletion(new Complete());
 		observable.subscribe(this);
 	}
 
@@ -98,11 +99,19 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 			try {
 				if (!MediaType.ALL.equals(mediaType)
 						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
-					if (this.firstElementWritten) {
+					if (!this.firstElementWritten) {
+						responseBodyEmitter.send("[]");
+					}
+					else {
 						responseBodyEmitter.send("]");
 					}
 				}
-				responseBodyEmitter.completeWithError(e);
+				if (e instanceof TimeoutException) {
+					responseBodyEmitter.complete();
+				}
+				else {
+					responseBodyEmitter.completeWithError(e);
+				}
 			}
 			catch (IOException ex) {
 				throw new RuntimeException(ex.getMessage(), ex);
@@ -130,8 +139,20 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T>, Runnable {
 		}
 	}
 
-	@Override
-	public void run() {
-		this.subscription.cancel();
+	class Complete implements Runnable {
+
+		@Override
+		public void run() {
+			ResponseBodyEmitterSubscriber.this.subscription.cancel();
+		}
+	}
+
+	class Timeout implements Runnable {
+
+		@Override
+		public void run() {
+			onComplete();
+			ResponseBodyEmitterSubscriber.this.subscription.cancel();
+		}
 	}
 }

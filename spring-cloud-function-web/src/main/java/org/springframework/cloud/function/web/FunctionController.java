@@ -70,6 +70,7 @@ public class FunctionController {
 	}
 
 	@GetMapping(path = "/{name}")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Flux<String> supplier(@PathVariable String name) {
 		Supplier<Object> supplier = functions.lookupSupplier(name);
 		if (!FunctionUtils.isFluxSupplier(supplier)) {

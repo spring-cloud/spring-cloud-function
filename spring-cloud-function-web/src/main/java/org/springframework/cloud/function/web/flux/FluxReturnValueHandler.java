@@ -40,10 +40,21 @@ import reactor.core.publisher.Flux;
 public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHandler {
 
 	private ResponseBodyEmitterReturnValueHandler delegate;
+	private long timeout = 1000L;
 	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");
 
 	public FluxReturnValueHandler(List<HttpMessageConverter<?>> messageConverters) {
 		delegate = new ResponseBodyEmitterReturnValueHandler(messageConverters);
+	}
+
+	/**
+	 * Timeout for clients. If no items are seen on an HTTP response in this period then
+	 * the response is closed.
+	 * 
+	 * @param timeout the timeout to set
+	 */
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
 	}
 
 	@Override
@@ -79,12 +90,14 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		MediaType mediaType = webRequest.getHeader("Accept") == null ? null
 				: MediaType.parseMediaTypes(webRequest.getHeader("Accept")).iterator()
 						.next();
-		delegate.handleReturnValue(getEmitter(1000L, flux, mediaType),
-				returnType, mavContainer, webRequest);
+		delegate.handleReturnValue(getEmitter(timeout, flux, mediaType), returnType,
+				mavContainer, webRequest);
 	}
 
-	private ResponseBodyEmitter getEmitter(Long timeout, Flux<?> flux, MediaType mediaType) {
-		if (!MediaType.ALL.equals(mediaType) && EVENT_STREAM.isCompatibleWith(mediaType)) {
+	private ResponseBodyEmitter getEmitter(Long timeout, Flux<?> flux,
+			MediaType mediaType) {
+		if (!MediaType.ALL.equals(mediaType)
+				&& EVENT_STREAM.isCompatibleWith(mediaType)) {
 			return new FluxResponseSseEmitter<>(timeout, mediaType, flux);
 		}
 		return new FluxResponseBodyEmitter<>(timeout, mediaType, flux);
