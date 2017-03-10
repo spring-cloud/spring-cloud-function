@@ -79,4 +79,15 @@ public class FunctionController {
 		Flux<String> result = (Flux<String>) supplier.get();
 		return debug ? result.log() : result;
 	}
+
+	@GetMapping(path = "/{name}/{value}")
+	public Flux<String> value(@PathVariable String name, @PathVariable String value) {
+		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
+		if (function != null) {
+			@SuppressWarnings({ "unchecked" })
+			Flux<String> result = (Flux<String>) function.apply(Flux.just(value));
+			return debug ? result.log() : result;
+		}
+		throw new IllegalArgumentException("no such function: " + name);
+	}
 }

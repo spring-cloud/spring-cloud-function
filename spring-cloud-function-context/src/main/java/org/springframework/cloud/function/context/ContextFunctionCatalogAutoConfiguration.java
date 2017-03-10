@@ -27,6 +27,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -46,8 +48,6 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import reactor.core.publisher.Flux;
 
@@ -70,9 +70,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 	private Map<String, Consumer<?>> consumers = Collections.emptyMap();
 
 	@Bean
-	public FunctionCatalog functionCatalog(ContextFunctionPostProcessor processor, ObjectMapper mapper) {
-		return new InMemoryFunctionCatalog(
-				processor.wrapSuppliers(mapper, suppliers),
+	public FunctionCatalog functionCatalog(ContextFunctionPostProcessor processor,
+			ObjectMapper mapper) {
+		return new InMemoryFunctionCatalog(processor.wrapSuppliers(mapper, suppliers),
 				processor.wrapFunctions(mapper, functions),
 				processor.wrapConsumers(mapper, consumers));
 	}
@@ -99,7 +99,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				if (this.suppliers.contains(key)) {
 					@SuppressWarnings("unchecked")
 					Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) suppliers.get(key);
-					result.put(key, wrapSupplier(supplier, mapper));
+					result.put(key, wrapSupplier(supplier, mapper, key));
 				}
 				else {
 					result.put(key, suppliers.get(key));
@@ -119,7 +119,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 					result.put(key, wrapFunction(function, mapper, key));
 				}
 				else if (!isFluxFunction(key, functions.get(key))) {
-					result.put(key, new FluxFunction(functions.get(key)));
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					FluxFunction value = new FluxFunction(functions.get(key));
+					result.put(key, value);
 				}
 				else {
 					result.put(key, functions.get(key));
@@ -166,12 +168,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 				Object source = beanDefinition.getSource();
 				if (source instanceof StandardMethodMetadata) {
 					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-					Type returnType = metadata.getIntrospectedMethod().getGenericReturnType();
+					Type returnType = metadata.getIntrospectedMethod()
+							.getGenericReturnType();
 					if (returnType instanceof ParameterizedType) {
-						Type[] types = ((ParameterizedType) returnType).getActualTypeArguments();
+						Type[] types = ((ParameterizedType) returnType)
+								.getActualTypeArguments();
 						if (types != null && types.length == 2) {
-							return (types[0].getTypeName().startsWith(Flux.class.getName())
-									&& types[1].getTypeName().startsWith(Flux.class.getName()));
+							return (types[0].getTypeName()
+									.startsWith(Flux.class.getName())
+									&& types[1].getTypeName()
+											.startsWith(Flux.class.getName()));
 						}
 					}
 				}
@@ -213,9 +219,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private ProxySupplier wrapSupplier(Supplier<Flux<?>> supplier,
-				ObjectMapper mapper) {
+				ObjectMapper mapper, String name) {
 			ProxySupplier wrapped = new ProxySupplier(mapper);
 			wrapped.setDelegate(supplier);
+			wrapped.setOutputType(findType(name));
 			return wrapped;
 		}
 
@@ -223,7 +230,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 				ObjectMapper mapper, String name) {
 			ProxyFunction wrapped = new ProxyFunction(mapper);
 			wrapped.setDelegate(function);
-			wrapped.setType(findType(name));
+			wrapped.setInputType(findType(name));
+			wrapped.setOutputType(findOutputType(name));
 			return wrapped;
 		}
 
@@ -231,16 +239,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 				ObjectMapper mapper, String name) {
 			ProxyConsumer wrapped = new ProxyConsumer(mapper);
 			wrapped.setDelegate(consumer);
-			wrapped.setType(findType(name));
+			wrapped.setInputType(findType(name));
 			return wrapped;
 		}
 
-		private Class<?> findType(RootBeanDefinition definition) {
+		private Class<?> findType(RootBeanDefinition definition, int index) {
 			StandardMethodMetadata source = (StandardMethodMetadata) definition
 					.getSource();
 			ParameterizedType type = (ParameterizedType) (source.getIntrospectedMethod()
 					.getGenericReturnType());
-			type = (ParameterizedType) type.getActualTypeArguments()[0];
+			type = (ParameterizedType) type.getActualTypeArguments()[index];
 			Type param = type.getActualTypeArguments()[0];
 			if (param instanceof ParameterizedType) {
 				ParameterizedType concrete = (ParameterizedType) param;
@@ -251,7 +259,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findType(String name) {
-			return findType((RootBeanDefinition) registry.getBeanDefinition(name));
+			return findType((RootBeanDefinition) registry.getBeanDefinition(name), 0);
+		}
+
+		private Class<?> findOutputType(String name) {
+			return findType((RootBeanDefinition) registry.getBeanDefinition(name), 1);
 		}
 
 	}
@@ -263,7 +275,9 @@ abstract class ProxyWrapper<T> {
 
 	private T delegate;
 
-	private Class<?> type;
+	private Class<?> inputType;
+
+	private Class<?> outputType;
 
 	public ProxyWrapper(ObjectMapper mapper) {
 		this.mapper = mapper;
@@ -277,20 +291,28 @@ abstract class ProxyWrapper<T> {
 		return delegate;
 	}
 
-	public void setType(Class<?> type) {
-		this.type = type;
+	public void setInputType(Class<?> inputType) {
+		this.inputType = inputType;
 	}
 
-	public Class<?> getType() {
-		return this.type;
+	public void setOutputType(Class<?> outputType) {
+		this.outputType = outputType;
+	}
+
+	public Class<?> getInputType() {
+		return this.inputType;
+	}
+
+	public Class<?> getOutputType() {
+		return outputType;
 	}
 
 	public Object fromJson(String value) {
-		if (getType().equals(String.class)) {
+		if (getInputType().equals(String.class)) {
 			return value;
 		}
 		try {
-			return mapper.readValue(value, getType());
+			return mapper.readValue(value, getInputType());
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot convert from JSON: " + value);
@@ -298,6 +320,9 @@ abstract class ProxyWrapper<T> {
 	}
 
 	public String toJson(Object value) {
+		if (String.class.equals(getOutputType()) && value instanceof String) {
+			return (String) value;
+		}
 		try {
 			return mapper.writeValueAsString(value);
 		}
@@ -308,7 +333,7 @@ abstract class ProxyWrapper<T> {
 
 	@Override
 	public String toString() {
-		return "ProxyWrapper [delegate=" + delegate + ", type=" + type + "]";
+		return "ProxyWrapper [delegate=" + delegate + ", inputType=" + inputType + "]";
 	}
 
 }
