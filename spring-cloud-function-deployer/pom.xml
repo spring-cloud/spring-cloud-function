@@ -15,7 +15,6 @@
 	</parent>
 
 	<properties>
-<!-- 		<java.version>1.8</java.version> -->
 		<spring-cloud-deployer-thin.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-deployer-thin.version>
 	</properties>
 
@@ -78,10 +77,6 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
