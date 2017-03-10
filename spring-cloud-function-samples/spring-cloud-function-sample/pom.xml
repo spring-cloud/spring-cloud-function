@@ -22,7 +22,6 @@
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<wrapper.version>1.0.0.M2</wrapper.version>
 		<reactor.version>3.0.5.RELEASE</reactor.version>
-		<spring-boot.version>1.5.1.RELEASE</spring-boot.version>
 	</properties>
 
 	<dependencies>
@@ -53,7 +52,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>${spring-boot.version}</version>
 				<dependencies>
 					<dependency>
 						<groupId>org.springframework.boot.experimental</groupId>
