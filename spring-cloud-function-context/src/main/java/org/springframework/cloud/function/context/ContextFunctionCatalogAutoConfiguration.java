@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -48,6 +49,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 import reactor.core.publisher.Flux;
 
@@ -246,16 +248,31 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private Class<?> findType(RootBeanDefinition definition, int index) {
 			StandardMethodMetadata source = (StandardMethodMetadata) definition
 					.getSource();
-			ParameterizedType type = (ParameterizedType) (source.getIntrospectedMethod()
-					.getGenericReturnType());
-			type = (ParameterizedType) type.getActualTypeArguments()[index];
-			Type param = type.getActualTypeArguments()[0];
+			Type param;
+			if (source instanceof StandardMethodMetadata) {
+				ParameterizedType type;
+				type = (ParameterizedType) (source.getIntrospectedMethod()
+						.getGenericReturnType());
+				type = (ParameterizedType) type.getActualTypeArguments()[index];
+				param = type.getActualTypeArguments()[0];
+			}
+			else {
+				ResolvableType resolvable = (ResolvableType) getField(definition,
+						"targetType");
+				param = resolvable.getGeneric(index).getGeneric(0).getType();
+			}
 			if (param instanceof ParameterizedType) {
 				ParameterizedType concrete = (ParameterizedType) param;
 				param = concrete.getRawType();
 			}
 			return ClassUtils.resolveClassName(param.getTypeName(),
 					registry.getClass().getClassLoader());
+		}
+
+		private Object getField(Object target, String name) {
+			Field field = ReflectionUtils.findField(target.getClass(), name);
+			ReflectionUtils.makeAccessible(field);
+			return ReflectionUtils.getField(field, target);
 		}
 
 		private Class<?> findType(String name) {
