@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.function.web.flux;
 
+import java.time.Duration;
 import java.util.List;
+
+import org.reactivestreams.Publisher;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -30,6 +33,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitterReturnValueHandler;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * A specialized {@link AsyncHandlerMethodReturnValueHandler} that handles {@link Flux}
@@ -64,7 +68,7 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 
 	@Override
 	public boolean supportsReturnType(MethodParameter returnType) {
-		return Flux.class.isAssignableFrom(returnType.getParameterType())
+		return Publisher.class.isAssignableFrom(returnType.getParameterType())
 				|| isResponseEntity(returnType);
 	}
 
@@ -85,7 +89,7 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		if (returnValue instanceof ResponseEntity) {
 			adaptFrom = ((ResponseEntity<?>) returnValue).getBody();
 		}
-		Flux<?> flux = (Flux<?>) adaptFrom;
+		Publisher<?> flux = (Publisher<?>) adaptFrom;
 
 		MediaType mediaType = webRequest.getHeader("Accept") == null ? null
 				: MediaType.parseMediaTypes(webRequest.getHeader("Accept")).iterator()
@@ -94,13 +98,15 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 				mavContainer, webRequest);
 	}
 
-	private ResponseBodyEmitter getEmitter(Long timeout, Flux<?> flux,
+	private ResponseBodyEmitter getEmitter(Long timeout, Publisher<?> flux,
 			MediaType mediaType) {
+		Publisher<?> exported = flux instanceof Mono ? Mono.from(flux)
+				: Flux.from(flux).timeout(Duration.ofMillis(timeout), Flux.empty());
 		if (!MediaType.ALL.equals(mediaType)
 				&& EVENT_STREAM.isCompatibleWith(mediaType)) {
-			return new FluxResponseSseEmitter<>(timeout, mediaType, flux);
+			return new FluxResponseSseEmitter<>(mediaType, exported);
 		}
-		return new FluxResponseBodyEmitter<>(timeout, mediaType, flux);
+		return new FluxResponseBodyEmitter<>(mediaType, exported);
 	}
 
 }

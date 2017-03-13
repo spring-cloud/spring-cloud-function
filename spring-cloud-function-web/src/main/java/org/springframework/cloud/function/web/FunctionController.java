@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -83,11 +84,12 @@ public class FunctionController {
 	}
 
 	@GetMapping(path = "/{name}/{value}")
-	public Flux<String> value(@PathVariable String name, @PathVariable String value) {
+	public Mono<String> value(@PathVariable String name, @PathVariable String value) {
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings({ "unchecked" })
-			Flux<String> result = (Flux<String>) function.apply(Flux.just(value));
+			Mono<String> result = Mono
+					.from((Flux<String>) function.apply(Flux.just(value)));
 			return debug ? result.log() : result;
 		}
 		throw new IllegalArgumentException("no such function: " + name);

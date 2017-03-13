@@ -19,6 +19,7 @@ package org.springframework.cloud.function.web.flux;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -26,6 +27,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Subscriber that emits any value produced by the {@link Flux} into the delegated
@@ -45,13 +47,16 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 
 	private boolean firstElementWritten;
 
-	public ResponseBodyEmitterSubscriber(MediaType mediaType, Flux<T> observable,
+	private boolean single;
+
+	public ResponseBodyEmitterSubscriber(MediaType mediaType, Publisher<T> observable,
 			ResponseBodyEmitter responseBodyEmitter) {
 
 		this.mediaType = mediaType;
 		this.responseBodyEmitter = responseBodyEmitter;
 		this.responseBodyEmitter.onTimeout(new Timeout());
 		this.responseBodyEmitter.onCompletion(new Complete());
+		this.single = observable instanceof Mono;
 		observable.subscribe(this);
 	}
 
@@ -70,8 +75,10 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 			if (!MediaType.ALL.equals(mediaType)
 					&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
 				if (!this.firstElementWritten) {
-					responseBodyEmitter.send("[");
-					this.firstElementWritten = true;
+					if (!single) {
+						responseBodyEmitter.send("[");
+						this.firstElementWritten = true;
+					}
 				}
 				else {
 					responseBodyEmitter.send(",");
@@ -99,11 +106,13 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 			try {
 				if (!MediaType.ALL.equals(mediaType)
 						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
-					if (!this.firstElementWritten) {
-						responseBodyEmitter.send("[]");
-					}
-					else {
-						responseBodyEmitter.send("]");
+					if (!single) {
+						if (!this.firstElementWritten) {
+							responseBodyEmitter.send("[]");
+						}
+						else {
+							responseBodyEmitter.send("]");
+						}
 					}
 				}
 				if (e instanceof TimeoutException) {
@@ -126,10 +135,12 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 			try {
 				if (!MediaType.ALL.equals(mediaType)
 						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
-					if (!this.firstElementWritten) {
-						responseBodyEmitter.send("[");
+					if (!single) {
+						if (!this.firstElementWritten) {
+							responseBodyEmitter.send("[");
+						}
+						responseBodyEmitter.send("]");
 					}
-					responseBodyEmitter.send("]");
 				}
 			}
 			catch (IOException e) {

@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.function.web.flux;
 
-import java.time.Duration;
+import org.reactivestreams.Publisher;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,16 +34,14 @@ class FluxResponseBodyEmitter<T> extends ResponseBodyEmitter {
 
 	private final MediaType mediaType;
 
-	public FluxResponseBodyEmitter(Flux<T> observable) {
-		this(1000L, null, observable);
+	public FluxResponseBodyEmitter(Publisher<T> observable) {
+		this(null, observable);
 	}
 
-	public FluxResponseBodyEmitter(Long timeout, MediaType mediaType,
-			Flux<T> observable) {
+	public FluxResponseBodyEmitter(MediaType mediaType, Publisher<T> observable) {
 		super();
 		this.mediaType = mediaType;
-		new ResponseBodyEmitterSubscriber<>(mediaType,
-				observable.timeout(Duration.ofMillis(timeout), Flux.empty()), this);
+		new ResponseBodyEmitterSubscriber<>(mediaType, observable, this);
 	}
 
 	@Override

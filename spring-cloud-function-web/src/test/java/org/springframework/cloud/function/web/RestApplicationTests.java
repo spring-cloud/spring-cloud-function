@@ -161,6 +161,14 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void convertGetJson() throws Exception {
+		assertThat(rest
+				.exchange(RequestEntity.get(new URI("/entity/321"))
+						.accept(MediaType.APPLICATION_JSON).build(), String.class)
+				.getBody()).isEqualTo("{\"value\":321}");
+	}
+
+	@Test
 	public void uppercaseJsonArray() throws Exception {
 		assertThat(rest.exchange(
 				RequestEntity.post(new URI("/maps"))
@@ -206,6 +214,12 @@ public class RestApplicationTests {
 		@Bean
 		public Function<Flux<Integer>, Flux<String>> wrap() {
 			return flux -> flux.log().map(value -> ".." + value + "..");
+		}
+
+		@Bean
+		public Function<Flux<Integer>, Flux<Map<String, Object>>> entity() {
+			return flux -> flux.log()
+					.map(value -> Collections.singletonMap("value", value));
 		}
 
 		@Bean
