@@ -35,7 +35,7 @@ class FluxResponseBodyEmitter<T> extends ResponseBodyEmitter {
 	private final MediaType mediaType;
 
 	public FluxResponseBodyEmitter(Flux<T> observable) {
-		this(null, null, observable);
+		this(1000L, null, observable);
 	}
 
 	public FluxResponseBodyEmitter(Long timeout, MediaType mediaType,
