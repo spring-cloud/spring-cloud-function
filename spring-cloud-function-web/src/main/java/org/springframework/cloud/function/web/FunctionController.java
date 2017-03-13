@@ -76,6 +76,9 @@ public class FunctionController {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Flux<String> supplier(@PathVariable String name) {
 		Supplier<Object> supplier = functions.lookupSupplier(name);
+		if (supplier == null) {
+			throw new IllegalArgumentException("no such supplier: " + name);
+		}
 		if (!FunctionUtils.isFluxSupplier(supplier)) {
 			supplier = new FluxSupplier(supplier);
 		}
