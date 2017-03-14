@@ -30,7 +30,6 @@ import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.task.configuration.EnableTask;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 

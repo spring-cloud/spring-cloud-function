@@ -32,7 +32,8 @@ import reactor.core.publisher.Flux;
 /**
  * @author Mark Fisher
  */
-public class StreamListeningFunctionInvoker extends AbstractFunctionInvoker<Flux<?>, Flux<?>> {
+public class StreamListeningFunctionInvoker
+		extends AbstractFunctionInvoker<Flux<?>, Flux<?>> {
 
 	public StreamListeningFunctionInvoker(Function<?, ?> function) {
 		super(wrapIfNecessary(function));
@@ -44,6 +45,7 @@ public class StreamListeningFunctionInvoker extends AbstractFunctionInvoker<Flux
 		return this.doInvoke(input);
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private static Function<Flux<?>, Flux<?>> wrapIfNecessary(Function function) {
 		Assert.notNull(function, "Function must not be null");
 		if (!FunctionUtils.isFluxFunction(function)) {

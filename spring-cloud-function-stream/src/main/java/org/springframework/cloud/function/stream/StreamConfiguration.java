@@ -33,8 +33,6 @@ import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
 import org.springframework.cloud.function.registry.FunctionCatalog;
-import org.springframework.cloud.function.support.FluxFunction;
-import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -72,7 +70,7 @@ public class StreamConfiguration {
 			long interval = properties.getInterval();
 			Supplier<Flux<Object>> supplier = registry.lookupSupplier(name);
 			return new SupplierInvokingMessageProducer<Object>(supplier, interval);
-		}		
+		}
 	}
 
 	@ConditionalOnFunction
@@ -89,7 +87,7 @@ public class StreamConfiguration {
 			Function<Object, Object> function = registry.lookupFunction(name);
 			Assert.notNull(function, "no such function: " + name);
 			return new StreamListeningFunctionInvoker(function);
-		}		
+		}
 	}
 
 	@ConditionalOnConsumer
@@ -105,7 +103,7 @@ public class StreamConfiguration {
 			String name = properties.getEndpoint();
 			Consumer<Object> consumer = registry.lookupConsumer(name);
 			return new StreamListeningConsumerInvoker<Object>(consumer);
-		}		
+		}
 	}
 
 	@Conditional(SupplierCondition.class)
@@ -129,7 +127,8 @@ public class StreamConfiguration {
 	private @interface ConditionalOnConsumer {
 	}
 
-	private static abstract class AbstractFunctionCondition extends SpringBootCondition implements ConfigurationCondition {
+	private static abstract class AbstractFunctionCondition extends SpringBootCondition
+			implements ConfigurationCondition {
 
 		private final Class<?> type;
 
@@ -138,8 +137,10 @@ public class StreamConfiguration {
 		}
 
 		@Override
-		public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
-			String functionName = context.getEnvironment().getProperty("spring.cloud.function.stream.endpoint");
+		public ConditionOutcome getMatchOutcome(ConditionContext context,
+				AnnotatedTypeMetadata metadata) {
+			String functionName = context.getEnvironment()
+					.getProperty("spring.cloud.function.stream.endpoint");
 			if (!StringUtils.hasText(functionName)) {
 				return ConditionOutcome.noMatch("no endpoint function name available");
 			}
@@ -150,15 +151,17 @@ public class StreamConfiguration {
 			}
 			Class<?> beanType = context.getBeanFactory().getType(functionName);
 			if (type.isAssignableFrom(beanType)) {
-				return ConditionOutcome.match(String.format("bean '%s' is a %s", functionName, type));
+				return ConditionOutcome
+						.match(String.format("bean '%s' is a %s", functionName, type));
 			}
-			return ConditionOutcome.noMatch(String.format("bean '%s' is not a %s", functionName, type));
+			return ConditionOutcome
+					.noMatch(String.format("bean '%s' is not a %s", functionName, type));
 		}
 
 		@Override
 		public ConfigurationPhase getConfigurationPhase() {
 			return ConfigurationPhase.REGISTER_BEAN;
-		}		
+		}
 	}
 
 	private static class SupplierCondition extends AbstractFunctionCondition {

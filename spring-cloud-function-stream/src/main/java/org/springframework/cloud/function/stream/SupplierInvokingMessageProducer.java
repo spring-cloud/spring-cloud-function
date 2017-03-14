@@ -42,12 +42,15 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 					? new FluxSupplier<>(supplier, Duration.ofMillis(interval))
 					: new FluxSupplier<>(supplier);
 		}
-		this.supplier = (Supplier<Flux<T>>) supplier;
+		@SuppressWarnings("unchecked")
+		Supplier<Flux<T>> unchecked = (Supplier<Flux<T>>) supplier;
+		this.supplier = unchecked;
 		this.setOutputChannelName(Source.OUTPUT);
 	}
 
 	@Override
 	protected void doStart() {
-		this.supplier.get().subscribe(m -> this.sendMessage(MessageBuilder.withPayload(m).build()));
+		this.supplier.get()
+				.subscribe(m -> this.sendMessage(MessageBuilder.withPayload(m).build()));
 	}
 }

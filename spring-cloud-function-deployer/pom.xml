@@ -20,11 +20,6 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-aether-provider</artifactId>
-			<version>3.3.9</version>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-core</artifactId>
 			<version>${project.version}</version>
@@ -58,6 +53,11 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.apache.maven</groupId>
+				<artifactId>maven-aether-provider</artifactId>
+				<version>3.3.9</version>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-function-parent</artifactId>

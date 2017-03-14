@@ -53,21 +53,27 @@ public class LocalFunctionGateway implements FunctionGateway {
 	}
 
 	@Override
-	public <T, R> void schedule(String functionName, Trigger trigger, Supplier<T> supplier, Consumer<R> consumer) {
+	public <T, R> void schedule(String functionName, Trigger trigger,
+			Supplier<T> supplier, Consumer<R> consumer) {
 		Function<T, R> function = this.catalog.lookupFunction(functionName);
-		this.scheduler.schedule(new FunctionInvokingRunnable(supplier, function, consumer), trigger);
+		this.scheduler.schedule(
+				new FunctionInvokingRunnable<T, R>(supplier, function, consumer),
+				trigger);
 	}
 
 	@Override
-	public <T, R> void subscribe(Publisher<T> publisher, String functionName, final Consumer<R> consumer) {
+	public <T, R> void subscribe(Publisher<T> publisher, String functionName,
+			final Consumer<R> consumer) {
 		final Function<T, R> function = this.catalog.lookupFunction(functionName);
 		publisher.subscribe(new Subscriber<T>() {
 
 			@Override
-			public void onComplete() {}
+			public void onComplete() {
+			}
 
 			@Override
-			public void onError(Throwable error) {}
+			public void onError(Throwable error) {
+			}
 
 			@Override
 			public void onNext(T next) {
