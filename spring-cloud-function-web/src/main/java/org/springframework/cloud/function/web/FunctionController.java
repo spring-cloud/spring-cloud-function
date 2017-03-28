@@ -64,9 +64,9 @@ public class FunctionController {
 			Flux<String> result = (Flux<String>) function.apply(body);
 			return debug ? result.log() : result;
 		}
-		Consumer<String> consumer = functions.lookupConsumer(name);
+		Consumer<Flux<?>> consumer = functions.lookupConsumer(name);
 		if (consumer != null) {
-			body.subscribe(consumer::accept);
+			consumer.accept(body);
 			return null;
 		}
 		throw new IllegalArgumentException("no such function: " + name);
