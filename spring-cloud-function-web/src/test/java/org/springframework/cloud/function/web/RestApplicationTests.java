@@ -61,6 +61,8 @@ public class RestApplicationTests {
 	private int port;
 	@Autowired
 	private TestRestTemplate rest;
+	@Autowired
+	private TestConfiguration test;
 
 	@Test
 	public void wordsSSE() throws Exception {
@@ -98,8 +100,9 @@ public class RestApplicationTests {
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
 				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isNull();
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(test.list).hasSize(2);
+		assertThat(result.getBody()).isEqualTo("onetwo");
 	}
 
 	@Test
