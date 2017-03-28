@@ -166,6 +166,12 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void transform() {
+		assertThat(rest.postForObject("/transform", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
 	public void uppercaseGet() {
 		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
@@ -222,7 +228,7 @@ public class RestApplicationTests {
 
 		private List<String> list = new ArrayList<>();
 
-		@Bean
+		@Bean({ "uppercase", "transform" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
