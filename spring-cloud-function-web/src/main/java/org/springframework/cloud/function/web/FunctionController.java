@@ -26,6 +26,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.function.support.FluxSupplier;
 import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,18 +58,19 @@ public class FunctionController {
 	}
 
 	@PostMapping(path = "/{name}")
-	public Flux<String> function(@PathVariable String name,
+	public ResponseEntity<Flux<String>> function(@PathVariable String name,
 			@RequestBody Flux<String> body) {
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings("unchecked")
 			Flux<String> result = (Flux<String>) function.apply(body);
-			return debug ? result.log() : result;
+			return ResponseEntity.ok().body(debug ? result.log() : result);
 		}
 		Consumer<Flux<?>> consumer = functions.lookupConsumer(name);
 		if (consumer != null) {
+			body = body.cache(); // send a copy back to the caller
 			consumer.accept(body);
-			return null;
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(body);
 		}
 		throw new IllegalArgumentException("no such function: " + name);
 	}

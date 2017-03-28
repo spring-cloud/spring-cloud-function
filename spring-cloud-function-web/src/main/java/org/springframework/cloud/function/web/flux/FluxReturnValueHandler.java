@@ -19,6 +19,8 @@ package org.springframework.cloud.function.web.flux;
 import java.time.Duration;
 import java.util.List;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.reactivestreams.Publisher;
 
 import org.springframework.core.MethodParameter;
@@ -87,7 +89,10 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 			throws Exception {
 		Object adaptFrom = returnValue;
 		if (returnValue instanceof ResponseEntity) {
-			adaptFrom = ((ResponseEntity<?>) returnValue).getBody();
+			ResponseEntity<?> value = (ResponseEntity<?>) returnValue;
+			adaptFrom = value.getBody();
+			webRequest.getNativeResponse(HttpServletResponse.class)
+					.setStatus(value.getStatusCodeValue());
 		}
 		Publisher<?> flux = (Publisher<?>) adaptFrom;
 
