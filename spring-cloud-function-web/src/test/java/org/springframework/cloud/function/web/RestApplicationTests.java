@@ -16,11 +16,13 @@
 package org.springframework.cloud.function.web;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -35,6 +37,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -85,9 +88,18 @@ public class RestApplicationTests {
 
 	@Test
 	public void words() throws Exception {
-		assertThat(
-				rest.exchange(RequestEntity.get(new URI("/words")).build(), String.class)
-						.getBody()).isEqualTo("foobar");
+		ResponseEntity<String> result = rest
+				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
+	public void updates() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isNull();
 	}
 
 	@Test
@@ -205,6 +217,8 @@ public class RestApplicationTests {
 	@SpringBootApplication
 	public static class TestConfiguration {
 
+		private List<String> list = new ArrayList<>();
+
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
@@ -233,6 +247,11 @@ public class RestApplicationTests {
 		@Bean
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
+		}
+
+		@Bean
+		public Consumer<Flux<String>> updates() {
+			return flux -> flux.subscribe(value -> list.add(value));
 		}
 
 		@Bean
