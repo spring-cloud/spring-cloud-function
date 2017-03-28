@@ -97,6 +97,14 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void moreWords() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.get(new URI("/more/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
 				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
@@ -172,6 +180,18 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void postLongPath() {
+		assertThat(rest.postForObject("/get/more", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void longPath() {
+		assertThat(rest.getForObject("/get/more/stuff", String.class))
+				.isEqualTo("[STUFF]");
+	}
+
+	@Test
 	public void uppercaseGet() {
 		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
@@ -228,7 +248,7 @@ public class RestApplicationTests {
 
 		private List<String> list = new ArrayList<>();
 
-		@Bean({ "uppercase", "transform" })
+		@Bean({ "uppercase", "transform", "get/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
@@ -253,7 +273,7 @@ public class RestApplicationTests {
 			});
 		}
 
-		@Bean
+		@Bean({ "words", "more/words" })
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
 		}

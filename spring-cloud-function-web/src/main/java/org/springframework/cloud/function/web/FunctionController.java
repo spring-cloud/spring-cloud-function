@@ -28,9 +28,11 @@ import org.springframework.cloud.function.support.FluxSupplier;
 import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,9 +59,12 @@ public class FunctionController {
 		this.functions = catalog;
 	}
 
-	@PostMapping(path = "/{name}")
+	@PostMapping(path = { "/{name}", "/{name}/**" })
 	public ResponseEntity<Flux<String>> function(@PathVariable String name,
+			@RequestAttribute(name = "org.springframework.web.servlet.HandlerMapping.pathWithinHandlerMapping", required = false) String path,
 			@RequestBody Flux<String> body) {
+		String suffix = path.replace("/" + name, "");
+		name = name + suffix;
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings("unchecked")
@@ -75,9 +80,31 @@ public class FunctionController {
 		throw new IllegalArgumentException("no such function: " + name);
 	}
 
-	@GetMapping(path = "/{name}")
+	@GetMapping(path = { "/{name}", "/{name}/**" })
+	public Object supplier(@PathVariable String name,
+			@RequestAttribute(name = "org.springframework.web.servlet.HandlerMapping.pathWithinHandlerMapping", required = false) String path) {
+		String suffix = path.replace("/" + name, "");
+		if (StringUtils.hasText(suffix)) {
+			while (suffix.startsWith("/")) {
+				suffix = suffix.substring(1);
+				Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
+				if (function != null) {
+					return value(name, suffix);
+				}
+				int index = suffix.indexOf("/");
+				name = name + (index > 0 ? "/" + suffix.substring(0, index) : "");
+				suffix = index > 0 ? suffix.substring(index) : suffix;
+			}
+			suffix = "/" + suffix;
+		}
+		else {
+			suffix = "";
+		}
+		return supplier(name + suffix);
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Flux<String> supplier(@PathVariable String name) {
+	private Flux<String> supplier(@PathVariable String name) {
 		Supplier<Object> supplier = functions.lookupSupplier(name);
 		if (supplier == null) {
 			throw new IllegalArgumentException("no such supplier: " + name);
@@ -89,8 +116,7 @@ public class FunctionController {
 		return debug ? result.log() : result;
 	}
 
-	@GetMapping(path = "/{name}/{value}")
-	public Mono<String> value(@PathVariable String name, @PathVariable String value) {
+	private Mono<String> value(@PathVariable String name, @PathVariable String value) {
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings({ "unchecked" })
