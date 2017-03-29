@@ -24,8 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.registry.FunctionCatalog;
-import org.springframework.cloud.function.support.FluxSupplier;
-import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -103,14 +101,11 @@ public class FunctionController {
 		return supplier(name + suffix);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked" })
 	private Flux<String> supplier(@PathVariable String name) {
 		Supplier<Object> supplier = functions.lookupSupplier(name);
 		if (supplier == null) {
 			throw new IllegalArgumentException("no such supplier: " + name);
-		}
-		if (!FunctionUtils.isFluxSupplier(supplier)) {
-			supplier = new FluxSupplier(supplier);
 		}
 		Flux<String> result = (Flux<String>) supplier.get();
 		return debug ? result.log() : result;

@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,6 +64,11 @@ public class RestApplicationTests {
 	private TestRestTemplate rest;
 	@Autowired
 	private TestConfiguration test;
+
+	@Before
+	public void init() {
+		test.list.clear();
+	}
 
 	@Test
 	public void wordsSSE() throws Exception {
@@ -105,9 +111,27 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void bareWords() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.get(new URI("/bare/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
 				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(test.list).hasSize(2);
+		assertThat(result.getBody()).isEqualTo("onetwo");
+	}
+
+	@Test
+	public void bareUpdates() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.post(new URI("/bare/updates")).body("one\ntwo"),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("onetwo");
@@ -170,6 +194,12 @@ public class RestApplicationTests {
 	@Test
 	public void uppercase() {
 		assertThat(rest.postForObject("/uppercase", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void bareUppercase() {
+		assertThat(rest.postForObject("/bare/uppercase", "foo\nbar", String.class))
 				.isEqualTo("[FOO][BAR]");
 	}
 
@@ -254,6 +284,11 @@ public class RestApplicationTests {
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
 		}
 
+		@Bean("bare/uppercase")
+		public Function<String, String> bareUppercase() {
+			return value -> "[" + value.trim().toUpperCase() + "]";
+		}
+
 		@Bean
 		public Function<Flux<Integer>, Flux<String>> wrap() {
 			return flux -> flux.log().map(value -> ".." + value + "..");
@@ -278,9 +313,19 @@ public class RestApplicationTests {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
 		}
 
+		@Bean("bare/words")
+		public Supplier<List<String>> bareWords() {
+			return () -> Arrays.asList("foo", "bar");
+		}
+
 		@Bean
 		public Consumer<Flux<String>> updates() {
 			return flux -> flux.subscribe(value -> list.add(value));
+		}
+
+		@Bean("bare/updates")
+		public Consumer<String> bareUpdates() {
+			return value -> list.add(value);
 		}
 
 		@Bean
