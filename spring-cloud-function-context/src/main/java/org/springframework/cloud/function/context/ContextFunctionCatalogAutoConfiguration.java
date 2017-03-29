@@ -41,7 +41,9 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.support.FluxConsumer;
 import org.springframework.cloud.function.support.FluxFunction;
+import org.springframework.cloud.function.support.FluxSupplier;
 import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -113,6 +115,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 				Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) target;
 				return wrapSupplier(supplier, mapper, key);
 			}
+			else if (!isFluxSupplier(key, target)) {
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				FluxSupplier value = new FluxSupplier(target);
+				return value;
+			}
 			else {
 				return target;
 			}
@@ -167,6 +174,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 				Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) target;
 				return wrapConsumer(consumer, mapper, key);
 			}
+			else if (!isFluxConsumer(key, target)) {
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				FluxConsumer value = new FluxConsumer(target);
+				return value;
+			}
 			else {
 				return target;
 			}
@@ -209,6 +221,48 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			return FunctionUtils.isFluxFunction(function);
+		}
+
+		private boolean isFluxConsumer(String name, Consumer<?> function) {
+			if (this.registry.containsBeanDefinition(name)) {
+				BeanDefinition beanDefinition = this.registry.getBeanDefinition(name);
+				Object source = beanDefinition.getSource();
+				if (source instanceof StandardMethodMetadata) {
+					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
+					Type returnType = metadata.getIntrospectedMethod()
+							.getGenericReturnType();
+					if (returnType instanceof ParameterizedType) {
+						Type[] types = ((ParameterizedType) returnType)
+								.getActualTypeArguments();
+						if (types != null && types.length == 1) {
+							return (types[0].getTypeName()
+									.startsWith(Flux.class.getName()));
+						}
+					}
+				}
+			}
+			return FunctionUtils.isFluxConsumer(function);
+		}
+
+		private boolean isFluxSupplier(String name, Supplier<?> function) {
+			if (this.registry.containsBeanDefinition(name)) {
+				BeanDefinition beanDefinition = this.registry.getBeanDefinition(name);
+				Object source = beanDefinition.getSource();
+				if (source instanceof StandardMethodMetadata) {
+					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
+					Type returnType = metadata.getIntrospectedMethod()
+							.getGenericReturnType();
+					if (returnType instanceof ParameterizedType) {
+						Type[] types = ((ParameterizedType) returnType)
+								.getActualTypeArguments();
+						if (types != null && types.length == 1) {
+							return (types[0].getTypeName()
+									.startsWith(Flux.class.getName()));
+						}
+					}
+				}
+			}
+			return FunctionUtils.isFluxSupplier(function);
 		}
 
 		private boolean isGenericSupplier(ConfigurableListableBeanFactory factory,

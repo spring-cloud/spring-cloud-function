@@ -116,9 +116,27 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void bareWords() throws Exception {
+		ResponseEntity<String> result = rest
+				.exchange(RequestEntity.get(new URI("/bareWords")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
 				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(test.list).hasSize(2);
+		assertThat(result.getBody()).isEqualTo("onetwo");
+	}
+
+	@Test
+	public void bareUpdates() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.post(new URI("/bareUpdates")).body("one\ntwo"),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("onetwo");
@@ -181,6 +199,12 @@ public class RestApplicationTests {
 	@Test
 	public void uppercase() {
 		assertThat(rest.postForObject("/uppercase", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void bareUppercase() {
+		assertThat(rest.postForObject("/bareUppercase", "foo\nbar", String.class))
 				.isEqualTo("[FOO][BAR]");
 	}
 
@@ -271,6 +295,11 @@ public class RestApplicationTests {
 		}
 
 		@Bean
+		public Function<String, String> bareUppercase() {
+			return value -> "[" + value.trim().toUpperCase() + "]";
+		}
+
+		@Bean
 		public Function<Flux<Integer>, Flux<String>> wrap() {
 			return flux -> flux.log().map(value -> ".." + value + "..");
 		}
@@ -295,8 +324,18 @@ public class RestApplicationTests {
 		}
 
 		@Bean
+		public Supplier<List<String>> bareWords() {
+			return () -> Arrays.asList("foo", "bar");
+		}
+
+		@Bean
 		public Consumer<Flux<String>> updates() {
 			return flux -> flux.subscribe(value -> list.add(value));
+		}
+
+		@Bean
+		public Consumer<String> bareUpdates() {
+			return value -> list.add(value);
 		}
 
 		@Bean

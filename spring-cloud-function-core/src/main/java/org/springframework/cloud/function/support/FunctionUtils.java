@@ -22,6 +22,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -37,7 +38,20 @@ public abstract class FunctionUtils {
 
 	private static final String FLUX_CLASS_NAME = Flux.class.getName();
 
-	private FunctionUtils() {}
+	private FunctionUtils() {
+	}
+
+	@SuppressWarnings("rawtypes")
+	public static boolean isFluxConsumer(Consumer<?> consumer) {
+		if (consumer instanceof ConsumerProxy) {
+			return ((ConsumerProxy) consumer).isFluxConsumer();
+		}
+		String[] types = getParameterizedTypeNames(consumer, Consumer.class);
+		if (ObjectUtils.isEmpty(types)) {
+			return false;
+		}
+		return (types[0].startsWith(FLUX_CLASS_NAME));
+	}
 
 	@SuppressWarnings("rawtypes")
 	public static boolean isFluxSupplier(Supplier<?> supplier) {
@@ -60,14 +74,17 @@ public abstract class FunctionUtils {
 		if (ObjectUtils.isEmpty(types) || types.length != 2) {
 			return false;
 		}
-		return (types[0].startsWith(FLUX_CLASS_NAME) && types[1].startsWith(FLUX_CLASS_NAME));
+		return (types[0].startsWith(FLUX_CLASS_NAME)
+				&& types[1].startsWith(FLUX_CLASS_NAME));
 	}
 
-	private static String[] getParameterizedTypeNames(Object source, Class<?> interfaceClass) {
+	private static String[] getParameterizedTypeNames(Object source,
+			Class<?> interfaceClass) {
 		Type[] genericInterfaces = source.getClass().getGenericInterfaces();
 		for (Type genericInterface : genericInterfaces) {
-			if ((genericInterface instanceof ParameterizedType)
-					&& interfaceClass.getTypeName().equals(((ParameterizedType) genericInterface).getRawType().getTypeName())) {
+			if ((genericInterface instanceof ParameterizedType) && interfaceClass
+					.getTypeName().equals(((ParameterizedType) genericInterface)
+							.getRawType().getTypeName())) {
 				ParameterizedType type = (ParameterizedType) genericInterface;
 				Type[] args = type.getActualTypeArguments();
 				if (args != null) {
@@ -88,8 +105,10 @@ public abstract class FunctionUtils {
 			return null;
 		}
 		ReflectionUtils.makeAccessible(method);
-		SerializedLambda serializedLambda = (SerializedLambda) ReflectionUtils.invokeMethod(method, source);
-		String signature = serializedLambda.getImplMethodSignature().replaceAll("[()]", "");
+		SerializedLambda serializedLambda = (SerializedLambda) ReflectionUtils
+				.invokeMethod(method, source);
+		String signature = serializedLambda.getImplMethodSignature().replaceAll("[()]",
+				"");
 		List<String> typeNames = new ArrayList<>();
 		for (String types : signature.split(";")) {
 			typeNames.add(types.substring(1).replace('/', '.'));
