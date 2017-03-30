@@ -31,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,9 +58,10 @@ public class FunctionController {
 		this.functions = catalog;
 	}
 
-	@PostMapping(path = "/{name}")
-	public ResponseEntity<Flux<String>> function(@PathVariable String name,
+	@PostMapping(path = "/**")
+	public ResponseEntity<Flux<String>> post(@RequestAttribute("org.springframework.web.servlet.HandlerMapping.pathWithinHandlerMapping") String path,
 			@RequestBody Flux<String> body) {
+		String name = path.startsWith("/") ? path.substring(1) : path;
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings("unchecked")
@@ -75,9 +77,25 @@ public class FunctionController {
 		throw new IllegalArgumentException("no such function: " + name);
 	}
 
-	@GetMapping(path = "/{name}")
+	@GetMapping(path = "/**")
+	public Object get(@RequestAttribute("org.springframework.web.servlet.HandlerMapping.pathWithinHandlerMapping") String path){
+		path = path.startsWith("/") ? path.substring(1) : path;
+		StringBuilder builder = new StringBuilder();
+		String name = path;
+		String value = null;
+		for (String element : path.split("/")) {
+			builder.append(element);
+			name = builder.toString();
+			value = path.length()>name.length() ? path.substring(name.length()+1) : null;
+			if (functions.lookupFunction(name)!=null) {
+				return value(name, value);
+			}
+		}
+		return supplier(path);
+	}
+	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Flux<String> supplier(@PathVariable String name) {
+	private Flux<String> supplier(@PathVariable String name) {
 		Supplier<Object> supplier = functions.lookupSupplier(name);
 		if (supplier == null) {
 			throw new IllegalArgumentException("no such supplier: " + name);
@@ -89,8 +107,7 @@ public class FunctionController {
 		return debug ? result.log() : result;
 	}
 
-	@GetMapping(path = "/{name}/{value}")
-	public Mono<String> value(@PathVariable String name, @PathVariable String value) {
+	private Mono<String> value(@PathVariable String name, @PathVariable String value) {
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings({ "unchecked" })
