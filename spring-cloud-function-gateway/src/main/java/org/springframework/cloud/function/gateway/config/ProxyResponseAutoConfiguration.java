@@ -18,6 +18,7 @@ package org.springframework.cloud.function.gateway.config;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -49,39 +50,40 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @EnableConfigurationProperties(ProxyProperties.class)
 public class ProxyResponseAutoConfiguration extends WebMvcConfigurerAdapter {
 
-    @Autowired
-    private ApplicationContext context;
+	@Autowired
+	private ApplicationContext context;
 
-    @Bean
-    @ConditionalOnMissingBean
-    public ProxyExchangeArgumentResolver proxyExchangeBuilderArgumentResolver(
-            RestTemplateBuilder builder, ProxyProperties proxy) {
-        RestTemplate template = builder.build();
-        template.setErrorHandler(new NoOpResponseErrorHandler());
-        template.getMessageConverters().add(new ByteArrayHttpMessageConverter() {
-            @Override
-            public boolean supports(Class<?> clazz) {
-                return true;
-            }
-        });
-        ProxyExchangeArgumentResolver resolver = new ProxyExchangeArgumentResolver(
-                template);
-        resolver.setHeaders(proxy.convertHeaders());
-        resolver.setSensitive(proxy.getSensitive()); // can be null
-        return resolver;
-    }
+	@Bean
+	@ConditionalOnMissingBean
+	public ProxyExchangeArgumentResolver proxyExchangeBuilderArgumentResolver(
+			Optional<RestTemplateBuilder> optional, ProxyProperties proxy) {
+		RestTemplateBuilder builder = optional.orElse(new RestTemplateBuilder());
+		RestTemplate template = builder.build();
+		template.setErrorHandler(new NoOpResponseErrorHandler());
+		template.getMessageConverters().add(new ByteArrayHttpMessageConverter() {
+			@Override
+			public boolean supports(Class<?> clazz) {
+				return true;
+			}
+		});
+		ProxyExchangeArgumentResolver resolver = new ProxyExchangeArgumentResolver(
+				template);
+		resolver.setHeaders(proxy.convertHeaders());
+		resolver.setSensitive(proxy.getSensitive()); // can be null
+		return resolver;
+	}
 
-    @Override
-    public void addArgumentResolvers(
-            List<HandlerMethodArgumentResolver> argumentResolvers) {
-        argumentResolvers.add(context.getBean(ProxyExchangeArgumentResolver.class));
-    }
+	@Override
+	public void addArgumentResolvers(
+			List<HandlerMethodArgumentResolver> argumentResolvers) {
+		argumentResolvers.add(context.getBean(ProxyExchangeArgumentResolver.class));
+	}
 
-    private static class NoOpResponseErrorHandler extends DefaultResponseErrorHandler {
+	private static class NoOpResponseErrorHandler extends DefaultResponseErrorHandler {
 
-        @Override
-        public void handleError(ClientHttpResponse response) throws IOException {
-        }
+		@Override
+		public void handleError(ClientHttpResponse response) throws IOException {
+		}
 
-    }
+	}
 }

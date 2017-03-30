@@ -6,17 +6,13 @@
     <artifactId>spring-cloud-function-gateway</artifactId>
     <packaging>jar</packaging>
     <name>spring-cloud-function-gateway</name>
-    <description>Spring Cloud Function Web Support</description>
+    <description>Spring Cloud Function Gateway Support</description>
 
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-function-parent</artifactId>
         <version>1.0.0.BUILD-SNAPSHOT</version>
     </parent>
-
-    <properties>
-        <spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
-    </properties>
 
     <dependencies>
         <dependency>
