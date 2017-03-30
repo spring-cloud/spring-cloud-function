@@ -71,6 +71,11 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void staticResource() throws Exception {
+		assertThat(rest.getForObject("/test.html", String.class)).contains("<body>Test");
+	}
+
+	@Test
 	public void wordsSSE() throws Exception {
 		assertThat(rest.exchange(
 				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
@@ -216,6 +221,11 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void postMoreFoo() {
+		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("[FOO]");
+	}
+
+	@Test
 	public void uppercaseGet() {
 		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
@@ -274,7 +284,7 @@ public class RestApplicationTests {
 
 		private List<String> list = new ArrayList<>();
 
-		@Bean({"uppercase", "transform", "post/more"})
+		@Bean({ "uppercase", "transform", "post/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
@@ -304,7 +314,7 @@ public class RestApplicationTests {
 			});
 		}
 
-		@Bean({"words", "get/more"})
+		@Bean({ "words", "get/more" })
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
 		}
