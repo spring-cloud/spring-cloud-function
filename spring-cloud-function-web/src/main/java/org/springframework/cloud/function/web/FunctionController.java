@@ -24,11 +24,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.registry.FunctionCatalog;
-import org.springframework.cloud.function.support.FluxSupplier;
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,39 +57,61 @@ public class FunctionController {
 		this.functions = catalog;
 	}
 
-	@PostMapping(path = "/{name}")
-	public Flux<String> function(@PathVariable String name,
+	@PostMapping(path = { "/{name}", "/{name}/**" })
+	public ResponseEntity<Flux<String>> function(@PathVariable String name,
+			@RequestAttribute(name = "org.springframework.web.servlet.HandlerMapping.pathWithinHandlerMapping", required = false) String path,
 			@RequestBody Flux<String> body) {
+		String suffix = path.replace("/" + name, "");
+		name = name + suffix;
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings("unchecked")
 			Flux<String> result = (Flux<String>) function.apply(body);
-			return debug ? result.log() : result;
+			return ResponseEntity.ok().body(debug ? result.log() : result);
 		}
-		Consumer<String> consumer = functions.lookupConsumer(name);
+		Consumer<Flux<?>> consumer = functions.lookupConsumer(name);
 		if (consumer != null) {
-			body.subscribe(consumer::accept);
-			return null;
+			body = body.cache(); // send a copy back to the caller
+			consumer.accept(body);
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(body);
 		}
 		throw new IllegalArgumentException("no such function: " + name);
 	}
 
-	@GetMapping(path = "/{name}")
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public Flux<String> supplier(@PathVariable String name) {
+	@GetMapping(path = { "/{name}", "/{name}/**" })
+	public Object supplier(@PathVariable String name,
+			@RequestAttribute(name = "org.springframework.web.servlet.HandlerMapping.pathWithinHandlerMapping", required = false) String path) {
+		String suffix = path.replace("/" + name, "");
+		if (StringUtils.hasText(suffix)) {
+			while (suffix.startsWith("/")) {
+				suffix = suffix.substring(1);
+				Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
+				if (function != null) {
+					return value(name, suffix);
+				}
+				int index = suffix.indexOf("/");
+				name = name + (index > 0 ? "/" + suffix.substring(0, index) : "");
+				suffix = index > 0 ? suffix.substring(index) : suffix;
+			}
+			suffix = "/" + suffix;
+		}
+		else {
+			suffix = "";
+		}
+		return supplier(name + suffix);
+	}
+
+	@SuppressWarnings({ "unchecked" })
+	private Flux<String> supplier(@PathVariable String name) {
 		Supplier<Object> supplier = functions.lookupSupplier(name);
 		if (supplier == null) {
 			throw new IllegalArgumentException("no such supplier: " + name);
-		}
-		if (!FunctionUtils.isFluxSupplier(supplier)) {
-			supplier = new FluxSupplier(supplier);
 		}
 		Flux<String> result = (Flux<String>) supplier.get();
 		return debug ? result.log() : result;
 	}
 
-	@GetMapping(path = "/{name}/{value}")
-	public Mono<String> value(@PathVariable String name, @PathVariable String value) {
+	private Mono<String> value(@PathVariable String name, @PathVariable String value) {
 		Function<Flux<?>, Flux<?>> function = functions.lookupFunction(name);
 		if (function != null) {
 			@SuppressWarnings({ "unchecked" })

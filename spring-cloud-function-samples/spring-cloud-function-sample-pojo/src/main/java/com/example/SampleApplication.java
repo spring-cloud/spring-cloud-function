@@ -15,6 +15,9 @@
 */
 package com.example;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -27,9 +30,20 @@ import reactor.core.publisher.Flux;
 @SpringBootApplication
 public class SampleApplication {
 
+	private List<Foo> list = new ArrayList<>();
+
+	public List<Foo> getList() {
+		return list;
+	}
+
 	@Bean
 	public Function<Flux<Foo>, Flux<Bar>> uppercase() {
 		return flux -> flux.map(value -> new Bar(value.uppercase()));
+	}
+
+	@Bean
+	public Consumer<Flux<Foo>> async() {
+		return flux -> flux.log().subscribe(value -> list.add(value));
 	}
 
 	@Bean

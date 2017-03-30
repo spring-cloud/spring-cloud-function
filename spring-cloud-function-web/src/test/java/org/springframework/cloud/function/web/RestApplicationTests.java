@@ -16,14 +16,17 @@
 package org.springframework.cloud.function.web;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +38,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -58,6 +62,13 @@ public class RestApplicationTests {
 	private int port;
 	@Autowired
 	private TestRestTemplate rest;
+	@Autowired
+	private TestConfiguration test;
+
+	@Before
+	public void init() {
+		test.list.clear();
+	}
 
 	@Test
 	public void wordsSSE() throws Exception {
@@ -85,9 +96,45 @@ public class RestApplicationTests {
 
 	@Test
 	public void words() throws Exception {
-		assertThat(
-				rest.exchange(RequestEntity.get(new URI("/words")).build(), String.class)
-						.getBody()).isEqualTo("foobar");
+		ResponseEntity<String> result = rest
+				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
+	public void moreWords() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.get(new URI("/more/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
+	public void bareWords() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.get(new URI("/bare/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
+	public void updates() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(test.list).hasSize(2);
+		assertThat(result.getBody()).isEqualTo("onetwo");
+	}
+
+	@Test
+	public void bareUpdates() throws Exception {
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.post(new URI("/bare/updates")).body("one\ntwo"),
+				String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(test.list).hasSize(2);
+		assertThat(result.getBody()).isEqualTo("onetwo");
 	}
 
 	@Test
@@ -151,6 +198,30 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void bareUppercase() {
+		assertThat(rest.postForObject("/bare/uppercase", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void transform() {
+		assertThat(rest.postForObject("/transform", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void postLongPath() {
+		assertThat(rest.postForObject("/get/more", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void longPath() {
+		assertThat(rest.getForObject("/get/more/stuff", String.class))
+				.isEqualTo("[STUFF]");
+	}
+
+	@Test
 	public void uppercaseGet() {
 		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
@@ -205,10 +276,17 @@ public class RestApplicationTests {
 	@SpringBootApplication
 	public static class TestConfiguration {
 
-		@Bean
+		private List<String> list = new ArrayList<>();
+
+		@Bean({ "uppercase", "transform", "get/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
+		}
+
+		@Bean("bare/uppercase")
+		public Function<String, String> bareUppercase() {
+			return value -> "[" + value.trim().toUpperCase() + "]";
 		}
 
 		@Bean
@@ -230,9 +308,24 @@ public class RestApplicationTests {
 			});
 		}
 
-		@Bean
+		@Bean({ "words", "more/words" })
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
+		}
+
+		@Bean("bare/words")
+		public Supplier<List<String>> bareWords() {
+			return () -> Arrays.asList("foo", "bar");
+		}
+
+		@Bean
+		public Consumer<Flux<String>> updates() {
+			return flux -> flux.subscribe(value -> list.add(value));
+		}
+
+		@Bean("bare/updates")
+		public Consumer<String> bareUpdates() {
+			return value -> list.add(value);
 		}
 
 		@Bean

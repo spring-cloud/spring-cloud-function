@@ -18,10 +18,13 @@ package com.example;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +40,9 @@ public class SampleApplicationTests {
 	@LocalServerPort
 	private int port;
 
+	@Autowired
+	private SampleApplication app;
+
 	@Test
 	public void words() {
 		assertThat(new TestRestTemplate()
@@ -49,6 +55,16 @@ public class SampleApplicationTests {
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",
 				String.class)).isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Test
+	public void async() {
+		ResponseEntity<String> post = new TestRestTemplate().postForEntity(
+				"http://localhost:" + port + "/async", "{\"value\":\"foo\"}",
+				String.class);
+		assertThat(post.getBody()).isEqualTo("{\"value\":\"foo\"}");
+		assertThat(post.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(app.getList()).hasSize(1);
 	}
 
 }

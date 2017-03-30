@@ -46,8 +46,6 @@ class FluxResponseBodyEmitter<T> extends ResponseBodyEmitter {
 
 	@Override
 	protected void extendResponse(ServerHttpResponse outputMessage) {
-		super.extendResponse(outputMessage);
-
 		HttpHeaders headers = outputMessage.getHeaders();
 		if (headers.getContentType() == null && this.mediaType != null
 				&& !MediaType.ALL.equals(this.mediaType)) {
