@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.context.annotation.Configuration;
@@ -51,6 +52,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	private final FunctionCatalog functions;
 
 	private final FunctionController controller;
+	
+	@Value("${spring.cloud.function.web.path:}")
+	private String prefix = ""; 
 
 	@Autowired
 	public FunctionHandlerMapping(FunctionCatalog catalog) {
@@ -63,6 +67,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
 		detectHandlerMethods(controller);
+		while (prefix.endsWith("/")) {
+			prefix = prefix.substring(0, prefix.length()-1);
+		}
 	}
 
 	@Override

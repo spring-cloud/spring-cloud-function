@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -279,7 +279,8 @@ public class RestApplicationTests {
 		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
+	@org.springframework.boot.test.context.TestConfiguration
 	public static class TestConfiguration {
 
 		private List<String> list = new ArrayList<>();
