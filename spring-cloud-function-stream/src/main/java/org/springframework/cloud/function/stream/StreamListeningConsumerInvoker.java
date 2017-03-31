@@ -29,14 +29,14 @@ import reactor.core.publisher.Flux;
  */
 public class StreamListeningConsumerInvoker<T> {
 
-	private final Consumer<T> consumer;
+	private final Consumer<Flux<T>> consumer;
 
-	public StreamListeningConsumerInvoker(Consumer<T> consumer) {
+	public StreamListeningConsumerInvoker(Consumer<Flux<T>> consumer) {
 		this.consumer = consumer;
 	}
 
 	@StreamListener
 	public void handle(@Input(Processor.INPUT) Flux<T> input) {
-		input.subscribe(this.consumer);
+		this.consumer.accept(input);
 	}
 }

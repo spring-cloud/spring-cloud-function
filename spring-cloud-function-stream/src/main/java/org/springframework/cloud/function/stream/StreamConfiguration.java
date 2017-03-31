@@ -101,7 +101,7 @@ public class StreamConfiguration {
 		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
 		public StreamListeningConsumerInvoker<Object> invoker(FunctionCatalog registry) {
 			String name = properties.getEndpoint();
-			Consumer<Object> consumer = registry.lookupConsumer(name);
+			Consumer<Flux<Object>> consumer = registry.lookupConsumer(name);
 			return new StreamListeningConsumerInvoker<Object>(consumer);
 		}
 	}
