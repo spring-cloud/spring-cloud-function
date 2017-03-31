@@ -201,50 +201,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean isFluxFunction(String name, Function<?, ?> function) {
-			if (this.registry.containsBeanDefinition(name)) {
-				BeanDefinition beanDefinition = this.registry.getBeanDefinition(name);
-				Object source = beanDefinition.getSource();
-				if (source instanceof StandardMethodMetadata) {
-					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-					Type returnType = metadata.getIntrospectedMethod()
-							.getGenericReturnType();
-					if (returnType instanceof ParameterizedType) {
-						Type[] types = ((ParameterizedType) returnType)
-								.getActualTypeArguments();
-						if (types != null && types.length == 2) {
-							return (types[0].getTypeName()
-									.startsWith(Flux.class.getName())
-									&& types[1].getTypeName()
-											.startsWith(Flux.class.getName()));
-						}
-					}
-				}
-			}
-			return FunctionUtils.isFluxFunction(function);
+			Boolean fluxTypes = this.hasFluxTypes(name, 2);
+			return (fluxTypes != null) ? fluxTypes
+					: FunctionUtils.isFluxFunction(function);
 		}
 
-		private boolean isFluxConsumer(String name, Consumer<?> function) {
-			if (this.registry.containsBeanDefinition(name)) {
-				BeanDefinition beanDefinition = this.registry.getBeanDefinition(name);
-				Object source = beanDefinition.getSource();
-				if (source instanceof StandardMethodMetadata) {
-					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-					Type returnType = metadata.getIntrospectedMethod()
-							.getGenericReturnType();
-					if (returnType instanceof ParameterizedType) {
-						Type[] types = ((ParameterizedType) returnType)
-								.getActualTypeArguments();
-						if (types != null && types.length == 1) {
-							return (types[0].getTypeName()
-									.startsWith(Flux.class.getName()));
-						}
-					}
-				}
-			}
-			return FunctionUtils.isFluxConsumer(function);
+		private boolean isFluxConsumer(String name, Consumer<?> consumer) {
+			Boolean fluxTypes = this.hasFluxTypes(name, 1);
+			return (fluxTypes != null) ? fluxTypes
+					: FunctionUtils.isFluxConsumer(consumer);
 		}
 
-		private boolean isFluxSupplier(String name, Supplier<?> function) {
+		private boolean isFluxSupplier(String name, Supplier<?> supplier) {
+			Boolean fluxTypes = this.hasFluxTypes(name, 1);
+			return (fluxTypes != null) ? fluxTypes
+					: FunctionUtils.isFluxSupplier(supplier);
+		}
+
+		private Boolean hasFluxTypes(String name, int numTypes) {
 			if (this.registry.containsBeanDefinition(name)) {
 				BeanDefinition beanDefinition = this.registry.getBeanDefinition(name);
 				Object source = beanDefinition.getSource();
@@ -255,14 +229,19 @@ public class ContextFunctionCatalogAutoConfiguration {
 					if (returnType instanceof ParameterizedType) {
 						Type[] types = ((ParameterizedType) returnType)
 								.getActualTypeArguments();
-						if (types != null && types.length == 1) {
-							return (types[0].getTypeName()
-									.startsWith(Flux.class.getName()));
+						if (types != null && types.length == numTypes) {
+							String fluxClassName = Flux.class.getName();
+							for (Type t : types) {
+								if (!(t.getTypeName().startsWith(fluxClassName))) {
+									return false;
+								}
+							}
+							return true;
 						}
 					}
 				}
 			}
-			return FunctionUtils.isFluxSupplier(function);
+			return null;
 		}
 
 		private boolean isGenericSupplier(ConfigurableListableBeanFactory factory,

@@ -30,14 +30,14 @@ import reactor.core.publisher.Flux;
  */
 public class FluxConsumer<T> implements Consumer<Flux<T>> {
 
-	private final Consumer<T> function;
+	private final Consumer<T> consumer;
 
-	public FluxConsumer(Consumer<T> function) {
-		this.function = function;
+	public FluxConsumer(Consumer<T> consumer) {
+		this.consumer = consumer;
 	}
 
 	@Override
 	public void accept(Flux<T> input) {
-		input.subscribe(t -> function.accept(t));
+		input.subscribe(t -> consumer.accept(t));
 	}
 }

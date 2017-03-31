@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 /**
  * Autoconfiguration for the {@link ProxyExchange} argument handler in Spring MVC
  * <code>@RequestMapping</code> methods.
- * @author Dave Syer
  *
+ * @author Dave Syer
  */
 @Configuration
 @ConditionalOnWebApplication
@@ -55,7 +55,7 @@ public class ProxyResponseAutoConfiguration extends WebMvcConfigurerAdapter {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public ProxyExchangeArgumentResolver proxyExchangeBuilderArgumentResolver(
+	public ProxyExchangeArgumentResolver proxyExchangeArgumentResolver(
 			Optional<RestTemplateBuilder> optional, ProxyProperties proxy) {
 		RestTemplateBuilder builder = optional.orElse(new RestTemplateBuilder());
 		RestTemplate template = builder.build();
