@@ -476,7 +476,7 @@ public class ProxyExchange<T> {
 			}
 			catch (HttpMessageNotWritableException
 					| HttpMediaTypeNotAcceptableException e) {
-				throw new IllegalStateException("Cannot convert body");
+				throw new IllegalStateException("Cannot convert body", e);
 			}
 			return response.getInputStream();
 		}
