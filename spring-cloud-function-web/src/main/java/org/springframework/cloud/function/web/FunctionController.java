@@ -45,7 +45,7 @@ public class FunctionController {
 
 	@Value("${debug:${DEBUG:false}}")
 	private boolean debug = false;
-	
+
 	@PostMapping(path = "/**")
 	@ResponseBody
 	public ResponseEntity<Flux<String>> post(
@@ -70,8 +70,7 @@ public class FunctionController {
 	public Object get(
 			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.function") Function<Flux<?>, Flux<?>> function,
 			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.supplier") Supplier<Flux<?>> supplier,
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.argument") String argument,
-			@RequestAttribute("org.springframework.web.servlet.HandlerMapping.pathWithinHandlerMapping") String path) {
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.argument") String argument) {
 		if (function != null) {
 			return value(function, argument);
 		}
