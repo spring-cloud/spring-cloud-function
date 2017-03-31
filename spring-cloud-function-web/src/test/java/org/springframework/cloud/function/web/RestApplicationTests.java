@@ -212,6 +212,11 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void supplierFirst() {
+		assertThat(rest.getForObject("/not/a/function", String.class)).isEqualTo("hello");
+	}
+
+	@Test
 	public void convertGetJson() throws Exception {
 		assertThat(rest
 				.exchange(RequestEntity.get(new URI("/entity/321"))
@@ -232,14 +237,12 @@ public class RestApplicationTests {
 
 	@Test
 	public void uppercaseJsonStream() throws Exception {
-		assertThat(
-				rest.exchange(
-						RequestEntity.post(new URI("/maps"))
-								.contentType(MediaType.APPLICATION_JSON)
-								// TODO: make this work without newline separator
-								.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"),
-						String.class).getBody())
-								.isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
+		assertThat(rest
+				.exchange(RequestEntity.post(new URI("/maps"))
+						.contentType(MediaType.APPLICATION_JSON)
+						// TODO: make this work without newline separator
+						.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"), String.class)
+				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
 	}
 
 	@Test
@@ -309,6 +312,16 @@ public class RestApplicationTests {
 		@Bean
 		public Supplier<Flux<String>> empty() {
 			return () -> Flux.fromIterable(Collections.emptyList());
+		}
+
+		@Bean("not/a/function")
+		public Supplier<Flux<String>> supplier() {
+			return () -> Flux.just("hello");
+		}
+
+		@Bean("not/a")
+		public Function<Flux<String>, Flux<String>> function() {
+			return input -> Flux.just("bye");
 		}
 
 		@Bean
