@@ -106,10 +106,12 @@ import org.springframework.web.util.AbstractUriTemplateHandler;
  * <pre>
  * &#64;PostMapping("/proxy")
  * public ResponseEntity&lt;Foo&gt; proxy(ProxyExchange&lt;Foo&gt; proxy) throws Exception {
- * 	return proxy.uri("http://localhost:9000/foos/")
- * 			.post(response -> ResponseEntity.status(response.getStatusCode())
- * 					.headers(response.getHeaders())
- * 					.header("X-Custom", "MyCustomHeader").body(response.getBody()));
+ * 	return proxy.uri("http://localhost:9000/foos/") //
+ * 			.post(response -> ResponseEntity.status(response.getStatusCode()) //
+ * 					.headers(response.getHeaders()) //
+ * 					.header("X-Custom", "MyCustomHeader") //
+ * 					.body(response.getBody()) //
+ * 	);
  * }
  * 
  * </pre>
