@@ -98,54 +98,78 @@ public class ContextFunctionCatalogAutoConfiguration {
 				Map<String, Supplier<?>> suppliers) {
 			Map<String, Supplier<?>> result = new HashMap<>();
 			for (String key : suppliers.keySet()) {
-				if (this.suppliers.contains(key)) {
-					@SuppressWarnings("unchecked")
-					Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) suppliers.get(key);
-					result.put(key, wrapSupplier(supplier, mapper, key));
-				}
-				else {
-					result.put(key, suppliers.get(key));
+				Supplier<?> target = target(suppliers.get(key), mapper, key);
+				result.put(key, target);
+				for (String name : registry.getAliases(key)) {
+					result.put(name, target);
 				}
 			}
 			return result;
+		}
+
+		private Supplier<?> target(Supplier<?> target, ObjectMapper mapper, String key) {
+			if (this.suppliers.contains(key)) {
+				@SuppressWarnings("unchecked")
+				Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) target;
+				return wrapSupplier(supplier, mapper, key);
+			}
+			else {
+				return target;
+			}
 		}
 
 		public Map<String, Function<?, ?>> wrapFunctions(ObjectMapper mapper,
 				Map<String, Function<?, ?>> functions) {
 			Map<String, Function<?, ?>> result = new HashMap<>();
 			for (String key : functions.keySet()) {
-				if (this.functions.contains(key)) {
-					@SuppressWarnings("unchecked")
-					Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) functions
-							.get(key);
-					result.put(key, wrapFunction(function, mapper, key));
-				}
-				else if (!isFluxFunction(key, functions.get(key))) {
-					@SuppressWarnings({ "unchecked", "rawtypes" })
-					FluxFunction value = new FluxFunction(functions.get(key));
-					result.put(key, value);
-				}
-				else {
-					result.put(key, functions.get(key));
+				Function<?, ?> target = target(functions.get(key), mapper, key);
+				result.put(key, target);
+				for (String name : registry.getAliases(key)) {
+					result.put(name, target);
 				}
 			}
 			return result;
+		}
+
+		private Function<?, ?> target(Function<?, ?> target, ObjectMapper mapper,
+				String key) {
+			if (this.functions.contains(key)) {
+				@SuppressWarnings("unchecked")
+				Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) target;
+				return wrapFunction(function, mapper, key);
+			}
+			else if (!isFluxFunction(key, target)) {
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				FluxFunction value = new FluxFunction(target);
+				return value;
+			}
+			else {
+				return target;
+			}
 		}
 
 		public Map<String, Consumer<?>> wrapConsumers(ObjectMapper mapper,
 				Map<String, Consumer<?>> consumers) {
 			Map<String, Consumer<?>> result = new HashMap<>();
 			for (String key : consumers.keySet()) {
-				if (this.consumers.contains(key)) {
-					@SuppressWarnings("unchecked")
-					Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) consumers.get(key);
-					result.put(key, wrapConsumer(consumer, mapper, key));
-				}
-				else {
-					result.put(key, consumers.get(key));
+				Consumer<?> target = target(consumers.get(key), mapper, key);
+				result.put(key, target);
+				for (String name : registry.getAliases(key)) {
+					result.put(name, target);
 				}
 			}
 			return result;
+		}
+
+		private Consumer<?> target(Consumer<?> target, ObjectMapper mapper, String key) {
+			if (this.consumers.contains(key)) {
+				@SuppressWarnings("unchecked")
+				Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) target;
+				return wrapConsumer(consumer, mapper, key);
+			}
+			else {
+				return target;
+			}
 		}
 
 		@Override

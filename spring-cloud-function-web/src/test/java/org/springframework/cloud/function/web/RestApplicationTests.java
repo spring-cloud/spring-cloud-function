@@ -26,12 +26,13 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -64,6 +65,16 @@ public class RestApplicationTests {
 	@Autowired
 	private TestConfiguration test;
 
+	@Before
+	public void init() {
+		test.list.clear();
+	}
+
+	@Test
+	public void staticResource() throws Exception {
+		assertThat(rest.getForObject("/test.html", String.class)).contains("<body>Test");
+	}
+
 	@Test
 	public void wordsSSE() throws Exception {
 		assertThat(rest.exchange(
@@ -92,6 +103,14 @@ public class RestApplicationTests {
 	public void words() throws Exception {
 		ResponseEntity<String> result = rest
 				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foobar");
+	}
+
+	@Test
+	public void getMore() throws Exception {
+		ResponseEntity<String> result = rest
+				.exchange(RequestEntity.get(new URI("/get/more")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("foobar");
 	}
@@ -166,6 +185,23 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void transform() {
+		assertThat(rest.postForObject("/transform", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void postMore() {
+		assertThat(rest.postForObject("/post/more", "foo\nbar", String.class))
+				.isEqualTo("[FOO][BAR]");
+	}
+
+	@Test
+	public void postMoreFoo() {
+		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("[FOO]");
+	}
+
+	@Test
 	public void uppercaseGet() {
 		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
@@ -196,12 +232,14 @@ public class RestApplicationTests {
 
 	@Test
 	public void uppercaseJsonStream() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.post(new URI("/maps"))
-						.contentType(MediaType.APPLICATION_JSON)
-						// TODO: make this work without newline separator
-						.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"), String.class)
-				.getBody()).isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
+		assertThat(
+				rest.exchange(
+						RequestEntity.post(new URI("/maps"))
+								.contentType(MediaType.APPLICATION_JSON)
+								// TODO: make this work without newline separator
+								.body("{\"value\":\"foo\"}\n{\"value\":\"bar\"}"),
+						String.class).getBody())
+								.isEqualTo("{\"value\":\"FOO\"}{\"value\":\"BAR\"}");
 	}
 
 	@Test
@@ -217,12 +255,13 @@ public class RestApplicationTests {
 		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
 	}
 
-	@SpringBootApplication
+	@EnableAutoConfiguration
+	@org.springframework.boot.test.context.TestConfiguration
 	public static class TestConfiguration {
 
 		private List<String> list = new ArrayList<>();
 
-		@Bean
+		@Bean({ "uppercase", "transform", "post/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
@@ -247,7 +286,7 @@ public class RestApplicationTests {
 			});
 		}
 
-		@Bean
+		@Bean({ "words", "get/more" })
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
 		}
