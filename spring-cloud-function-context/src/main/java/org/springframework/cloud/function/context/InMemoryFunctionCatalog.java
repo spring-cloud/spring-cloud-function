@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.function.context;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -41,6 +43,29 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 		this.suppliers = suppliers;
 		this.functions = functions;
 		this.consumers = consumers;
+	}
+
+	public InMemoryFunctionCatalog(Set<FunctionRegistration<?>> registrations) {
+		this.suppliers = new HashMap<>();
+		this.functions = new HashMap<>();
+		this.consumers = new HashMap<>();
+		for (FunctionRegistration<?> registration : registrations) {
+			if (registration.getTarget() instanceof Consumer) {
+				for (String name : registration.getNames()) {
+					consumers.put(name, (Consumer<?>) registration.getTarget());
+				}
+			}
+			if (registration.getTarget() instanceof Supplier) {
+				for (String name : registration.getNames()) {
+					suppliers.put(name, (Supplier<?>) registration.getTarget());
+				}
+			}
+			if (registration.getTarget() instanceof Function) {
+				for (String name : registration.getNames()) {
+					functions.put(name, (Function<?, ?>) registration.getTarget());
+				}
+			}
+		}
 	}
 
 	@Override

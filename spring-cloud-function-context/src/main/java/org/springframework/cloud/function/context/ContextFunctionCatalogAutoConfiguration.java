@@ -19,9 +19,12 @@ package org.springframework.cloud.function.context;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -32,6 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -48,6 +52,7 @@ import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
@@ -73,12 +78,14 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Autowired(required = false)
 	private Map<String, Consumer<?>> consumers = Collections.emptyMap();
 
+	@Autowired(required = false)
+	private Map<String, FunctionRegistration<?>> registrations = Collections.emptyMap();
+
 	@Bean
 	public FunctionCatalog functionCatalog(ContextFunctionPostProcessor processor,
 			ObjectMapper mapper) {
-		return new InMemoryFunctionCatalog(processor.wrapSuppliers(mapper, suppliers),
-				processor.wrapFunctions(mapper, functions),
-				processor.wrapConsumers(mapper, consumers));
+		return new InMemoryFunctionCatalog(
+				processor.merge(registrations, consumers, suppliers, functions, mapper));
 	}
 
 	@Component
@@ -96,17 +103,101 @@ public class ContextFunctionCatalogAutoConfiguration {
 			this.registry = registry;
 		}
 
-		public Map<String, Supplier<?>> wrapSuppliers(ObjectMapper mapper,
-				Map<String, Supplier<?>> suppliers) {
-			Map<String, Supplier<?>> result = new HashMap<>();
-			for (String key : suppliers.keySet()) {
-				Supplier<?> target = target(suppliers.get(key), mapper, key);
-				result.put(key, target);
-				for (String name : registry.getAliases(key)) {
-					result.put(name, target);
+		public Set<FunctionRegistration<?>> merge(
+				Map<String, FunctionRegistration<?>> initial,
+				Map<String, Consumer<?>> consumers, Map<String, Supplier<?>> suppliers,
+				Map<String, Function<?, ?>> functions, ObjectMapper mapper) {
+			Set<FunctionRegistration<?>> registrations = new HashSet<>();
+			Map<Object, String> targets = new HashMap<>();
+			// Replace the initial registrations with new ones that have the right names
+			for (String key : initial.keySet()) {
+				FunctionRegistration<?> registration = initial.get(key);
+				if (registration.getNames().isEmpty()) {
+					registration.names(getAliases(key));
+				}
+				registrations.add(registration);
+				targets.put(registration.getTarget(), key);
+			}
+			// Add consumers that were not already registered
+			for (String key : consumers.keySet()) {
+				if (!targets.containsKey(consumers.get(key))) {
+					FunctionRegistration<Object> target = new FunctionRegistration<Object>()
+							.target(consumers.get(key)).names(getAliases(key));
+					targets.put(target.getTarget(), key);
+					registrations.add(target);
 				}
 			}
-			return result;
+			// Add suppliers that were not already registered
+			for (String key : suppliers.keySet()) {
+				if (!targets.containsKey(suppliers.get(key))) {
+					FunctionRegistration<Object> target = new FunctionRegistration<Object>()
+							.target(suppliers.get(key)).names(getAliases(key));
+					targets.put(target.getTarget(), key);
+					registrations.add(target);
+				}
+			}
+			// Add functions that were not already registered
+			for (String key : functions.keySet()) {
+				if (!targets.containsKey(functions.get(key))) {
+					FunctionRegistration<Object> target = new FunctionRegistration<Object>()
+							.target(functions.get(key)).names(getAliases(key));
+					targets.put(target.getTarget(), key);
+					registrations.add(target);
+				}
+			}
+			// Wrap the functions so they handle reactive inputs and outputs
+			for (FunctionRegistration<?> registration : registrations) {
+				@SuppressWarnings("unchecked")
+				FunctionRegistration<Object> target = (FunctionRegistration<Object>) registration;
+				String key = targets.get(target.getTarget());
+				wrap(target, mapper, key);
+			}
+			return registrations;
+		}
+
+		private Collection<String> getAliases(String key) {
+			Collection<String> names = new LinkedHashSet<>();
+			String value = getQualifier(key);
+			if (value.equals(key)) {
+				names.add(key);
+				names.addAll(Arrays.asList(registry.getAliases(key)));
+			}
+			else {
+				names.add(value);
+			}
+			return names;
+		}
+
+		private void wrap(FunctionRegistration<Object> registration,
+				ObjectMapper mapper, String key) {
+			Object target = registration.getTarget();
+			if (target instanceof Supplier) {
+				registration.target(target((Supplier<?>) target, mapper, key));
+			}
+			else if (target instanceof Consumer) {
+				registration.target(target((Consumer<?>) target, mapper, key));
+			}
+			else if (target instanceof Function) {
+				registration.target(target((Function<?, ?>) target, mapper, key));
+			}
+		}
+
+		private String getQualifier(String key) {
+			if (!registry.containsBeanDefinition(key)) {
+				return key;
+			}
+			String value = key;
+			BeanDefinition beanDefinition = registry.getBeanDefinition(key);
+			Object source = beanDefinition.getSource();
+			if (source instanceof StandardMethodMetadata) {
+				StandardMethodMetadata metadata = (StandardMethodMetadata) source;
+				Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(
+						metadata.getIntrospectedMethod(), Qualifier.class);
+				if (qualifier != null && qualifier.value().length() > 0) {
+					return qualifier.value();
+				}
+			}
+			return value;
 		}
 
 		private Supplier<?> target(Supplier<?> target, ObjectMapper mapper, String key) {
@@ -125,19 +216,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 		}
 
-		public Map<String, Function<?, ?>> wrapFunctions(ObjectMapper mapper,
-				Map<String, Function<?, ?>> functions) {
-			Map<String, Function<?, ?>> result = new HashMap<>();
-			for (String key : functions.keySet()) {
-				Function<?, ?> target = target(functions.get(key), mapper, key);
-				result.put(key, target);
-				for (String name : registry.getAliases(key)) {
-					result.put(name, target);
-				}
-			}
-			return result;
-		}
-
 		private Function<?, ?> target(Function<?, ?> target, ObjectMapper mapper,
 				String key) {
 			if (this.functions.contains(key)) {
@@ -153,19 +231,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else {
 				return target;
 			}
-		}
-
-		public Map<String, Consumer<?>> wrapConsumers(ObjectMapper mapper,
-				Map<String, Consumer<?>> consumers) {
-			Map<String, Consumer<?>> result = new HashMap<>();
-			for (String key : consumers.keySet()) {
-				Consumer<?> target = target(consumers.get(key), mapper, key);
-				result.put(key, target);
-				for (String name : registry.getAliases(key)) {
-					result.put(name, target);
-				}
-			}
-			return result;
 		}
 
 		private Consumer<?> target(Consumer<?> target, ObjectMapper mapper, String key) {
