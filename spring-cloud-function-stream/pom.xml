@@ -14,10 +14,6 @@
 		<relativePath>..</relativePath>
 	</parent>
 
-	<properties>
-		<stream.version>1.1.1.BUILD-SNAPSHOT</stream.version>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>io.projectreactor</groupId>
@@ -33,7 +29,18 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-test-support</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-context</artifactId>
+			<scope>test</scope>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
