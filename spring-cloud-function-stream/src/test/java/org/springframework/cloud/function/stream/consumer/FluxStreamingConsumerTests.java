@@ -33,38 +33,59 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import reactor.core.publisher.Flux;
+
 /**
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = StreamingConsumerTests.StreamingSinkTest.class, properties = {
+@SpringBootTest(classes = FluxStreamingConsumerTests.StreamingSinkTest.class, properties = {
 		"spring.cloud.stream.bindings.input.destination=data-in",
 		"spring.cloud.function.stream.endpoint=sinkConsumer" })
-public class StreamingConsumerTests {
+public class FluxStreamingConsumerTests {
 
 	@Autowired
 	Sink sink;
 
 	@Autowired
-	List<String> sinkCollector;
+	List<Foo> sinkCollector;
 
 	@Test
 	public void test() throws Exception {
-		sink.input().send(MessageBuilder.withPayload("foo").build());
-		assertThat(sinkCollector).containsExactly("foo");
+		sink.input().send(MessageBuilder.withPayload(new Foo("foo")).build());
+		assertThat(sinkCollector).hasSize(1);
 	}
 
 	@SpringBootApplication
 	public static class StreamingSinkTest {
 
 		@Bean
-		public List<String> sinkCollector() {
+		public List<Foo> sinkCollector() {
 			return new ArrayList<>();
 		}
 
 		@Bean
-		public Consumer<String> sinkConsumer(final List<String> sinkCollector) {
-			return s -> sinkCollector.add(s);
+		public Consumer<Flux<Foo>> sinkConsumer(final List<Foo> sinkCollector) {
+			return foos -> foos.subscribe(s -> sinkCollector.add(s));
+		}
+	}
+
+	protected static class Foo {
+		private String name;
+
+		Foo() {
+		}
+
+		public Foo(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
 		}
 	}
 }

@@ -33,14 +33,16 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import reactor.core.publisher.Flux;
+
 /**
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = StreamingConsumerTests.StreamingSinkTest.class, properties = {
+@SpringBootTest(classes = FluxPojoStreamingConsumerTests.StreamingSinkTest.class, properties = {
 		"spring.cloud.stream.bindings.input.destination=data-in",
 		"spring.cloud.function.stream.endpoint=sinkConsumer" })
-public class StreamingConsumerTests {
+public class FluxPojoStreamingConsumerTests {
 
 	@Autowired
 	Sink sink;
@@ -51,7 +53,7 @@ public class StreamingConsumerTests {
 	@Test
 	public void test() throws Exception {
 		sink.input().send(MessageBuilder.withPayload("foo").build());
-		assertThat(sinkCollector).containsExactly("foo");
+		assertThat(sinkCollector).hasSize(1);
 	}
 
 	@SpringBootApplication
@@ -63,8 +65,9 @@ public class StreamingConsumerTests {
 		}
 
 		@Bean
-		public Consumer<String> sinkConsumer(final List<String> sinkCollector) {
-			return s -> sinkCollector.add(s);
+		public Consumer<Flux<String>> sinkConsumer(final List<String> sinkCollector) {
+			return foos -> foos.doOnNext(s -> sinkCollector.add(s));
 		}
 	}
+
 }
