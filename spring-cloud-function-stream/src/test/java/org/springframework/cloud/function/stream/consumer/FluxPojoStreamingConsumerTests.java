@@ -66,7 +66,7 @@ public class FluxPojoStreamingConsumerTests {
 
 		@Bean
 		public Consumer<Flux<String>> sinkConsumer(final List<String> sinkCollector) {
-			return foos -> foos.doOnNext(s -> sinkCollector.add(s));
+			return foos -> foos.subscribe(s -> sinkCollector.add(s));
 		}
 	}
 

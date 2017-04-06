@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,9 +40,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.function.registry.FunctionCatalog;
@@ -53,12 +54,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -209,7 +209,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else if (!isFluxSupplier(key, target)) {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				FluxSupplier value = new FluxSupplier(target);
-				return value;
+				return wrapSupplier(value, mapper, key);
 			}
 			else {
 				return target;
@@ -226,7 +226,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else if (!isFluxFunction(key, target)) {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				FluxFunction value = new FluxFunction(target);
-				return value;
+				return wrapFunction(value, mapper, key);
 			}
 			else {
 				return target;
@@ -242,7 +242,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else if (!isFluxConsumer(key, target)) {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				FluxConsumer value = new FluxConsumer(target);
-				return value;
+				return wrapConsumer(value, mapper, key);
 			}
 			else {
 				return target;
@@ -367,16 +367,38 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return wrapped;
 		}
 
-		private Class<?> findType(RootBeanDefinition definition, int index) {
-			StandardMethodMetadata source = (StandardMethodMetadata) definition
-					.getSource();
+		private Class<?> findType(AbstractBeanDefinition definition, int index) {
+			Object source = definition.getSource();
 			Type param;
 			if (source instanceof StandardMethodMetadata) {
 				ParameterizedType type;
-				type = (ParameterizedType) (source.getIntrospectedMethod()
-						.getGenericReturnType());
-				type = (ParameterizedType) type.getActualTypeArguments()[index];
-				param = type.getActualTypeArguments()[0];
+				type = (ParameterizedType) ((StandardMethodMetadata) source).getIntrospectedMethod()
+						.getGenericReturnType();
+				Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
+				if (typeArgumentAtIndex instanceof ParameterizedType) {
+					param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
+				}
+				else {
+					param = typeArgumentAtIndex;
+				}
+			}
+			else if (source instanceof FileSystemResource) {
+				try {
+					Type type = ClassUtils.forName(definition.getBeanClassName(), null);
+					if (type instanceof ParameterizedType) {
+						Type typeArgumentAtIndex = ((ParameterizedType)type).getActualTypeArguments()[index];
+						if (typeArgumentAtIndex instanceof ParameterizedType) {
+							param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
+						} else {
+							param = typeArgumentAtIndex;
+						}
+					}
+					else {
+						param = type;
+					}
+				} catch (ClassNotFoundException e) {
+					throw new IllegalStateException("Cannot instrospect bean: " + definition, e);
+				}
 			}
 			else {
 				ResolvableType resolvable = (ResolvableType) getField(definition,
@@ -398,11 +420,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findType(String name) {
-			return findType((RootBeanDefinition) registry.getBeanDefinition(name), 0);
+			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 0);
 		}
 
 		private Class<?> findOutputType(String name) {
-			return findType((RootBeanDefinition) registry.getBeanDefinition(name), 1);
+			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 1);
 		}
 
 	}

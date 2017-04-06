@@ -52,7 +52,7 @@ public class FluxStreamingConsumerTests {
 
 	@Test
 	public void test() throws Exception {
-		sink.input().send(MessageBuilder.withPayload(new Foo("foo")).build());
+		sink.input().send(MessageBuilder.withPayload(new String("{\"name\":\"foo\"}")).build());
 		assertThat(sinkCollector).hasSize(1);
 	}
 
