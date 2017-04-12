@@ -15,7 +15,7 @@
 	</parent>
 
 	<properties>
-		<spring-cloud-deployer-thin.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-deployer-thin.version>
+		<spring-cloud-deployer-thin.version>1.0.0.RELEASE</spring-cloud-deployer-thin.version>
 	</properties>
 
 	<dependencies>
