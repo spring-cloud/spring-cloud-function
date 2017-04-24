@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux;
+package org.springframework.cloud.function.web.flux.response;
 
 import org.reactivestreams.Publisher;
 
@@ -33,12 +33,12 @@ import reactor.core.publisher.Flux;
 class FluxResponseSseEmitter<T> extends SseEmitter {
 
 	public FluxResponseSseEmitter(Publisher<T> observable) {
-		this(MediaType.valueOf("text/event-stream"), observable);
+		this(MediaType.valueOf("text/plain"), observable);
 	}
 
 	public FluxResponseSseEmitter(MediaType mediaType, Publisher<T> observable) {
 		super();
-		new ResponseBodyEmitterSubscriber<>(mediaType, observable, this);
+		new ResponseBodyEmitterSubscriber<>(mediaType, observable, this, false);
 	}
 
 }

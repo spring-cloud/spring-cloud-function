@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.mvc;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,33 +29,43 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Bean;
+import org.springframework.cloud.function.mvc.MvcRestApplicationTests.TestConfiguration;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
+ * Tests for vanilla MVC handling (no function layer). Validates the MVC customizations
+ * that are added in this project independently of the specific concerns of function.
+ * 
  * @author Dave Syer
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-public class RestApplicationTests {
+@SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT)
+public class MvcRestApplicationTests {
 
-	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;
+	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");
 	@LocalServerPort
 	private int port;
 	@Autowired
@@ -70,11 +76,6 @@ public class RestApplicationTests {
 	@Before
 	public void init() {
 		test.list.clear();
-	}
-
-	@Test
-	public void staticResource() throws Exception {
-		assertThat(rest.getForObject("/test.html", String.class)).contains("<body>Test");
 	}
 
 	@Test
@@ -119,27 +120,9 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void qualifierFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
-				.post(new URI("/foos")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"[FOO]\"},{\"value\":\"[BAR]\"}]");
-	}
-
-	@Test
 	public void getMore() throws Exception {
 		ResponseEntity<String> result = rest
 				.exchange(RequestEntity.get(new URI("/get/more")).build(), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
-	}
-
-	@Test
-	public void bareWords() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/bareWords")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
@@ -176,20 +159,9 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void bareUpdates() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
-				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"one\",\"two\"]"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-		assertThat(test.list).hasSize(2);
-		assertThat(result.getBody()).isEqualTo("[\"one\",\"two\"]");
-	}
-
-	@Test
-	public void timeoutJson() throws Exception {
+	public void timeout() throws Exception {
 		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/timeout"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
+				.exchange(RequestEntity.get(new URI("/timeout")).build(), String.class)
 				.getBody()).isEqualTo("[\"foo\"]");
 	}
 
@@ -229,17 +201,6 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void sentencesAcceptSse() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.get(new URI("/sentences")).accept(EVENT_STREAM).build(),
-				String.class);
-		assertThat(result.getBody())
-				.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
-		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM))
-				.isTrue();
-	}
-
-	@Test
 	public void uppercase() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
@@ -250,20 +211,10 @@ public class RestApplicationTests {
 	@Test
 	public void uppercaseFoos() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
-				// TODO: does not require a content type header, but the plain MVC version
-				// does
 				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getBody())
 				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
-	}
-
-	@Test
-	public void bareUppercase() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
-				.post(new URI("/bareUppercase")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
 	}
 
 	@Test
@@ -283,11 +234,6 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void postMoreFoo() {
-		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("[FOO]");
-	}
-
-	@Test
 	public void uppercaseGet() {
 		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
@@ -295,12 +241,6 @@ public class RestApplicationTests {
 	@Test
 	public void convertGet() {
 		assertThat(rest.getForObject("/wrap/123", String.class)).isEqualTo("..123..");
-	}
-
-	@Test
-	public void supplierFirst() {
-		assertThat(rest.getForObject("/not/a/function", String.class))
-				.isEqualTo("[\"hello\"]");
 	}
 
 	@Test
@@ -312,14 +252,12 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void uppercaseJsonArray() throws Exception {
-		assertThat(rest.exchange(
-				RequestEntity.post(new URI("/maps"))
+	public void uppercaseJsonStream() throws Exception {
+		assertThat(rest
+				.exchange(RequestEntity.post(new URI("/maps"))
 						.contentType(MediaType.APPLICATION_JSON)
-						// The new line in the middle is optional
-						.body("[{\"value\":\"foo\"},\n{\"value\":\"bar\"}]"),
-				String.class).getBody())
-						.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+						.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class)
+				.getBody()).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
@@ -335,86 +273,83 @@ public class RestApplicationTests {
 	}
 
 	@EnableAutoConfiguration
-	@org.springframework.boot.test.context.TestConfiguration
+	@RestController
+	@Configuration
 	public static class TestConfiguration {
 
 		private List<String> list = new ArrayList<>();
 
-		@Bean({ "uppercase", "transform", "post/more" })
-		public Function<Flux<String>, Flux<String>> uppercase() {
-			return flux -> flux.log()
+		@PostMapping({ "/uppercase", "/transform", "/post/more" })
+		public Flux<?> uppercase(@RequestBody List<String> flux) {
+			return Flux.fromIterable(flux).log()
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
 		}
 
-		@Bean
-		public Function<String, String> bareUppercase() {
-			return value -> "[" + value.trim().toUpperCase() + "]";
-		}
-
-		@Bean
-		public Function<Flux<Foo>, Flux<Foo>> upFoos() {
-			return flux -> flux.log()
+		@PostMapping("/upFoos")
+		public Flux<Foo> upFoos(@RequestBody List<Foo> list) {
+			return Flux.fromIterable(list).log()
 					.map(value -> new Foo(value.getValue().trim().toUpperCase()));
 		}
 
-		@Bean
-		public Function<Flux<Integer>, Flux<String>> wrap() {
-			return flux -> flux.log().map(value -> ".." + value + "..");
+		@GetMapping("/uppercase/{id}")
+		public Mono<?> uppercaseGet(@PathVariable String id) {
+			return Mono.just(id).map(value -> "[" + value.trim().toUpperCase() + "]");
 		}
 
-		@Bean
-		public Function<Flux<Integer>, Flux<Map<String, Object>>> entity() {
-			return flux -> flux.log()
+		@PostMapping("/wrap")
+		public Flux<?> wrap(@RequestBody Flux<Integer> flux) {
+			return flux.log().map(value -> ".." + value + "..");
+		}
+
+		@GetMapping("/wrap/{id}")
+		public Mono<?> wrapGet(@PathVariable int id) {
+			return Mono.just(id).log().map(value -> ".." + value + "..");
+		}
+
+		@GetMapping("/entity/{id}")
+		public Mono<Map<String, Object>> entity(@PathVariable Integer id) {
+			return Mono.just(id).log()
 					.map(value -> Collections.singletonMap("value", value));
 		}
 
-		@Bean
-		public Function<Flux<HashMap<String, String>>, Flux<Map<String, String>>> maps() {
-			return flux -> flux.map(value -> {
+		@PostMapping("/maps")
+		public Flux<Map<String, String>> maps(
+				@RequestBody List<Map<String, String>> flux) {
+			return Flux.fromIterable(flux).map(value -> {
 				value.put("value", value.get("value").trim().toUpperCase());
 				return value;
 			});
 		}
 
-		@Bean({ "words", "get/more" })
-		public Supplier<Flux<String>> words() {
-			return () -> Flux.just("foo", "bar");
+		@GetMapping({ "/words", "/get/more" })
+		public Flux<Object> words() {
+			return Flux.fromArray(new String[] { "foo", "bar" });
 		}
 
-		@Bean
-		public Supplier<Flux<Foo>> foos() {
-			return () -> Flux.just(new Foo("foo"), new Foo("bar"));
+		@GetMapping("/foos")
+		public Flux<Foo> foos() {
+			return Flux.just(new Foo("foo"), new Foo("bar"));
 		}
 
-		@Bean
-		@Qualifier("foos")
-		public Function<String, Foo> qualifier() {
-			return value -> new Foo("[" + value.trim().toUpperCase() + "]");
+		@PostMapping("/updates")
+		@ResponseStatus(HttpStatus.ACCEPTED)
+		public Flux<?> updates(@RequestBody List<String> list) {
+			Flux<String> flux = Flux.fromIterable(list).cache();
+			flux.subscribe(value -> this.list.add(value));
+			return flux;
 		}
 
-		@Bean
-		public Supplier<List<String>> bareWords() {
-			return () -> Arrays.asList("foo", "bar");
+		@PostMapping("/addFoos")
+		@ResponseStatus(HttpStatus.ACCEPTED)
+		public Flux<Foo> addFoos(@RequestBody List<Foo> list) {
+			Flux<Foo> flux = Flux.fromIterable(list).cache();
+			flux.subscribe(value -> this.list.add(value.getValue()));
+			return flux;
 		}
 
-		@Bean
-		public Consumer<Flux<String>> updates() {
-			return flux -> flux.subscribe(value -> list.add(value));
-		}
-
-		@Bean
-		public Consumer<Flux<Foo>> addFoos() {
-			return flux -> flux.subscribe(value -> list.add(value.getValue()));
-		}
-
-		@Bean
-		public Consumer<String> bareUpdates() {
-			return value -> list.add(value);
-		}
-
-		@Bean
-		public Supplier<Flux<String>> bang() {
-			return () -> Flux.fromArray(new String[] { "foo", "bar" }).map(value -> {
+		@GetMapping("/bang")
+		public Flux<?> bang() {
+			return Flux.fromArray(new String[] { "foo", "bar" }).map(value -> {
 				if (value.equals("bar")) {
 					throw new RuntimeException("Bar");
 				}
@@ -422,32 +357,21 @@ public class RestApplicationTests {
 			});
 		}
 
-		@Bean
-		public Supplier<Flux<String>> empty() {
-			return () -> Flux.fromIterable(Collections.emptyList());
+		@GetMapping("/empty")
+		public Flux<?> empty() {
+			return Flux.fromIterable(Collections.emptyList());
 		}
 
-		@Bean("not/a/function")
-		public Supplier<Flux<String>> supplier() {
-			return () -> Flux.just("hello");
-		}
-
-		@Bean("not/a")
-		public Function<Flux<String>, Flux<String>> function() {
-			return input -> Flux.just("bye");
-		}
-
-		@Bean
-		public Supplier<Flux<String>> timeout() {
-			return () -> Flux.defer(() -> Flux.<String>create(emitter -> {
+		@GetMapping("/timeout")
+		public Flux<?> timeout() {
+			return Flux.defer(() -> Flux.<String>create(emitter -> {
 				emitter.next("foo");
 			}).timeout(Duration.ofMillis(100L), Flux.empty()));
 		}
 
-		@Bean
-		public Supplier<Flux<List<String>>> sentences() {
-			return () -> Flux.just(Arrays.asList("go", "home"),
-					Arrays.asList("come", "back"));
+		@GetMapping("/sentences")
+		public Flux<List<String>> sentences() {
+			return Flux.just(Arrays.asList("go", "home"), Arrays.asList("come", "back"));
 		}
 
 	}
@@ -470,5 +394,4 @@ public class RestApplicationTests {
 			this.value = value;
 		}
 	}
-
 }

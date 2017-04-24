@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.web.flux;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

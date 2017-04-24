@@ -56,7 +56,7 @@ public class PrefixTests {
 		ResponseEntity<String> result = rest
 				.exchange(RequestEntity.get(new URI("/functions/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("foobar");
+		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@EnableAutoConfiguration

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.web.flux;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,7 +26,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.web.flux.request.FluxHandlerMethodArgumentResolver;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
@@ -57,10 +59,10 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	private String prefix = "";
 
 	@Autowired
-	public FunctionHandlerMapping(FunctionCatalog catalog) {
+	public FunctionHandlerMapping(FunctionCatalog catalog, FunctionInspector inspector) {
 		this.functions = catalog;
 		setOrder(super.getOrder() - 5);
-		this.controller = new FunctionController();
+		this.controller = new FunctionController(inspector);
 	}
 
 	@Override
@@ -87,10 +89,14 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		if (path == null) {
 			return handler;
 		}
-		if (findFunctionForGet(request, path) != null) {
+		Object function = findFunctionForGet(request, path);
+		if (function != null) {
+			request.setAttribute(FluxHandlerMethodArgumentResolver.HANDLER, function);
 			return handler;
 		}
-		if (findFunctionForPost(request, path) != null) {
+		function = findFunctionForPost(request, path);
+		if (function != null) {
+			request.setAttribute(FluxHandlerMethodArgumentResolver.HANDLER, function);
 			return handler;
 		}
 		return null;

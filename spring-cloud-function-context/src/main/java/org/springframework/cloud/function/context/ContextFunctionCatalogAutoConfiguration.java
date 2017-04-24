@@ -31,14 +31,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import reactor.core.publisher.Flux;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -54,11 +51,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+
+import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -82,31 +83,83 @@ public class ContextFunctionCatalogAutoConfiguration {
 	private Map<String, FunctionRegistration<?>> registrations = Collections.emptyMap();
 
 	@Bean
-	public FunctionCatalog functionCatalog(ContextFunctionPostProcessor processor,
-			ObjectMapper mapper) {
+	public FunctionCatalog functionCatalog(ContextFunctionPostProcessor processor) {
 		return new InMemoryFunctionCatalog(
-				processor.merge(registrations, consumers, suppliers, functions, mapper));
+				processor.merge(registrations, consumers, suppliers, functions));
+	}
+
+	@Bean
+	public FunctionInspector functionInspector(ContextFunctionPostProcessor processor) {
+		return new BeanFactoryFunctionInspector(processor);
+	}
+	
+	protected class BeanFactoryFunctionInspector implements FunctionInspector {
+
+		private ContextFunctionPostProcessor processor;
+
+		public BeanFactoryFunctionInspector(ContextFunctionPostProcessor processor) {
+			this.processor = processor;
+		}
+		
+		@Override
+		public Class<?> getInputType(String name) {
+			return processor.findInputType(name);
+		}
+		
+		@Override
+		public Class<?> getOutputType(String name) {
+			return processor.findOutputType(name);
+		}
+
+		@Override
+		public Object convert(String name, String value) {
+			return processor.convert(name, value);
+		}
+		
+		@Override
+		public String getName(Object function) {
+			return processor.registrations.get(function);
+		}
+		
 	}
 
 	@Component
-	public static class ContextFunctionPostProcessor
-			implements BeanFactoryPostProcessor, BeanDefinitionRegistryPostProcessor {
+	protected static class ContextFunctionPostProcessor
+			implements BeanDefinitionRegistryPostProcessor {
 
 		private Set<String> suppliers = new HashSet<>();
 		private Set<String> functions = new HashSet<>();
 		private Set<String> consumers = new HashSet<>();
 
 		private BeanDefinitionRegistry registry;
+		private ConversionService conversionService;
+		private Map<Object, String> registrations = new HashMap<>();
 
 		@Override
 		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
 			this.registry = registry;
 		}
 
+		public Object convert(String name, String value) {
+			if (conversionService==null) {
+				if (registry instanceof ConfigurableListableBeanFactory) {
+					ConversionService conversionService = ((ConfigurableBeanFactory) this.registry).getConversionService();
+					if (conversionService != null) {
+						this.conversionService = conversionService;
+					}
+					else {
+						this.conversionService = new DefaultConversionService();
+					}
+				}
+			}
+			Class<?> type = findInputType(name);
+			return conversionService.canConvert(String.class, type) ? conversionService.convert(value, type) : value;
+		}
+
 		public Set<FunctionRegistration<?>> merge(
 				Map<String, FunctionRegistration<?>> initial,
 				Map<String, Consumer<?>> consumers, Map<String, Supplier<?>> suppliers,
-				Map<String, Function<?, ?>> functions, ObjectMapper mapper) {
+				Map<String, Function<?, ?>> functions) {
 			Set<FunctionRegistration<?>> registrations = new HashSet<>();
 			Map<Object, String> targets = new HashMap<>();
 			// Replace the initial registrations with new ones that have the right names
@@ -150,7 +203,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				@SuppressWarnings("unchecked")
 				FunctionRegistration<Object> target = (FunctionRegistration<Object>) registration;
 				String key = targets.get(target.getTarget());
-				wrap(target, mapper, key);
+				wrap(target, key);
 			}
 			return registrations;
 		}
@@ -168,18 +221,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return names;
 		}
 
-		private void wrap(FunctionRegistration<Object> registration,
-				ObjectMapper mapper, String key) {
+		private void wrap(FunctionRegistration<Object> registration, String key) {
 			Object target = registration.getTarget();
 			if (target instanceof Supplier) {
-				registration.target(target((Supplier<?>) target, mapper, key));
+				registration.target(target((Supplier<?>) target, key));
 			}
 			else if (target instanceof Consumer) {
-				registration.target(target((Consumer<?>) target, mapper, key));
+				registration.target(target((Consumer<?>) target, key));
 			}
 			else if (target instanceof Function) {
-				registration.target(target((Function<?, ?>) target, mapper, key));
+				registration.target(target((Function<?, ?>) target, key));
 			}
+			this.registrations.put(registration.getTarget(), key);
 		}
 
 		private String getQualifier(String key) {
@@ -200,49 +253,48 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return value;
 		}
 
-		private Supplier<?> target(Supplier<?> target, ObjectMapper mapper, String key) {
+		private Supplier<?> target(Supplier<?> target, String key) {
 			if (this.suppliers.contains(key)) {
 				@SuppressWarnings("unchecked")
 				Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) target;
-				return wrapSupplier(supplier, mapper, key);
+				return supplier;
 			}
 			else if (!isFluxSupplier(key, target)) {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				FluxSupplier value = new FluxSupplier(target);
-				return wrapSupplier(value, mapper, key);
+				return value;
 			}
 			else {
 				return target;
 			}
 		}
 
-		private Function<?, ?> target(Function<?, ?> target, ObjectMapper mapper,
-				String key) {
+		private Function<?, ?> target(Function<?, ?> target, String key) {
 			if (this.functions.contains(key)) {
 				@SuppressWarnings("unchecked")
 				Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) target;
-				return wrapFunction(function, mapper, key);
+				return function;
 			}
 			else if (!isFluxFunction(key, target)) {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				FluxFunction value = new FluxFunction(target);
-				return wrapFunction(value, mapper, key);
+				return value;
 			}
 			else {
 				return target;
 			}
 		}
 
-		private Consumer<?> target(Consumer<?> target, ObjectMapper mapper, String key) {
+		private Consumer<?> target(Consumer<?> target, String key) {
 			if (this.consumers.contains(key)) {
 				@SuppressWarnings("unchecked")
 				Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) target;
-				return wrapConsumer(consumer, mapper, key);
+				return consumer;
 			}
 			else if (!isFluxConsumer(key, target)) {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				FluxConsumer value = new FluxConsumer(target);
-				return wrapConsumer(value, mapper, key);
+				return value;
 			}
 			else {
 				return target;
@@ -342,201 +394,69 @@ public class ContextFunctionCatalogAutoConfiguration {
 											String.class)));
 		}
 
-		private ProxySupplier wrapSupplier(Supplier<Flux<?>> supplier,
-				ObjectMapper mapper, String name) {
-			ProxySupplier wrapped = new ProxySupplier(mapper);
-			wrapped.setDelegate(supplier);
-			wrapped.setOutputType(findType(name));
-			return wrapped;
-		}
-
-		private ProxyFunction wrapFunction(Function<Flux<?>, Flux<?>> function,
-				ObjectMapper mapper, String name) {
-			ProxyFunction wrapped = new ProxyFunction(mapper);
-			wrapped.setDelegate(function);
-			wrapped.setInputType(findType(name));
-			wrapped.setOutputType(findOutputType(name));
-			return wrapped;
-		}
-
-		private ProxyConsumer wrapConsumer(Consumer<Flux<?>> consumer,
-				ObjectMapper mapper, String name) {
-			ProxyConsumer wrapped = new ProxyConsumer(mapper);
-			wrapped.setDelegate(consumer);
-			wrapped.setInputType(findType(name));
-			return wrapped;
-		}
-
 		private Class<?> findType(AbstractBeanDefinition definition, int index) {
-			Object source = definition.getSource();
-			Type param;
-			if (source instanceof StandardMethodMetadata) {
-				ParameterizedType type;
-				type = (ParameterizedType) ((StandardMethodMetadata) source).getIntrospectedMethod()
-						.getGenericReturnType();
-				Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
-				if (typeArgumentAtIndex instanceof ParameterizedType) {
-					param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
-				}
-				else {
-					param = typeArgumentAtIndex;
-				}
-			}
-			else if (source instanceof FileSystemResource) {
-				try {
-					Type type = ClassUtils.forName(definition.getBeanClassName(), null);
-					if (type instanceof ParameterizedType) {
-						Type typeArgumentAtIndex = ((ParameterizedType)type).getActualTypeArguments()[index];
-						if (typeArgumentAtIndex instanceof ParameterizedType) {
-							param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
-						} else {
-							param = typeArgumentAtIndex;
-						}
-					}
-					else {
-						param = type;
-					}
-				} catch (ClassNotFoundException e) {
-					throw new IllegalStateException("Cannot instrospect bean: " + definition, e);
-				}
+		Object source = definition.getSource();
+		Type param;
+		if (source instanceof StandardMethodMetadata) {
+			ParameterizedType type;
+			type = (ParameterizedType) ((StandardMethodMetadata) source).getIntrospectedMethod()
+					.getGenericReturnType();
+			Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
+			if (typeArgumentAtIndex instanceof ParameterizedType) {
+				param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
 			}
 			else {
-				ResolvableType resolvable = (ResolvableType) getField(definition,
-						"targetType");
-				param = resolvable.getGeneric(index).getGeneric(0).getType();
+				param = typeArgumentAtIndex;
 			}
-			if (param instanceof ParameterizedType) {
-				ParameterizedType concrete = (ParameterizedType) param;
-				param = concrete.getRawType();
+		}
+		else if (source instanceof FileSystemResource) {
+			try {
+				Type type = ClassUtils.forName(definition.getBeanClassName(), null);
+				if (type instanceof ParameterizedType) {
+					Type typeArgumentAtIndex = ((ParameterizedType)type).getActualTypeArguments()[index];
+					if (typeArgumentAtIndex instanceof ParameterizedType) {
+						param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
+					} else {
+						param = typeArgumentAtIndex;
+					}
+				}
+				else {
+					param = type;
+				}
+			} catch (ClassNotFoundException e) {
+				throw new IllegalStateException("Cannot instrospect bean: " + definition, e);
 			}
-			return ClassUtils.resolveClassName(param.getTypeName(),
-					registry.getClass().getClassLoader());
 		}
-
-		private Object getField(Object target, String name) {
-			Field field = ReflectionUtils.findField(target.getClass(), name);
-			ReflectionUtils.makeAccessible(field);
-			return ReflectionUtils.getField(field, target);
+		else {
+			ResolvableType resolvable = (ResolvableType) getField(definition,
+					"targetType");
+			param = resolvable.getGeneric(index).getGeneric(0).getType();
 		}
-
-		private Class<?> findType(String name) {
-			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 0);
+		if (param instanceof ParameterizedType) {
+			ParameterizedType concrete = (ParameterizedType) param;
+			param = concrete.getRawType();
 		}
+		return ClassUtils.resolveClassName(param.getTypeName(),
+				registry.getClass().getClassLoader());
+	}
 
-		private Class<?> findOutputType(String name) {
-			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 1);
+	private Object getField(Object target, String name) {
+		Field field = ReflectionUtils.findField(target.getClass(), name);
+		ReflectionUtils.makeAccessible(field);
+		return ReflectionUtils.getField(field, target);
+	}
+
+	private Class<?> findInputType(String name) {
+		if (!registry.containsBeanDefinition(name)) {
+			return Object.class;
 		}
-
-	}
-}
-
-abstract class ProxyWrapper<T> {
-
-	private ObjectMapper mapper;
-
-	private T delegate;
-
-	private Class<?> inputType;
-
-	private Class<?> outputType;
-
-	public ProxyWrapper(ObjectMapper mapper) {
-		this.mapper = mapper;
+		return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 0);
 	}
 
-	public void setDelegate(T delegate) {
-		this.delegate = delegate;
-	}
-
-	public T getDelegate() {
-		return delegate;
-	}
-
-	public void setInputType(Class<?> inputType) {
-		this.inputType = inputType;
-	}
-
-	public void setOutputType(Class<?> outputType) {
-		this.outputType = outputType;
-	}
-
-	public Class<?> getInputType() {
-		return this.inputType;
-	}
-
-	public Class<?> getOutputType() {
-		return outputType;
-	}
-
-	public Object fromJson(String value) {
-		if (getInputType().equals(String.class)) {
-			return value;
+	private Class<?> findOutputType(String name) {
+		if (!registry.containsBeanDefinition(name)) {
+			return Object.class;
 		}
-		try {
-			return mapper.readValue(value, getInputType());
-		}
-		catch (Exception e) {
-			throw new IllegalStateException("Cannot convert from JSON: " + value);
-		}
-	}
-
-	public String toJson(Object value) {
-		if (String.class.equals(getOutputType()) && value instanceof String) {
-			return (String) value;
-		}
-		try {
-			return mapper.writeValueAsString(value);
-		}
-		catch (Exception e) {
-			throw new IllegalStateException("Cannot convert to JSON: " + value);
-		}
-	}
-
-	@Override
-	public String toString() {
-		return "ProxyWrapper [delegate=" + delegate + ", inputType=" + inputType + "]";
-	}
-
-}
-
-class ProxySupplier extends ProxyWrapper<Supplier<Flux<?>>>
-		implements Supplier<Flux<String>> {
-
-	@Autowired
-	public ProxySupplier(ObjectMapper mapper) {
-		super(mapper);
-	}
-
-	@Override
-	public Flux<String> get() {
-		return getDelegate().get().map(this::toJson);
-	}
-}
-
-class ProxyFunction extends ProxyWrapper<Function<Flux<?>, Flux<?>>>
-		implements Function<Flux<String>, Flux<String>> {
-
-	@Autowired
-	public ProxyFunction(ObjectMapper mapper) {
-		super(mapper);
-	}
-
-	@Override
-	public Flux<String> apply(Flux<String> input) {
-		return getDelegate().apply(input.map(this::fromJson)).map(this::toJson);
-	}
-}
-
-class ProxyConsumer extends ProxyWrapper<Consumer<Flux<?>>>
-		implements Consumer<Flux<String>> {
-
-	@Autowired
-	public ProxyConsumer(ObjectMapper mapper) {
-		super(mapper);
-	}
-
-	@Override
-	public void accept(Flux<String> input) {
-		getDelegate().accept(input.map(this::fromJson));
-	}
+		return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 1);
+	}	}
 }

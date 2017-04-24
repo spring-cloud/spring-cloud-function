@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux;
+package org.springframework.cloud.function.web.flux.response;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -49,11 +49,14 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 
 	private boolean single;
 
+	private boolean json;
+
 	public ResponseBodyEmitterSubscriber(MediaType mediaType, Publisher<T> observable,
-			ResponseBodyEmitter responseBodyEmitter) {
+			ResponseBodyEmitter responseBodyEmitter, boolean json) {
 
 		this.mediaType = mediaType;
 		this.responseBodyEmitter = responseBodyEmitter;
+		this.json = json;
 		this.responseBodyEmitter.onTimeout(new Timeout());
 		this.responseBodyEmitter.onCompletion(new Complete());
 		this.single = observable instanceof Mono;
@@ -72,8 +75,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 		Object object = value;
 
 		try {
-			if (!MediaType.ALL.equals(mediaType)
-					&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+			if (isJson()) {
 				if (!this.firstElementWritten) {
 					if (!single) {
 						responseBodyEmitter.send("[");
@@ -83,7 +85,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 				else {
 					responseBodyEmitter.send(",");
 				}
-				if (value.getClass() == String.class
+				if (!single && value.getClass() == String.class
 						&& !((String) value).contains("\"")) {
 					object = "\"" + value + "\"";
 				}
@@ -104,8 +106,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 		if (!completed) {
 			completed = true;
 			try {
-				if (!MediaType.ALL.equals(mediaType)
-						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+				if (isJson()) {
 					if (!single) {
 						if (!this.firstElementWritten) {
 							responseBodyEmitter.send("[]");
@@ -133,8 +134,7 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 		if (!completed) {
 			completed = true;
 			try {
-				if (!MediaType.ALL.equals(mediaType)
-						&& MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
+				if (isJson()) {
 					if (!single) {
 						if (!this.firstElementWritten) {
 							responseBodyEmitter.send("[");
@@ -148,6 +148,10 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 			}
 			responseBodyEmitter.complete();
 		}
+	}
+
+	private boolean isJson() {
+		return json;
 	}
 
 	class Complete implements Runnable {

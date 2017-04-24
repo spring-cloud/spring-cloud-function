@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux;
+package org.springframework.cloud.function.web.flux.response;
 
 import java.time.Duration;
 import java.util.List;
@@ -65,13 +65,19 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 
 	@Override
 	public boolean isAsyncReturnValue(Object returnValue, MethodParameter returnType) {
-		return returnValue != null && supportsReturnType(returnType);
+		if (returnValue != null) {
+			return supportsReturnType(returnType);
+		}
+		return false;
 	}
 
 	@Override
 	public boolean supportsReturnType(MethodParameter returnType) {
-		return Publisher.class.isAssignableFrom(returnType.getParameterType())
-				|| isResponseEntity(returnType);
+		return (returnType.getParameterType() != null
+				&& (Publisher.class.isAssignableFrom(returnType.getParameterType())
+						|| isResponseEntity(returnType)))
+				|| Publisher.class
+						.isAssignableFrom(returnType.getMethod().getReturnType());
 	}
 
 	private boolean isResponseEntity(MethodParameter returnType) {
@@ -87,6 +93,12 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 	public void handleReturnValue(Object returnValue, MethodParameter returnType,
 			ModelAndViewContainer mavContainer, NativeWebRequest webRequest)
 			throws Exception {
+
+		if (returnValue == null) {
+			mavContainer.setRequestHandled(true);
+			return;
+		}
+
 		Object adaptFrom = returnValue;
 		if (returnValue instanceof ResponseEntity) {
 			ResponseEntity<?> value = (ResponseEntity<?>) returnValue;
@@ -96,9 +108,19 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		}
 		Publisher<?> flux = (Publisher<?>) adaptFrom;
 
-		MediaType mediaType = webRequest.getHeader("Accept") == null ? null
-				: MediaType.parseMediaTypes(webRequest.getHeader("Accept")).iterator()
-						.next();
+		MediaType mediaType = null;
+		if (webRequest.getHeader("Accept") != null) {
+			for (MediaType type : MediaType
+					.parseMediaTypes(webRequest.getHeader("Accept"))) {
+				if (!MediaType.ALL.equals(type)
+						&& MediaType.APPLICATION_JSON.isCompatibleWith(type)) {
+					mediaType = MediaType.APPLICATION_JSON;
+					break;
+				} else if (mediaType==null) {
+					mediaType = type;
+				}
+			}
+		}
 		delegate.handleReturnValue(getEmitter(timeout, flux, mediaType), returnType,
 				mavContainer, webRequest);
 	}
@@ -109,7 +131,8 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 				: Flux.from(flux).timeout(Duration.ofMillis(timeout), Flux.empty());
 		if (!MediaType.ALL.equals(mediaType)
 				&& EVENT_STREAM.isCompatibleWith(mediaType)) {
-			return new FluxResponseSseEmitter<>(mediaType, exported);
+			// TODO: more subtle content negotiation
+			return new FluxResponseSseEmitter<>(MediaType.APPLICATION_JSON, exported);
 		}
 		return new FluxResponseBodyEmitter<>(mediaType, exported);
 	}

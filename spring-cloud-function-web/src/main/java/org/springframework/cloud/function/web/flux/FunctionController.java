@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.web.flux;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.support.FluxSupplier;
 import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.web.flux.request.FluxRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -42,25 +44,30 @@ import reactor.core.publisher.Mono;
  */
 @Component
 public class FunctionController {
+	
+	private FunctionInspector inspector;
 
 	@Value("${debug:${DEBUG:false}}")
 	private boolean debug = false;
 
+	public FunctionController(FunctionInspector inspector) {
+		this.inspector = inspector;
+	}
+
 	@PostMapping(path = "/**")
 	@ResponseBody
-	public ResponseEntity<Flux<String>> post(
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.function") Function<Flux<?>, Flux<?>> function,
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.consumer") Consumer<Flux<?>> consumer,
-			@RequestBody Flux<String> body) {
+	public ResponseEntity<Flux<?>> post(
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.function") Function<Flux<?>, Flux<?>> function,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.consumer") Consumer<Flux<?>> consumer,
+			@RequestBody FluxRequest<?> body) {
 		if (function != null) {
-			@SuppressWarnings("unchecked")
-			Flux<String> result = (Flux<String>) function.apply(body);
+			Flux<?> result = (Flux<?>) function.apply(body.flux());
 			return ResponseEntity.ok().body(debug ? result.log() : result);
 		}
 		if (consumer != null) {
-			body = body.cache(); // send a copy back to the caller
-			consumer.accept(body);
-			return ResponseEntity.status(HttpStatus.ACCEPTED).body(body);
+			Flux<?> flux = body.flux().cache(); // send a copy back to the caller
+			consumer.accept(flux);
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(flux);
 		}
 		throw new IllegalArgumentException("no such function");
 	}
@@ -68,9 +75,9 @@ public class FunctionController {
 	@GetMapping(path = "/**")
 	@ResponseBody
 	public Object get(
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.function") Function<Flux<?>, Flux<?>> function,
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.supplier") Supplier<Flux<?>> supplier,
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.FunctionHandlerMapping.argument") String argument) {
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.function") Function<Flux<?>, Flux<?>> function,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.supplier") Supplier<Flux<?>> supplier,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.argument") String argument) {
 		if (function != null) {
 			return value(function, argument);
 		}
@@ -78,18 +85,18 @@ public class FunctionController {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Flux<String> supplier(Supplier<Flux<?>> supplier) {
+	private Flux<?> supplier(Supplier<Flux<?>> supplier) {
 		if (!FunctionUtils.isFluxSupplier(supplier)) {
 			supplier = new FluxSupplier(supplier);
 		}
-		Flux<String> result = (Flux<String>) supplier.get();
+		Flux<?> result = supplier.get();
 		return debug ? result.log() : result;
 	}
 
-	private Mono<String> value(Function<Flux<?>, Flux<?>> function,
+	private Mono<?> value(Function<Flux<?>, Flux<?>> function,
 			@PathVariable String value) {
-		@SuppressWarnings({ "unchecked" })
-		Mono<String> result = Mono.from((Flux<String>) function.apply(Flux.just(value)));
+		Object input = inspector.convert(inspector.getName(function), value);
+		Mono<?> result = Mono.from(function.apply(Flux.just(input)));
 		return debug ? result.log() : result;
 	}
 }
