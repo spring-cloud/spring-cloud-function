@@ -31,10 +31,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.cloud.stream.messaging.Source;
@@ -42,6 +44,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.ConfigurationCondition;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -50,6 +53,7 @@ import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
 @EnableConfigurationProperties(StreamConfigurationProperties.class)
 @ConditionalOnClass({ Binder.class, AbstractFunctionInvoker.class })
@@ -82,11 +86,13 @@ public class StreamConfiguration {
 
 		@Bean
 		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
-		public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry) {
+		public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry, FunctionInspector functionInspector,
+				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 			String name = properties.getEndpoint();
 			Function<Object, Object> function = registry.lookupFunction(name);
 			Assert.notNull(function, "no such function: " + name);
-			return new StreamListeningFunctionInvoker(function);
+			return new StreamListeningFunctionInvoker(name, function, functionInspector,
+					compositeMessageConverterFactory);
 		}
 	}
 
@@ -99,10 +105,12 @@ public class StreamConfiguration {
 
 		@Bean
 		@ConditionalOnProperty("spring.cloud.stream.bindings.input.destination")
-		public StreamListeningConsumerInvoker<Object> invoker(FunctionCatalog registry) {
+		public StreamListeningConsumerInvoker invoker(FunctionCatalog registry, FunctionInspector functionInspector,
+				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 			String name = properties.getEndpoint();
-			Consumer<Flux<Object>> consumer = registry.lookupConsumer(name);
-			return new StreamListeningConsumerInvoker<Object>(consumer);
+			Consumer<Flux<?>> consumer = registry.lookupConsumer(name);
+			return new StreamListeningConsumerInvoker(name, consumer, functionInspector,
+					compositeMessageConverterFactory);
 		}
 	}
 
@@ -137,10 +145,8 @@ public class StreamConfiguration {
 		}
 
 		@Override
-		public ConditionOutcome getMatchOutcome(ConditionContext context,
-				AnnotatedTypeMetadata metadata) {
-			String functionName = context.getEnvironment()
-					.getProperty("spring.cloud.function.stream.endpoint");
+		public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+			String functionName = context.getEnvironment().getProperty("spring.cloud.function.stream.endpoint");
 			if (!StringUtils.hasText(functionName)) {
 				return ConditionOutcome.noMatch("no endpoint function name available");
 			}
@@ -151,11 +157,9 @@ public class StreamConfiguration {
 			}
 			Class<?> beanType = context.getBeanFactory().getType(functionName);
 			if (type.isAssignableFrom(beanType)) {
-				return ConditionOutcome
-						.match(String.format("bean '%s' is a %s", functionName, type));
+				return ConditionOutcome.match(String.format("bean '%s' is a %s", functionName, type));
 			}
-			return ConditionOutcome
-					.noMatch(String.format("bean '%s' is not a %s", functionName, type));
+			return ConditionOutcome.noMatch(String.format("bean '%s' is not a %s", functionName, type));
 		}
 
 		@Override

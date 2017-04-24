@@ -17,26 +17,64 @@
 package org.springframework.cloud.function.stream;
 
 import java.util.function.Consumer;
-
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.messaging.Processor;
+import java.util.function.Function;
 
 import reactor.core.publisher.Flux;
 
+import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.cloud.function.context.FunctionInspector;
+import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
+import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.converter.MessageConverter;
+
 /**
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
-public class StreamListeningConsumerInvoker<T> {
+public class StreamListeningConsumerInvoker implements SmartInitializingSingleton {
 
-	private final Consumer<Flux<T>> consumer;
+	private final Consumer<Flux<?>> consumer;
 
-	public StreamListeningConsumerInvoker(Consumer<Flux<T>> consumer) {
+	private final String name;
+
+	private final FunctionInspector functionInspector;
+
+	private final CompositeMessageConverterFactory converterFactory;
+
+	private MessageConverter converter;
+
+	private Class<?> inputType;
+
+	public StreamListeningConsumerInvoker(String name, Consumer<Flux<?>> consumer, FunctionInspector functionInspector,
+			CompositeMessageConverterFactory converterFactory) {
 		this.consumer = consumer;
+		this.name = name;
+		this.functionInspector = functionInspector;
+		this.converterFactory = converterFactory;
+	}
+
+	@Override
+	public void afterSingletonsInstantiated() {
+		this.converter = this.converterFactory.getMessageConverterForAllRegistered();
+		this.inputType = this.functionInspector.getInputType(this.name);
 	}
 
 	@StreamListener
-	public void handle(@Input(Processor.INPUT) Flux<T> input) {
-		this.consumer.accept(input);
+	public void handle(@Input(Processor.INPUT) Flux<Message<?>> input) {
+		this.consumer.accept(input.map(convertInput()));
+	}
+
+	private Function<Message<?>, Object> convertInput() {
+		return m -> {
+			if (this.inputType.isAssignableFrom(m.getPayload().getClass())) {
+				return m.getPayload();
+			}
+			else {
+				return converter.fromMessage(m, this.inputType);
+			}
+		};
 	}
 }

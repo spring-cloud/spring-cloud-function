@@ -18,31 +18,57 @@ package org.springframework.cloud.function.stream;
 
 import java.util.function.Function;
 
+import reactor.core.publisher.Flux;
+
+import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
 import org.springframework.cloud.function.support.FluxFunction;
 import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.Assert;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
+ * @author Marius Bogoevici
  */
-public class StreamListeningFunctionInvoker
-		extends AbstractFunctionInvoker<Flux<?>, Flux<?>> {
+public class StreamListeningFunctionInvoker extends AbstractFunctionInvoker<Flux<?>, Flux<?>>
+		implements SmartInitializingSingleton {
 
-	public StreamListeningFunctionInvoker(Function<?, ?> function) {
+	private final String name;
+
+	private final FunctionInspector functionInspector;
+
+	private final CompositeMessageConverterFactory converterFactory;
+
+	private MessageConverter converter;
+
+	private Class<?> inputType;
+
+	public StreamListeningFunctionInvoker(String name, Function<?, ?> function, FunctionInspector functionInspector,
+			CompositeMessageConverterFactory converterFactory) {
 		super(wrapIfNecessary(function));
+		this.name = name;
+		this.functionInspector = functionInspector;
+		this.converterFactory = converterFactory;
+	}
+
+	@Override
+	public void afterSingletonsInstantiated() {
+		this.converter = this.converterFactory.getMessageConverterForAllRegistered();
+		this.inputType = this.functionInspector.getInputType(this.name);
 	}
 
 	@StreamListener
 	@Output(Processor.OUTPUT)
-	public Flux<?> handle(@Input(Processor.INPUT) Flux<?> input) {
-		return this.doInvoke(input);
+	public Flux<?> handle(@Input(Processor.INPUT) Flux<Message<?>> input) {
+		return this.doInvoke(input.map(convertInput()));
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -52,5 +78,16 @@ public class StreamListeningFunctionInvoker
 			function = new FluxFunction(function);
 		}
 		return function;
+	}
+
+	private Function<Message<?>, Object> convertInput() {
+		return m -> {
+			if (this.inputType.isAssignableFrom(m.getPayload().getClass())) {
+				return m.getPayload();
+			}
+			else {
+				return this.converter.fromMessage(m, this.inputType);
+			}
+		};
 	}
 }
