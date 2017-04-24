@@ -54,7 +54,7 @@ public class PrefixTests {
 	@Test
 	public void words() throws Exception {
 		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+				.exchange(RequestEntity.get(new URI("/functions/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("foobar");
 	}

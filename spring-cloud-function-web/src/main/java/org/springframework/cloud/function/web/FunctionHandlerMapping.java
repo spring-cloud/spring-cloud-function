@@ -81,6 +81,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		}
 		String path = (String) request
 				.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		if (path.startsWith(prefix)) {
+			path = path.substring(prefix.length());
+		}
 		if (path == null) {
 			return handler;
 		}
