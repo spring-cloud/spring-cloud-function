@@ -41,8 +41,8 @@ public class SampleApplicationTests {
 	@Test
 	public void lowercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/test", "it works",
-				String.class)).isEqualTo("it works!!!");
+				"http://localhost:" + port + "/test", "[\"it works\"]",
+				String.class)).isEqualTo("[\"it works!!!\"]");
 	}
 
 }

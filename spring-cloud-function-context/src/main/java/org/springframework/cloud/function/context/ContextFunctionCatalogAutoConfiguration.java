@@ -92,7 +92,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 	public FunctionInspector functionInspector(ContextFunctionPostProcessor processor) {
 		return new BeanFactoryFunctionInspector(processor);
 	}
-	
+
 	protected class BeanFactoryFunctionInspector implements FunctionInspector {
 
 		private ContextFunctionPostProcessor processor;
@@ -100,12 +100,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public BeanFactoryFunctionInspector(ContextFunctionPostProcessor processor) {
 			this.processor = processor;
 		}
-		
+
 		@Override
 		public Class<?> getInputType(String name) {
 			return processor.findInputType(name);
 		}
-		
+
 		@Override
 		public Class<?> getOutputType(String name) {
 			return processor.findOutputType(name);
@@ -115,12 +115,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public Object convert(String name, String value) {
 			return processor.convert(name, value);
 		}
-		
+
 		@Override
 		public String getName(Object function) {
 			return processor.registrations.get(function);
 		}
-		
+
 	}
 
 	@Component
@@ -141,9 +141,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		public Object convert(String name, String value) {
-			if (conversionService==null) {
+			if (conversionService == null) {
 				if (registry instanceof ConfigurableListableBeanFactory) {
-					ConversionService conversionService = ((ConfigurableBeanFactory) this.registry).getConversionService();
+					ConversionService conversionService = ((ConfigurableBeanFactory) this.registry)
+							.getConversionService();
 					if (conversionService != null) {
 						this.conversionService = conversionService;
 					}
@@ -153,7 +154,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			Class<?> type = findInputType(name);
-			return conversionService.canConvert(String.class, type) ? conversionService.convert(value, type) : value;
+			return conversionService.canConvert(String.class, type)
+					? conversionService.convert(value, type) : value;
 		}
 
 		public Set<FunctionRegistration<?>> merge(
@@ -395,68 +397,78 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findType(AbstractBeanDefinition definition, int index) {
-		Object source = definition.getSource();
-		Type param;
-		if (source instanceof StandardMethodMetadata) {
-			ParameterizedType type;
-			type = (ParameterizedType) ((StandardMethodMetadata) source).getIntrospectedMethod()
-					.getGenericReturnType();
-			Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
-			if (typeArgumentAtIndex instanceof ParameterizedType) {
-				param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
-			}
-			else {
-				param = typeArgumentAtIndex;
-			}
-		}
-		else if (source instanceof FileSystemResource) {
-			try {
-				Type type = ClassUtils.forName(definition.getBeanClassName(), null);
-				if (type instanceof ParameterizedType) {
-					Type typeArgumentAtIndex = ((ParameterizedType)type).getActualTypeArguments()[index];
-					if (typeArgumentAtIndex instanceof ParameterizedType) {
-						param = ((ParameterizedType) typeArgumentAtIndex).getActualTypeArguments()[0];
-					} else {
-						param = typeArgumentAtIndex;
-					}
+			Object source = definition.getSource();
+			Type param;
+			if (source instanceof StandardMethodMetadata) {
+				ParameterizedType type;
+				type = (ParameterizedType) ((StandardMethodMetadata) source)
+						.getIntrospectedMethod().getGenericReturnType();
+				Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
+				if (typeArgumentAtIndex instanceof ParameterizedType) {
+					param = ((ParameterizedType) typeArgumentAtIndex)
+							.getActualTypeArguments()[0];
 				}
 				else {
-					param = type;
+					param = typeArgumentAtIndex;
 				}
-			} catch (ClassNotFoundException e) {
-				throw new IllegalStateException("Cannot instrospect bean: " + definition, e);
 			}
+			else if (source instanceof FileSystemResource) {
+				try {
+					Type type = ClassUtils.forName(definition.getBeanClassName(), null);
+					if (type instanceof ParameterizedType) {
+						Type typeArgumentAtIndex = ((ParameterizedType) type)
+								.getActualTypeArguments()[index];
+						if (typeArgumentAtIndex instanceof ParameterizedType) {
+							param = ((ParameterizedType) typeArgumentAtIndex)
+									.getActualTypeArguments()[0];
+						}
+						else {
+							param = typeArgumentAtIndex;
+						}
+					}
+					else {
+						param = type;
+					}
+				}
+				catch (ClassNotFoundException e) {
+					throw new IllegalStateException(
+							"Cannot instrospect bean: " + definition, e);
+				}
+			}
+			else {
+				ResolvableType resolvable = (ResolvableType) getField(definition,
+						"targetType");
+				if (resolvable != null) {
+					param = resolvable.getGeneric(index).getGeneric(0).getType();
+				}
+				else return Object.class;
+			}
+			if (param instanceof ParameterizedType) {
+				ParameterizedType concrete = (ParameterizedType) param;
+				param = concrete.getRawType();
+			}
+			return ClassUtils.resolveClassName(param.getTypeName(),
+					registry.getClass().getClassLoader());
 		}
-		else {
-			ResolvableType resolvable = (ResolvableType) getField(definition,
-					"targetType");
-			param = resolvable.getGeneric(index).getGeneric(0).getType();
-		}
-		if (param instanceof ParameterizedType) {
-			ParameterizedType concrete = (ParameterizedType) param;
-			param = concrete.getRawType();
-		}
-		return ClassUtils.resolveClassName(param.getTypeName(),
-				registry.getClass().getClassLoader());
-	}
 
-	private Object getField(Object target, String name) {
-		Field field = ReflectionUtils.findField(target.getClass(), name);
-		ReflectionUtils.makeAccessible(field);
-		return ReflectionUtils.getField(field, target);
-	}
-
-	private Class<?> findInputType(String name) {
-		if (!registry.containsBeanDefinition(name)) {
-			return Object.class;
+		private Object getField(Object target, String name) {
+			Field field = ReflectionUtils.findField(target.getClass(), name);
+			ReflectionUtils.makeAccessible(field);
+			return ReflectionUtils.getField(field, target);
 		}
-		return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 0);
-	}
 
-	private Class<?> findOutputType(String name) {
-		if (!registry.containsBeanDefinition(name)) {
-			return Object.class;
+		private Class<?> findInputType(String name) {
+			if (!registry.containsBeanDefinition(name)) {
+				return Object.class;
+			}
+			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 0);
 		}
-		return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 1);
-	}	}
+
+		private Class<?> findOutputType(String name) {
+			if (!registry.containsBeanDefinition(name)) {
+				return Object.class;
+			}
+			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 1);
+		}
+	}
 }

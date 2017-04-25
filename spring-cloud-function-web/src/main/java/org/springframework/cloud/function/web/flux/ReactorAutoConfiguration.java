@@ -35,8 +35,6 @@ import org.springframework.cloud.function.web.flux.response.FluxReturnValueHandl
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.http.converter.ObjectToStringHttpMessageConverter;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -56,11 +54,6 @@ public class ReactorAutoConfiguration {
 
 	@Autowired
 	private ApplicationContext context;
-
-	@Bean
-	public ObjectToStringHttpMessageConverter objectToStringHttpMessageConverter() {
-		return new ObjectToStringHttpMessageConverter(new DefaultConversionService());
-	}
 
 	@Bean
 	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog,

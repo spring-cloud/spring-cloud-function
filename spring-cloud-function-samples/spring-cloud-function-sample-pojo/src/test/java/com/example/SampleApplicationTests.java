@@ -41,14 +41,14 @@ public class SampleApplicationTests {
 	public void words() {
 		assertThat(new TestRestTemplate()
 				.getForObject("http://localhost:" + port + "/words", String.class))
-						.isEqualTo("{\"value\":\"foo\"}{\"value\":\"bar\"}");
+						.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void uppercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",
-				String.class)).isEqualTo("{\"value\":\"FOO\"}");
+				"http://localhost:" + port + "/uppercase", "[{\"value\":\"foo\"}]",
+				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
 }
