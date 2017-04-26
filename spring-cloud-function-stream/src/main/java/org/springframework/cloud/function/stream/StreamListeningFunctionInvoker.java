@@ -23,8 +23,6 @@ import reactor.core.publisher.Flux;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.invoker.AbstractFunctionInvoker;
-import org.springframework.cloud.function.support.FluxFunction;
-import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
@@ -32,7 +30,6 @@ import org.springframework.cloud.stream.converter.CompositeMessageConverterFacto
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.util.Assert;
 
 /**
  * @author Mark Fisher
@@ -51,9 +48,9 @@ public class StreamListeningFunctionInvoker extends AbstractFunctionInvoker<Flux
 
 	private Class<?> inputType;
 
-	public StreamListeningFunctionInvoker(String name, Function<?, ?> function, FunctionInspector functionInspector,
+	public StreamListeningFunctionInvoker(String name, Function<Flux<?>, Flux<?>> function, FunctionInspector functionInspector,
 			CompositeMessageConverterFactory converterFactory) {
-		super(wrapIfNecessary(function));
+		super(function);
 		this.name = name;
 		this.functionInspector = functionInspector;
 		this.converterFactory = converterFactory;
@@ -69,15 +66,6 @@ public class StreamListeningFunctionInvoker extends AbstractFunctionInvoker<Flux
 	@Output(Processor.OUTPUT)
 	public Flux<?> handle(@Input(Processor.INPUT) Flux<Message<?>> input) {
 		return this.doInvoke(input.map(convertInput()));
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static Function<Flux<?>, Flux<?>> wrapIfNecessary(Function function) {
-		Assert.notNull(function, "Function must not be null");
-		if (!FunctionUtils.isFluxFunction(function)) {
-			function = new FluxFunction(function);
-		}
-		return function;
 	}
 
 	private Function<Message<?>, Object> convertInput() {

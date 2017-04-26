@@ -89,7 +89,7 @@ public class StreamConfiguration {
 		public AbstractFunctionInvoker<?, ?> invoker(FunctionCatalog registry, FunctionInspector functionInspector,
 				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 			String name = properties.getEndpoint();
-			Function<Object, Object> function = registry.lookupFunction(name);
+			Function<Flux<?>, Flux<?>> function = registry.lookupFunction(name);
 			Assert.notNull(function, "no such function: " + name);
 			return new StreamListeningFunctionInvoker(name, function, functionInspector,
 					compositeMessageConverterFactory);
