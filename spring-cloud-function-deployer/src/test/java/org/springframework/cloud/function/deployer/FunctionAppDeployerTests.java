@@ -18,7 +18,10 @@ package org.springframework.cloud.function.deployer;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -34,6 +37,7 @@ import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.thin.ThinJarAppDeployer;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -71,9 +75,8 @@ public class FunctionAppDeployerTests {
 
 	@Test
 	public void web() throws Exception {
-		String first = deploy(
-				"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
-				"--function.name=uppercase");
+		String first = deploy("maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
+				"");
 		// Deployment is blocking so it either failed or succeeded.
 		assertThat(deployer.status(first).getState()).isEqualTo(DeploymentState.deployed);
 		deployer.undeploy(first);
@@ -81,25 +84,36 @@ public class FunctionAppDeployerTests {
 
 	@Test
 	public void stream() throws Exception {
-		String first = deploy(
-				"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
-				"--spring.cloud.stream.bindings.input.destination=words",
-				"--spring.cloud.stream.bindings.output.destination=uppercaseWords",
-				"--function.name=uppercase");
+		String first = deploy("maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
+				"spring.cloud.deployer.thin.profile=stream");
 		// Deployment is blocking so it either failed or succeeded.
 		assertThat(deployer.status(first).getState()).isEqualTo(DeploymentState.deployed);
 		deployer.undeploy(first);
 	}
 
-	private String deploy(String jarName, String... args) throws Exception {
+	private String deploy(String jarName, String properties, String... args)
+			throws Exception {
 		Resource resource = new FileSystemResource(
 				ArchiveUtils.getArchiveRoot(ArchiveUtils.getArchive(jarName)));
 		AppDefinition definition = new AppDefinition(resource.getFilename(),
 				Collections.emptyMap());
 		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource,
-				Collections.emptyMap(), Arrays.asList(args));
+				properties(properties), Arrays.asList(args));
 		String deployed = deployer.deploy(request);
 		return deployed;
+	}
+
+	private Map<String, String> properties(String properties) {
+		Map<String, String> map = new LinkedHashMap<>();
+		Properties props = StringUtils.splitArrayElementsIntoProperties(
+				StringUtils.commaDelimitedListToStringArray(properties), "=");
+		if (props != null) {
+			for (Object name : props.keySet()) {
+				String key = (String) name;
+				map.put(key, props.getProperty(key));
+			}
+		}
+		return map;
 	}
 
 }
