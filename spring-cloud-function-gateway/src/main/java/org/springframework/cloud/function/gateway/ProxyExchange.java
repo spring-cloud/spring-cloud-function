@@ -366,6 +366,7 @@ public class ProxyExchange<T> {
 		if (sensitive == null) {
 			sensitive = DEFAULT_SENSITIVE;
 		}
+		proxy();
 		for (String name : headers.keySet()) {
 			if (sensitive.contains(name.toLowerCase())) {
 				continue;
@@ -373,6 +374,53 @@ public class ProxyExchange<T> {
 			builder.header(name, headers.get(name).toArray(new String[0]));
 		}
 		return builder;
+	}
+
+	private void proxy() {
+		try {
+			URI uri = new URI(webRequest.getNativeRequest(HttpServletRequest.class)
+					.getRequestURL().toString());
+			appendForwarded(uri);
+			appendXForwarded(uri);
+		}
+		catch (URISyntaxException e) {
+			throw new IllegalStateException("Cannot create URI for request: " + webRequest
+					.getNativeRequest(HttpServletRequest.class).getRequestURL());
+		}
+	}
+
+	private void appendXForwarded(URI uri) {
+		// Append the legacy headers if they were already added upstream
+		String host = headers.getFirst("x-forwarded-host");
+		if (host == null) {
+			return;
+		}
+		host = host + ","  + uri.getHost();
+		headers.set("x-forwarded-host", host);
+		String proto = headers.getFirst("x-forwarded-proto");
+		if (proto == null) {
+			return;
+		}
+		proto = proto + ","  + uri.getScheme();
+		headers.set("x-forwarded-proto", proto);
+	}
+
+	private void appendForwarded(URI uri) {
+		String forwarded = headers.getFirst("forwarded");
+		if (forwarded != null) {
+			forwarded = forwarded + ",";
+		} else {
+			forwarded = "";
+		}
+		forwarded = forwarded + forwarded(uri);
+		headers.set("forwarded", forwarded);
+	}
+
+	private String forwarded(URI uri) {
+		if ("http".equals(uri.getScheme())) {
+			return "host=" + uri.getHost();
+		}
+		return String.format("host=%s;proto=%s", uri.getHost(), uri.getScheme());
 	}
 
 	private Object body() {
