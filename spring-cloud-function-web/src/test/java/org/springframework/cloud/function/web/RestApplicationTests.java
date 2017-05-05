@@ -244,14 +244,29 @@ public class RestApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
+	}
+
+	@Test
+	public void uppercaseSingleValue() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/uppercase")).contentType(MediaType.TEXT_PLAIN)
+				.body("foo"), String.class);
+		assertThat(result.getBody()).isEqualTo("(FOO)");
+	}
+
+	@Test
+	@Ignore("WebFlux would split the request body into lines: TODO make this work the same")
+	public void uppercasePlainText() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/uppercase")).contentType(MediaType.TEXT_PLAIN)
+				.body("foo\nbar"), String.class);
+		assertThat(result.getBody()).isEqualTo("(FOO)(BAR)");
 	}
 
 	@Test
 	public void uppercaseFoos() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
-				// TODO: does not require a content type header, but the plain MVC version
-				// does
 				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getBody())
@@ -263,7 +278,7 @@ public class RestApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/bareUppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
 	@Test
@@ -271,7 +286,7 @@ public class RestApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/transform")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
 	@Test
@@ -279,17 +294,17 @@ public class RestApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/post/more")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
 	@Test
 	public void postMoreFoo() {
-		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("[FOO]");
+		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("(FOO)");
 	}
 
 	@Test
 	public void uppercaseGet() {
-		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
+		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("(FOO)");
 	}
 
 	@Test
@@ -327,7 +342,7 @@ public class RestApplicationTests {
 		assertThat(rest.exchange(RequestEntity.post(new URI("/uppercase"))
 				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class).getBody())
-						.isEqualTo(sse("[FOO]", "[BAR]"));
+						.isEqualTo(sse("(FOO)", "(BAR)"));
 	}
 
 	private String sse(String... values) {
@@ -343,12 +358,12 @@ public class RestApplicationTests {
 		@Bean({ "uppercase", "transform", "post/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
-					.map(value -> "[" + value.trim().toUpperCase() + "]");
+					.map(value -> "(" + value.trim().toUpperCase() + ")");
 		}
 
 		@Bean
 		public Function<String, String> bareUppercase() {
-			return value -> "[" + value.trim().toUpperCase() + "]";
+			return value -> "(" + value.trim().toUpperCase() + ")";
 		}
 
 		@Bean

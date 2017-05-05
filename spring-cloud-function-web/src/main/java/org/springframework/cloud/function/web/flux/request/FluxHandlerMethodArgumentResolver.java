@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.function.web.flux.request;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
+import org.springframework.http.MediaType;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -67,11 +71,28 @@ public class FluxHandlerMethodArgumentResolver
 		if (type == null) {
 			type = Object.class;
 		}
-		List<Object> body = mapper.readValue(
-				webRequest.getNativeRequest(HttpServletRequest.class).getInputStream(),
-				mapper.getTypeFactory().constructCollectionLikeType(ArrayList.class,
-						type));
+		List<Object> body;
+		if (isPlainText(webRequest) && CharSequence.class.isAssignableFrom(type)) {
+			body = Arrays.asList(StreamUtils.copyToString(webRequest
+					.getNativeRequest(HttpServletRequest.class).getInputStream(),
+					Charset.forName("UTF-8")));
+		}
+		else {
+			body = mapper.readValue(
+					webRequest.getNativeRequest(HttpServletRequest.class)
+							.getInputStream(),
+					mapper.getTypeFactory().constructCollectionLikeType(ArrayList.class,
+							type));
+		}
 		return new FluxRequest<Object>(body);
+	}
+
+	private boolean isPlainText(NativeWebRequest webRequest) {
+		String value = webRequest.getHeader("Content-Type");
+		if (value!=null) {
+			return MediaType.valueOf(value).isCompatibleWith(MediaType.TEXT_PLAIN);
+		}
+		return false;
 	}
 
 	@Override

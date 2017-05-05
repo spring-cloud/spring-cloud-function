@@ -296,11 +296,6 @@ public class MvcRestApplicationTests {
 			return Mono.just(id).map(value -> "[" + value.trim().toUpperCase() + "]");
 		}
 
-		@PostMapping("/wrap")
-		public Flux<?> wrap(@RequestBody Flux<Integer> flux) {
-			return flux.log().map(value -> ".." + value + "..");
-		}
-
 		@GetMapping("/wrap/{id}")
 		public Mono<?> wrapGet(@PathVariable int id) {
 			return Mono.just(id).log().map(value -> ".." + value + "..");

@@ -17,12 +17,15 @@
 package org.springframework.cloud.function.web.flux.response;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.reactivestreams.Publisher;
 
+import org.springframework.cloud.function.context.FunctionInspector;
+import org.springframework.cloud.function.web.flux.request.FluxHandlerMethodArgumentResolver;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.http.MediaType;
@@ -49,8 +52,12 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 	private long timeout = 1000L;
 	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");
 
-	public FluxReturnValueHandler(List<HttpMessageConverter<?>> messageConverters) {
-		delegate = new ResponseBodyEmitterReturnValueHandler(messageConverters);
+	private FunctionInspector inspector;
+
+	public FluxReturnValueHandler(FunctionInspector inspector,
+			List<HttpMessageConverter<?>> messageConverters) {
+		this.inspector = inspector;
+		this.delegate = new ResponseBodyEmitterReturnValueHandler(messageConverters);
 	}
 
 	/**
@@ -108,21 +115,50 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		}
 		Publisher<?> flux = (Publisher<?>) adaptFrom;
 
+		Object handler = webRequest.getAttribute(
+				FluxHandlerMethodArgumentResolver.HANDLER,
+				NativeWebRequest.SCOPE_REQUEST);
+		Class<?> type = inspector.getOutputType(inspector.getName(handler));
+
 		MediaType mediaType = null;
-		if (webRequest.getHeader("Accept") != null) {
-			for (MediaType type : MediaType
-					.parseMediaTypes(webRequest.getHeader("Accept"))) {
-				if (!MediaType.ALL.equals(type)
-						&& MediaType.APPLICATION_JSON.isCompatibleWith(type)) {
-					mediaType = MediaType.APPLICATION_JSON;
-					break;
-				} else if (mediaType==null) {
-					mediaType = type;
-				}
-			}
+		if (isPlainText(webRequest) && CharSequence.class.isAssignableFrom(type)) {
+			mediaType = MediaType.TEXT_PLAIN;
+		} else {
+			mediaType = findMediaType(webRequest);
 		}
 		delegate.handleReturnValue(getEmitter(timeout, flux, mediaType), returnType,
 				mavContainer, webRequest);
+	}
+
+	private MediaType findMediaType(NativeWebRequest webRequest) {
+		List<MediaType> accepts = Arrays.asList(MediaType.ALL);
+		MediaType mediaType = null;
+		if (webRequest.getHeader("Accept") != null) {
+			accepts = MediaType.parseMediaTypes(webRequest.getHeader("Accept"));
+			for (MediaType accept : accepts) {
+				if (!MediaType.ALL.equals(accept)
+						&& MediaType.APPLICATION_JSON.isCompatibleWith(accept)) {
+					mediaType = MediaType.APPLICATION_JSON;
+					// Prefer JSON if that is acceptable
+					break;
+				}
+				else if (mediaType == null) {
+					mediaType = accept;
+				}
+			}
+		}
+		if (mediaType == null) {
+			mediaType = MediaType.APPLICATION_JSON;
+		}
+		return mediaType;
+	}
+
+	private boolean isPlainText(NativeWebRequest webRequest) {
+		String value = webRequest.getHeader("Content-Type");
+		if (value != null) {
+			return MediaType.valueOf(value).isCompatibleWith(MediaType.TEXT_PLAIN);
+		}
+		return false;
 	}
 
 	private ResponseBodyEmitter getEmitter(Long timeout, Publisher<?> flux,

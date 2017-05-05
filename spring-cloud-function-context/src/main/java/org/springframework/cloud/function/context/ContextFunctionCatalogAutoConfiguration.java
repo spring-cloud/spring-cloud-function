@@ -396,13 +396,19 @@ public class ContextFunctionCatalogAutoConfiguration {
 											String.class)));
 		}
 
-		private Class<?> findType(AbstractBeanDefinition definition, int index) {
+		private Class<?> findType(AbstractBeanDefinition definition, ParamType paramType) {
 			Object source = definition.getSource();
 			Type param;
+			// Start by assuming output -> Function
+			int index = paramType==ParamType.OUTPUT ? 1 : 0;
 			if (source instanceof StandardMethodMetadata) {
 				ParameterizedType type;
 				type = (ParameterizedType) ((StandardMethodMetadata) source)
 						.getIntrospectedMethod().getGenericReturnType();
+				if (type.getActualTypeArguments().length==1) {
+					// There's only one
+					index = 0;
+				}
 				Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
 				if (typeArgumentAtIndex instanceof ParameterizedType) {
 					param = ((ParameterizedType) typeArgumentAtIndex)
@@ -441,7 +447,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 				if (resolvable != null) {
 					param = resolvable.getGeneric(index).getGeneric(0).getType();
 				}
-				else return Object.class;
+				else {
+					// TODO: compiled functions only work as String -> String
+					return String.class;
+				}
 			}
 			if (param instanceof ParameterizedType) {
 				ParameterizedType concrete = (ParameterizedType) param;
@@ -461,14 +470,19 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (!registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
-			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 0);
+			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), ParamType.INPUT);
 		}
 
 		private Class<?> findOutputType(String name) {
-			if (!registry.containsBeanDefinition(name)) {
+			if (name==null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
-			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), 1);
+			BeanDefinition definition = registry.getBeanDefinition(name);
+			return findType((AbstractBeanDefinition) definition, ParamType.OUTPUT);
+		}
+		
+		static enum ParamType {
+			INPUT, OUTPUT;
 		}
 	}
 }

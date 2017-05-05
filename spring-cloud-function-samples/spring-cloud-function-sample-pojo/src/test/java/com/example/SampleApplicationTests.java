@@ -46,6 +46,7 @@ public class SampleApplicationTests {
 
 	@Test
 	public void uppercase() {
+		// TODO: make this work with a JSON stream as well (like in WebFlux)
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/uppercase", "[{\"value\":\"foo\"}]",
 				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");

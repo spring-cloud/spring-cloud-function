@@ -65,9 +65,9 @@ public class ReactorAutoConfiguration {
 	@ConditionalOnMissingClass("org.springframework.core.ReactiveAdapter")
 	protected static class FluxReturnValueConfiguration {
 		@Bean
-		public FluxReturnValueHandler fluxReturnValueHandler(
+		public FluxReturnValueHandler fluxReturnValueHandler(FunctionInspector inspector, 
 				HttpMessageConverters converters) {
-			return new FluxReturnValueHandler(converters.getConverters());
+			return new FluxReturnValueHandler(inspector, converters.getConverters());
 		}
 	}
 
