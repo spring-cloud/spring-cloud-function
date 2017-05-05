@@ -32,7 +32,7 @@ public abstract class DelegateHandler<T> {
 
 	public Class<?> type() {
 		String name = source instanceof String ? (String) source
-				: processor.getName(source);
+				: processor().getName(source);
 		return (Class<?>) processor().getInputType(name);
 	}
 
