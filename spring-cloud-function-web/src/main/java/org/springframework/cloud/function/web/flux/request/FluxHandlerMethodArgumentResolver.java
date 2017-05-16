@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.cloud.function.context.FunctionInspector;
@@ -34,6 +35,7 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 /**
  * Converter for request bodies of type <code>Flux<String></code>.
@@ -72,24 +74,26 @@ public class FluxHandlerMethodArgumentResolver
 			type = Object.class;
 		}
 		List<Object> body;
+		ContentCachingRequestWrapper nativeRequest = new ContentCachingRequestWrapper(
+				webRequest.getNativeRequest(HttpServletRequest.class));
 		if (isPlainText(webRequest) && CharSequence.class.isAssignableFrom(type)) {
-			body = Arrays.asList(StreamUtils.copyToString(webRequest
-					.getNativeRequest(HttpServletRequest.class).getInputStream(),
+			body = Arrays.asList(StreamUtils.copyToString(nativeRequest.getInputStream(),
 					Charset.forName("UTF-8")));
 		}
 		else {
-			body = mapper.readValue(
-					webRequest.getNativeRequest(HttpServletRequest.class)
-							.getInputStream(),
-					mapper.getTypeFactory().constructCollectionLikeType(ArrayList.class,
-							type));
+			try {
+			body = mapper.readValue(nativeRequest.getInputStream(), mapper
+					.getTypeFactory().constructCollectionLikeType(ArrayList.class, type));
+			} catch (JsonMappingException e) {
+				body = Arrays.asList(mapper.readValue(nativeRequest.getContentAsByteArray(), type));
+			}
 		}
 		return new FluxRequest<Object>(body);
 	}
 
 	private boolean isPlainText(NativeWebRequest webRequest) {
 		String value = webRequest.getHeader("Content-Type");
-		if (value!=null) {
+		if (value != null) {
 			return MediaType.valueOf(value).isCompatibleWith(MediaType.TEXT_PLAIN);
 		}
 		return false;

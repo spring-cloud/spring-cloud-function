@@ -274,6 +274,16 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void uppercaseFoo() throws Exception {
+		// Single Foo can be parsed
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
+				.body("{\"value\":\"foo\"}"), String.class);
+		assertThat(result.getBody())
+				.isEqualTo("[{\"value\":\"FOO\"}]");
+	}
+
+	@Test
 	public void bareUppercase() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/bareUppercase")).contentType(MediaType.APPLICATION_JSON)
