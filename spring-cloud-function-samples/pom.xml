@@ -16,6 +16,7 @@
 		<module>spring-cloud-function-sample</module>
 		<module>spring-cloud-function-sample-pojo</module>
 		<module>spring-cloud-function-sample-compiler</module>
+		<module>spring-cloud-function-sample-task</module>
 	</modules>
 
 </project>

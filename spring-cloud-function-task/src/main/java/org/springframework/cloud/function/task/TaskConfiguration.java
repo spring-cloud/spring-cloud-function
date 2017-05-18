@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.task;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -38,62 +36,28 @@ import reactor.core.publisher.Flux;
  */
 @Configuration
 @EnableTask
-@EnableConfigurationProperties(LambdaConfigurationProperties.class)
+@EnableConfigurationProperties(TaskConfigurationProperties.class)
 @ConditionalOnClass({ EnableTask.class })
 public class TaskConfiguration {
 
 	@Autowired
-	private LambdaConfigurationProperties properties;
+	private TaskConfigurationProperties properties;
 
 	@Bean
 	public CommandLineRunner commandLineRunner(FunctionCatalog registry) {
 		final Supplier<Flux<Object>> supplier = registry
 				.lookupSupplier(properties.getSupplier());
-		String functionName = properties.getFunction();
-		Function<Flux<Object>, Flux<Object>> function = registry
-				.lookupFunction(functionName);
-		final Consumer<Object> consumer = registry
+		final Function<Flux<Object>, Flux<Object>> function = registry
+				.lookupFunction(properties.getFunction());
+		final Consumer<Flux<Object>> consumer = registry
 				.lookupConsumer(properties.getConsumer());
-		final CountDownLatch latch = new CountDownLatch(1);
-		final AtomicBoolean status = new AtomicBoolean();
 		CommandLineRunner runner = new CommandLineRunner() {
 
 			@Override
 			public void run(String... args) throws Exception {
-				function.apply(supplier.get()).subscribe(consumer,
-						new CompletionConsumer(latch, status, false),
-						new CompletionConsumer(latch, status, true));
-				latch.await();
+				consumer.accept(function.apply(supplier.get()));
 			}
 		};
 		return runner;
-	}
-
-	private static class CompletionConsumer implements Consumer<Throwable>, Runnable {
-
-		private final CountDownLatch latch;
-
-		private final AtomicBoolean status;
-
-		private final boolean value;
-
-		private CompletionConsumer(CountDownLatch latch, AtomicBoolean status,
-				boolean value) {
-			this.latch = latch;
-			this.status = status;
-			this.value = value;
-		}
-
-		@Override
-		public void accept(Throwable t) {
-			System.err.println("task failed: " + t);
-			this.run();
-		}
-
-		@Override
-		public void run() {
-			this.status.set(this.value);
-			this.latch.countDown();
-		}
 	}
 }

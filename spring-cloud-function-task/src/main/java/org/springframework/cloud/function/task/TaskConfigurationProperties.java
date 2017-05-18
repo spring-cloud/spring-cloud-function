@@ -21,8 +21,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * @author Mark Fisher
  */
-@ConfigurationProperties(prefix = "lambda")
-public class LambdaConfigurationProperties {
+@ConfigurationProperties(prefix = "spring.cloud.function.task")
+public class TaskConfigurationProperties {
 
 	private String supplier;
 
