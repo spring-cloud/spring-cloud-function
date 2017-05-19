@@ -23,8 +23,10 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.loader.thin.ArchiveUtils;
+import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
+import org.springframework.context.support.LiveBeansView;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -62,10 +64,10 @@ public class FunctionAdminController implements CommandLineRunner {
 	}
 
 	@DeleteMapping(path = "/{name}")
-	public Map<String, Object> undeploy(@PathVariable String name,
-			@RequestParam String path) throws Exception {
+	public Map<String, Object> undeploy(@PathVariable String name) throws Exception {
 		String id = names.get(name);
 		if (id == null) {
+			// TODO: Convert to 404
 			throw new IllegalStateException("No such app");
 		}
 		deployer.undeploy(id);
@@ -78,8 +80,8 @@ public class FunctionAdminController implements CommandLineRunner {
 	public Map<String, Object> deployed() {
 		Map<String, Object> result = new LinkedHashMap<>();
 		for (String name : names.keySet()) {
-			result.put(name, new DeployedArtifact(name, names.get(name),
-					deployed.get(names.get(name))));
+			String id = names.get(name);
+			result.put(name, new DeployedArtifact(name, id, deployed.get(id)));
 		}
 		return result;
 	}
@@ -93,12 +95,14 @@ public class FunctionAdminController implements CommandLineRunner {
 		Resource resource = new FileSystemResource(
 				ArchiveUtils.getArchiveRoot(ArchiveUtils.getArchive(path)));
 		AppDefinition definition = new AppDefinition(resource.getFilename(),
-				Collections.emptyMap());
+				Collections.singletonMap(LiveBeansView.MBEAN_DOMAIN_PROPERTY_NAME,
+						"functions." + name));
 		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource,
-				Collections.emptyMap(), Arrays.asList(args));
+				Collections.singletonMap(AppDeployer.GROUP_PROPERTY_KEY, "functions"),
+				Arrays.asList(args));
 		String deployed = deployer.deploy(request);
 		this.deployed.put(deployed, path);
-		this.names.put(deployed, name);
+		this.names.put(name, deployed);
 		return deployed;
 	}
 }

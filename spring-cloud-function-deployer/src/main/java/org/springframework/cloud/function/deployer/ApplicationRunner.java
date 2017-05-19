@@ -21,7 +21,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,24 +29,19 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.graph.Dependency;
+
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.loader.archive.Archive;
-import org.springframework.boot.loader.thin.ArchiveUtils;
 import org.springframework.boot.loader.thin.DependencyResolver;
 import org.springframework.cloud.deployer.thin.ContextRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.core.SpringVersion;
-import org.springframework.messaging.Message;
+import org.springframework.context.support.LiveBeansView;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -55,10 +49,6 @@ import reactor.core.publisher.Flux;
  */
 // NOT a @Component (to prevent it from being scanned by the "main" application).
 public class ApplicationRunner implements CommandLineRunner {
-
-	private static final String DEFAULT_REACTOR_VERSION = "3.0.4.RELEASE";
-
-	private static final String DEFAULT_SPRING_VERSION = SpringVersion.getVersion();
 
 	private static Log logger = LogFactory.getLog(ApplicationRunner.class);
 
@@ -84,8 +74,9 @@ public class ApplicationRunner implements CommandLineRunner {
 			ClassUtils.overrideThreadContextClassLoader(classLoader);
 			Class<?> cls = classLoader.loadClass(ContextRunner.class.getName());
 			this.app = cls.newInstance();
-			runContext(DeployedFunctionApplication.class.getName(),
-					Collections.emptyMap(), args);
+			runContext(DeployedFunctionApplication.class.getName(), Collections
+					.singletonMap(LiveBeansView.MBEAN_DOMAIN_PROPERTY_NAME, "deployer"),
+					args);
 		}
 		catch (Exception e) {
 			logger.error("Cannot deploy", e);
@@ -93,11 +84,31 @@ public class ApplicationRunner implements CommandLineRunner {
 		finally {
 			ClassUtils.overrideThreadContextClassLoader(contextLoader);
 		}
+		RuntimeException e = getError();
+		if (e != null) {
+			throw e;
+		}
 	}
 
 	@PreDestroy
 	public void close() {
 		closeContext();
+	}
+
+	private RuntimeException getError() {
+		if (this.app == null) {
+			return null;
+		}
+		Method method = ReflectionUtils.findMethod(this.app.getClass(), "getError");
+		Throwable e;
+		e = (Throwable) ReflectionUtils.invokeMethod(method, this.app);
+		if (e==null) {
+			return null;
+		}
+		if (e instanceof RuntimeException) {
+			return (RuntimeException) e;
+		}
+		return new IllegalStateException("Cannot launch", e);
 	}
 
 	private void runContext(String mainClass, Map<String, String> properties,
@@ -125,14 +136,7 @@ public class ApplicationRunner implements CommandLineRunner {
 		for (URL url : urls) {
 			child.add(url);
 		}
-		DependencyResolver resolver = DependencyResolver.instance();
-		String reactor = getReactorCoordinates();
-		// spring-core is OK, spring-context is not, spring-messaging depends on
-		// spring-context (so it is not OK)
-		String spring = getSpringCoordinates();
-		List<File> resolved = Arrays.asList(
-				resolver.resolve(new Dependency(new DefaultArtifact(reactor), "runtime")),
-				resolver.resolve(new Dependency(new DefaultArtifact(spring), "runtime")));
+		List<File> resolved = resolveParent();
 		for (File archive : resolved) {
 			try {
 				URL url = archive.toURI().toURL();
@@ -151,42 +155,15 @@ public class ApplicationRunner implements CommandLineRunner {
 		return new URLClassLoader(child.toArray(new URL[0]), base);
 	}
 
-	private String getSpringCoordinates() {
-		Package pkg = Message.class.getPackage();
-		String version = null;
-		version = (pkg != null ? pkg.getImplementationVersion() : DEFAULT_SPRING_VERSION);
-		return "org.springframework:spring-core:" + version;
-	}
-
-	private String getReactorCoordinates() {
-		Package pkg = Flux.class.getPackage();
-		String version = null;
-		version = (pkg != null ? pkg.getImplementationVersion()
-				: DEFAULT_REACTOR_VERSION);
-		if (version == null) {
-			Archive archive = ArchiveUtils.getArchive(Flux.class);
-			try {
-				String path = archive.getUrl().toString();
-				if (path.endsWith("!/")) {
-					path = path.substring(0, path.length() - 2);
-				}
-				path = StringUtils.getFilename(path);
-				if (path.startsWith("reactor-core-")) {
-					path = path.substring("reactor-core-".length());
-				}
-				if (path.endsWith(".jar")) {
-					path = path.substring(0, path.length() - ".jar".length());
-				}
-				version = path;
-			}
-			catch (MalformedURLException e) {
-				// ignore
-			}
+	private List<File> resolveParent() {
+		DependencyResolver resolver = DependencyResolver.instance();
+		List<Dependency> dependencies = resolver
+				.dependencies(new ClassPathResource("core-pom.xml"));
+		List<File> resolved = new ArrayList<>();
+		for (Dependency dependency : dependencies) {
+			resolved.add(resolver.resolve(dependency));
 		}
-		if (version == null) {
-			version = DEFAULT_REACTOR_VERSION;
-		}
-		return "io.projectreactor:reactor-core:" + version;
+		return resolved;
 	}
 
 }
