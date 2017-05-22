@@ -22,6 +22,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.FunctionInspector;
@@ -47,6 +49,9 @@ import reactor.core.publisher.Mono;
  * @author Dave Syer
  */
 public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHandler {
+
+	private static Log logger = LogFactory
+			.getLog(FluxReturnValueHandler.class);
 
 	private ResponseBodyEmitterReturnValueHandler delegate;
 	private long timeout = 1000L;
@@ -125,6 +130,9 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 			mediaType = MediaType.TEXT_PLAIN;
 		} else {
 			mediaType = findMediaType(webRequest);
+		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("Handling return value " + type + " with media type: " + mediaType);
 		}
 		delegate.handleReturnValue(getEmitter(timeout, flux, mediaType), returnType,
 				mavContainer, webRequest);

@@ -29,17 +29,17 @@ public class SampleApplication {
 
 	@Bean
 	public Function<Flux<Foo>, Flux<Bar>> uppercase() {
-		return flux -> flux.map(value -> new Bar(value.uppercase()));
+		return flux -> flux.log().map(value -> new Bar(value.uppercase()));
 	}
 
 	@Bean
 	public Supplier<Flux<Bar>> words() {
-		return () -> Flux.fromArray(new Bar[] { new Bar("foo"), new Bar("bar") });
+		return () -> Flux.fromArray(new Bar[] { new Bar("foo"), new Bar("bar") }).log();
 	}
 
 	@Bean
 	public Function<Flux<Foo>, Flux<Bar>> lowercase() {
-		return flux -> flux.map(value -> new Bar(value.lowercase()));
+		return flux -> flux.log().map(value -> new Bar(value.lowercase()));
 	}
 
 	public static void main(String[] args) throws Exception {

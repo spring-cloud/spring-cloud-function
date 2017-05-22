@@ -61,6 +61,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Autowired
 	public FunctionHandlerMapping(FunctionCatalog catalog, FunctionInspector inspector) {
 		this.functions = catalog;
+		logger.info("FunctionCatalog: " + catalog + ", FunctionInspector: " + inspector);
 		setOrder(super.getOrder() - 5);
 		this.controller = new FunctionController(inspector);
 	}
@@ -91,11 +92,17 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		}
 		Object function = findFunctionForGet(request, path);
 		if (function != null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Found function for GET: " + path);
+			}
 			request.setAttribute(FluxHandlerMethodArgumentResolver.HANDLER, function);
 			return handler;
 		}
 		function = findFunctionForPost(request, path);
 		if (function != null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Found function for POST: " + path);
+			}
 			request.setAttribute(FluxHandlerMethodArgumentResolver.HANDLER, function);
 			return handler;
 		}

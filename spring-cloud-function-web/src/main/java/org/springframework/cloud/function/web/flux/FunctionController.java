@@ -20,6 +20,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.support.FluxSupplier;
@@ -44,7 +47,9 @@ import reactor.core.publisher.Mono;
  */
 @Component
 public class FunctionController {
-	
+
+	private static Log logger = LogFactory.getLog(FunctionController.class);
+
 	private FunctionInspector inspector;
 
 	@Value("${debug:${DEBUG:false}}")
@@ -62,11 +67,17 @@ public class FunctionController {
 			@RequestBody FluxRequest<?> body) {
 		if (function != null) {
 			Flux<?> result = (Flux<?>) function.apply(body.flux());
+			if (logger.isDebugEnabled()) {
+				logger.debug("Handled POST with function");
+			}
 			return ResponseEntity.ok().body(debug ? result.log() : result);
 		}
 		if (consumer != null) {
 			Flux<?> flux = body.flux().cache(); // send a copy back to the caller
 			consumer.accept(flux);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Handled POST with consumer");
+			}
 			return ResponseEntity.status(HttpStatus.ACCEPTED).body(flux);
 		}
 		throw new IllegalArgumentException("no such function");
@@ -90,6 +101,9 @@ public class FunctionController {
 			supplier = new FluxSupplier(supplier);
 		}
 		Flux<?> result = supplier.get();
+		if (logger.isDebugEnabled()) {
+			logger.debug("Handled GET with supplier");
+		}
 		return debug ? result.log() : result;
 	}
 
@@ -97,6 +111,9 @@ public class FunctionController {
 			@PathVariable String value) {
 		Object input = inspector.convert(inspector.getName(function), value);
 		Mono<?> result = Mono.from(function.apply(Flux.just(input)));
+		if (logger.isDebugEnabled()) {
+			logger.debug("Handled GET with function");
+		}
 		return debug ? result.log() : result;
 	}
 }

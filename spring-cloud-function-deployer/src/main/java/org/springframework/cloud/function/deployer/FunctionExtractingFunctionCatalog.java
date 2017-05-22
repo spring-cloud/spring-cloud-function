@@ -21,12 +21,19 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.thin.ThinJarAppDeployer;
+import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.util.MethodInvoker;
 
-public class FunctionExtractingFunctionCatalog implements FunctionCatalog {
+public class FunctionExtractingFunctionCatalog implements FunctionCatalog, FunctionInspector {
+
+	private static Log logger = LogFactory
+			.getLog(FunctionExtractingFunctionCatalog.class);
 
 	private final Set<String> deployed = new HashSet<>();
 
@@ -43,19 +50,39 @@ public class FunctionExtractingFunctionCatalog implements FunctionCatalog {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> Consumer<T> lookupConsumer(String name) {
-		return (Consumer<T>) find(name, "lookupConsumer");
+		return (Consumer<T>) lookup(name, "lookupConsumer");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T, R> Function<T, R> lookupFunction(String name) {
-		return (Function<T, R>) find(name, "lookupFunction");
+		return (Function<T, R>) lookup(name, "lookupFunction");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> Supplier<T> lookupSupplier(String name) {
-		return (Supplier<T>) find(name, "lookupSupplier");
+		return (Supplier<T>) lookup(name, "lookupSupplier");
+	}
+
+	@Override
+	public Class<?> getInputType(String name) {
+		return (Class<?>) inspect(name, "getInputType");
+	}
+
+	@Override
+	public Class<?> getOutputType(String name) {
+		return (Class<?>) inspect(name, "getOutputType");
+	}
+
+	@Override
+	public Object convert(String name, String value) {
+		return inspect(name, "convert");
+	}
+
+	@Override
+	public String getName(Object function) {
+		return (String) inspect(function, "getName");
 	}
 
 	public String deploy(AppDeploymentRequest request) {
@@ -69,9 +96,23 @@ public class FunctionExtractingFunctionCatalog implements FunctionCatalog {
 		deployed.remove(id);
 	}
 
-	private Object find(String name, String method) {
+	private Object inspect(Object arg, String method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Inspecting " + method);
+		}
+		return invoke(FunctionInspector.class, method, arg);
+	}
+	
+	private Object lookup(String name, String method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Looking up " + name + " with " + method);
+		}
+		return invoke(FunctionCatalog.class, method, name);
+	}
+	
+	private Object invoke(Class<?> type, String method, Object arg) {
 		for (String id : deployed) {
-			Object catalog = deployer.getBean(id, FunctionCatalog.class);
+			Object catalog = deployer.getBean(id, type);
 			if (catalog == null) {
 				continue;
 			}
@@ -79,7 +120,7 @@ public class FunctionExtractingFunctionCatalog implements FunctionCatalog {
 				MethodInvoker invoker = new MethodInvoker();
 				invoker.setTargetObject(catalog);
 				invoker.setTargetMethod(method);
-				invoker.setArguments(new Object[] { name });
+				invoker.setArguments(new Object[] { arg });
 				invoker.prepare();
 				Object result = invoker.invoke();
 				if (result != null) {
