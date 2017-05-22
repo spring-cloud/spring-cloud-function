@@ -396,21 +396,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 											String.class)));
 		}
 
-		private Class<?> findType(AbstractBeanDefinition definition, ParamType paramType) {
+		private Class<?> findType(AbstractBeanDefinition definition,
+				ParamType paramType) {
 			Object source = definition.getSource();
 			Type param;
 			// Start by assuming output -> Function
-			int index = paramType==ParamType.OUTPUT ? 1 : 0;
+			int index = paramType == ParamType.OUTPUT ? 1 : 0;
 			if (source instanceof StandardMethodMetadata) {
 				ParameterizedType type;
 				type = (ParameterizedType) ((StandardMethodMetadata) source)
 						.getIntrospectedMethod().getGenericReturnType();
-				if (type.getActualTypeArguments().length==1) {
+				if (type.getActualTypeArguments().length == 1) {
 					// There's only one
 					index = 0;
 				}
 				Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
-				if (typeArgumentAtIndex instanceof ParameterizedType) {
+				if (typeArgumentAtIndex instanceof ParameterizedType && Flux.class
+						.equals(((ParameterizedType) typeArgumentAtIndex).getRawType())) {
 					param = ((ParameterizedType) typeArgumentAtIndex)
 							.getActualTypeArguments()[0];
 				}
@@ -470,17 +472,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (!registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
-			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name), ParamType.INPUT);
+			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name),
+					ParamType.INPUT);
 		}
 
 		private Class<?> findOutputType(String name) {
-			if (name==null || !registry.containsBeanDefinition(name)) {
+			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
 			BeanDefinition definition = registry.getBeanDefinition(name);
 			return findType((AbstractBeanDefinition) definition, ParamType.OUTPUT);
 		}
-		
+
 		static enum ParamType {
 			INPUT, OUTPUT;
 		}

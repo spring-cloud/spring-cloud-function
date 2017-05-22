@@ -26,6 +26,9 @@ import javax.servlet.http.HttpServletRequest;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
@@ -45,6 +48,9 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
  */
 public class FluxHandlerMethodArgumentResolver
 		implements HandlerMethodArgumentResolver, Ordered {
+
+	private static Log logger = LogFactory
+			.getLog(FluxHandlerMethodArgumentResolver.class);
 
 	public static final String HANDLER = FluxHandlerMethodArgumentResolver.class.getName()
 			+ ".HANDLER";
@@ -76,16 +82,22 @@ public class FluxHandlerMethodArgumentResolver
 		List<Object> body;
 		ContentCachingRequestWrapper nativeRequest = new ContentCachingRequestWrapper(
 				webRequest.getNativeRequest(HttpServletRequest.class));
+		if (logger.isDebugEnabled()) {
+			logger.debug("Resolving request body into type: " + type);
+		}
 		if (isPlainText(webRequest) && CharSequence.class.isAssignableFrom(type)) {
 			body = Arrays.asList(StreamUtils.copyToString(nativeRequest.getInputStream(),
 					Charset.forName("UTF-8")));
 		}
 		else {
 			try {
-			body = mapper.readValue(nativeRequest.getInputStream(), mapper
-					.getTypeFactory().constructCollectionLikeType(ArrayList.class, type));
-			} catch (JsonMappingException e) {
-				body = Arrays.asList(mapper.readValue(nativeRequest.getContentAsByteArray(), type));
+				body = mapper.readValue(nativeRequest.getInputStream(),
+						mapper.getTypeFactory()
+								.constructCollectionLikeType(ArrayList.class, type));
+			}
+			catch (JsonMappingException e) {
+				body = Arrays.asList(
+						mapper.readValue(nativeRequest.getContentAsByteArray(), type));
 			}
 		}
 		return new FluxRequest<Object>(body);

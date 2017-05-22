@@ -18,9 +18,11 @@ package org.springframework.cloud.function.context;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.junit.After;
 import org.junit.Test;
@@ -44,6 +46,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	private ConfigurableApplicationContext context;
 	private InMemoryFunctionCatalog catalog;
+	private FunctionInspector inspector;
 
 	@After
 	public void close() {
@@ -57,6 +60,14 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		create(SimpleConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
 		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+	}
+
+	@Test
+	public void genericFunction() {
+		create(GenericConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
 	}
 
 	@Test
@@ -104,23 +115,37 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	private void create(Class<?>... types) {
 		context = new SpringApplicationBuilder((Object[]) types).run();
 		catalog = context.getBean(InMemoryFunctionCatalog.class);
+		inspector = context.getBean(FunctionInspector.class);
 	}
 
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class SimpleConfiguration {
 		private List<String> list = new ArrayList<>();
+
 		@Bean
 		public Function<String, String> function() {
 			return value -> value.toUpperCase();
 		}
+
 		@Bean
 		public Supplier<String> supplier() {
 			return () -> "hello";
 		}
+
 		@Bean
 		public Consumer<String> consumer() {
 			return value -> list.add(value);
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class GenericConfiguration {
+		@Bean
+		public Function<Map<String, String>, Map<String, String>> function() {
+			return m -> m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
+					e -> e.getValue().toString().toUpperCase()));
 		}
 	}
 
@@ -137,7 +162,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class AliasConfiguration {
-		@Bean({"function", "other"})
+		@Bean({ "function", "other" })
 		public Function<String, String> function() {
 			return value -> value.toUpperCase();
 		}
@@ -148,8 +173,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	protected static class RegistrationConfiguration {
 		@Bean
 		public FunctionRegistration<Function<String, String>> registration() {
-			return new FunctionRegistration<Function<String, String>>(function()).name("other");
+			return new FunctionRegistration<Function<String, String>>(function())
+					.name("other");
 		}
+
 		@Bean
 		public Function<String, String> function() {
 			return value -> value.toUpperCase();
