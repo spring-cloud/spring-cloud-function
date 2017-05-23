@@ -77,8 +77,12 @@ public class RuntimeJavaCompiler {
 			String sourceCode =null;
 			try {
 				sourceCode = (String)diagnostic.getSource().getCharContent(true);
-			} catch (IOException ioe) {
+			}
+			catch (IOException ioe) {
 				// Unexpected, but leave sourceCode null to indicate it was not retrievable
+			}
+			catch (NullPointerException npe) {
+				// TODO: should we skip warning diagnostics in the loop altogether?
 			}
 			int startPosition = (int)diagnostic.getPosition();
 			if (startPosition == Diagnostic.NOPOS) {
