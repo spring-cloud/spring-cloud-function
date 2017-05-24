@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.flux.response;
 
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -24,18 +25,21 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.el.stream.Optional;
 import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.FunctionInspector;
-import org.springframework.cloud.function.web.flux.request.FluxHandlerMethodArgumentResolver;
+import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 import org.springframework.web.method.support.ModelAndViewContainer;
+import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitterReturnValueHandler;
 
@@ -50,19 +54,28 @@ import reactor.core.publisher.Mono;
  */
 public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHandler {
 
-	private static Log logger = LogFactory
-			.getLog(FluxReturnValueHandler.class);
+	private static Log logger = LogFactory.getLog(FluxReturnValueHandler.class);
 
 	private ResponseBodyEmitterReturnValueHandler delegate;
+	private RequestResponseBodyMethodProcessor single;
 	private long timeout = 1000L;
 	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");
 
 	private FunctionInspector inspector;
 
+	private MethodParameter singleReturnType;
+
 	public FluxReturnValueHandler(FunctionInspector inspector,
 			List<HttpMessageConverter<?>> messageConverters) {
 		this.inspector = inspector;
 		this.delegate = new ResponseBodyEmitterReturnValueHandler(messageConverters);
+		this.single = new RequestResponseBodyMethodProcessor(messageConverters);
+		Method method = ReflectionUtils.findMethod(getClass(), "singleValue");
+		singleReturnType = new MethodParameter(method, -1);
+	}
+
+	ResponseEntity<Object> singleValue() {
+		return null;
 	}
 
 	/**
@@ -120,22 +133,44 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		}
 		Publisher<?> flux = (Publisher<?>) adaptFrom;
 
-		Object handler = webRequest.getAttribute(
-				FluxHandlerMethodArgumentResolver.HANDLER,
+		Object handler = webRequest.getAttribute(WebRequestConstants.HANDLER,
 				NativeWebRequest.SCOPE_REQUEST);
 		Class<?> type = inspector.getOutputType(inspector.getName(handler));
+
+		Boolean inputSingle = (Boolean) webRequest.getAttribute(
+				WebRequestConstants.INPUT_SINGLE, NativeWebRequest.SCOPE_REQUEST);
+		if (inputSingle!=null && inputSingle && isOutputSingle(handler)) {
+			single.handleReturnValue(Flux.from(flux).blockFirst(), singleReturnType,
+					mavContainer, webRequest);
+			return;
+		}
 
 		MediaType mediaType = null;
 		if (isPlainText(webRequest) && CharSequence.class.isAssignableFrom(type)) {
 			mediaType = MediaType.TEXT_PLAIN;
-		} else {
+		}
+		else {
 			mediaType = findMediaType(webRequest);
 		}
 		if (logger.isDebugEnabled()) {
-			logger.debug("Handling return value " + type + " with media type: " + mediaType);
+			logger.debug(
+					"Handling return value " + type + " with media type: " + mediaType);
 		}
 		delegate.handleReturnValue(getEmitter(timeout, flux, mediaType), returnType,
 				mavContainer, webRequest);
+	}
+
+	private boolean isOutputSingle(Object handler) {
+		String name = inspector.getName(handler);
+		Class<?> type = inspector.getOutputType(name);
+		Class<?> wrapper = inspector.getOutputWrapper(name);
+		if (wrapper==type) {
+			return true;
+		}
+		if (Mono.class.equals(wrapper) || Optional.class.equals(wrapper)) {
+			return true;
+		}
+		return false;
 	}
 
 	private MediaType findMediaType(NativeWebRequest webRequest) {

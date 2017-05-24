@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
-import org.springframework.cloud.function.web.flux.request.FluxHandlerMethodArgumentResolver;
+import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
@@ -43,14 +43,6 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		implements InitializingBean {
 
-	public static final String FUNCTION = FunctionHandlerMapping.class.getName()
-			+ ".function";
-	public static final String CONSUMER = FunctionHandlerMapping.class.getName()
-			+ ".consumer";
-	public static final String SUPPLIER = FunctionHandlerMapping.class.getName()
-			+ ".supplier";
-	public static final String ARGUMENT = FunctionHandlerMapping.class.getName()
-			+ ".argument";
 	private final FunctionCatalog functions;
 
 	private final FunctionController controller;
@@ -95,7 +87,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			if (logger.isDebugEnabled()) {
 				logger.debug("Found function for GET: " + path);
 			}
-			request.setAttribute(FluxHandlerMethodArgumentResolver.HANDLER, function);
+			request.setAttribute(WebRequestConstants.HANDLER, function);
 			return handler;
 		}
 		function = findFunctionForPost(request, path);
@@ -103,7 +95,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			if (logger.isDebugEnabled()) {
 				logger.debug("Found function for POST: " + path);
 			}
-			request.setAttribute(FluxHandlerMethodArgumentResolver.HANDLER, function);
+			request.setAttribute(WebRequestConstants.HANDLER, function);
 			return handler;
 		}
 		return null;
@@ -116,12 +108,12 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		path = path.startsWith("/") ? path.substring(1) : path;
 		Consumer<Object> consumer = functions.lookupConsumer(path);
 		if (consumer != null) {
-			request.setAttribute(CONSUMER, consumer);
+			request.setAttribute(WebRequestConstants.CONSUMER, consumer);
 			return consumer;
 		}
 		Function<Object, Object> function = functions.lookupFunction(path);
 		if (function != null) {
-			request.setAttribute(FUNCTION, function);
+			request.setAttribute(WebRequestConstants.FUNCTION, function);
 			return function;
 		}
 		return null;
@@ -134,7 +126,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		path = path.startsWith("/") ? path.substring(1) : path;
 		Supplier<Object> supplier = functions.lookupSupplier(path);
 		if (supplier != null) {
-			request.setAttribute(SUPPLIER, supplier);
+			request.setAttribute(WebRequestConstants.SUPPLIER, supplier);
 			return supplier;
 		}
 		StringBuilder builder = new StringBuilder();
@@ -150,8 +142,8 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 					: null;
 			Function<Object, Object> function = functions.lookupFunction(name);
 			if (function != null) {
-				request.setAttribute(FUNCTION, function);
-				request.setAttribute(ARGUMENT, value);
+				request.setAttribute(WebRequestConstants.FUNCTION, function);
+				request.setAttribute(WebRequestConstants.ARGUMENT, value);
 				return function;
 			}
 		}

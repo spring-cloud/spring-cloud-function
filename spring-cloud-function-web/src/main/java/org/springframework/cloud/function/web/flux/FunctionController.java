@@ -60,8 +60,9 @@ public class FunctionController {
 	@PostMapping(path = "/**")
 	@ResponseBody
 	public ResponseEntity<Flux<?>> post(
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.function") Function<Flux<?>, Flux<?>> function,
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.consumer") Consumer<Flux<?>> consumer,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.function") Function<Flux<?>, Flux<?>> function,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.consumer") Consumer<Flux<?>> consumer,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.input_single") Boolean single,
 			@RequestBody FluxRequest<?> body) {
 		if (function != null) {
 			Flux<?> result = (Flux<?>) function.apply(body.flux());
@@ -84,9 +85,9 @@ public class FunctionController {
 	@GetMapping(path = "/**")
 	@ResponseBody
 	public Object get(
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.function") Function<Flux<?>, Flux<?>> function,
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.supplier") Supplier<Flux<?>> supplier,
-			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.FunctionHandlerMapping.argument") String argument) {
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.function") Function<Flux<?>, Flux<?>> function,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.supplier") Supplier<Flux<?>> supplier,
+			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.argument") String argument) {
 		if (function != null) {
 			return value(function, argument);
 		}

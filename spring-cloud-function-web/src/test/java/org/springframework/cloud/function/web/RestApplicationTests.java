@@ -284,6 +284,25 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void bareUppercaseFoos() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/bareUpFoos")).contentType(MediaType.APPLICATION_JSON)
+				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
+		assertThat(result.getBody())
+				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+	}
+
+	@Test
+	public void bareUppercaseFoo() throws Exception {
+		// Single Foo can be parsed and returns a single value if the function is defined that way
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/bareUpFoos")).contentType(MediaType.APPLICATION_JSON)
+				.body("{\"value\":\"foo\"}"), String.class);
+		assertThat(result.getBody())
+				.isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Test
 	public void bareUppercase() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/bareUppercase")).contentType(MediaType.APPLICATION_JSON)
@@ -380,6 +399,11 @@ public class RestApplicationTests {
 		public Function<Flux<Foo>, Flux<Foo>> upFoos() {
 			return flux -> flux.log()
 					.map(value -> new Foo(value.getValue().trim().toUpperCase()));
+		}
+
+		@Bean
+		public Function<Foo, Foo> bareUpFoos() {
+			return value -> new Foo(value.getValue().trim().toUpperCase());
 		}
 
 		@Bean

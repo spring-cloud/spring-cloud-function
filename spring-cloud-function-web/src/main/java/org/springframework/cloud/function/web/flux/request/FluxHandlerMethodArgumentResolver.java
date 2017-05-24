@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.FunctionInspector;
+import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
 import org.springframework.http.MediaType;
@@ -52,9 +53,6 @@ public class FluxHandlerMethodArgumentResolver
 	private static Log logger = LogFactory
 			.getLog(FluxHandlerMethodArgumentResolver.class);
 
-	public static final String HANDLER = FluxHandlerMethodArgumentResolver.class.getName()
-			+ ".HANDLER";
-
 	private final ObjectMapper mapper;
 
 	private FunctionInspector inspector;
@@ -74,7 +72,8 @@ public class FluxHandlerMethodArgumentResolver
 	public Object resolveArgument(MethodParameter parameter,
 			ModelAndViewContainer mavContainer, NativeWebRequest webRequest,
 			WebDataBinderFactory binderFactory) throws Exception {
-		Object handler = webRequest.getAttribute(HANDLER, NativeWebRequest.SCOPE_REQUEST);
+		Object handler = webRequest.getAttribute(WebRequestConstants.HANDLER,
+				NativeWebRequest.SCOPE_REQUEST);
 		Class<?> type = inspector.getInputType(inspector.getName(handler));
 		if (type == null) {
 			type = Object.class;
@@ -96,6 +95,7 @@ public class FluxHandlerMethodArgumentResolver
 								.constructCollectionLikeType(ArrayList.class, type));
 			}
 			catch (JsonMappingException e) {
+				nativeRequest.setAttribute(WebRequestConstants.INPUT_SINGLE, true);
 				body = Arrays.asList(
 						mapper.readValue(nativeRequest.getContentAsByteArray(), type));
 			}
