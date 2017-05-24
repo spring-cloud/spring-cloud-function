@@ -38,14 +38,14 @@
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-lambda-java-events</artifactId>
-			<version>${aws-lambda-events.version}</version>
+			<artifactId>aws-lambda-java-log4j</artifactId>
+			<version>1.0.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-lambda-java-log4j</artifactId>
-			<version>1.0.0</version>
+			<artifactId>aws-lambda-java-events</artifactId>
+			<version>${aws-lambda-events.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
