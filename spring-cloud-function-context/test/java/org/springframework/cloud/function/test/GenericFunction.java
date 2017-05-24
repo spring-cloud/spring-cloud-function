@@ -14,36 +14,25 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.context;
+package org.springframework.cloud.function.test;
 
-import java.lang.reflect.Type;
-import java.util.Optional;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Dave Syer
  *
  */
-public interface FunctionInspector {
-
-	Class<?> getInputType(String name);
-
-	Class<?> getOutputType(String name);
-
-	Class<?> getInputWrapper(String name);
-
-	Class<?> getOutputWrapper(String name);
-
-	Object convert(String name, String value);
-
-	String getName(Object function);
-
-	// Maybe make this a default method?
-	static boolean isWrapper(Type type) {
-		return Flux.class.equals(type) || Mono.class.equals(type)
-				|| Optional.class.equals(type);
+@Configuration
+public class GenericFunction {
+	@Bean
+	public Function<Map<String, String>, Map<String, String>> function() {
+		return m -> m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
+				e -> e.getValue().toString().toUpperCase()));
 	}
-
 }
+

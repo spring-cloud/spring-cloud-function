@@ -17,14 +17,17 @@
 package org.springframework.cloud.function.context;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -37,6 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
@@ -55,6 +59,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.type.StandardMethodMetadata;
+import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -99,6 +104,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		public BeanFactoryFunctionInspector(ContextFunctionPostProcessor processor) {
 			this.processor = processor;
+		}
+
+		@Override
+		public Class<?> getInputWrapper(String name) {
+			return processor.findInputWrapper(name);
+		}
+
+		@Override
+		public Class<?> getOutputWrapper(String name) {
+			return processor.findOutputWrapper(name);
 		}
 
 		@Override
@@ -320,47 +335,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean isFluxFunction(String name, Function<?, ?> function) {
-			Boolean fluxTypes = this.hasFluxTypes(name, 2);
-			return (fluxTypes != null) ? fluxTypes
-					: FunctionUtils.isFluxFunction(function);
+			boolean fluxTypes = this.hasFluxTypes(name);
+			return fluxTypes || FunctionUtils.isFluxFunction(function);
 		}
 
 		private boolean isFluxConsumer(String name, Consumer<?> consumer) {
-			Boolean fluxTypes = this.hasFluxTypes(name, 1);
-			return (fluxTypes != null) ? fluxTypes
-					: FunctionUtils.isFluxConsumer(consumer);
+			boolean fluxTypes = this.hasFluxTypes(name);
+			return fluxTypes || FunctionUtils.isFluxConsumer(consumer);
 		}
 
 		private boolean isFluxSupplier(String name, Supplier<?> supplier) {
-			Boolean fluxTypes = this.hasFluxTypes(name, 1);
-			return (fluxTypes != null) ? fluxTypes
-					: FunctionUtils.isFluxSupplier(supplier);
+			boolean fluxTypes = this.hasFluxTypes(name);
+			return fluxTypes || FunctionUtils.isFluxSupplier(supplier);
 		}
 
-		private Boolean hasFluxTypes(String name, int numTypes) {
-			if (this.registry.containsBeanDefinition(name)) {
-				BeanDefinition beanDefinition = this.registry.getBeanDefinition(name);
-				Object source = beanDefinition.getSource();
-				if (source instanceof StandardMethodMetadata) {
-					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-					Type returnType = metadata.getIntrospectedMethod()
-							.getGenericReturnType();
-					if (returnType instanceof ParameterizedType) {
-						Type[] types = ((ParameterizedType) returnType)
-								.getActualTypeArguments();
-						if (types != null && types.length == numTypes) {
-							String fluxClassName = Flux.class.getName();
-							for (Type t : types) {
-								if (!(t.getTypeName().startsWith(fluxClassName))) {
-									return false;
-								}
-							}
-							return true;
-						}
-					}
-				}
-			}
-			return null;
+		private boolean hasFluxTypes(String name) {
+			return FunctionInspector.isWrapper(findInputWrapper(name))
+					|| FunctionInspector.isWrapper(findOutputWrapper(name));
 		}
 
 		private boolean isGenericSupplier(ConfigurableListableBeanFactory factory,
@@ -396,52 +387,33 @@ public class ContextFunctionCatalogAutoConfiguration {
 											String.class)));
 		}
 
-		private Class<?> findType(AbstractBeanDefinition definition,
+		private Class<?> findType(String name, AbstractBeanDefinition definition,
 				ParamType paramType) {
 			Object source = definition.getSource();
 			Type param;
 			// Start by assuming output -> Function
-			int index = paramType == ParamType.OUTPUT ? 1 : 0;
+			int index = paramType.isOutput() ? 1 : 0;
 			if (source instanceof StandardMethodMetadata) {
-				ParameterizedType type;
-				type = (ParameterizedType) ((StandardMethodMetadata) source)
+				// Standard @Bean metadata
+				ParameterizedType type = (ParameterizedType) ((StandardMethodMetadata) source)
 						.getIntrospectedMethod().getGenericReturnType();
-				if (type.getActualTypeArguments().length == 1) {
-					// There's only one
-					index = 0;
-				}
-				Type typeArgumentAtIndex = type.getActualTypeArguments()[index];
-				if (typeArgumentAtIndex instanceof ParameterizedType && Flux.class
-						.equals(((ParameterizedType) typeArgumentAtIndex).getRawType())) {
-					param = ((ParameterizedType) typeArgumentAtIndex)
-							.getActualTypeArguments()[0];
-				}
-				else {
-					param = typeArgumentAtIndex;
-				}
+				param = extractType(type, paramType, index);
 			}
 			else if (source instanceof FileSystemResource) {
 				try {
 					Type type = ClassUtils.forName(definition.getBeanClassName(), null);
-					if (type instanceof ParameterizedType) {
-						Type typeArgumentAtIndex = ((ParameterizedType) type)
-								.getActualTypeArguments()[index];
-						if (typeArgumentAtIndex instanceof ParameterizedType) {
-							param = ((ParameterizedType) typeArgumentAtIndex)
-									.getActualTypeArguments()[0];
-						}
-						else {
-							param = typeArgumentAtIndex;
-						}
-					}
-					else {
-						param = type;
-					}
+					param = extractType(type, paramType, index);
 				}
 				catch (ClassNotFoundException e) {
 					throw new IllegalStateException(
 							"Cannot instrospect bean: " + definition, e);
 				}
+			}
+			else if (source instanceof MethodMetadataReadingVisitor) {
+				// A component scan with @Beans
+				MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
+				Type type = findBeanType(definition, visitor);
+				param = extractType(type, paramType, index);
 			}
 			else {
 				ResolvableType resolvable = (ResolvableType) getField(definition,
@@ -458,8 +430,49 @@ public class ContextFunctionCatalogAutoConfiguration {
 				ParameterizedType concrete = (ParameterizedType) param;
 				param = concrete.getRawType();
 			}
-			return ClassUtils.resolveClassName(param.getTypeName(),
-					registry.getClass().getClassLoader());
+			return (Class<?>) param;
+		}
+
+		private Type findBeanType(AbstractBeanDefinition definition,
+				MethodMetadataReadingVisitor visitor) {
+			Class<?> factory = ClassUtils
+					.resolveClassName(visitor.getDeclaringClassName(), null);
+			List<Class<?>> params = new ArrayList<>();
+			for (ValueHolder holder : definition.getConstructorArgumentValues()
+					.getIndexedArgumentValues().values()) {
+				params.add(ClassUtils.resolveClassName(holder.getType(), null));
+			}
+			Method method = ReflectionUtils.findMethod(factory, visitor.getMethodName(),
+					params.toArray(new Class<?>[0]));
+			Type type = method.getGenericReturnType();
+			return type;
+		}
+
+		private Type extractType(Type type, ParamType paramType, int index) {
+			Type param;
+			if (type instanceof ParameterizedType) {
+				ParameterizedType parameterizedType = (ParameterizedType) type;
+				if (parameterizedType.getActualTypeArguments().length == 1) {
+					// There's only one
+					index = 0;
+				}
+				Type typeArgumentAtIndex = parameterizedType
+						.getActualTypeArguments()[index];
+				if (typeArgumentAtIndex instanceof ParameterizedType
+						&& FunctionInspector.isWrapper(
+								((ParameterizedType) typeArgumentAtIndex).getRawType())
+						&& !paramType.isWrapper()) {
+					param = ((ParameterizedType) typeArgumentAtIndex)
+							.getActualTypeArguments()[0];
+				}
+				else {
+					param = typeArgumentAtIndex;
+				}
+			}
+			else {
+				param = type;
+			}
+			return param;
 		}
 
 		private Object getField(Object target, String name) {
@@ -468,11 +481,30 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return ReflectionUtils.getField(field, target);
 		}
 
+		private Class<?> findInputWrapper(String name) {
+			if (!registry.containsBeanDefinition(name)) {
+				return Object.class;
+			}
+			return findType(name,
+					(AbstractBeanDefinition) registry.getBeanDefinition(name),
+					ParamType.INPUT_WRAPPER);
+		}
+
+		private Class<?> findOutputWrapper(String name) {
+			if (!registry.containsBeanDefinition(name)) {
+				return Object.class;
+			}
+			return findType(name,
+					(AbstractBeanDefinition) registry.getBeanDefinition(name),
+					ParamType.OUTPUT_WRAPPER);
+		}
+
 		private Class<?> findInputType(String name) {
 			if (!registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
-			return findType((AbstractBeanDefinition) registry.getBeanDefinition(name),
+			return findType(name,
+					(AbstractBeanDefinition) registry.getBeanDefinition(name),
 					ParamType.INPUT);
 		}
 
@@ -481,11 +513,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 				return Object.class;
 			}
 			BeanDefinition definition = registry.getBeanDefinition(name);
-			return findType((AbstractBeanDefinition) definition, ParamType.OUTPUT);
+			return findType(name, (AbstractBeanDefinition) definition, ParamType.OUTPUT);
 		}
 
 		static enum ParamType {
-			INPUT, OUTPUT;
+			INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER;
+
+			public boolean isOutput() {
+				return this == OUTPUT || this == OUTPUT_WRAPPER;
+			}
+
+			public boolean isInput() {
+				return this == INPUT || this == INPUT_WRAPPER;
+			}
+
+			public boolean isWrapper() {
+				return this == OUTPUT_WRAPPER || this == INPUT_WRAPPER;
+			}
 		}
 	}
 }

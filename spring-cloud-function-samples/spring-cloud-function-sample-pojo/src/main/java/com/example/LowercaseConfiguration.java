@@ -14,36 +14,25 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.context;
+package com.example;
 
-import java.lang.reflect.Type;
-import java.util.Optional;
+import java.util.function.Function;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
  *
  */
-public interface FunctionInspector {
+@Configuration
+public class LowercaseConfiguration {
 
-	Class<?> getInputType(String name);
-
-	Class<?> getOutputType(String name);
-
-	Class<?> getInputWrapper(String name);
-
-	Class<?> getOutputWrapper(String name);
-
-	Object convert(String name, String value);
-
-	String getName(Object function);
-
-	// Maybe make this a default method?
-	static boolean isWrapper(Type type) {
-		return Flux.class.equals(type) || Mono.class.equals(type)
-				|| Optional.class.equals(type);
+	@Bean
+	public Function<Flux<Foo>, Flux<Bar>> lowercase() {
+		return flux -> flux.log().map(value -> new Bar(value.lowercase()));
 	}
 
 }

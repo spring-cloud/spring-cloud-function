@@ -25,8 +25,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.function.context.FunctionInspector;
-import org.springframework.cloud.function.support.FluxSupplier;
-import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.cloud.function.web.flux.request.FluxRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -95,11 +93,7 @@ public class FunctionController {
 		return supplier(supplier);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Flux<?> supplier(Supplier<Flux<?>> supplier) {
-		if (!FunctionUtils.isFluxSupplier(supplier)) {
-			supplier = new FluxSupplier(supplier);
-		}
 		Flux<?> result = supplier.get();
 		if (logger.isDebugEnabled()) {
 			logger.debug("Handled GET with supplier");

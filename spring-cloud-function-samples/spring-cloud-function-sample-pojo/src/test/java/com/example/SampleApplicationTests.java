@@ -52,4 +52,11 @@ public class SampleApplicationTests {
 				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
+	@Test
+	public void lowercase() {
+		assertThat(new TestRestTemplate().postForObject(
+				"http://localhost:" + port + "/lowercase", "[{\"value\":\"Foo\"}]",
+				String.class)).isEqualTo("[{\"value\":\"foo\"}]");
+	}
+
 }

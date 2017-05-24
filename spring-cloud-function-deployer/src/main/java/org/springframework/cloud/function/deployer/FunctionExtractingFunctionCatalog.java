@@ -76,6 +76,16 @@ public class FunctionExtractingFunctionCatalog implements FunctionCatalog, Funct
 	}
 
 	@Override
+	public Class<?> getInputWrapper(String name) {
+		return (Class<?>) inspect(name, "getInputWrapper");
+	}
+
+	@Override
+	public Class<?> getOutputWrapper(String name) {
+		return (Class<?>) inspect(name, "getOutputWrapper");
+	}
+
+	@Override
 	public Object convert(String name, String value) {
 		return inspect(name, "convert");
 	}

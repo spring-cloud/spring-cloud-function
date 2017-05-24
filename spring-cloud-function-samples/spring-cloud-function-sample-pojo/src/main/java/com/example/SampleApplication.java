@@ -37,11 +37,6 @@ public class SampleApplication {
 		return () -> Flux.fromArray(new Bar[] { new Bar("foo"), new Bar("bar") }).log();
 	}
 
-	@Bean
-	public Function<Flux<Foo>, Flux<Bar>> lowercase() {
-		return flux -> flux.log().map(value -> new Bar(value.lowercase()));
-	}
-
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(SampleApplication.class, args);
 	}

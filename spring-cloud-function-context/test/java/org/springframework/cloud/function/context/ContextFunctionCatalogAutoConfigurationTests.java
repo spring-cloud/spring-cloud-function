@@ -30,9 +30,12 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.test.GenericFunction;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -68,6 +71,34 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
 		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
 		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
+		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Map.class);
+	}
+
+	@Test
+	public void genericFluxFunction() {
+		create(GenericFluxConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
+		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Flux.class);
+	}
+
+	@Test
+	public void externalFunction() {
+		create(ExternalConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
+		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Map.class);
+	}
+
+	@Test
+	public void componentScanFunction() {
+		create(ComponentScanConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
+		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Map.class);
 	}
 
 	@Test
@@ -151,6 +182,28 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
+	@Import(GenericFunction.class)
+	protected static class ExternalConfiguration {
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@ComponentScan(basePackageClasses=GenericFunction.class)
+	protected static class ComponentScanConfiguration {
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class GenericFluxConfiguration {
+		@Bean
+		public Function<Flux<Map<String, String>>, Flux<Map<String, String>>> function() {
+			return flux -> flux.map(m -> m.entrySet().stream().collect(Collectors
+					.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase())));
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
 	protected static class QualifiedConfiguration {
 		@Bean
 		@Qualifier("other")
@@ -184,3 +237,4 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 }
+

@@ -60,7 +60,10 @@ public abstract class FunctionUtils {
 		}
 		String[] types = getParameterizedTypeNames(supplier, Supplier.class);
 		if (ObjectUtils.isEmpty(types)) {
-			return true;
+			// Assume if there is no generic information then the function is not
+			// expecting a flux. N.B. this isn't very accurate. It is better to use a
+			// FunctionInspector if one is available.
+			return false;
 		}
 		return (types[0].startsWith(FLUX_CLASS_NAME));
 	}
