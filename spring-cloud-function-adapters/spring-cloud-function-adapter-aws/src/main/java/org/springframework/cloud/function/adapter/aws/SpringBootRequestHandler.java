@@ -28,7 +28,7 @@ import reactor.core.publisher.Flux;
 /**
  * @author Mark Fisher
  */
-public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer implements RequestHandler<E, List<O>> {
+public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer implements RequestHandler<E, Object> {
 
 	public SpringBootRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
@@ -39,24 +39,26 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer im
 	}
 
 	@Override
-	public List<O> handleRequest(E event, Context context) {
+	public Object handleRequest(E event, Context context) {
 		initialize();
 		Object input = convertEvent(event);
 		Flux<?> output = apply(extract(input));
-		return result(output);
+		return result(input, output);
 	}
 
-	private List<O> result(Flux<?> output) {
+	private Object result(Object input, Flux<?> output) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : output.toIterable()) {
 			result.add(value);
 		}
-		return convertResult(result);
+		if (isSingleValue(input) && result.size()==1) {
+			return result.get(0);
+		}
+		return result;
 	}
 
-	@SuppressWarnings("unchecked")
-	protected List<O> convertResult(List<Object> value) {
-		return (List<O>) value;
+	private boolean isSingleValue(Object input) {
+		return !(input instanceof Collection);
 	}
 
 	private Flux<?> extract(Object input) {

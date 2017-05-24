@@ -54,15 +54,22 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 		initialize();
 		Object value = convertStream(input);
 		Flux<?> flux = apply(extract(value));
-		mapper.writeValue(output, result(flux));
+		mapper.writeValue(output, result(value, flux));
 	}
 
-	private Object result(Flux<?> flux) {
+	private Object result(Object input, Flux<?> flux) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : flux.toIterable()) {
 			result.add(value);
 		}
+		if (isSingleValue(input) && result.size()==1) {
+			return result.get(0);
+		}
 		return result;
+	}
+
+	private boolean isSingleValue(Object input) {
+		return !(input instanceof Collection);
 	}
 
 	private Flux<?> extract(Object input) {

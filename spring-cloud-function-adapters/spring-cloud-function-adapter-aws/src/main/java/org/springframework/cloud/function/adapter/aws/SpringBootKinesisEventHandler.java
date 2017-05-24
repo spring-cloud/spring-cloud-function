@@ -16,19 +16,28 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
-import com.amazonaws.services.lambda.runtime.events.S3Event;
+import java.util.List;
+
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord;
 
 /**
  * @author Mark Fisher
  */
-public class FunctionInvokingS3EventHandler extends SpringBootRequestHandler<S3Event, String> {
+public class SpringBootKinesisEventHandler
+		extends SpringBootRequestHandler<KinesisEvent, String> {
 
-	public FunctionInvokingS3EventHandler(Class<?> configurationClass) {
+	public SpringBootKinesisEventHandler() {
+		super();
+	}
+
+	public SpringBootKinesisEventHandler(Class<?> configurationClass) {
 		super(configurationClass);
 	}
 
 	@Override
-	protected String convertEvent(S3Event event) {
-		return event.toJson();
+	protected List<KinesisEventRecord> convertEvent(KinesisEvent event) {
+		// TODO: maybe convert to List<Message>
+		return event.getRecords();
 	}
 }
