@@ -110,6 +110,14 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void word() throws Exception {
+		ResponseEntity<String> result = rest
+				.exchange(RequestEntity.get(new URI("/word")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("foo");
+	}
+
+	@Test
 	public void foos() throws Exception {
 		ResponseEntity<String> result = rest
 				.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
@@ -120,9 +128,9 @@ public class RestApplicationTests {
 
 	@Test
 	public void qualifierFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
-				.post(new URI("/foos")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/foos"))
+				.contentType(MediaType.APPLICATION_JSON).body("[\"foo\",\"bar\"]"),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody())
 				.isEqualTo("[{\"value\":\"[FOO]\"},{\"value\":\"[BAR]\"}]");
@@ -249,18 +257,21 @@ public class RestApplicationTests {
 
 	@Test
 	public void uppercaseSingleValue() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
-				.post(new URI("/uppercase")).contentType(MediaType.TEXT_PLAIN)
-				.body("foo"), String.class);
+		ResponseEntity<String> result = rest
+				.exchange(
+						RequestEntity.post(new URI("/uppercase"))
+								.contentType(MediaType.TEXT_PLAIN).body("foo"),
+						String.class);
 		assertThat(result.getBody()).isEqualTo("(FOO)");
 	}
 
 	@Test
 	@Ignore("WebFlux would split the request body into lines: TODO make this work the same")
 	public void uppercasePlainText() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
-				.post(new URI("/uppercase")).contentType(MediaType.TEXT_PLAIN)
-				.body("foo\nbar"), String.class);
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.post(new URI("/uppercase"))
+						.contentType(MediaType.TEXT_PLAIN).body("foo\nbar"),
+				String.class);
 		assertThat(result.getBody()).isEqualTo("(FOO)(BAR)");
 	}
 
@@ -279,8 +290,7 @@ public class RestApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("{\"value\":\"foo\"}"), String.class);
-		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"FOO\"}]");
+		assertThat(result.getBody()).isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
 	@Test
@@ -294,12 +304,12 @@ public class RestApplicationTests {
 
 	@Test
 	public void bareUppercaseFoo() throws Exception {
-		// Single Foo can be parsed and returns a single value if the function is defined that way
+		// Single Foo can be parsed and returns a single value if the function is defined
+		// that way
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/bareUpFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("{\"value\":\"foo\"}"), String.class);
-		assertThat(result.getBody())
-				.isEqualTo("{\"value\":\"FOO\"}");
+		assertThat(result.getBody()).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test
@@ -428,6 +438,11 @@ public class RestApplicationTests {
 		@Bean({ "words", "get/more" })
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.just("foo", "bar");
+		}
+
+		@Bean
+		public Supplier<String> word() {
+			return () -> "foo";
 		}
 
 		@Bean

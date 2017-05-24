@@ -20,6 +20,8 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -137,9 +139,8 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 				NativeWebRequest.SCOPE_REQUEST);
 		Class<?> type = inspector.getOutputType(inspector.getName(handler));
 
-		Boolean inputSingle = (Boolean) webRequest.getAttribute(
-				WebRequestConstants.INPUT_SINGLE, NativeWebRequest.SCOPE_REQUEST);
-		if (inputSingle!=null && inputSingle && isOutputSingle(handler)) {
+		boolean inputSingle = isInputSingle(webRequest, handler);
+		if (inputSingle && isOutputSingle(handler)) {
 			single.handleReturnValue(Flux.from(flux).blockFirst(), singleReturnType,
 					mavContainer, webRequest);
 			return;
@@ -160,11 +161,23 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 				mavContainer, webRequest);
 	}
 
+	private boolean isInputSingle(NativeWebRequest webRequest, Object handler) {
+		Boolean single = (Boolean) webRequest.getAttribute(
+				WebRequestConstants.INPUT_SINGLE, NativeWebRequest.SCOPE_REQUEST);
+		if (single == null) {
+			return handler instanceof Supplier;
+		}
+		return single;
+	}
+
 	private boolean isOutputSingle(Object handler) {
 		String name = inspector.getName(handler);
 		Class<?> type = inspector.getOutputType(name);
 		Class<?> wrapper = inspector.getOutputWrapper(name);
-		if (wrapper==type) {
+		if (Stream.class.isAssignableFrom(type)) {
+			return false;
+		}
+		if (wrapper == type) {
 			return true;
 		}
 		if (Mono.class.equals(wrapper) || Optional.class.equals(wrapper)) {

@@ -58,9 +58,6 @@ public class FluxSupplier<T> implements Supplier<Flux<T>> {
 		if (result instanceof Stream) {
 			return Flux.fromStream((Stream) result);
 		}
-		if (result instanceof Iterable) {
-			return Flux.fromIterable((Iterable) result);
-		}
 		return Flux.just((T) result);
 	}
 }

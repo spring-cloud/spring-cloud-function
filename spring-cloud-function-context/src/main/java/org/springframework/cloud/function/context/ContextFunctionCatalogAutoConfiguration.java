@@ -482,7 +482,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findInputWrapper(String name) {
-			if (!registry.containsBeanDefinition(name)) {
+			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
 			return findType(name,
@@ -491,7 +491,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findOutputWrapper(String name) {
-			if (!registry.containsBeanDefinition(name)) {
+			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
 			return findType(name,
@@ -500,7 +500,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findInputType(String name) {
-			if (!registry.containsBeanDefinition(name)) {
+			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
 			return findType(name,
