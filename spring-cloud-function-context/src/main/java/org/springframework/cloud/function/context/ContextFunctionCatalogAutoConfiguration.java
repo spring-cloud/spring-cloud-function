@@ -424,7 +424,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 				else {
 					// TODO: compiled functions (only work as String -> String)
-					if (paramType.isWrapper()) {
+					if (paramType.isWrapper() && !Consumer.class.isAssignableFrom(definition.getBeanClass())) {
 						return Flux.class;
 					}
 					return String.class;
