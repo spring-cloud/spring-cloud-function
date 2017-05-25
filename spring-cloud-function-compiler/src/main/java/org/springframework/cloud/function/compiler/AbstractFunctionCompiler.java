@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,7 +57,13 @@ public abstract class AbstractFunctionCompiler<F> {
 			+ "public class %s implements %sFactory {\n"
 			+ " public %s<%s> getResult() {\n" 
 			+ "  %s\n"
-			+ " }\n" 
+			+ " }\n"
+			+ " public String getInputType() {\n"
+			+ "  return \"%s\";\n"
+			+ " }\n"
+			+ " public String getOutputType() {\n"
+			+ "  return \"%s\";\n"
+			+ " }\n"
 			+ "}\n";
 // @formatter:on
 
@@ -91,23 +97,22 @@ public abstract class AbstractFunctionCompiler<F> {
 	 *
 	 * @return a factory instance
 	 */
-	public CompiledFunctionFactory<F> compile(String name, String code,
+	public final CompiledFunctionFactory<F> compile(String name, String code,
 			String... resultTypeParameterizations) {
 		if (name == null || name.length() == 0) {
 			throw new IllegalArgumentException("name must not be empty");
 		}
 		logger.info("Initial code property value :'{}'", code);
-		String parameterizations = StringUtils.arrayToCommaDelimitedString(
-				(!ObjectUtils.isEmpty(resultTypeParameterizations))
-						? resultTypeParameterizations
-						: this.defaultResultTypeParameterizations);
+		String[] parameterizedTypes = (!ObjectUtils.isEmpty(resultTypeParameterizations))
+					? resultTypeParameterizations
+					: this.defaultResultTypeParameterizations;
 		code = decode(code);
 		if (code.startsWith("\"") && code.endsWith("\"")) {
 			code = code.substring(1, code.length() - 1);
 		}
 		if (!code.startsWith("return ") && !code.endsWith(";")) {
 			code = String.format("return (%s<%s> & java.io.Serializable) %s;", resultType,
-					parameterizations, code);
+					StringUtils.arrayToCommaDelimitedString(parameterizedTypes), code);
 		}
 		logger.info("Processed code property value :\n{}\n", code);
 		String firstLetter = name.substring(0, 1).toUpperCase();
@@ -115,13 +120,24 @@ public abstract class AbstractFunctionCompiler<F> {
 		String className = String.format("%s.%s%sFactory",
 				this.getClass().getPackage().getName(), name, resultType);
 		CompilationResult compilationResult = buildAndCompileSourceCode(className, code,
-				parameterizations);
+				parameterizedTypes);
 		if (compilationResult.wasSuccessful()) {
-			return new CompiledFunctionFactory<F>(className, compilationResult);
+			CompiledFunctionFactory<F> factory = new CompiledFunctionFactory<>(className, compilationResult);
+			return this.postProcessCompiledFunctionFactory(factory);
 		}
 		List<CompilationMessage> compilationMessages = compilationResult
 				.getCompilationMessages();
 		throw new CompilationFailedException(compilationMessages);
+	}
+
+	/**
+	 * Implementing subclasses may override this, e.g. to set the input and/or output types.
+	 *
+	 * @param factory the {@link CompiledFunctionFactory} produced by {@link #compile(String, String, String...)}
+	 * @return the post-processed {@link CompiledFunctionFactory}
+	 */
+	protected CompiledFunctionFactory<F> postProcessCompiledFunctionFactory(CompiledFunctionFactory<F> factory) {
+		return factory;
 	}
 
 	/**
@@ -133,15 +149,15 @@ public abstract class AbstractFunctionCompiler<F> {
 	 *
 	 * @param className the name of the class
 	 * @param methodBody the source code for a method
-	 * @param parameterTypeString the String representation for the parameterized return
-	 * type, e.g.: <tt>&lt;Flux&lt;Object&gt;,Flux&lt;Object&gt;</tt>
+	 * @param parameterizedTypes the array of String representations for the parameterized
+	 * input and/or output types, e.g.: <tt>&lt;Flux&lt;Object&gt;&gt;</tt>
 	 * @return the list of Classes produced by compiling and then loading the snippet of
 	 * code
 	 */
 	private CompilationResult buildAndCompileSourceCode(String className,
-			String methodBody, String parameterTypeString) {
+			String methodBody, String[] parameterizedTypes) {
 		String sourceCode = makeSourceClassDefinition(className, methodBody,
-				parameterTypeString);
+				parameterizedTypes);
 		return compiler.compile(className, sourceCode);
 	}
 
@@ -156,15 +172,31 @@ public abstract class AbstractFunctionCompiler<F> {
 	 *
 	 * @param className the name of the class
 	 * @param methodBody the code to insert into the Reactive source class template
+	 * @param types the parameterized input and/or output types as Strings
 	 * @return a complete Java Class definition
 	 */
 	private String makeSourceClassDefinition(String className, String methodBody,
-			String types) {
+			String[] types) {
+		String inputType = null;
+		String outputType = null;
+		if (ResultType.Supplier.equals(this.resultType)) {
+			outputType = types[0];
+		}
+		else if (ResultType.Consumer.equals(this.resultType)) {
+			inputType = types[0];
+		}
+		else if (ResultType.Function.equals(this.resultType)) {
+			inputType = types[0];
+			outputType = types[1];
+		}
+		else {
+			throw new IllegalStateException("no FunctionType available");
+		}
 		String shortClassName = className.substring(className.lastIndexOf('.') + 1);
 		String s = String.format(SOURCE_CODE_TEMPLATE, shortClassName, resultType,
-				resultType, types, methodBody);
+				resultType, StringUtils.arrayToCommaDelimitedString(types),
+				methodBody, inputType, outputType);
 		System.out.println(s);
 		return s;
 	}
-
 }

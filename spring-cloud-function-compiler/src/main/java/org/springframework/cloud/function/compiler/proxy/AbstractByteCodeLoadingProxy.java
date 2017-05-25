@@ -32,7 +32,7 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 
 	private final Class<?> type;
 
-	private T target;
+	private CompilationResultFactory<T> factory; 
 
 	private final SimpleClassLoader classLoader = new SimpleClassLoader(AbstractByteCodeLoadingProxy.class.getClassLoader());
 
@@ -42,6 +42,7 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public void afterPropertiesSet() throws Exception {
 		byte[] bytes = FileCopyUtils.copyToByteArray(this.resource.getInputStream());
 		String functionName = this.resource.getFilename().replaceAll(".fun$", "");
@@ -50,9 +51,7 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 		String className = String.format("%s.%s%sFactory", FunctionCompiler.class.getPackage().getName(), upperCasedName, this.type.getSimpleName()); 
 		Class<?> factoryClass = this.classLoader.defineClass(className, bytes);
 		try {
-			@SuppressWarnings("unchecked")
-			CompilationResultFactory<T> factory = (CompilationResultFactory<T>) factoryClass.newInstance();
-			this.target = factory.getResult();
+			this.factory = (CompilationResultFactory<T>) factoryClass.newInstance();
 		}
 		catch (InstantiationException | IllegalAccessException e) {
 			throw new IllegalArgumentException("failed to load Function byte code", e);
@@ -60,6 +59,14 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 	}
 
 	public final T getTarget() {
-		return this.target;
+		return this.factory.getResult();
+	}
+
+	public String getInputType() {
+		return this.factory.getInputType();
+	}
+
+	public String getOutputType() {
+		return this.factory.getOutputType();
 	}
 }

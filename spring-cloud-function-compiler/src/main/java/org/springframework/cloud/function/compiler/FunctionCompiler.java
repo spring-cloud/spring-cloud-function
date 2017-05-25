@@ -23,6 +23,10 @@ import java.util.function.Function;
  */
 public class FunctionCompiler<T, R> extends AbstractFunctionCompiler<Function<T, R>> {
 
+	private final String inputType;
+
+	private final String outputType;
+
 	public FunctionCompiler() {
 		this("Flux<Object>");
 	}
@@ -32,6 +36,15 @@ public class FunctionCompiler<T, R> extends AbstractFunctionCompiler<Function<T,
 	}
 
 	public FunctionCompiler(String inputType, String outputType) {
-		super(ResultType.Function, String.format("%s, %s", inputType, outputType));
+		super(ResultType.Function, inputType, outputType);
+		this.inputType = inputType;
+		this.outputType = outputType;
+	}
+
+	@Override
+	protected CompiledFunctionFactory<Function<T, R>> postProcessCompiledFunctionFactory(CompiledFunctionFactory<Function<T, R>> factory) {
+		factory.setInputType(this.inputType);
+		factory.setOutputType(this.outputType);
+		return factory;
 	}
 }

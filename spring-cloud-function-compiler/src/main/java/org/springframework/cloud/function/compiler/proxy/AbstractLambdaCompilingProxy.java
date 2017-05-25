@@ -37,7 +37,7 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 
 	private String beanName;
 
-	private T target;
+	private CompiledFunctionFactory<T> factory;
 
 	private String[] typeParameterizations;
 
@@ -60,11 +60,18 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		String lambda = FileCopyUtils.copyToString(new InputStreamReader(this.resource.getInputStream()));
-		CompiledFunctionFactory<T> factory = this.compiler.compile(this.beanName, lambda, this.typeParameterizations);
-		this.target = factory.getResult();
+		this.factory = this.compiler.compile(this.beanName, lambda, this.typeParameterizations);
 	}
 
 	public final T getTarget() {
-		return this.target;
+		return this.factory.getResult();
+	}
+
+	public final String getInputType() {
+		return this.factory.getInputType();
+	}
+
+	public final String getOutputType() {
+		return this.factory.getOutputType();
 	}
 }

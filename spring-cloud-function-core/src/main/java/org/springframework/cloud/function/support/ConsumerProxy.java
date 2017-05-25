@@ -30,4 +30,6 @@ public interface ConsumerProxy<T> extends Consumer<T> {
 	}
 
 	Consumer<T> getTarget();
+
+	String getInputType();
 }

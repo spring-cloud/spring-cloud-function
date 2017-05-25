@@ -31,4 +31,8 @@ public interface FunctionProxy<T, R> extends Function<T, R> {
 	}
 
 	Function<T, R> getTarget();
+
+	String getInputType();
+
+	String getOutputType();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,10 @@ public class CompiledFunctionFactory<T> implements CompilationResultFactory<T> {
 
 	private final byte[] generatedClassBytes;
 
+	private String inputType;
+
+	private String outputType;
+
 	public CompiledFunctionFactory(String className, CompilationResult compilationResult) {
 		List<Class<?>> clazzes = compilationResult.getCompiledClasses();
 		T result = null;
@@ -53,6 +57,22 @@ public class CompiledFunctionFactory<T> implements CompilationResultFactory<T> {
 
 	public T getResult() {
 		return result;
+	}
+
+	public String getInputType() {
+		return inputType;
+	}
+
+	public void setInputType(String inputType) {
+		this.inputType = inputType;
+	}
+
+	public String getOutputType() {
+		return outputType;
+	}
+
+	public void setOutputType(String outputType) {
+		this.outputType = outputType;
 	}
 
 	public byte[] getGeneratedClassBytes() {

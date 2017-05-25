@@ -30,4 +30,6 @@ public interface SupplierProxy<T> extends Supplier<T> {
 	}
 
 	Supplier<T> getTarget();
+
+	String getOutputType();
 }
