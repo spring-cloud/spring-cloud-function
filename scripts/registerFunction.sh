@@ -17,5 +17,5 @@ while getopts ":n:f:i:o:" opt; do
     esac
 done
 
-curl -X POST -H "Content-Type: text/plain" -d $FUNC ":8080/function/$NAME?inputType=$INTYPE&outputType=$OUTTYPE"
+curl -X POST -H "Content-Type: text/plain" -d $FUNC "localhost:8080/function/$NAME?inputType=$INTYPE&outputType=$OUTTYPE"
 

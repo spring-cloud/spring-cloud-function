@@ -14,4 +14,4 @@ while getopts ":n:f:t:" opt; do
     esac
 done
 
-curl -X POST -H "Content-Type: text/plain" -d $FUNC :8080/supplier/$NAME?type=$TYPE
+curl -X POST -H "Content-Type: text/plain" -d $FUNC localhost:8080/supplier/$NAME?type=$TYPE

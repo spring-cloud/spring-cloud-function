@@ -137,7 +137,7 @@ Also, start a RabbitMQ server locally (e.g. execute `rabbitmq-server`).
 
 ----
 ./web.sh -f uppercase -p 9000
-curl -H "Content-Type: text/plain" -H "Accept: text/plain" :9000/uppercase -d foo
+curl -H "Content-Type: text/plain" -H "Accept: text/plain" localhost:9000/uppercase -d foo
 ----
 
 === Register a Supplier:
@@ -150,7 +150,7 @@ curl -H "Content-Type: text/plain" -H "Accept: text/plain" :9000/uppercase -d fo
 
 ----
 ./web.sh -s words -p 9001
-curl -H "Accept: application/json" :9001/words
+curl -H "Accept: application/json" localhost:9001/words
 ----
 
 === Register a Consumer:
@@ -163,7 +163,7 @@ curl -H "Accept: application/json" :9001/words
 
 ----
 ./web.sh -c print -p 9002
-curl -X POST -H "Content-Type: text/plain" -d foo :9002/print
+curl -X POST -H "Content-Type: text/plain" -d foo localhost:9002/print
 ----
 
 === Run Stream Processing Microservices:

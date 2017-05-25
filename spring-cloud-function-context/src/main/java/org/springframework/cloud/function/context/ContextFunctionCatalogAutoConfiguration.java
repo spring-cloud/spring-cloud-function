@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -422,7 +423,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 					param = resolvable.getGeneric(index).getGeneric(0).getType();
 				}
 				else {
-					// TODO: compiled functions only work as String -> String
+					// TODO: compiled functions (only work as String -> String)
+					if (paramType.isWrapper()) {
+						return Flux.class;
+					}
 					return String.class;
 				}
 			}
