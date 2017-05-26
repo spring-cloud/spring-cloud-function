@@ -35,7 +35,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -51,6 +51,7 @@ import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.function.support.FluxConsumer;
 import org.springframework.cloud.function.support.FluxFunction;
 import org.springframework.cloud.function.support.FluxSupplier;
+import org.springframework.cloud.function.support.FunctionFactoryMetadata;
 import org.springframework.cloud.function.support.FunctionUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -391,7 +392,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private Class<?> findType(String name, AbstractBeanDefinition definition,
 				ParamType paramType) {
 			Object source = definition.getSource();
-			Type param;
+			Type param = null;
 			// Start by assuming output -> Function
 			int index = paramType.isOutput() ? 1 : 0;
 			if (source instanceof StandardMethodMetadata) {
@@ -422,17 +423,25 @@ public class ContextFunctionCatalogAutoConfiguration {
 				if (resolvable != null) {
 					param = resolvable.getGeneric(index).getGeneric(0).getType();
 				}
-				else {
-					// TODO: compiled functions (only work as String -> String)
-					if (paramType.isWrapper() && !Consumer.class.isAssignableFrom(definition.getBeanClass())) {
-						return Flux.class;
+				else if (registry instanceof BeanFactory) {
+					Object bean = ((BeanFactory) registry).getBean(name);
+					if (bean instanceof FunctionFactoryMetadata) {
+						FunctionFactoryMetadata factory = (FunctionFactoryMetadata) bean;
+						Type type = factory.getFactoryMethod().getGenericReturnType();
+						param = extractType(type, paramType, index);
 					}
-					return String.class;
 				}
 			}
 			if (param instanceof ParameterizedType) {
 				ParameterizedType concrete = (ParameterizedType) param;
 				param = concrete.getRawType();
+			}
+			if (param == null) {
+				// Last ditch attempt to guess: Flux<String>
+				if (paramType.isWrapper()) {
+					return Flux.class;
+				}
+				return String.class;
 			}
 			return (Class<?>) param;
 		}

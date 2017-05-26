@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,15 @@
 
 package org.springframework.cloud.function.support;
 
-import java.util.function.Consumer;
+import java.lang.reflect.Method;
 
 /**
- * @author Mark Fisher
+ * @author Dave Syer
  *
- * @param <T> output type of target Consumer
+ * @param <T>
  */
-public interface ConsumerProxy<T> extends Consumer<T>, FunctionFactoryMetadata {
+public interface FunctionFactoryMetadata {
 
-	default boolean isFluxConsumer() {
-		return FunctionUtils.isFluxConsumer(getFactoryMethod());
-	}
-
-	Consumer<T> getTarget();
+	Method getFactoryMethod();
 
 }

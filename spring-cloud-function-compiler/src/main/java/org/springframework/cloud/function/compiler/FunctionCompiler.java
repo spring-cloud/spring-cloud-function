@@ -45,6 +45,7 @@ public class FunctionCompiler<T, R> extends AbstractFunctionCompiler<Function<T,
 	protected CompiledFunctionFactory<Function<T, R>> postProcessCompiledFunctionFactory(CompiledFunctionFactory<Function<T, R>> factory) {
 		factory.setInputType(this.inputType);
 		factory.setOutputType(this.outputType);
+		
 		return factory;
 	}
 }

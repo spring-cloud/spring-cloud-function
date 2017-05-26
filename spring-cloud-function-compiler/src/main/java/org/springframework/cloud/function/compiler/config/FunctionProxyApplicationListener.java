@@ -115,6 +115,9 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 		else if ("consumer".equals(type.toLowerCase())) {
 			proxyClass = LambdaCompilingConsumer.class;
 			args.addGenericArgumentValue(this.consumerCompiler);
+			if (inputType != null) {
+				props.add("typeParameterizations", inputType);
+			}
 		}
 		else {
 			proxyClass = LambdaCompilingFunction.class;

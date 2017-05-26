@@ -94,8 +94,8 @@ public class CompiledFunctionRegistry {
 		}
 	}
 
-	public void registerConsumer(String name, String consumer) {
-		CompiledFunctionFactory<?> factory = this.consumerCompiler.compile(name, consumer);
+	public void registerConsumer(String name, String consumer, String type) {
+		CompiledFunctionFactory<?> factory = this.consumerCompiler.compile(name, consumer, type);
 		File file = new File(this.consumerDirectory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);

@@ -17,11 +17,13 @@
 package org.springframework.cloud.function.compiler.proxy;
 
 import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.function.compiler.AbstractFunctionCompiler;
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
+import org.springframework.cloud.function.support.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
@@ -29,7 +31,7 @@ import org.springframework.util.FileCopyUtils;
 /**
  * @author Mark Fisher
  */
-public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNameAware {
+public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNameAware, FunctionFactoryMetadata {
 
 	private final Resource resource;
 
@@ -67,11 +69,7 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 		return this.factory.getResult();
 	}
 
-	public final String getInputType() {
-		return this.factory.getInputType();
-	}
-
-	public final String getOutputType() {
-		return this.factory.getOutputType();
+	public Method getFactoryMethod() {
+		return this.factory.getFactoryMethod();
 	}
 }

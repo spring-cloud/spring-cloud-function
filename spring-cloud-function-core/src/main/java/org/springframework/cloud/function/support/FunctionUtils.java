@@ -118,4 +118,51 @@ public abstract class FunctionUtils {
 		}
 		return typeNames.toArray(new String[typeNames.size()]);
 	}
+
+	public static boolean isFluxSupplier(Method method) {
+		String[] types = getParameterizedTypeNamesForMethod(method, Supplier.class);
+		if (ObjectUtils.isEmpty(types)) {
+			return false;
+		}
+		return (types[0].startsWith(FLUX_CLASS_NAME));
+	}
+
+	public static boolean isFluxConsumer(Method method) {
+		String[] types = getParameterizedTypeNamesForMethod(method, Consumer.class);
+		if (ObjectUtils.isEmpty(types)) {
+			return false;
+		}
+		return (types[0].startsWith(FLUX_CLASS_NAME));
+	}
+
+	public static boolean isFluxFunction(Method method) {
+		String[] types = getParameterizedTypeNamesForMethod(method, Function.class);
+		if (ObjectUtils.isEmpty(types)) {
+			return false;
+		}
+		if (ObjectUtils.isEmpty(types) || types.length != 2) {
+			return false;
+		}
+		return (types[0].startsWith(FLUX_CLASS_NAME)
+				&& types[1].startsWith(FLUX_CLASS_NAME));
+	}
+
+	private static String[] getParameterizedTypeNamesForMethod(Method method,
+			Class<?> interfaceClass) {
+		Type genericInterface = method.getGenericReturnType();
+		if ((genericInterface instanceof ParameterizedType) && interfaceClass
+				.getTypeName().equals(((ParameterizedType) genericInterface)
+						.getRawType().getTypeName())) {
+			ParameterizedType type = (ParameterizedType) genericInterface;
+			Type[] args = type.getActualTypeArguments();
+			if (args != null) {
+				String[] typeNames = new String[args.length];
+				for (int i = 0; i < args.length; i++) {
+					typeNames[i] = args[i].getTypeName();
+				}
+				return typeNames;
+			}
+		}
+		return new String[0];
+	}
 }

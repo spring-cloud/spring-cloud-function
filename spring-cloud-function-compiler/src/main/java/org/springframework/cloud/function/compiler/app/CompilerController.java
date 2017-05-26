@@ -44,7 +44,8 @@ public class CompilerController {
 	}
 
 	@PostMapping(path = "/consumer/{name}")
-	public void registerConsumer(@PathVariable String name, @RequestBody String lambda) {
-		this.registry.registerConsumer(name, lambda);
+	public void registerConsumer(@PathVariable String name, @RequestBody String lambda,
+			@RequestParam(defaultValue="Flux<String>") String type) {
+		this.registry.registerConsumer(name, lambda, type);
 	}
 }

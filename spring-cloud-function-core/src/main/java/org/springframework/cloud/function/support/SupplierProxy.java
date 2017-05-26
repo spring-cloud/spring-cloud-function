@@ -23,13 +23,11 @@ import java.util.function.Supplier;
  *
  * @param <T> output type of target Supplier
  */
-public interface SupplierProxy<T> extends Supplier<T> {
+public interface SupplierProxy<T> extends Supplier<T>, FunctionFactoryMetadata {
 
 	default boolean isFluxSupplier() {
-		return FunctionUtils.isFluxSupplier(getTarget());
+		return FunctionUtils.isFluxSupplier(getFactoryMethod());
 	}
 
 	Supplier<T> getTarget();
-
-	String getOutputType();
 }

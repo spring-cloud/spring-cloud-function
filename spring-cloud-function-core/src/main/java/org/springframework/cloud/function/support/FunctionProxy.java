@@ -24,15 +24,12 @@ import java.util.function.Function;
  * @param <T> input type of target Function
  * @param <R> output type of target Function
  */
-public interface FunctionProxy<T, R> extends Function<T, R> {
+public interface FunctionProxy<T, R> extends Function<T, R>, FunctionFactoryMetadata {
 
 	default boolean isFluxFunction() {
-		return FunctionUtils.isFluxFunction(getTarget());
+		return FunctionUtils.isFluxFunction(getFactoryMethod());
 	}
 
 	Function<T, R> getTarget();
 
-	String getInputType();
-
-	String getOutputType();
 }

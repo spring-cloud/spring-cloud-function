@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
 		properties = {
 				"spring.cloud.function.compile.test.lambda=com.example.SampleCompiledConsumerTests.Reference::set",
+				"spring.cloud.function.compile.test.inputType=String",
 				"spring.cloud.function.compile.test.type=consumer"
 		})
 public class SampleCompiledConsumerTests {

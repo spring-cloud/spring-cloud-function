@@ -16,9 +16,12 @@
 
 package org.springframework.cloud.function.compiler;
 
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.cloud.function.compiler.java.CompilationResult;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Mark Fisher
@@ -33,18 +36,26 @@ public class CompiledFunctionFactory<T> implements CompilationResultFactory<T> {
 
 	private String outputType;
 
-	public CompiledFunctionFactory(String className, CompilationResult compilationResult) {
+	private Method method;
+
+	public CompiledFunctionFactory(String className,
+			CompilationResult compilationResult) {
 		List<Class<?>> clazzes = compilationResult.getCompiledClasses();
 		T result = null;
-		for (Class<?> clazz: clazzes) {
+		Method method = null;
+		for (Class<?> clazz : clazzes) {
 			if (clazz.getName().equals(className)) {
 				try {
 					@SuppressWarnings("unchecked")
-					CompilationResultFactory<T> factory = (CompilationResultFactory<T>) clazz.newInstance();
+					CompilationResultFactory<T> factory = (CompilationResultFactory<T>) clazz
+							.newInstance();
 					result = factory.getResult();
+					method = findFactoryMethod(clazz);
 				}
 				catch (Exception e) {
-					throw new IllegalArgumentException("Unexpected problem during retrieval of Function from compiled class", e);
+					throw new IllegalArgumentException(
+							"Unexpected problem during retrieval of Function from compiled class",
+							e);
 				}
 			}
 		}
@@ -52,11 +63,27 @@ public class CompiledFunctionFactory<T> implements CompilationResultFactory<T> {
 			throw new IllegalArgumentException("Failed to extract compilation result.");
 		}
 		this.result = result;
+		this.method = method;
 		this.generatedClassBytes = compilationResult.getClassBytes(className);
+	}
+
+	private Method findFactoryMethod(Class<?> clazz) {
+		AtomicReference<Method> method = new AtomicReference<>();
+		ReflectionUtils.doWithLocalMethods(clazz, m -> {
+			if (m.getName().equals("getResult")
+					&& m.getReturnType().getName().startsWith("java.util.function")) {
+				method.set(m);
+			}
+		});
+		return method.get();
 	}
 
 	public T getResult() {
 		return result;
+	}
+
+	public Method getFactoryMethod() {
+		return method;
 	}
 
 	public String getInputType() {

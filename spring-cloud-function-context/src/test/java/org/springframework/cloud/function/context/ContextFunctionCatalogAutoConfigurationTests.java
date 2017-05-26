@@ -30,12 +30,16 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
+import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.test.GenericFunction;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -143,10 +147,33 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(catalog.lookupFunction("other")).isInstanceOf(Function.class);
 	}
 
-	private void create(Class<?>... types) {
-		context = new SpringApplicationBuilder((Object[]) types).run();
+	@Test
+	public void compiledFunction() throws Exception {
+		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
+				String.class.getName()).compile("foos", "v -> v.toUpperCase()", "String",
+						"String");
+		FileSystemResource resource = new FileSystemResource("target/foos.fun");
+		StreamUtils.copy(compiled.getGeneratedClassBytes(), resource.getOutputStream());
+		create(EmptyConfiguration.class,
+				"spring.cloud.function.import.foos.location=file:./target/foos.fun");
+		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("foos")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputWrapper("foos")).isEqualTo(String.class);
+	}
+
+	private void create(Class<?> type, String... props) {
+		create(new Class<?>[] { type }, props);
+	}
+
+	private void create(Class<?>[] types, String... props) {
+		context = new SpringApplicationBuilder((Object[]) types).properties(props).run();
 		catalog = context.getBean(InMemoryFunctionCatalog.class);
 		inspector = context.getBean(FunctionInspector.class);
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class EmptyConfiguration {
 	}
 
 	@EnableAutoConfiguration
@@ -188,7 +215,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
-	@ComponentScan(basePackageClasses=GenericFunction.class)
+	@ComponentScan(basePackageClasses = GenericFunction.class)
 	protected static class ComponentScanConfiguration {
 	}
 
@@ -237,4 +264,3 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 }
-

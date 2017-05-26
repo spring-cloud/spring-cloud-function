@@ -42,5 +42,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-compiler</artifactId>
+			<version>${spring-cloud-function.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

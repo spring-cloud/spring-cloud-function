@@ -23,7 +23,4 @@ public interface CompilationResultFactory<T> {
 
 	T getResult();
 
-	String getInputType();
-
-	String getOutputType();
 }

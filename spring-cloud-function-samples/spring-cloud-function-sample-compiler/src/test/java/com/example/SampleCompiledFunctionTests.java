@@ -31,8 +31,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Mark Fisher
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = "spring.cloud.function.compile.test.lambda=f->f.map(s->s+\"!!!\")")
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
+		"spring.cloud.function.compile.test.lambda=f->f.map(s->s+\"!!!\")",
+		"spring.cloud.function.compile.test.inputType=Flux<String>",
+		"spring.cloud.function.compile.test.outputType=Flux<String>" })
 public class SampleCompiledFunctionTests {
 
 	@LocalServerPort
@@ -41,8 +43,8 @@ public class SampleCompiledFunctionTests {
 	@Test
 	public void lowercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/test", "it works",
-				String.class)).isEqualTo("it works!!!");
+				"http://localhost:" + port + "/test", "it works", String.class))
+						.isEqualTo("it works!!!");
 	}
 
 }

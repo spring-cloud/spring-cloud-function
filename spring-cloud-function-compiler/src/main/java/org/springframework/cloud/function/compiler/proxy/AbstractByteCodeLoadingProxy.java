@@ -16,12 +16,16 @@
 
 package org.springframework.cloud.function.compiler.proxy;
 
+import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.function.compiler.CompilationResultFactory;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.java.SimpleClassLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Mark Fisher
@@ -36,6 +40,8 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 
 	private final SimpleClassLoader classLoader = new SimpleClassLoader(AbstractByteCodeLoadingProxy.class.getClassLoader());
 
+	private Method method;
+
 	public AbstractByteCodeLoadingProxy(Resource resource, Class<?> type) {
 		this.resource = resource;
 		this.type = type;
@@ -45,28 +51,37 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 	@SuppressWarnings("unchecked")
 	public void afterPropertiesSet() throws Exception {
 		byte[] bytes = FileCopyUtils.copyToByteArray(this.resource.getInputStream());
-		String functionName = this.resource.getFilename().replaceAll(".fun$", "");
+		String filename = this.resource.getFilename();
+		String functionName = filename == null ? type.getSimpleName() : filename.replaceAll(".fun$", "");
 		String firstLetter = functionName.substring(0, 1).toUpperCase();
 		String upperCasedName = (functionName.length() > 1) ? firstLetter + functionName.substring(1) : firstLetter;
 		String className = String.format("%s.%s%sFactory", FunctionCompiler.class.getPackage().getName(), upperCasedName, this.type.getSimpleName()); 
 		Class<?> factoryClass = this.classLoader.defineClass(className, bytes);
 		try {
 			this.factory = (CompilationResultFactory<T>) factoryClass.newInstance();
+			this.method = findFactoryMethod(factoryClass);
 		}
 		catch (InstantiationException | IllegalAccessException e) {
 			throw new IllegalArgumentException("failed to load Function byte code", e);
 		}
 	}
 
+	private Method findFactoryMethod(Class<?> clazz) {
+		AtomicReference<Method> method = new AtomicReference<>();
+		ReflectionUtils.doWithLocalMethods(clazz, m -> {
+			if (m.getName().equals("getResult")
+					&& m.getReturnType().getName().startsWith("java.util.function")) {
+				method.set(m);
+			}
+		});
+		return method.get();
+	}
+
 	public final T getTarget() {
 		return this.factory.getResult();
 	}
 
-	public String getInputType() {
-		return this.factory.getInputType();
-	}
-
-	public String getOutputType() {
-		return this.factory.getOutputType();
+	public Method getFactoryMethod() {
+		return this.method;
 	}
 }
