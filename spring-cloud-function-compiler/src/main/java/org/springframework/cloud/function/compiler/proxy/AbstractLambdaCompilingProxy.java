@@ -69,6 +69,7 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 		return this.factory.getResult();
 	}
 
+	@Override
 	public Method getFactoryMethod() {
 		return this.factory.getFactoryMethod();
 	}

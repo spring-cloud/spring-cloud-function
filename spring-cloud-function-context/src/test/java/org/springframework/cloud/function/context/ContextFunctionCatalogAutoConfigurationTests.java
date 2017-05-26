@@ -54,12 +54,14 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	private ConfigurableApplicationContext context;
 	private InMemoryFunctionCatalog catalog;
 	private FunctionInspector inspector;
+	private static String value;
 
 	@After
 	public void close() {
 		if (context != null) {
 			context.close();
 		}
+		ContextFunctionCatalogAutoConfigurationTests.value = null;
 	}
 
 	@Test
@@ -149,6 +151,17 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@Test
 	public void compiledFunction() throws Exception {
+		create(EmptyConfiguration.class,
+				"spring.cloud.function.compile.foos.lambda=v -> v.toUpperCase()",
+				"spring.cloud.function.compile.foos.inputType=String",
+				"spring.cloud.function.compile.foos.outputType=String");
+		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("foos")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputWrapper("foos")).isEqualTo(String.class);
+	}
+
+	@Test
+	public void byteCodeFunction() throws Exception {
 		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
 				String.class.getName()).compile("foos", "v -> v.toUpperCase()", "String",
 						"String");
@@ -161,6 +174,33 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(inspector.getInputWrapper("foos")).isEqualTo(String.class);
 	}
 
+	@Test
+	public void compiledConsumer() throws Exception {
+		create(EmptyConfiguration.class,
+				"spring.cloud.function.compile.foos.lambda=" + getClass().getName() + "::set",
+				"spring.cloud.function.compile.foos.type=consumer",
+				"spring.cloud.function.compile.foos.inputType=String");
+		assertThat(catalog.lookupConsumer("foos")).isInstanceOf(Consumer.class);
+		assertThat(inspector.getInputWrapper("foos")).isEqualTo(String.class);
+		@SuppressWarnings("unchecked")
+		Consumer<String> consumer = (Consumer<String>)context.getBean("foos");
+		consumer.accept("hello");
+		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
+	}
+
+	@Test
+	public void compiledFluxConsumer() throws Exception {
+		create(EmptyConfiguration.class,
+				"spring.cloud.function.compile.foos.lambda=f -> f.subscribe(" + getClass().getName() + "::set)",
+				"spring.cloud.function.compile.foos.type=consumer");
+		assertThat(catalog.lookupConsumer("foos")).isInstanceOf(Consumer.class);
+		assertThat(inspector.getInputWrapper("foos")).isEqualTo(Flux.class);
+		@SuppressWarnings("unchecked")
+		Consumer<Flux<String>> consumer = (Consumer<Flux<String>>)context.getBean("foos");
+		consumer.accept(Flux.just("hello"));
+		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
+	}
+
 	private void create(Class<?> type, String... props) {
 		create(new Class<?>[] { type }, props);
 	}
@@ -169,6 +209,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		context = new SpringApplicationBuilder((Object[]) types).properties(props).run();
 		catalog = context.getBean(InMemoryFunctionCatalog.class);
 		inspector = context.getBean(FunctionInspector.class);
+	}
+	
+	public static void set(Object value) {
+		ContextFunctionCatalogAutoConfigurationTests.value = value.toString();
 	}
 
 	@EnableAutoConfiguration

@@ -156,7 +156,7 @@ curl -H "Accept: application/json" localhost:9001/words
 === Register a Consumer:
 
 ----
-./registerConsumer.sh -n print -f "f->f.subscribe(System.out::println)"
+./registerConsumer.sh -n print -t String -f "System.out::println"
 ----
 
 === Run a REST Microservice using that Consumer:

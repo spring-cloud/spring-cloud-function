@@ -21,6 +21,7 @@ import java.util.List;
 /**
  * @author Mark Fisher
  */
+@SuppressWarnings("serial")
 public class CompilationFailedException extends RuntimeException {
 
 	public CompilationFailedException(List<CompilationMessage> messages) {

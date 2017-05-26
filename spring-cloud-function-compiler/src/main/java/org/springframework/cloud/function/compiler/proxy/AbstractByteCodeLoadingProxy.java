@@ -23,6 +23,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.function.compiler.CompilationResultFactory;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.java.SimpleClassLoader;
+import org.springframework.cloud.function.support.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.ReflectionUtils;
@@ -30,7 +31,7 @@ import org.springframework.util.ReflectionUtils;
 /**
  * @author Mark Fisher
  */
-public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBean {
+public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBean, FunctionFactoryMetadata {
 
 	private final Resource resource;
 
@@ -81,6 +82,7 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 		return this.factory.getResult();
 	}
 
+	@Override
 	public Method getFactoryMethod() {
 		return this.method;
 	}

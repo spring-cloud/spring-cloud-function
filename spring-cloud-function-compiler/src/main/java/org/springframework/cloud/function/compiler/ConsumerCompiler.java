@@ -26,7 +26,7 @@ public class ConsumerCompiler<T> extends AbstractFunctionCompiler<Consumer<T>> {
 	private final String inputType;
 
 	public ConsumerCompiler() {
-		this("Object");
+		this("Flux<Object>");
 	}
 
 	public ConsumerCompiler(String inputType) {
