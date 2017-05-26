@@ -16,3 +16,4 @@ spring:
         print:
           type: consumer
           lambda: System.out::println
+          inputType: String
