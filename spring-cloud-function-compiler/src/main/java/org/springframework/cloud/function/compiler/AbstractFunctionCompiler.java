@@ -58,12 +58,6 @@ public abstract class AbstractFunctionCompiler<F> {
 			+ " public %s<%s> getResult() {\n" 
 			+ "  %s\n"
 			+ " }\n"
-			+ " public String getInputType() {\n"
-			+ "  return \"%s\";\n"
-			+ " }\n"
-			+ " public String getOutputType() {\n"
-			+ "  return \"%s\";\n"
-			+ " }\n"
 			+ "}\n";
 // @formatter:on
 
@@ -104,8 +98,7 @@ public abstract class AbstractFunctionCompiler<F> {
 		}
 		logger.info("Initial code property value :'{}'", code);
 		String[] parameterizedTypes = (!ObjectUtils.isEmpty(resultTypeParameterizations))
-					? resultTypeParameterizations
-					: this.defaultResultTypeParameterizations;
+				? resultTypeParameterizations : this.defaultResultTypeParameterizations;
 		code = decode(code);
 		if (code.startsWith("\"") && code.endsWith("\"")) {
 			code = code.substring(1, code.length() - 1);
@@ -122,7 +115,8 @@ public abstract class AbstractFunctionCompiler<F> {
 		CompilationResult compilationResult = buildAndCompileSourceCode(className, code,
 				parameterizedTypes);
 		if (compilationResult.wasSuccessful()) {
-			CompiledFunctionFactory<F> factory = new CompiledFunctionFactory<>(className, compilationResult);
+			CompiledFunctionFactory<F> factory = new CompiledFunctionFactory<>(className,
+					compilationResult);
 			return this.postProcessCompiledFunctionFactory(factory);
 		}
 		List<CompilationMessage> compilationMessages = compilationResult
@@ -131,12 +125,15 @@ public abstract class AbstractFunctionCompiler<F> {
 	}
 
 	/**
-	 * Implementing subclasses may override this, e.g. to set the input and/or output types.
+	 * Implementing subclasses may override this, e.g. to set the input and/or output
+	 * types.
 	 *
-	 * @param factory the {@link CompiledFunctionFactory} produced by {@link #compile(String, String, String...)}
+	 * @param factory the {@link CompiledFunctionFactory} produced by
+	 * {@link #compile(String, String, String...)}
 	 * @return the post-processed {@link CompiledFunctionFactory}
 	 */
-	protected CompiledFunctionFactory<F> postProcessCompiledFunctionFactory(CompiledFunctionFactory<F> factory) {
+	protected CompiledFunctionFactory<F> postProcessCompiledFunctionFactory(
+			CompiledFunctionFactory<F> factory) {
 		return factory;
 	}
 
@@ -177,25 +174,9 @@ public abstract class AbstractFunctionCompiler<F> {
 	 */
 	private String makeSourceClassDefinition(String className, String methodBody,
 			String[] types) {
-		String inputType = null;
-		String outputType = null;
-		if (ResultType.Supplier.equals(this.resultType)) {
-			outputType = types[0];
-		}
-		else if (ResultType.Consumer.equals(this.resultType)) {
-			inputType = types[0];
-		}
-		else if (ResultType.Function.equals(this.resultType)) {
-			inputType = types[0];
-			outputType = types[1];
-		}
-		else {
-			throw new IllegalStateException("no FunctionType available");
-		}
 		String shortClassName = className.substring(className.lastIndexOf('.') + 1);
 		String s = String.format(SOURCE_CODE_TEMPLATE, shortClassName, resultType,
-				resultType, StringUtils.arrayToCommaDelimitedString(types),
-				methodBody, inputType, outputType);
+				resultType, StringUtils.arrayToCommaDelimitedString(types), methodBody);
 		System.out.println(s);
 		return s;
 	}
