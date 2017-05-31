@@ -16,19 +16,19 @@
 
 package org.springframework.cloud.function.stream;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
-
-import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionInspector;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
+
+import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
@@ -36,44 +36,68 @@ import org.springframework.messaging.converter.MessageConverter;
  */
 public class StreamListeningConsumerInvoker implements SmartInitializingSingleton {
 
-	private final Consumer<Flux<?>> consumer;
-
-	private final String name;
-
 	private final FunctionInspector functionInspector;
 
 	private final CompositeMessageConverterFactory converterFactory;
 
 	private MessageConverter converter;
 
-	private Class<?> inputType;
+	private final FunctionCatalog functionCatalog;
 
-	public StreamListeningConsumerInvoker(String name, Consumer<Flux<?>> consumer, FunctionInspector functionInspector,
-			CompositeMessageConverterFactory converterFactory) {
-		this.consumer = consumer;
-		this.name = name;
+	private final String defaultEndpoint;
+
+	private final String[] names;
+
+	public StreamListeningConsumerInvoker(FunctionCatalog functionCatalog,
+			FunctionInspector functionInspector,
+			CompositeMessageConverterFactory converterFactory, String defaultEndpoint,
+			String... names) {
+		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
 		this.converterFactory = converterFactory;
+		this.defaultEndpoint = defaultEndpoint;
+		this.names = names;
 	}
 
 	@Override
 	public void afterSingletonsInstantiated() {
 		this.converter = this.converterFactory.getMessageConverterForAllRegistered();
-		this.inputType = this.functionInspector.getInputType(this.name);
 	}
 
 	@StreamListener
-	public void handle(@Input(Processor.INPUT) Flux<Message<?>> input) {
-		this.consumer.accept(input.map(convertInput()));
+	public void handle(@Input(Sink.INPUT) Flux<Message<?>> input) {
+		input.groupBy(this::select)
+				.filter(group -> functionCatalog.lookupConsumer(group.key()) != null)
+				.subscribe(group -> process(group.key(), group));
 	}
 
-	private Function<Message<?>, Object> convertInput() {
+	private void process(String name, Flux<Message<?>> flux) {
+		functionCatalog.lookupConsumer(name)
+				.accept(flux.map(message -> convertInput(name).apply(message)));
+	}
+
+	private String select(Message<?> input) {
+		String name = defaultEndpoint;
+		if (name == null) {
+			for (String candidate : names) {
+				Class<?> inputType = functionInspector.getInputType(candidate);
+				if (this.converter.fromMessage(input, inputType) != null) {
+					name = candidate;
+					break;
+				}
+			}
+		}
+		return name;
+	}
+
+	private Function<Message<?>, Object> convertInput(String name) {
+		Class<?> inputType = functionInspector.getInputType(name);
 		return m -> {
-			if (this.inputType.isAssignableFrom(m.getPayload().getClass())) {
+			if (inputType.isAssignableFrom(m.getPayload().getClass())) {
 				return m.getPayload();
 			}
 			else {
-				return converter.fromMessage(m, this.inputType);
+				return this.converter.fromMessage(m, inputType);
 			}
 		};
 	}

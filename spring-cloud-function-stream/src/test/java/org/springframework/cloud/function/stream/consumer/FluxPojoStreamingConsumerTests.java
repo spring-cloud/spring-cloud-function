@@ -39,9 +39,7 @@ import reactor.core.publisher.Flux;
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = FluxPojoStreamingConsumerTests.StreamingSinkTest.class, properties = {
-		"spring.cloud.stream.bindings.input.destination=data-in",
-		"spring.cloud.function.stream.endpoint=sinkConsumer" })
+@SpringBootTest(classes = FluxPojoStreamingConsumerTests.StreamingSinkTest.class)
 public class FluxPojoStreamingConsumerTests {
 
 	@Autowired
