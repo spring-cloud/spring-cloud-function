@@ -16,11 +16,9 @@
 
 package org.springframework.cloud.function.stream;
 
-import java.time.Duration;
 import java.util.function.Supplier;
 
-import org.springframework.cloud.function.support.FluxSupplier;
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.messaging.support.MessageBuilder;
@@ -33,24 +31,30 @@ import reactor.core.publisher.Flux;
  */
 public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
-	private final Supplier<Flux<T>> supplier;
+	private final FunctionCatalog functionCatalog;
 
-	public SupplierInvokingMessageProducer(Supplier<?> supplier, long interval) {
-		Assert.notNull(supplier, "Supplier must not be null");
-		if (!FunctionUtils.isFluxSupplier(supplier)) {
-			supplier = (interval > 0)
-					? new FluxSupplier<>(supplier, Duration.ofMillis(interval))
-					: new FluxSupplier<>(supplier);
-		}
-		@SuppressWarnings("unchecked")
-		Supplier<Flux<T>> unchecked = (Supplier<Flux<T>>) supplier;
-		this.supplier = unchecked;
+	private final String[] names;
+
+	public SupplierInvokingMessageProducer(FunctionCatalog registry, String... names) {
+		this.functionCatalog = registry;
+		this.names = names;
 		this.setOutputChannelName(Source.OUTPUT);
 	}
 
 	@Override
 	protected void doStart() {
-		this.supplier.get()
+		supplier()
 				.subscribe(m -> this.sendMessage(MessageBuilder.withPayload(m).build()));
+	}
+
+	private Flux<?> supplier() {
+		Supplier<Flux<?>> supplier = null;
+		Flux<?> result = Flux.empty();
+		for (String name : names) {
+			supplier = functionCatalog.lookupSupplier(name);
+			Assert.notNull(supplier, "Supplier must not be null");
+			result = Flux.merge(result, supplier.get());
+		}
+		return result;
 	}
 }

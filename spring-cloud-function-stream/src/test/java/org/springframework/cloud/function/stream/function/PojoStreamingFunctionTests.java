@@ -38,9 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = PojoStreamingFunctionTests.StreamingFunctionApplication.class, properties = {
-		"spring.cloud.stream.bindings.input.destination=data-in",
-		"spring.cloud.stream.bindings.output.destination=data-out", "spring.cloud.function.stream.endpoint=uppercase" })
+@SpringBootTest(classes = PojoStreamingFunctionTests.StreamingFunctionApplication.class)
 public class PojoStreamingFunctionTests {
 
 	@Autowired

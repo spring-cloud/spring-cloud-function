@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream.supplier;
+package org.springframework.cloud.function.stream.mixed;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.Test;
@@ -25,10 +26,11 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.messaging.Source;
+import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,27 +39,57 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = StreamSupplierTests.StreamingFunctionApplication.class)
-public class StreamSupplierTests {
+@SpringBootTest(classes = PojoStreamingExplicitEndpointTests.StreamingFunctionApplication.class, properties = {
+		"spring.cloud.function.stream.endpoint=uppercase",
+		"logging.level.org.springframework.integration=DEBUG", "debug=TRUE" })
+public class PojoStreamingExplicitEndpointTests {
 
 	@Autowired
-	Source source;
+	Processor processor;
 
 	@Autowired
 	MessageCollector messageCollector;
 
 	@Test
 	public void test() throws Exception {
-		Message<?> result = messageCollector.forChannel(source.output()).poll(1000, TimeUnit.MILLISECONDS);
-		assertThat(result.getPayload()).isEqualTo("foo");
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"name\":\"hello\"}").build());
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000,
+				TimeUnit.MILLISECONDS);
+		assertThat(result.getPayload()).isInstanceOf(Foo.class);
 	}
 
 	@SpringBootApplication
 	public static class StreamingFunctionApplication {
 
 		@Bean
-		public Supplier<String> simpleSupplier() {
-			return () -> "foo";
+		public Function<Foo, Foo> uppercase() {
+			return f -> new Foo(f.getName().toUpperCase());
+		}
+
+		@Bean
+		public Supplier<Foo> foos() {
+			return () -> new Foo("world");
+		}
+
+	}
+
+	protected static class Foo {
+		private String name;
+
+		Foo() {
+		}
+
+		public Foo(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
 		}
 	}
 }

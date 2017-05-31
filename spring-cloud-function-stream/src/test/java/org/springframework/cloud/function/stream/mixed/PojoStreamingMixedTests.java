@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream.function;
+package org.springframework.cloud.function.stream.mixed;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -39,8 +41,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = FluxStreamingFunctionTests.StreamingFunctionApplication.class)
-public class FluxStreamingFunctionTests {
+@SpringBootTest(classes = PojoStreamingMixedTests.StreamingFunctionApplication.class)
+public class PojoStreamingMixedTests {
 
 	@Autowired
 	Processor processor;
@@ -48,19 +50,77 @@ public class FluxStreamingFunctionTests {
 	@Autowired
 	MessageCollector messageCollector;
 
+	@Autowired
+	List<Bar> collector;
+
 	@Test
 	public void test() throws Exception {
-		processor.input().send(MessageBuilder.withPayload("foo").build());
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000, TimeUnit.MILLISECONDS);
-		assertThat(result.getPayload()).isEqualTo("FOO");
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"name\":\"hello\"}").build());
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"name\":\"world\"}").build());
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000,
+				TimeUnit.MILLISECONDS);
+		assertThat(result.getPayload()).isInstanceOf(Foo.class);
+		// 2 subscribers to the same channel so input messages are applied as round robin
+		assertThat(collector).hasSize(1);
 	}
 
 	@SpringBootApplication
 	public static class StreamingFunctionApplication {
 
 		@Bean
-		public Function<Flux<String>, Flux<String>> uppercase() {
-			return f-> f.map(s -> s.toUpperCase());
+		public Function<Foo, Foo> uppercase() {
+			return f -> new Foo(f.getName().toUpperCase());
+		}
+
+		@Bean
+		public List<Bar> collector() {
+			return new ArrayList<>();
+		}
+
+		@Bean
+		public Consumer<Bar> sink(final List<Bar> list) {
+			return s -> list.add(s);
+		}
+
+	}
+
+	protected static class Foo {
+		private String name;
+
+		Foo() {
+		}
+
+		public Foo(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
+	protected static class Bar {
+		private String name;
+
+		Bar() {
+		}
+
+		public Bar(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
 		}
 	}
 }
