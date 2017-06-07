@@ -490,6 +490,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private Object getField(Object target, String name) {
 			Field field = ReflectionUtils.findField(target.getClass(), name);
+			if (field == null) {
+				return null;
+			}
 			ReflectionUtils.makeAccessible(field);
 			return ReflectionUtils.getField(field, target);
 		}
