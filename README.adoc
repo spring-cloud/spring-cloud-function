@@ -41,8 +41,7 @@ then turning them into `@Beans` that can be wrapped as above.
 isolated classloader, so that you can pack them together in a single
 JVM.
 
-4. TBD: adapters for AWS Lambda, and possibly other "serverless"
-service providers.
+4. Adapters for https://github.com/markfisher/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/markfisher/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers.
 
 == Getting Started
 
