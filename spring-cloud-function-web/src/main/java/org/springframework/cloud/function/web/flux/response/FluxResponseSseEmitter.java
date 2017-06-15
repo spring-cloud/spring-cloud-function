@@ -18,7 +18,9 @@ package org.springframework.cloud.function.web.flux.response;
 
 import org.reactivestreams.Publisher;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -30,15 +32,24 @@ import reactor.core.publisher.Flux;
  *
  * @author Dave Syer
  */
-class FluxResponseSseEmitter<T> extends SseEmitter {
+class FluxResponseSseEmitter extends SseEmitter {
 
-	public FluxResponseSseEmitter(Publisher<T> observable) {
-		this(MediaType.valueOf("text/plain"), observable);
+	private ResponseBodyEmitterSubscriber subscriber;
+
+	public FluxResponseSseEmitter(Publisher<?> observable) {
+		this(new HttpHeaders(), MediaType.valueOf("text/plain"), observable);
 	}
 
-	public FluxResponseSseEmitter(MediaType mediaType, Publisher<T> observable) {
+	public FluxResponseSseEmitter(HttpHeaders request, MediaType mediaType,
+			Publisher<?> observable) {
 		super();
-		new ResponseBodyEmitterSubscriber<>(mediaType, observable, this, false);
+		this.subscriber = new ResponseBodyEmitterSubscriber(request, mediaType,
+				observable, this, false);
 	}
 
+	@Override
+	protected void extendResponse(ServerHttpResponse outputMessage) {
+		super.extendResponse(outputMessage);
+		this.subscriber.extendResponse(outputMessage);
+	}
 }

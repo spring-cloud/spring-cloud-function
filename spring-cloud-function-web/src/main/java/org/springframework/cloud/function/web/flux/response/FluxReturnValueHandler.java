@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
@@ -32,11 +33,15 @@ import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
+import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.messaging.Message;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
@@ -130,8 +135,16 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		if (returnValue instanceof ResponseEntity) {
 			ResponseEntity<?> value = (ResponseEntity<?>) returnValue;
 			adaptFrom = value.getBody();
-			webRequest.getNativeResponse(HttpServletResponse.class)
-					.setStatus(value.getStatusCodeValue());
+			HttpServletResponse response = webRequest
+					.getNativeResponse(HttpServletResponse.class);
+			response.setStatus(value.getStatusCodeValue());
+			HttpHeaders headers = value.getHeaders();
+			for (String name : headers.keySet()) {
+				List<String> list = headers.get(name);
+				for (String header : list) {
+					response.addHeader(name, header);
+				}
+			}
 		}
 		Publisher<?> flux = (Publisher<?>) adaptFrom;
 
@@ -141,8 +154,13 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 
 		boolean inputSingle = isInputSingle(webRequest, handler);
 		if (inputSingle && isOutputSingle(handler)) {
-			single.handleReturnValue(Flux.from(flux).blockFirst(), singleReturnType,
-					mavContainer, webRequest);
+			Object result = Flux.from(flux).blockFirst();
+			if (result instanceof Message) {
+				Message<?> message = (Message<?>) result;
+				result = message.getPayload();
+				addHeaders(webRequest, message);
+			}
+			single.handleReturnValue(result, singleReturnType, mavContainer, webRequest);
 			return;
 		}
 
@@ -157,8 +175,25 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 			logger.debug(
 					"Handling return value " + type + " with media type: " + mediaType);
 		}
-		delegate.handleReturnValue(getEmitter(timeout, flux, mediaType), returnType,
+		ServletServerHttpRequest request = new ServletServerHttpRequest(
+				webRequest.getNativeRequest(HttpServletRequest.class));
+		delegate.handleReturnValue(
+				getEmitter(timeout, flux, mediaType, request.getHeaders()), returnType,
 				mavContainer, webRequest);
+	}
+
+	private void addHeaders(NativeWebRequest webRequest, Message<?> message) {
+		HttpServletResponse response = webRequest
+				.getNativeResponse(HttpServletResponse.class);
+		ServletServerHttpRequest request = new ServletServerHttpRequest(
+				webRequest.getNativeRequest(HttpServletRequest.class));
+		HttpHeaders headers = HeaderUtils.fromMessage(message.getHeaders(),
+				request.getHeaders());
+		for (String name : headers.keySet()) {
+			for (Object object : headers.get(name)) {
+				response.addHeader(name, object.toString());
+			}
+		}
 	}
 
 	private boolean isInputSingle(NativeWebRequest webRequest, Object handler) {
@@ -218,15 +253,16 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 	}
 
 	private ResponseBodyEmitter getEmitter(Long timeout, Publisher<?> flux,
-			MediaType mediaType) {
+			MediaType mediaType, HttpHeaders request) {
 		Publisher<?> exported = flux instanceof Mono ? Mono.from(flux)
 				: Flux.from(flux).timeout(Duration.ofMillis(timeout), Flux.empty());
 		if (!MediaType.ALL.equals(mediaType)
 				&& EVENT_STREAM.isCompatibleWith(mediaType)) {
 			// TODO: more subtle content negotiation
-			return new FluxResponseSseEmitter<>(MediaType.APPLICATION_JSON, exported);
+			return new FluxResponseSseEmitter(request, MediaType.APPLICATION_JSON,
+					exported);
 		}
-		return new FluxResponseBodyEmitter<>(mediaType, exported);
+		return new FluxResponseBodyEmitter(request, mediaType, exported);
 	}
 
 }

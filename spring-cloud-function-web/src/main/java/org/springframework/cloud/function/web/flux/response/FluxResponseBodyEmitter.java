@@ -30,25 +30,27 @@ import reactor.core.publisher.Flux;
  *
  * @author Dave Syer
  */
-class FluxResponseBodyEmitter<T> extends ResponseBodyEmitter {
+class FluxResponseBodyEmitter extends ResponseBodyEmitter {
 
 	private final MediaType mediaType;
+	private ResponseBodyEmitterSubscriber subscriber;
 
-	public FluxResponseBodyEmitter(Publisher<T> observable) {
-		this(null, observable);
+	public FluxResponseBodyEmitter(Publisher<?> observable) {
+		this(new HttpHeaders(), null, observable);
 	}
 
-	public FluxResponseBodyEmitter(MediaType mediaType, Publisher<T> observable) {
+	public FluxResponseBodyEmitter(HttpHeaders request, MediaType mediaType,
+			Publisher<?> observable) {
 		super();
 		this.mediaType = mediaType;
-		new ResponseBodyEmitterSubscriber<>(mediaType, observable, this,
-				MediaType.APPLICATION_JSON.isCompatibleWith(mediaType));
+		this.subscriber = new ResponseBodyEmitterSubscriber(request, mediaType,
+				observable, this, MediaType.APPLICATION_JSON.isCompatibleWith(mediaType));
 	}
 
 	@Override
 	protected void extendResponse(ServerHttpResponse outputMessage) {
 		super.extendResponse(outputMessage);
-
+		this.subscriber.extendResponse(outputMessage);
 		HttpHeaders headers = outputMessage.getHeaders();
 		if (headers.getContentType() == null && this.mediaType != null
 				&& !MediaType.ALL.equals(this.mediaType)) {

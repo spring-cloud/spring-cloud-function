@@ -23,7 +23,11 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import org.springframework.cloud.function.web.util.HeaderUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.messaging.Message;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import reactor.core.publisher.Flux;
@@ -35,7 +39,7 @@ import reactor.core.publisher.Mono;
  *
  * @author Dave Syer
  */
-class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
+class ResponseBodyEmitterSubscriber implements Subscriber<Object> {
 
 	private final MediaType mediaType;
 
@@ -49,11 +53,17 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 
 	private boolean single;
 
-	private boolean json;
+	private final boolean json;
 
-	public ResponseBodyEmitterSubscriber(MediaType mediaType, Publisher<T> observable,
-			ResponseBodyEmitter responseBodyEmitter, boolean json) {
+	private Message<?> first;
 
+	private final HttpHeaders request;
+
+	public ResponseBodyEmitterSubscriber(HttpHeaders request, MediaType mediaType,
+			Publisher<?> observable, ResponseBodyEmitter responseBodyEmitter,
+			boolean json) {
+
+		this.request = request;
 		this.mediaType = mediaType;
 		this.responseBodyEmitter = responseBodyEmitter;
 		this.json = json;
@@ -63,6 +73,10 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 		observable.subscribe(this);
 	}
 
+	public void extendResponse(ServerHttpResponse response) {
+		headers(response);
+	}
+
 	@Override
 	public void onSubscribe(Subscription subscription) {
 		this.subscription = subscription;
@@ -70,9 +84,15 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 	}
 
 	@Override
-	public void onNext(T value) {
+	public void onNext(Object value) {
 
 		Object object = value;
+
+		if (object instanceof Message) {
+			Message<?> message = (Message<?>) object;
+			object = message.getPayload();
+			this.first = message;
+		}
 
 		try {
 			if (isJson()) {
@@ -85,9 +105,9 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 				else {
 					responseBodyEmitter.send(",");
 				}
-				if (!single && value.getClass() == String.class
-						&& !((String) value).contains("\"")) {
-					object = "\"" + value + "\"";
+				if (!single && object.getClass() == String.class
+						&& !((String) object).contains("\"")) {
+					object = "\"" + object + "\"";
 				}
 			}
 			if (!completed) {
@@ -98,6 +118,24 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 
 		IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
+		}
+	}
+
+	private void headers(ServerHttpResponse response) {
+		if (this.first != null) {
+			Message<?> message = first;
+			try {
+				HttpHeaders headers = HeaderUtils.fromMessage(message.getHeaders(),
+						request);
+				for (String name : headers.keySet()) {
+					for (String value : headers.get(name)) {
+						response.getHeaders().add(name, value);
+					}
+				}
+			}
+			catch (Exception e) {
+				// Headers could not be set
+			}
 		}
 	}
 
@@ -170,4 +208,5 @@ class ResponseBodyEmitterSubscriber<T> implements Subscriber<T> {
 			ResponseBodyEmitterSubscriber.this.subscription.cancel();
 		}
 	}
+
 }

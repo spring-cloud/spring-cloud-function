@@ -45,6 +45,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.StringUtils;
 
@@ -257,6 +259,26 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void messages() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
+				.header("x-foo", "bar").body("[\"foo\",\"bar\"]"), String.class);
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
+		assertThat(result.getHeaders().getFirst("x-foo")).isEqualTo("bar");
+		assertThat(result.getHeaders()).doesNotContainKey("id");
+	}
+
+	@Test
+	public void headers() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/headers")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
+		assertThat(result.getHeaders().getFirst("foo")).isEqualTo("bar");
+		assertThat(result.getHeaders()).doesNotContainKey("id");
+	}
+
+	@Test
 	public void uppercaseSingleValue() throws Exception {
 		ResponseEntity<String> result = rest
 				.exchange(
@@ -404,6 +426,20 @@ public class RestApplicationTests {
 		@Bean
 		public Function<String, String> bareUppercase() {
 			return value -> "(" + value.trim().toUpperCase() + ")";
+		}
+
+		@Bean
+		public Function<Message<String>, Message<String>> messages() {
+			return value -> MessageBuilder
+					.withPayload("(" + value.getPayload().trim().toUpperCase() + ")")
+					.copyHeaders(value.getHeaders()).build();
+		}
+
+		@Bean
+		public Function<Flux<Message<String>>, Flux<Message<String>>> headers() {
+			return flux -> flux.map(value -> MessageBuilder
+					.withPayload("(" + value.getPayload().trim().toUpperCase() + ")")
+					.setHeader("foo", "bar").build());
 		}
 
 		@Bean
