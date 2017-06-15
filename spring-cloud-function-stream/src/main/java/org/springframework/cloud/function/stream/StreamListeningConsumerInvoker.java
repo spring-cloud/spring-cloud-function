@@ -93,7 +93,10 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 	private Function<Message<?>, Object> convertInput(String name) {
 		Class<?> inputType = functionInspector.getInputType(name);
 		return m -> {
-			if (inputType.isAssignableFrom(m.getPayload().getClass())) {
+			if (Message.class.isAssignableFrom(inputType)) {
+				return m;
+			}
+			else if (inputType.isAssignableFrom(m.getPayload().getClass())) {
 				return m.getPayload();
 			}
 			else {

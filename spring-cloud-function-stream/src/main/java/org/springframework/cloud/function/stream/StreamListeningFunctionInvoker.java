@@ -28,7 +28,7 @@ import org.springframework.cloud.stream.converter.CompositeMessageConverterFacto
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.util.Assert;
+import org.springframework.messaging.support.MessageBuilder;
 
 import reactor.core.publisher.Flux;
 
@@ -96,12 +96,22 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 	private Function<Message<?>, Object> convertInput(String name) {
 		Class<?> inputType = functionInspector.getInputType(name);
 		return m -> {
-			if (inputType.isAssignableFrom(m.getPayload().getClass())) {
-				return m.getPayload();
+			if (functionInspector.isMessage(name)) {
+				return MessageBuilder.withPayload(convertPayload(name, inputType, m))
+						.copyHeaders(m.getHeaders()).build();
 			}
 			else {
-				return this.converter.fromMessage(m, inputType);
+				return convertPayload(name, inputType, m);
 			}
 		};
+	}
+
+	private Object convertPayload(String name, Class<?> inputType, Message<?> m) {
+		if (inputType.isAssignableFrom(m.getPayload().getClass())) {
+			return m.getPayload();
+		}
+		else {
+			return this.converter.fromMessage(m, inputType);
+		}
 	}
 }

@@ -62,6 +62,7 @@ import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -106,6 +107,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		public BeanFactoryFunctionInspector(ContextFunctionPostProcessor processor) {
 			this.processor = processor;
+		}
+
+		@Override
+		public boolean isMessage(String name) {
+			return processor.isMessage(name);
 		}
 
 		@Override
@@ -472,18 +478,33 @@ public class ContextFunctionCatalogAutoConfiguration {
 				Type typeArgumentAtIndex = parameterizedType
 						.getActualTypeArguments()[index];
 				if (typeArgumentAtIndex instanceof ParameterizedType
-						&& FunctionInspector.isWrapper(
-								((ParameterizedType) typeArgumentAtIndex).getRawType())
 						&& !paramType.isWrapper()) {
-					param = ((ParameterizedType) typeArgumentAtIndex)
-							.getActualTypeArguments()[0];
+					if (FunctionInspector.isWrapper(
+							((ParameterizedType) typeArgumentAtIndex).getRawType())) {
+						param = ((ParameterizedType) typeArgumentAtIndex)
+								.getActualTypeArguments()[0];
+						param = extractNestedType(paramType, param);
+					}
+					else {
+						param = extractNestedType(paramType, typeArgumentAtIndex);
+					}
 				}
 				else {
-					param = typeArgumentAtIndex;
+					param = extractNestedType(paramType, typeArgumentAtIndex);
 				}
 			}
 			else {
 				param = type;
+			}
+			return param;
+		}
+
+		private Type extractNestedType(ParamType paramType, Type param) {
+			if (!paramType.isInnerWrapper()
+					&& param.getTypeName().startsWith(Message.class.getName())) {
+				if (param instanceof ParameterizedType) {
+					param = ((ParameterizedType) param).getActualTypeArguments()[0];
+				}
 			}
 			return param;
 		}
@@ -495,6 +516,19 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			ReflectionUtils.makeAccessible(field);
 			return ReflectionUtils.getField(field, target);
+		}
+
+		private boolean isMessage(String name) {
+			if (name == null || !registry.containsBeanDefinition(name)) {
+				return false;
+			}
+			return Message.class.isAssignableFrom(findType(name,
+					(AbstractBeanDefinition) registry.getBeanDefinition(name),
+					ParamType.INPUT_INNER_WRAPPER))
+					|| Message.class.isAssignableFrom(findType(name,
+							(AbstractBeanDefinition) registry.getBeanDefinition(name),
+							ParamType.OUTPUT_INNER_WRAPPER));
+
 		}
 
 		private Class<?> findInputWrapper(String name) {
@@ -533,18 +567,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		static enum ParamType {
-			INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER;
+			INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER, INPUT_INNER_WRAPPER, OUTPUT_INNER_WRAPPER;
 
 			public boolean isOutput() {
-				return this == OUTPUT || this == OUTPUT_WRAPPER;
+				return this == OUTPUT || this == OUTPUT_WRAPPER
+						|| this == OUTPUT_INNER_WRAPPER;
 			}
 
 			public boolean isInput() {
-				return this == INPUT || this == INPUT_WRAPPER;
+				return this == INPUT || this == INPUT_WRAPPER
+						|| this == INPUT_INNER_WRAPPER;
 			}
 
 			public boolean isWrapper() {
 				return this == OUTPUT_WRAPPER || this == INPUT_WRAPPER;
+			}
+
+			public boolean isInnerWrapper() {
+				return this == OUTPUT_INNER_WRAPPER || this == INPUT_INNER_WRAPPER;
 			}
 		}
 	}

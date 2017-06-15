@@ -39,6 +39,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,6 +80,26 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
 		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
 		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Map.class);
+	}
+
+	@Test
+	public void fluxMessageFunction() {
+		create(FluxMessageConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.isMessage("function")).isTrue();
+		assertThat(inspector.getInputType("function")).isAssignableFrom(String.class);
+		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Flux.class);
+	}
+
+	@Test
+	public void messageFunction() {
+		create(MessageConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.isMessage("function")).isTrue();
+		assertThat(inspector.getInputType("function")).isAssignableFrom(String.class);
+		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(String.class);
 	}
 
 	@Test
@@ -177,13 +199,14 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test
 	public void compiledConsumer() throws Exception {
 		create(EmptyConfiguration.class,
-				"spring.cloud.function.compile.foos.lambda=" + getClass().getName() + "::set",
+				"spring.cloud.function.compile.foos.lambda=" + getClass().getName()
+						+ "::set",
 				"spring.cloud.function.compile.foos.type=consumer",
 				"spring.cloud.function.compile.foos.inputType=String");
 		assertThat(catalog.lookupConsumer("foos")).isInstanceOf(Consumer.class);
 		assertThat(inspector.getInputWrapper("foos")).isEqualTo(String.class);
 		@SuppressWarnings("unchecked")
-		Consumer<String> consumer = (Consumer<String>)context.getBean("foos");
+		Consumer<String> consumer = (Consumer<String>) context.getBean("foos");
 		consumer.accept("hello");
 		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
 	}
@@ -191,12 +214,14 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test
 	public void compiledFluxConsumer() throws Exception {
 		create(EmptyConfiguration.class,
-				"spring.cloud.function.compile.foos.lambda=f -> f.subscribe(" + getClass().getName() + "::set)",
+				"spring.cloud.function.compile.foos.lambda=f -> f.subscribe("
+						+ getClass().getName() + "::set)",
 				"spring.cloud.function.compile.foos.type=consumer");
 		assertThat(catalog.lookupConsumer("foos")).isInstanceOf(Consumer.class);
 		assertThat(inspector.getInputWrapper("foos")).isEqualTo(Flux.class);
 		@SuppressWarnings("unchecked")
-		Consumer<Flux<String>> consumer = (Consumer<Flux<String>>)context.getBean("foos");
+		Consumer<Flux<String>> consumer = (Consumer<Flux<String>>) context
+				.getBean("foos");
 		consumer.accept(Flux.just("hello"));
 		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
 	}
@@ -210,7 +235,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		catalog = context.getBean(InMemoryFunctionCatalog.class);
 		inspector = context.getBean(FunctionInspector.class);
 	}
-	
+
 	public static void set(Object value) {
 		ContextFunctionCatalogAutoConfigurationTests.value = value.toString();
 	}
@@ -270,6 +295,25 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		public Function<Flux<Map<String, String>>, Flux<Map<String, String>>> function() {
 			return flux -> flux.map(m -> m.entrySet().stream().collect(Collectors
 					.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase())));
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class FluxMessageConfiguration {
+		@Bean
+		public Function<Flux<Message<String>>, Flux<Message<String>>> function() {
+			return flux -> flux.map(m -> MessageBuilder
+					.withPayload(m.getPayload().toUpperCase()).build());
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class MessageConfiguration {
+		@Bean
+		public Function<Message<String>, Message<String>> function() {
+			return m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build();
 		}
 	}
 

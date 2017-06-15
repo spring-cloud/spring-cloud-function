@@ -30,7 +30,8 @@ import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.util.MethodInvoker;
 
-public class FunctionExtractingFunctionCatalog implements FunctionCatalog, FunctionInspector {
+public class FunctionExtractingFunctionCatalog
+		implements FunctionCatalog, FunctionInspector {
 
 	private static Log logger = LogFactory
 			.getLog(FunctionExtractingFunctionCatalog.class);
@@ -63,6 +64,11 @@ public class FunctionExtractingFunctionCatalog implements FunctionCatalog, Funct
 	@Override
 	public <T> Supplier<T> lookupSupplier(String name) {
 		return (Supplier<T>) lookup(name, "lookupSupplier");
+	}
+
+	@Override
+	public boolean isMessage(String name) {
+		return (Boolean) inspect(name, "isMessage");
 	}
 
 	@Override
@@ -112,14 +118,14 @@ public class FunctionExtractingFunctionCatalog implements FunctionCatalog, Funct
 		}
 		return invoke(FunctionInspector.class, method, arg);
 	}
-	
+
 	private Object lookup(String name, String method) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Looking up " + name + " with " + method);
 		}
 		return invoke(FunctionCatalog.class, method, name);
 	}
-	
+
 	private Object invoke(Class<?> type, String method, Object arg) {
 		for (String id : deployed) {
 			Object catalog = deployer.getBean(id, type);

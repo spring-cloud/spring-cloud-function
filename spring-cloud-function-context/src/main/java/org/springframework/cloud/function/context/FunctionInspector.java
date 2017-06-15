@@ -28,6 +28,8 @@ import reactor.core.publisher.Mono;
  */
 public interface FunctionInspector {
 
+	boolean isMessage(String name);
+
 	Class<?> getInputType(String name);
 
 	Class<?> getOutputType(String name);
