@@ -38,6 +38,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
@@ -65,7 +66,7 @@ public class RestApplicationTests {
 	@Autowired
 	private TestRestTemplate rest;
 	@Autowired
-	private TestConfiguration test;
+	private ApplicationConfiguration test;
 
 	@Before
 	public void init() {
@@ -389,8 +390,8 @@ public class RestApplicationTests {
 	}
 
 	@EnableAutoConfiguration
-	@org.springframework.boot.test.context.TestConfiguration
-	public static class TestConfiguration {
+	@TestConfiguration
+	public static class ApplicationConfiguration {
 
 		private List<String> list = new ArrayList<>();
 

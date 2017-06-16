@@ -50,6 +50,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Value("${spring.cloud.function.web.path:}")
 	private String prefix = "";
 
+	@Value("${debug:${DEBUG:false}}")
+	private boolean debug = false;
+
 	@Autowired
 	public FunctionHandlerMapping(FunctionCatalog catalog, FunctionInspector inspector) {
 		this.functions = catalog;
@@ -61,6 +64,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
+		this.controller.setDebug(debug);
 		detectHandlerMethods(controller);
 		while (prefix.endsWith("/")) {
 			prefix = prefix.substring(0, prefix.length() - 1);

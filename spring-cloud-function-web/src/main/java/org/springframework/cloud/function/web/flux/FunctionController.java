@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.web.flux.request.FluxRequest;
 import org.springframework.http.HttpStatus;
@@ -50,11 +49,14 @@ public class FunctionController {
 
 	private FunctionInspector inspector;
 
-	@Value("${debug:${DEBUG:false}}")
 	private boolean debug = false;
 
 	public FunctionController(FunctionInspector inspector) {
 		this.inspector = inspector;
+	}
+
+	public void setDebug(boolean debug) {
+		this.debug = debug;
 	}
 
 	@PostMapping(path = "/**")
@@ -65,7 +67,11 @@ public class FunctionController {
 			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.input_single") Boolean single,
 			@RequestBody FluxRequest<?> body) {
 		if (function != null) {
-			Flux<?> result = (Flux<?>) function.apply(body.flux());
+			Flux<?> flux = body.flux();
+			if (debug) {
+				flux = flux.log();
+			}
+			Flux<?> result = function.apply(flux);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Handled POST with function");
 			}
@@ -73,6 +79,9 @@ public class FunctionController {
 		}
 		if (consumer != null) {
 			Flux<?> flux = body.flux().cache(); // send a copy back to the caller
+			if (debug) {
+				flux = flux.log();
+			}
 			consumer.accept(flux);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Handled POST with consumer");
