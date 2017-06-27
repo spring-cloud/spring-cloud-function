@@ -23,7 +23,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
 		<reactor.version>3.0.7.RELEASE</reactor.version>
-		<wrapper.version>1.0.4.BUILD-SNAPSHOT</wrapper.version>
+		<wrapper.version>1.0.4.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>
