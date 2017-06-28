@@ -52,7 +52,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	private String prefix = "";
 
 	@Value("${debug:${DEBUG:false}}")
-	private boolean debug = false;
+	private String debug = "false";
 
 	@Autowired
 	public FunctionHandlerMapping(FunctionCatalog catalog, FunctionInspector inspector) {
@@ -65,7 +65,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
-		this.controller.setDebug(debug);
+		this.controller.setDebug(!"false".equals(debug));
 		detectHandlerMethods(controller);
 		while (prefix.endsWith("/")) {
 			prefix = prefix.substring(0, prefix.length() - 1);
