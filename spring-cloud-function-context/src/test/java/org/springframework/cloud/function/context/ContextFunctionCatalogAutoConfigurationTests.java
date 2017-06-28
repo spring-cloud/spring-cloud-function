@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
+import org.springframework.cloud.function.scan.ScannedFunction;
 import org.springframework.cloud.function.test.GenericFunction;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -114,6 +115,15 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test
 	public void externalFunction() {
 		create(ExternalConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
+		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Map.class);
+	}
+
+	@Test
+	public void componentScanBeanFunction() {
+		create(ComponentScanBeanConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
 		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
 		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
@@ -285,6 +295,12 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@EnableAutoConfiguration
 	@Configuration
 	@ComponentScan(basePackageClasses = GenericFunction.class)
+	protected static class ComponentScanBeanConfiguration {
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@ComponentScan(basePackageClasses = ScannedFunction.class)
 	protected static class ComponentScanConfiguration {
 	}
 

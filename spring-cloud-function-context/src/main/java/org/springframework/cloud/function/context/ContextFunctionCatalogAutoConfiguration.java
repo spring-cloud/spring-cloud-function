@@ -409,8 +409,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			else if (source instanceof FileSystemResource) {
 				try {
-					Type type = ClassUtils.forName(definition.getBeanClassName(), null);
-					param = extractType(type, paramType, index);
+					Class<?> beanType = ClassUtils.forName(definition.getBeanClassName(),
+							null);
+					for (Type type : beanType.getGenericInterfaces()) {
+						if (type.getTypeName().startsWith("java.util.function")) {
+							param = extractType(type, paramType, index);
+							break;
+						}
+					}
+					if (param == null) {
+						// Last chance
+						param = beanType;
+					}
 				}
 				catch (ClassNotFoundException e) {
 					throw new IllegalStateException(
