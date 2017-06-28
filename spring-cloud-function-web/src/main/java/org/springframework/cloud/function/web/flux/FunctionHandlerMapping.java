@@ -30,6 +30,7 @@ import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -80,6 +81,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		}
 		String path = (String) request
 				.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		if (StringUtils.hasText(prefix) && !path.startsWith(prefix)) {
+			return null;
+		}
 		if (path.startsWith(prefix)) {
 			path = path.substring(prefix.length());
 		}

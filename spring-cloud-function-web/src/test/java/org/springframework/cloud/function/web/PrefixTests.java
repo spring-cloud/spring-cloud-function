@@ -53,10 +53,17 @@ public class PrefixTests {
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/functions/words")).build(), String.class);
+		ResponseEntity<String> result = rest.exchange(
+				RequestEntity.get(new URI("/functions/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
+	}
+
+	@Test
+	public void missing() throws Exception {
+		ResponseEntity<String> result = rest
+				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@EnableAutoConfiguration
