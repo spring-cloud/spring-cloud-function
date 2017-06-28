@@ -11,7 +11,7 @@ resources:
 - name: source
   type: git
   source:
-    uri: https://github.com/markfisher/spring-cloud-function.git
+    uri: https://github.com/spring-cloud/spring-cloud-function.git
 - name: slack
   type: slack-notification
   source:
