@@ -59,7 +59,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
 import org.springframework.messaging.Message;
@@ -407,7 +407,13 @@ public class ContextFunctionCatalogAutoConfiguration {
 						.getIntrospectedMethod().getGenericReturnType();
 				param = extractType(type, paramType, index);
 			}
-			else if (source instanceof FileSystemResource) {
+			else if (source instanceof MethodMetadataReadingVisitor) {
+				// A component scan with @Beans
+				MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
+				Type type = findBeanType(definition, visitor);
+				param = extractType(type, paramType, index);
+			}
+			else if (source instanceof Resource) {
 				try {
 					Class<?> beanType = ClassUtils.forName(definition.getBeanClassName(),
 							null);
@@ -426,12 +432,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 					throw new IllegalStateException(
 							"Cannot instrospect bean: " + definition, e);
 				}
-			}
-			else if (source instanceof MethodMetadataReadingVisitor) {
-				// A component scan with @Beans
-				MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
-				Type type = findBeanType(definition, visitor);
-				param = extractType(type, paramType, index);
 			}
 			else {
 				ResolvableType resolvable = (ResolvableType) getField(definition,

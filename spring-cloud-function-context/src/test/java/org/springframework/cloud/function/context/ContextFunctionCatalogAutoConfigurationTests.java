@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.context;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +41,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,6 +142,33 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
 		assertThat(inspector.getInputType("function")).isAssignableFrom(Map.class);
 		assertThat(inspector.getInputWrapper("function")).isAssignableFrom(Map.class);
+	}
+
+	@Test
+	public void componentScanJarFunction() {
+		try {
+			create("greeter.jar", ComponentScanJarConfiguration.class);
+			assertThat(context.getBean("greeter")).isInstanceOf(Function.class);
+			assertThat(catalog.lookupFunction("greeter")).isInstanceOf(Function.class);
+			assertThat(inspector.getInputType("greeter")).isAssignableFrom(String.class);
+			assertThat(inspector.getInputWrapper("greeter"))
+					.isAssignableFrom(String.class);
+		}
+		finally {
+			ClassUtils.overrideThreadContextClassLoader(getClass().getClassLoader());
+		}
+	}
+
+	private void create(String jarfile, Class<?> config, String... props) {
+		try {
+			URL[] urls = new URL[] { new ClassPathResource(jarfile).getURL() };
+			ClassUtils.overrideThreadContextClassLoader(
+					new URLClassLoader(urls, getClass().getClassLoader()));
+			create(config, props);
+		}
+		catch (Exception e) {
+			ReflectionUtils.rethrowRuntimeException(e);
+		}
 	}
 
 	@Test
@@ -302,6 +334,12 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Configuration
 	@ComponentScan(basePackageClasses = ScannedFunction.class)
 	protected static class ComponentScanConfiguration {
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@FunctionScan
+	protected static class ComponentScanJarConfiguration {
 	}
 
 	@EnableAutoConfiguration
