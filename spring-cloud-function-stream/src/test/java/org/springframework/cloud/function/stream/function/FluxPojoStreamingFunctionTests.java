@@ -21,7 +21,6 @@ import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -34,6 +33,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import reactor.core.publisher.Flux;
 
 /**
  * @author Marius Bogoevici
@@ -62,6 +63,7 @@ public class FluxPojoStreamingFunctionTests {
 		public Function<Flux<Foo>, Flux<Foo>> uppercase() {
 			return foos -> foos.map(f -> new Foo(f.getName().toUpperCase()));
 		}
+
 	}
 
 	protected static class Foo {

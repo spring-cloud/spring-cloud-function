@@ -48,6 +48,8 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 
 	private final String[] names;
 
+	private static final String NOENDPOINT = "__NOENDPOINT__";
+
 	public StreamListeningConsumerInvoker(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
 			CompositeMessageConverterFactory converterFactory, String defaultEndpoint,
@@ -79,13 +81,22 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 	private String select(Message<?> input) {
 		String name = defaultEndpoint;
 		if (name == null) {
-			for (String candidate : names) {
-				Class<?> inputType = functionInspector.getInputType(candidate);
-				if (this.converter.fromMessage(input, inputType) != null) {
-					name = candidate;
-					break;
+			if (names.length == 1) {
+				name = names[0];
+			}
+			else {
+				for (String candidate : names) {
+					Class<?> inputType = functionInspector.getInputType(candidate);
+					Object value = this.converter.fromMessage(input, inputType);
+					if (value != null && inputType.isInstance(value)) {
+						name = candidate;
+						break;
+					}
 				}
 			}
+		}
+		if (name == null) {
+			return NOENDPOINT;
 		}
 		return name;
 	}
