@@ -66,6 +66,24 @@ public class FunctionExtractingFunctionCatalog
 		return (Supplier<T>) lookup(name, "lookupSupplier");
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public Set<String> getSupplierNames() {
+		return (Set<String>) catalog("getSupplierNames");
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Set<String> getFunctionNames() {
+		return (Set<String>) catalog("getFunctionNames");
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Set<String> getConsumerNames() {
+		return (Set<String>) catalog("getConsumerNames");
+	}
+
 	@Override
 	public boolean isMessage(String name) {
 		return (Boolean) inspect(name, "isMessage");
@@ -126,7 +144,14 @@ public class FunctionExtractingFunctionCatalog
 		return invoke(FunctionCatalog.class, method, name);
 	}
 
-	private Object invoke(Class<?> type, String method, Object arg) {
+	private Object catalog(String method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Calling " + method);
+		}
+		return invoke(FunctionCatalog.class, method);
+	}
+
+	private Object invoke(Class<?> type, String method, Object... arg) {
 		for (String id : deployed) {
 			Object catalog = deployer.getBean(id, type);
 			if (catalog == null) {
@@ -136,7 +161,7 @@ public class FunctionExtractingFunctionCatalog
 				MethodInvoker invoker = new MethodInvoker();
 				invoker.setTargetObject(catalog);
 				invoker.setTargetMethod(method);
-				invoker.setArguments(new Object[] { arg });
+				invoker.setArguments(arg);
 				invoker.prepare();
 				Object result = invoker.invoke();
 				if (result != null) {

@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -63,10 +62,8 @@ public class StreamConfiguration {
 
 		@Bean
 		public SupplierInvokingMessageProducer<Object> supplierInvoker(
-				ListableBeanFactory beanFactory, FunctionCatalog registry) {
-			String[] names = beanFactory.getBeanNamesForType(Supplier.class, false,
-					false);
-			return new SupplierInvokingMessageProducer<Object>(registry, names);
+				FunctionCatalog registry) {
+			return new SupplierInvokingMessageProducer<Object>(registry);
 		}
 	}
 
@@ -78,14 +75,11 @@ public class StreamConfiguration {
 		private StreamConfigurationProperties properties;
 
 		@Bean
-		public StreamListeningFunctionInvoker functionInvoker(
-				ListableBeanFactory beanFactory, FunctionCatalog registry,
+		public StreamListeningFunctionInvoker functionInvoker(FunctionCatalog registry,
 				FunctionInspector functionInspector,
 				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
-			String[] names = beanFactory.getBeanNamesForType(Function.class, false,
-					false);
 			return new StreamListeningFunctionInvoker(registry, functionInspector,
-					compositeMessageConverterFactory, properties.getEndpoint(), names);
+					compositeMessageConverterFactory, properties.getEndpoint());
 		}
 	}
 
@@ -97,14 +91,11 @@ public class StreamConfiguration {
 		private StreamConfigurationProperties properties;
 
 		@Bean
-		public StreamListeningConsumerInvoker consumerInvoker(
-				ListableBeanFactory beanFactory, FunctionCatalog registry,
+		public StreamListeningConsumerInvoker consumerInvoker(FunctionCatalog registry,
 				FunctionInspector functionInspector,
 				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
-			String[] names = beanFactory.getBeanNamesForType(Consumer.class, false,
-					false);
 			return new StreamListeningConsumerInvoker(registry, functionInspector,
-					compositeMessageConverterFactory, properties.getEndpoint(), names);
+					compositeMessageConverterFactory, properties.getEndpoint());
 		}
 	}
 

@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.registry;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,4 +32,10 @@ public interface FunctionCatalog {
 	<T, R> Function<T, R> lookupFunction(String name);
 
 	<T> Consumer<T> lookupConsumer(String name);
+
+	default Set<String> getSupplierNames() { return Collections.emptySet(); }
+
+	default Set<String> getFunctionNames() { return Collections.emptySet(); }
+
+	default Set<String> getConsumerNames() { return Collections.emptySet(); }
 }

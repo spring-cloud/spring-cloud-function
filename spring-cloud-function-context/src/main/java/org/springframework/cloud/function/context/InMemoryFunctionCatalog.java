@@ -94,4 +94,20 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 	public <T> Consumer<T> lookupConsumer(String name) {
 		return (Consumer<T>) consumers.get(name);
 	}
+
+	@Override
+	public Set<String> getSupplierNames() {
+		return suppliers.keySet();
+	}
+
+	@Override
+	public Set<String> getFunctionNames() {
+		return functions.keySet();
+	}
+
+	@Override
+	public Set<String> getConsumerNames() {
+		return consumers.keySet();
+	}
+
 }

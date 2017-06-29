@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.stream;
 
+import java.util.Set;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -48,19 +49,15 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 
 	private final String defaultEndpoint;
 
-	private final String[] names;
-
 	private static final String NOENDPOINT = "__NOENDPOINT__";
 
 	public StreamListeningFunctionInvoker(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
-			CompositeMessageConverterFactory converterFactory, String defaultEndpoint,
-			String... names) {
+			CompositeMessageConverterFactory converterFactory, String defaultEndpoint) {
 		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
 		this.converterFactory = converterFactory;
 		this.defaultEndpoint = defaultEndpoint;
-		this.names = names;
 	}
 
 	@Override
@@ -84,8 +81,9 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 	private String select(Message<?> input) {
 		String name = defaultEndpoint;
 		if (name == null) {
-			if (names.length == 1) {
-				name = names[0];
+			Set<String> names = functionCatalog.getFunctionNames();
+			if (names.size() == 1) {
+				name = names.iterator().next();
 			}
 			else {
 				for (String candidate : names) {

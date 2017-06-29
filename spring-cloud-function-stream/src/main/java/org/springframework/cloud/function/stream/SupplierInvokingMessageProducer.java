@@ -33,11 +33,8 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
 	private final FunctionCatalog functionCatalog;
 
-	private final String[] names;
-
-	public SupplierInvokingMessageProducer(FunctionCatalog registry, String... names) {
+	public SupplierInvokingMessageProducer(FunctionCatalog registry) {
 		this.functionCatalog = registry;
-		this.names = names;
 		this.setOutputChannelName(Source.OUTPUT);
 	}
 
@@ -50,7 +47,7 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 	private Flux<?> supplier() {
 		Supplier<Flux<?>> supplier = null;
 		Flux<?> result = Flux.empty();
-		for (String name : names) {
+		for (String name : functionCatalog.getSupplierNames()) {
 			supplier = functionCatalog.lookupSupplier(name);
 			Assert.notNull(supplier, "Supplier must not be null");
 			result = Flux.merge(result, supplier.get());
