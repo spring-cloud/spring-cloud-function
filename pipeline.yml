@@ -1,22 +1,6 @@
 # fly --target cloud login --concourse-url https://ci.spring.io --team-name spring-cloud
 # fly --target cloud set-pipeline --config pipeline.yml --pipeline spring-cloud-function --load-vars-from credentials.yml
 ---
-resource_types:
-- name: slack-notification
-  type: docker-image
-  source:
-    repository: nebhale/slack-notification-resource
-
-resources:
-- name: source
-  type: git
-  source:
-    uri: https://github.com/spring-cloud/spring-cloud-function.git
-- name: slack
-  type: slack-notification
-  source:
-    url: {{slack-url}}
-  
 jobs:
 - name: build
   plan:
@@ -31,10 +15,12 @@ jobs:
           repository: springio/maven-base
       inputs:
         - name: source
+      caches:
+        - path: source/.m2
       run:
         dir: source
         path: ./mvnw
-        args: [deploy, "-s", ".mvn/settings.xml", "-Dgpg.passphrase=${passphrase}"]
+        args: [deploy, "-s", ".mvn/settings.xml", "-Dgpg.passphrase=${passphrase}", "-Dmaven.repo.local=.m2"]
     params:
       TERM: -dumb
       passphrase: {{passphrase}}
@@ -64,3 +50,20 @@ slack-success: &slack-success
       text: "Build has succeeded"
       title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
       title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
+
+resources:
+- name: source
+  type: git
+  source:
+    uri: https://github.com/spring-cloud/spring-cloud-function.git
+- name: slack
+  type: slack-notification
+  source:
+    url: {{slack-url}}
+  
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: nebhale/slack-notification-resource
+
