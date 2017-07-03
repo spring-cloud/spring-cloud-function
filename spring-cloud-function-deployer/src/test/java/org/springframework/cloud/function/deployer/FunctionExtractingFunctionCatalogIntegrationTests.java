@@ -15,13 +15,17 @@
  */
 package org.springframework.cloud.function.deployer;
 
+import java.net.URI;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,19 +34,33 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@Ignore
-// TODO: Salvage some stuff from this project
 public class FunctionExtractingFunctionCatalogIntegrationTests {
 
 	private static ConfigurableApplicationContext context;
 	private static int port;
 
 	@BeforeClass
-	public static void open() {
+	public static void open() throws Exception {
 		port = SocketUtils.findAvailableTcpPort();
 		// System.setProperty("debug", "true");
 		context = new ApplicationRunner().start("--server.port=" + port,
 				"--spring.cloud.stream.enabled=false");
+		deploy("sample", "maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT");
+	}
+
+	private static void deploy(String name, String path) throws Exception {
+		ResponseEntity<String> result = new TestRestTemplate().postForEntity(
+				"http://localhost:" + port + "/admin/" + name + "?path=" + path, "",
+				String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
+	private static String undeploy(String name) throws Exception {
+		ResponseEntity<String> result = new TestRestTemplate().exchange(RequestEntity
+				.delete(new URI("http://localhost:" + port + "/admin/" + name)).build(),
+				String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		return result.getBody();
 	}
 
 	@AfterClass
@@ -53,17 +71,48 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 	}
 
 	@Test
+	public void listing() {
+		assertThat(new TestRestTemplate()
+				.getForObject("http://localhost:" + port + "/admin", String.class))
+						.startsWith("{").contains("sample");
+	}
+
+	@Test
 	public void words() {
 		assertThat(new TestRestTemplate()
-				.getForObject("http://localhost:" + port + "/words", String.class))
-						.isEqualTo("{\"value\":\"foo\"}{\"value\":\"bar\"}");
+				.getForObject("http://localhost:" + port + "/sample/words", String.class))
+						.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void uppercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",
-				String.class)).isEqualTo("{\"value\":\"FOO\"}");
+				"http://localhost:" + port + "/sample/uppercase", "{\"value\":\"foo\"}",
+				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
+	}
+
+	@Test
+	public void another() throws Exception {
+		deploy("strings", "maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT");
+		assertThat(new TestRestTemplate().getForObject(
+				"http://localhost:" + port + "/strings/words", String.class))
+						.isEqualTo("[\"foo\",\"bar\"]");
+	}
+
+	@Test
+	public void cycle() throws Exception {
+		String undeploy = undeploy("sample");
+		assertThat(undeploy.contains("\"name\":\"sample\""));
+		assertThat(undeploy.contains(
+				"\"path\":\"maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT\""));
+		ResponseEntity<String> result = new TestRestTemplate().exchange(RequestEntity
+				.get(new URI("http://localhost:" + port + "/sample/words")).build(),
+				String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		deploy("sample", "maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
+		assertThat(new TestRestTemplate().postForObject(
+				"http://localhost:" + port + "/sample/uppercase", "{\"value\":\"foo\"}",
+				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
 }

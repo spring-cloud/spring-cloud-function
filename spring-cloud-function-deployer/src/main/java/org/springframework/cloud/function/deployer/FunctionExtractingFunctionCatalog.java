@@ -15,8 +15,11 @@
  */
 package org.springframework.cloud.function.deployer;
 
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -26,10 +29,16 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.loader.thin.ArchiveUtils;
+import org.springframework.cloud.deployer.spi.app.AppDeployer;
+import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.thin.ThinJarAppDeployer;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.context.support.LiveBeansView;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.util.MethodInvoker;
 
 public class FunctionExtractingFunctionCatalog
@@ -43,6 +52,8 @@ public class FunctionExtractingFunctionCatalog
 	private Map<String, String> deployed = new LinkedHashMap<>();
 
 	private Map<String, String> names = new LinkedHashMap<>();
+
+	private Map<String, String> ids = new LinkedHashMap<>();
 
 	public FunctionExtractingFunctionCatalog() {
 		this("thin", "slim");
@@ -123,15 +134,19 @@ public class FunctionExtractingFunctionCatalog
 		return (String) inspect(function, "getName");
 	}
 
-	public String deploy(String name, AppDeploymentRequest request) {
+	public String deploy(String name, String path, String... args) {
+		Resource resource = new FileSystemResource(
+				ArchiveUtils.getArchiveRoot(ArchiveUtils.getArchive(path)));
+		AppDefinition definition = new AppDefinition(resource.getFilename(),
+				Collections.singletonMap(LiveBeansView.MBEAN_DOMAIN_PROPERTY_NAME,
+						"functions." + name));
+		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource,
+				Collections.singletonMap(AppDeployer.GROUP_PROPERTY_KEY, "functions"),
+				Arrays.asList(args));
 		String id = this.deployer.deploy(request);
-		try {
-			this.deployed.put(id, request.getResource().getURI().toString());
-		}
-		catch (IOException e) {
-			throw new IllegalStateException("Cannot locate resource for " + name, e);
-		}
+		this.deployed.put(id, path);
 		this.names.put(name, id);
+		this.ids.put(id, name);
 		return id;
 	}
 
@@ -142,10 +157,10 @@ public class FunctionExtractingFunctionCatalog
 			throw new IllegalStateException("No such app");
 		}
 		this.deployer.undeploy(id);
-		this.deployed.remove(id);
-		this.names.remove(name);
 		String path = this.deployed.remove(id);
-		return new DeployedArtifact(id, name, path);
+		this.names.remove(name);
+		this.ids.remove(id);
+		return new DeployedArtifact(name, id, path);
 	}
 
 	private Object inspect(Object arg, String method) {
@@ -170,10 +185,24 @@ public class FunctionExtractingFunctionCatalog
 	}
 
 	private Object invoke(Class<?> type, String method, Object... arg) {
+		Set<Object> results = new LinkedHashSet<>();
 		for (String id : this.deployed.keySet()) {
 			Object catalog = this.deployer.getBean(id, type);
 			if (catalog == null) {
 				continue;
+			}
+			String name = this.ids.get(id);
+			String prefix = name + "/";
+			if (arg.length == 1) {
+				if (arg[0] instanceof String) {
+					String specific = arg[0].toString();
+					if (specific.startsWith(prefix)) {
+						arg[0] = specific.substring(prefix.length());
+					}
+					else {
+						continue;
+					}
+				}
 			}
 			try {
 				MethodInvoker invoker = new MethodInvoker();
@@ -183,14 +212,25 @@ public class FunctionExtractingFunctionCatalog
 				invoker.prepare();
 				Object result = invoker.invoke();
 				if (result != null) {
-					return result;
+					if (result instanceof Collection) {
+						for (Object value : (Collection<?>) result) {
+							results.add(prefix + value);
+						}
+					}
+					else if (result instanceof String) {
+						return prefix + result;
+					}
+
+					else {
+						return result;
+					}
 				}
 			}
 			catch (Exception e) {
 				throw new IllegalStateException("Cannot extract catalog", e);
 			}
 		}
-		return null;
+		return arg.length > 0 ? null : results;
 	}
 
 	public Map<String, Object> deployed() {

@@ -15,19 +15,10 @@
  */
 package org.springframework.cloud.function.deployer;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.loader.thin.ArchiveUtils;
-import org.springframework.cloud.deployer.spi.app.AppDeployer;
-import org.springframework.cloud.deployer.spi.core.AppDefinition;
-import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
-import org.springframework.context.support.LiveBeansView;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/admin")
-public class FunctionAdminController implements CommandLineRunner {
+public class FunctionAdminController {
 
 	private final FunctionExtractingFunctionCatalog deployer;
 
@@ -68,21 +59,8 @@ public class FunctionAdminController implements CommandLineRunner {
 		return deployer.deployed();
 	}
 
-	@Override
-	public void run(String... args) throws Exception {
-		deploy("sample", "maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
-	}
-
 	private String deploy(String name, String path, String... args) throws Exception {
-		Resource resource = new FileSystemResource(
-				ArchiveUtils.getArchiveRoot(ArchiveUtils.getArchive(path)));
-		AppDefinition definition = new AppDefinition(resource.getFilename(),
-				Collections.singletonMap(LiveBeansView.MBEAN_DOMAIN_PROPERTY_NAME,
-						"functions." + name));
-		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource,
-				Collections.singletonMap(AppDeployer.GROUP_PROPERTY_KEY, "functions"),
-				Arrays.asList(args));
-		String deployed = deployer.deploy(name, request);
+		String deployed = deployer.deploy(name, path, args);
 		return deployed;
 	}
 }
