@@ -63,7 +63,7 @@ public class FunctionExtractingFunctionCatalogTests {
 	@AfterClass
 	public static void close() {
 		if (id != null) {
-			deployer.undeploy(id);
+			deployer.undeploy("sample");
 		}
 	}
 
@@ -95,7 +95,7 @@ public class FunctionExtractingFunctionCatalogTests {
 				Collections.emptyMap());
 		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource,
 				Collections.emptyMap(), Arrays.asList(args));
-		String deployed = deployer.deploy(request);
+		String deployed = deployer.deploy("sample", request);
 		return deployed;
 	}
 

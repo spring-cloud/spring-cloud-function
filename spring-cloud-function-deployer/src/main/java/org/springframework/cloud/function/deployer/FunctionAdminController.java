@@ -17,7 +17,6 @@ package org.springframework.cloud.function.deployer;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,10 +46,6 @@ public class FunctionAdminController implements CommandLineRunner {
 
 	private final FunctionExtractingFunctionCatalog deployer;
 
-	private Map<String, String> deployed = new LinkedHashMap<>();
-
-	private Map<String, String> names = new LinkedHashMap<>();
-
 	@Autowired
 	public FunctionAdminController(FunctionExtractingFunctionCatalog deployer) {
 		this.deployer = deployer;
@@ -64,26 +59,13 @@ public class FunctionAdminController implements CommandLineRunner {
 	}
 
 	@DeleteMapping(path = "/{name}")
-	public Map<String, Object> undeploy(@PathVariable String name) throws Exception {
-		String id = names.get(name);
-		if (id == null) {
-			// TODO: Convert to 404
-			throw new IllegalStateException("No such app");
-		}
-		deployer.undeploy(id);
-		names.remove(name);
-		deployed.remove(id);
-		return Collections.singletonMap("id", id);
+	public Object undeploy(@PathVariable String name) throws Exception {
+		return deployer.undeploy(name);
 	}
 
 	@GetMapping({ "", "/" })
 	public Map<String, Object> deployed() {
-		Map<String, Object> result = new LinkedHashMap<>();
-		for (String name : names.keySet()) {
-			String id = names.get(name);
-			result.put(name, new DeployedArtifact(name, id, deployed.get(id)));
-		}
-		return result;
+		return deployer.deployed();
 	}
 
 	@Override
@@ -100,50 +82,7 @@ public class FunctionAdminController implements CommandLineRunner {
 		AppDeploymentRequest request = new AppDeploymentRequest(definition, resource,
 				Collections.singletonMap(AppDeployer.GROUP_PROPERTY_KEY, "functions"),
 				Arrays.asList(args));
-		String deployed = deployer.deploy(request);
-		this.deployed.put(deployed, path);
-		this.names.put(name, deployed);
+		String deployed = deployer.deploy(name, request);
 		return deployed;
 	}
-}
-
-class DeployedArtifact {
-
-	private String name;
-	private String id;
-	private String path;
-
-	public DeployedArtifact() {
-	}
-
-	public DeployedArtifact(String name, String id, String path) {
-		this.name = name;
-		this.id = id;
-		this.path = path;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
-	}
-
 }

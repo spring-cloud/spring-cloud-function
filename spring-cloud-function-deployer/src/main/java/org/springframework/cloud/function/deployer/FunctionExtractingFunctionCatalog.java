@@ -15,7 +15,9 @@
  */
 package org.springframework.cloud.function.deployer;
 
-import java.util.HashSet;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -36,9 +38,11 @@ public class FunctionExtractingFunctionCatalog
 	private static Log logger = LogFactory
 			.getLog(FunctionExtractingFunctionCatalog.class);
 
-	private final Set<String> deployed = new HashSet<>();
-
 	private ThinJarAppDeployer deployer;
+
+	private Map<String, String> deployed = new LinkedHashMap<>();
+
+	private Map<String, String> names = new LinkedHashMap<>();
 
 	public FunctionExtractingFunctionCatalog() {
 		this("thin", "slim");
@@ -119,15 +123,29 @@ public class FunctionExtractingFunctionCatalog
 		return (String) inspect(function, "getName");
 	}
 
-	public String deploy(AppDeploymentRequest request) {
-		String id = deployer.deploy(request);
-		deployed.add(id);
+	public String deploy(String name, AppDeploymentRequest request) {
+		String id = this.deployer.deploy(request);
+		try {
+			this.deployed.put(id, request.getResource().getURI().toString());
+		}
+		catch (IOException e) {
+			throw new IllegalStateException("Cannot locate resource for " + name, e);
+		}
+		this.names.put(name, id);
 		return id;
 	}
 
-	public void undeploy(String id) {
-		deployer.undeploy(id);
-		deployed.remove(id);
+	public DeployedArtifact undeploy(String name) {
+		String id = this.names.get(name);
+		if (id == null) {
+			// TODO: Convert to 404
+			throw new IllegalStateException("No such app");
+		}
+		this.deployer.undeploy(id);
+		this.deployed.remove(id);
+		this.names.remove(name);
+		String path = this.deployed.remove(id);
+		return new DeployedArtifact(id, name, path);
 	}
 
 	private Object inspect(Object arg, String method) {
@@ -152,8 +170,8 @@ public class FunctionExtractingFunctionCatalog
 	}
 
 	private Object invoke(Class<?> type, String method, Object... arg) {
-		for (String id : deployed) {
-			Object catalog = deployer.getBean(id, type);
+		for (String id : this.deployed.keySet()) {
+			Object catalog = this.deployer.getBean(id, type);
 			if (catalog == null) {
 				continue;
 			}
@@ -173,6 +191,56 @@ public class FunctionExtractingFunctionCatalog
 			}
 		}
 		return null;
+	}
+
+	public Map<String, Object> deployed() {
+		Map<String, Object> result = new LinkedHashMap<>();
+		for (String name : this.names.keySet()) {
+			String id = this.names.get(name);
+			result.put(name, new DeployedArtifact(name, id, this.deployed.get(id)));
+		}
+		return result;
+	}
+
+}
+
+class DeployedArtifact {
+
+	private String name;
+	private String id;
+	private String path;
+
+	public DeployedArtifact() {
+	}
+
+	public DeployedArtifact(String name, String id, String path) {
+		this.name = name;
+		this.id = id;
+		this.path = path;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
 	}
 
 }
