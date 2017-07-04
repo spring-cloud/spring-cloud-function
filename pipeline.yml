@@ -39,6 +39,7 @@ jobs:
 slack-failure: &slack-failure
   put: slack
   params:
+    channel: spring-cloud-firehose
     attachments:
     - color: danger
       fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
@@ -49,6 +50,7 @@ slack-failure: &slack-failure
 slack-success: &slack-success
   put: slack
   params:
+    channel: spring-cloud-firehose
     attachments:
     - color: good
       fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <SUCCESS>"

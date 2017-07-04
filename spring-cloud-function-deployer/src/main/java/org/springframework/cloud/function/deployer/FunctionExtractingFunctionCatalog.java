@@ -18,6 +18,7 @@ package org.springframework.cloud.function.deployer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.loader.thin.ArchiveUtils;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
@@ -42,7 +44,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.MethodInvoker;
 
 public class FunctionExtractingFunctionCatalog
-		implements FunctionCatalog, FunctionInspector {
+		implements FunctionCatalog, FunctionInspector, DisposableBean {
 
 	private static Log logger = LogFactory
 			.getLog(FunctionExtractingFunctionCatalog.class);
@@ -61,6 +63,13 @@ public class FunctionExtractingFunctionCatalog
 
 	public FunctionExtractingFunctionCatalog(String name, String... profiles) {
 		deployer = new ThinJarAppDeployer(name, profiles);
+	}
+
+	@Override
+	public void destroy() throws Exception {
+		for (String name : new HashSet<>(names.keySet())) {
+			undeploy(name);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
