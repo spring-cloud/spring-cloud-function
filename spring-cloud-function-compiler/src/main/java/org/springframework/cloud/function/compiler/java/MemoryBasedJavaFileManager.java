@@ -22,7 +22,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.tools.FileObject;
@@ -31,6 +33,8 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.Dependency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +54,8 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	private List<CloseableFilterableJavaFileObjectIterable> toClose = new ArrayList<>();
 
+	private Map<String,File> resolvedAdditionalDependencies = new LinkedHashMap<>();
+	
 	public MemoryBasedJavaFileManager() {
 		outputCollector = new CompilationOutputCollector();
 	}
@@ -84,6 +90,11 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		else if (location == StandardLocation.CLASS_PATH
 				&& (kinds == null || kinds.contains(Kind.CLASS))) {
 			String javaClassPath = getClassPath();
+			if (!resolvedAdditionalDependencies.isEmpty()) {
+				for (File resolvedAdditionalDependency: resolvedAdditionalDependencies.values()) {
+					javaClassPath += File.pathSeparatorChar + resolvedAdditionalDependency.toURI().toString().substring("file:".length());
+				}
+			}
 			logger.debug("Creating iterable for class path: {}", javaClassPath);
 			resultIterable = new IterableClasspath(javaClassPath, packageName, recurse);
 			toClose.add(resultIterable);
@@ -201,6 +212,37 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	public List<CompiledClassDefinition> getCompiledClasses() {
 		return outputCollector.getCompiledClasses();
+	}
+
+	public List<CompilationMessage> addAndResolveDependencies(String[] dependencies) {
+		List<CompilationMessage> resolutionMessages = new ArrayList<>();
+		for (String dependency: dependencies) {
+			if (dependency.startsWith("maven:")) {
+				// Resolving an explicit external archive
+				String coordinates = dependency.replaceFirst("maven:\\/*", "");
+				DependencyResolver engine = DependencyResolver.instance();
+				try {
+					File resolved = engine.resolve(new Dependency(new DefaultArtifact(coordinates), "runtime"));
+					// Example:
+					// dependency = maven://org.springframework:spring-expression:4.3.9.RELEASE 
+					// resolved.toURI() = file:/Users/aclement/.m2/repository/org/springframework/spring-expression/4.3.9.RELEASE/spring-expression-4.3.9.RELEASE.jar
+					resolvedAdditionalDependencies.put(dependency, resolved);
+				} catch (RuntimeException re) {
+					CompilationMessage compilationMessage =
+							new CompilationMessage(CompilationMessage.Kind.ERROR,re.getMessage(),null,0,0);
+					resolutionMessages.add(compilationMessage);
+				}
+			}
+			else {
+				resolutionMessages.add(new CompilationMessage(CompilationMessage.Kind.ERROR,
+						"Unrecognized dependency: "+dependency+" (expected something of the form: maven://groupId:artifactId:version)",null,0,0));
+			}
+		}
+		return resolutionMessages;
+	}
+
+	public Map<String, File> getResolvedAdditionalDependencies() {
+		return resolvedAdditionalDependencies;
 	}
 
 }

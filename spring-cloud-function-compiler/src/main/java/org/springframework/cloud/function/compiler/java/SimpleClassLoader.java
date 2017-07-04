@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.function.compiler.java;
 
+import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.List;
 
 /**
  * Very simple classloader that can be used to load the compiled types.
@@ -30,6 +32,22 @@ public class SimpleClassLoader extends URLClassLoader {
 
 	public SimpleClassLoader(ClassLoader classLoader) {
 		super(NO_URLS, classLoader);
+	}
+
+	public SimpleClassLoader(List<File> resolvedAdditionalDependencies, ClassLoader classLoader) {
+		super(toUrls(resolvedAdditionalDependencies), classLoader);
+	}
+
+	private static URL[] toUrls(List<File> resolvedAdditionalDependencies) {
+		URL[] urls = new URL[resolvedAdditionalDependencies.size()];
+		for (int i=0,max=resolvedAdditionalDependencies.size();i<max;i++) {
+			try {
+				urls[i] = resolvedAdditionalDependencies.get(i).toURI().toURL();
+			} catch (Exception e) {
+				throw new IllegalStateException(e);
+			}
+		}
+		return urls;
 	}
 
 	public Class<?> defineClass(String name, byte[] bytes) {

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.compiler.java;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +42,8 @@ public class CompilationResult {
 	List<Class<?>> compiledClasses = new ArrayList<>();
 
 	private Map<String, byte[]> classBytes = new HashMap<>();
+	
+	private List<File> resolvedAdditionalDependencies = new ArrayList<>();
 
 	public CompilationResult(boolean successfulCompilation) {
 		this.successfulCompilation = successfulCompilation;
@@ -48,6 +51,14 @@ public class CompilationResult {
 
 	public void addClassBytes(String name, byte[] bytes) {
 		this.classBytes.put(name, bytes);
+	}
+	
+	public void setResolvedAdditionalDependencies(List<File> resolvedAdditionalDependencies) {
+		this.resolvedAdditionalDependencies = resolvedAdditionalDependencies;
+	}
+	
+	public List<File> getResolvedAdditionalDependencies() {
+		return this.resolvedAdditionalDependencies;
 	}
 
 	public byte[] getClassBytes(String classname) {
@@ -66,8 +77,12 @@ public class CompilationResult {
 		return Collections.unmodifiableList(compilationMessages);
 	}
 
-	public void recordCompilationMessage(CompilationMessage compilationMessage) {
-		this.compilationMessages.add(compilationMessage);
+	public void recordCompilationMessage(CompilationMessage message) {
+		this.compilationMessages.add(message);
+	}
+
+	public void recordCompilationMessages(List<CompilationMessage> messages) {
+		this.compilationMessages.addAll(messages);
 	}
 
 	public void setCompiledClasses(List<Class<?>> compiledClasses) {
