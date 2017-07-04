@@ -15,7 +15,7 @@
 	</parent>
 
 	<properties>
-		<spring-cloud-deployer-thin.version>1.0.2.RELEASE</spring-cloud-deployer-thin.version>
+		<spring-cloud-deployer-thin.version>1.0.5.RELEASE</spring-cloud-deployer-thin.version>
 	</properties>
 
 	<dependencies>

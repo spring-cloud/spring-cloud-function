@@ -19,8 +19,13 @@ jobs:
         - path: source/.m2
       run:
         dir: source
-        path: ./mvnw
-        args: [deploy, "-s", ".mvn/settings.xml", "-Dgpg.passphrase=${passphrase}", "-Dmaven.repo.local=.m2"]
+        path: sh
+        args:
+        - -c
+        - |
+          rm -rf ~/.m2
+          ln -s $(pwd)/.m2 ~/.m2
+          ./mvnw deploy -s .mvn/settings.xml -Dgpg.passphrase="${passphrase}"
     params:
       TERM: -dumb
       passphrase: {{passphrase}}
