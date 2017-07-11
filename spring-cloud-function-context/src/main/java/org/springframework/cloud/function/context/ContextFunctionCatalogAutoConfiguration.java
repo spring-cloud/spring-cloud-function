@@ -153,6 +153,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private Set<String> suppliers = new HashSet<>();
 		private Set<String> functions = new HashSet<>();
 		private Set<String> consumers = new HashSet<>();
+		private Map<String, String> beans = new HashMap<>();
 
 		private BeanDefinitionRegistry registry;
 		private ConversionService conversionService;
@@ -178,7 +179,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			Class<?> type = findInputType(name);
 			return conversionService.canConvert(String.class, type)
-					? conversionService.convert(value, type) : value;
+					? conversionService.convert(value, type)
+					: value;
 		}
 
 		public Set<FunctionRegistration<?>> merge(
@@ -248,6 +250,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private void wrap(FunctionRegistration<Object> registration, String key) {
 			Object target = registration.getTarget();
+			for (String name : registration.getNames()) {
+				beans.put(name, key);
+			}
 			if (target instanceof Supplier) {
 				registration.target(target((Supplier<?>) target, key));
 			}
@@ -529,6 +534,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean isMessage(String name) {
+			if (name != null) {
+				name = beans.get(name);
+			}
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return false;
 			}
@@ -542,6 +550,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findInputWrapper(String name) {
+			if (name != null) {
+				name = beans.get(name);
+			}
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
@@ -551,6 +562,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findOutputWrapper(String name) {
+			if (name != null) {
+				name = beans.get(name);
+			}
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
@@ -560,6 +574,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findInputType(String name) {
+			if (name != null) {
+				name = beans.get(name);
+			}
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
@@ -569,6 +586,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Class<?> findOutputType(String name) {
+			if (name != null) {
+				name = beans.get(name);
+			}
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}

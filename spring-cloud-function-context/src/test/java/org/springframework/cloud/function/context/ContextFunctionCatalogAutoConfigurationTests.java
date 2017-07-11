@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -77,6 +78,18 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		create(SimpleConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
 		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+	}
+
+	@Test
+	@Ignore("see https://github.com/spring-cloud/spring-cloud-function/issues/81")
+	public void ambiguousFunction() {
+		create(AmbiguousConfiguration.class);
+		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("foos")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupConsumer("foos")).isInstanceOf(Consumer.class);
+		// Could be String or Foo
+		assertThat(inspector.getInputType("foos")).isEqualTo(Foo.class);
+
 	}
 
 	@Test
@@ -194,6 +207,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
 		assertThat(catalog.lookupFunction("function")).isNull();
 		assertThat(catalog.lookupFunction("other")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType("other")).isEqualTo(String.class);
 	}
 
 	@Test
@@ -310,6 +324,23 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
+	protected static class AmbiguousConfiguration {
+		private List<Foo> list = new ArrayList<>();
+
+		@Bean
+		public Function<String, Foo> foos() {
+			return value -> new Foo(value.toUpperCase());
+		}
+
+		@Bean
+		@Qualifier("foos")
+		public Consumer<Foo> consumer() {
+			return value -> list.add(value);
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
 	protected static class GenericConfiguration {
 		@Bean
 		public Function<Map<String, String>, Map<String, String>> function() {
@@ -405,4 +436,22 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		}
 	}
 
+	public static class Foo {
+		private String value;
+
+		public Foo(String value) {
+			this.value = value;
+		}
+
+		Foo() {
+		}
+
+		public String getValue() {
+			return value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+	}
 }
