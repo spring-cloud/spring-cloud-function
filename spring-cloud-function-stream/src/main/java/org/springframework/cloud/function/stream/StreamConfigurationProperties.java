@@ -27,10 +27,12 @@ public class StreamConfigurationProperties {
 	private String endpoint;
 
 	/**
-	 * Interval to be used for the Duration (in milliseconds) of a non-Flux producing Supplier.
-	 * Default is 0, which means the Supplier will only be invoked once. 
+	 * Interval to be used for the Duration (in milliseconds) of a non-Flux producing
+	 * Supplier. Default is 0, which means the Supplier will only be invoked once.
 	 */
 	private long interval = 0L;
+
+	public static final String ROUTE_KEY = "stream_routekey";
 
 	public String getEndpoint() {
 		return endpoint;

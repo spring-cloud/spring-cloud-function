@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import org.springframework.cloud.function.registry.FunctionCatalog;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.endpoint.MessageProducerSupport;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
@@ -40,17 +41,19 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
 	@Override
 	protected void doStart() {
-		supplier()
-				.subscribe(m -> this.sendMessage(MessageBuilder.withPayload(m).build()));
+		supplier().subscribe(m -> this.sendMessage(m));
 	}
 
-	private Flux<?> supplier() {
+	private Flux<Message<?>> supplier() {
 		Supplier<Flux<?>> supplier = null;
-		Flux<?> result = Flux.empty();
+		Flux<Message<?>> result = Flux.empty();
 		for (String name : functionCatalog.getSupplierNames()) {
 			supplier = functionCatalog.lookupSupplier(name);
 			Assert.notNull(supplier, "Supplier must not be null");
-			result = Flux.merge(result, supplier.get());
+			result = Flux.merge(result,
+					supplier.get().map(payload -> MessageBuilder.withPayload(payload)
+							.setHeader(StreamConfigurationProperties.ROUTE_KEY, name)
+							.build()));
 		}
 		return result;
 	}

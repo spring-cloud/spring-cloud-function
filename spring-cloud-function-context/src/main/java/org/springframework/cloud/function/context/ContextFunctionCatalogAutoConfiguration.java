@@ -262,6 +262,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else if (target instanceof Function) {
 				registration.target(target((Function<?, ?>) target, key));
 			}
+			for (String name : registration.getNames()) {
+				beans.put(name, key);
+			}
 			this.registrations.put(registration.getTarget(), key);
 		}
 

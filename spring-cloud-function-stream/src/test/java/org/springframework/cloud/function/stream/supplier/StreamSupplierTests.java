@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.function.stream.StreamConfigurationProperties;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.annotation.Bean;
@@ -48,8 +49,11 @@ public class StreamSupplierTests {
 
 	@Test
 	public void test() throws Exception {
-		Message<?> result = messageCollector.forChannel(source.output()).poll(1000, TimeUnit.MILLISECONDS);
+		Message<?> result = messageCollector.forChannel(source.output()).poll(1000,
+				TimeUnit.MILLISECONDS);
 		assertThat(result.getPayload()).isEqualTo("foo");
+		assertThat(result.getHeaders().get(StreamConfigurationProperties.ROUTE_KEY))
+				.isEqualTo("simpleSupplier");
 	}
 
 	@SpringBootApplication

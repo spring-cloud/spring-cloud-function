@@ -16,7 +16,14 @@
 
 package org.springframework.cloud.function.stream;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -27,11 +34,13 @@ import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.reactive.FluxSender;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Mark Fisher
@@ -49,7 +58,11 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 
 	private final String defaultEndpoint;
 
-	private static final String NOENDPOINT = "__NOENDPOINT__";
+	private final Map<String, FluxMessageProcessor> processors = new HashMap<>();
+
+	private int count = -1;
+
+	private static final FluxMessageProcessor NOENDPOINT = flux -> Flux.empty();
 
 	public StreamListeningFunctionInvoker(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
@@ -66,40 +79,110 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 	}
 
 	@StreamListener
-	@Output(Processor.OUTPUT)
-	public Flux<?> handle(@Input(Processor.INPUT) Flux<Message<?>> input) {
-		return input.groupBy(this::select)
-				.filter(group -> functionCatalog.lookupFunction(group.key()) != null)
-				.flatMap(group -> process(group.key(), group));
+	public Mono<Void> handle(@Input(Processor.INPUT) Flux<Message<?>> input,
+			@Output(Processor.OUTPUT) FluxSender output) {
+		return output.send(
+				input.groupBy(this::select).flatMap(group -> group.key().process(group)));
 	}
 
-	private Flux<?> process(String name, Flux<Message<?>> flux) {
-		return (Flux<?>) functionCatalog.lookupFunction(name)
-				.apply(flux.map(message -> convertInput(name).apply(message)));
+	private Flux<Message<?>> function(String name, Flux<Message<?>> flux) {
+		// TODO: the routing key could be added here, but really it should be added in
+		// Spring Cloud Stream
+		// (https://github.com/spring-cloud/spring-cloud-stream/issues/1010)
+		AtomicReference<Map<String, Object>> headers = new AtomicReference<Map<String, Object>>(
+				new LinkedHashMap<>());
+		return ((Flux<?>) functionCatalog.lookupFunction(name).apply(flux.map(message -> {
+			Object applied = convertInput(name).apply(message);
+			headers.set(message.getHeaders());
+			return applied;
+		}))).map(result -> message(result, headers.get()));
 	}
 
-	private String select(Message<?> input) {
+	private Message<?> message(Object result, Map<String, Object> headers) {
+		return result instanceof Message ? (Message<?>) result
+				: MessageBuilder.withPayload(result).copyHeadersIfAbsent(headers).build();
+	}
+
+	private Flux<Message<?>> consumer(String name, Flux<Message<?>> flux) {
+		functionCatalog.lookupConsumer(name)
+				.accept(flux.map(message -> convertInput(name).apply(message)));
+		return Flux.empty();
+	}
+
+	private Flux<Message<?>> balance(List<String> names, Flux<Message<?>> flux) {
+		if (names.isEmpty()) {
+			return Flux.empty();
+		}
+		String name = choose(names);
+		if (functionCatalog.lookupConsumer(name) != null) {
+			return consumer(name, flux);
+		}
+		return function(name, flux);
+	}
+
+	private synchronized String choose(List<String> names) {
+		if (++count >= names.size() || count < 0) {
+			count = 0;
+		}
+		return names.get(count);
+	}
+
+	private FluxMessageProcessor select(Message<?> input) {
 		String name = defaultEndpoint;
+		if (name != null) {
+			name = stash(name);
+		}
 		if (name == null) {
-			Set<String> names = functionCatalog.getFunctionNames();
+			if (input.getHeaders().containsKey(StreamConfigurationProperties.ROUTE_KEY)) {
+				String key = (String) input.getHeaders()
+						.get(StreamConfigurationProperties.ROUTE_KEY);
+				name = stash(key);
+			}
+		}
+		if (name == null) {
+			Set<String> names = new LinkedHashSet<>(functionCatalog.getFunctionNames());
+			names.addAll(functionCatalog.getConsumerNames());
+			List<String> matches = new ArrayList<>();
 			if (names.size() == 1) {
-				name = names.iterator().next();
+				String key = names.iterator().next();
+				name = stash(key);
 			}
 			else {
 				for (String candidate : names) {
 					Class<?> inputType = functionInspector.getInputType(candidate);
 					Object value = this.converter.fromMessage(input, inputType);
 					if (value != null && inputType.isInstance(value)) {
-						name = candidate;
-						break;
+						matches.add(candidate);
 					}
+				}
+				if (matches.size() == 1) {
+					name = stash(matches.iterator().next());
+				}
+				else {
+					return flux -> balance(matches, flux);
 				}
 			}
 		}
 		if (name == null) {
 			return NOENDPOINT;
 		}
-		return name;
+		return processors.get(name);
+	}
+
+	private String stash(String key) {
+		if (functionCatalog.lookupFunction(key) != null) {
+			if (!processors.containsKey(key)) {
+				processors.put(key, flux -> function(key, flux));
+			}
+			return key;
+		}
+		else if (functionCatalog.lookupConsumer(key) != null) {
+			if (!processors.containsKey(key)) {
+				processors.put(key, flux -> consumer(key, flux));
+			}
+			return key;
+		}
+		return null;
 	}
 
 	private Function<Message<?>, Object> convertInput(String name) {
@@ -123,4 +206,9 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			return this.converter.fromMessage(m, inputType);
 		}
 	}
+
+	interface FluxMessageProcessor {
+		Flux<Message<?>> process(Flux<Message<?>> flux);
+	}
+
 }

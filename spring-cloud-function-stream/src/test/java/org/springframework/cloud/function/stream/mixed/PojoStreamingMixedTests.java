@@ -22,12 +22,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.function.stream.StreamConfigurationProperties;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.annotation.Bean;
@@ -53,8 +55,13 @@ public class PojoStreamingMixedTests {
 	@Autowired
 	List<Bar> collector;
 
+	@Before
+	public void init() {
+		collector.clear();
+	}
+
 	@Test
-	public void test() throws Exception {
+	public void balance() throws Exception {
 		processor.input()
 				.send(MessageBuilder.withPayload("{\"name\":\"hello\"}").build());
 		processor.input()
@@ -64,6 +71,19 @@ public class PojoStreamingMixedTests {
 		assertThat(result.getPayload()).isInstanceOf(Foo.class);
 		// 2 subscribers to the same channel so input messages are applied as round robin
 		assertThat(collector).hasSize(1);
+	}
+
+	@Test
+	public void routing() throws Exception {
+		processor.input().send(MessageBuilder.withPayload("{\"name\":\"hello\"}")
+				.setHeader(StreamConfigurationProperties.ROUTE_KEY, "uppercase").build());
+		processor.input().send(MessageBuilder.withPayload("{\"name\":\"world\"}")
+				.setHeader(StreamConfigurationProperties.ROUTE_KEY, "uppercase").build());
+		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000,
+				TimeUnit.MILLISECONDS);
+		assertThat(result.getPayload()).isInstanceOf(Foo.class);
+		// routing key sends messages to the function, not the consumer
+		assertThat(collector).hasSize(0);
 	}
 
 	@SpringBootApplication

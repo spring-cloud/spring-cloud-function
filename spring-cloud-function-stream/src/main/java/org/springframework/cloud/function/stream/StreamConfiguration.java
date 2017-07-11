@@ -132,6 +132,12 @@ public class StreamConfiguration {
 		@Override
 		public ConditionOutcome getMatchOutcome(ConditionContext context,
 				AnnotatedTypeMetadata metadata) {
+			return getMatchOutcomeForType(this.type, context, metadata);
+
+		}
+
+		protected ConditionOutcome getMatchOutcomeForType(Class<?> type,
+				ConditionContext context, AnnotatedTypeMetadata metadata) {
 			if (context.getBeanFactory().getBeanNamesForType(type, false,
 					false).length > 0) {
 				String endpoint = new RelaxedPropertyResolver(context.getEnvironment(),
@@ -174,6 +180,16 @@ public class StreamConfiguration {
 
 		public ConsumerCondition() {
 			super(Consumer.class);
+		}
+
+		@Override
+		public ConditionOutcome getMatchOutcome(ConditionContext context,
+				AnnotatedTypeMetadata metadata) {
+			if (getMatchOutcomeForType(Function.class, context, metadata).isMatch()) {
+				return ConditionOutcome
+						.noMatch(String.format("bean of type Function detected"));
+			}
+			return super.getMatchOutcome(context, metadata);
 		}
 	}
 }
