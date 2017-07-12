@@ -114,6 +114,31 @@ public class FunctionExtractingFunctionCatalog
 	}
 
 	@Override
+	public Class<?> getInputType(Object function) {
+		return (Class<?>) inspect(function, "getInputType");
+	}
+
+	@Override
+	public Class<?> getOutputType(Object function) {
+		return (Class<?>) inspect(function, "getOutputType");
+	}
+
+	@Override
+	public Class<?> getInputWrapper(Object function) {
+		return (Class<?>) inspect(function, "getInputWrapper");
+	}
+
+	@Override
+	public Class<?> getOutputWrapper(Object function) {
+		return (Class<?>) inspect(function, "getOutputWrapper");
+	}
+
+	@Override
+	public Object convert(Object function, String value) {
+		return inspect(function, "convert");
+	}
+
+	@Override
 	public Class<?> getInputType(String name) {
 		return (Class<?>) inspect(name, "getInputType");
 	}

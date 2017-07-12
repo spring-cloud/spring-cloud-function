@@ -30,15 +30,30 @@ public interface FunctionInspector {
 
 	boolean isMessage(String name);
 
+	@Deprecated
 	Class<?> getInputType(String name);
 
+	@Deprecated
 	Class<?> getOutputType(String name);
 
+	@Deprecated
 	Class<?> getInputWrapper(String name);
 
+	@Deprecated
 	Class<?> getOutputWrapper(String name);
 
+	Class<?> getInputType(Object function);
+
+	Class<?> getOutputType(Object function);
+
+	Class<?> getInputWrapper(Object function);
+
+	Class<?> getOutputWrapper(Object function);
+
+	@Deprecated
 	Object convert(String name, String value);
+
+	Object convert(Object function, String value);
 
 	String getName(Object function);
 

@@ -140,6 +140,31 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		@Override
+		public Class<?> getInputWrapper(Object function) {
+			return processor.findInputWrapper(function);
+		}
+
+		@Override
+		public Class<?> getOutputWrapper(Object function) {
+			return processor.findOutputWrapper(function);
+		}
+
+		@Override
+		public Class<?> getInputType(Object function) {
+			return processor.findInputType(function);
+		}
+
+		@Override
+		public Class<?> getOutputType(Object function) {
+			return processor.findOutputType(function);
+		}
+
+		@Override
+		public Object convert(Object function, String value) {
+			return processor.convert(function, value);
+		}
+
+		@Override
 		public String getName(Object function) {
 			return processor.registrations.get(function);
 		}
@@ -158,13 +183,15 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private BeanDefinitionRegistry registry;
 		private ConversionService conversionService;
 		private Map<Object, String> registrations = new HashMap<>();
+		// TODO: keys are not unique
+		private Map<String, Object> reverse = new HashMap<>();
 
 		@Override
 		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
 			this.registry = registry;
 		}
 
-		public Object convert(String name, String value) {
+		private Object convert(Object function, String value) {
 			if (conversionService == null) {
 				if (registry instanceof ConfigurableListableBeanFactory) {
 					ConversionService conversionService = ((ConfigurableBeanFactory) this.registry)
@@ -177,10 +204,14 @@ public class ContextFunctionCatalogAutoConfiguration {
 					}
 				}
 			}
-			Class<?> type = findInputType(name);
+			Class<?> type = findInputType(function);
 			return conversionService.canConvert(String.class, type)
 					? conversionService.convert(value, type)
 					: value;
+		}
+
+		public Object convert(String name, String value) {
+			return convert(reverse.get(name), value);
 		}
 
 		public Set<FunctionRegistration<?>> merge(
@@ -250,8 +281,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private void wrap(FunctionRegistration<Object> registration, String key) {
 			Object target = registration.getTarget();
+			this.registrations.put(registration.getTarget(), key);
 			for (String name : registration.getNames()) {
 				beans.put(name, key);
+				this.reverse.put(name, registration.getTarget());
 			}
 			if (target instanceof Supplier) {
 				registration.target(target((Supplier<?>) target, key));
@@ -263,7 +296,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				registration.target(target((Function<?, ?>) target, key));
 			}
 			for (String name : registration.getNames()) {
-				beans.put(name, key);
+				this.reverse.put(name, registration.getTarget());
 			}
 			this.registrations.put(registration.getTarget(), key);
 		}
@@ -552,10 +585,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		}
 
-		private Class<?> findInputWrapper(String name) {
-			if (name != null) {
-				name = beans.get(name);
-			}
+		private Class<?> findInputWrapper(Object function) {
+			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
@@ -564,10 +595,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 					ParamType.INPUT_WRAPPER);
 		}
 
-		private Class<?> findOutputWrapper(String name) {
-			if (name != null) {
-				name = beans.get(name);
-			}
+		private Class<?> findInputWrapper(String name) {
+			return findInputWrapper(function(name));
+		}
+
+		private Object function(String name) {
+			return reverse.containsKey(name) ? reverse.get(name) : null;
+		}
+
+		private Class<?> findOutputWrapper(Object function) {
+			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
@@ -576,10 +613,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 					ParamType.OUTPUT_WRAPPER);
 		}
 
-		private Class<?> findInputType(String name) {
-			if (name != null) {
-				name = beans.get(name);
-			}
+		private Class<?> findOutputWrapper(String name) {
+			return findOutputWrapper(reverse.get(name));
+		}
+
+		private Class<?> findInputType(Object function) {
+			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
@@ -588,15 +627,22 @@ public class ContextFunctionCatalogAutoConfiguration {
 					ParamType.INPUT);
 		}
 
-		private Class<?> findOutputType(String name) {
-			if (name != null) {
-				name = beans.get(name);
-			}
+		private Class<?> findInputType(String name) {
+			return findInputType(reverse.get(name));
+		}
+
+		private Class<?> findOutputType(Object function) {
+			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
-			BeanDefinition definition = registry.getBeanDefinition(name);
-			return findType(name, (AbstractBeanDefinition) definition, ParamType.OUTPUT);
+			return findType(name,
+					(AbstractBeanDefinition) registry.getBeanDefinition(name),
+					ParamType.OUTPUT);
+		}
+
+		private Class<?> findOutputType(String name) {
+			return findOutputType(reverse.get(name));
 		}
 
 		static enum ParamType {
