@@ -22,13 +22,16 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
 public class InMemoryFunctionCatalog implements FunctionCatalog {
 
@@ -38,34 +41,22 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 
 	private final Map<String, Supplier<?>> suppliers;
 
-	public InMemoryFunctionCatalog(Map<String, Supplier<?>> suppliers,
-			Map<String, Function<?, ?>> functions, Map<String, Consumer<?>> consumers) {
-		this.suppliers = suppliers;
-		this.functions = functions;
-		this.consumers = consumers;
-	}
-
 	public InMemoryFunctionCatalog(Set<FunctionRegistration<?>> registrations) {
+		Assert.notNull(registrations, "'registrations' must not be null");
 		this.suppliers = new HashMap<>();
 		this.functions = new HashMap<>();
 		this.consumers = new HashMap<>();
-		for (FunctionRegistration<?> registration : registrations) {
-			if (registration.getTarget() instanceof Consumer) {
-				for (String name : registration.getNames()) {
-					consumers.put(name, (Consumer<?>) registration.getTarget());
-				}
+		registrations.stream().forEach(reg -> reg.getNames().stream().forEach(name -> {
+			if (reg.getTarget() instanceof Consumer){
+				consumers.put(name, (Consumer<?>) reg.getTarget());
 			}
-			if (registration.getTarget() instanceof Supplier) {
-				for (String name : registration.getNames()) {
-					suppliers.put(name, (Supplier<?>) registration.getTarget());
-				}
+			else if (reg.getTarget() instanceof Function){
+				functions.put(name, (Function<?, ?>) reg.getTarget());
 			}
-			if (registration.getTarget() instanceof Function) {
-				for (String name : registration.getNames()) {
-					functions.put(name, (Function<?, ?>) registration.getTarget());
-				}
+			else if (reg.getTarget() instanceof Supplier){
+				suppliers.put(name, (Supplier<?>) reg.getTarget());
 			}
-		}
+		}));
 	}
 
 	@Override
@@ -77,16 +68,10 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <T, R> Function<T, R> lookupFunction(String name) {
-		if (name.indexOf(',') == -1) {
-			return (Function<T, R>) functions.get(name);
-		}
-		String[] tokens = StringUtils.tokenizeToStringArray(name, ",");
-		Function function = null;
-		for (String token : tokens) {
-			Function next = lookupFunction(token);
-			function = (function == null) ? next : function.andThen(next);
-		}
-		return function;
+		return (Function<T, R>) Stream.of(StringUtils.tokenizeToStringArray(name, ","))
+				.map(functions::get)
+				.filter(f -> f != null)
+				.reduce(null, (f1, f2) -> f1 == null ? f2 : f1.andThen((Function)f2));
 	}
 
 	@Override
@@ -109,5 +94,4 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 	public Set<String> getConsumerNames() {
 		return consumers.keySet();
 	}
-
 }

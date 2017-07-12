@@ -73,10 +73,19 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	public void simpleFunction() {
+	public void lookUps() {
 		create(SimpleConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
 		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(context.getBean("function2")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function,function2")).isInstanceOf(Function.class);
+		Function<Flux<String>,Flux<String>> f = catalog.lookupFunction("function,function2,function3");
+		assertThat(f).isInstanceOf(Function.class);
+		assertThat(f.apply(Flux.just("hello")).blockFirst()).isEqualTo("HELLOfunction2function3");
+		assertThat(context.getBean("supplierFoo")).isInstanceOf(Supplier.class);
+		assertThat(catalog.lookupSupplier("supplierFoo")).isInstanceOf(Supplier.class);
+		assertThat(context.getBean("supplier_Foo")).isInstanceOf(Supplier.class);
+		assertThat(catalog.lookupSupplier("supplier_Foo")).isInstanceOf(Supplier.class);
 	}
 
 	@Test
@@ -332,7 +341,22 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		}
 
 		@Bean
+		public Function<String, String> function2() {
+			return value -> value + "function2";
+		}
+
+		@Bean
+		public Function<String, String> function3() {
+			return value -> value + "function3";
+		}
+
+		@Bean
 		public Supplier<String> supplier() {
+			return () -> "hello";
+		}
+
+		@Bean(name={"supplierFoo", "supplier_Foo"})
+		public Supplier<String> foo() {
 			return () -> "hello";
 		}
 
