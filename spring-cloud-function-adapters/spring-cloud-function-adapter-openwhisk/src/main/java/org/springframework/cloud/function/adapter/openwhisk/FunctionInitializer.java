@@ -62,6 +62,7 @@ public class FunctionInitializer {
 		if ("function".equals(type)) {
 			this.function = this.catalog.lookupFunction(name);
 			if (this.function != null && !FunctionUtils.isFluxFunction(this.function)) {
+				// TODO: this shouldn't be necessary
 				this.function = new FluxFunction(this.function);
 			}
 		}
@@ -75,9 +76,14 @@ public class FunctionInitializer {
 
 	protected Class<?> getInputType() {
 		if (inspector != null) {
-			return inspector.getInputType(this.properties.getName());
+			return inspector.getInputType(function());
 		}
 		return Object.class;
+	}
+
+	private Object function() {
+		return this.function != null ? this.function
+				: (this.consumer != null ? this.consumer : this.supplier);
 	}
 
 	protected Flux<?> apply(Flux<?> input) {

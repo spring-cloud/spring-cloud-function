@@ -109,8 +109,8 @@ public class FunctionExtractingFunctionCatalog
 	}
 
 	@Override
-	public boolean isMessage(String name) {
-		return (Boolean) inspect(name, "isMessage");
+	public boolean isMessage(Object function) {
+		return (Boolean) inspect(function, "isMessage");
 	}
 
 	@Override
@@ -136,31 +136,6 @@ public class FunctionExtractingFunctionCatalog
 	@Override
 	public Object convert(Object function, String value) {
 		return inspect(function, "convert");
-	}
-
-	@Override
-	public Class<?> getInputType(String name) {
-		return (Class<?>) inspect(name, "getInputType");
-	}
-
-	@Override
-	public Class<?> getOutputType(String name) {
-		return (Class<?>) inspect(name, "getOutputType");
-	}
-
-	@Override
-	public Class<?> getInputWrapper(String name) {
-		return (Class<?>) inspect(name, "getInputWrapper");
-	}
-
-	@Override
-	public Class<?> getOutputWrapper(String name) {
-		return (Class<?>) inspect(name, "getOutputWrapper");
-	}
-
-	@Override
-	public Object convert(String name, String value) {
-		return inspect(name, "convert");
 	}
 
 	@Override

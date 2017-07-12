@@ -28,19 +28,7 @@ import reactor.core.publisher.Mono;
  */
 public interface FunctionInspector {
 
-	boolean isMessage(String name);
-
-	@Deprecated
-	Class<?> getInputType(String name);
-
-	@Deprecated
-	Class<?> getOutputType(String name);
-
-	@Deprecated
-	Class<?> getInputWrapper(String name);
-
-	@Deprecated
-	Class<?> getOutputWrapper(String name);
+	boolean isMessage(Object function);
 
 	Class<?> getInputType(Object function);
 
@@ -49,9 +37,6 @@ public interface FunctionInspector {
 	Class<?> getInputWrapper(Object function);
 
 	Class<?> getOutputWrapper(Object function);
-
-	@Deprecated
-	Object convert(String name, String value);
 
 	Object convert(Object function, String value);
 

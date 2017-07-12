@@ -77,11 +77,11 @@ public class FluxHandlerMethodArgumentResolver
 			WebDataBinderFactory binderFactory) throws Exception {
 		Object handler = webRequest.getAttribute(WebRequestConstants.HANDLER,
 				NativeWebRequest.SCOPE_REQUEST);
-		Class<?> type = inspector.getInputType(inspector.getName(handler));
+		Class<?> type = inspector.getInputType(handler);
 		if (type == null) {
 			type = Object.class;
 		}
-		boolean message = inspector.isMessage(inspector.getName(handler));
+		boolean message = inspector.isMessage(handler);
 		List<Object> body;
 		ContentCachingRequestWrapper nativeRequest = new ContentCachingRequestWrapper(
 				webRequest.getNativeRequest(HttpServletRequest.class));
@@ -107,8 +107,8 @@ public class FluxHandlerMethodArgumentResolver
 		if (message) {
 			List<Object> messages = new ArrayList<>();
 			for (Object payload : body) {
-				messages.add(MessageBuilder.withPayload(payload).copyHeaders(
-						HeaderUtils.fromHttp(new ServletServerHttpRequest(
+				messages.add(MessageBuilder.withPayload(payload)
+						.copyHeaders(HeaderUtils.fromHttp(new ServletServerHttpRequest(
 								webRequest.getNativeRequest(HttpServletRequest.class))
 										.getHeaders()))
 						.build());

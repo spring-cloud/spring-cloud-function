@@ -87,13 +87,14 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 						.containsKey(StreamConfigurationProperties.ROUTE_KEY)) {
 					String key = (String) input.getHeaders()
 							.get(StreamConfigurationProperties.ROUTE_KEY);
-					if (functionCatalog.lookupFunction(key) != null) {
+					if (functionCatalog.lookupConsumer(key) != null) {
 						return key;
 					}
 				}
 				else {
 					for (String candidate : names) {
-						Class<?> inputType = functionInspector.getInputType(candidate);
+						Class<?> inputType = functionInspector
+								.getInputType(functionCatalog.lookupConsumer(candidate));
 						Object value = this.converter.fromMessage(input, inputType);
 						if (value != null && inputType.isInstance(value)) {
 							name = candidate;
@@ -110,7 +111,8 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 	}
 
 	private Function<Message<?>, Object> convertInput(String name) {
-		Class<?> inputType = functionInspector.getInputType(name);
+		Class<?> inputType = functionInspector
+				.getInputType(functionCatalog.lookupConsumer(name));
 		return m -> {
 			if (Message.class.isAssignableFrom(inputType)) {
 				return m;

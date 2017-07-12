@@ -113,7 +113,7 @@ public class FunctionController {
 
 	private Mono<?> value(Function<Flux<?>, Flux<?>> function,
 			@PathVariable String value) {
-		Object input = inspector.convert(inspector.getName(function), value);
+		Object input = inspector.convert(function, value);
 		Mono<?> result = Mono.from(function.apply(Flux.just(input)));
 		if (logger.isDebugEnabled()) {
 			logger.debug("Handled GET with function");

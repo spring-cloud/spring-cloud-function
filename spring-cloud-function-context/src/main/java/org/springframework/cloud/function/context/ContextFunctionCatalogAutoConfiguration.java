@@ -110,33 +110,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		@Override
-		public boolean isMessage(String name) {
-			return processor.isMessage(name);
-		}
-
-		@Override
-		public Class<?> getInputWrapper(String name) {
-			return processor.findInputWrapper(name);
-		}
-
-		@Override
-		public Class<?> getOutputWrapper(String name) {
-			return processor.findOutputWrapper(name);
-		}
-
-		@Override
-		public Class<?> getInputType(String name) {
-			return processor.findInputType(name);
-		}
-
-		@Override
-		public Class<?> getOutputType(String name) {
-			return processor.findOutputType(name);
-		}
-
-		@Override
-		public Object convert(String name, String value) {
-			return processor.convert(name, value);
+		public boolean isMessage(Object function) {
+			return processor.isMessage(function);
 		}
 
 		@Override
@@ -178,13 +153,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private Set<String> suppliers = new HashSet<>();
 		private Set<String> functions = new HashSet<>();
 		private Set<String> consumers = new HashSet<>();
-		private Map<String, String> beans = new HashMap<>();
 
 		private BeanDefinitionRegistry registry;
 		private ConversionService conversionService;
 		private Map<Object, String> registrations = new HashMap<>();
-		// TODO: keys are not unique
-		private Map<String, Object> reverse = new HashMap<>();
 
 		@Override
 		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
@@ -208,10 +180,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return conversionService.canConvert(String.class, type)
 					? conversionService.convert(value, type)
 					: value;
-		}
-
-		public Object convert(String name, String value) {
-			return convert(reverse.get(name), value);
 		}
 
 		public Set<FunctionRegistration<?>> merge(
@@ -281,11 +249,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private void wrap(FunctionRegistration<Object> registration, String key) {
 			Object target = registration.getTarget();
-			this.registrations.put(registration.getTarget(), key);
-			for (String name : registration.getNames()) {
-				beans.put(name, key);
-				this.reverse.put(name, registration.getTarget());
-			}
+			this.registrations.put(target, key);
 			if (target instanceof Supplier) {
 				registration.target(target((Supplier<?>) target, key));
 			}
@@ -295,9 +259,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else if (target instanceof Function) {
 				registration.target(target((Function<?, ?>) target, key));
 			}
-			for (String name : registration.getNames()) {
-				this.reverse.put(name, registration.getTarget());
-			}
+			registrations.remove(target);
 			this.registrations.put(registration.getTarget(), key);
 		}
 
@@ -384,23 +346,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean isFluxFunction(String name, Function<?, ?> function) {
-			boolean fluxTypes = this.hasFluxTypes(name);
+			boolean fluxTypes = this.hasFluxTypes(function);
 			return fluxTypes || FunctionUtils.isFluxFunction(function);
 		}
 
 		private boolean isFluxConsumer(String name, Consumer<?> consumer) {
-			boolean fluxTypes = this.hasFluxTypes(name);
+			boolean fluxTypes = this.hasFluxTypes(consumer);
 			return fluxTypes || FunctionUtils.isFluxConsumer(consumer);
 		}
 
 		private boolean isFluxSupplier(String name, Supplier<?> supplier) {
-			boolean fluxTypes = this.hasFluxTypes(name);
+			boolean fluxTypes = this.hasFluxTypes(supplier);
 			return fluxTypes || FunctionUtils.isFluxSupplier(supplier);
 		}
 
-		private boolean hasFluxTypes(String name) {
-			return FunctionInspector.isWrapper(findInputWrapper(name))
-					|| FunctionInspector.isWrapper(findOutputWrapper(name));
+		private boolean hasFluxTypes(Object function) {
+			return FunctionInspector.isWrapper(findInputWrapper(function))
+					|| FunctionInspector.isWrapper(findOutputWrapper(function));
 		}
 
 		private boolean isGenericSupplier(ConfigurableListableBeanFactory factory,
@@ -569,10 +531,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return ReflectionUtils.getField(field, target);
 		}
 
-		private boolean isMessage(String name) {
-			if (name != null) {
-				name = beans.get(name);
-			}
+		private boolean isMessage(Object function) {
+			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return false;
 			}
@@ -582,7 +542,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 					|| Message.class.isAssignableFrom(findType(name,
 							(AbstractBeanDefinition) registry.getBeanDefinition(name),
 							ParamType.OUTPUT_INNER_WRAPPER));
-
 		}
 
 		private Class<?> findInputWrapper(Object function) {
@@ -595,14 +554,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 					ParamType.INPUT_WRAPPER);
 		}
 
-		private Class<?> findInputWrapper(String name) {
-			return findInputWrapper(function(name));
-		}
-
-		private Object function(String name) {
-			return reverse.containsKey(name) ? reverse.get(name) : null;
-		}
-
 		private Class<?> findOutputWrapper(Object function) {
 			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
@@ -611,10 +562,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return findType(name,
 					(AbstractBeanDefinition) registry.getBeanDefinition(name),
 					ParamType.OUTPUT_WRAPPER);
-		}
-
-		private Class<?> findOutputWrapper(String name) {
-			return findOutputWrapper(reverse.get(name));
 		}
 
 		private Class<?> findInputType(Object function) {
@@ -627,10 +574,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 					ParamType.INPUT);
 		}
 
-		private Class<?> findInputType(String name) {
-			return findInputType(reverse.get(name));
-		}
-
 		private Class<?> findOutputType(Object function) {
 			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
@@ -639,10 +582,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return findType(name,
 					(AbstractBeanDefinition) registry.getBeanDefinition(name),
 					ParamType.OUTPUT);
-		}
-
-		private Class<?> findOutputType(String name) {
-			return findOutputType(reverse.get(name));
 		}
 
 		static enum ParamType {

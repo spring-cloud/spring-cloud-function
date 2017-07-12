@@ -62,8 +62,6 @@ public class SpringFunctionInitializer implements Closeable {
 	@Autowired(required = false)
 	private FunctionCatalog catalog;
 
-	private String name;
-
 	private ConfigurableApplicationContext context;
 
 	public SpringFunctionInitializer(Class<?> configurationClass) {
@@ -102,19 +100,16 @@ public class SpringFunctionInitializer implements Closeable {
 		}
 		else {
 			this.function = this.catalog.lookupFunction(name);
-			this.name = name;
 			if (this.function == null) {
 				if (defaultName) {
 					name = "consumer";
 				}
 				this.consumer = this.catalog.lookupConsumer(name);
-				this.name = name;
 				if (this.consumer == null) {
 					if (defaultName) {
 						name = "supplier";
 					}
 					this.supplier = this.catalog.lookupSupplier(name);
-					this.name = name;
 				}
 			}
 		}
@@ -123,9 +118,14 @@ public class SpringFunctionInitializer implements Closeable {
 
 	protected Class<?> getInputType() {
 		if (inspector != null) {
-			return inspector.getInputType(this.name);
+			return inspector.getInputType(function());
 		}
 		return Object.class;
+	}
+
+	private Object function() {
+		return this.function != null ? this.function
+				: (this.consumer != null ? this.consumer : this.supplier);
 	}
 
 	protected Flux<?> apply(Flux<?> input) {

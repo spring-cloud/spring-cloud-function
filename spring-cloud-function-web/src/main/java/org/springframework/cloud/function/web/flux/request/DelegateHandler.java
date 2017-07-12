@@ -23,6 +23,7 @@ public abstract class DelegateHandler<T> {
 
 	private final ListableBeanFactory factory;
 	private FunctionInspector processor;
+	private Object handler;
 	private final Object source;
 
 	public DelegateHandler(ListableBeanFactory factory, Object source) {
@@ -31,9 +32,15 @@ public abstract class DelegateHandler<T> {
 	}
 
 	public Class<?> type() {
-		String name = source instanceof String ? (String) source
-				: processor().getName(source);
-		return (Class<?>) processor().getInputType(name);
+		return processor().getInputType(handler());
+	}
+
+	private Object handler() {
+		if (handler == null) {
+			handler = source instanceof String ? factory.getBean((String) source)
+					: source;
+		}
+		return handler;
 	}
 
 	private FunctionInspector processor() {

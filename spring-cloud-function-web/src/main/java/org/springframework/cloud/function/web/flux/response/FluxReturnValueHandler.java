@@ -150,7 +150,7 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 
 		Object handler = webRequest.getAttribute(WebRequestConstants.HANDLER,
 				NativeWebRequest.SCOPE_REQUEST);
-		Class<?> type = inspector.getOutputType(inspector.getName(handler));
+		Class<?> type = inspector.getOutputType(handler);
 
 		boolean inputSingle = isInputSingle(webRequest, handler);
 		if (inputSingle && isOutputSingle(handler)) {
@@ -206,9 +206,8 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 	}
 
 	private boolean isOutputSingle(Object handler) {
-		String name = inspector.getName(handler);
-		Class<?> type = inspector.getOutputType(name);
-		Class<?> wrapper = inspector.getOutputWrapper(name);
+		Class<?> type = inspector.getOutputType(handler);
+		Class<?> wrapper = inspector.getOutputWrapper(handler);
 		if (Stream.class.isAssignableFrom(type)) {
 			return false;
 		}
