@@ -1,0 +1,33 @@
+[[spring-cloud-function-reference]]
+= Spring Cloud Function Reference Guide
+Mark Fisher; Dave Syer;
+:doctype: book
+:toc:
+:toclevels: 4
+:source-highlighter: prettify
+:numbered:
+:icons: font
+:hide-uri-scheme:
+:spring-cloud-function-repo: snapshot
+:github-tag: master
+:spring-cloud-function-docs-version: current
+:spring-cloud-function-docs: http://docs.spring.io/spring-cloud-function/docs/{spring-cloud-function-docs-version}/reference
+:spring-cloud-function-docs-current: http://docs.spring.io/spring-cloud-function/docs/current-SNAPSHOT/reference/html/
+:github-repo: spring-cloud/spring-cloud-function
+:github-raw: http://raw.github.com/{github-repo}/{github-tag}
+:github-code: http://github.com/{github-repo}/tree/{github-tag}
+:github-wiki: http://github.com/{github-repo}/wiki
+:github-master-code: http://github.com/{github-repo}/tree/master
+:sc-ext: java
+// ======================================================================================
+
+= Reference Guide
+include::spring-cloud-function-overview.adoc[]
+
+
+= Appendices
+[appendix]
+include::building.adoc[]
+include::contributing.adoc[]
+
+// ======================================================================================
