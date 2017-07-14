@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -442,7 +442,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	protected static class MessageConfiguration {
 		@Bean
 		public Function<Message<String>, Message<String>> function() {
-			return m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build();
+			return m -> {
+				System.out.println("Message: " + m);
+				return MessageBuilder.withPayload(m.getPayload().toUpperCase()).build();
+			};
 		}
 	}
 

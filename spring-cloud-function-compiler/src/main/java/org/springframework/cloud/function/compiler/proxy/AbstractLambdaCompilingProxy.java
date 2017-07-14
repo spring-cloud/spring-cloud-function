@@ -31,7 +31,7 @@ import org.springframework.util.FileCopyUtils;
 /**
  * @author Mark Fisher
  */
-public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNameAware, FunctionFactoryMetadata {
+public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNameAware, FunctionFactoryMetadata<T> {
 
 	private final Resource resource;
 
@@ -65,6 +65,7 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 		this.factory = this.compiler.compile(this.beanName, lambda, this.typeParameterizations);
 	}
 
+	@Override
 	public final T getTarget() {
 		return this.factory.getResult();
 	}

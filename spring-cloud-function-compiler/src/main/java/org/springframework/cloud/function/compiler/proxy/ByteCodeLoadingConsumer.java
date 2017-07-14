@@ -18,7 +18,7 @@ package org.springframework.cloud.function.compiler.proxy;
 
 import java.util.function.Consumer;
 
-import org.springframework.cloud.function.support.ConsumerProxy;
+import org.springframework.cloud.function.support.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 
 /**
@@ -26,7 +26,7 @@ import org.springframework.core.io.Resource;
  *
  * @param <T> type
  */
-public class ByteCodeLoadingConsumer<T> extends AbstractByteCodeLoadingProxy<Consumer<T>> implements ConsumerProxy<T> {
+public class ByteCodeLoadingConsumer<T> extends AbstractByteCodeLoadingProxy<Consumer<T>> implements FunctionFactoryMetadata<Consumer<T>>, Consumer<T> {
 
 	public ByteCodeLoadingConsumer(Resource resource) {
 		super(resource, Consumer.class);

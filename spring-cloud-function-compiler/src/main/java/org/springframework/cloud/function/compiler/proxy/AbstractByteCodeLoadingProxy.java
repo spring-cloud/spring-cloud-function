@@ -31,13 +31,13 @@ import org.springframework.util.ReflectionUtils;
 /**
  * @author Mark Fisher
  */
-public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBean, FunctionFactoryMetadata {
+public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBean, FunctionFactoryMetadata<T> {
 
 	private final Resource resource;
 
 	private final Class<?> type;
 
-	private CompilationResultFactory<T> factory; 
+	private CompilationResultFactory<T> factory;
 
 	private final SimpleClassLoader classLoader = new SimpleClassLoader(AbstractByteCodeLoadingProxy.class.getClassLoader());
 
@@ -56,7 +56,7 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 		String functionName = filename == null ? type.getSimpleName() : filename.replaceAll(".fun$", "");
 		String firstLetter = functionName.substring(0, 1).toUpperCase();
 		String upperCasedName = (functionName.length() > 1) ? firstLetter + functionName.substring(1) : firstLetter;
-		String className = String.format("%s.%s%sFactory", FunctionCompiler.class.getPackage().getName(), upperCasedName, this.type.getSimpleName()); 
+		String className = String.format("%s.%s%sFactory", FunctionCompiler.class.getPackage().getName(), upperCasedName, this.type.getSimpleName());
 		Class<?> factoryClass = this.classLoader.defineClass(className, bytes);
 		try {
 			this.factory = (CompilationResultFactory<T>) factoryClass.newInstance();
@@ -78,6 +78,7 @@ public abstract class AbstractByteCodeLoadingProxy<T> implements InitializingBea
 		return method.get();
 	}
 
+	@Override
 	public final T getTarget() {
 		return this.factory.getResult();
 	}
