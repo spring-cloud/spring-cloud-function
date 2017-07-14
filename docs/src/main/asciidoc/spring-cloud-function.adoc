@@ -1,0 +1,20 @@
+= Spring Cloud Function
+
+Mark Fisher, Dave Syer
+
+---
+
+:github: https://github.com/spring-cloud/spring-cloud-function
+:githubmaster: {github}/tree/master
+:docslink: {githubmaster}/docs/src/main/asciidoc
+:nofooter:
+
+== Introduction
+
+include::intro.adoc[]
+
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing-docs.adoc[]
+
+== Getting Started
+
+include::getting-started.adoc[]

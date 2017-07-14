@@ -1,0 +1,152 @@
+Build from the command line (and "install" the samples):
+
+----
+$ ./mvnw clean install
+----
+
+(If you like to YOLO add `-DskipTests`.)
+
+Run one of the samples, e.g.
+
+----
+$ java -jar spring-cloud-function-samples/spring-cloud-function-sample/target/*.jar
+----
+
+This runs the app and exposes its functions over HTTP, so you can
+convert a string to uppercase, like this:
+
+----
+$ curl -H "Content-Type: text/plain" localhost:8080/uppercase -d Hello
+HELLO
+----
+
+You can convert multiple strings (a `Flux<String>`) by separating them
+with new lines
+
+----
+$ curl -H "Content-Type: text/plain" localhost:8080/uppercase -d 'Hello
+> World'
+HELLOWORLD
+----
+
+(You can use `^Q^J` in a terminal to insert a new line in a literal
+string like that.)
+
+== Building and Running a Function
+
+The sample `@SpringBootApplication` above has a function that can be
+decorated at runtime by Spring Cloud Function to be an HTTP endpoint,
+or a Stream processor, for instance with RabbitMQ, Apache Kafka or
+JMS.
+
+The `@Beans` can be `Function`, `Consumer` or `Supplier` (all from
+`java.util`), and their parametric types can be String or POJO. A
+`Function` is exposed as an HTTP POST if `spring-cloud-function-web`
+is on the classpath, and as a Spring Cloud Stream `Processor` if
+`spring-cloud-function-stream` is on the classpath and a
+`spring.cloud.function.stream.endpoint` property is configured in the Spring
+environment. A `Consumer` is also exposed as an HTTP POST, or as a Stream
+`Sink`. A `Supplier` translates to an HTTP GET, or a Stream `Source`.
+
+Functions can be of `Flux<String>` or `Flux<Pojo>` and Spring Cloud
+Function takes care of converting the data to and from the desired
+types, as long as it comes in as plain text or (in the case of the
+POJO) JSON. TBD: support for `Flux<Message<Pojo>>` and maybe plain
+`Pojo` types (Fluxes implied and implemented by the framework).
+
+Functions can be grouped together in a single application, or deployed
+one-per-jar. It's up to the developer to choose. An app with multiple
+functions can be deployed multiple times in different "personalities",
+exposing different functions over different physical transports.
+
+== Deploying a Packaged Function
+
+TBD: describe the deployer app.
+
+== Dynamic Compilation
+
+To run these examples, change into the `scripts` directory:
+
+----
+cd scripts
+----
+
+Also, start a RabbitMQ server locally (e.g. execute `rabbitmq-server`).
+
+=== Start the Function Registry Service:
+
+----
+./function-registry.sh
+----
+
+=== Register a Function:
+
+----
+./registerFunction.sh -n uppercase -f "f->f.map(s->s.toString().toUpperCase())"
+----
+
+=== Run a REST Microservice using that Function:
+
+----
+./web.sh -f uppercase -p 9000
+curl -H "Content-Type: text/plain" -H "Accept: text/plain" localhost:9000/uppercase -d foo
+----
+
+=== Register a Supplier:
+
+----
+./registerSupplier.sh -n words -f "()->Flux.just(\"foo\",\"bar\")"
+----
+
+=== Run a REST Microservice using that Supplier:
+
+----
+./web.sh -s words -p 9001
+curl -H "Accept: application/json" localhost:9001/words
+----
+
+=== Register a Consumer:
+
+----
+./registerConsumer.sh -n print -t String -f "System.out::println"
+----
+
+=== Run a REST Microservice using that Consumer:
+
+----
+./web.sh -c print -p 9002
+curl -X POST -H "Content-Type: text/plain" -d foo localhost:9002/print
+----
+
+=== Run Stream Processing Microservices:
+
+First register a streaming words supplier:
+
+----
+./registerSupplier.sh -n wordstream -f "()->Flux.intervalMillis(1000).map(i->\"message-\"+i)"
+----
+
+Then start the source (supplier), processor (function), and sink (consumer) apps
+(in reverse order):
+
+----
+./stream.sh -p 9103 -i uppercaseWords -c print
+./stream.sh -p 9102 -i words -f uppercase -o uppercaseWords
+./stream.sh -p 9101 -s wordstream -o words
+----
+
+The output will appear in the console of the sink app (one message per second, converted to uppercase):
+
+----
+MESSAGE-0
+MESSAGE-1
+MESSAGE-2
+MESSAGE-3
+MESSAGE-4
+MESSAGE-5
+MESSAGE-6
+MESSAGE-7
+MESSAGE-8
+MESSAGE-9
+...
+----
