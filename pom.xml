@@ -20,6 +20,7 @@
 		<spring-cloud-stream.version>Chelsea.SR1</spring-cloud-stream.version>
 		<wrapper.version>1.0.5.RELEASE</wrapper.version>
 		<spring-boot.version>1.5.4.RELEASE</spring-boot.version>
+		<docs.main>spring-cloud-function</docs.main>
 	</properties>
 
 	<dependencyManagement>
@@ -58,6 +59,7 @@
 		<module>spring-cloud-function-samples</module>
 		<module>spring-cloud-function-deployer</module>
 		<module>spring-cloud-function-adapters</module>
+		<module>docs</module>
 	</modules>
 
 	<build>
