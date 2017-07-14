@@ -19,13 +19,13 @@ package org.springframework.cloud.function.compiler.proxy;
 import java.util.function.Supplier;
 
 import org.springframework.cloud.function.compiler.SupplierCompiler;
-import org.springframework.cloud.function.support.SupplierProxy;
+import org.springframework.cloud.function.support.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 
 /**
  * @author Mark Fisher
  */
-public class LambdaCompilingSupplier<T> extends AbstractLambdaCompilingProxy<Supplier<T>> implements SupplierProxy<T> {
+public class LambdaCompilingSupplier<T> extends AbstractLambdaCompilingProxy<Supplier<T>> implements FunctionFactoryMetadata<Supplier<T>>, Supplier<T> {
 
 	public LambdaCompilingSupplier(Resource resource, SupplierCompiler<T> compiler) {
 		super(resource, compiler);

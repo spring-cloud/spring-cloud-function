@@ -52,7 +52,7 @@ import org.springframework.cloud.function.support.FluxConsumer;
 import org.springframework.cloud.function.support.FluxFunction;
 import org.springframework.cloud.function.support.FluxSupplier;
 import org.springframework.cloud.function.support.FunctionFactoryMetadata;
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.support.FunctionFactoryUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
@@ -297,17 +297,17 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private boolean isFluxFunction(String name, Function<?, ?> function) {
 			boolean fluxTypes = this.hasFluxTypes(function);
-			return fluxTypes || FunctionUtils.isFluxFunction(function);
+			return fluxTypes || FunctionFactoryUtils.isFluxFunction(function);
 		}
 
 		private boolean isFluxConsumer(String name, Consumer<?> consumer) {
 			boolean fluxTypes = this.hasFluxTypes(consumer);
-			return fluxTypes || FunctionUtils.isFluxConsumer(consumer);
+			return fluxTypes || FunctionFactoryUtils.isFluxConsumer(consumer);
 		}
 
 		private boolean isFluxSupplier(String name, Supplier<?> supplier) {
 			boolean fluxTypes = this.hasFluxTypes(supplier);
-			return fluxTypes || FunctionUtils.isFluxSupplier(supplier);
+			return fluxTypes || FunctionFactoryUtils.isFluxSupplier(supplier);
 		}
 
 		private boolean hasFluxTypes(Object function) {
@@ -379,7 +379,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				else if (registry instanceof BeanFactory) {
 					Object bean = ((BeanFactory) registry).getBean(name);
 					if (bean instanceof FunctionFactoryMetadata) {
-						FunctionFactoryMetadata factory = (FunctionFactoryMetadata) bean;
+						FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) bean;
 						Type type = factory.getFactoryMethod().getGenericReturnType();
 						param = extractType(type, paramType, index);
 					}

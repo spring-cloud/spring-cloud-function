@@ -23,8 +23,10 @@ import java.lang.reflect.Method;
  *
  * @param <T>
  */
-public interface FunctionFactoryMetadata {
+public interface FunctionFactoryMetadata<F> {
 
 	Method getFactoryMethod();
+
+	F getTarget();
 
 }
