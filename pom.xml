@@ -10,16 +10,16 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>1.3.0.BUILD-SNAPSHOT</version>
+		<version>1.3.3.RELEASE</version>
 		<relativePath />
 	</parent>
 
 	<properties>
 		<java.version>1.8</java.version>
-		<reactor-bom.version>Aluminium-BUILD-SNAPSHOT</reactor-bom.version>
+		<reactor-bom.version>Aluminium-SR3</reactor-bom.version>
 		<spring-cloud-stream.version>Chelsea.SR1</spring-cloud-stream.version>
 		<wrapper.version>1.0.5.RELEASE</wrapper.version>
-		<spring-boot.version>1.5.2.RELEASE</spring-boot.version>
+		<spring-boot.version>1.5.4.RELEASE</spring-boot.version>
 	</properties>
 
 	<dependencyManagement>
@@ -52,7 +52,6 @@
 		<module>spring-cloud-function-compiler</module>
 		<module>spring-cloud-function-core</module>
 		<module>spring-cloud-function-context</module>
-		<module>spring-cloud-function-gateway</module>
 		<module>spring-cloud-function-stream</module>
 		<module>spring-cloud-function-task</module>
 		<module>spring-cloud-function-web</module>
