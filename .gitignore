@@ -6,3 +6,5 @@ _site
 *.sw[op]
 .project
 sample-pages
+target/
+spring-cloud-function-*/
