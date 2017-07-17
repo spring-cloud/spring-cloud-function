@@ -113,7 +113,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 					if (path.startsWith("file:")) {
 						path = path.substring("file:".length());
 					}
-					builder.append(url);
+					builder.append(path);
 				}
 				return builder.toString();
 			}
