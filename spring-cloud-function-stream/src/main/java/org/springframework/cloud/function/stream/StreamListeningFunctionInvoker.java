@@ -84,9 +84,6 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 				input.groupBy(this::select).flatMap(group -> group.key().process(group)));
 	}
 
-	// TODO: the routing key could be added here, but really it should be added in
-	// Spring Cloud Stream
-	// (https://github.com/spring-cloud/spring-cloud-stream/issues/1010)
 	private Flux<Message<?>> function(String name, Flux<Message<?>> flux) {
 		Function<Object, Flux<?>> function = functionCatalog.lookupFunction(name);
 		return flux.publish(values -> {
