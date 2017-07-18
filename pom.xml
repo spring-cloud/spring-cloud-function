@@ -66,19 +66,8 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-maven-plugin</artifactId>
-					<version>${spring-boot.version}</version>
-					<dependencies>
-						<dependency>
-							<groupId>org.springframework.boot.experimental</groupId>
-							<artifactId>spring-boot-thin-layout</artifactId>
-							<version>${wrapper.version}</version>
-						</dependency>
-					</dependencies>
-				</plugin>
-				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
+					<inherited>false</inherited>
 					<configuration>
 						<aggregate>true</aggregate>
 						<excludePackageNames>com.example,functions,example</excludePackageNames>
@@ -89,9 +78,21 @@
 							<goals>
 								<goal>aggregate-jar</goal>
 							</goals>
-							<phase>install</phase>
+							<phase>package</phase>
 						</execution>
 					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+					<version>${spring-boot.version}</version>
+					<dependencies>
+						<dependency>
+							<groupId>org.springframework.boot.experimental</groupId>
+							<artifactId>spring-boot-thin-layout</artifactId>
+							<version>${wrapper.version}</version>
+						</dependency>
+					</dependencies>
 				</plugin>
 			</plugins>
 		</pluginManagement>
