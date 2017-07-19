@@ -18,7 +18,11 @@ package org.springframework.cloud.function.compiler.app;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import org.springframework.cloud.function.compiler.AbstractFunctionCompiler;
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.ConsumerCompiler;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
@@ -30,6 +34,7 @@ import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
 public class CompiledFunctionRegistry {
 
@@ -45,11 +50,11 @@ public class CompiledFunctionRegistry {
 
 	private final File consumerDirectory;
 
-	private final SupplierCompiler<Flux<?>> supplierCompiler = new SupplierCompiler<>();
+	private final AbstractFunctionCompiler<Supplier<Flux<?>>> supplierCompiler = new SupplierCompiler<>();
 
-	private final FunctionCompiler<Flux<?>, Flux<?>> functionCompiler = new FunctionCompiler<>();
+	private final AbstractFunctionCompiler<Function<Flux<?>, Flux<?>>> functionCompiler = new FunctionCompiler<>();
 
-	private final ConsumerCompiler<?> consumerCompiler = new ConsumerCompiler<>();
+	private final AbstractFunctionCompiler<Consumer<Flux<?>>> consumerCompiler = new ConsumerCompiler<>();
 
 	public CompiledFunctionRegistry() {
 		this(new File("/tmp/function-registry"));
@@ -72,36 +77,26 @@ public class CompiledFunctionRegistry {
 		this.consumerDirectory.mkdir();
 	}
 
-	public void registerSupplier(String name, String supplier, String type) {
-		CompiledFunctionFactory<?> factory = this.supplierCompiler.compile(name, supplier, type);
-		File file = new File(this.supplierDirectory, fileName(name));
-		try {
-			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
-		}
-		catch (IOException e) {
-			throw new IllegalArgumentException(String.format("failed to register Supplier: %s", name), e);
-		}
+	public void registerSupplier(String name, String lambda, String type) {
+		this.doRegister(this.supplierCompiler, this.supplierDirectory, name, lambda, type);
 	}
 
-	public void registerFunction(String name, String function, String... types) {
-		CompiledFunctionFactory<?> factory = this.functionCompiler.compile(name, function, types);
-		File file = new File(this.functionDirectory, fileName(name));
-		try {
-			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
-		}
-		catch (IOException e) {
-			throw new IllegalArgumentException(String.format("failed to register Function: %s", name), e);
-		}
+	public void registerFunction(String name, String lambda, String... types) {
+		this.doRegister(this.functionCompiler, this.functionDirectory, name, lambda, types);
 	}
 
-	public void registerConsumer(String name, String consumer, String type) {
-		CompiledFunctionFactory<?> factory = this.consumerCompiler.compile(name, consumer, type);
-		File file = new File(this.consumerDirectory, fileName(name));
+	public void registerConsumer(String name, String lambda, String type) {
+		this.doRegister(this.consumerCompiler, this.consumerDirectory, name, lambda, type);
+	}
+
+	private void doRegister(AbstractFunctionCompiler<?> compiler, File directory, String name, String lambda, String... types) {
+		CompiledFunctionFactory<?> factory = compiler.compile(name, lambda, types);
+		File file = new File(directory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
 		}
 		catch (IOException e) {
-			throw new IllegalArgumentException(String.format("failed to register Consumer: %s", name), e);
+			throw new IllegalArgumentException(String.format("failed to register '%s'", name), e);
 		}
 	}
 
