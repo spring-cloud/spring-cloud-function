@@ -32,6 +32,7 @@ import org.springframework.util.StringUtils;
 /**
  * @author Andy Clement
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
 public abstract class AbstractFunctionCompiler<F> {
 
@@ -54,12 +55,12 @@ public abstract class AbstractFunctionCompiler<F> {
 			+ "import java.util.*;\n" // Helpful to include this
 			+ "import java.util.function.*;\n"
 			+ "import reactor.core.publisher.Flux;\n"
-			+ "public class %s implements %sFactory {\n"
-			+ " public %s<%s> getResult() {\n" 
+			+ "public class %s implements CompilationResultFactory<%s> {\n"
+			+ " public %s<%s> getResult() {\n"
 			+ "  %s\n"
 			+ " }\n"
 			+ "}\n";
-// @formatter:on
+	// @formatter:on
 
 	static enum ResultType {
 		Consumer, Function, Supplier
@@ -177,7 +178,7 @@ public abstract class AbstractFunctionCompiler<F> {
 		String shortClassName = className.substring(className.lastIndexOf('.') + 1);
 		String s = String.format(SOURCE_CODE_TEMPLATE, shortClassName, resultType,
 				resultType, StringUtils.arrayToCommaDelimitedString(types), methodBody);
-		System.out.println(s);
+		logger.info("\n" + s);
 		return s;
 	}
 }
