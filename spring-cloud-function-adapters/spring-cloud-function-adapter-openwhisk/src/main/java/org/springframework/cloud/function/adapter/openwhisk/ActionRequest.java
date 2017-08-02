@@ -38,7 +38,7 @@ public class ActionRequest {
 
 	private String namespace;
 
-	private Map<String, String> value;
+	private Map<String, Object> value;
 
 	public String getActionName() {
 		return actionName;
@@ -80,11 +80,11 @@ public class ActionRequest {
 		this.namespace = namespace;
 	}
 
-	public Map<String, String> getValue() {
+	public Map<String, Object> getValue() {
 		return value;
 	}
 
-	public void setValue(Map<String, String> value) {
+	public void setValue(Map<String, Object> value) {
 		this.value = value;
 	}
 }

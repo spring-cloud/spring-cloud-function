@@ -84,7 +84,7 @@ public class ActionController extends FunctionInitializer {
 		return Flux.just(input);
 	}
 
-	protected Object convertEvent(Map<String, String> event) {
+	protected Object convertEvent(Map<String, Object> event) {
 		// just expecting "payload" for now
 		return event.get("payload");
 	}
