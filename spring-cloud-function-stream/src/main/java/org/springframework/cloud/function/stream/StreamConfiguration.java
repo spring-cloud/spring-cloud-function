@@ -45,7 +45,7 @@ public class StreamConfiguration {
 	private StreamConfigurationProperties properties;
 
 	@Bean
-	// Because of the underlying behaviour of Spring AMQP etc., sinks do not start
+	// Because of the underlying behaviour of Spring AMQP etc., sources do not start
 	// up and fail gracefully if the broker is down. So we need a flag to be able to
 	// switch this off and stop the app failing on startup.
 	// TODO: find a slicker way to do it (e.g. backoff if the broker is down)
