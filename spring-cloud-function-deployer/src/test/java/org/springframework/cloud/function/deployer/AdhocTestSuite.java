@@ -27,8 +27,9 @@ import org.junit.runners.Suite.SuiteClasses;
  * @author Dave Syer
  */
 @RunWith(Suite.class)
-@SuiteClasses({ FunctionExtractingFunctionCatalogIntegrationTests.class,
-		FunctionExtractingFunctionCatalogTests.class })
+@SuiteClasses({ FunctionAppDeployerTests.class,
+		FunctionExtractingFunctionCatalogTests.class,
+		FunctionExtractingFunctionCatalogIntegrationTests.class })
 @Ignore
 public class AdhocTestSuite {
 
