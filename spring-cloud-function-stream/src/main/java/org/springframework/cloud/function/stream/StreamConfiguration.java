@@ -16,21 +16,10 @@
 
 package org.springframework.cloud.function.stream;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
-import org.springframework.boot.bind.RelaxedPropertyResolver;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
@@ -38,158 +27,40 @@ import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.ConfigurationCondition;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
  * @author Mark Fisher
  * @author Marius Bogoevici
  */
 @EnableConfigurationProperties(StreamConfigurationProperties.class)
-@ConditionalOnClass({ Binder.class })
+@ConditionalOnClass(Binder.class)
+@ConditionalOnBean(FunctionCatalog.class)
 @ConditionalOnProperty(name = "spring.cloud.stream.enabled", havingValue = "true", matchIfMissing = true)
+@EnableBinding(Processor.class)
 public class StreamConfiguration {
 
-	@ConditionalOnSupplier
-	@EnableBinding(Source.class)
-	protected static class SupplierConfiguration {
+	@Autowired
+	private StreamConfigurationProperties properties;
 
-		@Bean
-		public SupplierInvokingMessageProducer<Object> supplierInvoker(
-				FunctionCatalog registry) {
-			return new SupplierInvokingMessageProducer<Object>(registry);
-		}
+	@Bean
+	// Because of the underlying behaviour of Spring AMQP etc., sinks do not start
+	// up and fail gracefully if the broker is down. So we need a flag to be able to
+	// switch this off and stop the app failing on startup.
+	// TODO: find a slicker way to do it (e.g. backoff if the broker is down)
+	@ConditionalOnProperty(name = "spring.cloud.function.stream.supplier.enabled", havingValue = "true", matchIfMissing = true)
+	public SupplierInvokingMessageProducer<Object> supplierInvoker(
+			FunctionCatalog registry) {
+		return new SupplierInvokingMessageProducer<Object>(registry);
 	}
 
-	@ConditionalOnFunction
-	@EnableBinding(Processor.class)
-	protected static class FunctionConfiguration {
-
-		@Autowired
-		private StreamConfigurationProperties properties;
-
-		@Bean
-		public StreamListeningFunctionInvoker functionInvoker(FunctionCatalog registry,
-				FunctionInspector functionInspector,
-				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
-			return new StreamListeningFunctionInvoker(registry, functionInspector,
-					compositeMessageConverterFactory, properties.getEndpoint());
-		}
+	@Bean
+	public StreamListeningFunctionInvoker functionInvoker(FunctionCatalog registry,
+			FunctionInspector functionInspector,
+			@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
+		return new StreamListeningFunctionInvoker(registry, functionInspector,
+				compositeMessageConverterFactory, properties.getEndpoint());
 	}
 
-	@ConditionalOnConsumer
-	@EnableBinding(Sink.class)
-	protected static class ConsumerConfiguration {
-
-		@Autowired
-		private StreamConfigurationProperties properties;
-
-		@Bean
-		public StreamListeningConsumerInvoker consumerInvoker(FunctionCatalog registry,
-				FunctionInspector functionInspector,
-				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
-			return new StreamListeningConsumerInvoker(registry, functionInspector,
-					compositeMessageConverterFactory, properties.getEndpoint());
-		}
-	}
-
-	@Conditional(SupplierCondition.class)
-	@Target(ElementType.TYPE)
-	@Retention(RetentionPolicy.RUNTIME)
-	@Documented
-	private @interface ConditionalOnSupplier {
-	}
-
-	@Conditional(FunctionCondition.class)
-	@Target(ElementType.TYPE)
-	@Retention(RetentionPolicy.RUNTIME)
-	@Documented
-	private @interface ConditionalOnFunction {
-	}
-
-	@Conditional(ConsumerCondition.class)
-	@Target(ElementType.TYPE)
-	@Retention(RetentionPolicy.RUNTIME)
-	@Documented
-	private @interface ConditionalOnConsumer {
-	}
-
-	private static abstract class AbstractFunctionCondition extends SpringBootCondition
-			implements ConfigurationCondition {
-
-		private final Class<?> type;
-
-		private AbstractFunctionCondition(Class<?> type) {
-			this.type = type;
-		}
-
-		@Override
-		public ConditionOutcome getMatchOutcome(ConditionContext context,
-				AnnotatedTypeMetadata metadata) {
-			return getMatchOutcomeForType(this.type, context, metadata);
-
-		}
-
-		protected ConditionOutcome getMatchOutcomeForType(Class<?> type,
-				ConditionContext context, AnnotatedTypeMetadata metadata) {
-			if (context.getBeanFactory().getBeanNamesForType(type, false,
-					false).length > 0) {
-				String endpoint = new RelaxedPropertyResolver(context.getEnvironment(),
-						"spring.cloud.function.stream.").getProperty("endpoint");
-				if (endpoint != null && !type
-						.isAssignableFrom(context.getBeanFactory().getType(endpoint))) {
-					return ConditionOutcome.noMatch(String.format(
-							"explicit endpoint of type other than %s detected", type));
-				}
-				return ConditionOutcome
-						.match(String.format("bean of type %s detected", type));
-
-			}
-			return ConditionOutcome
-					.noMatch(String.format("no bean of type %s detected", type));
-
-		}
-
-		@Override
-		public ConfigurationPhase getConfigurationPhase() {
-			return ConfigurationPhase.REGISTER_BEAN;
-		}
-	}
-
-	private static class SupplierCondition extends AbstractFunctionCondition {
-
-		public SupplierCondition() {
-			super(Supplier.class);
-		}
-	}
-
-	private static class FunctionCondition extends AbstractFunctionCondition {
-
-		public FunctionCondition() {
-			super(Function.class);
-		}
-	}
-
-	private static class ConsumerCondition extends AbstractFunctionCondition {
-
-		public ConsumerCondition() {
-			super(Consumer.class);
-		}
-
-		@Override
-		public ConditionOutcome getMatchOutcome(ConditionContext context,
-				AnnotatedTypeMetadata metadata) {
-			if (getMatchOutcomeForType(Function.class, context, metadata).isMatch()) {
-				return ConditionOutcome
-						.noMatch(String.format("bean of type Function detected"));
-			}
-			return super.getMatchOutcome(context, metadata);
-		}
-	}
 }

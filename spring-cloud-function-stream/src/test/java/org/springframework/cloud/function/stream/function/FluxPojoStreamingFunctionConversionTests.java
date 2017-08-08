@@ -43,7 +43,7 @@ import reactor.core.publisher.Flux;
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = FluxPojoStreamingFunctionConversionTests.StreamingFunctionApplication.class)
+@SpringBootTest(classes = FluxPojoStreamingFunctionConversionTests.StreamingFunctionApplication.class, properties = "logging.level.org.springframework.integration=DEBUG")
 public class FluxPojoStreamingFunctionConversionTests {
 
 	@Autowired
