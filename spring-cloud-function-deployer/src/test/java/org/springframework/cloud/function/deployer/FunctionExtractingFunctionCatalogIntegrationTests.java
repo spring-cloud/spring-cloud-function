@@ -43,9 +43,9 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 	public static void open() throws Exception {
 		port = SocketUtils.findAvailableTcpPort();
 		// System.setProperty("debug", "true");
-		context = new ApplicationRunner().start("--server.port=" + port,
-				"--spring.cloud.stream.enabled=false");
-		deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
+		context = new ApplicationRunner().start("--server.port=" + port, "--debug",
+				"--logging.level.org.springframework.cloud.function=DEBUG");
+		deploy("sample", "maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
 	}
 
 	private static void deploy(String name, String path) throws Exception {
@@ -79,23 +79,31 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 
 	@Test
 	public void words() {
-		assertThat(new TestRestTemplate()
-				.getForObject("http://localhost:" + port + "/sample/words", String.class))
+		assertThat(new TestRestTemplate().getForObject(
+				"http://localhost:" + port + "/stream/sample/words", String.class))
 						.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+	}
+
+	@Test
+	public void missing() throws Exception {
+		ResponseEntity<String> result = new TestRestTemplate().exchange(RequestEntity
+				.get(new URI("http://localhost:" + port + "/stream/missing/words"))
+				.build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test
 	public void uppercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/sample/uppercase", "{\"value\":\"foo\"}",
-				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
+				"http://localhost:" + port + "/stream/sample/uppercase",
+				"{\"value\":\"foo\"}", String.class)).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test
 	public void another() throws Exception {
 		deploy("strings", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
 		assertThat(new TestRestTemplate().getForObject(
-				"http://localhost:" + port + "/strings/words", String.class))
+				"http://localhost:" + port + "/stream/strings/words", String.class))
 						.isEqualTo("[\"foo\",\"bar\"]");
 	}
 
@@ -106,13 +114,13 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 		assertThat(undeploy.contains(
 				"\"path\":\"maven://io.spring.sample:function-sample-pojo:1.0.0.BUILD-SNAPSHOT\""));
 		ResponseEntity<String> result = new TestRestTemplate().exchange(RequestEntity
-				.get(new URI("http://localhost:" + port + "/sample/words")).build(),
-				String.class);
+				.get(new URI("http://localhost:" + port + "/stream/sample/words"))
+				.build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 		deploy("sample", "maven://io.spring.sample:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/sample/uppercase", "{\"value\":\"foo\"}",
-				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
+				"http://localhost:" + port + "/stream/sample/uppercase",
+				"{\"value\":\"foo\"}", String.class)).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 }

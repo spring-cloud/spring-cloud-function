@@ -16,8 +16,6 @@
 
 package com.example;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -28,17 +26,16 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Mark Fisher
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = {
-				"spring.cloud.function.compile.test.lambda=com.example.SampleCompiledConsumerTests.Reference::set",
-				"spring.cloud.function.compile.test.inputType=String",
-				"spring.cloud.function.compile.test.type=consumer"
-		})
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
+		"spring.cloud.function.compile.test.lambda=com.example.SampleCompiledConsumerTests.Reference::set",
+		"spring.cloud.function.compile.test.inputType=String",
+		"spring.cloud.function.compile.test.type=consumer" })
 public class SampleCompiledConsumerTests {
 
 	@LocalServerPort
@@ -47,8 +44,8 @@ public class SampleCompiledConsumerTests {
 	@Test
 	public void print() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/test", "it works",
-				String.class)).isEqualTo("it works");
+				"http://localhost:" + port + "/stream/test", "it works", String.class))
+						.isEqualTo("it works");
 		assertEquals("it works", Reference.instance);
 	}
 

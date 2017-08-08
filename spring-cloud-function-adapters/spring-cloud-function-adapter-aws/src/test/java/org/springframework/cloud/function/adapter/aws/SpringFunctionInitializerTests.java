@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
 
-import org.springframework.cloud.function.context.ContextFunctionCatalogAutoConfiguration;
+import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;

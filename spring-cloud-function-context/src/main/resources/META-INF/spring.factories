@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.function.context.ContextFunctionCatalogAutoConfiguration
+org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration
