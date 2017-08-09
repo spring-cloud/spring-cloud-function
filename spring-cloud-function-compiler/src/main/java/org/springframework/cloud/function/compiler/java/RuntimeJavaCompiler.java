@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * @author Andy Clement
  */
 public class RuntimeJavaCompiler {
-	
+
 	private JavaCompiler compiler =  ToolProvider.getSystemJavaCompiler();
 	
 	private static Logger logger = LoggerFactory.getLogger(RuntimeJavaCompiler.class);
@@ -49,13 +49,15 @@ public class RuntimeJavaCompiler {
 	 * classes.
 	 * @param className the name of the class (dotted form, e.g. com.foo.bar.Goo)
 	 * @param classSourceCode the full source code for the class
+	 * @param dependencies optional maven coordinates for dependencies "maven://groupId:artifactId:version"
 	 * @return a CompilationResult that encapsulates what happened during compilation (classes/messages produced)
 	 */
-	public CompilationResult compile(String className, String classSourceCode) {
+	public CompilationResult compile(String className, String classSourceCode, String... dependencies) {
 		logger.info("Compiling source for class {} using compiler {}",className,compiler.getClass().getName());
 		
 		DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
 		MemoryBasedJavaFileManager fileManager = new MemoryBasedJavaFileManager();
+		List<CompilationMessage> resolutionMessages = fileManager.addAndResolveDependencies(dependencies);
 //		JavaFileObject sourceFile = new StringBasedJavaSourceFileObject(className, classSourceCode);
 		JavaFileObject sourceFile = InMemoryJavaFileObject.getSourceJavaFileObject(className, classSourceCode);
 //				new InMemoryJavaFileObject(StandardLocation.SOURCE_PATH, className, javax.tools.JavaFileObject.Kind.SOURCE, null);
@@ -69,6 +71,8 @@ public class RuntimeJavaCompiler {
 
 		boolean success = task.call();
 		CompilationResult compilationResult = new CompilationResult(success);
+		compilationResult.recordCompilationMessages(resolutionMessages);
+		compilationResult.setResolvedAdditionalDependencies(new ArrayList<>(fileManager.getResolvedAdditionalDependencies().values()));
 		
 		// If successful there may be no errors but there might be info/warnings
 		for (Diagnostic<? extends JavaFileObject> diagnostic : diagnosticCollector.getDiagnostics()) {
