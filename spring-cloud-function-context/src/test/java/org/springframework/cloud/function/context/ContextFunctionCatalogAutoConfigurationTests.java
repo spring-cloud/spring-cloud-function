@@ -442,10 +442,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	protected static class MessageConfiguration {
 		@Bean
 		public Function<Message<String>, Message<String>> function() {
-			return m -> {
-				System.out.println("Message: " + m);
-				return MessageBuilder.withPayload(m.getPayload().toUpperCase()).build();
-			};
+			return m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build();
 		}
 	}
 
