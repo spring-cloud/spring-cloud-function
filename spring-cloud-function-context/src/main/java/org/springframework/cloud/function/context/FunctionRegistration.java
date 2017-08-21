@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2012-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,22 +23,22 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import reactor.core.publisher.Flux;
+
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  *
  */
-public class FunctionRegistration<T> {
+class FunctionRegistration<T> {
 
 	private T target;
 
-	private Set<String> names = new LinkedHashSet<>();
+	private final Set<String> names = new LinkedHashSet<>();
 
-	private Map<String, String> properties = new LinkedHashMap<>();
+	private final Map<String, String> properties = new LinkedHashMap<>();
 
-	public FunctionRegistration() {
-	}
-
-	public FunctionRegistration(T target) {
+	FunctionRegistration(T target) {
 		this.target = target;
 	}
 
@@ -50,8 +50,16 @@ public class FunctionRegistration<T> {
 		return names;
 	}
 
+	/**
+	 * Will set the names for this registration clearing all
+	 * previous names first. If you want to add a name  or set or
+	 * names to the existing set of names use {@link #names(Collection)}
+	 * or {@link #name(String)} or {@link #names(String...)} operations.
+	 * @param names
+	 */
 	public void setNames(Set<String> names) {
-		this.names = names;
+		this.names.clear();
+		this.names.addAll(names);
 	}
 
 	public T getTarget() {
@@ -63,14 +71,21 @@ public class FunctionRegistration<T> {
 		return this;
 	}
 
+	/**
+	 * Allows to override the target of this registration with a new target
+	 * that typically wraps the original target.
+	 * This typically happens when original target is wrapped into its {@link Flux}
+	 * counterpart (e.g., Function into FluxFunction)
+	 * @param target new target
+	 * @return this registration with new target
+	 */
 	public FunctionRegistration<T> target(T target) {
 		this.target = target;
 		return this;
 	}
 
 	public FunctionRegistration<T> name(String name) {
-		this.names.add(name);
-		return this;
+		return this.names(name);
 	}
 
 	public FunctionRegistration<T> names(Collection<String> names) {
@@ -79,8 +94,6 @@ public class FunctionRegistration<T> {
 	}
 
 	public FunctionRegistration<T> names(String... names) {
-		this.names.addAll(Arrays.asList(names));
-		return this;
+		return this.names(Arrays.asList(names));
 	}
-
 }
