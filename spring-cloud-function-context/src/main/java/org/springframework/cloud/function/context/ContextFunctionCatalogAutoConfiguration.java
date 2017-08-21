@@ -72,6 +72,7 @@ import reactor.core.publisher.Flux;
 /**
  * @author Dave Syer
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
 @Configuration
 @ConditionalOnClass(InMemoryFunctionCatalog.class)
@@ -116,22 +117,22 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		public Class<?> getInputWrapper(Object function) {
-			return processor.findInputWrapper(function);
+			return processor.findType(function, ParamType.INPUT_WRAPPER);
 		}
 
 		@Override
 		public Class<?> getOutputWrapper(Object function) {
-			return processor.findOutputWrapper(function);
+			return processor.findType(function, ParamType.OUTPUT_WRAPPER);
 		}
 
 		@Override
 		public Class<?> getInputType(Object function) {
-			return processor.findInputType(function);
+			return processor.findType(function, ParamType.INPUT);
 		}
 
 		@Override
 		public Class<?> getOutputType(Object function) {
-			return processor.findOutputType(function);
+			return processor.findType(function, ParamType.OUTPUT);
 		}
 
 		@Override
@@ -163,23 +164,19 @@ public class ContextFunctionCatalogAutoConfiguration {
 			this.registry = registry;
 		}
 
-		private Object convert(Object function, String value) {
-			if (conversionService == null) {
-				if (registry instanceof ConfigurableListableBeanFactory) {
-					ConversionService conversionService = ((ConfigurableBeanFactory) this.registry)
-							.getConversionService();
-					if (conversionService != null) {
-						this.conversionService = conversionService;
-					}
-					else {
-						this.conversionService = new DefaultConversionService();
-					}
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory factory) throws BeansException {
+			for (String name : factory.getBeanDefinitionNames()) {
+				if (isGeneric(factory, name, Supplier.class)) {
+					this.suppliers.add(name);
+				}
+				else if (isGeneric(factory, name, Function.class)) {
+					this.functions.add(name);
+				}
+				else if (isGeneric(factory, name, Consumer.class)) {
+					this.consumers.add(name);
 				}
 			}
-			Class<?> type = findInputType(function);
-			return conversionService.canConvert(String.class, type)
-					? conversionService.convert(value, type)
-					: value;
 		}
 
 		public Set<FunctionRegistration<?>> merge(
@@ -200,8 +197,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			// Add consumers that were not already registered
 			for (String key : consumers.keySet()) {
 				if (!targets.containsKey(consumers.get(key))) {
-					FunctionRegistration<Object> target = new FunctionRegistration<Object>()
-							.target(consumers.get(key)).names(getAliases(key));
+					FunctionRegistration<Object> target = new FunctionRegistration<Object>(consumers.get(key)).names(getAliases(key));
 					targets.put(target.getTarget(), key);
 					registrations.add(target);
 				}
@@ -209,8 +205,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			// Add suppliers that were not already registered
 			for (String key : suppliers.keySet()) {
 				if (!targets.containsKey(suppliers.get(key))) {
-					FunctionRegistration<Object> target = new FunctionRegistration<Object>()
-							.target(suppliers.get(key)).names(getAliases(key));
+					FunctionRegistration<Object> target = new FunctionRegistration<Object>(suppliers.get(key)).names(getAliases(key));
 					targets.put(target.getTarget(), key);
 					registrations.add(target);
 				}
@@ -218,8 +213,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			// Add functions that were not already registered
 			for (String key : functions.keySet()) {
 				if (!targets.containsKey(functions.get(key))) {
-					FunctionRegistration<Object> target = new FunctionRegistration<Object>()
-							.target(functions.get(key)).names(getAliases(key));
+					FunctionRegistration<Object> target = new FunctionRegistration<Object>(functions.get(key)).names(getAliases(key));
 					targets.put(target.getTarget(), key);
 					registrations.add(target);
 				}
@@ -234,16 +228,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return registrations;
 		}
 
+		private Object convert(Object function, String value) {
+			if (conversionService == null && registry instanceof ConfigurableListableBeanFactory) {
+				ConversionService conversionService = ((ConfigurableBeanFactory) this.registry).getConversionService();
+				this.conversionService = conversionService != null ? conversionService : new DefaultConversionService();
+			}
+			Class<?> type = findType(function, ParamType.INPUT);
+			return conversionService.canConvert(String.class, type)
+					? conversionService.convert(value, type)
+					: value;
+		}
+
 		private Collection<String> getAliases(String key) {
 			Collection<String> names = new LinkedHashSet<>();
 			String value = getQualifier(key);
 			if (value.equals(key)) {
-				names.add(key);
 				names.addAll(Arrays.asList(registry.getAliases(key)));
 			}
-			else {
-				names.add(value);
-			}
+			names.add(value);
 			return names;
 		}
 
@@ -264,85 +266,33 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private String getQualifier(String key) {
-			if (!registry.containsBeanDefinition(key)) {
-				return key;
-			}
-			String value = key;
-			BeanDefinition beanDefinition = registry.getBeanDefinition(key);
-			Object source = beanDefinition.getSource();
-			if (source instanceof StandardMethodMetadata) {
-				StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-				Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(
-						metadata.getIntrospectedMethod(), Qualifier.class);
-				if (qualifier != null && qualifier.value().length() > 0) {
-					return qualifier.value();
+			if (registry.containsBeanDefinition(key)) {
+				BeanDefinition beanDefinition = registry.getBeanDefinition(key);
+				Object source = beanDefinition.getSource();
+				if (source instanceof StandardMethodMetadata) {
+					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
+					Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(
+							metadata.getIntrospectedMethod(), Qualifier.class);
+					if (qualifier != null && qualifier.value().length() > 0) {
+						return qualifier.value();
+					}
 				}
 			}
-			return value;
+			return key;
 		}
 
-		private Supplier<?> target(Supplier<?> target, String key) {
-			if (this.suppliers.contains(key)) {
-				@SuppressWarnings("unchecked")
-				Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) target;
-				return supplier;
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		private <T> T target(T target, String key) {
+			if (target instanceof Supplier<?> && !isFluxSupplier(key, (Supplier<?>)target)) {
+				target = (T) new FluxSupplier((Supplier<?>)target);
 			}
-			else if (!isFluxSupplier(key, target)) {
-				@SuppressWarnings({ "unchecked", "rawtypes" })
-				FluxSupplier value = new FluxSupplier(target);
-				return value;
+			else if (target instanceof Function<?, ?> && !isFluxFunction(key, (Function<?, ?>)target)) {
+				target = (T) new FluxFunction((Function<?, ?>)target);
 			}
-			else {
-				return target;
+			else if (target instanceof Consumer<?> && !isFluxConsumer(key, (Consumer<?>)target)) {
+				target = (T) new FluxConsumer((Consumer<?>)target);
 			}
-		}
-
-		private Function<?, ?> target(Function<?, ?> target, String key) {
-			if (this.functions.contains(key)) {
-				@SuppressWarnings("unchecked")
-				Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) target;
-				return function;
-			}
-			else if (!isFluxFunction(key, target)) {
-				@SuppressWarnings({ "unchecked", "rawtypes" })
-				FluxFunction value = new FluxFunction(target);
-				return value;
-			}
-			else {
-				return target;
-			}
-		}
-
-		private Consumer<?> target(Consumer<?> target, String key) {
-			if (this.consumers.contains(key)) {
-				@SuppressWarnings("unchecked")
-				Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) target;
-				return consumer;
-			}
-			else if (!isFluxConsumer(key, target)) {
-				@SuppressWarnings({ "unchecked", "rawtypes" })
-				FluxConsumer value = new FluxConsumer(target);
-				return value;
-			}
-			else {
-				return target;
-			}
-		}
-
-		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory factory)
-				throws BeansException {
-			for (String name : factory.getBeanDefinitionNames()) {
-				if (isGenericSupplier(factory, name)) {
-					this.suppliers.add(name);
-				}
-				else if (isGenericFunction(factory, name)) {
-					this.functions.add(name);
-				}
-				else if (isGenericConsumer(factory, name)) {
-					this.consumers.add(name);
-				}
-			}
+			return target;
 		}
 
 		private boolean isFluxFunction(String name, Function<?, ?> function) {
@@ -361,41 +311,25 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean hasFluxTypes(Object function) {
-			return FunctionInspector.isWrapper(findInputWrapper(function))
-					|| FunctionInspector.isWrapper(findOutputWrapper(function));
+			return FunctionInspector.isWrapper(findType(function, ParamType.INPUT_WRAPPER))
+					|| FunctionInspector.isWrapper(findType(function, ParamType.OUTPUT_WRAPPER));
 		}
 
-		private boolean isGenericSupplier(ConfigurableListableBeanFactory factory,
-				String name) {
-			return factory.isTypeMatch(name,
-					ResolvableType.forClassWithGenerics(Supplier.class, Flux.class))
-					&& !factory.isTypeMatch(name,
-							ResolvableType.forClassWithGenerics(Supplier.class,
-									ResolvableType.forClassWithGenerics(Flux.class,
-											String.class)));
-		}
-
-		private boolean isGenericFunction(ConfigurableListableBeanFactory factory,
-				String name) {
-			return factory.isTypeMatch(name,
-					ResolvableType.forClassWithGenerics(Function.class, Flux.class,
-							Flux.class))
-					&& !factory.isTypeMatch(name,
-							ResolvableType.forClassWithGenerics(Function.class,
-									ResolvableType.forClassWithGenerics(Flux.class,
-											String.class),
-									ResolvableType.forClassWithGenerics(Flux.class,
-											String.class)));
-		}
-
-		private boolean isGenericConsumer(ConfigurableListableBeanFactory factory,
-				String name) {
-			return factory.isTypeMatch(name,
-					ResolvableType.forClassWithGenerics(Consumer.class, Flux.class))
-					&& !factory.isTypeMatch(name,
-							ResolvableType.forClassWithGenerics(Consumer.class,
-									ResolvableType.forClassWithGenerics(Flux.class,
-											String.class)));
+		private boolean isGeneric(ConfigurableListableBeanFactory factory, String name, Class<?> functionalInterface) {
+			ResolvableType matchingType = null;
+			ResolvableType[] nonMatchingTypes = null;
+			if (functionalInterface.isAssignableFrom(Function.class)) {
+				matchingType = ResolvableType.forClassWithGenerics(Function.class, Flux.class, Flux.class);
+				nonMatchingTypes = new ResolvableType[]{ResolvableType.forClassWithGenerics(Flux.class, String.class), ResolvableType.forClassWithGenerics(Flux.class, String.class)};
+			}
+			else {
+				nonMatchingTypes = new ResolvableType[]{ResolvableType.forClassWithGenerics(Flux.class, String.class)};
+				if (functionalInterface.isAssignableFrom(Consumer.class)) {
+					matchingType = ResolvableType.forClassWithGenerics(Consumer.class, Flux.class);
+				}
+				matchingType = ResolvableType.forClassWithGenerics(Supplier.class, Flux.class);
+			}
+			return factory.isTypeMatch(name, matchingType) && !factory.isTypeMatch(name, ResolvableType.forClassWithGenerics(functionalInterface, nonMatchingTypes));
 		}
 
 		private Class<?> findType(String name, AbstractBeanDefinition definition,
@@ -544,66 +478,34 @@ public class ContextFunctionCatalogAutoConfiguration {
 							ParamType.OUTPUT_INNER_WRAPPER));
 		}
 
-		private Class<?> findInputWrapper(Object function) {
+		private Class<?> findType(Object function, ParamType type) {
 			String name = registrations.get(function);
 			if (name == null || !registry.containsBeanDefinition(name)) {
 				return Object.class;
 			}
-			return findType(name,
-					(AbstractBeanDefinition) registry.getBeanDefinition(name),
-					ParamType.INPUT_WRAPPER);
+			return findType(name, (AbstractBeanDefinition) registry.getBeanDefinition(name), type);
+		}
+	}
+
+	static enum ParamType {
+		INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER, INPUT_INNER_WRAPPER, OUTPUT_INNER_WRAPPER;
+
+		public boolean isOutput() {
+			return this == OUTPUT || this == OUTPUT_WRAPPER
+					|| this == OUTPUT_INNER_WRAPPER;
 		}
 
-		private Class<?> findOutputWrapper(Object function) {
-			String name = registrations.get(function);
-			if (name == null || !registry.containsBeanDefinition(name)) {
-				return Object.class;
-			}
-			return findType(name,
-					(AbstractBeanDefinition) registry.getBeanDefinition(name),
-					ParamType.OUTPUT_WRAPPER);
+		public boolean isInput() {
+			return this == INPUT || this == INPUT_WRAPPER
+					|| this == INPUT_INNER_WRAPPER;
 		}
 
-		private Class<?> findInputType(Object function) {
-			String name = registrations.get(function);
-			if (name == null || !registry.containsBeanDefinition(name)) {
-				return Object.class;
-			}
-			return findType(name,
-					(AbstractBeanDefinition) registry.getBeanDefinition(name),
-					ParamType.INPUT);
+		public boolean isWrapper() {
+			return this == OUTPUT_WRAPPER || this == INPUT_WRAPPER;
 		}
 
-		private Class<?> findOutputType(Object function) {
-			String name = registrations.get(function);
-			if (name == null || !registry.containsBeanDefinition(name)) {
-				return Object.class;
-			}
-			return findType(name,
-					(AbstractBeanDefinition) registry.getBeanDefinition(name),
-					ParamType.OUTPUT);
-		}
-
-		static enum ParamType {
-			INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER, INPUT_INNER_WRAPPER, OUTPUT_INNER_WRAPPER;
-
-			public boolean isOutput() {
-				return this == OUTPUT || this == OUTPUT_WRAPPER
-						|| this == OUTPUT_INNER_WRAPPER;
-			}
-
-			public boolean isInput() {
-				return this == INPUT || this == INPUT_WRAPPER
-						|| this == INPUT_INNER_WRAPPER;
-			}
-
-			public boolean isWrapper() {
-				return this == OUTPUT_WRAPPER || this == INPUT_WRAPPER;
-			}
-
-			public boolean isInnerWrapper() {
-				return this == OUTPUT_INNER_WRAPPER || this == INPUT_INNER_WRAPPER;
-			}
+		public boolean isInnerWrapper() {
+			return this == OUTPUT_INNER_WRAPPER || this == INPUT_INNER_WRAPPER;
 		}
 	}
 }
