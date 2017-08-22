@@ -20,7 +20,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.support.FunctionFactoryUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,14 +35,14 @@ public class FunctionCompilerTests {
 		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
 				String.class.getName()).compile("foos",
 						"flux -> flux.map(v -> v.toUpperCase())", "Flux<String>", "Flux<String>");
-		assertThat(FunctionUtils.isFluxFunction(compiled.getFactoryMethod())).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxFunction(compiled.getFactoryMethod())).isTrue();
 	}
 
 	@Test
 	public void transformsString() {
 		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
 				String.class.getName()).compile("foos", "v -> v.toUpperCase()", "String", "String");
-		assertThat(FunctionUtils.isFluxFunction(compiled.getFactoryMethod())).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxFunction(compiled.getFactoryMethod())).isFalse();
 		assertThat(compiled.getResult().apply("hello")).isEqualTo("HELLO");
 	}
 

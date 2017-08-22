@@ -18,7 +18,7 @@ package org.springframework.cloud.function.compiler.proxy;
 
 import java.util.function.Supplier;
 
-import org.springframework.cloud.function.support.SupplierProxy;
+import org.springframework.cloud.function.support.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 
 /**
@@ -26,7 +26,7 @@ import org.springframework.core.io.Resource;
  *
  * @param <T> type
  */
-public class ByteCodeLoadingSupplier<T> extends AbstractByteCodeLoadingProxy<Supplier<T>> implements SupplierProxy<T> {
+public class ByteCodeLoadingSupplier<T> extends AbstractByteCodeLoadingProxy<Supplier<T>> implements FunctionFactoryMetadata<Supplier<T>>, Supplier<T> {
 
 	public ByteCodeLoadingSupplier(Resource resource) {
 		super(resource, Supplier.class);

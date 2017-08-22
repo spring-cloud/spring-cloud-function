@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 import org.junit.Test;
 
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.support.FunctionFactoryUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,14 +35,14 @@ public class ConsumerCompilerTests {
 		CompiledFunctionFactory<Consumer<String>> compiled = new ConsumerCompiler<String>(
 				String.class.getName()).compile("foos",
 						"flux -> flux.subscribe(System.out::println)", "Flux<String>");
-		assertThat(FunctionUtils.isFluxConsumer(compiled.getFactoryMethod())).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(compiled.getFactoryMethod())).isTrue();
 	}
 
 	@Test
 	public void consumesString() {
 		CompiledFunctionFactory<Consumer<String>> compiled = new ConsumerCompiler<String>(
 				String.class.getName()).compile("foos", "System.out::println", "String");
-		assertThat(FunctionUtils.isFluxConsumer(compiled.getFactoryMethod())).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(compiled.getFactoryMethod())).isFalse();
 	}
 
 }

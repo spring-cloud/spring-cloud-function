@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.gateway;
+package org.springframework.cloud.function.support;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.support.FunctionFactoryUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,30 +34,30 @@ import reactor.core.publisher.Flux;
  * @author Dave Syer
  *
  */
-public class FunctionUtilsTests {
+public class FunctionFactoryUtilsTests {
 
 	@Test
 	public void isFluxConsumer() {
-		Method method = ReflectionUtils.findMethod(FunctionUtilsTests.class, "fluxConsumer");
-		assertThat(FunctionUtils.isFluxConsumer(method)).isTrue();
-		assertThat(FunctionUtils.isFluxSupplier(method)).isFalse();
-		assertThat(FunctionUtils.isFluxFunction(method)).isFalse();
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "fluxConsumer");
+		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isFalse();
 	}
 	
 	@Test
 	public void isFluxSupplier() {
-		Method method = ReflectionUtils.findMethod(FunctionUtilsTests.class, "fluxSupplier");
-		assertThat(FunctionUtils.isFluxSupplier(method)).isTrue();
-		assertThat(FunctionUtils.isFluxConsumer(method)).isFalse();
-		assertThat(FunctionUtils.isFluxFunction(method)).isFalse();
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "fluxSupplier");
+		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isFalse();
 	}
 
 	@Test
 	public void isFluxFunction() {
-		Method method = ReflectionUtils.findMethod(FunctionUtilsTests.class, "fluxFunction");
-		assertThat(FunctionUtils.isFluxFunction(method)).isTrue();
-		assertThat(FunctionUtils.isFluxSupplier(method)).isFalse();
-		assertThat(FunctionUtils.isFluxConsumer(method)).isFalse();
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "fluxFunction");
+		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isFalse();
 	}
 	
 	public Function<Flux<Foo>, Flux<Foo>> fluxFunction() {

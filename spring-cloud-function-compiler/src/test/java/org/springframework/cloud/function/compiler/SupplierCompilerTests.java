@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.support.FunctionFactoryUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +35,7 @@ public class SupplierCompilerTests {
 		CompiledFunctionFactory<Supplier<String>> compiled = new SupplierCompiler<String>(
 				String.class.getName()).compile("foos",
 						"() -> Flux.just(\"foo\", \"bar\")", "Flux<String>");
-		assertThat(FunctionUtils.isFluxSupplier(compiled.getFactoryMethod())).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod())).isTrue();
 	}
 
 	@Test
@@ -43,7 +43,7 @@ public class SupplierCompilerTests {
 		CompiledFunctionFactory<Supplier<String>> compiled = new SupplierCompiler<String>(
 				String.class.getName()).compile("foos",
 						"() -> \"foo\"", "String");
-		assertThat(FunctionUtils.isFluxSupplier(compiled.getFactoryMethod())).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod())).isFalse();
 		assertThat(compiled.getResult().get()).isEqualTo("foo");
 	}
 

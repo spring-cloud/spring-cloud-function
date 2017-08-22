@@ -27,7 +27,7 @@ import org.springframework.cloud.function.compiler.ConsumerCompiler;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.SupplierCompiler;
 import org.springframework.cloud.function.support.FunctionFactoryMetadata;
-import org.springframework.cloud.function.support.FunctionUtils;
+import org.springframework.cloud.function.support.FunctionFactoryUtils;
 import org.springframework.core.io.ByteArrayResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +53,7 @@ public class ByteCodeLoadingFunctionTests {
 		ByteCodeLoadingConsumer<String> consumer = new ByteCodeLoadingConsumer<>(resource);
 		consumer.afterPropertiesSet();
 		assertThat(consumer instanceof FunctionFactoryMetadata);
-		assertThat(FunctionUtils.isFluxConsumer(consumer.getFactoryMethod())).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(consumer.getFactoryMethod())).isFalse();
 		consumer.accept("foo");
 	}
 
@@ -70,7 +70,7 @@ public class ByteCodeLoadingFunctionTests {
 		ByteCodeLoadingSupplier<String> supplier = new ByteCodeLoadingSupplier<>(resource);
 		supplier.afterPropertiesSet();
 		assertThat(supplier instanceof FunctionFactoryMetadata);
-		assertThat(FunctionUtils.isFluxSupplier(supplier.getFactoryMethod())).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxSupplier(supplier.getFactoryMethod())).isFalse();
 		assertThat(supplier.get()).isEqualTo("foo");
 	}
 
@@ -87,7 +87,7 @@ public class ByteCodeLoadingFunctionTests {
 		ByteCodeLoadingFunction<String, String> function = new ByteCodeLoadingFunction<>(resource);
 		function.afterPropertiesSet();
 		assertThat(function instanceof FunctionFactoryMetadata);
-		assertThat(FunctionUtils.isFluxFunction(function.getFactoryMethod())).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxFunction(function.getFactoryMethod())).isFalse();
 		assertThat(function.apply("foo")).isEqualTo("FOO");
 	}
 
@@ -104,7 +104,7 @@ public class ByteCodeLoadingFunctionTests {
 		ByteCodeLoadingFunction<Flux<String>, Flux<String>> function = new ByteCodeLoadingFunction<>(resource);
 		function.afterPropertiesSet();
 		assertThat(function instanceof FunctionFactoryMetadata);
-		assertThat(FunctionUtils.isFluxFunction(function.getFactoryMethod())).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxFunction(function.getFactoryMethod())).isTrue();
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 	}
 

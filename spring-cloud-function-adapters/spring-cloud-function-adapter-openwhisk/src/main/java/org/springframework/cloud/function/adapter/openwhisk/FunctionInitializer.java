@@ -24,8 +24,8 @@ import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.support.FunctionFactoryUtils;
 import org.springframework.cloud.function.support.FluxFunction;
-import org.springframework.cloud.function.support.FunctionUtils;
 
 import reactor.core.publisher.Flux;
 
@@ -61,7 +61,7 @@ public class FunctionInitializer {
 		String type = this.properties.getType();
 		if ("function".equals(type)) {
 			this.function = this.catalog.lookupFunction(name);
-			if (this.function != null && !FunctionUtils.isFluxFunction(this.function)) {
+			if (this.function != null && !FunctionFactoryUtils.isFluxFunction(this.function)) {
 				// TODO: this shouldn't be necessary
 				this.function = new FluxFunction(this.function);
 			}
