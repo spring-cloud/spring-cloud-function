@@ -23,13 +23,14 @@ import org.springframework.core.io.Resource;
 
 /**
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  *
  * @param <T> type
  */
 public class ByteCodeLoadingSupplier<T> extends AbstractByteCodeLoadingProxy<Supplier<T>> implements FunctionFactoryMetadata<Supplier<T>>, Supplier<T> {
 
 	public ByteCodeLoadingSupplier(Resource resource) {
-		super(resource, Supplier.class);
+		super(resource);
 	}
 
 	@Override

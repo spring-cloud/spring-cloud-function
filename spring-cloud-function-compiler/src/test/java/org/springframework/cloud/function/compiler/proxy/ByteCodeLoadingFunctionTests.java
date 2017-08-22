@@ -36,7 +36,7 @@ import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 public class ByteCodeLoadingFunctionTests {
 
@@ -44,12 +44,7 @@ public class ByteCodeLoadingFunctionTests {
 	public void compileConsumer() throws Exception {
 		CompiledFunctionFactory<Consumer<String>> compiled = new ConsumerCompiler<String>(
 				String.class.getName()).compile("foos", "System.out::println", "String");
-		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos") {
-			@Override
-			public String getFilename() {
-				return "foos.fun";
-			}
-		};
+		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos");
 		ByteCodeLoadingConsumer<String> consumer = new ByteCodeLoadingConsumer<>(resource);
 		consumer.afterPropertiesSet();
 		assertThat(consumer instanceof FunctionFactoryMetadata);
@@ -61,12 +56,7 @@ public class ByteCodeLoadingFunctionTests {
 	public void compileSupplier() throws Exception {
 		CompiledFunctionFactory<Supplier<String>> compiled = new SupplierCompiler<String>(
 				String.class.getName()).compile("foos", "() -> \"foo\"", "String");
-		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos") {
-			@Override
-			public String getFilename() {
-				return "foos.fun";
-			}
-		};
+		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos");
 		ByteCodeLoadingSupplier<String> supplier = new ByteCodeLoadingSupplier<>(resource);
 		supplier.afterPropertiesSet();
 		assertThat(supplier instanceof FunctionFactoryMetadata);
@@ -78,12 +68,7 @@ public class ByteCodeLoadingFunctionTests {
 	public void compileFunction() throws Exception {
 		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
 				String.class.getName()).compile("foos", "v -> v.toUpperCase()", "String", "String");
-		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos") {
-			@Override
-			public String getFilename() {
-				return "foos.fun";
-			}
-		};
+		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos");
 		ByteCodeLoadingFunction<String, String> function = new ByteCodeLoadingFunction<>(resource);
 		function.afterPropertiesSet();
 		assertThat(function instanceof FunctionFactoryMetadata);
@@ -95,17 +80,11 @@ public class ByteCodeLoadingFunctionTests {
 	public void compileFluxFunction() throws Exception {
 		CompiledFunctionFactory<Function<Flux<String>, Flux<String>>> compiled = new FunctionCompiler<Flux<String>, Flux<String>>(
 				String.class.getName()).compile("foos", "flux -> flux.map(v -> v.toUpperCase())", "Flux<String>", "Flux<String>");
-		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos") {
-			@Override
-			public String getFilename() {
-				return "foos.fun";
-			}
-		};
+		ByteArrayResource resource = new ByteArrayResource(compiled.getGeneratedClassBytes(), "foos");
 		ByteCodeLoadingFunction<Flux<String>, Flux<String>> function = new ByteCodeLoadingFunction<>(resource);
 		function.afterPropertiesSet();
 		assertThat(function instanceof FunctionFactoryMetadata);
 		assertThat(FunctionFactoryUtils.isFluxFunction(function.getFactoryMethod())).isTrue();
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 	}
-
 }
