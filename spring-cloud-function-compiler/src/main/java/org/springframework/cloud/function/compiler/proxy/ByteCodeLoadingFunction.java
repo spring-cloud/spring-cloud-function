@@ -23,6 +23,7 @@ import org.springframework.core.io.Resource;
 
 /**
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  *
  * @param <T> Function input type
  * @param <R> Function result type
@@ -30,7 +31,7 @@ import org.springframework.core.io.Resource;
 public class ByteCodeLoadingFunction<T, R> extends AbstractByteCodeLoadingProxy<Function<T, R>> implements FunctionFactoryMetadata<Function<T, R>>, Function<T, R> {
 
 	public ByteCodeLoadingFunction(Resource resource) {
-		super(resource, Function.class);
+		super(resource);
 	}
 
 	@Override
