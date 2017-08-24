@@ -30,7 +30,7 @@ import reactor.core.publisher.Flux;
  * @author Oleg Zhurakousky
  *
  */
-class FunctionRegistration<T> {
+public class FunctionRegistration<T> {
 
 	private T target;
 
@@ -38,7 +38,7 @@ class FunctionRegistration<T> {
 
 	private final Map<String, String> properties = new LinkedHashMap<>();
 
-	FunctionRegistration(T target) {
+	public FunctionRegistration(T target) {
 		this.target = target;
 	}
 
