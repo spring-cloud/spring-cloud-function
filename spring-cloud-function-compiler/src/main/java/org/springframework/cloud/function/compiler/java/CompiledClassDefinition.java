@@ -33,10 +33,10 @@ public class CompiledClassDefinition {
 		this.filename = filename;
 		this.bytes = bytes;
 		this.classname = filename;
-		if (classname.startsWith(File.separator)) {
+		if (classname.startsWith("/")) {
 			classname = classname.substring(1);
 		}
-		classname = classname.replace(File.separatorChar, '.').substring(0, classname.length()-6);//strip off .class
+		classname = classname.replace('/', '.').substring(0, classname.length()-6); //strip off .class
 	}
 
 	public String getName() {
