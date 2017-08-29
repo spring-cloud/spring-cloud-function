@@ -136,7 +136,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		}
 		// Kind of ignoring location here... assuming we want basically the FQ type name
 		// Example value from getName(): javax/validation/bootstrap/GenericBootstrap.class
-		String classname = file.getName().replace('/', '.');
+		String classname = file.getName().replace('/', '.').replace('\\', '.');
 		return classname.substring(0, classname.lastIndexOf(".class"));
 	}
 

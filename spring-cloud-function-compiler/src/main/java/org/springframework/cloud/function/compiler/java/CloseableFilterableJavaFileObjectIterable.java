@@ -46,7 +46,8 @@ public abstract class CloseableFilterableJavaFileObjectIterable implements Itera
 		if (packageNameFilter!=null && packageNameFilter.contains(File.separator)) {
 			throw new IllegalArgumentException("Package name filters should use dots to separate components: "+packageNameFilter);
 		}
-		this.packageNameFilter = packageNameFilter==null?null:packageNameFilter.replace('.', File.separatorChar) + "/";
+		// Normalize filter to forward slashes
+		this.packageNameFilter = packageNameFilter==null?null:packageNameFilter.replace('.', '/') + '/';
 		this.includeSubpackages = includeSubpackages;
 	}
 	
@@ -65,6 +66,8 @@ public abstract class CloseableFilterableJavaFileObjectIterable implements Itera
 			return true;
 		}
 		boolean accept;
+		// Normalize to forward slashes (some jars are producing paths with forward slashes, some with backward slashes)
+		name = name.replace('\\', '/');
 		if (includeSubpackages == true) {
 			accept = name.startsWith(packageNameFilter);
 			if (!accept && BOOT_PACKAGING_AWARE) {
