@@ -8,6 +8,7 @@ target/
 build/
 bin/
 .m2/
+.gradle/
 _site/
 .classpath
 .project

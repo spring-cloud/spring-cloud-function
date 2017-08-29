@@ -1,0 +1,47 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.2.RELEASE'
+		wrapperVersion = '1.0.6.RELEASE'
+	}
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		maven { url "https://repo.spring.io/snapshot" }
+		maven { url "https://repo.spring.io/milestone" }
+	}
+	dependencies {
+		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+apply plugin: 'spring-boot'
+apply plugin: 'org.springframework.boot.experimental.thin-launcher'
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	maven { url "https://repo.spring.io/snapshot" }
+	maven { url "https://repo.spring.io/milestone" }
+}
+
+ext {
+	springCloudFunctionVersion = "1.0.0.BUILD-SNAPSHOT"
+	springCloudStreamServletVersion = "1.0.0.BUILD-SNAPSHOT"
+}
+ext['reactor.version'] = "3.0.7.RELEASE"
+
+dependencies {
+	compile("org.springframework.cloud:spring-cloud-function-stream:${springCloudFunctionVersion}")
+	compile("org.springframework.cloud:spring-cloud-function-compiler:${springCloudFunctionVersion}")
+	compile("org.springframework.cloud:spring-cloud-stream-binder-servlet:${springCloudStreamServletVersion}")
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+}
