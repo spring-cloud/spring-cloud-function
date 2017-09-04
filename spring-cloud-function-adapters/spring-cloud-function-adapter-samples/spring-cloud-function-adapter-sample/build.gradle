@@ -1,16 +1,17 @@
 buildscript {
 	ext {
 		springBootVersion = '1.5.2.RELEASE'
-		wrapperVersion = '1.0.6.RELEASE'
+        shadowVersion = '2.0.1'
 	}
 	repositories {
+		jcenter()
 		mavenLocal()
 		mavenCentral()
 		maven { url "https://repo.spring.io/snapshot" }
 		maven { url "https://repo.spring.io/milestone" }
 	}
-	dependencies {
-		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:${shadowVersion}"
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
 	}
 }
@@ -18,8 +19,8 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'eclipse'
+apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'spring-boot'
-apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
@@ -35,14 +36,33 @@ repositories {
 
 ext {
 	springCloudFunctionVersion = "1.0.0.BUILD-SNAPSHOT"
+    awsLambdaEventsVersion = "1.2.1"
+    awsLambdaCoreVersion = "1.1.0"
 }
 ext['reactor.version'] = "3.0.7.RELEASE"
 
-// TODO: remove this when pom.xml generator is fixed
-jar.dependsOn = [thinProperties]
+assemble.dependsOn = [shadowJar, bootRepackage]
+
+jar {
+  manifest {
+    attributes 'Start-Class': 'example.Config'
+  }
+}
+
+shadowJar {
+  dependencies {
+    exclude(dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
+  }
+}
+
+configurations {
+    testCompile.extendsFrom(compileOnly)
+}
 
 dependencies {
 	compile("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}")
-	compile("org.springframework.cloud:spring-cloud-function-compiler:${springCloudFunctionVersion}")
+	compile("org.springframework.cloud:spring-cloud-function-adapter-aws:${springCloudFunctionVersion}")
+	compileOnly("com.amazonaws:aws-lambda-java-events:${awsLambdaEventsVersion}")
+	compileOnly("com.amazonaws:aws-lambda-java-core:${awsLambdaCoreVersion}")
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

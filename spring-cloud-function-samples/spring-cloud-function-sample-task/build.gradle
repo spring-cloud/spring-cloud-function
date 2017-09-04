@@ -42,7 +42,8 @@ ext['reactor.version'] = "3.0.7.RELEASE"
 jar.dependsOn = [thinProperties]
 
 dependencies {
-	compile("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}")
+	compile("org.springframework.cloud:spring-cloud-function-task:${springCloudFunctionVersion}")
+	compile("org.springframework.cloud:spring-cloud-function-context:${springCloudFunctionVersion}")
 	compile("org.springframework.cloud:spring-cloud-function-compiler:${springCloudFunctionVersion}")
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
