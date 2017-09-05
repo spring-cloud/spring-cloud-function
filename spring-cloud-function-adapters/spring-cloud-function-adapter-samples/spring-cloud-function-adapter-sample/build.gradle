@@ -1,6 +1,7 @@
 buildscript {
 	ext {
 		springBootVersion = '1.5.2.RELEASE'
+		wrapperVersion = '1.0.7.BUILD-SNAPSHOT'
         shadowVersion = '2.0.1'
 	}
 	repositories {
@@ -12,6 +13,7 @@ buildscript {
 	}
     dependencies {
         classpath "com.github.jengelman.gradle.plugins:shadow:${shadowVersion}"
+		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
 	}
 }
@@ -21,6 +23,7 @@ apply plugin: 'maven'
 apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'spring-boot'
+apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
@@ -50,6 +53,7 @@ jar {
 }
 
 shadowJar {
+  classifier = 'aws'
   dependencies {
     exclude(dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
   }
@@ -58,6 +62,9 @@ shadowJar {
 configurations {
     testCompile.extendsFrom(compileOnly)
 }
+
+// TODO: remove this when pom.xml generator is fixed
+jar.dependsOn = [thinProperties]
 
 dependencies {
 	compile("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}")
