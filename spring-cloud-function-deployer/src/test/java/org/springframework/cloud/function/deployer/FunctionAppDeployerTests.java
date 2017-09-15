@@ -57,8 +57,8 @@ public class FunctionAppDeployerTests {
 	@BeforeClass
 	public static void skip() {
 		try {
-			ArchiveUtils.getArchiveRoot(ArchiveUtils.getArchive(
-					"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT"));
+			ArchiveUtils.getArchiveRoot(ArchiveUtils
+					.getArchive("maven://io.spring.sample:function-sample:1.0.0.M1"));
 		}
 		catch (Exception e) {
 			Assume.assumeNoException(
@@ -75,8 +75,8 @@ public class FunctionAppDeployerTests {
 
 	@Test
 	public void web() throws Exception {
-		String first = deploy("maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
-				"", "--spring.cloud.function.stream.supplier.enabled=false");
+		String first = deploy("maven://io.spring.sample:function-sample:1.0.0.M1", "",
+				"--spring.cloud.function.stream.supplier.enabled=false");
 		// Deployment is blocking so it either failed or succeeded.
 		assertThat(deployer.status(first).getState()).isEqualTo(DeploymentState.deployed);
 		deployer.undeploy(first);
@@ -84,7 +84,7 @@ public class FunctionAppDeployerTests {
 
 	@Test
 	public void stream() throws Exception {
-		String first = deploy("maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT",
+		String first = deploy("maven://io.spring.sample:function-sample:1.0.0.M1",
 				"spring.cloud.deployer.thin.profile=stream",
 				"--spring.cloud.function.stream.supplier.enabled=false", "--debug=true");
 		// Deployment is blocking so it either failed or succeeded.
