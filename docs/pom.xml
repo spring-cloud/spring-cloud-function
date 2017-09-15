@@ -19,7 +19,7 @@
  	<build>
 		<plugins>
 	        <plugin>
-		      <!--skip deploy (this is just a test module) -->
+		      <!--skip deploy -->
 		      <artifactId>maven-deploy-plugin</artifactId>
 		      <configuration>
 		        <skip>true</skip>
@@ -32,22 +32,31 @@
 			<id>docs</id>
             <build>
                <plugins>
-		        <plugin>
-		          <groupId>org.asciidoctor</groupId>
-		          <artifactId>asciidoctor-maven-plugin</artifactId>
-                  <inherited>false</inherited>
-                </plugin>
-			    <plugin>
-				  <groupId>org.apache.maven.plugins</groupId>
-				  <artifactId>maven-antrun-plugin</artifactId>
-                  <inherited>false</inherited>
-                </plugin>
- 				<plugin>
-				  <groupId>org.codehaus.mojo</groupId>
-				  <artifactId>build-helper-maven-plugin</artifactId>
-                  <inherited>false</inherited>
-                </plugin>
-              </plugins>
+				   <plugin>
+					   <groupId>org.apache.maven.plugins</groupId>
+					   <artifactId>maven-dependency-plugin</artifactId>
+					   <inherited>false</inherited>
+				   </plugin>
+		           <plugin>
+					   <groupId>org.asciidoctor</groupId>
+					   <artifactId>asciidoctor-maven-plugin</artifactId>
+					   <inherited>false</inherited>
+                   </plugin>
+				   <plugin>
+					   <groupId>com.agilejava.docbkx</groupId>
+					   <artifactId>docbkx-maven-plugin</artifactId>
+				   </plugin>
+			       <plugin>
+					   <groupId>org.apache.maven.plugins</groupId>
+					   <artifactId>maven-antrun-plugin</artifactId>
+					   <inherited>false</inherited>
+                   </plugin>
+ 				   <plugin>
+					   <groupId>org.codehaus.mojo</groupId>
+					   <artifactId>build-helper-maven-plugin</artifactId>
+					   <inherited>false</inherited>
+                   </plugin>
+               </plugins>
             </build>
 		</profile>
     </profiles>
