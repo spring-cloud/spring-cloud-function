@@ -1,7 +1,7 @@
 buildscript {
 	ext {
 		springBootVersion = '1.5.2.RELEASE'
-		wrapperVersion = '1.0.7.BUILD-SNAPSHOT'
+		wrapperVersion = '1.0.7.RELEASE'
         shadowVersion = '2.0.1'
 	}
 	repositories {
@@ -25,8 +25,8 @@ apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
-group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+group = 'io.spring.sample'
+version = '1.0.0.BUILD-SNAPSHOT'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 

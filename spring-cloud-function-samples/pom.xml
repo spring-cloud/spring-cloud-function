@@ -13,11 +13,11 @@
 	</parent>
 
 	<modules>
-		<module>spring-cloud-function-sample</module>
-		<module>spring-cloud-function-sample-pof</module>
-		<module>spring-cloud-function-sample-pojo</module>
-		<module>spring-cloud-function-sample-compiler</module>
-		<module>spring-cloud-function-sample-task</module>
+		<module>function-sample</module>
+		<module>function-sample-pof</module>
+		<module>function-sample-pojo</module>
+		<module>function-sample-compiler</module>
+		<module>function-sample-task</module>
 	</modules>
 
 	<build>

@@ -21,8 +21,8 @@ apply plugin: 'eclipse'
 apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
-group = 'com.example'
-version = '0.0.1-SNAPSHOT'
+group = 'io.spring.sample'
+version = '1.0.0.BUILD-SNAPSHOT'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 

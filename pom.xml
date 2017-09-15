@@ -17,6 +17,7 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring-cloud-stream.version>Chelsea.SR2</spring-cloud-stream.version>
+		<spring-cloud-task.version>1.1.2.RELEASE</spring-cloud-task.version>
 		<wrapper.version>1.0.7.RELEASE</wrapper.version>
 		<spring-boot.version>1.5.7.RELEASE</spring-boot.version>
 		<docs.main>spring-cloud-function</docs.main>
@@ -24,11 +25,6 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>commons-io</groupId>
-				<artifactId>commons-io</artifactId>
-				<version>2.3</version>
-			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-function-dependencies</artifactId>
@@ -40,6 +36,13 @@
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream-dependencies</artifactId>
 				<version>${spring-cloud-stream.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-task-dependencies</artifactId>
+				<version>${spring-cloud-task.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

@@ -14,18 +14,6 @@
 
 	<name>spring-cloud-function-adapter-parent</name>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>Dalston.SR3</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<modules>
 		<module>spring-cloud-function-adapter-aws</module>
 		<module>spring-cloud-function-adapter-openwhisk</module>

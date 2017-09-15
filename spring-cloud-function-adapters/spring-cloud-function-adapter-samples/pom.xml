@@ -9,7 +9,7 @@
 	<packaging>pom</packaging>
 
 	<modules>
-		<module>spring-cloud-function-adapter-sample</module>
+		<module>function-adapter-sample-aws</module>
 	</modules>
 
 	<build>
