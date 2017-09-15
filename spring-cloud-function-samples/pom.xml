@@ -18,6 +18,7 @@
 		<module>function-sample-pojo</module>
 		<module>function-sample-compiler</module>
 		<module>function-sample-task</module>
+		<module>function-sample-aws</module>
 	</modules>
 
 	<build>

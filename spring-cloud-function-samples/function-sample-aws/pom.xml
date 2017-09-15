@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>io.spring.sample</groupId>
-	<artifactId>function-adapter-sample-aws</artifactId>
+	<artifactId>function-sample-aws</artifactId>
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
