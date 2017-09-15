@@ -47,10 +47,10 @@ public class FunctionExtractingFunctionCatalogTests {
 	@Before
 	public void init() throws Exception {
 		if (id == null) {
-			deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.M1");
+			deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
 			// "--debug");
 			id = deploy("pojos",
-					"maven://io.spring.sample:function-sample-pojo:1.0.0.M1");
+					"maven://io.spring.sample:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
 		}
 	}
 
