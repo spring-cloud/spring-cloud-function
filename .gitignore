@@ -24,3 +24,4 @@ _site/
 coverage-error.log
 .apt_generated
 credentials.yml
+.flattened-pom.xml
