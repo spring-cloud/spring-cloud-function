@@ -1,7 +1,7 @@
 buildscript {
 	ext {
 		springBootVersion = '1.5.2.RELEASE'
-		wrapperVersion = '1.0.6.RELEASE'
+		wrapperVersion = '1.0.7.RELEASE'
 	}
 	repositories {
 		mavenLocal()
@@ -41,8 +41,14 @@ ext['reactor.version'] = "3.0.7.RELEASE"
 // TODO: remove this when pom.xml generator is fixed
 jar.dependsOn = [thinProperties]
 
+dependencyManagement {
+     imports {
+          mavenBom "org.springframework.cloud:spring-cloud-function-dependencies:${springCloudFunctionVersion}"
+     }
+}
+
 dependencies {
-	compile("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}")
-	compile("org.springframework.cloud:spring-cloud-function-compiler:${springCloudFunctionVersion}")
+	compile('org.springframework.cloud:spring-cloud-function-web')
+	compile('org.springframework.cloud:spring-cloud-function-compiler')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

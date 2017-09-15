@@ -5,17 +5,15 @@
 
 	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-function-adapter-aws</artifactId>
-	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>spring-cloud-function-adapter-aws</name>
 	<description>AWS Lambda Adapter for Spring Cloud Function</description>
 
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.3.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-function-adapter-parent</artifactId>
+		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<properties>
@@ -23,14 +21,12 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
 		<aws-lambda-events.version>1.2.1</aws-lambda-events.version>
-		<reactor.version>3.0.7.RELEASE</reactor.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-context</artifactId>
-			<version>1.0.0.BUILD-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -58,18 +54,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>Dalston.BUILD-SNAPSHOT</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<repositories>
 		<repository>
