@@ -27,7 +27,7 @@ import java.util.function.Function;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionInspector;
-import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;

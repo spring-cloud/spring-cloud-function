@@ -37,7 +37,7 @@ import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.thin.ThinJarAppDeployer;
 import org.springframework.cloud.function.context.FunctionInspector;
-import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.context.support.LiveBeansView;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;

@@ -14,31 +14,30 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.support;
+package org.springframework.cloud.function.core;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 import reactor.core.publisher.Flux;
 
 /**
- * {@link Function} implementation that wraps a target Function so that the target's
- * simple input and output types will be wrapped as {@link Flux} instances.
+ * {@link Consumer} implementation that wraps a target Consumer so that the target's
+ * simple input type will be wrapped as a {@link Flux} instance.
  *
- * @author Mark Fisher
+ * @author Dave Syer
  *
- * @param <T> input type of target function
- * @param <R> output type of target function
+ * @param <T> input type of target consumer
  */
-public class FluxFunction<T, R> implements Function<Flux<T>, Flux<R>> {
+public class FluxConsumer<T> implements Consumer<Flux<T>> {
 
-	private final Function<T, R> function;
+	private final Consumer<T> consumer;
 
-	public FluxFunction(Function<T, R> function) {
-		this.function = function;
+	public FluxConsumer(Consumer<T> consumer) {
+		this.consumer = consumer;
 	}
 
 	@Override
-	public Flux<R> apply(Flux<T> input) {
-		return input.map(i -> this.function.apply(i));
+	public void accept(Flux<T> input) {
+		input.subscribe(t -> consumer.accept(t));
 	}
 }

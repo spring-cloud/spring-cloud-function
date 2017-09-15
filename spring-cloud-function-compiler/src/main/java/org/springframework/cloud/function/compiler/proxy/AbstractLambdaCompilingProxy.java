@@ -23,7 +23,7 @@ import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.function.compiler.AbstractFunctionCompiler;
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
-import org.springframework.cloud.function.support.FunctionFactoryMetadata;
+import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;

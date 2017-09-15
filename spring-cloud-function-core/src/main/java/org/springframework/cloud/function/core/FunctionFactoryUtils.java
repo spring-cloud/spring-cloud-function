@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.support;
+package org.springframework.cloud.function.core;
 
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.support;
+package org.springframework.cloud.function.core;
 
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
-import org.springframework.cloud.function.support.FunctionFactoryUtils;
+import org.springframework.cloud.function.core.FunctionFactoryUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;

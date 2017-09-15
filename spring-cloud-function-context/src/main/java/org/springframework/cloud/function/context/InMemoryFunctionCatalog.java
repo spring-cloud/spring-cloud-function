@@ -24,7 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 

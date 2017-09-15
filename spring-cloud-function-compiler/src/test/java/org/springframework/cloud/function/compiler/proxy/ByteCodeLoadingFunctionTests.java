@@ -26,8 +26,8 @@ import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.ConsumerCompiler;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.SupplierCompiler;
-import org.springframework.cloud.function.support.FunctionFactoryMetadata;
-import org.springframework.cloud.function.support.FunctionFactoryUtils;
+import org.springframework.cloud.function.core.FunctionFactoryMetadata;
+import org.springframework.cloud.function.core.FunctionFactoryUtils;
 import org.springframework.core.io.ByteArrayResource;
 
 import static org.assertj.core.api.Assertions.assertThat;

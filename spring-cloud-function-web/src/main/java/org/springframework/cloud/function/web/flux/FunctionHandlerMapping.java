@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionInspector;
-import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;

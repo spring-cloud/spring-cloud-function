@@ -23,9 +23,9 @@ import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionInspector;
-import org.springframework.cloud.function.registry.FunctionCatalog;
-import org.springframework.cloud.function.support.FunctionFactoryUtils;
-import org.springframework.cloud.function.support.FluxFunction;
+import org.springframework.cloud.function.core.FluxFunction;
+import org.springframework.cloud.function.core.FunctionCatalog;
+import org.springframework.cloud.function.core.FunctionFactoryUtils;
 
 import reactor.core.publisher.Flux;
 

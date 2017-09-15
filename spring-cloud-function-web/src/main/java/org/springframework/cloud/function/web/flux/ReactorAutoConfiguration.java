@@ -29,7 +29,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClas
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
 import org.springframework.cloud.function.context.FunctionInspector;
-import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.function.web.flux.request.FluxHandlerMethodArgumentResolver;
 import org.springframework.cloud.function.web.flux.response.FluxReturnValueHandler;
 import org.springframework.context.ApplicationContext;

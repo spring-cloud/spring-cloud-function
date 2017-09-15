@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.registry;
+package org.springframework.cloud.function.core;
 
 import java.util.Collections;
 import java.util.Set;

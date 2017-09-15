@@ -18,7 +18,7 @@ package org.springframework.cloud.function.stream;
 
 import java.util.function.Supplier;
 
-import org.springframework.cloud.function.registry.FunctionCatalog;
+import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.messaging.Message;

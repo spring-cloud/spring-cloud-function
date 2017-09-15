@@ -23,7 +23,7 @@ import org.springframework.asm.ClassReader;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cloud.function.compiler.CompilationResultFactory;
 import org.springframework.cloud.function.compiler.java.SimpleClassLoader;
-import org.springframework.cloud.function.support.FunctionFactoryMetadata;
+import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.ReflectionUtils;

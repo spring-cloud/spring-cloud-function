@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
-import org.springframework.cloud.function.support.FunctionFactoryUtils;
+import org.springframework.cloud.function.core.FunctionFactoryUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
