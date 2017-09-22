@@ -26,6 +26,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * @author Mark Fisher
@@ -41,7 +42,7 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
 	@Override
 	protected void doStart() {
-		supplier().subscribe(m -> this.sendMessage(m));
+		supplier().subscribeOn(Schedulers.elastic()).subscribe(m -> this.sendMessage(m));
 	}
 
 	private Flux<Message<?>> supplier() {
