@@ -74,6 +74,7 @@ import reactor.core.publisher.Flux;
  * @author Mark Fisher
  * @author Oleg Zhurakousky
  */
+@FunctionScan
 @Configuration
 @ConditionalOnClass(InMemoryFunctionCatalog.class)
 @ConditionalOnMissingBean(FunctionCatalog.class)
