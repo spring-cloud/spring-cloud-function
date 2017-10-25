@@ -55,7 +55,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	private List<CloseableFilterableJavaFileObjectIterable> toClose = new ArrayList<>();
 
-	private Map<String,File> resolvedAdditionalDependencies = new LinkedHashMap<>();
+	private Map<String, File> resolvedAdditionalDependencies = new LinkedHashMap<>();
 
 	public MemoryBasedJavaFileManager() {
 		outputCollector = new CompilationOutputCollector();
@@ -89,14 +89,17 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 				&& (kinds == null || kinds.contains(Kind.CLASS))) {
 			String javaClassPath = getClassPath();
 			if (!resolvedAdditionalDependencies.isEmpty()) {
-				for (File resolvedAdditionalDependency: resolvedAdditionalDependencies.values()) {
-					javaClassPath += File.pathSeparatorChar + resolvedAdditionalDependency.toURI().toString().substring("file:".length());
+				for (File resolvedAdditionalDependency : resolvedAdditionalDependencies
+						.values()) {
+					javaClassPath += File.pathSeparatorChar + resolvedAdditionalDependency
+							.toURI().toString().substring("file:".length());
 				}
 			}
 			classpath = javaClassPath;
 			logger.debug("Creating iterable for class path: {}", classpath);
 		}
-		CloseableFilterableJavaFileObjectIterable resultIterable = new IterableClasspath(classpath, packageName, recurse);
+		CloseableFilterableJavaFileObjectIterable resultIterable = new IterableClasspath(
+				classpath, packageName, recurse);
 		toClose.add(resultIterable);
 		return resultIterable;
 	}
@@ -106,18 +109,20 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		if (loader instanceof URLClassLoader) {
 			URL[] urls = ((URLClassLoader) loader).getURLs();
 			if (urls.length > 1) { // heuristic that catches Maven surefire tests
-				StringBuilder builder = new StringBuilder();
-				for (URL url : urls) {
-					if (builder.length() > 0) {
-						builder.append(File.pathSeparator);
+				if (!urls[0].toString().startsWith("jar:file:")) { // heuristic for Spring Boot fat jar
+					StringBuilder builder = new StringBuilder();
+					for (URL url : urls) {
+						if (builder.length() > 0) {
+							builder.append(File.pathSeparator);
+						}
+						String path = url.toString();
+						if (path.startsWith("file:")) {
+							path = path.substring("file:".length());
+						}
+						builder.append(path);
 					}
-					String path = url.toString();
-					if (path.startsWith("file:")) {
-						path = path.substring("file:".length());
-					}
-					builder.append(path);
+					return builder.toString();
 				}
-				return builder.toString();
 			}
 		}
 		return System.getProperty("java.class.path");
@@ -207,26 +212,33 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	public List<CompilationMessage> addAndResolveDependencies(String[] dependencies) {
 		List<CompilationMessage> resolutionMessages = new ArrayList<>();
-		for (String dependency: dependencies) {
+		for (String dependency : dependencies) {
 			if (dependency.startsWith("maven:")) {
 				// Resolving an explicit external archive
 				String coordinates = dependency.replaceFirst("maven:\\/*", "");
 				DependencyResolver engine = DependencyResolver.instance();
 				try {
-					File resolved = engine.resolve(new Dependency(new DefaultArtifact(coordinates), "runtime"));
+					File resolved = engine.resolve(
+							new Dependency(new DefaultArtifact(coordinates), "runtime"));
 					// Example:
-					// dependency = maven://org.springframework:spring-expression:4.3.9.RELEASE
-					// resolved.toURI() = file:/Users/aclement/.m2/repository/org/springframework/spring-expression/4.3.9.RELEASE/spring-expression-4.3.9.RELEASE.jar
+					// dependency =
+					// maven://org.springframework:spring-expression:4.3.9.RELEASE
+					// resolved.toURI() =
+					// file:/Users/aclement/.m2/repository/org/springframework/spring-expression/4.3.9.RELEASE/spring-expression-4.3.9.RELEASE.jar
 					resolvedAdditionalDependencies.put(dependency, resolved);
-				} catch (RuntimeException re) {
-					CompilationMessage compilationMessage =
-							new CompilationMessage(CompilationMessage.Kind.ERROR,re.getMessage(),null,0,0);
+				}
+				catch (RuntimeException re) {
+					CompilationMessage compilationMessage = new CompilationMessage(
+							CompilationMessage.Kind.ERROR, re.getMessage(), null, 0, 0);
 					resolutionMessages.add(compilationMessage);
 				}
 			}
 			else {
-				resolutionMessages.add(new CompilationMessage(CompilationMessage.Kind.ERROR,
-						"Unrecognized dependency: "+dependency+" (expected something of the form: maven://groupId:artifactId:version)",null,0,0));
+				resolutionMessages.add(new CompilationMessage(
+						CompilationMessage.Kind.ERROR,
+						"Unrecognized dependency: " + dependency
+								+ " (expected something of the form: maven://groupId:artifactId:version)",
+						null, 0, 0));
 			}
 		}
 		return resolutionMessages;
