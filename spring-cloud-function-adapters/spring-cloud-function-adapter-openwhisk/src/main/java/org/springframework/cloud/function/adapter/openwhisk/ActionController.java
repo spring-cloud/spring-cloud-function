@@ -21,20 +21,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.cloud.function.context.FunctionScan;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
  */
-@FunctionScan
 @RestController
 public class ActionController extends FunctionInitializer {
 

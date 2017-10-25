@@ -18,9 +18,7 @@ package functions;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.function.context.FunctionScan;
 
-@FunctionScan
 @SpringBootApplication
 public class Application {
 

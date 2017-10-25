@@ -32,7 +32,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import reactor.core.publisher.Flux;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(properties = "spring.cloud.function.scan.packages=com.example.functions")
+@SpringBootTest
 public class SampleApplicationTests {
 
 	@Test
