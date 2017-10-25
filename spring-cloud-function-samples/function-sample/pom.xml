@@ -7,7 +7,7 @@
 	<artifactId>function-sample</artifactId>
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>spring-cloud-function-sample</name>
+	<name>function-sample</name>
 	<description>Spring Cloud Function Web Support</description>
 
 	<parent>
