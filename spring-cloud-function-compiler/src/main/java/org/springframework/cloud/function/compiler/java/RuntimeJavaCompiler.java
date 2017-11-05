@@ -49,7 +49,7 @@ public class RuntimeJavaCompiler {
 	 * classes.
 	 * @param className the name of the class (dotted form, e.g. com.foo.bar.Goo)
 	 * @param classSourceCode the full source code for the class
-	 * @param dependencies optional maven coordinates for dependencies "maven://groupId:artifactId:version"
+	 * @param dependencies optional coordinates for dependencies, maven 'maven://groupId:artifactId:version', or 'file:' URIs for local files
 	 * @return a CompilationResult that encapsulates what happened during compilation (classes/messages produced)
 	 */
 	public CompilationResult compile(String className, String classSourceCode, String... dependencies) {
