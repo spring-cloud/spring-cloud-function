@@ -20,6 +20,8 @@ import java.io.File;
 
 import javax.tools.JavaFileObject;
 
+import org.springframework.cloud.function.compiler.java.MemoryBasedJavaFileManager.CompilationInfoCache;
+
 /**
  * Common superclass for iterables that need to handle closing when finished
  * with and that need to handle possible constraints on the values that
@@ -35,22 +37,26 @@ public abstract class CloseableFilterableJavaFileObjectIterable implements Itera
 	private final static String BOOT_PACKAGING_PREFIX_FOR_CLASSES = "BOOT-INF/classes/";
 
 	// If set specifies the package the iterator consumer is interested in. Only
-	// return results in this package.
-	private String packageNameFilter;
+	// return results in this package. Will have a trailing separator to speed
+	// matching. '/' on its own represents the default package
+	protected String packageNameFilter;
 
 	// Indicates whether the consumer of the iterator wants to see classes
 	// that are in subpackages of those matching the filter.
-	private boolean includeSubpackages;
+	protected boolean includeSubpackages;
+	
+	protected CompilationInfoCache compilationInfoCache;
 
-	public CloseableFilterableJavaFileObjectIterable(String packageNameFilter, boolean includeSubpackages) {
+	public CloseableFilterableJavaFileObjectIterable(CompilationInfoCache compilationInfoCache, String packageNameFilter, boolean includeSubpackages) {
 		if (packageNameFilter!=null && packageNameFilter.contains(File.separator)) {
 			throw new IllegalArgumentException("Package name filters should use dots to separate components: "+packageNameFilter);
 		}
+		this.compilationInfoCache = compilationInfoCache;
 		// Normalize filter to forward slashes
 		this.packageNameFilter = packageNameFilter==null?null:packageNameFilter.replace('.', '/') + '/';
 		this.includeSubpackages = includeSubpackages;
 	}
-	
+
 	/**
 	 * Used by subclasses to check values against any specified constraints.
 	 * 
@@ -68,6 +74,16 @@ public abstract class CloseableFilterableJavaFileObjectIterable implements Itera
 		boolean accept;
 		// Normalize to forward slashes (some jars are producing paths with forward slashes, some with backward slashes)
 		name = name.replace('\\', '/');
+		if (packageNameFilter.length() == 1 && packageNameFilter.equals("/")) {
+			// This is the 'default package' filter representation
+			if (name.indexOf('/') == -1) {
+				accept = true;
+			} else if (BOOT_PACKAGING_AWARE) {
+					accept = name.startsWith(BOOT_PACKAGING_PREFIX_FOR_CLASSES) &&
+							name.indexOf('/',BOOT_PACKAGING_PREFIX_FOR_CLASSES.length()) == -1;
+			}
+			return accept;
+		}
 		if (includeSubpackages == true) {
 			accept = name.startsWith(packageNameFilter);
 			if (!accept && BOOT_PACKAGING_AWARE) {

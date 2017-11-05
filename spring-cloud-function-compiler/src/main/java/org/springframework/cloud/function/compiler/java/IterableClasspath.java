@@ -33,6 +33,8 @@ import javax.tools.JavaFileObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.function.compiler.java.MemoryBasedJavaFileManager.CompilationInfoCache;
+import org.springframework.cloud.function.compiler.java.MemoryBasedJavaFileManager.CompilationInfoCache.ArchiveInfo;
 
 /**
  * Iterable that will produce an iterator that returns classes found
@@ -46,24 +48,30 @@ public class IterableClasspath extends CloseableFilterableJavaFileObjectIterable
 
 	private static Logger logger = LoggerFactory.getLogger(IterableClasspath.class);
 	
-	private static final String BOOT_PACKAGING_PREFIX_FOR_LIBRARIES = "BOOT-INF/lib/";
-	
 	private List<File> classpathEntries = new ArrayList<>();
 	
 	private List<ZipFile> openArchives = new ArrayList<>();
 
 	/**
+	 * @param compilationInfoCache cache of info that may help accelerate compilation
 	 * @param classpath a classpath of jars/directories
 	 * @param packageNameFilter an optional package name if choosing to filter (e.g. com.example)
 	 * @param includeSubpackages if true, include results in subpackages of the specified package filter
 	 */
-	IterableClasspath(String classpath, String packageNameFilter, boolean includeSubpackages) {
-		super(packageNameFilter, includeSubpackages);
+	IterableClasspath(CompilationInfoCache compilationInfoCache, String classpath, String packageNameFilter, boolean includeSubpackages) {
+		super(compilationInfoCache, packageNameFilter, includeSubpackages);
 		StringTokenizer tokenizer = new StringTokenizer(classpath, File.pathSeparator);
 		while (tokenizer.hasMoreElements()) {
 			String nextEntry = tokenizer.nextToken();
 			File f = new File(nextEntry);
 			if (f.exists()) {
+				// Skip iterating over archives that cannot possibly match the filter
+				if (this.packageNameFilter != null && this.packageNameFilter.length() > 0) {
+					ArchiveInfo archiveInfo = compilationInfoCache.getArchiveInfoFor(f);
+					if (archiveInfo != null && !archiveInfo.containsPackage(this.packageNameFilter, this.includeSubpackages)) {
+						continue;
+					}
+				}
 				classpathEntries.add(f);
 			} else {
 				logger.debug("path element does not exist {}",f);
@@ -131,7 +139,7 @@ public class IterableClasspath extends CloseableFilterableJavaFileObjectIterable
 											nextEntry = new ZipEntryJavaFileObject(openFile, openArchive, entry);
 										}
 										return;
-									} else if (nestedZip == null && entryName.startsWith(BOOT_PACKAGING_PREFIX_FOR_LIBRARIES) && entryName.endsWith(".jar")) {
+									} else if (nestedZip == null && entryName.startsWith(MemoryBasedJavaFileManager.BOOT_PACKAGING_PREFIX_FOR_LIBRARIES) && entryName.endsWith(".jar")) {
 										// nested jar in uber jar
 										logger.debug("opening nested archive {}",entry.getName());
 										ZipInputStream zis = new ZipInputStream(openArchive.getInputStream(entry));
@@ -210,5 +218,9 @@ public class IterableClasspath extends CloseableFilterableJavaFileObjectIterable
 			return retval;
 		}
 		
+	}
+
+	public void reset() {
+		close();
 	}
 }
