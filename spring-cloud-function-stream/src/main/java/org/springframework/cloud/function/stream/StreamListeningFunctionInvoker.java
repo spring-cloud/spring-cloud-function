@@ -169,6 +169,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 					name = stash(matches.iterator().next());
 				}
 				else {
+					// TODO: do we really want this? Or maybe warn that it is happening?
 					return flux -> balance(matches, flux);
 				}
 			}
