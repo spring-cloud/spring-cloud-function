@@ -633,7 +633,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			else {
-				param = type;
+				param = Object.class;
 			}
 			return param;
 		}
