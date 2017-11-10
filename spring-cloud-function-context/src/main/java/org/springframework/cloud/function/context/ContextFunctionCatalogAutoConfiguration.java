@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -73,6 +72,7 @@ import reactor.core.publisher.Flux;
  * @author Dave Syer
  * @author Mark Fisher
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
  */
 @FunctionScan
 @Configuration
@@ -197,13 +197,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 	protected static class ContextFunctionRegistry {
 
 		private Map<String, Object> suppliers = new HashMap<>();
+
 		private Map<String, Object> functions = new HashMap<>();
+
 		private Map<String, Object> consumers = new HashMap<>();
 
 		@Autowired
 		private ConfigurableListableBeanFactory registry;
+
 		private ConversionService conversionService;
+
 		private Map<Object, String> registrations = new HashMap<>();
+
 		private Map<String, Map<ParamType, Class<?>>> types = new HashMap<>();
 
 		public Set<String> getSuppliers() {
@@ -507,11 +512,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return FunctionInspector
 					.isWrapper(findType(function, ParamType.INPUT_WRAPPER))
 					|| FunctionInspector
-							.isWrapper(findType(function, ParamType.OUTPUT_WRAPPER));
+					.isWrapper(findType(function, ParamType.OUTPUT_WRAPPER));
 		}
 
-		private Class<?> findType(String name, AbstractBeanDefinition definition,
-				ParamType paramType) {
+		private Class<?> findType(String name, AbstractBeanDefinition definition, ParamType paramType) {
 			Object source = definition.getSource();
 			Type param = null;
 			// Start by assuming output -> Function
@@ -535,17 +539,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 				param = extractType(type, paramType, index);
 			}
 			else if (source instanceof Resource) {
-				try {
-					Class<?> beanType = resolveBeanClass(definition);
-					param = findTypeFromBeanClass(beanType, paramType);
-					if (param == null) {
-						// Last chance
-						param = beanType;
-					}
-				}
-				catch (ClassNotFoundException e) {
-					throw new IllegalStateException(
-							"Cannot instrospect bean: " + definition, e);
+				Class<?> beanType = this.registry.getType(name);
+				param = findTypeFromBeanClass(beanType, paramType);
+				if (param == null) {
+					return Object.class;
 				}
 			}
 			else {
@@ -554,8 +551,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 				if (resolvable != null) {
 					param = resolvable.getGeneric(index).getGeneric(0).getType();
 				}
-				else if (registry instanceof BeanFactory) {
-					Object bean = ((BeanFactory) registry).getBean(name);
+				else {
+					Object bean = this.registry.getBean(name);
 					if (bean instanceof FunctionFactoryMetadata) {
 						FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) bean;
 						Type type = factory.getFactoryMethod().getGenericReturnType();
@@ -563,8 +560,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 					}
 				}
 			}
-			Class<?> result = extractClass(name, param, paramType);
-			return result;
+			return extractClass(name, param, paramType);
 		}
 
 		private Class<?> extractClass(String name, Type param, ParamType paramType) {
@@ -598,17 +594,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			return null;
-		}
-
-		private Class<?> resolveBeanClass(AbstractBeanDefinition definition)
-				throws ClassNotFoundException, LinkageError {
-			try {
-				return ClassUtils.forName(definition.getBeanClassName(), null);
-			}
-			catch (ClassNotFoundException e) {
-				return ClassUtils.forName(definition.getBeanClassName(),
-						getClass().getClassLoader());
-			}
 		}
 
 		private Type findBeanType(AbstractBeanDefinition definition,
@@ -681,7 +666,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return Message.class
 					.isAssignableFrom(findType(function, ParamType.INPUT_INNER_WRAPPER))
 					|| Message.class.isAssignableFrom(
-							findType(function, ParamType.OUTPUT_INNER_WRAPPER));
+					findType(function, ParamType.OUTPUT_INNER_WRAPPER));
 		}
 
 		private Class<?> findType(Object function, ParamType type) {
@@ -710,7 +695,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 	}
 
-	static enum ParamType {
+	enum ParamType {
 		INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER, INPUT_INNER_WRAPPER, OUTPUT_INNER_WRAPPER;
 
 		public boolean isOutput() {
