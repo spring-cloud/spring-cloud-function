@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.context;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -31,8 +33,12 @@ import org.junit.Test;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.AbstractFactoryBean;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
@@ -46,6 +52,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.DescriptiveResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -53,12 +60,11 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StreamUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
+ * @author Artem Bilan
  *
  */
 public class ContextFunctionCatalogAutoConfigurationTests {
@@ -375,6 +381,15 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
 	}
 
+	@Test
+	public void factoryBeanFunction() {
+		create(FactoryBeanConfiguration.class);
+		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(this.catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		Function<Flux<String>, Flux<String>> f = this.catalog.lookupFunction("function");
+		assertThat(f.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO-bar");
+	}
+
 	private void create(Class<?> type, String... props) {
 		create(new Class<?>[] { type }, props);
 	}
@@ -595,6 +610,39 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		public Function<String, String> function() {
 			return value -> value.toUpperCase();
 		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class FactoryBeanConfiguration implements BeanDefinitionRegistryPostProcessor {
+
+		@Override
+		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+			RootBeanDefinition beanDefinition = new RootBeanDefinition(FunctionFactoryBean.class);
+			beanDefinition.setSource(new DescriptiveResource("Function"));
+			registry.registerBeanDefinition("function", beanDefinition);
+		}
+
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+
+		}
+
+	}
+
+
+	private static class FunctionFactoryBean extends AbstractFactoryBean<Function<String, String>> {
+
+		@Override
+		public Class<?> getObjectType() {
+			return Function.class;
+		}
+
+		@Override
+		protected Function<String, String> createInstance() throws Exception {
+			return s -> s.toUpperCase() + "-bar";
+		}
+
 	}
 
 	public static class Foo {
