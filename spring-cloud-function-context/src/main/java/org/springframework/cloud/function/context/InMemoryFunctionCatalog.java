@@ -66,12 +66,9 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 	}
 
 	@Override
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	public <T, R> Function<T, R> lookupFunction(String name) {
-		return (Function<T, R>) Stream.of(StringUtils.tokenizeToStringArray(name, ","))
-				.map(functions::get)
-				.filter(f -> f != null)
-				.reduce(null, (f1, f2) -> f1 == null ? f2 : f1.andThen((Function)f2));
+		return (Function<T, R>) functions.get(name);
 	}
 
 	@Override

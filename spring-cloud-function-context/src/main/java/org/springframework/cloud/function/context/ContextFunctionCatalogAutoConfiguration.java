@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -66,6 +67,7 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 
@@ -94,13 +96,85 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Bean
 	public FunctionCatalog functionCatalog(ContextFunctionPostProcessor processor) {
-		return new InMemoryFunctionCatalog(
-				processor.merge(registrations, consumers, suppliers, functions));
+		return new BeanFactoryFunctionCatalog(
+				new InMemoryFunctionCatalog(
+						processor.merge(registrations, consumers, suppliers, functions)),
+				processor);
 	}
 
 	@Bean
 	public FunctionInspector functionInspector(ContextFunctionPostProcessor processor) {
 		return new BeanFactoryFunctionInspector(processor);
+	}
+
+	protected class BeanFactoryFunctionCatalog implements FunctionCatalog {
+
+		private final FunctionCatalog delegate;
+		private final ContextFunctionPostProcessor processor;
+
+		@SuppressWarnings("unchecked")
+		public <T> Supplier<T> lookupSupplier(String name) {
+			Supplier<T> result = this.delegate.lookupSupplier(name);
+			if (result != null) {
+				return result;
+			}
+			if (name.contains(",")) {
+				Object composed = processor.compose(name);
+				if (composed instanceof Supplier) {
+					result = (Supplier<T>) composed;
+				}
+			}
+			return result;
+		}
+
+		@SuppressWarnings("unchecked")
+		public <T, R> Function<T, R> lookupFunction(String name) {
+			Function<T, R> result = this.delegate.lookupFunction(name);
+			if (result != null) {
+				return result;
+			}
+			if (name.contains(",")) {
+				Object composed = processor.compose(name);
+				if (composed instanceof Function) {
+					result = (Function<T, R>) composed;
+				}
+			}
+			return result;
+		}
+
+		@SuppressWarnings("unchecked")
+		public <T> Consumer<T> lookupConsumer(String name) {
+			Consumer<T> result = this.delegate.lookupConsumer(name);
+			if (result != null) {
+				return result;
+			}
+			if (name.contains(",")) {
+				Object composed = processor.compose(name);
+				if (composed instanceof Consumer) {
+					result = (Consumer<T>) composed;
+				}
+			}
+			return result;
+		}
+
+		public Set<String> getSupplierNames() {
+			return this.delegate.getSupplierNames();
+		}
+
+		public Set<String> getFunctionNames() {
+			return this.delegate.getFunctionNames();
+		}
+
+		public Set<String> getConsumerNames() {
+			return this.delegate.getConsumerNames();
+		}
+
+		public BeanFactoryFunctionCatalog(FunctionCatalog delegate,
+				ContextFunctionPostProcessor processor) {
+			this.delegate = delegate;
+			this.processor = processor;
+		}
+
 	}
 
 	protected class BeanFactoryFunctionInspector implements FunctionInspector {
@@ -159,11 +233,73 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private BeanDefinitionRegistry registry;
 		private ConversionService conversionService;
 		private Map<Object, String> registrations = new HashMap<>();
+		private Map<String, Object> lookup = new HashMap<>();
 		private Map<String, Map<ParamType, Class<?>>> types = new HashMap<>();
 
 		@Override
 		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
 			this.registry = registry;
+		}
+
+		public Object compose(String name) {
+			if (lookup.containsKey(name)) {
+				return lookup.get(name);
+			}
+			String[] stages = StringUtils.tokenizeToStringArray(name, ",");
+			Object function = Stream.of(stages).map(key -> lookup(key)).sequential()
+					.reduce(this::compose).get();
+			lookup.computeIfAbsent(name, key -> function);
+			Map<ParamType, Class<?>> values = types.computeIfAbsent(name,
+					key -> new HashMap<>());
+			for (ParamType type : ParamType.values()) {
+				if (!values.containsKey(type)) {
+					if (type.isInput()) {
+						values.put(type, types.get(stages[0]).get(type));
+					}
+					else {
+						values.put(type, types.get(stages[stages.length - 1]).get(type));
+					}
+				}
+			}
+			registrations.put(function, name);
+			return function;
+		}
+
+		private Object lookup(String name) {
+			Object result = lookup.get(name);
+			if (result != null) {
+				Map<ParamType, Class<?>> values = types.computeIfAbsent(name,
+						key -> new HashMap<>());
+				for (ParamType type : ParamType.values()) {
+					if (!values.containsKey(type)) {
+						values.put(type, findType(result, type));
+					}
+				}
+			}
+			return result;
+		}
+
+		@SuppressWarnings("unchecked")
+		private Object compose(Object a, Object b) {
+			if (a instanceof Supplier && b instanceof Function) {
+				Supplier<Object> supplier = (Supplier<Object>) a;
+				Function<Object, Object> function = (Function<Object, Object>) b;
+				return (Supplier<Object>) () -> function.apply(supplier.get());
+			}
+			else if (a instanceof Function && b instanceof Function) {
+				Function<Object, Object> function1 = (Function<Object, Object>) a;
+				Function<Object, Object> function2 = (Function<Object, Object>) b;
+				return function1.andThen(function2);
+			}
+			else if (a instanceof Function && b instanceof Consumer) {
+				Function<Object, Object> function = (Function<Object, Object>) a;
+				Consumer<Object> consumer = (Consumer<Object>) b;
+				return (Consumer<Object>) v -> consumer.accept(function.apply(v));
+			}
+			else {
+				throw new IllegalArgumentException(String.format(
+						"Could not compose %s and %s", a.getClass(), b.getClass()));
+			}
 		}
 
 		@Override
@@ -275,6 +411,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				registration.target(target((Function<?, ?>) target, key));
 			}
 			registrations.remove(target);
+			this.lookup.put(key, registration.getTarget());
 			this.registrations.put(registration.getTarget(), key);
 		}
 
