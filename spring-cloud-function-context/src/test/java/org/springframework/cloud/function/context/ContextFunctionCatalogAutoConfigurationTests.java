@@ -29,7 +29,10 @@ import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
@@ -156,6 +159,17 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.isAssignableFrom(Map.class);
 		assertThat(inspector.getInputWrapper(catalog.lookupFunction("function")))
 				.isAssignableFrom(Map.class);
+	}
+
+	@Test
+	public void singletonFunction() {
+		create(SingletonConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookupFunction("function")))
+				.isAssignableFrom(Integer.class);
+		assertThat(inspector.getInputWrapper(catalog.lookupFunction("function")))
+				.isAssignableFrom(Integer.class);
 	}
 
 	@Test
@@ -397,6 +411,26 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Configuration
 	@Import(GenericFunction.class)
 	protected static class ExternalConfiguration {
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class SingletonConfiguration implements BeanFactoryPostProcessor {
+
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+				throws BeansException {
+			beanFactory.registerSingleton("function", new SingletonFunction());
+		}
+	}
+	
+	protected static class SingletonFunction implements Function<Integer, String> {
+
+		@Override
+		public String apply(Integer input) {
+			return "value=" + input;
+		}
+		
 	}
 
 	@EnableAutoConfiguration

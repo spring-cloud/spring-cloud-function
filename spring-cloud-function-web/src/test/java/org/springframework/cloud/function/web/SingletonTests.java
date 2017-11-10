@@ -80,7 +80,7 @@ public class SingletonTests {
 				@Override
 				public void postProcessBeanDefinitionRegistry(
 						BeanDefinitionRegistry registry) throws BeansException {
-					// Simulates what happens whem you add a compiled function
+					// Simulates what happens when you add a compiled function
 					RootBeanDefinition beanDefinition = new RootBeanDefinition(MySupplier.class);
 					registry.registerBeanDefinition("words", beanDefinition);
 				}

@@ -152,8 +152,14 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			}
 			else {
 				for (String candidate : names) {
-					Class<?> inputType = functionInspector
-							.getInputType(functionCatalog.lookupFunction(candidate));
+					Object function = functionCatalog.lookupFunction(candidate);
+					if (function==null) {
+						function = functionCatalog.lookupConsumer(candidate);
+					}
+					if (function==null) {
+						continue;
+					}
+					Class<?> inputType = functionInspector.getInputType(function);
 					Object value = this.converter.fromMessage(input, inputType);
 					if (value != null && inputType.isInstance(value)) {
 						matches.add(candidate);
@@ -210,7 +216,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 		else {
 			result = this.converter.fromMessage(m, inputType);
 		}
-		if (result==null) {
+		if (result == null) {
 			result = UNCONVERTED;
 		}
 		return result;
