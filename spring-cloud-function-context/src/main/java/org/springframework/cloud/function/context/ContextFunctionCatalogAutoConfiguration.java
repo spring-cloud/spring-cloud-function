@@ -318,6 +318,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 		}
 
+		@SuppressWarnings("unchecked")
+		public <T> void register(FunctionRegistration<T> function) {
+			wrap((FunctionRegistration<Object>) function,
+					function.getNames().iterator().next());
+		}
+
 		public Set<FunctionRegistration<?>> merge(
 				Map<String, FunctionRegistration<?>> initial,
 				Map<String, Consumer<?>> consumers, Map<String, Supplier<?>> suppliers,
@@ -387,7 +393,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private Collection<String> getAliases(String key) {
 			Collection<String> names = new LinkedHashSet<>();
 			String value = getQualifier(key);
-			if (value.equals(key)) {
+			if (value.equals(key) && registry != null) {
 				names.addAll(Arrays.asList(registry.getAliases(key)));
 			}
 			names.add(value);
@@ -416,7 +422,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private String getQualifier(String key) {
-			if (registry.containsBeanDefinition(key)) {
+			if (registry != null && registry.containsBeanDefinition(key)) {
 				BeanDefinition beanDefinition = registry.getBeanDefinition(key);
 				Object source = beanDefinition.getSource();
 				if (source instanceof StandardMethodMetadata) {
@@ -658,16 +664,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean isMessage(Object function) {
-			String name = registrations.get(function);
-			if (name == null || !registry.containsBeanDefinition(name)) {
-				return false;
-			}
-			return Message.class.isAssignableFrom(findType(name,
-					(AbstractBeanDefinition) registry.getBeanDefinition(name),
-					ParamType.INPUT_INNER_WRAPPER))
-					|| Message.class.isAssignableFrom(findType(name,
-							(AbstractBeanDefinition) registry.getBeanDefinition(name),
-							ParamType.OUTPUT_INNER_WRAPPER));
+			return Message.class
+					.isAssignableFrom(findType(function, ParamType.INPUT_INNER_WRAPPER))
+					|| Message.class.isAssignableFrom(
+							findType(function, ParamType.OUTPUT_INNER_WRAPPER));
 		}
 
 		private Class<?> findType(Object function, ParamType type) {
@@ -678,7 +678,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 					return values.get(type);
 				}
 			}
-			if (name == null || !registry.containsBeanDefinition(name)) {
+			if (name == null || registry == null
+					|| !registry.containsBeanDefinition(name)) {
 				if (function != null) {
 					Type param = findTypeFromBeanClass(function.getClass(), type);
 					if (param != null) {
