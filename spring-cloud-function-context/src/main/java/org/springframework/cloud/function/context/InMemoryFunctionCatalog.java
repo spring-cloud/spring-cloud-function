@@ -16,24 +16,23 @@
 
 package org.springframework.cloud.function.context;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import org.springframework.cloud.function.core.FunctionCatalog;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
  * @author Mark Fisher
  * @author Oleg Zhurakousky
  */
-public class InMemoryFunctionCatalog implements FunctionCatalog {
+public class InMemoryFunctionCatalog implements FunctionRegistry {
 
 	private final Map<String, Function<?, ?>> functions;
 
@@ -41,22 +40,46 @@ public class InMemoryFunctionCatalog implements FunctionCatalog {
 
 	private final Map<String, Supplier<?>> suppliers;
 
+	public InMemoryFunctionCatalog() {
+		this(Collections.emptySet());
+	}
+	
+	@Autowired(required=false)
 	public InMemoryFunctionCatalog(Set<FunctionRegistration<?>> registrations) {
 		Assert.notNull(registrations, "'registrations' must not be null");
 		this.suppliers = new HashMap<>();
 		this.functions = new HashMap<>();
 		this.consumers = new HashMap<>();
 		registrations.stream().forEach(reg -> reg.getNames().stream().forEach(name -> {
-			if (reg.getTarget() instanceof Consumer){
+			if (reg.getTarget() instanceof Consumer) {
 				consumers.put(name, (Consumer<?>) reg.getTarget());
 			}
-			else if (reg.getTarget() instanceof Function){
+			else if (reg.getTarget() instanceof Function) {
 				functions.put(name, (Function<?, ?>) reg.getTarget());
 			}
-			else if (reg.getTarget() instanceof Supplier){
+			else if (reg.getTarget() instanceof Supplier) {
 				suppliers.put(name, (Supplier<?>) reg.getTarget());
 			}
 		}));
+	}
+
+	@Override
+	public <T> void register(FunctionRegistration<T> registration) {
+		Map<String, ?> values = null;
+		if (registration.getTarget() instanceof Function) {
+			values = this.functions;
+		}
+		else if (registration.getTarget() instanceof Supplier) {
+			values = this.suppliers;
+		}
+		else {
+			values = this.consumers;
+		}
+		@SuppressWarnings("unchecked")
+		Map<String, Object> map = (Map<String, Object>) values;
+		for (String name : registration.getNames()) {
+			map.put(name, registration.getTarget());
+		}
 	}
 
 	@Override

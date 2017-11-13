@@ -33,19 +33,14 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.function.core.FluxConsumer;
@@ -95,83 +90,56 @@ public class ContextFunctionCatalogAutoConfiguration {
 	private Map<String, FunctionRegistration<?>> registrations = Collections.emptyMap();
 
 	@Bean
-	public FunctionCatalog functionCatalog(ContextFunctionPostProcessor processor) {
-		return new BeanFactoryFunctionCatalog(
-				new InMemoryFunctionCatalog(
-						processor.merge(registrations, consumers, suppliers, functions)),
-				processor);
+	public FunctionRegistry functionCatalog(ContextFunctionRegistry processor) {
+		processor.merge(registrations, consumers, suppliers, functions);
+		return new BeanFactoryFunctionCatalog(processor);
 	}
 
 	@Bean
-	public FunctionInspector functionInspector(ContextFunctionPostProcessor processor) {
+	public FunctionInspector functionInspector(ContextFunctionRegistry processor) {
 		return new BeanFactoryFunctionInspector(processor);
 	}
 
-	protected class BeanFactoryFunctionCatalog implements FunctionCatalog {
+	protected static class BeanFactoryFunctionCatalog implements FunctionRegistry {
 
-		private final FunctionCatalog delegate;
-		private final ContextFunctionPostProcessor processor;
+		private final ContextFunctionRegistry processor;
+
+		@Override
+		public <T> void register(FunctionRegistration<T> registration) {
+			processor.register(registration);
+		}
 
 		@SuppressWarnings("unchecked")
 		public <T> Supplier<T> lookupSupplier(String name) {
-			Supplier<T> result = this.delegate.lookupSupplier(name);
-			if (result != null) {
-				return result;
-			}
-			if (name.contains(",")) {
-				Object composed = processor.compose(name);
-				if (composed instanceof Supplier) {
-					result = (Supplier<T>) composed;
-				}
-			}
+			Supplier<T> result = (Supplier<T>) processor.lookupSupplier(name);
 			return result;
 		}
 
 		@SuppressWarnings("unchecked")
 		public <T, R> Function<T, R> lookupFunction(String name) {
-			Function<T, R> result = this.delegate.lookupFunction(name);
-			if (result != null) {
-				return result;
-			}
-			if (name.contains(",")) {
-				Object composed = processor.compose(name);
-				if (composed instanceof Function) {
-					result = (Function<T, R>) composed;
-				}
-			}
+			Function<T, R> result = (Function<T, R>) processor.lookupFunction(name);
 			return result;
 		}
 
 		@SuppressWarnings("unchecked")
 		public <T> Consumer<T> lookupConsumer(String name) {
-			Consumer<T> result = this.delegate.lookupConsumer(name);
-			if (result != null) {
-				return result;
-			}
-			if (name.contains(",")) {
-				Object composed = processor.compose(name);
-				if (composed instanceof Consumer) {
-					result = (Consumer<T>) composed;
-				}
-			}
+			Consumer<T> result = (Consumer<T>) processor.lookupConsumer(name);
 			return result;
 		}
 
 		public Set<String> getSupplierNames() {
-			return this.delegate.getSupplierNames();
+			return this.processor.getSuppliers();
 		}
 
 		public Set<String> getFunctionNames() {
-			return this.delegate.getFunctionNames();
+			return this.processor.getFunctions();
 		}
 
 		public Set<String> getConsumerNames() {
-			return this.delegate.getConsumerNames();
+			return this.processor.getConsumers();
 		}
 
-		public BeanFactoryFunctionCatalog(FunctionCatalog delegate,
-				ContextFunctionPostProcessor processor) {
-			this.delegate = delegate;
+		public BeanFactoryFunctionCatalog(ContextFunctionRegistry processor) {
 			this.processor = processor;
 		}
 
@@ -179,9 +147,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	protected class BeanFactoryFunctionInspector implements FunctionInspector {
 
-		private ContextFunctionPostProcessor processor;
+		private ContextFunctionRegistry processor;
 
-		public BeanFactoryFunctionInspector(ContextFunctionPostProcessor processor) {
+		public BeanFactoryFunctionInspector(ContextFunctionRegistry processor) {
 			this.processor = processor;
 		}
 
@@ -223,32 +191,83 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 
 	@Component
-	protected static class ContextFunctionPostProcessor
-			implements BeanDefinitionRegistryPostProcessor {
+	protected static class ContextFunctionRegistry {
 
-		private Set<String> suppliers = new HashSet<>();
-		private Set<String> functions = new HashSet<>();
-		private Set<String> consumers = new HashSet<>();
+		private Map<String, Object> suppliers = new HashMap<>();
+		private Map<String, Object> functions = new HashMap<>();
+		private Map<String, Object> consumers = new HashMap<>();
 
-		private BeanDefinitionRegistry registry;
+		@Autowired
+		private ConfigurableListableBeanFactory registry;
 		private ConversionService conversionService;
 		private Map<Object, String> registrations = new HashMap<>();
-		private Map<String, Object> lookup = new HashMap<>();
 		private Map<String, Map<ParamType, Class<?>>> types = new HashMap<>();
 
-		@Override
-		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) {
-			this.registry = registry;
+		public Set<String> getSuppliers() {
+			return this.suppliers.keySet();
 		}
 
-		public Object compose(String name) {
+		public Set<String> getConsumers() {
+			return this.consumers.keySet();
+		}
+
+		public Set<String> getFunctions() {
+			return this.functions.keySet();
+		}
+
+		public Supplier<?> lookupSupplier(String name) {
+			Object composed = compose(name, this.suppliers, false);
+			if (composed instanceof Supplier) {
+				return (Supplier<?>) composed;
+			}
+			return null;
+		}
+
+		public Consumer<?> lookupConsumer(String name) {
+			Object composed = compose(name, this.consumers, true);
+			if (composed instanceof Consumer) {
+				return (Consumer<?>) composed;
+			}
+			return null;
+		}
+
+		public Function<?, ?> lookupFunction(String name) {
+			Object composed = compose(name, this.functions, true);
+			if (composed instanceof Function) {
+				return (Function<?, ?>) composed;
+			}
+			return null;
+		}
+
+		private Object compose(String name, Map<String, Object> lookup,
+				boolean hasInput) {
 			if (lookup.containsKey(name)) {
 				return lookup.get(name);
 			}
 			String[] stages = StringUtils.tokenizeToStringArray(name, ",");
-			Object function = Stream.of(stages).map(key -> lookup(key)).sequential()
-					.reduce(this::compose).get();
-			lookup.computeIfAbsent(name, key -> function);
+			Object function = lookup(stages[0],
+					!hasInput || stages.length == 1 ? lookup : this.functions);
+			if (function == null) {
+				return null;
+			}
+			Object other = null;
+			for (int i = 1; i < stages.length - 1; i++) {
+				other = lookup(stages[i], this.functions);
+				if (other == null) {
+					return null;
+				}
+				function = compose(function, other);
+			}
+			if (stages.length > 1) {
+				other = lookup(stages[stages.length - 1],
+						hasInput ? lookup : this.functions);
+				if (other == null) {
+					return null;
+				}
+				function = compose(function, other);
+			}
+			final Object value = function;
+			lookup.computeIfAbsent(name, key -> value);
 			Map<ParamType, Class<?>> values = types.computeIfAbsent(name,
 					key -> new HashMap<>());
 			for (ParamType type : ParamType.values()) {
@@ -265,7 +284,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return function;
 		}
 
-		private Object lookup(String name) {
+		private Object lookup(String name, Map<String, Object> lookup) {
 			Object result = lookup.get(name);
 			if (result != null) {
 				Map<ParamType, Class<?>> values = types.computeIfAbsent(name,
@@ -299,22 +318,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else {
 				throw new IllegalArgumentException(String.format(
 						"Could not compose %s and %s", a.getClass(), b.getClass()));
-			}
-		}
-
-		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory factory)
-				throws BeansException {
-			for (String name : factory.getBeanDefinitionNames()) {
-				if (isGeneric(factory, name, Supplier.class)) {
-					this.suppliers.add(name);
-				}
-				else if (isGeneric(factory, name, Function.class)) {
-					this.functions.add(name);
-				}
-				else if (isGeneric(factory, name, Consumer.class)) {
-					this.consumers.add(name);
-				}
 			}
 		}
 
@@ -377,9 +380,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private Object convert(Object function, String value) {
-			if (conversionService == null
-					&& registry instanceof ConfigurableListableBeanFactory) {
-				ConversionService conversionService = ((ConfigurableBeanFactory) this.registry)
+			if (conversionService == null && registry != null) {
+				ConversionService conversionService = this.registry
 						.getConversionService();
 				this.conversionService = conversionService != null ? conversionService
 						: new DefaultConversionService();
@@ -406,18 +408,26 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (target instanceof Supplier) {
 				findType(target, ParamType.OUTPUT);
 				registration.target(target((Supplier<?>) target, key));
+				for (String name : registration.getNames()) {
+					this.suppliers.put(name, (Supplier<?>) registration.getTarget());
+				}
 			}
 			else if (target instanceof Consumer) {
 				findType(target, ParamType.INPUT);
 				registration.target(target((Consumer<?>) target, key));
+				for (String name : registration.getNames()) {
+					this.consumers.put(name, (Consumer<?>) registration.getTarget());
+				}
 			}
 			else if (target instanceof Function) {
 				findType(target, ParamType.INPUT);
 				findType(target, ParamType.OUTPUT);
 				registration.target(target((Function<?, ?>) target, key));
+				for (String name : registration.getNames()) {
+					this.functions.put(name, (Function<?, ?>) registration.getTarget());
+				}
 			}
 			registrations.remove(target);
-			this.lookup.put(key, registration.getTarget());
 			this.registrations.put(registration.getTarget(), key);
 		}
 
@@ -474,32 +484,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 					.isWrapper(findType(function, ParamType.INPUT_WRAPPER))
 					|| FunctionInspector
 							.isWrapper(findType(function, ParamType.OUTPUT_WRAPPER));
-		}
-
-		private boolean isGeneric(ConfigurableListableBeanFactory factory, String name,
-				Class<?> functionalInterface) {
-			ResolvableType matchingType = null;
-			ResolvableType[] nonMatchingTypes = null;
-			if (functionalInterface.isAssignableFrom(Function.class)) {
-				matchingType = ResolvableType.forClassWithGenerics(Function.class,
-						Flux.class, Flux.class);
-				nonMatchingTypes = new ResolvableType[] {
-						ResolvableType.forClassWithGenerics(Flux.class, String.class),
-						ResolvableType.forClassWithGenerics(Flux.class, String.class) };
-			}
-			else {
-				nonMatchingTypes = new ResolvableType[] {
-						ResolvableType.forClassWithGenerics(Flux.class, String.class) };
-				if (functionalInterface.isAssignableFrom(Consumer.class)) {
-					matchingType = ResolvableType.forClassWithGenerics(Consumer.class,
-							Flux.class);
-				}
-				matchingType = ResolvableType.forClassWithGenerics(Supplier.class,
-						Flux.class);
-			}
-			return factory.isTypeMatch(name, matchingType)
-					&& !factory.isTypeMatch(name, ResolvableType
-							.forClassWithGenerics(functionalInterface, nonMatchingTypes));
 		}
 
 		private Class<?> findType(String name, AbstractBeanDefinition definition,

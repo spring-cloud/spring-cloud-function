@@ -16,11 +16,11 @@
 
 package org.springframework.cloud.function.context;
 
-import java.util.Collections;
 import java.util.function.Function;
 
 import org.junit.Test;
 
+import org.springframework.cloud.function.context.ContextFunctionCatalogAutoConfiguration.BeanFactoryFunctionCatalog;
 import org.springframework.cloud.function.context.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,40 +31,15 @@ import reactor.core.publisher.Flux;
  * @author Dave Syer
  *
  */
-// TODO: test all sorts of error conditions (duplicate registrations, incompatible types
-// for functions with the same name, uncomposable combinations)
-public class ContextFunctionPostProcessorTests {
+public class BeanFactoryFunctionCatalogTests {
 
-	private ContextFunctionRegistry processor = new ContextFunctionRegistry();
+	private BeanFactoryFunctionCatalog processor = new BeanFactoryFunctionCatalog(
+			new ContextFunctionRegistry());
 
 	@Test
 	public void basicRegistrationFeatures() {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
-		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
-				.lookupFunction("foos");
-		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
-	}
-
-	@Test
-	public void registrationThroughMerge() {
-		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos())
-				.names("foos");
-		processor.merge(Collections.singletonMap("foos", registration),
-				Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
-		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
-				.lookupFunction("foos");
-		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
-	}
-
-	@Test
-	public void registrationThroughMergeFromNamedFunction() {
-		processor.merge(Collections.emptyMap(), Collections.emptyMap(),
-				Collections.emptyMap(), Collections.singletonMap("foos", new Foos()));
-		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
-				.lookupFunction("foos");
+		Function<Flux<Integer>, Flux<String>> foos = processor.lookupFunction("foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
@@ -72,8 +47,7 @@ public class ContextFunctionPostProcessorTests {
 	public void compose() {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
 		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
-		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+		Function<Flux<Integer>, Flux<String>> foos = processor
 				.lookupFunction("foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
 	}
