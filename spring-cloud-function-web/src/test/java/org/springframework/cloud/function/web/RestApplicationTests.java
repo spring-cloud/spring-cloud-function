@@ -375,6 +375,25 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void convertPost() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/wrap"))
+				.contentType(MediaType.TEXT_PLAIN).body("123"), String.class);
+		assertThat(result.getBody()).isEqualTo("..123..");
+	}
+
+	@Test
+	public void convertPostJson() throws Exception {
+		// If you POST a single value to a Function<Flux<Integer>,Flux<Integer>> it can't
+		// determine if the output is single valued, so it has to send an array back
+		ResponseEntity<String> result = rest
+				.exchange(
+						RequestEntity.post(new URI("/doubler"))
+								.contentType(MediaType.TEXT_PLAIN).body("123"),
+						String.class);
+		assertThat(result.getBody()).isEqualTo("[246]");
+	}
+
+	@Test
 	public void supplierFirst() {
 		assertThat(rest.getForObject("/not/a/function", String.class))
 				.isEqualTo("[\"hello\"]");
@@ -456,6 +475,11 @@ public class RestApplicationTests {
 		@Bean
 		public Function<Flux<Integer>, Flux<String>> wrap() {
 			return flux -> flux.log().map(value -> ".." + value + "..");
+		}
+
+		@Bean
+		public Function<Flux<Integer>, Flux<Integer>> doubler() {
+			return flux -> flux.log().map(value -> 2 * value);
 		}
 
 		@Bean
