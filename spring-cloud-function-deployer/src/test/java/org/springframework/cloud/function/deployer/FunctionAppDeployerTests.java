@@ -74,6 +74,15 @@ public class FunctionAppDeployerTests {
 	}
 
 	@Test
+	public void directory() throws Exception {
+		String first = deploy("file:../spring-cloud-function-samples/function-sample/target/classes", "",
+				"--spring.cloud.function.stream.supplier.enabled=false");
+		// Deployment is blocking so it either failed or succeeded.
+		assertThat(deployer.status(first).getState()).isEqualTo(DeploymentState.deployed);
+		deployer.undeploy(first);
+	}
+
+	@Test
 	public void web() throws Exception {
 		String first = deploy("maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT", "",
 				"--spring.cloud.function.stream.supplier.enabled=false");
