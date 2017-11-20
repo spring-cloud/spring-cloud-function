@@ -494,9 +494,14 @@ public class ContextFunctionCatalogAutoConfiguration {
 			int index = paramType.isOutput() ? 1 : 0;
 			if (source instanceof StandardMethodMetadata) {
 				// Standard @Bean metadata
-				ParameterizedType type = (ParameterizedType) ((StandardMethodMetadata) source)
+				Type beanType = ((StandardMethodMetadata) source)
 						.getIntrospectedMethod().getGenericReturnType();
+				if (beanType instanceof ParameterizedType) {
+				ParameterizedType type = (ParameterizedType) beanType;
 				param = extractType(type, paramType, index);
+				} else {
+					param = findTypeFromBeanClass((Class<?>) beanType, paramType);
+				}
 			}
 			else if (source instanceof MethodMetadataReadingVisitor) {
 				// A component scan with @Beans

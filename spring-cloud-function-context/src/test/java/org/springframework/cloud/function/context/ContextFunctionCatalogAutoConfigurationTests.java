@@ -212,6 +212,17 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
+	public void nonParametericTypeFunction() {
+		create(NonParametricTypeSingletonConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookupFunction("function")))
+				.isAssignableFrom(Integer.class);
+		assertThat(inspector.getInputWrapper(catalog.lookupFunction("function")))
+				.isAssignableFrom(Integer.class);
+	}
+
+	@Test
 	public void componentScanBeanFunction() {
 		create(ComponentScanBeanConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
@@ -484,6 +495,15 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
 				throws BeansException {
 			beanFactory.registerSingleton("function", new SingletonFunction());
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class NonParametricTypeSingletonConfiguration {
+		@Bean
+		public SingletonFunction function() {
+			return new SingletonFunction();
 		}
 	}
 
