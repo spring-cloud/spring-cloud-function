@@ -16,12 +16,22 @@
 
 package org.springframework.cloud.function.context;
 
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import org.junit.After;
 import org.junit.Test;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.cloud.function.context.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
+import org.springframework.cloud.function.context.ContextFunctionCatalogAutoConfigurationTests.Bar;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.ClassUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +46,18 @@ import reactor.core.publisher.Flux;
 public class ContextFunctionPostProcessorTests {
 
 	private ContextFunctionRegistry processor = new ContextFunctionRegistry();
+	private URLClassLoader classLoader;
+	private ClassLoader contextClassLoader;
+
+	@After
+	public void close() throws Exception {
+		if (this.classLoader != null) {
+			this.classLoader.close();
+		}
+		if (Thread.currentThread().getContextClassLoader() != null) {
+			ClassUtils.overrideThreadContextClassLoader(contextClassLoader);
+		}
+	}
 
 	@Test
 	public void basicRegistrationFeatures() {
@@ -78,20 +100,91 @@ public class ContextFunctionPostProcessorTests {
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
 	}
 
-	protected static class Foos implements Function<Integer, String> {
+	@Test
+	public void isolatedFunction() {
+		contextClassLoader = ClassUtils
+				.overrideThreadContextClassLoader(getClass().getClassLoader());
+		processor.register(new FunctionRegistration<>(create(Foos.class)).names("foos"));
+		@SuppressWarnings("unchecked")
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+				.lookupFunction("foos");
+		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
+	}
+
+	@Test
+	public void isolatedSupplier() {
+		contextClassLoader = ClassUtils
+				.overrideThreadContextClassLoader(getClass().getClassLoader());
+		processor.register(new FunctionRegistration<>(create(Source.class)).names("source"));
+		@SuppressWarnings("unchecked")
+		Supplier<Flux<Integer>> source = (Supplier<Flux<Integer>>) processor
+				.lookupSupplier("source");
+		assertThat(source.get().blockFirst()).isEqualTo(4);
+	}
+
+	@Test
+	public void isolatedConsumer() {
+		contextClassLoader = ClassUtils
+				.overrideThreadContextClassLoader(getClass().getClassLoader());
+		Object target = create(Sink.class);
+		processor.register(new FunctionRegistration<>(target).names("sink"));
+		@SuppressWarnings("unchecked")
+		Consumer<Flux<String>> sink = (Consumer<Flux<String>>) processor
+				.lookupConsumer("sink");
+		sink.accept(Flux.just("Hello"));
+		@SuppressWarnings("unchecked")
+		List<String> values = (List<String>) ReflectionTestUtils.getField(target, "values");
+		assertThat(values).contains("Hello");
+	}
+
+	private Object create(Class<?> type) {
+		this.classLoader = new URLClassLoader(
+				((URLClassLoader) getClass().getClassLoader()).getURLs(),
+				getClass().getClassLoader().getParent());
+		return BeanUtils
+				.instantiate(ClassUtils.resolveClassName(type.getName(), classLoader));
+	}
+
+	public static class Foos implements Function<Integer, String> {
 
 		@Override
 		public String apply(Integer t) {
+			assertThat(ClassUtils.resolveClassName(Bar.class.getName(), null)
+					.getClassLoader()).isEqualTo(getClass().getClassLoader());
 			return "" + 2 * t;
 		}
 
 	}
 
-	protected static class Bars implements Function<String, String> {
+	public static class Bars implements Function<String, String> {
 
 		@Override
 		public String apply(String t) {
+			assertThat(ClassUtils.resolveClassName(Bar.class.getName(), null)
+					.getClassLoader()).isEqualTo(getClass().getClassLoader());
 			return "Hello " + t;
+		}
+
+	}
+
+	public static class Sink implements Consumer<String> {
+
+		private List<String> values = new ArrayList<>();
+
+		@Override
+		public void accept(String t) {
+			assertThat(ClassUtils.resolveClassName(Bar.class.getName(), null)
+					.getClassLoader()).isEqualTo(getClass().getClassLoader());
+			values.add(t);
+		}
+
+	}
+
+	public static class Source implements Supplier<Integer> {
+
+		@Override
+		public Integer get() {
+			return 4;
 		}
 
 	}

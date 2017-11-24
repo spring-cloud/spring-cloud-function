@@ -49,6 +49,9 @@ import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.cloud.function.core.FunctionFactoryUtils;
+import org.springframework.cloud.function.core.IsolatedConsumer;
+import org.springframework.cloud.function.core.IsolatedFunction;
+import org.springframework.cloud.function.core.IsolatedSupplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
@@ -250,7 +253,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (stages.length == 0 && source.size() == 1) {
 				stages = new String[] { source.keySet().iterator().next() };
 			}
-			Object function = stages.length>0 ? lookup(stages[0], source) : null;
+			Object function = stages.length > 0 ? lookup(stages[0], source) : null;
 			if (function == null) {
 				return null;
 			}
@@ -453,17 +456,34 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		private <T> T target(T target, String key) {
-			if (target instanceof Supplier<?>
-					&& !isFluxSupplier(key, (Supplier<?>) target)) {
-				target = (T) new FluxSupplier((Supplier<?>) target);
+			boolean isolated = getClass().getClassLoader() != target.getClass()
+					.getClassLoader();
+			if (target instanceof Supplier<?>) {
+				boolean flux = isFluxSupplier(key, (Supplier<?>) target);
+				if (isolated) {
+					target = (T) new IsolatedSupplier((Supplier<?>) target);
+				}
+				if (!flux) {
+					target = (T) new FluxSupplier((Supplier<?>) target);
+				}
 			}
-			else if (target instanceof Function<?, ?>
-					&& !isFluxFunction(key, (Function<?, ?>) target)) {
-				target = (T) new FluxFunction((Function<?, ?>) target);
+			else if (target instanceof Function<?, ?>) {
+				boolean flux = isFluxFunction(key, (Function<?, ?>) target);
+				if (isolated) {
+					target = (T) new IsolatedFunction((Function<?, ?>) target);
+				}
+				if (!flux) {
+					target = (T) new FluxFunction((Function<?, ?>) target);
+				}
 			}
-			else if (target instanceof Consumer<?>
-					&& !isFluxConsumer(key, (Consumer<?>) target)) {
-				target = (T) new FluxConsumer((Consumer<?>) target);
+			else if (target instanceof Consumer<?>) {
+				boolean flux = isFluxConsumer(key, (Consumer<?>) target);
+				if (isolated) {
+					target = (T) new IsolatedConsumer((Consumer<?>) target);
+				}
+				if (!flux) {
+					target = (T) new FluxConsumer((Consumer<?>) target);
+				}
 			}
 			return target;
 		}
