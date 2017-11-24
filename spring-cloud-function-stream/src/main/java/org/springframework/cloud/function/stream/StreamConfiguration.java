@@ -60,7 +60,7 @@ public class StreamConfiguration {
 			FunctionInspector functionInspector,
 			@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 		return new StreamListeningFunctionInvoker(registry, functionInspector,
-				compositeMessageConverterFactory, properties.getEndpoint());
+				compositeMessageConverterFactory, properties.getDefaultRoute());
 	}
 
 }

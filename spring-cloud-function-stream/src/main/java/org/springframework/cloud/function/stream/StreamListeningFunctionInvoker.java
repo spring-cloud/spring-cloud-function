@@ -55,7 +55,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 
 	private MessageConverter converter;
 
-	private final String defaultEndpoint;
+	private final String defaultRoute;
 
 	private final Map<String, FluxMessageProcessor> processors = new HashMap<>();
 
@@ -67,11 +67,11 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 
 	public StreamListeningFunctionInvoker(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
-			CompositeMessageConverterFactory converterFactory, String defaultEndpoint) {
+			CompositeMessageConverterFactory converterFactory, String defaultRoute) {
 		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
 		this.converterFactory = converterFactory;
-		this.defaultEndpoint = defaultEndpoint;
+		this.defaultRoute = defaultRoute;
 	}
 
 	@Override
@@ -137,8 +137,8 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 					.get(StreamConfigurationProperties.ROUTE_KEY);
 			name = stash(key);
 		}
-		if (name==null && defaultEndpoint != null) {
-			name = stash(defaultEndpoint);
+		if (name==null && defaultRoute != null) {
+			name = stash(defaultRoute);
 		}
 		if (name == null) {
 			Set<String> names = new LinkedHashSet<>(functionCatalog.getFunctionNames());

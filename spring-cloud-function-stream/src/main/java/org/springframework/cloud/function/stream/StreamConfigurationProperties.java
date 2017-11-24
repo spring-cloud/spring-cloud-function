@@ -24,7 +24,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "spring.cloud.function.stream")
 public class StreamConfigurationProperties {
 
-	private String endpoint;
+	/**
+	 * The default route for a message if more than one is available and no explicit route
+	 * key is provided.
+	 */
+	private String defaultRoute;
 
 	/**
 	 * Interval to be used for the Duration (in milliseconds) of a non-Flux producing
@@ -34,12 +38,12 @@ public class StreamConfigurationProperties {
 
 	public static final String ROUTE_KEY = "stream_routekey";
 
-	public String getEndpoint() {
-		return endpoint;
+	public String getDefaultRoute() {
+		return defaultRoute;
 	}
 
-	public void setEndpoint(String endpoint) {
-		this.endpoint = endpoint;
+	public void setDefaultRoute(String defaultRoute) {
+		this.defaultRoute = defaultRoute;
 	}
 
 	public long getInterval() {

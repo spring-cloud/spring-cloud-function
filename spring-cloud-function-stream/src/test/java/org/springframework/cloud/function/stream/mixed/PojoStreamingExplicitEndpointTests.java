@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = PojoStreamingExplicitEndpointTests.StreamingFunctionApplication.class, properties = {
-		"spring.cloud.function.stream.endpoint=uppercase",
+		"spring.cloud.function.stream.default-route=uppercase",
 		"logging.level.org.springframework.integration=DEBUG", "debug=TRUE" })
 public class PojoStreamingExplicitEndpointTests {
 
