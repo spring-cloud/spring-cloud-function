@@ -245,8 +245,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 				return lookup.get(name);
 			}
 			String[] stages = StringUtils.tokenizeToStringArray(name, ",");
-			Object function = lookup(stages[0],
-					!hasInput || stages.length == 1 ? lookup : this.functions);
+			Map<String, Object> source = !hasInput || stages.length <= 1 ? lookup
+					: this.functions;
+			if (stages.length == 0 && source.size() == 1) {
+				stages = new String[] { source.keySet().iterator().next() };
+			}
+			Object function = lookup(stages[0], source);
 			if (function == null) {
 				return null;
 			}
@@ -494,12 +498,13 @@ public class ContextFunctionCatalogAutoConfiguration {
 			int index = paramType.isOutput() ? 1 : 0;
 			if (source instanceof StandardMethodMetadata) {
 				// Standard @Bean metadata
-				Type beanType = ((StandardMethodMetadata) source)
-						.getIntrospectedMethod().getGenericReturnType();
+				Type beanType = ((StandardMethodMetadata) source).getIntrospectedMethod()
+						.getGenericReturnType();
 				if (beanType instanceof ParameterizedType) {
-				ParameterizedType type = (ParameterizedType) beanType;
-				param = extractType(type, paramType, index);
-				} else {
+					ParameterizedType type = (ParameterizedType) beanType;
+					param = extractType(type, paramType, index);
+				}
+				else {
 					param = findTypeFromBeanClass((Class<?>) beanType, paramType);
 				}
 			}

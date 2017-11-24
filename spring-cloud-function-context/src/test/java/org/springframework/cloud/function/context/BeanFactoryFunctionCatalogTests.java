@@ -16,7 +16,11 @@
 
 package org.springframework.cloud.function.context;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 
@@ -44,12 +48,73 @@ public class BeanFactoryFunctionCatalogTests {
 	}
 
 	@Test
-	public void compose() {
+	public void lookupFunctionWithEmptyName() {
+		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		Function<Flux<Integer>, Flux<String>> foos = processor.lookupFunction("");
+		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
+	}
+
+	@Test
+	public void composeFunction() {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
 		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
 		Function<Flux<Integer>, Flux<String>> foos = processor
 				.lookupFunction("foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
+	}
+
+	@Test
+	public void composeSupplier() {
+		processor.register(new FunctionRegistration<>(new Source()).names("numbers"));
+		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		Supplier<Flux<String>> foos = processor.lookupSupplier("numbers,foos");
+		assertThat(foos.get().blockFirst()).isEqualTo("6");
+	}
+
+	@Test
+	public void composeUniqueSupplier() {
+		processor.register(new FunctionRegistration<>(new Source()).names("numbers"));
+		Supplier<Flux<Integer>> foos = processor.lookupSupplier("");
+		assertThat(foos.get().blockFirst()).isEqualTo(3);
+	}
+
+	@Test
+	public void composeConsumer() {
+		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		Sink sink = new Sink();
+		processor.register(new FunctionRegistration<>(sink).names("sink"));
+		Consumer<Flux<Integer>> foos = processor.lookupConsumer("foos,sink");
+		foos.accept(Flux.just(2));
+		assertThat(sink.values).contains("4");
+	}
+
+	@Test
+	public void composeUniqueConsumer() {
+		Sink sink = new Sink();
+		processor.register(new FunctionRegistration<>(sink).names("sink"));
+		Consumer<Flux<String>> foos = processor.lookupConsumer("");
+		foos.accept(Flux.just("2"));
+		assertThat(sink.values).contains("2");
+	}
+
+	protected static class Source implements Supplier<Integer> {
+
+		@Override
+		public Integer get() {
+			return 3;
+		}
+
+	}
+
+	protected static class Sink implements Consumer<String> {
+
+		private List<String> values = new ArrayList<>();
+
+		@Override
+		public void accept(String value) {
+			values.add(value);
+		}
+
 	}
 
 	protected static class Foos implements Function<Integer, String> {
