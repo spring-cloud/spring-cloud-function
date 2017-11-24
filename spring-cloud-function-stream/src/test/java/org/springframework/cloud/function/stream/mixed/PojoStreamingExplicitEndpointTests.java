@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.function.stream.mixed;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -26,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.function.stream.StreamConfigurationProperties;
 import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.test.binder.MessageCollector;
 import org.springframework.context.annotation.Bean;
@@ -49,9 +53,12 @@ public class PojoStreamingExplicitEndpointTests {
 
 	@Autowired
 	MessageCollector messageCollector;
+	
+	@Autowired
+	StreamingFunctionApplication app;
 
 	@Test
-	public void test() throws Exception {
+	public void testDefaultEndpoint() throws Exception {
 		processor.input()
 				.send(MessageBuilder.withPayload("{\"name\":\"hello\"}").build());
 		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000,
@@ -59,8 +66,17 @@ public class PojoStreamingExplicitEndpointTests {
 		assertThat(result.getPayload()).isInstanceOf(Foo.class);
 	}
 
+	@Test
+	public void testRoutingBeatsDefaultEndpoint() throws Exception {
+		processor.input()
+				.send(MessageBuilder.withPayload("{\"name\":\"hello\"}").setHeader(StreamConfigurationProperties.ROUTE_KEY, "sink").build());
+		assertThat(app.foos).hasSize(1);
+	}
+
 	@SpringBootApplication
 	public static class StreamingFunctionApplication {
+		
+		private List<Foo> foos = new ArrayList<>();
 
 		@Bean
 		public Function<Foo, Foo> uppercase() {
@@ -70,6 +86,11 @@ public class PojoStreamingExplicitEndpointTests {
 		@Bean
 		public Supplier<Foo> foos() {
 			return () -> new Foo("world");
+		}
+
+		@Bean
+		public Consumer<Foo> sink() {
+			return foo -> foos.add(foo);
 		}
 
 	}

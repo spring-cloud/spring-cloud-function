@@ -250,7 +250,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (stages.length == 0 && source.size() == 1) {
 				stages = new String[] { source.keySet().iterator().next() };
 			}
-			Object function = lookup(stages[0], source);
+			Object function = stages.length>0 ? lookup(stages[0], source) : null;
 			if (function == null) {
 				return null;
 			}

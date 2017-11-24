@@ -131,16 +131,14 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 	}
 
 	private FluxMessageProcessor select(Message<?> input) {
-		String name = defaultEndpoint;
-		if (name != null) {
-			name = stash(name);
+		String name = null;
+		if (input.getHeaders().containsKey(StreamConfigurationProperties.ROUTE_KEY)) {
+			String key = (String) input.getHeaders()
+					.get(StreamConfigurationProperties.ROUTE_KEY);
+			name = stash(key);
 		}
-		if (name == null) {
-			if (input.getHeaders().containsKey(StreamConfigurationProperties.ROUTE_KEY)) {
-				String key = (String) input.getHeaders()
-						.get(StreamConfigurationProperties.ROUTE_KEY);
-				name = stash(key);
-			}
+		if (name==null && defaultEndpoint != null) {
+			name = stash(defaultEndpoint);
 		}
 		if (name == null) {
 			Set<String> names = new LinkedHashSet<>(functionCatalog.getFunctionNames());

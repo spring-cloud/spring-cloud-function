@@ -55,6 +55,13 @@ public class BeanFactoryFunctionCatalogTests {
 	}
 
 	@Test
+	public void lookupNonExistentConsumerWithEmptyName() {
+		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		Consumer<Flux<String>> foos = processor.lookupConsumer("");
+		assertThat(foos).isNull();
+	}
+
+	@Test
 	public void composeFunction() {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
 		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
