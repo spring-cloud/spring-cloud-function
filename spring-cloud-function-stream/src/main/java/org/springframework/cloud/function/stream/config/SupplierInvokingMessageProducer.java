@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream;
+package org.springframework.cloud.function.stream.config;
 
 import java.util.function.Supplier;
 

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream;
+package org.springframework.cloud.function.stream.config;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -23,11 +24,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.core.FunctionCatalog;
-import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.function.stream.DefaultStreamListener;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.reactive.MessageChannelToFluxSenderParameterAdapter;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 
 /**
@@ -38,11 +40,17 @@ import org.springframework.context.annotation.Lazy;
 @ConditionalOnClass(Binder.class)
 @ConditionalOnBean(FunctionCatalog.class)
 @ConditionalOnProperty(name = "spring.cloud.stream.enabled", havingValue = "true", matchIfMissing = true)
-@EnableBinding(Processor.class)
-public class StreamConfiguration {
+@Import(DefaultStreamListener.class)
+public class StreamAutoConfiguration {
 
 	@Autowired
 	private StreamConfigurationProperties properties;
+
+	@Bean
+	public MessageChannelToFunctionInvokerParameterAdapter messageChannelToFunctionInvokerParameterAdapter(
+			BeanFactory beanFactory, MessageChannelToFluxSenderParameterAdapter adapter) {
+		return new MessageChannelToFunctionInvokerParameterAdapter(beanFactory, adapter);
+	}
 
 	@Bean
 	// Because of the underlying behaviour of Spring AMQP etc., sources do not start

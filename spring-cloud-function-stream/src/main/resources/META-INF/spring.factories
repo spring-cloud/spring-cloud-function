@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.function.stream.StreamConfiguration
+org.springframework.cloud.function.stream.config.StreamAutoConfiguration

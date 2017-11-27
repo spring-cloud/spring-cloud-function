@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream;
+package org.springframework.cloud.function.stream.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -35,6 +35,11 @@ public class StreamConfigurationProperties {
 	 * Supplier. Default is 0, which means the Supplier will only be invoked once.
 	 */
 	private long interval = 0L;
+	
+	/**
+	 * Flag to say that the default bindings to "input" and "output" are to be enabled.
+	 */
+	private boolean defaultBindingsEnabled = true;
 
 	public static final String ROUTE_KEY = "stream_routekey";
 
@@ -52,5 +57,13 @@ public class StreamConfigurationProperties {
 
 	public void setInterval(long interval) {
 		this.interval = interval;
+	}
+
+	public boolean isDefaultBindingsEnabled() {
+		return this.defaultBindingsEnabled;
+	}
+
+	public void setDefaultBindingsEnabled(boolean defaultBindingsEnabled) {
+		this.defaultBindingsEnabled = defaultBindingsEnabled;
 	}
 }
