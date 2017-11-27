@@ -26,7 +26,7 @@ Before running the sample, we need to install a custom azure maven plugin.
 Checkout this fork: https://github.com/sobychacko/azure-maven-plugins/tree/for-spring-boot-apps
 ----
 cd azure-functions-maven-plugin
-mvn clean install
+mvn clean install -Dcheckstyle.skip=true -DskipTests -Dfindbugs.skip=true
 ----
 
 Build the sample under `spring-cloud-function-samples/function-sample-azure`.
