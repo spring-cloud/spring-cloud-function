@@ -17,6 +17,7 @@
 	<modules>
 		<module>spring-cloud-function-adapter-aws</module>
 		<module>spring-cloud-function-adapter-openwhisk</module>
+		<module>spring-cloud-function-adapter-azure</module>
   	</modules>
 
 </project>

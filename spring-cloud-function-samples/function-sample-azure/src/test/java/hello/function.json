@@ -1,0 +1,16 @@
+{
+  "scriptFile" : "../fabrikam-functions-1.0-SNAPSHOT.jar",
+  "entryPoint" : "com.fabrikam.functions.FooHandler.handleRequest",
+  "bindings" : [ {
+    "type" : "httpTrigger",
+    "name" : "req",
+    "direction" : "in",
+    "authLevel" : "anonymous",
+    "methods" : [ "get", "post" ]
+  }, {
+    "type" : "http",
+    "name" : "$return",
+    "direction" : "out"
+  } ],
+  "disabled" : false
+}
