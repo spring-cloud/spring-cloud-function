@@ -4,13 +4,13 @@
 
 	<artifactId>spring-cloud-function-parent</artifactId>
 	<name>Spring Cloud Function Parent</name>
-	<version>1.0.0.M2</version>
+	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>1.3.5.RELEASE</version>
+		<version>1.3.6.RELEASE</version>
 		<relativePath />
 	</parent>
 
@@ -19,7 +19,7 @@
 		<spring-cloud-stream.version>Chelsea.SR2</spring-cloud-stream.version>
 		<spring-cloud-task.version>1.1.2.RELEASE</spring-cloud-task.version>
 		<wrapper.version>1.0.8.RELEASE</wrapper.version>
-		<spring-boot.version>1.5.7.RELEASE</spring-boot.version>
+		<spring-boot.version>1.5.8.RELEASE</spring-boot.version>
 		<docs.main>spring-cloud-function</docs.main>
 	</properties>
 
