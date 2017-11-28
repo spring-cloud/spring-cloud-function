@@ -14,7 +14,7 @@
 	<name>Spring Cloud Function Dependencies</name>
 	<description>Spring Cloud Function Dependencies</description>
 	<properties>
-		<reactor-bom.version>Aluminium-SR3</reactor-bom.version>
+		<reactor-bom.version>Bismuth-SR1</reactor-bom.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
