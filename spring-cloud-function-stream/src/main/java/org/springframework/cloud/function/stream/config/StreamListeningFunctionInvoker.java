@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.stream;
+package org.springframework.cloud.function.stream.config;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,11 +28,7 @@ import java.util.function.Function;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionInspector;
 import org.springframework.cloud.function.core.FunctionCatalog;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
-import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
-import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.cloud.stream.reactive.FluxSender;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
@@ -79,9 +75,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 		this.converter = this.converterFactory.getMessageConverterForAllRegistered();
 	}
 
-	@StreamListener
-	public Mono<Void> handle(@Input(Processor.INPUT) Flux<Message<?>> input,
-			@Output(Processor.OUTPUT) FluxSender output) {
+	public Mono<Void> handle(Flux<Message<?>> input, FluxSender output) {
 		return output.send(
 				input.groupBy(this::select).flatMap(group -> group.key().process(group)));
 	}
@@ -137,7 +131,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 					.get(StreamConfigurationProperties.ROUTE_KEY);
 			name = stash(key);
 		}
-		if (name==null && defaultRoute != null) {
+		if (name == null && defaultRoute != null) {
 			name = stash(defaultRoute);
 		}
 		if (name == null) {
@@ -151,10 +145,10 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			else {
 				for (String candidate : names) {
 					Object function = functionCatalog.lookupFunction(candidate);
-					if (function==null) {
+					if (function == null) {
 						function = functionCatalog.lookupConsumer(candidate);
 					}
-					if (function==null) {
+					if (function == null) {
 						continue;
 					}
 					Class<?> inputType = functionInspector.getInputType(function);
