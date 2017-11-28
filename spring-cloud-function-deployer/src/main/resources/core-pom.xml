@@ -11,11 +11,11 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.3.RELEASE</version>
+		<version>1.5.8.RELEASE</version>
 	</parent>
 	
 	<properties>
-		<reactor.version>3.0.7.RELEASE</reactor.version>
+		<reactor.version>3.1.1.RELEASE</reactor.version>
 	</properties>
 
 	<dependencies>
@@ -39,7 +39,7 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>Dalston.SR3</version>
+				<version>Edgware.RELEASE</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
