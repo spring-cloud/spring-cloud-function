@@ -15,7 +15,9 @@
  */
 package org.springframework.cloud.function.deployer;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -65,14 +67,15 @@ public class ApplicationRunner implements CommandLineRunner {
 	}
 
 	private Object app;
+	private ClassLoader classLoader;
 
 	@Override
 	public void run(String... args) {
 		ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
 		try {
-			ClassLoader classLoader = createClassLoader();
-			ClassUtils.overrideThreadContextClassLoader(classLoader);
-			Class<?> cls = classLoader.loadClass(ContextRunner.class.getName());
+			this.classLoader = createClassLoader();
+			ClassUtils.overrideThreadContextClassLoader(this.classLoader);
+			Class<?> cls = this.classLoader.loadClass(ContextRunner.class.getName());
 			this.app = cls.newInstance();
 			runContext(DeployedFunctionApplication.class.getName(), Collections
 					.singletonMap(LiveBeansView.MBEAN_DOMAIN_PROPERTY_NAME, "deployer"),
@@ -91,8 +94,11 @@ public class ApplicationRunner implements CommandLineRunner {
 	}
 
 	@PreDestroy
-	public void close() {
+	public void close() throws IOException {
 		closeContext();
+		if (this.classLoader!=null && this.classLoader instanceof Closeable) {
+			((Closeable) this.classLoader).close();
+		}
 	}
 
 	private RuntimeException getError() {
