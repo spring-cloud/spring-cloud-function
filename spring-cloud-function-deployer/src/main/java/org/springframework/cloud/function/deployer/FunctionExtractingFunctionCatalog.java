@@ -31,13 +31,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.loader.thin.ArchiveUtils;
 import org.springframework.cloud.deployer.spi.app.AppDeployer;
 import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.thin.ThinJarAppDeployer;
-import org.springframework.cloud.function.context.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FunctionCatalog;
+import org.springframework.cloud.function.stream.config.SupplierInvokingMessageProducer;
+import org.springframework.cloud.stream.binder.servlet.RouteRegistrar;
 import org.springframework.context.support.LiveBeansView;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -48,6 +51,10 @@ public class FunctionExtractingFunctionCatalog
 
 	private static Log logger = LogFactory
 			.getLog(FunctionExtractingFunctionCatalog.class);
+
+	private RouteRegistrar routes;
+
+	private SupplierInvokingMessageProducer<?> producer;
 
 	private ThinJarAppDeployer deployer;
 
@@ -63,6 +70,16 @@ public class FunctionExtractingFunctionCatalog
 
 	public FunctionExtractingFunctionCatalog(String name, String... profiles) {
 		deployer = new ThinJarAppDeployer(name, profiles);
+	}
+
+	@Autowired
+	public void setRouteRegistrar(RouteRegistrar routes) {
+		this.routes = routes;
+	}
+
+	@Autowired
+	public void setProducer(SupplierInvokingMessageProducer<?> producer) {
+		this.producer = producer;
 	}
 
 	@Override
@@ -156,6 +173,7 @@ public class FunctionExtractingFunctionCatalog
 		this.deployed.put(id, path);
 		this.names.put(name, id);
 		this.ids.put(id, name);
+		register(name);
 		return id;
 	}
 
@@ -165,11 +183,45 @@ public class FunctionExtractingFunctionCatalog
 			// TODO: Convert to 404
 			throw new IllegalStateException("No such app");
 		}
+		unregister(name);
 		this.deployer.undeploy(id);
 		String path = this.deployed.remove(id);
 		this.names.remove(name);
 		this.ids.remove(id);
 		return new DeployedArtifact(name, id, path);
+	}
+
+	private void register(String name) {
+		Set<String> names = getSupplierNames(name);
+		if (routes != null) {
+			logger.info("Registering routes: " + names);
+			routes.registerRoutes(getSupplierNames(name));
+		}
+		if (producer != null) {
+			// Need an ApplicationEvent that we can react to in the producer?
+			for (String supplier : names) {
+				producer.start(supplier);
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private Set<String> getSupplierNames(String name) {
+		String id = this.names.get(name);
+		return (Set<String>) invoke(id, FunctionCatalog.class, "getSupplierNames");
+	}
+
+	private void unregister(String name) {
+		Set<String> names = getSupplierNames(name);
+		if (routes != null) {
+			logger.info("Unregistering routes: " + names);
+			routes.unregisterRoutes(names);
+		}
+		if (producer != null) {
+			for (String supplier : names) {
+				producer.stop(supplier);
+			}
+		}
 	}
 
 	private Object inspect(Object arg, String method) {
@@ -195,51 +247,88 @@ public class FunctionExtractingFunctionCatalog
 
 	private Object invoke(Class<?> type, String method, Object... arg) {
 		Set<Object> results = new LinkedHashSet<>();
+		Object fallback = null;
 		for (String id : this.deployed.keySet()) {
-			Object catalog = this.deployer.getBean(id, type);
-			if (catalog == null) {
+			Object result = invoke(id, type, method, arg);
+			if (result instanceof Collection) {
+				results.addAll((Collection<?>) result);
 				continue;
 			}
-			String name = this.ids.get(id);
-			String prefix = name + "/";
-			if (arg.length == 1) {
-				if (arg[0] instanceof String) {
-					String specific = arg[0].toString();
-					if (specific.startsWith(prefix)) {
-						arg[0] = specific.substring(prefix.length());
-					}
-					else {
-						continue;
-					}
+			if (result != null) {
+				if (result == Object.class) {
+					// Type fallback is Object
+					fallback = Object.class;
+					continue;
 				}
-			}
-			try {
-				MethodInvoker invoker = new MethodInvoker();
-				invoker.setTargetObject(catalog);
-				invoker.setTargetMethod(method);
-				invoker.setArguments(arg);
-				invoker.prepare();
-				Object result = invoker.invoke();
-				if (result != null) {
-					if (result instanceof Collection) {
-						for (Object value : (Collection<?>) result) {
-							results.add(prefix + value);
-						}
-					}
-					else if (result instanceof String) {
-						return prefix + result;
-					}
-
-					else {
-						return result;
-					}
+				if (result instanceof Boolean && !((Boolean) result)) {
+					// Boolean fallback is false
+					fallback = false;
+					continue;
 				}
-			}
-			catch (Exception e) {
-				throw new IllegalStateException("Cannot extract catalog", e);
+				return result;
 			}
 		}
+		if (fallback != null) {
+			return fallback;
+		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("Results: " + results);
+		}
 		return arg.length > 0 ? null : results;
+	}
+
+	private Object invoke(String id, Class<?> type, String method, Object... arg) {
+		Object catalog = this.deployer.getBean(id, type);
+		if (catalog == null) {
+			return null;
+		}
+		String name = this.ids.get(id);
+		String prefix = name + "/";
+		if (arg.length == 1) {
+			if (arg[0] instanceof String) {
+				String specific = arg[0].toString();
+				if (specific.startsWith(prefix)) {
+					arg[0] = specific.substring(prefix.length());
+				}
+				else {
+					return null;
+				}
+			}
+		}
+		try {
+			MethodInvoker invoker = new MethodInvoker();
+			invoker.setTargetObject(catalog);
+			invoker.setTargetMethod(method);
+			invoker.setArguments(arg);
+			invoker.prepare();
+			Object result = invoker.invoke();
+			if (result != null) {
+				if (result instanceof Collection) {
+					Set<String> results = new LinkedHashSet<>();
+					for (Object value : (Collection<?>) result) {
+						results.add(prefix + value);
+					}
+					return results;
+				}
+				else if (result instanceof String) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Prefixed (from \" + name + \"): " + result);
+					}
+					return prefix + result;
+				}
+
+				else {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Result (from " + name + "): " + result);
+					}
+					return result;
+				}
+			}
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Cannot extract catalog", e);
+		}
+		return null;
 	}
 
 	public Map<String, Object> deployed() {

@@ -43,7 +43,7 @@ public class SampleCompiledFunctionTests {
 	@Test
 	public void lowercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/test", "it works", String.class))
+				"http://localhost:" + port + "/stream/test", "it works", String.class))
 						.isEqualTo("it works!!!");
 	}
 

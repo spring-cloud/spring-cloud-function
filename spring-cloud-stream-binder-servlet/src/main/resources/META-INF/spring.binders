@@ -1,0 +1,2 @@
+servlet:\
+org.springframework.cloud.stream.binder.servlet.config.ServletServiceAutoConfiguration

@@ -94,7 +94,7 @@ public class FunctionAppDeployerTests {
 	@Test
 	public void stream() throws Exception {
 		String first = deploy("maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT",
-				"spring.cloud.deployer.thin.profile=stream",
+				"spring.cloud.deployer.thin.profile=rabbit",
 				"--spring.cloud.function.stream.supplier.enabled=false", "--debug=true");
 		// Deployment is blocking so it either failed or succeeded.
 		assertThat(deployer.status(first).getState()).isEqualTo(DeploymentState.deployed);

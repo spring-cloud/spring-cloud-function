@@ -14,7 +14,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>1.5.1.RELEASE</version>
-		<relativePath/>
+		<relativePath />
 	</parent>
 
 	<properties>
@@ -23,20 +23,17 @@
 		<spring-cloud-stream.version>Chelsea.SR2</spring-cloud-stream.version>
 		<reactor.version>3.0.7.RELEASE</reactor.version>
 		<wrapper.version>1.0.7.RELEASE</wrapper.version>
+		<spring-cloud-stream-servlet.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-stream-servlet.version>
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-function-web</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-stream</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-stream-rabbit</artifactId>
+			<artifactId>spring-cloud-stream-binder-servlet</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -64,6 +61,11 @@
 				<version>${spring-cloud-stream.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-binder-servlet</artifactId>
+				<version>${spring-cloud-stream-servlet.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
