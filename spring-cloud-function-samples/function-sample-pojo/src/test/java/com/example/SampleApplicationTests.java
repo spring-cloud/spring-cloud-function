@@ -40,7 +40,7 @@ public class SampleApplicationTests {
 	@Test
 	public void words() {
 		assertThat(new TestRestTemplate()
-				.getForObject("http://localhost:" + port + "/stream/words", String.class))
+				.getForObject("http://localhost:" + port + "/words", String.class))
 						.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
@@ -48,14 +48,14 @@ public class SampleApplicationTests {
 	public void uppercase() {
 		// TODO: make this work with a JSON stream as well (like in WebFlux)
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/stream/uppercase", "[{\"value\":\"foo\"}]",
+				"http://localhost:" + port + "/uppercase", "[{\"value\":\"foo\"}]",
 				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
 	@Test
 	public void lowercase() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/stream/lowercase", "[{\"value\":\"Foo\"}]",
+				"http://localhost:" + port + "/lowercase", "[{\"value\":\"Foo\"}]",
 				String.class)).isEqualTo("[{\"value\":\"foo\"}]");
 	}
 

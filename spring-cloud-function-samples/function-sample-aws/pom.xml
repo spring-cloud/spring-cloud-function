@@ -24,7 +24,7 @@
 		<java.version>1.8</java.version>
 		<wrapper.version>1.0.9.RELEASE</wrapper.version>
 		<aws-lambda-events.version>1.2.1</aws-lambda-events.version>
-		<reactor.version>3.0.7.RELEASE</reactor.version>
+		<reactor.version>3.1.2.RELEASE</reactor.version>
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<spring-cloud-stream-servlet.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-stream-servlet.version>
 		<start-class>example.Config</start-class>
@@ -37,12 +37,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-function-stream</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-servlet</artifactId>
+			<artifactId>spring-cloud-function-web</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>

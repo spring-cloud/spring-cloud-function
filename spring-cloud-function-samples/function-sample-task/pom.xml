@@ -21,7 +21,7 @@
 		<java.version>1.8</java.version>
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<wrapper.version>1.0.9.RELEASE</wrapper.version>
-		<reactor.version>3.1.1.RELEASE</reactor.version>
+		<reactor.version>3.1.2.RELEASE</reactor.version>
 	</properties>
 
 	<dependencies>
@@ -31,11 +31,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-servlet</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-function-stream</artifactId>
+			<artifactId>spring-cloud-function-web</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>

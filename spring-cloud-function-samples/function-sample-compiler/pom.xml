@@ -21,18 +21,14 @@
 		<java.version>1.8</java.version>
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<spring-cloud-stream.version>Ditmars.RELEASE</spring-cloud-stream.version>
-		<reactor.version>3.1.1.RELEASE</reactor.version>
+		<reactor.version>3.1.2.RELEASE</reactor.version>
 		<wrapper.version>1.0.9.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-function-stream</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-servlet</artifactId>
+			<artifactId>spring-cloud-function-web</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -60,11 +56,6 @@
 				<version>${spring-cloud-stream.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-servlet</artifactId>
-				<version>${spring-cloud-stream-servlet.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

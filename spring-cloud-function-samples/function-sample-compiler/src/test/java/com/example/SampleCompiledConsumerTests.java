@@ -44,7 +44,7 @@ public class SampleCompiledConsumerTests {
 	@Test
 	public void print() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/stream/test", "it works", String.class))
+				"http://localhost:" + port + "/test", "it works", String.class))
 						.isEqualTo("it works");
 		assertEquals("it works", Reference.instance);
 	}
