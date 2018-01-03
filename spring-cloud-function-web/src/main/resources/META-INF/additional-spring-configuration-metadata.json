@@ -1,0 +1,9 @@
+{"properties": [
+  {
+    "name": "spring.cloud.function.web.path",
+    "type": "java.lang.String",
+    "description": "Path to web resources for functions (should start with / if not empty).",
+    "defaultValue": ""
+  }]
+}
+

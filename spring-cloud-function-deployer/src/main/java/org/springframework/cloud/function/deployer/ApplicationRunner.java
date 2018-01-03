@@ -99,6 +99,7 @@ public class ApplicationRunner implements CommandLineRunner {
 		if (this.classLoader!=null && this.classLoader instanceof Closeable) {
 			((Closeable) this.classLoader).close();
 		}
+		this.classLoader = null;
 	}
 
 	private RuntimeException getError() {
