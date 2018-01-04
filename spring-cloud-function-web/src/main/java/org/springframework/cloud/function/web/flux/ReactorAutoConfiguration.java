@@ -21,9 +21,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -65,7 +64,7 @@ public class ReactorAutoConfiguration {
 	@ConditionalOnMissingClass("org.springframework.core.ReactiveAdapter")
 	protected static class FluxReturnValueConfiguration {
 		@Bean
-		public FluxReturnValueHandler fluxReturnValueHandler(FunctionInspector inspector, 
+		public FluxReturnValueHandler fluxReturnValueHandler(FunctionInspector inspector,
 				HttpMessageConverters converters) {
 			return new FluxReturnValueHandler(inspector, converters.getConverters());
 		}
@@ -81,34 +80,26 @@ public class ReactorAutoConfiguration {
 	}
 
 	@Bean
-	public BeanPostProcessor fluxRequestMappingHandlerAdapterProcessor() {
-		return new BeanPostProcessor() {
-			@Override
-			public Object postProcessAfterInitialization(Object bean, String beanName)
-					throws BeansException {
-				if (bean instanceof RequestMappingHandlerAdapter) {
-					RequestMappingHandlerAdapter adapter = (RequestMappingHandlerAdapter) bean;
-					List<HandlerMethodArgumentResolver> resolvers = new ArrayList<>(
-							adapter.getArgumentResolvers());
-					resolvers.add(0,
-							context.getBean(FluxHandlerMethodArgumentResolver.class));
-					adapter.setArgumentResolvers(resolvers);
-					if (!ClassUtils.isPresent("org.springframework.core.ReactiveAdapter",
-							null)) {
-						List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(
-								adapter.getReturnValueHandlers());
-						handlers.add(0, context.getBean(FluxReturnValueHandler.class));
-						adapter.setReturnValueHandlers(handlers);
-					}
-				}
-				return bean;
-			}
+	public SmartInitializingSingleton fluxRequestMappingHandlerAdapterProcessor(
+			RequestMappingHandlerAdapter adapter,
+			FluxHandlerMethodArgumentResolver resolver) {
+		return new SmartInitializingSingleton() {
 
 			@Override
-			public Object postProcessBeforeInitialization(Object bean, String beanName)
-					throws BeansException {
-				return bean;
+			public void afterSingletonsInstantiated() {
+				List<HandlerMethodArgumentResolver> resolvers = new ArrayList<>(
+						adapter.getArgumentResolvers());
+				resolvers.add(0, resolver);
+				adapter.setArgumentResolvers(resolvers);
+				if (!ClassUtils.isPresent("org.springframework.core.ReactiveAdapter",
+						null)) {
+					List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(
+							adapter.getReturnValueHandlers());
+					handlers.add(0, context.getBean(FluxReturnValueHandler.class));
+					adapter.setReturnValueHandlers(handlers);
+				}
 			}
+
 		};
 	}
 }
