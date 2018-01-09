@@ -16,14 +16,16 @@
 
 package org.springframework.cloud.function.compiler.config;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.boot.bind.PropertySourcesBinder;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.cloud.function.compiler.ConsumerCompiler;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.SupplierCompiler;
@@ -35,6 +37,7 @@ import org.springframework.cloud.function.compiler.proxy.LambdaCompilingFunction
 import org.springframework.cloud.function.compiler.proxy.LambdaCompilingSupplier;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
@@ -42,7 +45,9 @@ import org.springframework.util.Assert;
 /**
  * @author Mark Fisher
  */
-public class FunctionProxyApplicationListener implements ApplicationListener<ApplicationPreparedEvent> {
+@ConfigurationProperties("spring.cloud.function")
+public class FunctionProxyApplicationListener
+		implements ApplicationListener<ApplicationPreparedEvent> {
 
 	private final SupplierCompiler<?> supplierCompiler = new SupplierCompiler<>();
 
@@ -50,38 +55,70 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 
 	private final ConsumerCompiler<?> consumerCompiler = new ConsumerCompiler<>();
 
+	private final Map<String, Object> toCompile = new HashMap<>();
+
+	private final Map<String, Object> toImport = new HashMap<>();
+
+	public Map<String, Object> getCompile() {
+		return toCompile;
+	}
+
+	public Map<String, Object> getImport() {
+		return toImport;
+	}
+
 	@Override
 	public void onApplicationEvent(ApplicationPreparedEvent event) {
 		ConfigurableApplicationContext context = event.getApplicationContext();
-		DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context.getBeanFactory();
-		PropertySourcesBinder binder = new PropertySourcesBinder(context.getEnvironment());
-		Map<String, Object> toCompile = binder.extractAll("spring.cloud.function.compile");
+		DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context
+				.getBeanFactory();
+		bind(context);
 		for (Map.Entry<String, Object> entry : toCompile.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
-			String type = (properties.get("type") != null) ? properties.get("type") : "function";
+			String type = (properties.get("type") != null) ? properties.get("type")
+					: "function";
 			String lambda = properties.get("lambda");
-			Assert.notNull(lambda,
-					String.format("The 'lambda' property is required for compiling Function: %s", name));
+			Assert.notNull(lambda, String.format(
+					"The 'lambda' property is required for compiling Function: %s",
+					name));
 			String inputType = properties.get("inputType");
 			String outputType = properties.get("outputType");
-			registerLambdaCompilingProxy(name, type, inputType, outputType, lambda, beanFactory);
+			registerLambdaCompilingProxy(name, type, inputType, outputType, lambda,
+					beanFactory);
 		}
-		Map<String, Object> toImport = binder.extractAll("spring.cloud.function.import");
 		for (Map.Entry<String, Object> entry : toImport.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
-			String type = (properties.get("type") != null) ? properties.get("type") : "function";
+			String type = (properties.get("type") != null) ? properties.get("type")
+					: "function";
 			String location = properties.get("location");
-			Assert.notNull(location,
-					String.format("The 'location' property is required for importing Function: %s", name));
-			registerByteCodeLoadingProxy(name, type, context.getResource(location), beanFactory);
+			Assert.notNull(location, String.format(
+					"The 'location' property is required for importing Function: %s",
+					name));
+			registerByteCodeLoadingProxy(name, type, context.getResource(location),
+					beanFactory);
 		}
 	}
 
-	private void registerByteCodeLoadingProxy(String name, String type, Resource resource, DefaultListableBeanFactory beanFactory) {
+	private void bind(ConfigurableApplicationContext context) {
+		ConfigurationPropertiesBindingPostProcessor post = new ConfigurationPropertiesBindingPostProcessor();
+		post.setBeanFactory(new DefaultListableBeanFactory());
+		post.setEnvironment(context.getEnvironment());
+		post.setApplicationContext(new StaticApplicationContext());
+		try {
+			post.afterPropertiesSet();
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Cannot bind properties", e);
+		}
+		post.postProcessBeforeInitialization(this, getClass().getName());
+	}
+
+	private void registerByteCodeLoadingProxy(String name, String type, Resource resource,
+			DefaultListableBeanFactory beanFactory) {
 		Class<?> proxyClass = null;
 		if ("supplier".equals(type.toLowerCase())) {
 			proxyClass = ByteCodeLoadingSupplier.class;
@@ -99,7 +136,8 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 		beanFactory.registerBeanDefinition(name, beanDefinition);
 	}
 
-	private void registerLambdaCompilingProxy(String name, String type, String inputType, String outputType, String lambda, DefaultListableBeanFactory beanFactory) {
+	private void registerLambdaCompilingProxy(String name, String type, String inputType,
+			String outputType, String lambda, DefaultListableBeanFactory beanFactory) {
 		Resource resource = new ByteArrayResource(lambda.getBytes());
 		ConstructorArgumentValues args = new ConstructorArgumentValues();
 		MutablePropertyValues props = new MutablePropertyValues();
@@ -122,11 +160,14 @@ public class FunctionProxyApplicationListener implements ApplicationListener<App
 		else {
 			proxyClass = LambdaCompilingFunction.class;
 			args.addGenericArgumentValue(this.functionCompiler);
-			if ((inputType == null && outputType != null) || (outputType == null && inputType != null)) {
-				throw new IllegalArgumentException("if either input or output type is set, the other is also required");
+			if ((inputType == null && outputType != null)
+					|| (outputType == null && inputType != null)) {
+				throw new IllegalArgumentException(
+						"if either input or output type is set, the other is also required");
 			}
 			if (inputType != null) {
-				props.add("typeParameterizations", new String[] { inputType, outputType });
+				props.add("typeParameterizations",
+						new String[] { inputType, outputType });
 			}
 		}
 		RootBeanDefinition beanDefinition = new RootBeanDefinition(proxyClass);
