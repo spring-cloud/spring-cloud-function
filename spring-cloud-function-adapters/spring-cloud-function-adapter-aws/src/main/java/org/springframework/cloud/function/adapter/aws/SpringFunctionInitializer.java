@@ -30,6 +30,7 @@ import java.util.jar.Manifest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -85,8 +86,7 @@ public class SpringFunctionInitializer implements Closeable {
 			return;
 		}
 		logger.info("Initializing: " + configurationClass);
-		SpringApplicationBuilder builder = new SpringApplicationBuilder(
-				configurationClass);
+		SpringApplicationBuilder builder = springApplication();
 		ConfigurableApplicationContext context = builder.web(false).run();
 		context.getAutowireCapableBeanFactory().autowireBean(this);
 		String name = context.getEnvironment().getProperty("function.name");
@@ -114,6 +114,19 @@ public class SpringFunctionInitializer implements Closeable {
 			}
 		}
 		this.context = context;
+	}
+
+	private SpringApplicationBuilder springApplication() {
+		if (ClassUtils.hasConstructor(SpringApplicationBuilder.class, Object[].class)) {
+			SpringApplicationBuilder builder = new SpringApplicationBuilder(
+					configurationClass);
+			return builder;
+		}
+		// Forward compatibility with Spring Boot 2.0 via reflection
+		return BeanUtils.instantiateClass(
+				ClassUtils.getConstructorIfAvailable(SpringApplicationBuilder.class,
+						Class[].class),
+				new Object[] { new Class<?>[] { configurationClass } });
 	}
 
 	protected Class<?> getInputType() {
