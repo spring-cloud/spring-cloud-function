@@ -20,7 +20,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<aws-lambda-events.version>1.2.1</aws-lambda-events.version>
+		<aws-lambda-events.version>2.0.2</aws-lambda-events.version>
 	</properties>
 
 	<dependencies>
