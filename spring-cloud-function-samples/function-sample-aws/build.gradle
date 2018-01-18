@@ -44,7 +44,7 @@ ext {
     awsLambdaEventsVersion = "1.2.1"
     awsLambdaCoreVersion = "1.1.0"
 }
-ext['reactor.version'] = "3.1.1.RELEASE"
+ext['reactor.version'] = "3.1.2.RELEASE"
 
 assemble.dependsOn = [shadowJar, bootRepackage]
 
