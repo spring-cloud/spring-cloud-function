@@ -49,7 +49,7 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer im
 	private Object result(Object input, Flux<?> output) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : output.toIterable()) {
-			result.add(value);
+			result.add(convertOutput(value));
 		}
 		if (isSingleValue(input) && result.size()==1) {
 			return result.get(0);
@@ -71,5 +71,9 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer im
 	protected Object convertEvent(E event) {
 		return event;
 	}
+
+    protected O convertOutput(Object output) {
+        return (O) output;
+    }
 
 }

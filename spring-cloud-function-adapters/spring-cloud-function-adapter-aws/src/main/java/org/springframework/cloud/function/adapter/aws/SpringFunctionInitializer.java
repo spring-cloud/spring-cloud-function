@@ -136,7 +136,7 @@ public class SpringFunctionInitializer implements Closeable {
 		return Object.class;
 	}
 
-	private Object function() {
+	protected Object function() {
 		return this.function != null ? this.function
 				: (this.consumer != null ? this.consumer : this.supplier);
 	}
