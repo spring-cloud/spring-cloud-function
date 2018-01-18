@@ -11,6 +11,7 @@ bin/
 .m2/
 .gradle/
 _site/
+.vscode/
 .classpath
 .project
 .settings/
