@@ -14,6 +14,30 @@ You don't need the Spring Cloud Function Web at runtime in Azure, so you need to
 A function application on Azure has to be shaded, but a Spring Boot standalone application does not, so you can run the same app using 2 separate jars (as per the sample here).
 The sample app creates the shaded jar file, with an `azure` classifier for deploying in Azure.
 
+=== JSON Configuration
+
+The Azure tooling needs to find some JSON configuration files to tell it how to deploy and intergrate the function (e.g. which Java class to use as the entry point, and which triggers to use). Those files can be created with the Maven plugin for a non-Spring function, but the tooling doesn't work yet with the adapter in its current form. There is an example `function.json` in the sample which hooks the function up as an HTTP endpoint:
+
+```
+{
+  "scriptFile" : "../function-sample-azure-1.0.0.BUILD-SNAPSHOT-azure.jar",
+  "entryPoint" : "example.FooHandler.handleRequest",
+  "bindings" : [ {
+    "type" : "httpTrigger",
+    "name" : "req",
+    "direction" : "in",
+    "authLevel" : "anonymous",
+    "methods" : [ "get", "post" ]
+  }, {
+    "type" : "http",
+    "name" : "$return",
+    "direction" : "out"
+  } ],
+  "disabled" : false
+}
+```
+
+
 == Build
 
 ----
@@ -22,48 +46,23 @@ The sample app creates the shaded jar file, with an `azure` classifier for deplo
 
 == Running the sample
 
-Before running the sample, we need to install a custom azure maven plugin.
-Checkout this fork: https://github.com/sobychacko/azure-maven-plugins/tree/for-spring-boot-apps
-----
-cd azure-functions-maven-plugin
-mvn clean install -Dcheckstyle.skip=true -DskipTests -Dfindbugs.skip=true
-----
+You can run the sample locally, just like the other Spring Cloud Function samples:
 
-Build the sample under `spring-cloud-function-samples/function-sample-azure`.
+---
+./mvnw spring-boot:run
+---
 
-----
-mvn clean package
-----
+and `curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'`.
 
-Running Azure function locally.
+You will need the `az` CLI app and some node.js fu (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more detail). To deploy the function on Azure runtime:
 
 ----
-mvn azure-functions:run
-
-On another terminal try this: curl localhost:7071/api/uppercase -d '{"value": "hello foobar"}'
-----
-
-Deploying the function that ran locally on Azure runtime.
-
-----
-az login
-
-mvn azure-functions:deploy
+$ az login
+$ mvn azure-functions:deploy
 
 On another terminal try this: curl https://<azure-function-url-from-the-log>/api/uppercase -d '{"value": "hello foobar!"}'
 
 Please ensure that you use the right URL for the function above.
-----
-
-Running the function as a standalone Spring Boot app
-
-Go to the samples project and uncomment `spring-cloud-function-web` dependency and `spring-boot-maven-plugin`.
-
-----
-mvn clean package
-java -jar target/<spring boot uber jar>
-
-On another terminal: curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'
 ----
 
 The input type for the function in the Azure sample is a Foo with a single property called "value". So you would need this to test it with something as below.

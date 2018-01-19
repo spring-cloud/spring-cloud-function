@@ -1,0 +1,16 @@
+{
+  "scriptFile" : "../function-sample-azure-1.0.0.BUILD-SNAPSHOT-azure.jar",
+  "entryPoint" : "example.FooHandler.handleRequest",
+  "bindings" : [ {
+    "type" : "httpTrigger",
+    "name" : "foo",
+    "direction" : "in",
+    "authLevel" : "anonymous",
+    "methods" : [ "get", "post" ]
+  }, {
+    "type" : "http",
+    "name" : "$return",
+    "direction" : "out"
+  } ],
+  "disabled" : false
+}

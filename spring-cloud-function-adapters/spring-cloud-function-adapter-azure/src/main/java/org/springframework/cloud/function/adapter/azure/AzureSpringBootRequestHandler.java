@@ -21,12 +21,13 @@ import java.util.Collection;
 import java.util.List;
 
 import com.microsoft.azure.serverless.functions.ExecutionContext;
+
 import reactor.core.publisher.Flux;
 
 /**
  * @author Soby Chacko
  */
-public class AzureSpringBootRequestHandler<I,O> extends AzureSpringFunctionInitializer {
+public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInitializer {
 
 	public Object handleRequest(I foo, ExecutionContext context) {
 		context.getLogger().info("Handler Java HTTP trigger processed a request.");
@@ -51,9 +52,9 @@ public class AzureSpringBootRequestHandler<I,O> extends AzureSpringFunctionIniti
 	private Object result(Object input, Flux<?> output) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : output.toIterable()) {
-			result.add(value);
+			result.add(convertOutput(value));
 		}
-		if (isSingleValue(input) && result.size()==1) {
+		if (isSingleValue(input) && result.size() == 1) {
 			return result.get(0);
 		}
 		return result;
@@ -63,5 +64,8 @@ public class AzureSpringBootRequestHandler<I,O> extends AzureSpringFunctionIniti
 		return !(input instanceof Collection);
 	}
 
-
+	@SuppressWarnings("unchecked")
+	protected O convertOutput(Object output) {
+		return (O) output;
+	}
 }

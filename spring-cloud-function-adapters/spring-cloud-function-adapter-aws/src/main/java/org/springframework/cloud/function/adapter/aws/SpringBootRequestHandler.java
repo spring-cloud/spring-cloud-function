@@ -48,7 +48,7 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer
 	}
 
 	private Object result(Object input, Flux<?> output) {
-		List<Object> result = new ArrayList<>();
+		List<O> result = new ArrayList<>();
 		for (Object value : output.toIterable()) {
 			result.add(convertOutput(value));
 		}
