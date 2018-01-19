@@ -28,7 +28,8 @@ import reactor.core.publisher.Flux;
 /**
  * @author Mark Fisher
  */
-public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer implements RequestHandler<E, Object> {
+public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer
+		implements RequestHandler<E, Object> {
 
 	public SpringBootRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
@@ -51,7 +52,7 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer im
 		for (Object value : output.toIterable()) {
 			result.add(convertOutput(value));
 		}
-		if (isSingleValue(input) && result.size()==1) {
+		if (isSingleValue(input) && result.size() == 1) {
 			return result.get(0);
 		}
 		return result;
@@ -72,8 +73,9 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer im
 		return event;
 	}
 
-    protected O convertOutput(Object output) {
-        return (O) output;
-    }
+	@SuppressWarnings("unchecked")
+	protected O convertOutput(Object output) {
+		return (O) output;
+	}
 
 }
