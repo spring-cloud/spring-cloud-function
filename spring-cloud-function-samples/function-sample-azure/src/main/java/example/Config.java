@@ -23,15 +23,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
-class FooConfig {
+public class Config {
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(Config.class, args);
+	}
 
 	@Bean
 	public Function<Foo, Bar> uppercase() {
-		return value -> new Bar(value.getValue().toUpperCase());
-	}
-
-	public static void main(String[] args) throws Exception {
-		SpringApplication.run(FooConfig.class, args);
+		return foo -> new Bar(foo.getValue().toUpperCase());
 	}
 }
 

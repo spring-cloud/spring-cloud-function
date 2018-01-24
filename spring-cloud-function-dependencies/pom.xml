@@ -14,7 +14,7 @@
 	<name>Spring Cloud Function Dependencies</name>
 	<description>Spring Cloud Function Dependencies</description>
 	<properties>
-		<reactor-bom.version>Bismuth-SR1</reactor-bom.version>
+		<reactor-bom.version>Bismuth-SR4</reactor-bom.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -63,6 +63,11 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-function-adapter-aws</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-function-adapter-azure</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

@@ -17,8 +17,6 @@
 package example;
 
 import com.microsoft.azure.serverless.functions.ExecutionContext;
-import com.microsoft.azure.serverless.functions.annotation.HttpOutput;
-import com.microsoft.azure.serverless.functions.annotation.HttpTrigger;
 
 import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHandler;
 
@@ -27,12 +25,8 @@ import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHa
  */
 public class FooHandler extends AzureSpringBootRequestHandler<Foo, Bar> {
 
-	@Override
-	public @HttpOutput(name = "bar") Bar handleRequest(
-			@HttpTrigger(name = "foo", methods = { "get", "post" }) Foo foo,
-			ExecutionContext context) {
-		context.getLogger().info("Invoking entry point method");
-		return (Bar) super.handleRequest(foo, context);
+	public Bar execute(Foo foo, ExecutionContext context) {
+		return handleRequest(foo, context);
 	}
 
 }

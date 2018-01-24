@@ -29,7 +29,7 @@ import reactor.core.publisher.Flux;
  */
 public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInitializer {
 
-	public Object handleRequest(I foo, ExecutionContext context) {
+	public O handleRequest(I foo, ExecutionContext context) {
 		context.getLogger().info("Handler Java HTTP trigger processed a request.");
 		initialize(context);
 
@@ -49,15 +49,19 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		return Flux.just(input);
 	}
 
-	private Object result(Object input, Flux<?> output) {
+	private O result(Object input, Flux<?> output) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : output.toIterable()) {
 			result.add(convertOutput(value));
 		}
 		if (isSingleValue(input) && result.size() == 1) {
-			return result.get(0);
+			@SuppressWarnings("unchecked")
+			O value = (O) result.get(0);
+			return value;
 		}
-		return result;
+		@SuppressWarnings("unchecked")
+		O value = (O) result;
+		return value;
 	}
 
 	private boolean isSingleValue(Object input) {

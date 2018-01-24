@@ -23,30 +23,25 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<functionAppName>function-sample-azure</functionAppName>
 		<functionAppRegion>westus</functionAppRegion>
-		<start-class>example.FooConfig</start-class>
+		<reactor.version>3.1.2.RELEASE</reactor.version>
+		<start-class>example.Config</start-class>
 	</properties>
 
 	<dependencies>
 		<dependency>
-			<groupId>com.microsoft.azure</groupId>
-			<artifactId>azure-functions-java-core</artifactId>
-			<version>1.0.0-beta-2</version>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-adapter-azure</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-web</artifactId>
-			<version>1.0.0.BUILD-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-function-adapter-azure</artifactId>
-			<version>1.0.0.BUILD-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
-			<version>3.1.2.RELEASE</version>
+			<groupId>com.microsoft.azure</groupId>
+			<artifactId>azure-functions-java-core</artifactId>
+			<version>1.0.0-beta-2</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- Test -->
@@ -61,6 +56,18 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-function-dependencies</artifactId>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<build>
 		<pluginManagement>
@@ -78,28 +85,6 @@
 		</pluginManagement>
 
 		<plugins>
-			<plugin>
-				<groupId>com.github.eirslett</groupId>
-				<artifactId>frontend-maven-plugin</artifactId>
-				<version>1.6</version>
-				<configuration>
-					<nodeVersion>v8.8.1</nodeVersion>
-				</configuration>
-				<executions>
-					<execution>
-						<id>install-npm</id>
-						<goals>
-							<goal>install-node-and-npm</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>npm-install</id>
-						<goals>
-							<goal>npm</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<groupId>com.microsoft.azure</groupId>
 				<artifactId>azure-functions-maven-plugin</artifactId>
@@ -132,9 +117,7 @@
 								<resource>
 									<directory>${project.basedir}/src/main/azure</directory>
 									<includes>
-										<include>uppercase/**</include>
-										<include>host.json</include>
-										<include>local.settings.json</include>
+										<include>**</include>
 									</includes>
 								</resource>
 							</resources>
@@ -152,6 +135,28 @@
 					<shadedClassifierName>azure</shadedClassifierName>
 					<outputDirectory>${project.build.directory}/azure-functions/${functionAppName}</outputDirectory>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>azure</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<attach>false</attach>
+							<descriptor>${basedir}/src/assembly/azure.xml</descriptor>
+							<outputDirectory>${project.build.directory}/azure-functions</outputDirectory>
+							<appendAssemblyId>false</appendAssemblyId>
+							<finalName>${functionAppName}</finalName>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 
 		</plugins>
