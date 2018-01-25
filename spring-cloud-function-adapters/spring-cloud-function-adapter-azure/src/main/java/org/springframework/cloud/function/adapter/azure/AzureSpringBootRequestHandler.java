@@ -29,6 +29,14 @@ import reactor.core.publisher.Flux;
  */
 public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInitializer {
 
+	public AzureSpringBootRequestHandler(Class<?> configurationClass) {
+		super(configurationClass);
+	}
+
+	public AzureSpringBootRequestHandler() {
+		super();
+	}
+
 	public O handleRequest(I foo, ExecutionContext context) {
 		if (context != null) {
 			context.getLogger().fine("Handler Java HTTP trigger processed a request.");
