@@ -46,7 +46,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 
 	private AtomicBoolean initialized = new AtomicBoolean();
 
-	private  Class<?> configurationClass;
+	private Class<?> configurationClass;
 
 	@Autowired(required = false)
 	private FunctionCatalog catalog;
@@ -61,7 +61,6 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		this(getStartClass());
 	}
 
-
 	@Override
 	public void close() throws IOException {
 		if (AzureSpringFunctionInitializer.context != null) {
@@ -73,24 +72,27 @@ public class AzureSpringFunctionInitializer implements Closeable {
 	protected void initialize(ExecutionContext ctxt) {
 
 		ConfigurableApplicationContext context = AzureSpringFunctionInitializer.context;
-		
+
 		if (!this.initialized.compareAndSet(false, true)) {
 			return;
 		}
-		ctxt.getLogger().info("Initializing function");
-		
-		if (context==null) {
+		if (ctxt != null) {
+			ctxt.getLogger().info("Initializing function");
+		}
+
+		if (context == null) {
 			synchronized (AzureSpringFunctionInitializer.class) {
-				if (context==null) {
+				if (context == null) {
 					SpringApplicationBuilder builder = new SpringApplicationBuilder(
 							configurationClass);
-					ClassUtils.overrideThreadContextClassLoader(AzureSpringFunctionInitializer.class.getClassLoader());
+					ClassUtils.overrideThreadContextClassLoader(
+							AzureSpringFunctionInitializer.class.getClassLoader());
 
 					context = builder.web(false).run();
 					AzureSpringFunctionInitializer.context = context;
 				}
 			}
-			
+
 		}
 
 		context.getAutowireCapableBeanFactory().autowireBean(this);
@@ -116,7 +118,8 @@ public class AzureSpringFunctionInitializer implements Closeable {
 	}
 
 	private static Class<?> getStartClass() {
-		ClassLoader classLoader = org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class.getClassLoader();
+		ClassLoader classLoader = org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class
+				.getClassLoader();
 		if (System.getenv("MAIN_CLASS") != null) {
 			return ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
 		}
@@ -144,8 +147,10 @@ public class AzureSpringFunctionInitializer implements Closeable {
 							.getValue("Main-Class");
 					if (startClass != null) {
 						Class<?> aClass = ClassUtils.forName(startClass,
-								org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class.getClassLoader());
-						SpringBootApplication declaredAnnotation = aClass.getDeclaredAnnotation(SpringBootApplication.class);
+								org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class
+										.getClassLoader());
+						SpringBootApplication declaredAnnotation = aClass
+								.getDeclaredAnnotation(SpringBootApplication.class);
 						if (declaredAnnotation != null) {
 							return aClass;
 						}
