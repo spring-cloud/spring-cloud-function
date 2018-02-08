@@ -19,7 +19,7 @@ package org.springframework.cloud.function.adapter.openwhisk;
 /**
  * @author Mark Fisher
  */
-public class InitRequest {
+public class OpenWhiskInitRequest {
 
 	private String name;
 

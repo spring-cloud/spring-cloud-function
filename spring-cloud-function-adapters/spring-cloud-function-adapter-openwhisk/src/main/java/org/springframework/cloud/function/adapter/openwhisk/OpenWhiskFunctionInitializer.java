@@ -21,19 +21,22 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FunctionCatalog;
-import org.springframework.cloud.function.core.FunctionFactoryUtils;
 
 import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
  * @author Mark Fisher
+ * @author Kamesh Sampath
  */
-public class FunctionInitializer {
+public class OpenWhiskFunctionInitializer {
+
+	private static Log logger = LogFactory.getLog(OpenWhiskFunctionInitializer.class);
 
 	private Function<Flux<?>, Flux<?>> function;
 
@@ -54,6 +57,7 @@ public class FunctionInitializer {
 
 	@SuppressWarnings("unchecked")
 	protected void initialize() {
+		logger.info("Initializing - OpenWhisk Function Initializer");
 		if (!this.initialized.compareAndSet(false, true)) {
 			return;
 		}
@@ -61,15 +65,9 @@ public class FunctionInitializer {
 		String type = this.properties.getType();
 		if ("function".equals(type)) {
 			this.function = this.catalog.lookupFunction(name);
-			if (this.function != null && !FunctionFactoryUtils.isFluxFunction(this.function)) {
-				// TODO: this shouldn't be necessary
-				this.function = new FluxFunction(this.function);
-			}
-		}
-		else if ("consumer".equals(type)) {
+		} else if ("consumer".equals(type)) {
 			this.consumer = this.catalog.lookupConsumer(name);
-		}
-		else if ("supplier".equals(type)) {
+		} else if ("supplier".equals(type)) {
 			this.supplier = this.catalog.lookupSupplier(name);
 		}
 	}

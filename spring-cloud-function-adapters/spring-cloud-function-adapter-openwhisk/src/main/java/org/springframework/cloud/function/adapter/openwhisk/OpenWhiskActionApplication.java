@@ -25,9 +25,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
  */
 @SpringBootApplication
 @EnableConfigurationProperties(FunctionProperties.class)
-public class ActionApplication {
+public class OpenWhiskActionApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ActionApplication.class, args);
+		SpringApplication.run(OpenWhiskActionApplication.class, args);
 	}
 }
