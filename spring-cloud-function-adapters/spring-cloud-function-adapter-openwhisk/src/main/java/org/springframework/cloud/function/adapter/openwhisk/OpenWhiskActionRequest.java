@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * @author Mark Fisher
  */
-public class ActionRequest {
+public class OpenWhiskActionRequest {
 
 	@JsonProperty("action_name")
 	private String actionName;
