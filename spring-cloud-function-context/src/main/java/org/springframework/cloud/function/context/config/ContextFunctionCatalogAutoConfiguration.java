@@ -474,6 +474,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				type = Function.class;
 				findType(target, ParamType.INPUT);
 				findType(target, ParamType.OUTPUT);
+				isMessage(target); // cache wrapper types
 				registration.target(target((Function<?, ?>) target, key));
 				for (String name : registration.getNames()) {
 					this.functions.put(name, (Function<?, ?>) registration.getTarget());
@@ -559,10 +560,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return FunctionInspector
 					.isWrapper(findType(function, ParamType.INPUT_WRAPPER))
 					|| FunctionInspector
-					.isWrapper(findType(function, ParamType.OUTPUT_WRAPPER));
+							.isWrapper(findType(function, ParamType.OUTPUT_WRAPPER));
 		}
 
-		private Class<?> findType(String name, AbstractBeanDefinition definition, ParamType paramType) {
+		private Class<?> findType(String name, AbstractBeanDefinition definition,
+				ParamType paramType) {
 			Object source = definition.getSource();
 			Type param = null;
 			// Start by assuming output -> Function
@@ -710,10 +712,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean isMessage(Object function) {
-			return Message.class
-					.isAssignableFrom(findType(function, ParamType.INPUT_INNER_WRAPPER))
-					|| Message.class.isAssignableFrom(
-					findType(function, ParamType.OUTPUT_INNER_WRAPPER));
+			Class<?> inputType = findType(function, ParamType.INPUT_INNER_WRAPPER);
+			Class<?> outputType = findType(function, ParamType.OUTPUT_INNER_WRAPPER);
+			return inputType.getName().startsWith(Message.class.getName())
+					|| Message.class.isAssignableFrom(inputType)
+					|| outputType.getName().startsWith(Message.class.getName())
+					|| Message.class.isAssignableFrom(outputType);
 		}
 
 		private Class<?> findType(Object function, ParamType type) {

@@ -234,6 +234,18 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
+	public void singletonMessageFunction() {
+		create(SingletonMessageConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookupFunction("function")))
+				.isAssignableFrom(Integer.class);
+		assertThat(inspector.getInputWrapper(catalog.lookupFunction("function")))
+				.isAssignableFrom(Integer.class);
+		assertThat(inspector.isMessage(catalog.lookupFunction("function"))).isTrue();
+	}
+
+	@Test
 	public void nonParametericTypeFunction() {
 		create(NonParametricTypeSingletonConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
@@ -531,6 +543,17 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
+	protected static class SingletonMessageConfiguration implements BeanFactoryPostProcessor {
+
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+				throws BeansException {
+			beanFactory.registerSingleton("function", new SingletonMessageFunction());
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
 	protected static class NonParametricTypeSingletonConfiguration {
 		@Bean
 		public SingletonFunction function() {
@@ -543,6 +566,15 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Override
 		public String apply(Integer input) {
 			return "value=" + input;
+		}
+
+	}
+
+	protected static class SingletonMessageFunction implements Function<Message<Integer>, Message<String>> {
+
+		@Override
+		public Message<String> apply(Message<Integer> input) {
+			return MessageBuilder.withPayload("value=" + input.getPayload()).build();
 		}
 
 	}
