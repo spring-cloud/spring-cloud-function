@@ -22,8 +22,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.Test;
+import org.reactivestreams.Publisher;
 
-import org.springframework.cloud.function.core.FunctionFactoryUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,8 +60,20 @@ public class FunctionFactoryUtilsTests {
 		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isFalse();
 	}
 	
+	@Test
+	public void isReactiveFunction() {
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "reactiveFunction");
+		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isFalse();
+	}
+	
 	public Function<Flux<Foo>, Flux<Foo>> fluxFunction() {
 		return foos -> foos.map(foo -> new Foo());
+	}
+
+	public Function<Publisher<Foo>, Publisher<Foo>> reactiveFunction() {
+		return foos -> Flux.from(foos).map(foo -> new Foo());
 	}
 
 	public Supplier<Flux<Foo>> fluxSupplier() {

@@ -19,6 +19,8 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.Type;
 import java.util.Optional;
 
+import org.reactivestreams.Publisher;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -44,7 +46,7 @@ public interface FunctionInspector {
 
 	// Maybe make this a default method?
 	static boolean isWrapper(Type type) {
-		return Flux.class.equals(type) || Mono.class.equals(type)
+		return Publisher.class.equals(type) || Flux.class.equals(type) || Mono.class.equals(type)
 				|| Optional.class.equals(type);
 	}
 

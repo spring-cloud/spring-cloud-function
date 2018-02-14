@@ -111,8 +111,10 @@ Stream `Source`.
 Functions can be of `Flux<String>` or `Flux<Pojo>` and Spring Cloud
 Function takes care of converting the data to and from the desired
 types, as long as it comes in as plain text or (in the case of the
-POJO) JSON. TBD: support for `Flux<Message<Pojo>>` and maybe plain
-`Pojo` types (Fluxes implied and implemented by the framework).
+POJO) JSON. Also works for `Flux<Message<Pojo>>` and plain
+`Pojo` types (where `Flux` is implied and implemented by the framework).
+Additionally, you can replace `Flux` by `Publisher` in any function
+definition and it should work that way too.
 
 Functions can be grouped together in a single application, or deployed
 one-per-jar. It's up to the developer to choose. An app with multiple

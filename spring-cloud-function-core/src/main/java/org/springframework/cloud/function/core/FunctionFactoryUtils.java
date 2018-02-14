@@ -27,6 +27,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.reactivestreams.Publisher;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
@@ -54,6 +56,7 @@ import reactor.core.publisher.Flux;
 public abstract class FunctionFactoryUtils {
 
 	private static final String FLUX_CLASS_NAME = Flux.class.getName();
+	private static final String PUBLISHER_CLASS_NAME = Publisher.class.getName();
 
 	private FunctionFactoryUtils() {
 	}
@@ -130,6 +133,6 @@ public abstract class FunctionFactoryUtils {
 	}
 
 	private static boolean isFlux(int length, String... types){
-		return !ObjectUtils.isEmpty(types) && types.length == length && Stream.of(types).allMatch(type -> type.startsWith(FLUX_CLASS_NAME));
+		return !ObjectUtils.isEmpty(types) && types.length == length && Stream.of(types).allMatch(type -> type.startsWith(FLUX_CLASS_NAME) || type.startsWith(PUBLISHER_CLASS_NAME));
 	}
 }

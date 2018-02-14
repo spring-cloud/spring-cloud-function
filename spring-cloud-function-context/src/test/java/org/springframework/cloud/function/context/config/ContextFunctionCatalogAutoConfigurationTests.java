@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.context.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -30,6 +28,7 @@ import java.util.stream.Collectors;
 
 import org.junit.After;
 import org.junit.Test;
+import org.reactivestreams.Publisher;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -62,6 +61,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StreamUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import reactor.core.publisher.Flux;
 
@@ -173,6 +174,18 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.isAssignableFrom(String.class);
 		assertThat(inspector.getInputWrapper(catalog.lookupFunction("function")))
 				.isAssignableFrom(Flux.class);
+	}
+
+	@Test
+	public void publisherMessageFunction() {
+		create(PublisherMessageConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.lookupFunction("function")).isInstanceOf(Function.class);
+		assertThat(inspector.isMessage(catalog.lookupFunction("function"))).isTrue();
+		assertThat(inspector.getInputType(catalog.lookupFunction("function")))
+				.isAssignableFrom(String.class);
+		assertThat(inspector.getInputWrapper(catalog.lookupFunction("function")))
+				.isAssignableFrom(Publisher.class);
 	}
 
 	@Test
@@ -568,6 +581,16 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Function<Flux<Message<String>>, Flux<Message<String>>> function() {
 			return flux -> flux.map(m -> MessageBuilder
+					.withPayload(m.getPayload().toUpperCase()).build());
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class PublisherMessageConfiguration {
+		@Bean
+		public Function<Publisher<Message<String>>, Publisher<Message<String>>> function() {
+			return flux -> Flux.from(flux).map(m -> MessageBuilder
 					.withPayload(m.getPayload().toUpperCase()).build());
 		}
 	}

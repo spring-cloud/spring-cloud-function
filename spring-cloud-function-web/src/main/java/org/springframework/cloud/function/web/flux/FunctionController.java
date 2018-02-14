@@ -71,7 +71,7 @@ public class FunctionController {
 			if (debug) {
 				flux = flux.log();
 			}
-			Flux<?> result = function.apply(flux);
+			Flux<?> result = Flux.from(function.apply(flux));
 			if (logger.isDebugEnabled()) {
 				logger.debug("Handled POST with function");
 			}
