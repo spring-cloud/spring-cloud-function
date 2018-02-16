@@ -23,13 +23,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
 
+import org.junit.Test;
+
+import org.springframework.messaging.Message;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
  *
  */
 public class ClassLoaderUtils {
+	
+	@Test
+	public void fluxIsShared() {
+		Class<?> flux = ClassUtils.resolveClassName(Flux.class.getName(), createClassLoader());
+		assertThat(flux).isEqualTo(Flux.class);
+	}
+
+	@Test
+	public void messageIsNotShared() {
+		Class<?> flux = ClassUtils.resolveClassName(Message.class.getName(), createClassLoader());
+		assertThat(flux).isNotEqualTo(Message.class);
+	}
 
 	public static ClassLoader createClassLoader() {
 		URL[] urls = findClassPath();

@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.message;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.cloud.function.core.FluxWrapper;
@@ -48,6 +49,11 @@ public abstract class MessageUtils {
 			Map<String, Object> headers) {
 		if (handler instanceof FluxWrapper) {
 			handler = ((FluxWrapper<?>) handler).getTarget();
+		}
+		if (payload instanceof Message) {
+			headers = new HashMap<>(headers);
+			headers.putAll(((Message<?>) payload).getHeaders());
+			payload = ((Message<?>) payload).getPayload();
 		}
 		if (!(handler instanceof Isolated)) {
 			return MessageBuilder.withPayload(payload).copyHeaders(headers).build();
