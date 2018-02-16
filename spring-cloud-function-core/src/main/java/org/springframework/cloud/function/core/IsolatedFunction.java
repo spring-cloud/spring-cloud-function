@@ -24,20 +24,27 @@ import org.springframework.util.ClassUtils;
  * @author Dave Syer
  *
  */
-public class IsolatedFunction<S, T> implements Function<S, T> {
+public class IsolatedFunction<S, T> implements Function<S, T>, Isolated {
 
 	private final Function<S, T> function;
+	private final ClassLoader classLoader;
 
 	public IsolatedFunction(Function<S, T> function) {
 		this.function = function;
+		this.classLoader = function.getClass().getClassLoader();
+	}
+
+	@Override
+	public ClassLoader getClassLoader() {
+		return this.classLoader;
 	}
 
 	@Override
 	public T apply(S item) {
 		ClassLoader context = ClassUtils
-				.overrideThreadContextClassLoader(function.getClass().getClassLoader());
+				.overrideThreadContextClassLoader(this.classLoader);
 		try {
-			return function.apply(item);
+			return this.function.apply(item);
 		}
 		finally {
 			ClassUtils.overrideThreadContextClassLoader(context);

@@ -457,6 +457,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (target instanceof Supplier) {
 				type = Supplier.class;
 				findType(target, ParamType.OUTPUT);
+				findType(target, ParamType.OUTPUT_WRAPPER);
+				isMessage(target);
 				registration.target(target((Supplier<?>) target, key));
 				for (String name : registration.getNames()) {
 					this.suppliers.put(name, (Supplier<?>) registration.getTarget());
@@ -465,6 +467,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else if (target instanceof Consumer) {
 				type = Consumer.class;
 				findType(target, ParamType.INPUT);
+				findType(target, ParamType.INPUT_WRAPPER);
+				isMessage(target); // cache wrapper types
 				registration.target(target((Consumer<?>) target, key));
 				for (String name : registration.getNames()) {
 					this.consumers.put(name, (Consumer<?>) registration.getTarget());
@@ -474,6 +478,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 				type = Function.class;
 				findType(target, ParamType.INPUT);
 				findType(target, ParamType.OUTPUT);
+				findType(target, ParamType.INPUT_WRAPPER);
+				findType(target, ParamType.OUTPUT_WRAPPER);
 				isMessage(target); // cache wrapper types
 				registration.target(target((Function<?, ?>) target, key));
 				for (String name : registration.getNames()) {

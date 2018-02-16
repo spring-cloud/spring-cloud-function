@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.web.flux.request.FluxRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -72,6 +73,9 @@ public class FunctionController {
 				flux = flux.log();
 			}
 			Flux<?> result = Flux.from(function.apply(flux));
+			if (inspector.isMessage(function)) {
+				result = result.map(message -> MessageUtils.unpack(function, message));
+			}
 			if (logger.isDebugEnabled()) {
 				logger.debug("Handled POST with function");
 			}

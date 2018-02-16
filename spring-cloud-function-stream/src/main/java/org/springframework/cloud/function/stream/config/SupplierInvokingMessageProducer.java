@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.endpoint.MessageProducerSupport;
@@ -86,7 +87,8 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 					if (supplier != null) {
 						suppliers.add(name);
 						disposables.put(name,
-								supplier.get().subscribeOn(Schedulers.elastic()).subscribe(m -> send(name, m)));
+								supplier.get().subscribeOn(Schedulers.elastic())
+										.subscribe(m -> send(name, m)));
 					}
 				}
 			}
@@ -94,16 +96,10 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 	}
 
 	private void send(String name, Object payload) {
-		Message<?> message;
-		if (payload instanceof Message) {
-			message = MessageBuilder.fromMessage((Message<?>) payload)
-					.setHeaderIfAbsent(StreamConfigurationProperties.ROUTE_KEY, name)
-					.build();
-		}
-		else {
-			message = MessageBuilder.withPayload(payload)
-					.setHeader(StreamConfigurationProperties.ROUTE_KEY, name).build();
-		}
+		Supplier<Flux<?>> supplier = functionCatalog.lookupSupplier(name);
+		Message<?> message = MessageUtils.unpack(supplier, payload);
+		message = MessageBuilder.fromMessage(message)
+				.setHeaderIfAbsent(StreamConfigurationProperties.ROUTE_KEY, name).build();
 		getOutputChannel().send(message);
 	}
 

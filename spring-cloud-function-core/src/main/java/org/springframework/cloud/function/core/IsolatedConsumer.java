@@ -24,18 +24,25 @@ import org.springframework.util.ClassUtils;
  * @author Dave Syer
  *
  */
-public class IsolatedConsumer<T> implements Consumer<T> {
+public class IsolatedConsumer<T> implements Consumer<T>, Isolated {
 
 	private final Consumer<T> consumer;
+	private final ClassLoader classLoader;
 
 	public IsolatedConsumer(Consumer<T> consumer) {
 		this.consumer = consumer;
+		this.classLoader = consumer.getClass().getClassLoader();
+	}
+
+	@Override
+	public ClassLoader getClassLoader() {
+		return this.classLoader;
 	}
 
 	@Override
 	public void accept(T item) {
 		ClassLoader context = ClassUtils
-				.overrideThreadContextClassLoader(consumer.getClass().getClassLoader());
+				.overrideThreadContextClassLoader(this.classLoader);
 		try {
 			consumer.accept(item);
 		}

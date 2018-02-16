@@ -29,12 +29,17 @@ import reactor.core.publisher.Flux;
  * @param <T> input type of target function
  * @param <R> output type of target function
  */
-public class FluxFunction<T, R> implements Function<Flux<T>, Flux<R>> {
+public class FluxFunction<T, R> implements Function<Flux<T>, Flux<R>>, FluxWrapper<Function<T, R>> {
 
 	private final Function<T, R> function;
 
 	public FluxFunction(Function<T, R> function) {
 		this.function = function;
+	}
+	
+	@Override
+	public Function<T, R> getTarget() {
+		return this.function;
 	}
 
 	@Override

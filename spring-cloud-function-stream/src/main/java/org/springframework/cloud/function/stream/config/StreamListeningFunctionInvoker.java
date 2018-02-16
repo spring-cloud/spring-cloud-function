@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;
@@ -91,6 +92,9 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 		return flux.publish(values -> {
 			Flux<?> result = function
 					.apply(values.map(message -> convertInput(function).apply(message)));
+			if (this.functionInspector.isMessage(function)) {
+				result = result.map(message -> MessageUtils.unpack(function, message));
+			}
 			Flux<Map<String, Object>> aggregate = headers(values);
 			return result.withLatestFrom(aggregate, (p, m) -> message(p, m));
 		});
@@ -141,7 +145,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 					.get(StreamConfigurationProperties.ROUTE_KEY);
 			name = stash(key);
 		}
-		if (name==null && defaultRoute != null) {
+		if (name == null && defaultRoute != null) {
 			name = stash(defaultRoute);
 		}
 		if (name == null) {
@@ -155,10 +159,10 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			else {
 				for (String candidate : names) {
 					Object function = functionCatalog.lookupFunction(candidate);
-					if (function==null) {
+					if (function == null) {
 						function = functionCatalog.lookupConsumer(candidate);
 					}
-					if (function==null) {
+					if (function == null) {
 						continue;
 					}
 					Class<?> inputType = functionInspector.getInputType(function);
@@ -202,8 +206,8 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 		Class<?> inputType = functionInspector.getInputType(function);
 		return m -> {
 			if (functionInspector.isMessage(function)) {
-				return MessageBuilder.withPayload(convertPayload(inputType, m))
-						.copyHeaders(m.getHeaders()).build();
+				return MessageUtils.create(function, convertPayload(inputType, m),
+						m.getHeaders());
 			}
 			else {
 				return convertPayload(inputType, m);

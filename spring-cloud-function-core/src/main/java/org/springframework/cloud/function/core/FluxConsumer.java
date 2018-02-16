@@ -28,12 +28,17 @@ import reactor.core.publisher.Flux;
  *
  * @param <T> input type of target consumer
  */
-public class FluxConsumer<T> implements Consumer<Flux<T>> {
+public class FluxConsumer<T> implements Consumer<Flux<T>>, FluxWrapper<Consumer<T>> {
 
 	private final Consumer<T> consumer;
 
 	public FluxConsumer(Consumer<T> consumer) {
 		this.consumer = consumer;
+	}
+
+	@Override
+	public Consumer<T> getTarget() {
+		return this.consumer;
 	}
 
 	@Override

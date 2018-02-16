@@ -33,7 +33,7 @@ import reactor.core.publisher.Flux;
  *
  * @param <T> output type of target supplier
  */
-public class FluxSupplier<T> implements Supplier<Flux<T>> {
+public class FluxSupplier<T> implements Supplier<Flux<T>>, FluxWrapper<Supplier<T>>  {
 
 	private final Supplier<T> supplier;
 
@@ -42,12 +42,17 @@ public class FluxSupplier<T> implements Supplier<Flux<T>> {
 	public FluxSupplier(Supplier<T> supplier) {
 		this(supplier, null);
 	}
-
+	
 	public FluxSupplier(Supplier<T> supplier, Duration period) {
 		this.supplier = supplier;
 		this.period = period;
 	}
 
+	@Override
+	public Supplier<T> getTarget() {
+		return this.supplier;
+	}
+	
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Flux<T> get() {

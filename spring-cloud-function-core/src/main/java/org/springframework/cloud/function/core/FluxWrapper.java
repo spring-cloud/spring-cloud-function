@@ -16,39 +16,12 @@
 
 package org.springframework.cloud.function.core;
 
-import java.util.function.Supplier;
-
-import org.springframework.util.ClassUtils;
-
 /**
  * @author Dave Syer
  *
  */
-public class IsolatedSupplier<T> implements Supplier<T>, Isolated {
-
-	private final Supplier<T> supplier;
-	private final ClassLoader classLoader;
-
-	public IsolatedSupplier(Supplier<T> supplier) {
-		this.supplier = supplier;
-		this.classLoader = supplier.getClass().getClassLoader();
-	}
-
-	@Override
-	public ClassLoader getClassLoader() {
-		return this.classLoader;
-	}
-
-	@Override
-	public T get() {
-		ClassLoader context = ClassUtils
-				.overrideThreadContextClassLoader(this.classLoader);
-		try {
-			return supplier.get();
-		}
-		finally {
-			ClassUtils.overrideThreadContextClassLoader(context);
-		}
-	}
+public interface FluxWrapper<T> {
+	
+	T getTarget();
 
 }

@@ -30,13 +30,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.ServletServerHttpRequest;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -106,12 +107,10 @@ public class FluxHandlerMethodArgumentResolver
 		}
 		if (message) {
 			List<Object> messages = new ArrayList<>();
+			MessageHeaders headers = HeaderUtils.fromHttp(new ServletServerHttpRequest(
+					webRequest.getNativeRequest(HttpServletRequest.class)).getHeaders());
 			for (Object payload : body) {
-				messages.add(MessageBuilder.withPayload(payload)
-						.copyHeaders(HeaderUtils.fromHttp(new ServletServerHttpRequest(
-								webRequest.getNativeRequest(HttpServletRequest.class))
-										.getHeaders()))
-						.build());
+				messages.add(MessageUtils.create(handler, payload, headers));
 			}
 			body = messages;
 		}
