@@ -22,14 +22,14 @@ $ curl localhost:8080/admin
 Deploy a sample like this:
 
 ```
-$ curl localhost:8080/admin/pojos -d path=maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT
+$ curl localhost:8080/admin/pojos -d path=maven://com.example:function-sample-pojo:1.0.0.M4
 {"id":"81c568e36c7909ec1dd841aa7ee6d3e3"}
 ```
 
 (takes about 500ms, once the local Maven cache is warm). Deploy another one:
 
 ```
-$ curl localhost:8080/admin/sample -d path=maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT
+$ curl localhost:8080/admin/sample -d path=maven://com.example:function-sample:1.0.0.M4
 {"id":"cb2fdb3130f6349f143f4686848ea90f"}
 ```
 
@@ -37,14 +37,14 @@ Undeploy the first one:
 
 ```
 $ curl localhost:8080/admin/pojos -X DELETE
-{"name":"81c568e36c7909ec1dd841aa7ee6d3e3","id":"pojos","path":"maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT"}
+{"name":"81c568e36c7909ec1dd841aa7ee6d3e3","id":"pojos","path":"maven://com.example:function-sample-pojo:1.0.0.M4"}
 ```
 
 List the deployed apps:
 
 ```
 $ curl localhost:8080/admin
-{"sample":{"name":"sample","id":"cb2fdb3130f6349f143f4686848ea90","path":"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT"}}
+{"sample":{"name":"sample","id":"cb2fdb3130f6349f143f4686848ea90","path":"maven://com.example:function-sample:1.0.0.M4"}}
 ```
 
 Send an event to one of the functions:
