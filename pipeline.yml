@@ -43,7 +43,7 @@ slack-failure: &slack-failure
     attachments:
     - color: danger
       fallback: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME <FAILURE>"
-      text: "<!here> Build has failed"
+      text: "Build has failed"
       title: "$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME #$BUILD_NAME"
       title_link: $ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME
 

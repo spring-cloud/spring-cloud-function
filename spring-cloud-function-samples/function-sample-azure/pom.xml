@@ -5,7 +5,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-azure</artifactId>
-	<version>1.0.0.M4</version>
+	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>function-sample-azure</name>
@@ -37,7 +37,7 @@
 			<artifactId>spring-cloud-function-web</artifactId>
 			<scope>provided</scope>
 		</dependency>
-`		<dependency>
+		<dependency>
 			<groupId>com.microsoft.azure</groupId>
 			<artifactId>azure-functions-java-core</artifactId>
 			<version>1.0.0-beta-2</version>
@@ -57,7 +57,7 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-function-dependencies</artifactId>
-				<version>1.0.0.M4</version>
+				<version>1.0.0.BUILD-SNAPSHOT</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -66,13 +66,6 @@
 
 	<build>
 		<pluginManagement>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
 			<plugins>
 				<plugin>
 					<artifactId>maven-resources-plugin</artifactId>
@@ -87,6 +80,13 @@
 		</pluginManagement>
 
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>com.microsoft.azure</groupId>
 				<artifactId>azure-functions-maven-plugin</artifactId>
