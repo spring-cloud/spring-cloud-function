@@ -9,7 +9,7 @@ $ ./mvnw clean install
 Run one of the samples, e.g.
 
 ----
-$ java -jar spring-cloud-function-samples/spring-cloud-function-sample/target/*.jar
+$ java -jar spring-cloud-function-samples/function-sample/target/*.jar
 ----
 
 This runs the app and exposes its functions over HTTP, so you can
