@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 
 import org.reactivestreams.Publisher;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -37,16 +36,15 @@ import reactor.core.publisher.Flux;
 
 /**
  * <p>
- * Miscellaneous utility operations to interrogate functional
- * components (beans) configured in BeanFactory.
+ * Miscellaneous utility operations to interrogate functional components (beans)
+ * configured in BeanFactory.
  * </p>
  * <p>
- * It is important to understand that it is not a general purpose utility
- * to interrogate "any" functional component. Certain operations may/will
- * not work as expected due to java type erasure. While BeanFactory is not
- * the requirement, this utility is targeting only the components
- * defined in such way where they could be configured as
- * @{@link Component} or @{@link Bean} within BeanFactory.
+ * It is important to understand that it is not a general purpose utility to interrogate
+ * "any" functional component. Certain operations may/will not work as expected due to
+ * java type erasure. While BeanFactory is not the requirement, this utility is targeting
+ * only the components defined in such way where they could be configured beans within
+ * BeanFactory.
  * </p>
  * It is primarily used internally by the framework.
  *
@@ -63,7 +61,8 @@ public abstract class FunctionFactoryUtils {
 
 	public static boolean isFluxConsumer(Consumer<?> consumer) {
 		return consumer instanceof FunctionFactoryMetadata
-				? isFluxConsumer(((FunctionFactoryMetadata<?>) consumer).getFactoryMethod())
+				? isFluxConsumer(
+						((FunctionFactoryMetadata<?>) consumer).getFactoryMethod())
 				: isFlux(1, getParameterizedTypeNames(consumer, Consumer.class));
 	}
 
@@ -73,7 +72,8 @@ public abstract class FunctionFactoryUtils {
 
 	public static boolean isFluxSupplier(Supplier<?> supplier) {
 		return supplier instanceof FunctionFactoryMetadata
-				? isFluxSupplier(((FunctionFactoryMetadata<?>) supplier).getFactoryMethod())
+				? isFluxSupplier(
+						((FunctionFactoryMetadata<?>) supplier).getFactoryMethod())
 				: isFlux(1, getParameterizedTypeNames(supplier, Supplier.class));
 	}
 
@@ -83,7 +83,8 @@ public abstract class FunctionFactoryUtils {
 
 	public static boolean isFluxFunction(Function<?, ?> function) {
 		return function instanceof FunctionFactoryMetadata
-				? isFluxFunction(((FunctionFactoryMetadata<?>) function).getFactoryMethod())
+				? isFluxFunction(
+						((FunctionFactoryMetadata<?>) function).getFactoryMethod())
 				: isFlux(1, getParameterizedTypeNames(function, Function.class));
 	}
 
@@ -91,26 +92,29 @@ public abstract class FunctionFactoryUtils {
 		return isFlux(2, getParameterizedTypeNamesForMethod(method, Function.class));
 	}
 
-	private static String[] getParameterizedTypeNamesForMethod(Method method, Class<?> interfaceClass) {
+	private static String[] getParameterizedTypeNamesForMethod(Method method,
+			Class<?> interfaceClass) {
 		String[] types = retrieveTypes(method.getGenericReturnType(), interfaceClass);
 		return types == null ? new String[0] : types;
 	}
 
-	private static String[] getParameterizedTypeNames(Object source, Class<?> interfaceClass) {
+	private static String[] getParameterizedTypeNames(Object source,
+			Class<?> interfaceClass) {
 		return Stream.of(source.getClass().getGenericInterfaces())
-				.map(gi -> retrieveTypes(gi, interfaceClass))
-				.filter(s -> s != null)
-				.findFirst()
-				.orElse(getSerializedLambdaParameterizedTypeNames(source));
+				.map(gi -> retrieveTypes(gi, interfaceClass)).filter(s -> s != null)
+				.findFirst().orElse(getSerializedLambdaParameterizedTypeNames(source));
 	}
 
-	private static String[] retrieveTypes(Type genericInterface, Class<?> interfaceClass){
+	private static String[] retrieveTypes(Type genericInterface,
+			Class<?> interfaceClass) {
 		if ((genericInterface instanceof ParameterizedType) && interfaceClass
-				.getTypeName().equals(((ParameterizedType) genericInterface).getRawType().getTypeName())) {
+				.getTypeName().equals(((ParameterizedType) genericInterface).getRawType()
+						.getTypeName())) {
 			ParameterizedType type = (ParameterizedType) genericInterface;
 			Type[] args = type.getActualTypeArguments();
 			if (args != null) {
-				return Stream.of(args).map(arg -> arg.getTypeName()).toArray(String[]::new);
+				return Stream.of(args).map(arg -> arg.getTypeName())
+						.toArray(String[]::new);
 			}
 		}
 		return null;
@@ -124,7 +128,8 @@ public abstract class FunctionFactoryUtils {
 		ReflectionUtils.makeAccessible(method);
 		SerializedLambda serializedLambda = (SerializedLambda) ReflectionUtils
 				.invokeMethod(method, source);
-		String signature = serializedLambda.getImplMethodSignature().replaceAll("[()]","");
+		String signature = serializedLambda.getImplMethodSignature().replaceAll("[()]",
+				"");
 
 		List<String> typeNames = Stream.of(signature.split(";"))
 				.map(t -> t.substring(1).replace('/', '.')).collect(Collectors.toList());
@@ -132,7 +137,9 @@ public abstract class FunctionFactoryUtils {
 		return typeNames.toArray(new String[typeNames.size()]);
 	}
 
-	private static boolean isFlux(int length, String... types){
-		return !ObjectUtils.isEmpty(types) && types.length == length && Stream.of(types).allMatch(type -> type.startsWith(FLUX_CLASS_NAME) || type.startsWith(PUBLISHER_CLASS_NAME));
+	private static boolean isFlux(int length, String... types) {
+		return !ObjectUtils.isEmpty(types) && types.length == length
+				&& Stream.of(types).allMatch(type -> type.startsWith(FLUX_CLASS_NAME)
+						|| type.startsWith(PUBLISHER_CLASS_NAME));
 	}
 }

@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -28,7 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.el.stream.Optional;
 import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
