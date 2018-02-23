@@ -8,6 +8,7 @@ target/
 build/
 bin/
 .sts4-cache/
+.attach_pid*
 .m2/
 .gradle/
 _site/

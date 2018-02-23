@@ -19,14 +19,16 @@ package org.springframework.cloud.function.web.flux;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
+import org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.function.web.flux.request.FluxHandlerMethodArgumentResolver;
@@ -34,6 +36,8 @@ import org.springframework.cloud.function.web.flux.response.FluxReturnValueHandl
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -49,6 +53,7 @@ import reactor.core.publisher.Flux;
 @Configuration
 @ConditionalOnWebApplication
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
+@AutoConfigureBefore(HttpMessageConvertersAutoConfiguration.class)
 public class ReactorAutoConfiguration {
 
 	@Autowired
@@ -58,6 +63,24 @@ public class ReactorAutoConfiguration {
 	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog,
 			FunctionInspector inspector) {
 		return new FunctionHandlerMapping(catalog, inspector);
+	}
+
+	// TODO: remove this when https://jira.spring.io/browse/SPR-16529 is resolved
+	@Bean
+	public HttpMessageConverters httpMessageConverters(Gson gson) {
+		List<HttpMessageConverter<?>> converters = new ArrayList<>();
+		for (HttpMessageConverter<?> converter : new HttpMessageConverters()
+				.getConverters()) {
+			if (converter instanceof GsonHttpMessageConverter) {
+				BetterGsonHttpMessageConverter gsonConverter = new BetterGsonHttpMessageConverter();
+				gsonConverter.setGson(gson);
+				converters.add(gsonConverter);
+			}
+			else {
+				converters.add(converter);
+			}
+		}
+		return new HttpMessageConverters(false, converters);
 	}
 
 	@Configuration
@@ -74,7 +97,7 @@ public class ReactorAutoConfiguration {
 	protected static class FluxArgumentResolverConfiguration {
 		@Bean
 		public FluxHandlerMethodArgumentResolver fluxHandlerMethodArgumentResolver(
-				FunctionInspector inspector, ObjectMapper mapper) {
+				FunctionInspector inspector, Gson mapper) {
 			return new FluxHandlerMethodArgumentResolver(inspector, mapper);
 		}
 	}

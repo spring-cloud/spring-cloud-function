@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.flux.request;
 
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,8 +24,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,6 +36,7 @@ import org.springframework.cloud.function.web.flux.constants.WebRequestConstants
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
+import org.springframework.core.ResolvableType;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.messaging.MessageHeaders;
@@ -57,12 +59,11 @@ public class FluxHandlerMethodArgumentResolver
 	private static Log logger = LogFactory
 			.getLog(FluxHandlerMethodArgumentResolver.class);
 
-	private final ObjectMapper mapper;
+	private final Gson mapper;
 
 	private FunctionInspector inspector;
 
-	public FluxHandlerMethodArgumentResolver(FunctionInspector inspector,
-			ObjectMapper mapper) {
+	public FluxHandlerMethodArgumentResolver(FunctionInspector inspector, Gson mapper) {
 		this.inspector = inspector;
 		this.mapper = mapper;
 	}
@@ -95,14 +96,15 @@ public class FluxHandlerMethodArgumentResolver
 		}
 		else {
 			try {
-				body = mapper.readValue(nativeRequest.getInputStream(),
-						mapper.getTypeFactory()
-								.constructCollectionLikeType(ArrayList.class, type));
+				body = mapper.fromJson(
+						new InputStreamReader(nativeRequest.getInputStream()),
+						ResolvableType.forClassWithGenerics(ArrayList.class, type)
+								.getType());
 			}
-			catch (JsonMappingException e) {
+			catch (JsonSyntaxException e) {
 				nativeRequest.setAttribute(WebRequestConstants.INPUT_SINGLE, true);
-				body = Arrays.asList(
-						mapper.readValue(nativeRequest.getContentAsByteArray(), type));
+				body = Arrays.asList(mapper.fromJson(
+						new String(nativeRequest.getContentAsByteArray()), type));
 			}
 		}
 		if (message) {
