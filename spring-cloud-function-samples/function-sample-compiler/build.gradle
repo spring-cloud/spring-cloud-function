@@ -1,6 +1,6 @@
 buildscript {
 	ext {
-		springBootVersion = '1.5.10.BUILD-SNAPSHOT'
+		springBootVersion = '1.5.10.RELEASE'
 		wrapperVersion = '1.0.9.RELEASE'
 	}
 	repositories {
@@ -12,8 +12,6 @@ buildscript {
 	dependencies {
 		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-		// Remove this when Boot 1.5.10 is out.
-		classpath "io.spring.gradle:dependency-management-plugin:1.0.4.BUILD-SNAPSHOT"
 	}
 }
 
@@ -47,7 +45,7 @@ dependencyManagement {
 }
 
 dependencies {
-	compile('org.springframework.cloud:spring-cloud-function-web')
+	compile('org.springframework.cloud:spring-cloud-starter-function-web')
 	compile('org.springframework.cloud:spring-cloud-function-compiler')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
