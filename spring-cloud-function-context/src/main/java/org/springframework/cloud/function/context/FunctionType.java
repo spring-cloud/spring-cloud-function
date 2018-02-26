@@ -17,8 +17,10 @@ package org.springframework.cloud.function.context;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.function.Function;
 
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 
 import reactor.core.publisher.Flux;
@@ -28,6 +30,9 @@ import reactor.core.publisher.Flux;
  *
  */
 public class FunctionType {
+
+	public static FunctionType UNCLASSIFIED = new FunctionType(ResolvableType
+			.forClassWithGenerics(Function.class, Object.class, Object.class).getType());
 
 	private Type type;
 
@@ -58,6 +63,36 @@ public class FunctionType {
 				|| Message.class.isAssignableFrom(inputType)
 				|| outputType.getName().startsWith(Message.class.getName())
 				|| Message.class.isAssignableFrom(outputType);
+	}
+
+	public static FunctionType compose(FunctionType input, FunctionType output) {
+		ResolvableType inputGeneric;
+		ResolvableType inputType = ResolvableType.forClass(input.getInputType());
+		if (input.isMessage()) {
+			inputType = ResolvableType.forClassWithGenerics(Message.class, inputType);
+		}
+		ResolvableType outputGeneric;
+		ResolvableType outputType = ResolvableType.forClass(output.getOutputType());
+		if (output.isMessage()) {
+			outputType = ResolvableType.forClassWithGenerics(Message.class, outputType);
+		}
+		if (FunctionInspector.isWrapper(input.getInputWrapper())) {
+			inputGeneric = ResolvableType.forClassWithGenerics(input.getInputWrapper(),
+					inputType);
+		}
+		else {
+			inputGeneric = inputType;
+		}
+		if (FunctionInspector.isWrapper(output.getInputWrapper())) {
+			outputGeneric = ResolvableType.forClassWithGenerics(output.getInputWrapper(),
+					outputType);
+		}
+		else {
+			outputGeneric = outputType;
+		}
+		return new FunctionType(ResolvableType
+				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
+				.getType());
 	}
 
 	private Class<?> findType(ParamType paramType) {

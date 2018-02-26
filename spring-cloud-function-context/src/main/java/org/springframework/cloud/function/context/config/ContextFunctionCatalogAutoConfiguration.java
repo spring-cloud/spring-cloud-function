@@ -46,6 +46,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionScan;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionRegistrationEvent;
 import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
@@ -68,13 +69,10 @@ import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
-import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -176,22 +174,22 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		public Class<?> getInputWrapper(Object function) {
-			return processor.findType(function, ParamType.INPUT_WRAPPER);
+			return processor.findType(function).getInputWrapper();
 		}
 
 		@Override
 		public Class<?> getOutputWrapper(Object function) {
-			return processor.findType(function, ParamType.OUTPUT_WRAPPER);
+			return processor.findType(function).getOutputWrapper();
 		}
 
 		@Override
 		public Class<?> getInputType(Object function) {
-			return processor.findType(function, ParamType.INPUT);
+			return processor.findType(function).getInputType();
 		}
 
 		@Override
 		public Class<?> getOutputType(Object function) {
-			return processor.findType(function, ParamType.OUTPUT);
+			return processor.findType(function).getOutputType();
 		}
 
 		@Override
@@ -217,6 +215,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Autowired(required = false)
 		private ApplicationEventPublisher publisher;
+
 		@Autowired
 		private ConfigurableListableBeanFactory registry;
 
@@ -224,7 +223,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private Map<Object, String> registrations = new HashMap<>();
 
-		private Map<String, Map<ParamType, Class<?>>> types = new HashMap<>();
+		private Map<String, FunctionType> types = new HashMap<>();
 
 		public Set<String> getSuppliers() {
 			return this.suppliers.keySet();
@@ -295,16 +294,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			final Object value = function;
 			lookup.computeIfAbsent(name, key -> value);
-			Map<ParamType, Class<?>> values = types.computeIfAbsent(name,
-					key -> new HashMap<>());
-			for (ParamType type : ParamType.values()) {
-				if (!values.containsKey(type)) {
-					if (type.isInput()) {
-						values.put(type, types.get(stages[0]).get(type));
-					}
-					else {
-						values.put(type, types.get(stages[stages.length - 1]).get(type));
-					}
+			if (!types.containsKey(name)) {
+				if (types.containsKey(stages[0])
+						&& types.containsKey(stages[stages.length - 1])) {
+					FunctionType input = types.get(stages[0]);
+					FunctionType output = types.get(stages[stages.length - 1]);
+					types.put(name, FunctionType.compose(input, output));
 				}
 			}
 			registrations.put(function, name);
@@ -314,13 +309,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private Object lookup(String name, Map<String, Object> lookup) {
 			Object result = lookup.get(name);
 			if (result != null) {
-				Map<ParamType, Class<?>> values = types.computeIfAbsent(name,
-						key -> new HashMap<>());
-				for (ParamType type : ParamType.values()) {
-					if (!values.containsKey(type)) {
-						values.put(type, findType(result, type));
-					}
-				}
+				findType(result);
 			}
 			return result;
 		}
@@ -431,7 +420,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				this.conversionService = conversionService != null ? conversionService
 						: new DefaultConversionService();
 			}
-			Class<?> type = findType(function, ParamType.INPUT);
+			Class<?> type = findType(function).getInputType();
 			return conversionService.canConvert(String.class, type)
 					? conversionService.convert(value, type)
 					: value;
@@ -453,9 +442,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			Class<?> type;
 			if (target instanceof Supplier) {
 				type = Supplier.class;
-				findType(target, ParamType.OUTPUT);
-				findType(target, ParamType.OUTPUT_WRAPPER);
-				isMessage(target);
+				findType(target);
 				registration.target(target((Supplier<?>) target, key));
 				for (String name : registration.getNames()) {
 					this.suppliers.put(name, registration.getTarget());
@@ -463,9 +450,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			else if (target instanceof Consumer) {
 				type = Consumer.class;
-				findType(target, ParamType.INPUT);
-				findType(target, ParamType.INPUT_WRAPPER);
-				isMessage(target); // cache wrapper types
+				findType(target);
 				registration.target(target((Consumer<?>) target, key));
 				for (String name : registration.getNames()) {
 					this.consumers.put(name, registration.getTarget());
@@ -473,11 +458,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			else if (target instanceof Function) {
 				type = Function.class;
-				findType(target, ParamType.INPUT);
-				findType(target, ParamType.OUTPUT);
-				findType(target, ParamType.INPUT_WRAPPER);
-				findType(target, ParamType.OUTPUT_WRAPPER);
-				isMessage(target); // cache wrapper types
+				findType(target);
 				registration.target(target((Function<?, ?>) target, key));
 				for (String name : registration.getNames()) {
 					this.functions.put(name, registration.getTarget());
@@ -560,92 +541,55 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean hasFluxTypes(Object function) {
-			return FunctionInspector
-					.isWrapper(findType(function, ParamType.INPUT_WRAPPER))
-					|| FunctionInspector
-							.isWrapper(findType(function, ParamType.OUTPUT_WRAPPER));
+			return FunctionInspector.isWrapper(findType(function).getInputWrapper())
+					|| FunctionInspector.isWrapper(findType(function).getOutputWrapper());
 		}
 
-		private Class<?> findType(String name, AbstractBeanDefinition definition,
-				ParamType paramType) {
+		private FunctionType findType(String name, AbstractBeanDefinition definition) {
 			Object source = definition.getSource();
-			Type param = null;
+			FunctionType param = null;
 			// Start by assuming output -> Function
-			int index = paramType.isOutput() ? 1 : 0;
 			if (source instanceof StandardMethodMetadata) {
 				// Standard @Bean metadata
 				Type beanType = ((StandardMethodMetadata) source).getIntrospectedMethod()
 						.getGenericReturnType();
 				if (beanType instanceof ParameterizedType) {
 					ParameterizedType type = (ParameterizedType) beanType;
-					param = extractType(type, paramType, index);
+					param = new FunctionType(type);
 				}
 				else {
-					param = findTypeFromBeanClass((Class<?>) beanType, paramType);
+					param = new FunctionType(beanType);
 				}
 			}
 			else if (source instanceof MethodMetadataReadingVisitor) {
 				// A component scan with @Beans
 				MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
 				Type type = findBeanType(definition, visitor);
-				param = extractType(type, paramType, index);
+				param = new FunctionType(type);
 			}
 			else if (source instanceof Resource) {
 				Class<?> beanType = this.registry.getType(name);
-				param = findTypeFromBeanClass(beanType, paramType);
-				if (param == null) {
-					return Object.class;
-				}
+				param = new FunctionType(beanType);
 			}
 			else {
 				ResolvableType resolvable = (ResolvableType) getField(definition,
 						"targetType");
 				if (resolvable != null) {
-					param = resolvable.getGeneric(index).getGeneric(0).getType();
+					param = new FunctionType(resolvable.getType());
 				}
 				else {
 					Object bean = this.registry.getBean(name);
 					if (bean instanceof FunctionFactoryMetadata) {
 						FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) bean;
 						Type type = factory.getFactoryMethod().getGenericReturnType();
-						param = extractType(type, paramType, index);
+						param = new FunctionType(type);
+					}
+					else {
+						param = new FunctionType(bean.getClass());
 					}
 				}
 			}
-			return extractClass(name, param, paramType);
-		}
-
-		private Class<?> extractClass(String name, Type param, ParamType paramType) {
-			if (param instanceof ParameterizedType) {
-				ParameterizedType concrete = (ParameterizedType) param;
-				param = concrete.getRawType();
-			}
-			if (param == null) {
-				// Last ditch attempt to guess: Flux<String>
-				if (paramType.isWrapper()) {
-					param = Flux.class;
-				}
-				else {
-					param = String.class;
-				}
-			}
-			Class<?> result = param instanceof Class ? (Class<?>) param : null;
-			if (result != null) {
-				Map<ParamType, Class<?>> values = types.computeIfAbsent(name,
-						key -> new HashMap<>());
-				values.put(paramType, result);
-			}
-			return result;
-		}
-
-		private Type findTypeFromBeanClass(Class<?> beanType, ParamType paramType) {
-			int index = paramType.isOutput() ? 1 : 0;
-			for (Type type : beanType.getGenericInterfaces()) {
-				if (type.getTypeName().startsWith("java.util.function")) {
-					return extractType(type, paramType, index);
-				}
-			}
-			return null;
+			return param;
 		}
 
 		private Type findBeanType(AbstractBeanDefinition definition,
@@ -663,48 +607,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return type;
 		}
 
-		private Type extractType(Type type, ParamType paramType, int index) {
-			Type param;
-			if (type instanceof ParameterizedType) {
-				ParameterizedType parameterizedType = (ParameterizedType) type;
-				if (parameterizedType.getActualTypeArguments().length == 1) {
-					// There's only one
-					index = 0;
-				}
-				Type typeArgumentAtIndex = parameterizedType
-						.getActualTypeArguments()[index];
-				if (typeArgumentAtIndex instanceof ParameterizedType
-						&& !paramType.isWrapper()) {
-					if (FunctionInspector.isWrapper(
-							((ParameterizedType) typeArgumentAtIndex).getRawType())) {
-						param = ((ParameterizedType) typeArgumentAtIndex)
-								.getActualTypeArguments()[0];
-						param = extractNestedType(paramType, param);
-					}
-					else {
-						param = extractNestedType(paramType, typeArgumentAtIndex);
-					}
-				}
-				else {
-					param = extractNestedType(paramType, typeArgumentAtIndex);
-				}
-			}
-			else {
-				param = Object.class;
-			}
-			return param;
-		}
-
-		private Type extractNestedType(ParamType paramType, Type param) {
-			if (!paramType.isInnerWrapper()
-					&& param.getTypeName().startsWith(Message.class.getName())) {
-				if (param instanceof ParameterizedType) {
-					param = ((ParameterizedType) param).getActualTypeArguments()[0];
-				}
-			}
-			return param;
-		}
-
 		private Object getField(Object target, String name) {
 			Field field = ReflectionUtils.findField(target.getClass(), name);
 			if (field == null) {
@@ -715,58 +617,32 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean isMessage(Object function) {
-			Class<?> inputType = findType(function, ParamType.INPUT_INNER_WRAPPER);
-			Class<?> outputType = findType(function, ParamType.OUTPUT_INNER_WRAPPER);
-			return inputType.getName().startsWith(Message.class.getName())
-					|| Message.class.isAssignableFrom(inputType)
-					|| outputType.getName().startsWith(Message.class.getName())
-					|| Message.class.isAssignableFrom(outputType);
+			return findType(function).isMessage();
 		}
 
-		private Class<?> findType(Object function, ParamType type) {
+		private FunctionType findType(Object function) {
 			String name = registrations.get(function);
 			if (types.containsKey(name)) {
-				Map<ParamType, Class<?>> values = types.get(name);
-				if (values.containsKey(type)) {
-					return values.get(type);
-				}
+				return types.get(name);
 			}
+			FunctionType param;
 			if (name == null || registry == null
 					|| !registry.containsBeanDefinition(name)) {
 				if (function != null) {
-					Type param = findTypeFromBeanClass(function.getClass(), type);
-					if (param != null) {
-						Class<?> result = extractClass(name, param, type);
-						if (result != null) {
-							return result;
-						}
-					}
+					param = new FunctionType(function.getClass());
 				}
-				return Object.class;
+				else {
+					param = FunctionType.UNCLASSIFIED;
+				}
 			}
-			return findType(name,
-					(AbstractBeanDefinition) registry.getBeanDefinition(name), type);
+			else {
+				param = findType(name,
+						(AbstractBeanDefinition) registry.getBeanDefinition(name));
+			}
+			types.computeIfAbsent(name, str -> param);
+			return param;
 		}
+
 	}
 
-	enum ParamType {
-		INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER, INPUT_INNER_WRAPPER, OUTPUT_INNER_WRAPPER;
-
-		public boolean isOutput() {
-			return this == OUTPUT || this == OUTPUT_WRAPPER
-					|| this == OUTPUT_INNER_WRAPPER;
-		}
-
-		public boolean isInput() {
-			return this == INPUT || this == INPUT_WRAPPER || this == INPUT_INNER_WRAPPER;
-		}
-
-		public boolean isWrapper() {
-			return this == OUTPUT_WRAPPER || this == INPUT_WRAPPER;
-		}
-
-		public boolean isInnerWrapper() {
-			return this == OUTPUT_INNER_WRAPPER || this == INPUT_INNER_WRAPPER;
-		}
-	}
 }
