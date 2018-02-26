@@ -39,7 +39,7 @@ public class FunctionRegistration<T> {
 
 	private final Map<String, String> properties = new LinkedHashMap<>();
 
-	private Type type;
+	private FunctionType type;
 
 	public FunctionRegistration(T target) {
 		this.target = target;
@@ -53,7 +53,7 @@ public class FunctionRegistration<T> {
 		return names;
 	}
 
-	public Type getType() {
+	public FunctionType getType() {
 		return type;
 	}
 
@@ -79,7 +79,7 @@ public class FunctionRegistration<T> {
 	}
 
 	public FunctionRegistration<T> type(Type type) {
-		this.type = type;
+		this.type = FunctionType.of(type);
 		return this;
 	}
 

@@ -45,6 +45,10 @@ public class FunctionType {
 		this.type = type;
 	}
 
+	public Type getType() {
+		return type;
+	}
+
 	public Class<?> getInputWrapper() {
 		return findType(ParamType.INPUT_WRAPPER);
 	}
@@ -77,6 +81,10 @@ public class FunctionType {
 	public static boolean isWrapper(Type type) {
 		return Publisher.class.equals(type) || Flux.class.equals(type)
 				|| Mono.class.equals(type) || Optional.class.equals(type);
+	}
+
+	public static FunctionType of(Type function) {
+		return new FunctionType(function);
 	}
 
 	public static FunctionType from(Class<?> input) {

@@ -439,10 +439,15 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private void wrap(FunctionRegistration<Object> registration, String key) {
 			Object target = registration.getTarget();
 			this.registrations.put(target, key);
+			if (registration.getType() != null) {
+				this.types.put(key, registration.getType());
+			}
+			else {
+				findType(target);
+			}
 			Class<?> type;
 			if (target instanceof Supplier) {
 				type = Supplier.class;
-				findType(target);
 				registration.target(target((Supplier<?>) target, key));
 				for (String name : registration.getNames()) {
 					this.suppliers.put(name, registration.getTarget());
@@ -450,7 +455,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			else if (target instanceof Consumer) {
 				type = Consumer.class;
-				findType(target);
 				registration.target(target((Consumer<?>) target, key));
 				for (String name : registration.getNames()) {
 					this.consumers.put(name, registration.getTarget());
@@ -458,7 +462,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			else if (target instanceof Function) {
 				type = Function.class;
-				findType(target);
 				registration.target(target((Function<?, ?>) target, key));
 				for (String name : registration.getNames()) {
 					this.functions.put(name, registration.getTarget());
@@ -467,7 +470,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else {
 				return;
 			}
-			registrations.remove(target);
+			this.registrations.remove(target);
 			this.registrations.put(registration.getTarget(), key);
 			if (publisher != null) {
 				publisher.publishEvent(new FunctionRegistrationEvent(

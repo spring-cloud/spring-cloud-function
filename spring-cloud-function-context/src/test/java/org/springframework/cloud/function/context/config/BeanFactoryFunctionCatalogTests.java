@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import org.junit.Test;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.BeanFactoryFunctionCatalog;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
 
@@ -53,6 +54,26 @@ public class BeanFactoryFunctionCatalogTests {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
 		Function<Flux<Integer>, Flux<String>> foos = processor.lookupFunction("");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
+	}
+
+	@Test
+	public void registerFunctionWithType() {
+		processor.register(new FunctionRegistration<Function<Integer, String>>(
+				(Integer i) -> "i=" + i).names("foos").type(
+						FunctionType.from(Integer.class).to(String.class).getType()));
+		Function<Flux<Integer>, Flux<String>> foos = processor.lookupFunction("");
+		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("i=2");
+	}
+
+	@Test
+	public void registerFunctionWithFluxType() {
+		processor
+				.register(new FunctionRegistration<Function<Flux<Integer>, Flux<String>>>(
+						ints -> ints.map(i -> "i=" + i)).names("foos")
+								.type(FunctionType.from(Integer.class).to(String.class)
+										.wrap(Flux.class).getType()));
+		Function<Flux<Integer>, Flux<String>> foos = processor.lookupFunction("");
+		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("i=2");
 	}
 
 	@Test
