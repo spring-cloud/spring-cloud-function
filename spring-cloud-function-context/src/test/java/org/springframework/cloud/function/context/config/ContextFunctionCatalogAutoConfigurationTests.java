@@ -136,9 +136,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(catalog.lookupFunction("names,foos")).isNull();
 		assertThat(inspector.getOutputType(catalog.lookupSupplier("names,foos")))
 				.isAssignableFrom(Foo.class);
-		// The input type is the same as the output type of the first element in the chain
+		// The input type is the same as the input type of the first element in the chain
 		assertThat(inspector.getInputType(catalog.lookupSupplier("names,foos")))
-				.isAssignableFrom(String.class);
+				.isAssignableFrom(Void.class);
 	}
 
 	@Test
@@ -148,9 +148,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(catalog.lookupFunction("foos,print")).isNull();
 		assertThat(inspector.getInputType(catalog.lookupConsumer("foos,print")))
 				.isAssignableFrom(String.class);
-		// The output type is the same as the input type of the last element in the chain
+		// The output type is the same as the output type of the last element in the chain
 		assertThat(inspector.getOutputType(catalog.lookupConsumer("foos,print")))
-				.isAssignableFrom(Foo.class);
+				.isAssignableFrom(Void.class);
 	}
 
 	@Test
@@ -543,7 +543,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
-	protected static class SingletonMessageConfiguration implements BeanFactoryPostProcessor {
+	protected static class SingletonMessageConfiguration
+			implements BeanFactoryPostProcessor {
 
 		@Override
 		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
@@ -570,7 +571,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	}
 
-	protected static class SingletonMessageFunction implements Function<Message<Integer>, Message<String>> {
+	protected static class SingletonMessageFunction
+			implements Function<Message<Integer>, Message<String>> {
 
 		@Override
 		public Message<String> apply(Message<Integer> input) {
@@ -672,24 +674,28 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
-	protected static class FactoryBeanConfiguration implements BeanDefinitionRegistryPostProcessor {
+	protected static class FactoryBeanConfiguration
+			implements BeanDefinitionRegistryPostProcessor {
 
 		@Override
-		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
-			RootBeanDefinition beanDefinition = new RootBeanDefinition(FunctionFactoryBean.class);
+		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry)
+				throws BeansException {
+			RootBeanDefinition beanDefinition = new RootBeanDefinition(
+					FunctionFactoryBean.class);
 			beanDefinition.setSource(new DescriptiveResource("Function"));
 			registry.registerBeanDefinition("function", beanDefinition);
 		}
 
 		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+				throws BeansException {
 
 		}
 
 	}
 
-
-	private static class FunctionFactoryBean extends AbstractFactoryBean<Function<String, String>> {
+	private static class FunctionFactoryBean
+			extends AbstractFactoryBean<Function<String, String>> {
 
 		@Override
 		public Class<?> getObjectType() {

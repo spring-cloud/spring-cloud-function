@@ -18,7 +18,9 @@ package org.springframework.cloud.function.context;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 
@@ -96,6 +98,30 @@ public class FunctionTypeTests {
 		assertThat(function.getOutputType()).isEqualTo(String.class);
 		assertThat(function.getInputWrapper()).isEqualTo(Integer.class);
 		assertThat(function.getOutputWrapper()).isEqualTo(String.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
+	public void pojoConsumerFromType() {
+		Type type = ResolvableType.forClassWithGenerics(Consumer.class, Foo.class)
+				.getType();
+		FunctionType function = new FunctionType(type);
+		assertThat(function.getInputType()).isEqualTo(Foo.class);
+		assertThat(function.getOutputType()).isEqualTo(Void.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Foo.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(Void.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
+	public void pojoSupplierFromType() {
+		Type type = ResolvableType.forClassWithGenerics(Supplier.class, Foo.class)
+				.getType();
+		FunctionType function = new FunctionType(type);
+		assertThat(function.getInputType()).isEqualTo(Void.class);
+		assertThat(function.getOutputType()).isEqualTo(Foo.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Void.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(Foo.class);
 		assertThat(function.isMessage()).isEqualTo(false);
 	}
 

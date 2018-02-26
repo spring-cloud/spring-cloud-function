@@ -18,7 +18,9 @@ package org.springframework.cloud.function.context;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
 
@@ -219,6 +221,9 @@ public class FunctionType {
 		if (type instanceof ParameterizedType) {
 			ParameterizedType parameterizedType = (ParameterizedType) type;
 			if (parameterizedType.getActualTypeArguments().length == 1) {
+				if (isVoid(parameterizedType, paramType)) {
+					return Void.class;
+				}
 				// There's only one
 				index = 0;
 			}
@@ -243,6 +248,17 @@ public class FunctionType {
 			param = Object.class;
 		}
 		return param;
+	}
+
+	private boolean isVoid(ParameterizedType parameterizedType, ParamType paramType) {
+		Class<?> rawType = extractClass(parameterizedType.getRawType(), paramType);
+		if (Consumer.class.isAssignableFrom(rawType) && paramType.isOutput()) {
+			return true;
+		}
+		if (Supplier.class.isAssignableFrom(rawType) && paramType.isInput()) {
+			return true;
+		}
+		return false;
 	}
 
 	private Type extractNestedType(ParamType paramType, Type param) {

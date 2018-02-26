@@ -165,7 +165,8 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		}
 
 		MediaType mediaType = null;
-		if (isPlainText(webRequest) && CharSequence.class.isAssignableFrom(type)) {
+		if (isPlainText(webRequest) && (CharSequence.class.isAssignableFrom(type)
+				|| Void.class.isAssignableFrom(type))) {
 			mediaType = MediaType.TEXT_PLAIN;
 		}
 		else {

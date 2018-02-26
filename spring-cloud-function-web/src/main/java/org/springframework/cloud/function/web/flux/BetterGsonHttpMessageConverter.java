@@ -114,7 +114,6 @@ public class BetterGsonHttpMessageConverter
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
 	public Object read(Type type, Class<?> contextClass, HttpInputMessage inputMessage)
 			throws IOException, HttpMessageNotReadableException {
 
@@ -123,7 +122,6 @@ public class BetterGsonHttpMessageConverter
 	}
 
 	@Override
-	@SuppressWarnings("deprecation")
 	protected Object readInternal(Class<?> clazz, HttpInputMessage inputMessage)
 			throws IOException, HttpMessageNotReadableException {
 
