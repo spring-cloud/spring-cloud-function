@@ -42,7 +42,6 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -50,7 +49,6 @@ import org.springframework.cloud.function.context.FunctionScan;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionRegistrationEvent;
 import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
-import org.springframework.cloud.function.context.catalog.InMemoryFunctionCatalog;
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
@@ -86,7 +84,6 @@ import reactor.core.publisher.Flux;
  */
 @FunctionScan
 @Configuration
-@ConditionalOnClass(InMemoryFunctionCatalog.class)
 @ConditionalOnMissingBean(FunctionCatalog.class)
 public class ContextFunctionCatalogAutoConfiguration {
 
@@ -461,7 +458,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				isMessage(target);
 				registration.target(target((Supplier<?>) target, key));
 				for (String name : registration.getNames()) {
-					this.suppliers.put(name, (Supplier<?>) registration.getTarget());
+					this.suppliers.put(name, registration.getTarget());
 				}
 			}
 			else if (target instanceof Consumer) {
@@ -471,7 +468,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				isMessage(target); // cache wrapper types
 				registration.target(target((Consumer<?>) target, key));
 				for (String name : registration.getNames()) {
-					this.consumers.put(name, (Consumer<?>) registration.getTarget());
+					this.consumers.put(name, registration.getTarget());
 				}
 			}
 			else if (target instanceof Function) {
@@ -483,7 +480,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				isMessage(target); // cache wrapper types
 				registration.target(target((Function<?, ?>) target, key));
 				for (String name : registration.getNames()) {
-					this.functions.put(name, (Function<?, ?>) registration.getTarget());
+					this.functions.put(name, registration.getTarget());
 				}
 			}
 			else {

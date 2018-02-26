@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -38,6 +39,8 @@ public class FunctionRegistration<T> {
 
 	private final Map<String, String> properties = new LinkedHashMap<>();
 
+	private Type type;
+
 	public FunctionRegistration(T target) {
 		this.target = target;
 	}
@@ -50,11 +53,15 @@ public class FunctionRegistration<T> {
 		return names;
 	}
 
+	public Type getType() {
+		return type;
+	}
+
 	/**
-	 * Will set the names for this registration clearing all
-	 * previous names first. If you want to add a name  or set or
-	 * names to the existing set of names use {@link #names(Collection)}
-	 * or {@link #name(String)} or {@link #names(String...)} operations.
+	 * Will set the names for this registration clearing all previous names first. If you
+	 * want to add a name or set or names to the existing set of names use
+	 * {@link #names(Collection)} or {@link #name(String)} or {@link #names(String...)}
+	 * operations.
 	 * @param names
 	 */
 	public void setNames(Set<String> names) {
@@ -71,11 +78,15 @@ public class FunctionRegistration<T> {
 		return this;
 	}
 
+	public FunctionRegistration<T> type(Type type) {
+		this.type = type;
+		return this;
+	}
+
 	/**
-	 * Allows to override the target of this registration with a new target
-	 * that typically wraps the original target.
-	 * This typically happens when original target is wrapped into its {@link Flux}
-	 * counterpart (e.g., Function into FluxFunction)
+	 * Allows to override the target of this registration with a new target that typically
+	 * wraps the original target. This typically happens when original target is wrapped
+	 * into its {@link Flux} counterpart (e.g., Function into FluxFunction)
 	 * @param target new target
 	 * @return this registration with new target
 	 */
