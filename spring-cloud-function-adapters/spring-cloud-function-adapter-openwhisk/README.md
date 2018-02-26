@@ -78,3 +78,17 @@ wsk action invoke example --result --param payload foo
     "result": "FOO"
 }
 ```
+# Examples
+
+The following examples are built based on the details and explanations above, on how to deploy Spring Cloud Functions on to [OpenWhisk](https://openwhisk.apache.org/)
+
+* [Spring Cloud Function PoF Example](https://github.com/redhat-developer-demos/ow-scf-fruiteason)
+
+This example shows how to use Spring Cloud Functions by defining simple Plain Old Function (POF)
+
+* [Spring Cloud Function Application Example](https://github.com/redhat-developer-demos/ow-scf-greeter)
+
+This example shows how to use Spring Cloud Functions with a complete Spring Boot Application
+that has functions defined by extending `java.util.function.Function` interfaces.
+
+The base docker images used for above examples is available [here](https://github.com/redhat-developer-demos/openwhisk-scf-docker).
