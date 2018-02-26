@@ -541,8 +541,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean hasFluxTypes(Object function) {
-			return FunctionInspector.isWrapper(findType(function).getInputWrapper())
-					|| FunctionInspector.isWrapper(findType(function).getOutputWrapper());
+			return findType(function).isWrapper();
 		}
 
 		private FunctionType findType(String name, AbstractBeanDefinition definition) {

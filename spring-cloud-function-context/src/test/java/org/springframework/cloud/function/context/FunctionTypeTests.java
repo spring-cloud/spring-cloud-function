@@ -100,6 +100,16 @@ public class FunctionTypeTests {
 	}
 
 	@Test
+	public void plainFunctionFromApi() {
+		FunctionType function = FunctionType.from(Integer.class).to(String.class);
+		assertThat(function.getInputType()).isEqualTo(Integer.class);
+		assertThat(function.getOutputType()).isEqualTo(String.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Integer.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(String.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
 	public void fluxMessageFunctionFromType() {
 		Type type = ResolvableType
 				.forClassWithGenerics(Function.class,
@@ -116,6 +126,31 @@ public class FunctionTypeTests {
 		assertThat(function.getInputWrapper()).isEqualTo(Flux.class);
 		assertThat(function.getOutputWrapper()).isEqualTo(Flux.class);
 		assertThat(function.isMessage()).isEqualTo(true);
+	}
+
+	@Test
+	public void fluxMessageFunctionFromApi() {
+		FunctionType function = FunctionType.from(Foo.class).to(Bar.class).message()
+				.wrap(Flux.class);
+		assertThat(function.getInputType()).isEqualTo(Foo.class);
+		assertThat(function.getOutputType()).isEqualTo(Bar.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Flux.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(Flux.class);
+		assertThat(function.isMessage()).isEqualTo(true);
+	}
+
+	@Test
+	public void idempotentMessage() {
+		FunctionType function = FunctionType.from(Foo.class).to(Bar.class).message()
+				.wrap(Flux.class);
+		assertThat(function).isSameAs(function.message());
+	}
+
+	@Test
+	public void idempotentWrapper() {
+		FunctionType function = FunctionType.from(Foo.class).to(Bar.class).message()
+				.wrap(Flux.class);
+		assertThat(function).isSameAs(function.wrap(Flux.class));
 	}
 
 	private static class IntegerToString implements Function<Integer, String> {

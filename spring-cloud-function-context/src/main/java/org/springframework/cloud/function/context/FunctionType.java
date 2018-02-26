@@ -17,13 +17,16 @@ package org.springframework.cloud.function.context;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Optional;
 import java.util.function.Function;
 
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.reactivestreams.Publisher;
+
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -65,34 +68,110 @@ public class FunctionType {
 				|| Message.class.isAssignableFrom(outputType);
 	}
 
-	public static FunctionType compose(FunctionType input, FunctionType output) {
-		ResolvableType inputGeneric;
-		ResolvableType inputType = ResolvableType.forClass(input.getInputType());
-		if (input.isMessage()) {
-			inputType = ResolvableType.forClassWithGenerics(Message.class, inputType);
+	public boolean isWrapper() {
+		return isWrapper(getInputWrapper()) || isWrapper(getOutputWrapper());
+	}
+
+	public static boolean isWrapper(Type type) {
+		return Publisher.class.equals(type) || Flux.class.equals(type)
+				|| Mono.class.equals(type) || Optional.class.equals(type);
+	}
+
+	public static FunctionType from(Class<?> input) {
+		return new FunctionType(ResolvableType
+				.forClassWithGenerics(Function.class, input, Object.class).getType());
+	}
+
+	public FunctionType to(Class<?> output) {
+		ResolvableType inputGeneric = input(this);
+		ResolvableType outputGeneric = output(output);
+		return new FunctionType(ResolvableType
+				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
+				.getType());
+	}
+
+	public FunctionType message() {
+		if (isMessage()) {
+			return this;
 		}
-		ResolvableType outputGeneric;
-		ResolvableType outputType = ResolvableType.forClass(output.getOutputType());
-		if (output.isMessage()) {
-			outputType = ResolvableType.forClassWithGenerics(Message.class, outputType);
-		}
-		if (FunctionInspector.isWrapper(input.getInputWrapper())) {
-			inputGeneric = ResolvableType.forClassWithGenerics(input.getInputWrapper(),
-					inputType);
-		}
-		else {
-			inputGeneric = inputType;
-		}
-		if (FunctionInspector.isWrapper(output.getInputWrapper())) {
-			outputGeneric = ResolvableType.forClassWithGenerics(output.getInputWrapper(),
-					outputType);
-		}
-		else {
-			outputGeneric = outputType;
+		ResolvableType inputGeneric = message(getInputType());
+		ResolvableType outputGeneric = message(getOutputType());
+		if (isWrapper(getInputWrapper())) {
+			inputGeneric = ResolvableType.forClassWithGenerics(getInputWrapper(),
+					inputGeneric);
+			outputGeneric = ResolvableType.forClassWithGenerics(getInputWrapper(),
+					outputGeneric);
 		}
 		return new FunctionType(ResolvableType
 				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
 				.getType());
+	}
+
+	public FunctionType wrap(Class<?> wrapper) {
+		if (wrapper.isAssignableFrom(getInputWrapper())) {
+			return this;
+		}
+		return new FunctionType(ResolvableType.forClassWithGenerics(Function.class,
+				wrap(wrapper, getInputType()), wrap(wrapper, getOutputType())).getType());
+	}
+
+	public static FunctionType compose(FunctionType input, FunctionType output) {
+		ResolvableType inputGeneric = input(input);
+		ResolvableType outputGeneric = output(output);
+		return new FunctionType(ResolvableType
+				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
+				.getType());
+	}
+
+	private ResolvableType wrap(Class<?> wrapper, Class<?> type) {
+		return isMessage() ? wrap(wrapper, message(type))
+				: ResolvableType.forClassWithGenerics(wrapper, type);
+	}
+
+	private ResolvableType wrap(Class<?> wrapper, ResolvableType type) {
+		return ResolvableType.forClassWithGenerics(wrapper, type);
+	}
+
+	private ResolvableType message(Class<?> type) {
+		return ResolvableType.forClassWithGenerics(Message.class, type);
+	}
+
+	private static ResolvableType input(FunctionType type) {
+		return type.input(type.getInputType());
+	}
+
+	private static ResolvableType output(FunctionType type) {
+		return type.output(type.getOutputType());
+	}
+
+	private ResolvableType output(Class<?> type) {
+		ResolvableType generic;
+		ResolvableType raw = ResolvableType.forClass(type);
+		if (isMessage()) {
+			raw = ResolvableType.forClassWithGenerics(Message.class, raw);
+		}
+		if (FunctionType.isWrapper(getOutputWrapper())) {
+			generic = ResolvableType.forClassWithGenerics(getOutputWrapper(), raw);
+		}
+		else {
+			generic = raw;
+		}
+		return generic;
+	}
+
+	private ResolvableType input(Class<?> type) {
+		ResolvableType generic;
+		ResolvableType raw = ResolvableType.forClass(type);
+		if (isMessage()) {
+			raw = ResolvableType.forClassWithGenerics(Message.class, raw);
+		}
+		if (FunctionType.isWrapper(getInputWrapper())) {
+			generic = ResolvableType.forClassWithGenerics(getInputWrapper(), raw);
+		}
+		else {
+			generic = raw;
+		}
+		return generic;
 	}
 
 	private Class<?> findType(ParamType paramType) {
@@ -146,7 +225,7 @@ public class FunctionType {
 			Type typeArgumentAtIndex = parameterizedType.getActualTypeArguments()[index];
 			if (typeArgumentAtIndex instanceof ParameterizedType
 					&& !paramType.isWrapper()) {
-				if (FunctionInspector.isWrapper(
+				if (FunctionType.isWrapper(
 						((ParameterizedType) typeArgumentAtIndex).getRawType())) {
 					param = ((ParameterizedType) typeArgumentAtIndex)
 							.getActualTypeArguments()[0];
