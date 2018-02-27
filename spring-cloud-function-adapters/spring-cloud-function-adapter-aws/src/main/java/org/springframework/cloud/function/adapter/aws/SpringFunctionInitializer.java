@@ -99,17 +99,17 @@ public class SpringFunctionInitializer implements Closeable {
 			this.function = context.getBean(name, Function.class);
 		}
 		else {
-			this.function = this.catalog.lookupFunction(name);
+			this.function = this.catalog.lookup(Function.class, name);
 			if (this.function == null) {
 				if (defaultName) {
 					name = "consumer";
 				}
-				this.consumer = this.catalog.lookupConsumer(name);
+				this.consumer = this.catalog.lookup(Consumer.class, name);
 				if (this.consumer == null) {
 					if (defaultName) {
 						name = "supplier";
 					}
-					this.supplier = this.catalog.lookupSupplier(name);
+					this.supplier = this.catalog.lookup(Supplier.class, name);
 				}
 			}
 		}

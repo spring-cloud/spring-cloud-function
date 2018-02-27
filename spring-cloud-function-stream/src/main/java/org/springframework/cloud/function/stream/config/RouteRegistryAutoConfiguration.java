@@ -15,6 +15,8 @@
  */
 package org.springframework.cloud.function.stream.config;
 
+import java.util.function.Supplier;
+
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -36,7 +38,7 @@ public class RouteRegistryAutoConfiguration {
 
 	@Bean
 	public RouteRegistry supplierRoutes(FunctionCatalog registry) {
-		return () -> registry.getSupplierNames();
+		return () -> registry.getNames(Supplier.class);
 	}
 
 }

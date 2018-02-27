@@ -51,7 +51,7 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
 	@Override
 	protected void doStart() {
-		for (String name : functionCatalog.getSupplierNames()) {
+		for (String name : functionCatalog.getNames(Supplier.class)) {
 			start(name);
 		}
 	}
@@ -83,7 +83,7 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 		if (!disposables.containsKey(name)) {
 			synchronized (disposables) {
 				if (!disposables.containsKey(name)) {
-					Supplier<Flux<?>> supplier = functionCatalog.lookupSupplier(name);
+					Supplier<Flux<?>> supplier = functionCatalog.lookup(Supplier.class, name);
 					if (supplier != null) {
 						suppliers.add(name);
 						disposables.put(name,
@@ -96,7 +96,7 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 	}
 
 	private void send(String name, Object payload) {
-		Supplier<Flux<?>> supplier = functionCatalog.lookupSupplier(name);
+		Supplier<Flux<?>> supplier = functionCatalog.lookup(Supplier.class, name);
 		Message<?> message = MessageUtils.unpack(supplier, payload);
 		message = MessageBuilder.fromMessage(message)
 				.setHeaderIfAbsent(StreamConfigurationProperties.ROUTE_KEY, name).build();

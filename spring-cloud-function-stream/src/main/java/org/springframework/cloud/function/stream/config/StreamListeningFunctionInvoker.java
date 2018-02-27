@@ -88,7 +88,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 	}
 
 	private Flux<Message<?>> function(String name, Flux<Message<?>> flux) {
-		Function<Object, Flux<?>> function = functionCatalog.lookupFunction(name);
+		Function<Object, Flux<?>> function = functionCatalog.lookup(Function.class, name);
 		return flux.publish(values -> {
 			Flux<?> result = function
 					.apply(values.map(message -> convertInput(function).apply(message)));
@@ -114,7 +114,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 	}
 
 	private Flux<Message<?>> consumer(String name, Flux<Message<?>> flux) {
-		Consumer<Object> consumer = functionCatalog.lookupConsumer(name);
+		Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, name);
 		consumer.accept(flux.map(message -> convertInput(consumer).apply(message))
 				.filter(transformed -> transformed != UNCONVERTED));
 		return Flux.empty();
@@ -125,7 +125,7 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			return Flux.empty();
 		}
 		String name = choose(names);
-		if (functionCatalog.lookupConsumer(name) != null) {
+		if (functionCatalog.lookup(Consumer.class, name) != null) {
 			return consumer(name, flux);
 		}
 		return function(name, flux);
@@ -149,8 +149,8 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			name = stash(defaultRoute);
 		}
 		if (name == null) {
-			Set<String> names = new LinkedHashSet<>(functionCatalog.getFunctionNames());
-			names.addAll(functionCatalog.getConsumerNames());
+			Set<String> names = new LinkedHashSet<>(functionCatalog.getNames(Function.class));
+			names.addAll(functionCatalog.getNames(Consumer.class));
 			List<String> matches = new ArrayList<>();
 			if (names.size() == 1) {
 				String key = names.iterator().next();
@@ -158,9 +158,9 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			}
 			else {
 				for (String candidate : names) {
-					Object function = functionCatalog.lookupFunction(candidate);
+					Object function = functionCatalog.lookup(Function.class, candidate);
 					if (function == null) {
-						function = functionCatalog.lookupConsumer(candidate);
+						function = functionCatalog.lookup(Consumer.class, candidate);
 					}
 					if (function == null) {
 						continue;
@@ -187,13 +187,13 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 	}
 
 	private String stash(String key) {
-		if (functionCatalog.lookupFunction(key) != null) {
+		if (functionCatalog.lookup(Function.class, key) != null) {
 			if (!processors.containsKey(key)) {
 				processors.put(key, flux -> function(key, flux));
 			}
 			return key;
 		}
-		else if (functionCatalog.lookupConsumer(key) != null) {
+		else if (functionCatalog.lookup(Consumer.class, key) != null) {
 			if (!processors.containsKey(key)) {
 				processors.put(key, flux -> consumer(key, flux));
 			}

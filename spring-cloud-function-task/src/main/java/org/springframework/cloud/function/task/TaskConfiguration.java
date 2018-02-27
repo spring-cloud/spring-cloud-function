@@ -45,12 +45,9 @@ public class TaskConfiguration {
 
 	@Bean
 	public CommandLineRunner commandLineRunner(FunctionCatalog registry) {
-		final Supplier<Flux<Object>> supplier = registry
-				.lookupSupplier(properties.getSupplier());
-		final Function<Flux<Object>, Flux<Object>> function = registry
-				.lookupFunction(properties.getFunction());
-		final Consumer<Flux<Object>> consumer = registry
-				.lookupConsumer(properties.getConsumer());
+		final Supplier<Flux<Object>> supplier = registry.lookup(Supplier.class, properties.getSupplier());
+		final Function<Flux<Object>, Flux<Object>> function = registry.lookup(Function.class, properties.getFunction());
+		final Consumer<Flux<Object>> consumer = registry.lookup(Consumer.class, properties.getConsumer());
 		CommandLineRunner runner = new CommandLineRunner() {
 
 			@Override

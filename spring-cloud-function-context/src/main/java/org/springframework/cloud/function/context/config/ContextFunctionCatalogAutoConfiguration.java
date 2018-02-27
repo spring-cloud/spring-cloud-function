@@ -64,8 +64,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
@@ -119,38 +117,31 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		@SuppressWarnings("unchecked")
-		public <T> Supplier<T> lookupSupplier(String name) {
-			Supplier<T> result = (Supplier<T>) processor.lookupSupplier(name);
-			return result;
+		public <T> T lookup(Class<?> type, String name) {
+			if (Supplier.class.isAssignableFrom(type)) {
+				return (T) processor.lookupSupplier(name);
+			}
+			if (Consumer.class.isAssignableFrom(type)) {
+				return (T) processor.lookupConsumer(name);
+			}
+			if (Function.class.isAssignableFrom(type)) {
+				return (T) processor.lookupFunction(name);
+			}
+			return null;
 		}
 
 		@Override
-		@SuppressWarnings("unchecked")
-		public <T, R> Function<T, R> lookupFunction(String name) {
-			Function<T, R> result = (Function<T, R>) processor.lookupFunction(name);
-			return result;
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <T> Consumer<T> lookupConsumer(String name) {
-			Consumer<T> result = (Consumer<T>) processor.lookupConsumer(name);
-			return result;
-		}
-
-		@Override
-		public Set<String> getSupplierNames() {
-			return this.processor.getSuppliers();
-		}
-
-		@Override
-		public Set<String> getFunctionNames() {
-			return this.processor.getFunctions();
-		}
-
-		@Override
-		public Set<String> getConsumerNames() {
-			return this.processor.getConsumers();
+		public Set<String> getNames(Class<?> type) {
+			if (Supplier.class.isAssignableFrom(type)) {
+				return this.processor.getSuppliers();
+			}
+			if (Consumer.class.isAssignableFrom(type)) {
+				return this.processor.getConsumers();
+			}
+			if (Function.class.isAssignableFrom(type)) {
+				return this.processor.getFunctions();
+			}
+			return Collections.emptySet();
 		}
 
 		public BeanFactoryFunctionCatalog(ContextFunctionRegistry processor) {
@@ -168,38 +159,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		@Override
-		public boolean isMessage(Object function) {
-			return processor.isMessage(function);
-		}
-
-		@Override
-		public Class<?> getInputWrapper(Object function) {
-			return processor.findType(function).getInputWrapper();
-		}
-
-		@Override
-		public Class<?> getOutputWrapper(Object function) {
-			return processor.findType(function).getOutputWrapper();
-		}
-
-		@Override
-		public Class<?> getInputType(Object function) {
-			return processor.findType(function).getInputType();
-		}
-
-		@Override
-		public Class<?> getOutputType(Object function) {
-			return processor.findType(function).getOutputType();
-		}
-
-		@Override
-		public Object convert(Object function, String value) {
-			return processor.convert(function, value);
-		}
-
-		@Override
-		public String getName(Object function) {
-			return processor.registrations.get(function);
+		public FunctionRegistration<?> getRegistration(Object function) {
+			return processor.getRegistration(function);
 		}
 
 	}
@@ -219,14 +180,20 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@Autowired
 		private ConfigurableListableBeanFactory registry;
 
-		private ConversionService conversionService;
-
-		private Map<Object, String> registrations = new HashMap<>();
+		private Map<Object, String> names = new HashMap<>();
 
 		private Map<String, FunctionType> types = new HashMap<>();
 
 		public Set<String> getSuppliers() {
 			return this.suppliers.keySet();
+		}
+
+		public FunctionRegistration<?> getRegistration(Object function) {
+			if (!names.containsKey(function)) {
+				return null;
+			}
+			return new FunctionRegistration<>(function).name(names.get(function))
+					.type(findType(function).getType());
 		}
 
 		public Set<String> getConsumers() {
@@ -302,7 +269,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 					types.put(name, FunctionType.compose(input, output));
 				}
 			}
-			registrations.put(function, name);
+			names.put(function, name);
 			return function;
 		}
 
@@ -413,19 +380,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return registrations;
 		}
 
-		private Object convert(Object function, String value) {
-			if (conversionService == null && registry != null) {
-				ConversionService conversionService = this.registry
-						.getConversionService();
-				this.conversionService = conversionService != null ? conversionService
-						: new DefaultConversionService();
-			}
-			Class<?> type = findType(function).getInputType();
-			return conversionService.canConvert(String.class, type)
-					? conversionService.convert(value, type)
-					: value;
-		}
-
 		private Collection<String> getAliases(String key) {
 			Collection<String> names = new LinkedHashSet<>();
 			String value = getQualifier(key);
@@ -438,7 +392,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private void wrap(FunctionRegistration<Object> registration, String key) {
 			Object target = registration.getTarget();
-			this.registrations.put(target, key);
+			this.names.put(target, key);
 			if (registration.getType() != null) {
 				this.types.put(key, registration.getType());
 			}
@@ -470,8 +424,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else {
 				return;
 			}
-			this.registrations.remove(target);
-			this.registrations.put(registration.getTarget(), key);
+			this.names.remove(target);
+			this.names.put(registration.getTarget(), key);
 			if (publisher != null) {
 				publisher.publishEvent(new FunctionRegistrationEvent(
 						registration.getTarget(), type, registration.getNames()));
@@ -618,12 +572,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return ReflectionUtils.getField(field, target);
 		}
 
-		private boolean isMessage(Object function) {
-			return findType(function).isMessage();
-		}
-
 		private FunctionType findType(Object function) {
-			String name = registrations.get(function);
+			String name = names.get(function);
 			if (types.containsKey(name)) {
 				return types.get(name);
 			}

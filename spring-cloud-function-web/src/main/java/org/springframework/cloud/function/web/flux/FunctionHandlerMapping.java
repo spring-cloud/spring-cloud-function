@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -55,11 +54,12 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	private String debug = "false";
 
 	@Autowired
-	public FunctionHandlerMapping(FunctionCatalog catalog, FunctionInspector inspector) {
+	public FunctionHandlerMapping(FunctionCatalog catalog,
+			FunctionController controller) {
 		this.functions = catalog;
-		logger.info("FunctionCatalog: " + catalog + ", FunctionInspector: " + inspector);
+		logger.info("FunctionCatalog: " + catalog);
 		setOrder(super.getOrder() - 5);
-		this.controller = new FunctionController(inspector);
+		this.controller = controller;
 	}
 
 	@Override
@@ -118,12 +118,12 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
-		Consumer<Object> consumer = functions.lookupConsumer(path);
+		Consumer<Object> consumer = functions.lookup(Consumer.class, path);
 		if (consumer != null) {
 			request.setAttribute(WebRequestConstants.CONSUMER, consumer);
 			return consumer;
 		}
-		Function<Object, Object> function = functions.lookupFunction(path);
+		Function<Object, Object> function = functions.lookup(Function.class, path);
 		if (function != null) {
 			request.setAttribute(WebRequestConstants.FUNCTION, function);
 			return function;
@@ -136,7 +136,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
-		Supplier<Object> supplier = functions.lookupSupplier(path);
+		Supplier<Object> supplier = functions.lookup(Supplier.class, path);
 		if (supplier != null) {
 			request.setAttribute(WebRequestConstants.SUPPLIER, supplier);
 			return supplier;
@@ -152,7 +152,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			name = builder.toString();
 			value = path.length() > name.length() ? path.substring(name.length() + 1)
 					: null;
-			Function<Object, Object> function = functions.lookupFunction(name);
+			Function<Object, Object> function = functions.lookup(Function.class, name);
 			if (function != null) {
 				request.setAttribute(WebRequestConstants.FUNCTION, function);
 				request.setAttribute(WebRequestConstants.ARGUMENT, value);

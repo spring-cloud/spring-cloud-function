@@ -118,7 +118,7 @@ public class FunctionType {
 	}
 
 	public FunctionType wrap(Class<?> wrapper) {
-		if (wrapper.isAssignableFrom(getInputWrapper())) {
+		if (wrapper.isAssignableFrom(getInputWrapper()) || !isWrapper(wrapper)) {
 			return this;
 		}
 		return new FunctionType(ResolvableType.forClassWithGenerics(Function.class,

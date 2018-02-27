@@ -16,24 +16,48 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import org.springframework.cloud.function.context.FunctionRegistration;
+
 /**
  * @author Dave Syer
  *
  */
 public interface FunctionInspector {
 
-	boolean isMessage(Object function);
+	FunctionRegistration<?> getRegistration(Object function);
 
-	Class<?> getInputType(Object function);
+	default boolean isMessage(Object function) {
+		FunctionRegistration<?> registration = getRegistration(function);
+		return registration == null ? false : registration.getType().isMessage();
+	}
 
-	Class<?> getOutputType(Object function);
+	default Class<?> getInputType(Object function) {
+		FunctionRegistration<?> registration = getRegistration(function);
+		return registration == null ? Object.class
+				: registration.getType().getInputType();
+	}
 
-	Class<?> getInputWrapper(Object function);
+	default Class<?> getOutputType(Object function) {
+		FunctionRegistration<?> registration = getRegistration(function);
+		return registration == null ? Object.class
+				: registration.getType().getOutputType();
+	}
 
-	Class<?> getOutputWrapper(Object function);
+	default Class<?> getInputWrapper(Object function) {
+		FunctionRegistration<?> registration = getRegistration(function);
+		return registration == null ? Object.class
+				: registration.getType().getInputWrapper();
+	}
 
-	Object convert(Object function, String value);
+	default Class<?> getOutputWrapper(Object function) {
+		FunctionRegistration<?> registration = getRegistration(function);
+		return registration == null ? Object.class
+				: registration.getType().getOutputWrapper();
+	}
 
-	String getName(Object function);
+	default String getName(Object function) {
+		FunctionRegistration<?> registration = getRegistration(function);
+		return registration == null ? null : registration.getNames().iterator().next();
+	}
 
 }

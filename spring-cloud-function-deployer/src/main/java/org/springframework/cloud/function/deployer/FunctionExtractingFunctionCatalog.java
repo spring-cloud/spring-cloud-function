@@ -23,8 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
@@ -38,6 +36,8 @@ import org.springframework.cloud.deployer.spi.core.AppDefinition;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
 import org.springframework.cloud.deployer.thin.ThinJarAppDeployer;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.stream.config.SupplierInvokingMessageProducer;
 import org.springframework.cloud.stream.binder.servlet.RouteRegistrar;
@@ -89,75 +89,66 @@ public class FunctionExtractingFunctionCatalog
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public <T> Consumer<T> lookupConsumer(String name) {
-		return (Consumer<T>) lookup(name, "lookupConsumer");
+	public FunctionRegistration<?> getRegistration(Object function) {
+		String name = getName(function);
+		if (name == null) {
+			return null;
+		}
+		return new FunctionRegistration<>(function).name(name)
+				.type(findType(function).getType());
+	}
+
+	private FunctionType findType(Object function) {
+		FunctionType type = FunctionType.from(getInputType(function))
+				.to(getOutputType(function)).wrap(getInputWrapper(function));
+		if (isMessage(function)) {
+			type = type.message();
+		}
+		return type;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T, R> Function<T, R> lookupFunction(String name) {
-		return (Function<T, R>) lookup(name, "lookupFunction");
+	public <T> T lookup(Class<?> type, String name) {
+		return (T) lookup(type, name, "lookup");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> Supplier<T> lookupSupplier(String name) {
-		return (Supplier<T>) lookup(name, "lookupSupplier");
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public Set<String> getSupplierNames() {
-		return (Set<String>) catalog("getSupplierNames");
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public Set<String> getFunctionNames() {
-		return (Set<String>) catalog("getFunctionNames");
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public Set<String> getConsumerNames() {
-		return (Set<String>) catalog("getConsumerNames");
+	public Set<String> getNames(Class<?> type) {
+		return (Set<String>) getNames("getNames", type);
 	}
 
 	@Override
 	public boolean isMessage(Object function) {
-		return (Boolean) inspect(function, "isMessage");
+		return (Boolean) type(function, "isMessage");
 	}
 
 	@Override
 	public Class<?> getInputType(Object function) {
-		return (Class<?>) inspect(function, "getInputType");
+		return (Class<?>) type(function, "getInputType");
 	}
 
 	@Override
 	public Class<?> getOutputType(Object function) {
-		return (Class<?>) inspect(function, "getOutputType");
+		return (Class<?>) type(function, "getOutputType");
 	}
 
 	@Override
 	public Class<?> getInputWrapper(Object function) {
-		return (Class<?>) inspect(function, "getInputWrapper");
+		return (Class<?>) type(function, "getInputWrapper");
 	}
 
 	@Override
 	public Class<?> getOutputWrapper(Object function) {
-		return (Class<?>) inspect(function, "getOutputWrapper");
+		return (Class<?>) type(function, "getOutputWrapper");
 	}
 
-	@Override
-	public Object convert(Object function, String value) {
-		return inspect(function, "convert");
-	}
-
+	@SuppressWarnings("unchecked")
 	@Override
 	public String getName(Object function) {
-		return (String) inspect(function, "getName");
+		return ((Set<String>) inspect(function, "getNames")).iterator().next();
 	}
 
 	public String deploy(String name, String path, String... args) {
@@ -208,7 +199,8 @@ public class FunctionExtractingFunctionCatalog
 	@SuppressWarnings("unchecked")
 	private Set<String> getSupplierNames(String name) {
 		String id = this.names.get(name);
-		return (Set<String>) invoke(id, FunctionCatalog.class, "getSupplierNames");
+		return (Set<String>) invoke(id, FunctionCatalog.class, "getNames",
+				Supplier.class);
 	}
 
 	private void unregister(String name) {
@@ -228,24 +220,67 @@ public class FunctionExtractingFunctionCatalog
 		if (logger.isDebugEnabled()) {
 			logger.debug("Inspecting " + method);
 		}
-		return invoke(FunctionInspector.class, method, arg);
+		return invoke(FunctionInspector.class, "getRegistration", (id, result) -> {
+			return prefix(id, invoke(result, method));
+		}, arg);
 	}
 
-	private Object lookup(String name, String method) {
+	private Object type(Object arg, String method) {
 		if (logger.isDebugEnabled()) {
-			logger.debug("Looking up " + name + " with " + method);
+			logger.debug("Inspecting " + method);
 		}
-		return invoke(FunctionCatalog.class, method, name);
+		return invoke(invoke(invoke(FunctionInspector.class, "getRegistration", arg),
+				"getType"), method);
 	}
 
-	private Object catalog(String method) {
+	private Object prefix(String id, Object result) {
+		String name = this.ids.get(id);
+		String prefix = name + "/";
+		if (result != null) {
+			if (result instanceof Collection) {
+				Set<String> results = new LinkedHashSet<>();
+				for (Object value : (Collection<?>) result) {
+					results.add(prefix + value);
+				}
+				return results;
+			}
+			else if (result instanceof String) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Prefixed (from \" + name + \"): " + result);
+				}
+				return prefix + result;
+			}
+
+			else {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Result (from " + name + "): " + result);
+				}
+				return result;
+			}
+		}
+		return null;
+	}
+
+	private Object lookup(Class<?> type, String name, String method) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Looking up " + type + " named " + name + " with " + method);
+		}
+		return invoke(FunctionCatalog.class, method, type, name);
+	}
+
+	private Object getNames(String method, Class<?> type) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Calling " + method);
 		}
-		return invoke(FunctionCatalog.class, method);
+		return invoke(FunctionCatalog.class, method, type);
 	}
 
 	private Object invoke(Class<?> type, String method, Object... arg) {
+		return invoke(type, method, null, arg);
+	}
+
+	private Object invoke(Class<?> type, String method, Callback callback,
+			Object... arg) {
 		Set<Object> results = new LinkedHashSet<>();
 		Object fallback = null;
 		for (String id : this.deployed.keySet()) {
@@ -265,6 +300,9 @@ public class FunctionExtractingFunctionCatalog
 					fallback = false;
 					continue;
 				}
+				if (callback != null) {
+					return callback.call(id, result);
+				}
 				return result;
 			}
 		}
@@ -274,7 +312,7 @@ public class FunctionExtractingFunctionCatalog
 		if (logger.isDebugEnabled()) {
 			logger.debug("Results: " + results);
 		}
-		return arg.length > 0 ? null : results;
+		return "lookup".equals(method) ? null : results;
 	}
 
 	private Object invoke(String id, Class<?> type, String method, Object... arg) {
@@ -284,11 +322,11 @@ public class FunctionExtractingFunctionCatalog
 		}
 		String name = this.ids.get(id);
 		String prefix = name + "/";
-		if (arg.length == 1) {
-			if (arg[0] instanceof String) {
-				String specific = arg[0].toString();
+		if (arg.length == 2 && arg[0] instanceof Class) {
+			if (arg[1] instanceof String) {
+				String specific = arg[1].toString();
 				if (specific.startsWith(prefix)) {
-					arg[0] = specific.substring(prefix.length());
+					arg[1] = specific.substring(prefix.length());
 				}
 				else {
 					return null;
@@ -296,39 +334,26 @@ public class FunctionExtractingFunctionCatalog
 			}
 		}
 		try {
-			MethodInvoker invoker = new MethodInvoker();
-			invoker.setTargetObject(catalog);
-			invoker.setTargetMethod(method);
-			invoker.setArguments(arg);
-			invoker.prepare();
-			Object result = invoker.invoke();
-			if (result != null) {
-				if (result instanceof Collection) {
-					Set<String> results = new LinkedHashSet<>();
-					for (Object value : (Collection<?>) result) {
-						results.add(prefix + value);
-					}
-					return results;
-				}
-				else if (result instanceof String) {
-					if (logger.isDebugEnabled()) {
-						logger.debug("Prefixed (from \" + name + \"): " + result);
-					}
-					return prefix + result;
-				}
-
-				else {
-					if (logger.isDebugEnabled()) {
-						logger.debug("Result (from " + name + "): " + result);
-					}
-					return result;
-				}
-			}
+			Object result = invoke(catalog, method, arg);
+			return prefix(id, result);
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot extract catalog", e);
 		}
-		return null;
+	}
+
+	private Object invoke(Object target, String method, Object... arg) {
+		MethodInvoker invoker = new MethodInvoker();
+		invoker.setTargetObject(target);
+		invoker.setTargetMethod(method);
+		invoker.setArguments(arg);
+		try {
+			invoker.prepare();
+			return invoker.invoke();
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Cannot invoke method", e);
+		}
 	}
 
 	public Map<String, Object> deployed() {
@@ -338,6 +363,10 @@ public class FunctionExtractingFunctionCatalog
 			result.put(name, new DeployedArtifact(name, id, this.deployed.get(id)));
 		}
 		return result;
+	}
+
+	interface Callback {
+		Object call(String id, Object result);
 	}
 
 }

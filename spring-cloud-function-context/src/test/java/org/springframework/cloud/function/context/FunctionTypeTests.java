@@ -179,6 +179,12 @@ public class FunctionTypeTests {
 		assertThat(function).isSameAs(function.wrap(Flux.class));
 	}
 
+	@Test
+	public void nonWrapper() {
+		FunctionType function = FunctionType.from(Foo.class).to(Bar.class);
+		assertThat(function).isSameAs(function.wrap(Object.class));
+	}
+
 	private static class IntegerToString implements Function<Integer, String> {
 		@Override
 		public String apply(Integer t) {

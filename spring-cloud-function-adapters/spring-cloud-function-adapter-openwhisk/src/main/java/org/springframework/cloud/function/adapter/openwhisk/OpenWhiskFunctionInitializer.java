@@ -64,11 +64,11 @@ public class OpenWhiskFunctionInitializer {
 		String name = this.properties.getName();
 		String type = this.properties.getType();
 		if ("function".equals(type)) {
-			this.function = this.catalog.lookupFunction(name);
+			this.function = this.catalog.lookup(Function.class, name);
 		} else if ("consumer".equals(type)) {
-			this.consumer = this.catalog.lookupConsumer(name);
+			this.consumer = this.catalog.lookup(Consumer.class, name);
 		} else if ("supplier".equals(type)) {
-			this.supplier = this.catalog.lookupSupplier(name);
+			this.supplier = this.catalog.lookup(Supplier.class, name);
 		}
 	}
 

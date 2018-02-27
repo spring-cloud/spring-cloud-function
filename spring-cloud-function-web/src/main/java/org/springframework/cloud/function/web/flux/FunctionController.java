@@ -30,7 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,8 +51,11 @@ public class FunctionController {
 
 	private boolean debug = false;
 
-	public FunctionController(FunctionInspector inspector) {
+	private StringConverter converter;
+
+	public FunctionController(FunctionInspector inspector, StringConverter converter) {
 		this.inspector = inspector;
+		this.converter = converter;
 	}
 
 	public void setDebug(boolean debug) {
@@ -115,9 +117,8 @@ public class FunctionController {
 		return debug ? result.log() : result;
 	}
 
-	private Mono<?> value(Function<Flux<?>, Flux<?>> function,
-			@PathVariable String value) {
-		Object input = inspector.convert(function, value);
+	private Mono<?> value(Function<Flux<?>, Flux<?>> function, String value) {
+		Object input = converter.convert(function, value);
 		Mono<?> result = Mono.from(function.apply(Flux.just(input)));
 		if (logger.isDebugEnabled()) {
 			logger.debug("Handled GET with function");

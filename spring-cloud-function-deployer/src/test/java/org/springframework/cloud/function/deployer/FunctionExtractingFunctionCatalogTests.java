@@ -15,6 +15,10 @@
  */
 package org.springframework.cloud.function.deployer;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
@@ -47,7 +51,8 @@ public class FunctionExtractingFunctionCatalogTests {
 	@Before
 	public void init() throws Exception {
 		if (id == null) {
-			deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
+			deploy("sample",
+					"maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
 			// "--debug");
 			id = deploy("pojos",
 					"maven://io.spring.sample:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
@@ -64,13 +69,13 @@ public class FunctionExtractingFunctionCatalogTests {
 
 	@Test
 	public void listFunctions() throws Exception {
-		assertThat(deployer.getFunctionNames()).contains("sample/uppercase",
+		assertThat(deployer.getNames(Function.class)).contains("sample/uppercase",
 				"pojos/uppercase");
 	}
 
 	@Test
 	public void nameFunction() throws Exception {
-		assertThat(deployer.getName(deployer.lookupFunction("sample/uppercase")))
+		assertThat(deployer.getName(deployer.lookup(Function.class, "sample/uppercase")))
 				.isEqualTo("sample/uppercase");
 	}
 
@@ -79,37 +84,40 @@ public class FunctionExtractingFunctionCatalogTests {
 		// This one can only work if you change the boot classpath to contain reactor-core
 		// and reactive-streams
 		expected.expect(ClassCastException.class);
-		@SuppressWarnings("unchecked")
-		Flux<String> result = (Flux<String>) deployer.lookupFunction("pojos/uppercase")
-				.apply(Flux.just("foo"));
+		Function<Flux<String>, Flux<String>> function = deployer.lookup(Function.class,
+				"pojos/uppercase");
+		Flux<String> result = function.apply(Flux.just("foo"));
 		assertThat(result.blockFirst()).isEqualTo("FOO");
 	}
 
 	@Test
 	public void listConsumers() throws Exception {
-		assertThat(deployer.getConsumerNames()).isEmpty();
+		assertThat(deployer.getNames(Consumer.class)).isEmpty();
 	}
 
 	@Test
 	public void deployAndExtractConsumers() throws Exception {
-		assertThat(deployer.lookupConsumer("pojos/sink")).isNull();
+		assertThat(deployer.<Consumer<?>>lookup(Consumer.class, "pojos/sink")).isNull();
 	}
 
 	@Test
 	public void listSuppliers() throws Exception {
-		assertThat(deployer.getSupplierNames()).contains("sample/words", "pojos/words");
+		assertThat(deployer.getNames(Supplier.class)).contains("sample/words",
+				"pojos/words");
 	}
 
 	@Test
 	public void nameSupplier() throws Exception {
-		assertThat(deployer.getName(deployer.lookupSupplier("sample/words")))
+		assertThat(deployer.getName(deployer.lookup(Supplier.class, "sample/words")))
 				.isEqualTo("sample/words");
 	}
 
 	@Test
 	public void deployAndExtractSuppliers() throws Exception {
-		assertThat(deployer.lookupSupplier("sample/words")).isNotNull();
-		assertThat(deployer.lookupSupplier("pojos/words")).isNotNull();
+		assertThat(deployer.<Supplier<?>>lookup(Supplier.class, "sample/words"))
+				.isNotNull();
+		assertThat(deployer.<Supplier<?>>lookup(Supplier.class, "pojos/words"))
+				.isNotNull();
 	}
 
 	private static String deploy(String name, String path, String... args)

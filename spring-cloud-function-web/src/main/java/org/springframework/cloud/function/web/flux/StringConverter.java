@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.springframework.cloud.function.context;
-
-import java.util.Set;
+package org.springframework.cloud.function.web.flux;
 
 /**
  * @author Dave Syer
+ *
  */
-public interface FunctionCatalog {
+public interface StringConverter {
 
-	<T> T lookup(Class<?> type, String name);
-
-	Set<String> getNames(Class<?> type);
+	Object convert(Object function, String value);
 
 }

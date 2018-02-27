@@ -42,11 +42,7 @@ import org.springframework.util.Assert;
 public class InMemoryFunctionCatalog
 		implements FunctionRegistry, ApplicationEventPublisherAware {
 
-	private final Map<String, Function<?, ?>> functions;
-
-	private final Map<String, Consumer<?>> consumers;
-
-	private final Map<String, Supplier<?>> suppliers;
+	private final Map<Class<?>, Map<String, Object>> functions;
 
 	@Autowired(required = false)
 	private ApplicationEventPublisher publisher;
@@ -57,49 +53,42 @@ public class InMemoryFunctionCatalog
 
 	public InMemoryFunctionCatalog(Set<FunctionRegistration<?>> registrations) {
 		Assert.notNull(registrations, "'registrations' must not be null");
-		this.suppliers = new HashMap<>();
 		this.functions = new HashMap<>();
-		this.consumers = new HashMap<>();
-		registrations.stream().forEach(reg -> reg.getNames().stream().forEach(name -> {
-			if (reg.getTarget() instanceof Consumer) {
-				consumers.put(name, (Consumer<?>) reg.getTarget());
-			}
-			else if (reg.getTarget() instanceof Function) {
-				functions.put(name, (Function<?, ?>) reg.getTarget());
-			}
-			else if (reg.getTarget() instanceof Supplier) {
-				suppliers.put(name, (Supplier<?>) reg.getTarget());
-			}
-		}));
+		registrations.stream().forEach(reg -> register(reg));
 	}
 
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
-		Map<String, ?> values = null;
 		FunctionRegistrationEvent event;
+		Class<?> type;
 		if (registration.getTarget() instanceof Function) {
-			values = this.functions;
+			type = Function.class;
 			event = new FunctionRegistrationEvent(this, Function.class,
 					registration.getNames());
 		}
 		else if (registration.getTarget() instanceof Supplier) {
-			values = this.suppliers;
+			type = Supplier.class;
 			event = new FunctionRegistrationEvent(this, Supplier.class,
 					registration.getNames());
 		}
-		else {
-			values = this.consumers;
+		else if (registration.getTarget() instanceof Consumer) {
+			type = Consumer.class;
 			event = new FunctionRegistrationEvent(this, Consumer.class,
 					registration.getNames());
 		}
-		@SuppressWarnings("unchecked")
-		Map<String, Object> map = (Map<String, Object>) values;
+		else {
+			type = Object.class;
+			event = new FunctionRegistrationEvent(this, Object.class,
+					registration.getNames());
+		}
+		Map<String, Object> map = functions.computeIfAbsent(type, key -> new HashMap<>());
 		for (String name : registration.getNames()) {
 			map.put(name, registration.getTarget());
 		}
 		publisher.publishEvent(event);
 	}
 
+	@Override
 	public void setApplicationEventPublisher(ApplicationEventPublisher publisher) {
 		this.publisher = publisher;
 	}
@@ -108,16 +97,10 @@ public class InMemoryFunctionCatalog
 	public void init() {
 		if (publisher != null) {
 			if (!functions.isEmpty()) {
-				publisher.publishEvent(new FunctionRegistrationEvent(this, Function.class,
-						functions.keySet()));
-			}
-			if (!consumers.isEmpty()) {
-				publisher.publishEvent(new FunctionRegistrationEvent(this, Consumer.class,
-						consumers.keySet()));
-			}
-			if (!suppliers.isEmpty()) {
-				publisher.publishEvent(new FunctionRegistrationEvent(this, Supplier.class,
-						suppliers.keySet()));
+				for (Class<?> type : functions.keySet()) {
+					publisher.publishEvent(new FunctionRegistrationEvent(this, type,
+							functions.get(type).keySet()));
+				}
 			}
 		}
 	}
@@ -126,50 +109,48 @@ public class InMemoryFunctionCatalog
 	public void close() {
 		if (publisher != null) {
 			if (!functions.isEmpty()) {
-				publisher.publishEvent(new FunctionUnregistrationEvent(this,
-						Function.class, functions.keySet()));
-			}
-			if (!consumers.isEmpty()) {
-				publisher.publishEvent(new FunctionUnregistrationEvent(this,
-						Consumer.class, consumers.keySet()));
-			}
-			if (!suppliers.isEmpty()) {
-				publisher.publishEvent(new FunctionUnregistrationEvent(this,
-						Supplier.class, suppliers.keySet()));
+				for (Class<?> type : functions.keySet()) {
+					publisher.publishEvent(new FunctionUnregistrationEvent(this, type,
+							functions.get(type).keySet()));
+				}
 			}
 		}
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public <T> Supplier<T> lookupSupplier(String name) {
-		return (Supplier<T>) suppliers.get(name);
+	public <T> T lookup(Class<?> type, String name) {
+		Map<String, Object> map = null;
+		for (Class<?> key : functions.keySet()) {
+			if (key != Object.class) {
+				if (key.isAssignableFrom(type)) {
+					map = functions.get(key);
+					break;
+				}
+			}
+		}
+		if (map == null) {
+			map = functions.get(Object.class);
+		}
+		@SuppressWarnings("unchecked")
+		T result = (T) map.get(name);
+		return result;
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public <T, R> Function<T, R> lookupFunction(String name) {
-		return (Function<T, R>) functions.get(name);
+	public Set<String> getNames(Class<?> type) {
+		Map<String, Object> map = null;
+		for (Class<?> key : functions.keySet()) {
+			if (key != Object.class) {
+				if (key.isAssignableFrom(type)) {
+					map = functions.get(key);
+					break;
+				}
+			}
+		}
+		if (map == null) {
+			map = functions.get(Object.class);
+		}
+		return map == null ? Collections.emptySet() : map.keySet();
 	}
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public <T> Consumer<T> lookupConsumer(String name) {
-		return (Consumer<T>) consumers.get(name);
-	}
-
-	@Override
-	public Set<String> getSupplierNames() {
-		return suppliers.keySet();
-	}
-
-	@Override
-	public Set<String> getFunctionNames() {
-		return functions.keySet();
-	}
-
-	@Override
-	public Set<String> getConsumerNames() {
-		return consumers.keySet();
-	}
 }

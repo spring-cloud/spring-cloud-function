@@ -105,8 +105,8 @@ public class AzureSpringFunctionInitializer implements Closeable {
 			this.function = context.getBean(name, Function.class);
 		}
 		else {
-			Set<String> functionNames = this.catalog.getFunctionNames();
-			this.function = this.catalog.lookupFunction(functionNames.iterator().next());
+			Set<String> functionNames = this.catalog.getNames(Function.class);
+			this.function = this.catalog.lookup(Function.class, functionNames.iterator().next());
 		}
 	}
 

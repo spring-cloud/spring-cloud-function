@@ -23,8 +23,10 @@ import com.google.gson.Gson;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
@@ -36,6 +38,9 @@ import org.springframework.cloud.function.web.flux.response.FluxReturnValueHandl
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.util.ClassUtils;
@@ -54,6 +59,7 @@ import reactor.core.publisher.Flux;
 @ConditionalOnWebApplication
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
 @AutoConfigureBefore(HttpMessageConvertersAutoConfiguration.class)
+@Import(FunctionController.class)
 public class ReactorAutoConfiguration {
 
 	@Autowired
@@ -61,8 +67,15 @@ public class ReactorAutoConfiguration {
 
 	@Bean
 	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog,
-			FunctionInspector inspector) {
-		return new FunctionHandlerMapping(catalog, inspector);
+			FunctionController controller) {
+		return new FunctionHandlerMapping(catalog, controller);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public StringConverter functionStringConverter(FunctionInspector inspector,
+			ConfigurableListableBeanFactory beanFactory) {
+		return new BasicStringConverter(inspector, beanFactory);
 	}
 
 	// TODO: remove this when https://jira.spring.io/browse/SPR-16529 is resolved
@@ -124,5 +137,33 @@ public class ReactorAutoConfiguration {
 			}
 
 		};
+	}
+
+	private static class BasicStringConverter implements StringConverter {
+
+		private ConversionService conversionService;
+		private ConfigurableListableBeanFactory registry;
+		private FunctionInspector inspector;
+
+		public BasicStringConverter(FunctionInspector inspector,
+				ConfigurableListableBeanFactory registry) {
+			this.inspector = inspector;
+			this.registry = registry;
+		}
+
+		@Override
+		public Object convert(Object function, String value) {
+			if (conversionService == null && registry != null) {
+				ConversionService conversionService = this.registry
+						.getConversionService();
+				this.conversionService = conversionService != null ? conversionService
+						: new DefaultConversionService();
+			}
+			Class<?> type = inspector.getInputType(function);
+			return conversionService.canConvert(String.class, type)
+					? conversionService.convert(value, type)
+					: value;
+		}
+
 	}
 }
