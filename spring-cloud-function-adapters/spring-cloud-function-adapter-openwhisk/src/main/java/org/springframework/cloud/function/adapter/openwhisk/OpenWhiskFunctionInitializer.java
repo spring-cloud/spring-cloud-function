@@ -24,8 +24,8 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.function.core.FunctionCatalog;
 
 import reactor.core.publisher.Flux;
 

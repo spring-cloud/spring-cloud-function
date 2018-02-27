@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.core;
+package org.springframework.cloud.function.context;
 
 import java.util.Set;
 import java.util.function.Consumer;

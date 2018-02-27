@@ -43,6 +43,7 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionScan;
@@ -53,7 +54,6 @@ import org.springframework.cloud.function.context.catalog.FunctionUnregistration
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
-import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.cloud.function.core.FunctionFactoryUtils;
 import org.springframework.cloud.function.core.IsolatedConsumer;

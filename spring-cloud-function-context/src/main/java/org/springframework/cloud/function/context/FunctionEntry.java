@@ -24,7 +24,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.core.annotation.AliasFor;
 
 /**

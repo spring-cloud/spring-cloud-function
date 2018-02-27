@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.context;
 
-import org.springframework.cloud.function.core.FunctionCatalog;
-
 /**
  * @author Dave Syer
  *

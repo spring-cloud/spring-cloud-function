@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.message.MessageUtils;
-import org.springframework.cloud.function.core.FunctionCatalog;
 import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.messaging.Message;
