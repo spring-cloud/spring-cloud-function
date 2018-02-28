@@ -160,7 +160,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		public FunctionRegistration<?> getRegistration(Object function) {
-			return processor.getRegistration(function);
+			FunctionRegistration<?> registration = processor.getRegistration(function);
+			return registration;
 		}
 
 	}

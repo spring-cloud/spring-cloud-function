@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.springframework.cloud.function.context.FunctionRegistration;
 
 /**
@@ -57,7 +60,9 @@ public interface FunctionInspector {
 
 	default String getName(Object function) {
 		FunctionRegistration<?> registration = getRegistration(function);
-		return registration == null ? null : registration.getNames().iterator().next();
+		Set<String> names = registration == null ? Collections.emptySet()
+				: registration.getNames();
+		return names.isEmpty() ? null : names.iterator().next();
 	}
 
 }

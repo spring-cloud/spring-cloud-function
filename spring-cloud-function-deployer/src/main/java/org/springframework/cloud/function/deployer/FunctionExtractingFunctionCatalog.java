@@ -100,9 +100,10 @@ public class FunctionExtractingFunctionCatalog
 	}
 
 	private FunctionType findType(Object function) {
-		FunctionType type = FunctionType.from(getInputType(function))
-				.to(getOutputType(function)).wrap(getInputWrapper(function));
-		if (isMessage(function)) {
+		FunctionType type = FunctionType.from((Class<?>) type(function, "getInputType"))
+				.to((Class<?>) type(function, "getOutputType"))
+				.wrap((Class<?>) type(function, "getInputWrapper"));
+		if ((Boolean) type(function, "isMessage")) {
 			type = type.message();
 		}
 		return type;
@@ -121,34 +122,9 @@ public class FunctionExtractingFunctionCatalog
 	}
 
 	@Override
-	public boolean isMessage(Object function) {
-		return (Boolean) type(function, "isMessage");
-	}
-
-	@Override
-	public Class<?> getInputType(Object function) {
-		return (Class<?>) type(function, "getInputType");
-	}
-
-	@Override
-	public Class<?> getOutputType(Object function) {
-		return (Class<?>) type(function, "getOutputType");
-	}
-
-	@Override
-	public Class<?> getInputWrapper(Object function) {
-		return (Class<?>) type(function, "getInputWrapper");
-	}
-
-	@Override
-	public Class<?> getOutputWrapper(Object function) {
-		return (Class<?>) type(function, "getOutputWrapper");
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
 	public String getName(Object function) {
-		return ((Set<String>) inspect(function, "getNames")).iterator().next();
+		Set<String> names = getNames(function);
+		return names.isEmpty() ? null : names.iterator().next();
 	}
 
 	public String deploy(String name, String path, String... args) {
@@ -216,21 +192,45 @@ public class FunctionExtractingFunctionCatalog
 		}
 	}
 
-	private Object inspect(Object arg, String method) {
+	private Set<String> getNames(Object arg) {
 		if (logger.isDebugEnabled()) {
-			logger.debug("Inspecting " + method);
+			logger.debug("Inspecting names");
 		}
-		return invoke(FunctionInspector.class, "getRegistration", (id, result) -> {
-			return prefix(id, invoke(result, method));
-		}, arg);
+		@SuppressWarnings("unchecked")
+		Set<String> result = (Set<String>) invoke(FunctionInspector.class,
+				"getRegistration", this::extractNames, arg);
+		return result;
+	}
+
+	private Set<String> extractNames(String id, Object result) {
+		@SuppressWarnings("unchecked")
+		Set<String> prefixed = (Set<String>) prefix(id, invoke(result, "getNames"));
+		if (logger.isDebugEnabled()) {
+			logger.debug("Result (from " + this.ids.get(id) + "): " + prefixed);
+		}
+		if (prefixed.isEmpty()) {
+			return null;
+		}
+		return prefixed;
 	}
 
 	private Object type(Object arg, String method) {
 		if (logger.isDebugEnabled()) {
-			logger.debug("Inspecting " + method);
+			logger.debug("Inspecting type " + method);
 		}
-		return invoke(invoke(invoke(FunctionInspector.class, "getRegistration", arg),
-				"getType"), method);
+		Object result = invoke(invoke(invoke(FunctionInspector.class, "getRegistration",
+				this::discardEmpty, arg), "getType"), method);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Result: " + result);
+		}
+		return result;
+	}
+
+	private Object discardEmpty(String id, Object result) {
+		if (result == null || invoke(result, "getTarget") == null) {
+			return null;
+		}
+		return result;
 	}
 
 	private Object prefix(String id, Object result) {
@@ -252,9 +252,6 @@ public class FunctionExtractingFunctionCatalog
 			}
 
 			else {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Result (from " + name + "): " + result);
-				}
 				return result;
 			}
 		}
@@ -279,7 +276,7 @@ public class FunctionExtractingFunctionCatalog
 		return invoke(type, method, null, arg);
 	}
 
-	private Object invoke(Class<?> type, String method, Callback callback,
+	private Object invoke(Class<?> type, String method, Callback<?> callback,
 			Object... arg) {
 		Set<Object> results = new LinkedHashSet<>();
 		Object fallback = null;
@@ -301,7 +298,11 @@ public class FunctionExtractingFunctionCatalog
 					continue;
 				}
 				if (callback != null) {
-					return callback.call(id, result);
+					result = callback.call(id, result);
+					if (result != null) {
+						return result;
+					}
+					continue;
 				}
 				return result;
 			}
@@ -338,7 +339,7 @@ public class FunctionExtractingFunctionCatalog
 			return prefix(id, result);
 		}
 		catch (Exception e) {
-			throw new IllegalStateException("Cannot extract catalog", e);
+			throw new IllegalStateException("Cannot extract", e);
 		}
 	}
 
@@ -365,8 +366,8 @@ public class FunctionExtractingFunctionCatalog
 		return result;
 	}
 
-	interface Callback {
-		Object call(String id, Object result);
+	interface Callback<T> {
+		T call(String id, Object result);
 	}
 
 }
