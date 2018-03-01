@@ -425,7 +425,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else {
 				return;
 			}
-			this.names.remove(target);
+			// this.names.remove(target);
 			this.names.put(registration.getTarget(), key);
 			if (publisher != null) {
 				publisher.publishEvent(new FunctionRegistrationEvent(

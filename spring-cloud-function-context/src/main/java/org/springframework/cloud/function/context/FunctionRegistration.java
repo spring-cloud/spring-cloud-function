@@ -107,4 +107,5 @@ public class FunctionRegistration<T> {
 	public FunctionRegistration<T> names(String... names) {
 		return this.names(Arrays.asList(names));
 	}
+
 }

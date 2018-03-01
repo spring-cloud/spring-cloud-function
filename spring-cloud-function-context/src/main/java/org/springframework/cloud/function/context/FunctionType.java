@@ -39,10 +39,34 @@ public class FunctionType {
 	public static FunctionType UNCLASSIFIED = new FunctionType(ResolvableType
 			.forClassWithGenerics(Function.class, Object.class, Object.class).getType());
 
-	private Type type;
+	final private Type type;
+
+	final private Class<?> inputType;
+
+	final private Class<?> outputType;
+
+	final private Class<?> inputWrapper;
+
+	final private Class<?> outputWrapper;
+
+	final private boolean message;
 
 	public FunctionType(Type type) {
 		this.type = type;
+		this.inputWrapper = findType(ParamType.INPUT_WRAPPER);
+		this.outputWrapper = findType(ParamType.OUTPUT_WRAPPER);
+		this.inputType = findType(ParamType.INPUT);
+		this.outputType = findType(ParamType.OUTPUT);
+		this.message = messageType();
+	}
+
+	private boolean messageType() {
+		Class<?> inputType = findType(ParamType.INPUT_INNER_WRAPPER);
+		Class<?> outputType = findType(ParamType.OUTPUT_INNER_WRAPPER);
+		return inputType.getName().startsWith(Message.class.getName())
+				|| Message.class.isAssignableFrom(inputType)
+				|| outputType.getName().startsWith(Message.class.getName())
+				|| Message.class.isAssignableFrom(outputType);
 	}
 
 	public Type getType() {
@@ -50,28 +74,23 @@ public class FunctionType {
 	}
 
 	public Class<?> getInputWrapper() {
-		return findType(ParamType.INPUT_WRAPPER);
+		return inputWrapper;
 	}
 
 	public Class<?> getOutputWrapper() {
-		return findType(ParamType.OUTPUT_WRAPPER);
+		return outputWrapper;
 	}
 
 	public Class<?> getInputType() {
-		return findType(ParamType.INPUT);
+		return inputType;
 	}
 
 	public Class<?> getOutputType() {
-		return findType(ParamType.OUTPUT);
+		return outputType;
 	}
 
 	public boolean isMessage() {
-		Class<?> inputType = findType(ParamType.INPUT_INNER_WRAPPER);
-		Class<?> outputType = findType(ParamType.OUTPUT_INNER_WRAPPER);
-		return inputType.getName().startsWith(Message.class.getName())
-				|| Message.class.isAssignableFrom(inputType)
-				|| outputType.getName().startsWith(Message.class.getName())
-				|| Message.class.isAssignableFrom(outputType);
+		return message;
 	}
 
 	public boolean isWrapper() {
@@ -277,6 +296,60 @@ public class FunctionType {
 			}
 		}
 		return param;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((inputType == null) ? 0 : inputType.toString().hashCode());
+		result = prime * result
+				+ ((inputWrapper == null) ? 0 : inputWrapper.toString().hashCode());
+		result = prime * result + (message ? 1231 : 1237);
+		result = prime * result
+				+ ((outputType == null) ? 0 : outputType.toString().hashCode());
+		result = prime * result
+				+ ((outputWrapper == null) ? 0 : outputWrapper.toString().hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FunctionType other = (FunctionType) obj;
+		if (inputType == null) {
+			if (other.inputType != null)
+				return false;
+		}
+		else if (!inputType.toString().equals(other.inputType.toString()))
+			return false;
+		if (inputWrapper == null) {
+			if (other.inputWrapper != null)
+				return false;
+		}
+		else if (!inputWrapper.toString().equals(other.inputWrapper.toString()))
+			return false;
+		if (message != other.message)
+			return false;
+		if (outputType == null) {
+			if (other.outputType != null)
+				return false;
+		}
+		else if (!outputType.toString().equals(other.outputType.toString()))
+			return false;
+		if (outputWrapper == null) {
+			if (other.outputWrapper != null)
+				return false;
+		}
+		else if (!outputWrapper.toString().equals(other.outputWrapper.toString()))
+			return false;
+		return true;
 	}
 
 	enum ParamType {

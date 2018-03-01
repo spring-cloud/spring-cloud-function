@@ -332,6 +332,20 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
+	public void simpleFunction() {
+		create(SimpleConfiguration.class);
+		Object bean = context.getBean("function");
+		assertThat(bean).isInstanceOf(Function.class);
+		Function<Flux<String>, Flux<String>> function = catalog.lookup(Function.class,
+				"function");
+		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
+		assertThat(bean).isNotSameAs(function);
+		assertThat(inspector.getRegistration(bean)).isNotNull();
+		assertThat(inspector.getRegistration(bean).getType())
+				.isEqualTo(inspector.getRegistration(function).getType());
+	}
+
+	@Test
 	public void simpleSupplier() {
 		create(SimpleConfiguration.class);
 		assertThat(context.getBean("supplier")).isInstanceOf(Supplier.class);
