@@ -16,7 +16,7 @@ The sample app creates the shaded jar file, with an `azure` classifier for deplo
 
 === JSON Configuration
 
-The Azure tooling needs to find some JSON configuration files to tell it how to deploy and intergrate the function (e.g. which Java class to use as the entry point, and which triggers to use). Those files can be created with the Maven plugin for a non-Spring function, but the tooling doesn't work yet with the adapter in its current form. There is an example `function.json` in the sample which hooks the function up as an HTTP endpoint:
+The Azure tooling needs to find some JSON configuration files to tell it how to deploy and integrate the function (e.g. which Java class to use as the entry point, and which triggers to use). Those files can be created with the Maven plugin for a non-Spring function, but the tooling doesn't work yet with the adapter in its current form. There is an example `function.json` in the sample which hooks the function up as an HTTP endpoint:
 
 ```
 {

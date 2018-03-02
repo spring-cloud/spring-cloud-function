@@ -46,6 +46,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionScan;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.inject.FooConfiguration;
 import org.springframework.cloud.function.scan.ScannedFunction;
 import org.springframework.cloud.function.test.GenericFunction;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -120,7 +121,26 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.isEqualTo(String.class);
 		assertThat(inspector.getInputType(catalog.lookup(Consumer.class, "foos")))
 				.isEqualTo(Foo.class);
+	}
 
+	@Test
+	public void dependencyInjection() {
+		create(DependencyInjectionConfiguration.class);
+		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
+		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
+				.isEqualTo(String.class);
+	}
+
+	@Test
+	public void externalDependencyInjection() {
+		create(ExternalDependencyConfiguration.class);
+		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
+		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
+				.isEqualTo(String.class);
 	}
 
 	@Test
@@ -520,6 +540,32 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Consumer<String> consumer() {
 			return value -> list.add(value);
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class DependencyInjectionConfiguration {
+
+		@Bean
+		public Function<String, Foo> foos(String foo) {
+			return value -> new Foo(foo + ": " + value.toUpperCase());
+		}
+
+		@Bean
+		public String value() {
+			return "Hello";
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@ComponentScan(basePackageClasses = FooConfiguration.class)
+	protected static class ExternalDependencyConfiguration {
+
+		@Bean
+		public String value() {
+			return "Hello";
 		}
 	}
 

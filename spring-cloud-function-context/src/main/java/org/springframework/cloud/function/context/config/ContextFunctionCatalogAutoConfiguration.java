@@ -20,6 +20,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +44,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -553,15 +556,48 @@ public class ContextFunctionCatalogAutoConfiguration {
 				MethodMetadataReadingVisitor visitor) {
 			Class<?> factory = ClassUtils
 					.resolveClassName(visitor.getDeclaringClassName(), null);
+			Class<?>[] params = getParamTypes(factory, definition);
+			Method method = ReflectionUtils.findMethod(factory, visitor.getMethodName(),
+					params);
+			Type type = method.getGenericReturnType();
+			return type;
+		}
+
+		private Method[] getCandidateMethods(final Class<?> factoryClass,
+				final RootBeanDefinition mbd) {
+			if (System.getSecurityManager() != null) {
+				return AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+					@Override
+					public Method[] run() {
+						return (mbd.isNonPublicAccessAllowed()
+								? ReflectionUtils.getAllDeclaredMethods(factoryClass)
+								: factoryClass.getMethods());
+					}
+				});
+			}
+			else {
+				return (mbd.isNonPublicAccessAllowed()
+						? ReflectionUtils.getAllDeclaredMethods(factoryClass)
+						: factoryClass.getMethods());
+			}
+		}
+
+		private Class<?>[] getParamTypes(Class<?> factory,
+				AbstractBeanDefinition definition) {
+			if (definition instanceof RootBeanDefinition) {
+				RootBeanDefinition root = (RootBeanDefinition) definition;
+				for (Method method : getCandidateMethods(factory, root)) {
+					if (root.isFactoryMethod(method)) {
+						return method.getParameterTypes();
+					}
+				}
+			}
 			List<Class<?>> params = new ArrayList<>();
 			for (ValueHolder holder : definition.getConstructorArgumentValues()
 					.getIndexedArgumentValues().values()) {
 				params.add(ClassUtils.resolveClassName(holder.getType(), null));
 			}
-			Method method = ReflectionUtils.findMethod(factory, visitor.getMethodName(),
-					params.toArray(new Class<?>[0]));
-			Type type = method.getGenericReturnType();
-			return type;
+			return params.toArray(new Class<?>[0]);
 		}
 
 		private Object getField(Object target, String name) {
