@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -99,7 +100,7 @@ public class FunctionController {
 
 	@GetMapping(path = "/**")
 	@ResponseBody
-	public Object get(
+	public Publisher<?> get(
 			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.function") Function<Flux<?>, Flux<?>> function,
 			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.supplier") Supplier<Flux<?>> supplier,
 			@RequestAttribute(required = false, name = "org.springframework.cloud.function.web.flux.constants.WebRequestConstants.argument") String argument) {

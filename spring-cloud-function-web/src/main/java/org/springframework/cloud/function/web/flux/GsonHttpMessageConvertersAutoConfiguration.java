@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2016-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,42 +22,57 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
+import org.springframework.boot.autoconfigure.web.HttpMessageConvertersAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractGenericHttpMessageConverter;
+import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.http.converter.json.GsonHttpMessageConverter;
 import org.springframework.util.Assert;
 
-/**
- * Implementation of {@link org.springframework.http.converter.HttpMessageConverter} that
- * can read and write JSON using the
- * <a href="https://code.google.com/p/google-gson/">Google Gson</a> library's {@link Gson}
- * class.
- *
- * <p>
- * This converter can be used to bind to typed beans or untyped {@code HashMap}s. By
- * default, it supports {@code application/json} and {@code application/*+json} with
- * {@code UTF-8} character set.
- *
- * <p>
- * Tested against Gson 2.6; compatible with Gson 2.0 and higher.
- *
- * @author Roy Clarkson
- * @since 4.1
- * @see #setGson
- * @see #setSupportedMediaTypes
- */
-public class BetterGsonHttpMessageConverter
-		extends AbstractGenericHttpMessageConverter<Object> {
+// TODO: remove this when https://jira.spring.io/browse/SPR-16529 is resolved
+@Configuration
+@ConditionalOnClass(HttpMessageConverters.class)
+@AutoConfigureBefore(HttpMessageConvertersAutoConfiguration.class)
+public class GsonHttpMessageConvertersAutoConfiguration {
+
+	@Bean
+	public HttpMessageConverters httpMessageConverters(Gson gson) {
+		List<HttpMessageConverter<?>> converters = new ArrayList<>();
+		for (HttpMessageConverter<?> converter : new HttpMessageConverters()
+				.getConverters()) {
+			if (converter instanceof GsonHttpMessageConverter) {
+				BetterGsonHttpMessageConverter gsonConverter = new BetterGsonHttpMessageConverter();
+				gsonConverter.setGson(gson);
+				converters.add(gsonConverter);
+			}
+			else {
+				converters.add(converter);
+			}
+		}
+		return new HttpMessageConverters(false, converters);
+	}
+
+}
+
+class BetterGsonHttpMessageConverter extends AbstractGenericHttpMessageConverter<Object> {
 
 	public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
