@@ -18,10 +18,10 @@ package com.example;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,9 +46,16 @@ public class SampleApplicationTests {
 
 	@Test
 	public void uppercase() {
-		// TODO: make this work with a JSON stream as well (like in WebFlux)
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/uppercase", "[{\"value\":\"foo\"}]",
+				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
+	}
+
+	@Test
+	public void single() {
+		// TODO: make this return a single value
+		assertThat(new TestRestTemplate().postForObject(
+				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",
 				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
