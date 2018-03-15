@@ -16,6 +16,7 @@
 
 	<properties>
 		<spring-cloud-deployer-thin.version>1.0.10.BUILD-SNAPSHOT</spring-cloud-deployer-thin.version>
+		<wrapper.version>1.0.10.BUILD-SNAPSHOT</wrapper.version>
 	</properties>
 
 	<dependencies>

@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.SocketUtils;
@@ -45,7 +46,7 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 		// System.setProperty("debug", "true");
 		context = new ApplicationRunner().start("--server.port=" + port, "--debug",
 				"--logging.level.org.springframework.cloud.function=DEBUG");
-		deploy("sample", "maven://io.spring.sample:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
+		deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
 	}
 
 	private static void deploy(String name, String path) throws Exception {
@@ -81,7 +82,7 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 	public void words() {
 		assertThat(new TestRestTemplate().getForObject(
 				"http://localhost:" + port + "/stream/sample/words", String.class))
-						.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+						.isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
@@ -93,18 +94,21 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 	}
 
 	@Test
-	public void uppercase() {
-		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/stream/sample/uppercase",
-				"{\"value\":\"foo\"}", String.class)).isEqualTo("{\"value\":\"FOO\"}");
+	public void uppercase() throws Exception {
+		ResponseEntity<String> result = new TestRestTemplate().exchange(RequestEntity
+				.post(new URI("http://localhost:" + port + "/stream/sample/uppercase"))
+				.contentType(MediaType.TEXT_PLAIN)
+				.body("foo"), String.class);
+		assertThat(result.getBody()).isEqualTo("FOO");
 	}
 
 	@Test
 	public void another() throws Exception {
-		deploy("strings", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
-		assertThat(new TestRestTemplate().getForObject(
-				"http://localhost:" + port + "/stream/strings/words", String.class))
-						.isEqualTo("[\"foo\",\"bar\"]");
+		deploy("pof",
+				"maven://io.spring.sample:function-sample-pof:jar:exec:1.0.0.BUILD-SNAPSHOT");
+		assertThat(new TestRestTemplate().postForObject(
+				"http://localhost:" + port + "/stream/pof/greeter", "Foo",
+				String.class)).isEqualTo("Hello Foo");
 	}
 
 	@Test
@@ -112,15 +116,15 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 		String undeploy = undeploy("sample");
 		assertThat(undeploy.contains("\"name\":\"sample\""));
 		assertThat(undeploy.contains(
-				"\"path\":\"maven://io.spring.sample:function-sample-pojo:1.0.0.BUILD-SNAPSHOT\""));
+				"\"path\":\"maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT\""));
 		ResponseEntity<String> result = new TestRestTemplate().exchange(RequestEntity
 				.get(new URI("http://localhost:" + port + "/stream/sample/words"))
 				.build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-		deploy("sample", "maven://io.spring.sample:function-sample-pojo:1.0.0.BUILD-SNAPSHOT");
+		deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/stream/sample/uppercase",
-				"{\"value\":\"foo\"}", String.class)).isEqualTo("{\"value\":\"FOO\"}");
+				"http://localhost:" + port + "/stream/sample/uppercase", "foo",
+				String.class)).isEqualTo("FOO");
 	}
 
 }

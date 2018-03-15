@@ -15,7 +15,7 @@
 	</parent>
 	
 	<properties>
-		<reactor.version>3.1.1.RELEASE</reactor.version>
+		<reactor.version>3.1.4.RELEASE</reactor.version>
 	</properties>
 
 	<dependencies>
