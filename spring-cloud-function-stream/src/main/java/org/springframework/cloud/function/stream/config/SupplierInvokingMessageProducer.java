@@ -28,6 +28,7 @@ import org.springframework.cloud.stream.messaging.Source;
 import org.springframework.integration.endpoint.MessageProducerSupport;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.StringUtils;
 
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
@@ -44,15 +45,24 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 
 	private final Map<String, Disposable> disposables = new HashMap<>();
 
-	public SupplierInvokingMessageProducer(FunctionCatalog registry) {
+	private String defaultRoute;
+
+	public SupplierInvokingMessageProducer(FunctionCatalog registry,
+			String defaultRoute) {
 		this.functionCatalog = registry;
+		this.defaultRoute = defaultRoute;
 		this.setOutputChannelName(Source.OUTPUT);
 	}
 
 	@Override
 	protected void doStart() {
-		for (String name : functionCatalog.getNames(Supplier.class)) {
-			start(name);
+		if (StringUtils.hasText(this.defaultRoute)) {
+			start(this.defaultRoute);
+		}
+		else {
+			for (String name : functionCatalog.getNames(Supplier.class)) {
+				start(name);
+			}
 		}
 	}
 
@@ -83,7 +93,8 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 		if (!disposables.containsKey(name)) {
 			synchronized (disposables) {
 				if (!disposables.containsKey(name)) {
-					Supplier<Flux<?>> supplier = functionCatalog.lookup(Supplier.class, name);
+					Supplier<Flux<?>> supplier = functionCatalog.lookup(Supplier.class,
+							name);
 					if (supplier != null) {
 						suppliers.add(name);
 						disposables.put(name,

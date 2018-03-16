@@ -24,33 +24,135 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "spring.cloud.function.stream")
 public class StreamConfigurationProperties {
 
-	/**
-	 * The default route for a message if more than one is available and no explicit route
-	 * key is provided.
-	 */
-	private String defaultRoute;
+	private Source source = new Source();
 
-	/**
-	 * Interval to be used for the Duration (in milliseconds) of a non-Flux producing
-	 * Supplier. Default is 0, which means the Supplier will only be invoked once.
-	 */
-	private long interval = 0L;
+	private Sink sink = new Sink();
+
+	private Processor processor = new Processor();
 
 	public static final String ROUTE_KEY = "stream_routekey";
 
+	public Sink getSink() {
+		return this.sink;
+	}
+
+	public Source getSource() {
+		return this.source;
+	}
+
+	public Processor getProcessor() {
+		return this.processor;
+	}
+
+	public static class Sink {
+
+		/**
+		 * The name of a single consumer to wire up to the input channel. Default is null,
+		 * which means all consumers are bound.
+		 */
+		private String name;
+
+		/**
+		 * Flag to be able to switch off binding consumers to input streams.
+		 */
+		private boolean enabled;
+
+		public String getName() {
+			return this.name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public boolean isEnabled() {
+			return this.enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+	}
+
+	public static class Source {
+
+		/**
+		 * The name of a single supplier to wire up to the output channel. Default is
+		 * null, which means all suppliers are bound.
+		 */
+		private String name;
+
+		/**
+		 * Flag to be able to switch off binding suppliers to output streams. Because of
+		 * the underlying behaviour of Spring AMQP etc., sources do not start up and fail
+		 * gracefully if the broker is down. So this flag is needed to control the
+		 * behaviour if you know the broker is not available and there are suppliers.
+		 */
+		private boolean enabled;
+
+		/**
+		 * Interval to be used for the Duration (in milliseconds) of a non-Flux producing
+		 * Supplier. Default is 0, which means the Supplier will only be invoked once.
+		 */
+		private long interval = 0L;
+
+		public long getInterval() {
+			return interval;
+		}
+
+		public void setInterval(long interval) {
+			this.interval = interval;
+		}
+
+		public boolean isEnabled() {
+			return this.enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+
+		public String getName() {
+			return this.name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
+	public static class Processor {
+
+		/**
+		 * The name of a single processor to wire up to the input and output channels.
+		 * Default is null, which means all functions are bound.
+		 */
+		private String name;
+
+		/**
+		 * Flag to be able to switch off binding consumers to input streams.
+		 */
+		private boolean enabled;
+
+		public String getName() {
+			return this.name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public boolean isEnabled() {
+			return this.enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+	}
+
 	public String getDefaultRoute() {
-		return defaultRoute;
+		return processor.getName()!=null ? processor.getName() : sink.getName();
 	}
 
-	public void setDefaultRoute(String defaultRoute) {
-		this.defaultRoute = defaultRoute;
-	}
-
-	public long getInterval() {
-		return interval;
-	}
-
-	public void setInterval(long interval) {
-		this.interval = interval;
-	}
 }

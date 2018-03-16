@@ -58,13 +58,13 @@ one-per-jar. It's up to the developer to choose. An app with multiple
 functions can be deployed multiple times in different "personalities",
 exposing different functions over different physical transports.
 
-== Deploying a Packaged Function
-
-TBD: describe the deployer app.
-
 == Dynamic Compilation
 
-To run these examples, change into the `scripts` directory:
+There is a sample app that uses the function compiler to create a
+function from a configuration property. The vanilla "function-sample"
+also has that feature. And there are some examples that you can run to
+see the compilation happening at run time. To run these examples,
+change into the `scripts` directory:
 
 ----
 cd scripts
