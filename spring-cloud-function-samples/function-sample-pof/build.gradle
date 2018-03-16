@@ -24,7 +24,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'io.spring.sample'
-version = '1.0.0.M5'
+version = '1.0.0.BUILD-SNAPSHOT'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -36,7 +36,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "1.0.0.M5"
+	springCloudFunctionVersion = "1.0.0.BUILD-SNAPSHOT"
 }
 ext['reactor.version'] = "3.1.2.RELEASE"
 
