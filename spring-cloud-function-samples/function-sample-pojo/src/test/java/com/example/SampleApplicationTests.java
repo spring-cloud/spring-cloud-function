@@ -52,6 +52,13 @@ public class SampleApplicationTests {
 	}
 
 	@Test
+	public void composite() {
+		assertThat(new TestRestTemplate()
+				.getForObject("http://localhost:" + port + "/words,uppercase", String.class))
+						.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+	}
+
+	@Test
 	public void single() {
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",

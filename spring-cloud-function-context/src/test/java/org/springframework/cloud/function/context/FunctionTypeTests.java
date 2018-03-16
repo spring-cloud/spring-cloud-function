@@ -166,6 +166,18 @@ public class FunctionTypeTests {
 	}
 
 	@Test
+	public void compose() {
+		FunctionType input = FunctionType.from(Foo.class).to(Bar.class).wrap(Flux.class);
+		FunctionType output = FunctionType.from(Bar.class).to(String.class);
+		FunctionType function = FunctionType.compose(input, output);
+		assertThat(function.getInputType()).isEqualTo(Foo.class);
+		assertThat(function.getOutputType()).isEqualTo(String.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Flux.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(Flux.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
 	public void idempotentMessage() {
 		FunctionType function = FunctionType.from(Foo.class).to(Bar.class).message()
 				.wrap(Flux.class);

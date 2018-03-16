@@ -98,7 +98,8 @@ public class ContextFunctionPostProcessorTests {
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
 				.lookupFunction("foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
-		assertThat(processor.getRegistration(foos).getNames()).containsExactly("foos|bars");
+		assertThat(processor.getRegistration(foos).getNames())
+				.containsExactly("foos|bars");
 	}
 
 	@Test
@@ -109,7 +110,21 @@ public class ContextFunctionPostProcessorTests {
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
 				.lookupFunction("foos|bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
-		assertThat(processor.getRegistration(foos).getNames()).containsExactly("foos|bars");
+		assertThat(processor.getRegistration(foos).getNames())
+				.containsExactly("foos|bars");
+	}
+
+	@Test
+	public void composeWrapper() {
+		processor.register(new FunctionRegistration<>(new WrappedSource()).names("ints"));
+		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		@SuppressWarnings("unchecked")
+		Supplier<Flux<String>> foos = (Supplier<Flux<String>>) processor
+				.lookupSupplier("ints|foos");
+		assertThat(foos.get().blockFirst()).isEqualTo("8");
+		assertThat(processor.getRegistration(foos).getNames())
+				.containsExactly("ints|foos");
+		assertThat(processor.getRegistration(foos).getType().getOutputWrapper()).isEqualTo(Flux.class);
 	}
 
 	@Test
@@ -127,7 +142,8 @@ public class ContextFunctionPostProcessorTests {
 	public void isolatedSupplier() {
 		contextClassLoader = ClassUtils
 				.overrideThreadContextClassLoader(getClass().getClassLoader());
-		processor.register(new FunctionRegistration<>(create(Source.class)).names("source"));
+		processor.register(
+				new FunctionRegistration<>(create(Source.class)).names("source"));
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<Integer>> source = (Supplier<Flux<Integer>>) processor
 				.lookupSupplier("source");
@@ -145,7 +161,8 @@ public class ContextFunctionPostProcessorTests {
 				.lookupConsumer("sink");
 		sink.accept(Flux.just("Hello"));
 		@SuppressWarnings("unchecked")
-		List<String> values = (List<String>) ReflectionTestUtils.getField(target, "values");
+		List<String> values = (List<String>) ReflectionTestUtils.getField(target,
+				"values");
 		assertThat(values).contains("Hello");
 	}
 
@@ -201,6 +218,15 @@ public class ContextFunctionPostProcessorTests {
 
 	}
 
+	public static class WrappedSource implements Supplier<Flux<Integer>> {
+
+		@Override
+		public Flux<Integer> get() {
+			return Flux.just(4);
+		}
+
+	}
+
 	public static class Foo {
 		private String value;
 
@@ -239,5 +265,5 @@ public class ContextFunctionPostProcessorTests {
 		}
 
 	}
-	
+
 }

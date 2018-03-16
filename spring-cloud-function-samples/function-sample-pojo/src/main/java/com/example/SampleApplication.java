@@ -33,8 +33,8 @@ public class SampleApplication {
 	}
 
 	@Bean
-	public Supplier<Flux<Bar>> words() {
-		return () -> Flux.fromArray(new Bar[] { new Bar("foo"), new Bar("bar") }).log();
+	public Supplier<Flux<Foo>> words() {
+		return () -> Flux.fromArray(new Foo[] { new Foo("foo"), new Foo("bar") }).log();
 	}
 
 	public static void main(String[] args) throws Exception {

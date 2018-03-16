@@ -98,6 +98,9 @@ public class FunctionType {
 	}
 
 	public static boolean isWrapper(Type type) {
+		if (type instanceof ParameterizedType) {
+			type = ((ParameterizedType)type).getRawType();
+		}
 		return Publisher.class.equals(type) || Flux.class.equals(type)
 				|| Mono.class.equals(type) || Optional.class.equals(type);
 	}
@@ -147,21 +150,34 @@ public class FunctionType {
 	public static FunctionType compose(FunctionType input, FunctionType output) {
 		ResolvableType inputGeneric = input(input);
 		ResolvableType outputGeneric = output(output);
+		if (!isWrapper(outputGeneric.getType())) {
+			ResolvableType inputOutput = output(input);
+			if (isWrapper(inputOutput.getType())) {
+				outputGeneric = wrap(input,
+						extractClass(inputOutput.getType(), ParamType.OUTPUT_WRAPPER),
+						extractClass(outputGeneric.getType(), ParamType.OUTPUT));
+			}
+		}
 		return new FunctionType(ResolvableType
 				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
 				.getType());
 	}
 
 	private ResolvableType wrap(Class<?> wrapper, Class<?> type) {
-		return isMessage() ? wrap(wrapper, message(type))
+		return wrap(this, wrapper, type);
+	}
+
+	private static ResolvableType wrap(FunctionType input, Class<?> wrapper,
+			Class<?> type) {
+		return input.isMessage() ? wrap(wrapper, message(type))
 				: ResolvableType.forClassWithGenerics(wrapper, type);
 	}
 
-	private ResolvableType wrap(Class<?> wrapper, ResolvableType type) {
+	private static ResolvableType wrap(Class<?> wrapper, ResolvableType type) {
 		return ResolvableType.forClassWithGenerics(wrapper, type);
 	}
 
-	private ResolvableType message(Class<?> type) {
+	private static ResolvableType message(Class<?> type) {
 		return ResolvableType.forClassWithGenerics(Message.class, type);
 	}
 
@@ -224,7 +240,7 @@ public class FunctionType {
 		return Object.class;
 	}
 
-	private Class<?> extractClass(Type param, ParamType paramType) {
+	private static Class<?> extractClass(Type param, ParamType paramType) {
 		if (param instanceof ParameterizedType) {
 			ParameterizedType concrete = (ParameterizedType) param;
 			param = concrete.getRawType();
