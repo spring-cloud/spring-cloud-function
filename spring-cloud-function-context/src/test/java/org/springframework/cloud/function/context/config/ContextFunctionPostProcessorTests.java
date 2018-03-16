@@ -91,13 +91,25 @@ public class ContextFunctionPostProcessorTests {
 	}
 
 	@Test
-	public void compose() {
+	public void composeWithComma() {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
 		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
 				.lookupFunction("foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
+		assertThat(processor.getRegistration(foos).getNames()).containsExactly("foos|bars");
+	}
+
+	@Test
+	public void compose() {
+		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
+		@SuppressWarnings("unchecked")
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+				.lookupFunction("foos|bars");
+		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
+		assertThat(processor.getRegistration(foos).getNames()).containsExactly("foos|bars");
 	}
 
 	@Test

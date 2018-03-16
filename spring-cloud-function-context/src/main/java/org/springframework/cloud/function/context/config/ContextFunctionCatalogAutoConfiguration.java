@@ -234,10 +234,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private Object compose(String name, Map<String, Object> lookup,
 				boolean hasInput) {
+			name = name.replaceAll(",", "|");
 			if (lookup.containsKey(name)) {
 				return lookup.get(name);
 			}
-			String[] stages = StringUtils.tokenizeToStringArray(name, ",");
+			String[] stages = StringUtils.delimitedListToStringArray(name, "|");
 			Map<String, Object> source = !hasInput || stages.length <= 1 ? lookup
 					: this.functions;
 			if (stages.length == 0 && source.size() == 1) {
