@@ -53,10 +53,9 @@ public class SampleApplicationTests {
 
 	@Test
 	public void single() {
-		// TODO: make this return a single value
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",
-				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
+				String.class)).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test

@@ -19,10 +19,8 @@ package org.springframework.cloud.function.web.flux.response;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -116,7 +114,7 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		if (ResponseEntity.class.isAssignableFrom(returnType.getParameterType())) {
 			Class<?> bodyType = ResolvableType.forMethodParameter(returnType)
 					.getGeneric(0).resolve();
-			return bodyType != null && Flux.class.isAssignableFrom(bodyType);
+			return bodyType != null && Publisher.class.isAssignableFrom(bodyType);
 		}
 		return false;
 	}
@@ -152,8 +150,7 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 				NativeWebRequest.SCOPE_REQUEST);
 		Class<?> type = inspector.getOutputType(handler);
 
-		boolean inputSingle = isInputSingle(webRequest, handler);
-		if (inputSingle && isOutputSingle(handler)) {
+		if (isOutputSingle(webRequest, handler, type)) {
 			Object result = Flux.from(flux).blockFirst();
 			if (result instanceof Message) {
 				Message<?> message = (Message<?>) result;
@@ -197,28 +194,16 @@ public class FluxReturnValueHandler implements AsyncHandlerMethodReturnValueHand
 		}
 	}
 
-	private boolean isInputSingle(NativeWebRequest webRequest, Object handler) {
+	private boolean isOutputSingle(NativeWebRequest webRequest, Object handler,
+			Class<?> type) {
 		Boolean single = (Boolean) webRequest.getAttribute(
-				WebRequestConstants.INPUT_SINGLE, NativeWebRequest.SCOPE_REQUEST);
+				WebRequestConstants.OUTPUT_SINGLE, NativeWebRequest.SCOPE_REQUEST);
 		if (single == null) {
-			return handler instanceof Supplier;
+			// If the declared return type is a collection then we can render it as a
+			// "single" value
+			return Collection.class.isAssignableFrom(type);
 		}
 		return single;
-	}
-
-	private boolean isOutputSingle(Object handler) {
-		Class<?> type = inspector.getOutputType(handler);
-		Class<?> wrapper = inspector.getOutputWrapper(handler);
-		if (Stream.class.isAssignableFrom(type)) {
-			return false;
-		}
-		if (wrapper == type) {
-			return true;
-		}
-		if (Mono.class.equals(wrapper) || Optional.class.equals(wrapper)) {
-			return true;
-		}
-		return false;
 	}
 
 	private MediaType findMediaType(NativeWebRequest webRequest) {

@@ -28,8 +28,8 @@ import reactor.core.publisher.Flux;
 public class SampleApplication {
 
 	@Bean
-	public Function<Flux<Foo>, Flux<Bar>> uppercase() {
-		return flux -> flux.log().map(value -> new Bar(value.uppercase()));
+	public Function<Foo, Bar> uppercase() {
+		return value -> new Bar(value.uppercase());
 	}
 
 	@Bean
