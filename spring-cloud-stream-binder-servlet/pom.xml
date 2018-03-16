@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>spring-cloud-stream-binder-servlet</artifactId>
-	<version>1.0.0.BUILD-SNAPSHOT</version>
+	<version>1.0.0.M5</version>
 	<packaging>jar</packaging>
 	<name>spring-cloud-stream-binder-servlet</name>
 	<description>Servlet binder implementation</description>

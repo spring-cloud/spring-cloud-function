@@ -34,7 +34,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "1.0.0.BUILD-SNAPSHOT"
+	springCloudFunctionVersion = "1.0.0.M5"
 }
 ext['reactor.version'] = "3.1.2.RELEASE"
 

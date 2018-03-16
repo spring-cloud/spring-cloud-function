@@ -46,7 +46,7 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 		// System.setProperty("debug", "true");
 		context = new ApplicationRunner().start("--server.port=" + port, "--debug",
 				"--logging.level.org.springframework.cloud.function=DEBUG");
-		deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
+		deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.M5");
 	}
 
 	private static void deploy(String name, String path) throws Exception {
@@ -105,7 +105,7 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 	@Test
 	public void another() throws Exception {
 		deploy("pof",
-				"maven://io.spring.sample:function-sample-pof:jar:exec:1.0.0.BUILD-SNAPSHOT");
+				"maven://io.spring.sample:function-sample-pof:jar:exec:1.0.0.M5");
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/stream/pof/greeter", "Foo",
 				String.class)).isEqualTo("Hello Foo");
@@ -116,12 +116,12 @@ public class FunctionExtractingFunctionCatalogIntegrationTests {
 		String undeploy = undeploy("sample");
 		assertThat(undeploy.contains("\"name\":\"sample\""));
 		assertThat(undeploy.contains(
-				"\"path\":\"maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT\""));
+				"\"path\":\"maven://io.spring.sample:function-sample:1.0.0.M5\""));
 		ResponseEntity<String> result = new TestRestTemplate().exchange(RequestEntity
 				.get(new URI("http://localhost:" + port + "/stream/sample/words"))
 				.build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-		deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.BUILD-SNAPSHOT");
+		deploy("sample", "maven://io.spring.sample:function-sample:1.0.0.M5");
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/stream/sample/uppercase", "foo",
 				String.class)).isEqualTo("FOO");
