@@ -60,19 +60,21 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 
 	private final Map<String, FluxMessageProcessor> processors = new HashMap<>();
 
-	private int count = -1;
-
 	private static final FluxMessageProcessor NOENDPOINT = flux -> Flux.empty();
 
 	private static final Object UNCONVERTED = new Object();
 
+	private boolean share;
+
 	public StreamListeningFunctionInvoker(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
-			CompositeMessageConverterFactory converterFactory, String defaultRoute) {
+			CompositeMessageConverterFactory converterFactory, String defaultRoute,
+			boolean share) {
 		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
 		this.converterFactory = converterFactory;
 		this.defaultRoute = defaultRoute;
+		this.share = share;
 	}
 
 	@Override
@@ -96,7 +98,8 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 				result = result.map(message -> MessageUtils.unpack(function, message));
 			}
 			Flux<Map<String, Object>> aggregate = headers(values);
-			return result.withLatestFrom(aggregate, (p, m) -> message(p, m));
+			return aggregate.withLatestFrom(result,
+					(map, payload) -> message(map, payload));
 		});
 	}
 
@@ -104,10 +107,8 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 		return flux.map(message -> message.getHeaders());
 	}
 
-	private Message<?> message(Object result, Map<String, Object> headers) {
+	private Message<?> message(Map<String, Object> headers, Object result) {
 		return result instanceof Message
-				// TODO: why do we have to do this? The headers should have come with the
-				// result.
 				? MessageBuilder.fromMessage((Message<?>) result)
 						.copyHeadersIfAbsent(headers).build()
 				: MessageBuilder.withPayload(result).copyHeadersIfAbsent(headers).build();
@@ -115,27 +116,37 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 
 	private Flux<Message<?>> consumer(String name, Flux<Message<?>> flux) {
 		Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, name);
+		flux = flux.publish().refCount(2);
+		// The consumer will subscribe to the input flux, so we need to listen separately
 		consumer.accept(flux.map(message -> convertInput(consumer).apply(message))
 				.filter(transformed -> transformed != UNCONVERTED));
-		return Flux.empty();
+		return flux.ignoreElements().flux();
 	}
 
 	private Flux<Message<?>> balance(List<String> names, Flux<Message<?>> flux) {
 		if (names.isEmpty()) {
 			return Flux.empty();
 		}
-		String name = choose(names);
-		if (functionCatalog.lookup(Consumer.class, name) != null) {
-			return consumer(name, flux);
+		flux = flux.hide();
+		Flux<Message<?>> result = Flux.empty();
+		if (names.size() > 1) {
+			if (this.share) {
+				flux = flux.publish().refCount(names.size());
+			}
+			else {
+				return Flux.error(new IllegalStateException(
+						"Multiple matches and share disabled: " + names));
+			}
 		}
-		return function(name, flux);
-	}
-
-	private synchronized String choose(List<String> names) {
-		if (++count >= names.size() || count < 0) {
-			count = 0;
+		for (String name : names) {
+			if (functionCatalog.lookup(Consumer.class, name) != null) {
+				result = result.mergeWith(consumer(name, flux));
+			}
+			else {
+				result = result.mergeWith(function(name, flux));
+			}
 		}
-		return names.get(count);
+		return result;
 	}
 
 	private FluxMessageProcessor select(Message<?> input) {
@@ -149,7 +160,8 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 			name = stash(defaultRoute);
 		}
 		if (name == null) {
-			Set<String> names = new LinkedHashSet<>(functionCatalog.getNames(Function.class));
+			Set<String> names = new LinkedHashSet<>(
+					functionCatalog.getNames(Function.class));
 			names.addAll(functionCatalog.getNames(Consumer.class));
 			List<String> matches = new ArrayList<>();
 			if (names.size() == 1) {
@@ -175,7 +187,6 @@ public class StreamListeningFunctionInvoker implements SmartInitializingSingleto
 					name = stash(matches.iterator().next());
 				}
 				else {
-					// TODO: do we really want this? Or maybe warn that it is happening?
 					return flux -> balance(matches, flux);
 				}
 			}

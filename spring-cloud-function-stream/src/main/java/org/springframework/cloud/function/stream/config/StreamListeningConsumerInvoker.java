@@ -37,6 +37,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -55,19 +56,21 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 
 	private final Map<String, FluxMessageProcessor> processors = new HashMap<>();
 
-	private int count = -1;
-
-	private static final FluxMessageProcessor NOENDPOINT = flux -> Flux.empty();
+	private static final FluxMessageProcessor NOENDPOINT = flux -> Mono.empty();
 
 	private static final Object UNCONVERTED = new Object();
 
+	private boolean share;
+
 	public StreamListeningConsumerInvoker(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector,
-			CompositeMessageConverterFactory converterFactory, String defaultRoute) {
+			CompositeMessageConverterFactory converterFactory, String defaultRoute,
+			boolean share) {
 		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
 		this.converterFactory = converterFactory;
 		this.defaultRoute = defaultRoute;
+		this.share = share;
 	}
 
 	@Override
@@ -77,32 +80,35 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 
 	@StreamListener
 	public void handle(@Input(Processor.INPUT) Flux<Message<?>> input) {
-		input.groupBy(this::select).flatMap(group -> group.key().process(group)).subscribe();
+		input.groupBy(this::select).flatMap(group -> group.key().process(group))
+				.subscribe();
 	}
 
-	private Flux<Message<?>> consumer(String name, Flux<Message<?>> flux) {
+	private Mono<Void> consumer(String name, Flux<Message<?>> flux) {
 		Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, name);
 		consumer.accept(flux.map(message -> convertInput(consumer).apply(message))
 				.filter(transformed -> transformed != UNCONVERTED));
-		return Flux.empty();
+		return Mono.empty();
 	}
 
-	private Flux<Message<?>> balance(List<String> names, Flux<Message<?>> flux) {
+	private Mono<Void> balance(List<String> names, Flux<Message<?>> flux) {
 		if (names.isEmpty()) {
-			return Flux.empty();
+			return Mono.empty();
 		}
-		String name = choose(names);
-		if (functionCatalog.lookup(Consumer.class, name) != null) {
-			return consumer(name, flux);
+		Flux<?> result = Flux.empty();
+		if (names.size() > 1) {
+			if (this.share) {
+				flux = flux.share();
+			}
+			else {
+				return Mono.error(new IllegalStateException(
+						"Multiple matches and share disabled: " + names));
+			}
 		}
-		return Flux.empty();
-	}
-
-	private synchronized String choose(List<String> names) {
-		if (++count >= names.size() || count < 0) {
-			count = 0;
+		for (String name : names) {
+			result = result.zipWith(consumer(name, flux));
 		}
-		return names.get(count);
+		return result.then();
 	}
 
 	private FluxMessageProcessor select(Message<?> input) {
@@ -188,7 +194,7 @@ public class StreamListeningConsumerInvoker implements SmartInitializingSingleto
 	}
 
 	interface FluxMessageProcessor {
-		Flux<Message<?>> process(Flux<Message<?>> flux);
+		Mono<Void> process(Flux<Message<?>> flux);
 	}
 
 }

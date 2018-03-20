@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = PojoStreamingMixedTests.StreamingFunctionApplication.class)
+@SpringBootTest(classes = PojoStreamingMixedTests.StreamingFunctionApplication.class, properties = "spring.cloud.function.stream.shared=true")
 public class PojoStreamingMixedTests {
 
 	@Autowired
@@ -69,8 +69,8 @@ public class PojoStreamingMixedTests {
 		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000,
 				TimeUnit.MILLISECONDS);
 		assertThat(result.getPayload()).isInstanceOf(Foo.class);
-		// 2 subscribers to the same channel so input messages are applied as round robin
-		assertThat(collector).hasSize(1);
+		// 2 subscribers to the same channel but input messages are sent to all
+		assertThat(collector).hasSize(2);
 	}
 
 	@Test

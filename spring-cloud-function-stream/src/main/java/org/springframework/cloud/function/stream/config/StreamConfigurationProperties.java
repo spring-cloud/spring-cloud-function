@@ -30,6 +30,8 @@ public class StreamConfigurationProperties {
 
 	private Processor processor = new Processor();
 
+	private boolean shared;
+
 	public static final String ROUTE_KEY = "stream_routekey";
 
 	public Sink getSink() {
@@ -42,6 +44,14 @@ public class StreamConfigurationProperties {
 
 	public Processor getProcessor() {
 		return this.processor;
+	}
+
+	public boolean isShared() {
+		return this.shared;
+	}
+
+	public void setShared(boolean shared) {
+		this.shared = shared;
 	}
 
 	public static class Sink {
@@ -72,6 +82,7 @@ public class StreamConfigurationProperties {
 		public void setEnabled(boolean enabled) {
 			this.enabled = enabled;
 		}
+
 	}
 
 	public static class Source {
@@ -149,10 +160,11 @@ public class StreamConfigurationProperties {
 		public void setEnabled(boolean enabled) {
 			this.enabled = enabled;
 		}
+
 	}
 
 	public String getDefaultRoute() {
-		return processor.getName()!=null ? processor.getName() : sink.getName();
+		return processor.getName() != null ? processor.getName() : sink.getName();
 	}
 
 }
