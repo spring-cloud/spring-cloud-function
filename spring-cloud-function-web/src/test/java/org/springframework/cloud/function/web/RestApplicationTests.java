@@ -15,23 +15,10 @@
  */
 package org.springframework.cloud.function.web;
 
-import java.net.URI;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -48,15 +35,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
+
+import java.net.URI;
+import java.time.Duration;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-
 /**
  * @author Dave Syer
- *
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -76,7 +71,7 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void staticResource() throws Exception {
+	public void staticResource() {
 		assertThat(rest.getForObject("/test.html", String.class)).contains("<body>Test");
 	}
 
@@ -224,7 +219,7 @@ public class RestApplicationTests {
 		assertThat(rest.exchange(
 				RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(),
 				String.class).getBody())
-						.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+				.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
@@ -415,7 +410,7 @@ public class RestApplicationTests {
 						// The new line in the middle is optional
 						.body("[{\"value\":\"foo\"},\n{\"value\":\"bar\"}]"),
 				String.class).getBody())
-						.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
@@ -423,7 +418,21 @@ public class RestApplicationTests {
 		assertThat(rest.exchange(RequestEntity.post(new URI("/uppercase"))
 				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class).getBody())
-						.isEqualTo(sse("(FOO)", "(BAR)"));
+				.isEqualTo(sse("(FOO)", "(BAR)"));
+	}
+
+	@Test
+	public void sum() throws Exception {
+
+		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+
+		map.put("A", Arrays.asList("1", "2", "3"));
+		map.put("B", Arrays.asList("5", "6"));
+
+		assertThat(rest.exchange(RequestEntity.post(new URI("/sum"))
+				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.MULTIPART_FORM_DATA)
+				.body(map), String.class).getBody())
+				.isEqualTo("[{\"A\":6,\"B\":11}]");
 	}
 
 	private String sse(String... values) {
@@ -573,6 +582,20 @@ public class RestApplicationTests {
 		public Supplier<Flux<List<String>>> sentences() {
 			return () -> Flux.just(Arrays.asList("go", "home"),
 					Arrays.asList("come", "back"));
+		}
+
+		@Bean
+		public Function<MultiValueMap<String, String>, Map<String, Integer>> sum() {
+			return valueMap -> valueMap
+					.entrySet()
+					.stream()
+					.collect(
+							Collectors
+									.toMap(
+											Map.Entry::getKey,
+											values -> values.getValue().stream().mapToInt(Integer::parseInt).sum()
+									)
+					);
 		}
 
 	}

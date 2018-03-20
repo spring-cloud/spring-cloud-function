@@ -17,18 +17,22 @@ package com.example;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+
+import java.net.URI;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
- *
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -41,7 +45,7 @@ public class SampleApplicationTests {
 	public void words() {
 		assertThat(new TestRestTemplate()
 				.getForObject("http://localhost:" + port + "/words", String.class))
-						.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
@@ -55,7 +59,7 @@ public class SampleApplicationTests {
 	public void composite() {
 		assertThat(new TestRestTemplate()
 				.getForObject("http://localhost:" + port + "/words,uppercase", String.class))
-						.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
@@ -70,6 +74,20 @@ public class SampleApplicationTests {
 		assertThat(new TestRestTemplate().postForObject(
 				"http://localhost:" + port + "/lowercase", "[{\"value\":\"Foo\"}]",
 				String.class)).isEqualTo("[{\"value\":\"foo\"}]");
+	}
+
+	@Test
+	public void sum() throws Exception {
+
+		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+
+		map.put("A", Arrays.asList("1", "2", "3"));
+		map.put("B", Arrays.asList("5", "6"));
+
+		assertThat(new TestRestTemplate().exchange(RequestEntity.post(new URI("http://localhost:" + port + "/sum"))
+				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.MULTIPART_FORM_DATA)
+				.body(map), String.class).getBody())
+				.isEqualTo("[{\"A\":6,\"B\":11}]");
 	}
 
 }

@@ -18,9 +18,8 @@ package org.springframework.cloud.function.web.flux.constants;
 
 /**
  * Common storage for web request attribute names (in a separate package to avoid cycles).
- * 
- * @author Dave Syer
  *
+ * @author Dave Syer
  */
 public abstract class WebRequestConstants {
 
@@ -32,7 +31,8 @@ public abstract class WebRequestConstants {
 			+ ".supplier";
 	public static final String ARGUMENT = WebRequestConstants.class.getName()
 			+ ".argument";
-	public static final String HANDLER = WebRequestConstants.class.getName() + ".handler";
+	public static final String HANDLER = WebRequestConstants.class.getName()
+			+ ".handler";
 	public static final String INPUT_SINGLE = WebRequestConstants.class.getName()
 			+ ".input_single";
 	public static final String OUTPUT_SINGLE = WebRequestConstants.class.getName()
