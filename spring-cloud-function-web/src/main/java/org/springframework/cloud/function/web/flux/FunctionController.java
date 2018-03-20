@@ -16,19 +16,13 @@
 
 package org.springframework.cloud.function.web.flux;
 
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
-
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
+import org.springframework.cloud.function.web.flux.request.FluxFormRequest;
 import org.springframework.cloud.function.web.flux.request.FluxRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,9 +32,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * @author Dave Syer
@@ -68,18 +67,23 @@ public class FunctionController {
 
 	@PostMapping(path = "/**")
 	@ResponseBody
-	public ResponseEntity<Publisher<?>> post(WebRequest request,
-			@RequestBody FluxRequest<?> body) {
+	public ResponseEntity<Publisher<?>> post(WebRequest request, @RequestBody FluxRequest<?> body) {
+
 		@SuppressWarnings("unchecked")
 		Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) request
 				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
+
 		@SuppressWarnings("unchecked")
 		Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) request
 				.getAttribute(WebRequestConstants.CONSUMER, WebRequest.SCOPE_REQUEST);
-		Boolean single = (Boolean) request.getAttribute(WebRequestConstants.INPUT_SINGLE,
-				WebRequest.SCOPE_REQUEST);
+
+		Boolean single = (Boolean) request
+				.getAttribute(WebRequestConstants.INPUT_SINGLE, WebRequest.SCOPE_REQUEST);
+
+		FluxFormRequest from = FluxFormRequest.from(request.getParameterMap());
+
 		if (function != null) {
-			Flux<?> flux = body.flux();
+			Flux<?> flux = body.body() == null ? from.flux() : body.flux();
 			if (debug) {
 				flux = flux.log();
 			}
@@ -90,11 +94,11 @@ public class FunctionController {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Handled POST with function");
 			}
-			return ResponseEntity.ok().body(
-					debug ? result.log() : response(request, function, single, result));
+			return ResponseEntity.ok().body(debug ? result.log() : response(request, function, single, result));
 		}
+
 		if (consumer != null) {
-			Flux<?> flux = body.flux().cache(); // send a copy back to the caller
+			Flux<?> flux = body.body() == null ? from.flux().cache() : body.flux().cache(); // send a copy back to the caller
 			if (debug) {
 				flux = flux.log();
 			}
@@ -104,18 +108,19 @@ public class FunctionController {
 			}
 			return ResponseEntity.status(HttpStatus.ACCEPTED).body(flux);
 		}
+
 		throw new IllegalArgumentException("no such function");
 	}
 
-	private Publisher<?> response(WebRequest request, Object handler, Boolean single,
-			Flux<?> result) {
+	private Publisher<?> response(WebRequest request, Object handler, Boolean single, Flux<?> result) {
+
 		if (single != null && single && isOutputSingle(handler)) {
-			request.setAttribute(WebRequestConstants.OUTPUT_SINGLE, true,
-					WebRequest.SCOPE_REQUEST);
+			request.setAttribute(WebRequestConstants.OUTPUT_SINGLE, true, WebRequest.SCOPE_REQUEST);
 			return Mono.from(result);
 		}
-		request.setAttribute(WebRequestConstants.OUTPUT_SINGLE, false,
-				WebRequest.SCOPE_REQUEST);
+
+		request.setAttribute(WebRequestConstants.OUTPUT_SINGLE, false, WebRequest.SCOPE_REQUEST);
+
 		return result;
 	}
 
@@ -128,10 +133,7 @@ public class FunctionController {
 		if (wrapper == type) {
 			return true;
 		}
-		if (Mono.class.equals(wrapper) || Optional.class.equals(wrapper)) {
-			return true;
-		}
-		return false;
+		return Mono.class.equals(wrapper) || Optional.class.equals(wrapper);
 	}
 
 	@GetMapping(path = "/**")
@@ -140,11 +142,14 @@ public class FunctionController {
 		@SuppressWarnings("unchecked")
 		Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) request
 				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
+
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) request
 				.getAttribute(WebRequestConstants.SUPPLIER, WebRequest.SCOPE_REQUEST);
-		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,
-				WebRequest.SCOPE_REQUEST);
+
+		String argument = (String) request
+				.getAttribute(WebRequestConstants.ARGUMENT, WebRequest.SCOPE_REQUEST);
+
 		if (function != null) {
 			return value(function, argument);
 		}
