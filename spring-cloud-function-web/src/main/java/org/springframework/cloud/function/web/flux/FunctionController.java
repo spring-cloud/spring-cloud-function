@@ -72,11 +72,9 @@ public class FunctionController {
 		@SuppressWarnings("unchecked")
 		Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) request
 				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
-
 		@SuppressWarnings("unchecked")
 		Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) request
 				.getAttribute(WebRequestConstants.CONSUMER, WebRequest.SCOPE_REQUEST);
-
 		Boolean single = (Boolean) request
 				.getAttribute(WebRequestConstants.INPUT_SINGLE, WebRequest.SCOPE_REQUEST);
 
@@ -142,11 +140,9 @@ public class FunctionController {
 		@SuppressWarnings("unchecked")
 		Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) request
 				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
-
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) request
 				.getAttribute(WebRequestConstants.SUPPLIER, WebRequest.SCOPE_REQUEST);
-
 		String argument = (String) request
 				.getAttribute(WebRequestConstants.ARGUMENT, WebRequest.SCOPE_REQUEST);
 
