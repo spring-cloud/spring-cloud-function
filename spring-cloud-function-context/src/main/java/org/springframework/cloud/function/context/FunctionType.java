@@ -99,7 +99,7 @@ public class FunctionType {
 
 	public static boolean isWrapper(Type type) {
 		if (type instanceof ParameterizedType) {
-			type = ((ParameterizedType)type).getRawType();
+			type = ((ParameterizedType) type).getRawType();
 		}
 		return Publisher.class.equals(type) || Flux.class.equals(type)
 				|| Mono.class.equals(type) || Optional.class.equals(type);
@@ -222,12 +222,18 @@ public class FunctionType {
 	private Class<?> findType(ParamType paramType) {
 		int index = paramType.isOutput() ? 1 : 0;
 		Type type = this.type;
-		if (type instanceof Class) {
-			for (Type iface : ((Class<?>) type).getGenericInterfaces()) {
+		boolean found = false;
+		while (!found && type instanceof Class && type != Object.class) {
+			Class<?> clz = (Class<?>) type;
+			for (Type iface : clz.getGenericInterfaces()) {
 				if (iface.getTypeName().startsWith("java.util.function")) {
 					type = iface;
+					found = true;
 					break;
 				}
+			}
+			if (!found) {
+				type = clz.getSuperclass();
 			}
 		}
 		Type param = extractType(type, paramType, index);

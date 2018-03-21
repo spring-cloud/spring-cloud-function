@@ -124,6 +124,20 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
+	public void configurationFunction() {
+		create(FunctionConfiguration.class);
+		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
+		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
+				.isEqualTo(String.class);
+		assertThat(inspector.getOutputType(catalog.lookup(Function.class, "foos")))
+				.isEqualTo(Foo.class);
+		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "foos")))
+				.isEqualTo(Flux.class);
+	}
+
+	@Test
 	public void dependencyInjection() {
 		create(DependencyInjectionConfiguration.class);
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
@@ -550,6 +564,22 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Function<String, Foo> foos(String foo) {
 			return value -> new Foo(foo + ": " + value.toUpperCase());
+		}
+
+		@Bean
+		public String value() {
+			return "Hello";
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration("foos")
+	protected static class FunctionConfiguration
+			implements Function<Flux<String>, Flux<Foo>> {
+
+		@Override
+		public Flux<Foo> apply(Flux<String> flux) {
+			return flux.map(foo -> new Foo(value() + ": " + foo.toUpperCase()));
 		}
 
 		@Bean

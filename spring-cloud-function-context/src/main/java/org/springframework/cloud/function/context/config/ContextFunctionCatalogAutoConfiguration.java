@@ -539,14 +539,22 @@ public class ContextFunctionCatalogAutoConfiguration {
 					param = new FunctionType(resolvable.getType());
 				}
 				else {
-					Object bean = this.registry.getBean(name);
-					if (bean instanceof FunctionFactoryMetadata) {
-						FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) bean;
-						Type type = factory.getFactoryMethod().getGenericReturnType();
+					Class<?> beanClass = definition.getBeanClass();
+					if (beanClass != null && !FunctionFactoryMetadata.class
+							.isAssignableFrom(beanClass)) {
+						Type type = beanClass;
 						param = new FunctionType(type);
 					}
 					else {
-						param = new FunctionType(bean.getClass());
+						Object bean = this.registry.getBean(name);
+						if (bean instanceof FunctionFactoryMetadata) {
+							FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) bean;
+							Type type = factory.getFactoryMethod().getGenericReturnType();
+							param = new FunctionType(type);
+						}
+						else {
+							param = new FunctionType(bean.getClass());
+						}
 					}
 				}
 			}
