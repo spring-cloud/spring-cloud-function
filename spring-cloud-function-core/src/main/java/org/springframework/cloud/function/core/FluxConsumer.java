@@ -17,18 +17,21 @@
 package org.springframework.cloud.function.core;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
- * {@link Consumer} implementation that wraps a target Consumer so that the target's
- * simple input type will be wrapped as a {@link Flux} instance.
+ * Wrapper for a {@link Consumer} implementation that converts a non-reactive consumer
+ * into a reactive function.
  *
  * @author Dave Syer
  *
  * @param <T> input type of target consumer
  */
-public class FluxConsumer<T> implements Consumer<Flux<T>>, FluxWrapper<Consumer<T>> {
+public class FluxConsumer<T>
+		implements Function<Flux<T>, Mono<Void>>, FluxWrapper<Consumer<T>> {
 
 	private final Consumer<T> consumer;
 
@@ -42,7 +45,7 @@ public class FluxConsumer<T> implements Consumer<Flux<T>>, FluxWrapper<Consumer<
 	}
 
 	@Override
-	public void accept(Flux<T> input) {
-		input.subscribe(t -> consumer.accept(t));
+	public Mono<Void> apply(Flux<T> input) {
+		return input.doOnNext(consumer).then();
 	}
 }

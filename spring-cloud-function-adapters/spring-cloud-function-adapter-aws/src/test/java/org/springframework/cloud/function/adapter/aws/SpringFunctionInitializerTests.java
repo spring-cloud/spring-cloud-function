@@ -38,21 +38,20 @@ import reactor.core.publisher.Flux;
  *
  */
 public class SpringFunctionInitializerTests {
-	
+
 	private SpringFunctionInitializer initializer;
 
 	@After
 	public void after() {
 		System.clearProperty("function.name");
-		if (initializer!=null) {
+		if (initializer != null) {
 			initializer.close();
 		}
 	}
 
 	@Test
 	public void functionBean() {
-		initializer = new SpringFunctionInitializer(
-				FluxFunctionConfig.class);
+		initializer = new SpringFunctionInitializer(FluxFunctionConfig.class);
 		initializer.initialize();
 		Flux<?> result = initializer.apply(Flux.just(new Foo()));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
@@ -60,8 +59,7 @@ public class SpringFunctionInitializerTests {
 
 	@Test
 	public void functionCatalog() {
-		initializer = new SpringFunctionInitializer(
-				FunctionConfig.class);
+		initializer = new SpringFunctionInitializer(FunctionConfig.class);
 		initializer.initialize();
 		Flux<?> result = initializer.apply(Flux.just(new Foo()));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
@@ -69,8 +67,7 @@ public class SpringFunctionInitializerTests {
 
 	@Test
 	public void namedFunctionCatalog() {
-		initializer = new SpringFunctionInitializer(
-				NamedFunctionConfig.class);
+		initializer = new SpringFunctionInitializer(NamedFunctionConfig.class);
 		System.setProperty("function.name", "other");
 		initializer.initialize();
 		Flux<?> result = initializer.apply(Flux.just(new Foo()));
@@ -79,8 +76,7 @@ public class SpringFunctionInitializerTests {
 
 	@Test
 	public void consumerCatalog() {
-		initializer = new SpringFunctionInitializer(
-				ConsumerConfig.class);
+		initializer = new SpringFunctionInitializer(ConsumerConfig.class);
 		initializer.initialize();
 		Flux<?> result = initializer.apply(Flux.just(new Foo()));
 		assertThat(result.toStream().collect(Collectors.toList())).isEmpty();
@@ -88,8 +84,7 @@ public class SpringFunctionInitializerTests {
 
 	@Test
 	public void supplierCatalog() {
-		initializer = new SpringFunctionInitializer(
-				SupplierConfig.class);
+		initializer = new SpringFunctionInitializer(SupplierConfig.class);
 		initializer.initialize();
 		Flux<?> result = initializer.apply(Flux.empty());
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);

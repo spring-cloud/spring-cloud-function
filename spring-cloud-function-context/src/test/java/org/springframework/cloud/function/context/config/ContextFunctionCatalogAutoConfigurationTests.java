@@ -66,6 +66,7 @@ import org.springframework.util.StreamUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -115,11 +116,11 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
 		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
-		assertThat(catalog.<Consumer<?>>lookup(Consumer.class, "foos"))
-				.isInstanceOf(Consumer.class);
+		assertThat(catalog.<Supplier<?>>lookup(Supplier.class, "foos"))
+				.isInstanceOf(Supplier.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
-		assertThat(inspector.getInputType(catalog.lookup(Consumer.class, "foos")))
+		assertThat(inspector.getOutputType(catalog.lookup(Supplier.class, "foos")))
 				.isEqualTo(Foo.class);
 	}
 
@@ -185,13 +186,13 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test
 	public void composedConsumer() {
 		create(MultipleConfiguration.class);
-		assertThat(catalog.<Consumer<?>>lookup(Consumer.class, "foos,print"))
-				.isInstanceOf(Consumer.class);
-		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos,print")).isNull();
-		assertThat(inspector.getInputType(catalog.lookup(Consumer.class, "foos,print")))
+		assertThat(catalog.<Consumer<?>>lookup(Consumer.class, "foos,print")).isNull();
+		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos,print"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos,print")))
 				.isAssignableFrom(String.class);
 		// The output type is the same as the output type of the last element in the chain
-		assertThat(inspector.getOutputType(catalog.lookup(Consumer.class, "foos,print")))
+		assertThat(inspector.getOutputType(catalog.lookup(Function.class, "foos,print")))
 				.isAssignableFrom(Void.class);
 	}
 
@@ -391,8 +392,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void simpleConsumer() {
 		create(SimpleConfiguration.class);
 		assertThat(context.getBean("consumer")).isInstanceOf(Consumer.class);
-		Consumer<Flux<String>> consumer = catalog.lookup(Consumer.class, "consumer");
-		consumer.accept(Flux.just("foo", "bar"));
+		Function<Flux<String>, Mono<Void>> consumer = catalog.lookup(Function.class,
+				"consumer");
+		consumer.apply(Flux.just("foo", "bar")).subscribe();
 		assertThat(context.getBean(SimpleConfiguration.class).list).hasSize(2);
 	}
 
@@ -464,9 +466,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 						+ "::set",
 				"spring.cloud.function.compile.foos.type=consumer",
 				"spring.cloud.function.compile.foos.inputType=String");
-		assertThat(catalog.<Consumer<?>>lookup(Consumer.class, "foos"))
-				.isInstanceOf(Consumer.class);
-		assertThat(inspector.getInputWrapper(catalog.lookup(Consumer.class, "foos")))
+		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
 		@SuppressWarnings("unchecked")
 		Consumer<String> consumer = (Consumer<String>) context.getBean("foos");
@@ -602,7 +604,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class AmbiguousConfiguration {
-		private List<Foo> list = new ArrayList<>();
 
 		@Bean
 		public Function<String, Foo> foos() {
@@ -611,8 +612,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		@Qualifier("foos")
-		public Consumer<Foo> consumer() {
-			return value -> list.add(value);
+		public Supplier<Foo> supplier() {
+			return () -> new Foo("bar");
 		}
 	}
 

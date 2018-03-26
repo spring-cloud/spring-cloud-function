@@ -23,11 +23,9 @@ import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.converter.CompositeMessageConverterFactory;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.reactive.FluxSender;
 import org.springframework.messaging.Message;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * @author Mark Fisher
@@ -43,10 +41,9 @@ public class StreamListeningFunctionInvoker extends AbstractStreamListeningInvok
 	}
 
 	@StreamListener
-	public Mono<Void> handle(@Input(Processor.INPUT) Flux<Message<?>> input,
-			@Output(Processor.OUTPUT) FluxSender output) {
-		return output.send(
-				input.groupBy(this::select).flatMap(group -> group.key().process(group)));
+	@Output(Processor.OUTPUT)
+	public Flux<Message<?>> handle(@Input(Processor.INPUT) Flux<Message<?>> input) {
+		return input.groupBy(this::select).flatMap(group -> group.key().process(group));
 	}
 
 }

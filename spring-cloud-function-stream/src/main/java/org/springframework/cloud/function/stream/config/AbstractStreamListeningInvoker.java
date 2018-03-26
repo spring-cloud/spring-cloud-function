@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.reactivestreams.Publisher;
+
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -89,10 +91,11 @@ public abstract class AbstractStreamListeningInvoker
 	protected Flux<Message<?>> function(String name, Flux<Message<?>> flux) {
 		Function<Object, Flux<?>> function = functionCatalog.lookup(Function.class, name);
 		return flux.publish(values -> {
-			Flux<?> result = function
+			Publisher<?> result = function
 					.apply(values.map(message -> convertInput(function).apply(message)));
 			if (this.functionInspector.isMessage(function)) {
-				result = result.map(message -> MessageUtils.unpack(function, message));
+				result = Flux.from(result)
+						.map(message -> MessageUtils.unpack(function, message));
 			}
 			Flux<Map<String, Object>> aggregate = headers(values);
 			return aggregate.withLatestFrom(result,
