@@ -191,9 +191,9 @@ public class RestApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"one\",\"two\"]"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(test.list).hasSize(2);
-		assertThat(result.getBody()).isEqualTo("[\"one\",\"two\"]");
+		assertThat(result.getBody()).isEqualTo("[]");
 	}
 
 	@Test

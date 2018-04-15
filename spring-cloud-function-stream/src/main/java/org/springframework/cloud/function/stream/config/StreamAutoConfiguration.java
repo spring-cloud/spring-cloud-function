@@ -62,7 +62,8 @@ public class StreamAutoConfiguration {
 		@Bean
 		public SupplierInvokingMessageProducer<Object> supplierInvoker(
 				FunctionCatalog registry) {
-			return new SupplierInvokingMessageProducer<Object>(registry, properties.getSource().getName());
+			return new SupplierInvokingMessageProducer<Object>(registry,
+					properties.getSource().getName());
 		}
 
 	}
@@ -80,7 +81,8 @@ public class StreamAutoConfiguration {
 				FunctionInspector functionInspector,
 				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 			return new StreamListeningFunctionInvoker(registry, functionInspector,
-					compositeMessageConverterFactory, properties.getDefaultRoute());
+					compositeMessageConverterFactory, properties.getDefaultRoute(),
+					properties.isShared());
 		}
 
 	}
@@ -91,7 +93,7 @@ public class StreamAutoConfiguration {
 
 		@Autowired
 		private StreamConfigurationProperties properties;
-		
+
 		public SinkConfiguration() {
 		}
 
@@ -100,7 +102,8 @@ public class StreamAutoConfiguration {
 				FunctionInspector functionInspector,
 				@Lazy CompositeMessageConverterFactory compositeMessageConverterFactory) {
 			return new StreamListeningConsumerInvoker(registry, functionInspector,
-					compositeMessageConverterFactory, properties.getSink().getName());
+					compositeMessageConverterFactory, properties.getSink().getName(),
+					properties.isShared());
 		}
 
 	}
@@ -125,7 +128,7 @@ public class StreamAutoConfiguration {
 
 	private static class SinkOnlyCondition extends SpringBootCondition {
 		private SourceAndSinkCondition processor = new SourceAndSinkCondition();
-		
+
 		private SinkCondition sink = new SinkCondition();
 
 		@Override
@@ -137,7 +140,8 @@ public class StreamAutoConfiguration {
 			if (sink.matches(context, metadata)) {
 				return ConditionOutcome.match("Sink is explicitly enabled");
 			}
-			return ConditionOutcome.noMatch("Sink is not enabled and not available through Processor");
+			return ConditionOutcome
+					.noMatch("Sink is not enabled and not available through Processor");
 		}
 	}
 

@@ -43,8 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Marius Bogoevici
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = PojoStreamingMixedTests.StreamingFunctionApplication.class, properties = "spring.cloud.function.stream.shared=true")
-public class PojoStreamingMixedTests {
+@SpringBootTest(classes = PojoStreamingNotSharedTests.StreamingFunctionApplication.class)
+public class PojoStreamingNotSharedTests {
 
 	@Autowired
 	Processor processor;
@@ -66,11 +66,9 @@ public class PojoStreamingMixedTests {
 				.send(MessageBuilder.withPayload("{\"name\":\"hello\"}").build());
 		processor.input()
 				.send(MessageBuilder.withPayload("{\"name\":\"world\"}").build());
-		Message<?> result = messageCollector.forChannel(processor.output()).poll(1000,
-				TimeUnit.MILLISECONDS);
-		assertThat(result.getPayload()).isInstanceOf(Foo.class);
-		// 2 subscribers to the same channel but input messages are sent to all
-		assertThat(collector).hasSize(2);
+		assertThat(messageCollector.forChannel(processor.output())).isEmpty();
+		assertThat(collector).hasSize(0);
+		// There should be an error in the logs (sharing disabled by default)
 	}
 
 	@Test

@@ -32,6 +32,7 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import static org.assertj.core.api.Assertions.assertThat;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -88,7 +89,8 @@ public class BeanFactoryFunctionCatalogTests {
 	public void composeFunction() {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
 		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
-		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class, "foos,bars");
+		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class,
+				"foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
 	}
 
@@ -112,8 +114,9 @@ public class BeanFactoryFunctionCatalogTests {
 		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
 		Sink sink = new Sink();
 		processor.register(new FunctionRegistration<>(sink).names("sink"));
-		Consumer<Flux<Integer>> foos = processor.lookup(Consumer.class, "foos,sink");
-		foos.accept(Flux.just(2));
+		Function<Flux<Integer>, Mono<Void>> foos = processor.lookup(Function.class,
+				"foos,sink");
+		foos.apply(Flux.just(2)).subscribe();
 		assertThat(sink.values).contains("4");
 	}
 
@@ -121,8 +124,8 @@ public class BeanFactoryFunctionCatalogTests {
 	public void composeUniqueConsumer() {
 		Sink sink = new Sink();
 		processor.register(new FunctionRegistration<>(sink).names("sink"));
-		Consumer<Flux<String>> foos = processor.lookup(Consumer.class, "");
-		foos.accept(Flux.just("2"));
+		Function<Flux<String>, Mono<Void>> foos = processor.lookup(Function.class, "");
+		foos.apply(Flux.just("2")).subscribe();
 		assertThat(sink.values).contains("2");
 	}
 

@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Mark Fisher
@@ -45,9 +46,11 @@ public class TaskConfiguration {
 
 	@Bean
 	public CommandLineRunner commandLineRunner(FunctionCatalog registry) {
-		final Supplier<Flux<Object>> supplier = registry.lookup(Supplier.class, properties.getSupplier());
-		final Function<Flux<Object>, Flux<Object>> function = registry.lookup(Function.class, properties.getFunction());
-		final Consumer<Flux<Object>> consumer = registry.lookup(Consumer.class, properties.getConsumer());
+		final Supplier<Flux<Object>> supplier = registry.lookup(Supplier.class,
+				properties.getSupplier());
+		final Function<Flux<Object>, Flux<Object>> function = registry
+				.lookup(Function.class, properties.getFunction());
+		final Consumer<Flux<Object>> consumer = consumer(registry);
 		CommandLineRunner runner = new CommandLineRunner() {
 
 			@Override
@@ -56,5 +59,16 @@ public class TaskConfiguration {
 			}
 		};
 		return runner;
+	}
+
+	private Consumer<Flux<Object>> consumer(FunctionCatalog registry) {
+		Consumer<Flux<Object>> consumer = registry.lookup(Consumer.class,
+				properties.getConsumer());
+		if (consumer != null) {
+			return consumer;
+		}
+		Function<Flux<Object>, Mono<Void>> function = registry.lookup(Function.class,
+				properties.getConsumer());
+		return flux -> function.apply(flux).subscribe();
 	}
 }

@@ -29,6 +29,7 @@ import java.util.jar.Manifest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,7 @@ public class SpringFunctionInitializer implements Closeable {
 
 	private final Class<?> configurationClass;
 
-	private Function<Flux<?>, Flux<?>> function;
+	private Function<Flux<?>, Publisher<?>> function;
 
 	private Consumer<Flux<?>> consumer;
 
@@ -104,16 +105,20 @@ public class SpringFunctionInitializer implements Closeable {
 				if (defaultName) {
 					name = "consumer";
 				}
-				this.consumer = this.catalog.lookup(Consumer.class, name);
-				if (this.consumer == null) {
-					if (defaultName) {
-						name = "supplier";
+				this.function = this.catalog.lookup(Function.class, name);
+				if (this.function == null) {
+					this.consumer = this.catalog.lookup(Consumer.class, name);
+					if (this.consumer == null) {
+						if (defaultName) {
+							name = "supplier";
+						}
+						this.supplier = this.catalog.lookup(Supplier.class, name);
 					}
-					this.supplier = this.catalog.lookup(Supplier.class, name);
 				}
 			}
 		}
 		this.context = context;
+
 	}
 
 	private SpringApplicationBuilder springApplication() {
@@ -143,7 +148,7 @@ public class SpringFunctionInitializer implements Closeable {
 
 	protected Flux<?> apply(Flux<?> input) {
 		if (this.function != null) {
-			return function.apply(input);
+			return Flux.from(function.apply(input));
 		}
 		if (this.consumer != null) {
 			this.consumer.accept(input);
