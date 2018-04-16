@@ -47,7 +47,6 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-servlet</artifactId>
-			<version>${servlet-binder.version}</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
