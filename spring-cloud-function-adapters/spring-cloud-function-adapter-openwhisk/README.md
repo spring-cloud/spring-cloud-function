@@ -28,7 +28,7 @@ dependencies.function: com.example:pof:0.0.1-SNAPSHOT
 Copy the openwhisk runner JAR to the working directory (same directory as the properties file):
 
 ```
-cp spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk/target/spring-cloud-function-adapter-openwhisk-1.0.0.M6.jar runner.jar
+cp spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk/target/spring-cloud-function-adapter-openwhisk-1.0.0.BUILD-SNAPSHOT.jar runner.jar
 ```
 
 Generate a m2 repo from the `--thin.dryrun` of the runner JAR with the above properties file:
