@@ -78,10 +78,10 @@ public class FunctionController {
 		Boolean single = (Boolean) request
 				.getAttribute(WebRequestConstants.INPUT_SINGLE, WebRequest.SCOPE_REQUEST);
 
-		FluxFormRequest from = FluxFormRequest.from(request.getParameterMap());
+		FluxFormRequest form = FluxFormRequest.from(request.getParameterMap());
 
 		if (function != null) {
-			Flux<?> flux = body.body() == null ? from.flux() : body.flux();
+			Flux<?> flux = body.body() == null ? form.flux() : body.flux();
 			if (debug) {
 				flux = flux.log();
 			}
@@ -96,7 +96,7 @@ public class FunctionController {
 		}
 
 		if (consumer != null) {
-			Flux<?> flux = body.body() == null ? from.flux().cache() : body.flux().cache(); // send a copy back to the caller
+			Flux<?> flux = body.body() == null ? form.flux().cache() : body.flux().cache(); // send a copy back to the caller
 			if (debug) {
 				flux = flux.log();
 			}
