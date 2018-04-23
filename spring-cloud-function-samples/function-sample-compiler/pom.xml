@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.10.RELEASE</version>
+		<version>1.5.11.RELEASE</version>
 		<relativePath/>
 	</parent>
 
@@ -22,7 +22,7 @@
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<spring-cloud-stream.version>Ditmars.RELEASE</spring-cloud-stream.version>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
-		<wrapper.version>1.0.9.RELEASE</wrapper.version>
+		<wrapper.version>1.0.10.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>

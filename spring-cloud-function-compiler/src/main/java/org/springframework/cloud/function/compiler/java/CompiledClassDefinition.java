@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.compiler.java;
 
-import java.io.File;
-
 /**
  * Encapsulates a name with the bytes for its class definition.
  * 
@@ -36,7 +34,9 @@ public class CompiledClassDefinition {
 		if (classname.startsWith("/")) {
 			classname = classname.substring(1);
 		}
-		classname = classname.replace('/', '.').substring(0, classname.length()-6); //strip off .class
+		classname = classname.replace('/', '.').substring(0, classname.length() - 6); // strip
+																						// off
+																						// .class
 	}
 
 	public String getName() {
@@ -47,8 +47,10 @@ public class CompiledClassDefinition {
 		return bytes;
 	}
 
+	@Override
 	public String toString() {
-		return "CompiledClassDefinition(name=" + getName() + ",#bytes=" + getBytes().length + ")";
+		return "CompiledClassDefinition(name=" + getName() + ",#bytes="
+				+ getBytes().length + ")";
 	}
 
 	public String getClassName() {

@@ -28,14 +28,15 @@ import org.junit.After;
 import org.junit.Test;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.util.ClassUtils;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.ClassUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -124,7 +125,8 @@ public class ContextFunctionPostProcessorTests {
 		assertThat(foos.get().blockFirst()).isEqualTo("8");
 		assertThat(processor.getRegistration(foos).getNames())
 				.containsExactly("ints|foos");
-		assertThat(processor.getRegistration(foos).getType().getOutputWrapper()).isEqualTo(Flux.class);
+		assertThat(processor.getRegistration(foos).getType().getOutputWrapper())
+				.isEqualTo(Flux.class);
 	}
 
 	@Test
@@ -157,9 +159,9 @@ public class ContextFunctionPostProcessorTests {
 		Object target = create(Sink.class);
 		processor.register(new FunctionRegistration<>(target).names("sink"));
 		@SuppressWarnings("unchecked")
-		Consumer<Flux<String>> sink = (Consumer<Flux<String>>) processor
-				.lookupConsumer("sink");
-		sink.accept(Flux.just("Hello"));
+		Function<Flux<String>, Mono<Void>> sink = (Function<Flux<String>, Mono<Void>>) processor
+				.lookupFunction("sink");
+		sink.apply(Flux.just("Hello")).subscribe();
 		@SuppressWarnings("unchecked")
 		List<String> values = (List<String>) ReflectionTestUtils.getField(target,
 				"values");

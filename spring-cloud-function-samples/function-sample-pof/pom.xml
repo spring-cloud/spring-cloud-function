@@ -12,7 +12,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.10.RELEASE</version>
+		<version>1.5.11.RELEASE</version>
 		<relativePath />
 	</parent>
 
@@ -63,7 +63,7 @@
 					<dependency>
 						<groupId>org.springframework.boot.experimental</groupId>
 						<artifactId>spring-boot-thin-layout</artifactId>
-						<version>1.0.4.RELEASE</version>
+						<version>1.0.10.RELEASE</version>
 					</dependency>
 				</dependencies>
 			</plugin>

@@ -1,7 +1,7 @@
 buildscript {
 	ext {
-		springBootVersion = '1.5.10.BUILD-SNAPSHOT'
-		wrapperVersion = '1.0.9.RELEASE'
+		springBootVersion = '1.5.11.RELEASE'
+		wrapperVersion = '1.0.10.RELEASE'
 	}
 	repositories {
 		mavenLocal()
@@ -12,7 +12,7 @@ buildscript {
 	dependencies {
 		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-		// Remove this when Boot 1.5.10 is out.
+		// Remove this when Boot 1.5.11.RELEASE is out.
 		classpath "io.spring.gradle:dependency-management-plugin:1.0.4.BUILD-SNAPSHOT"
 	}
 }

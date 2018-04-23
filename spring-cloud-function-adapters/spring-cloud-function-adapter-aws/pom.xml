@@ -3,7 +3,6 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-function-adapter-aws</artifactId>
 	<packaging>jar</packaging>
 
@@ -21,6 +20,9 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
 		<aws-lambda-events.version>2.0.2</aws-lambda-events.version>
+		<aws-java-sdk.version>1.11.163</aws-java-sdk.version>
+		<aws-kinesis-deaggregator.version>1.0.3</aws-kinesis-deaggregator.version>
+		<aws-kinesis-aggregator.version>1.0.3</aws-kinesis-aggregator.version>
 	</properties>
 
 	<dependencies>
@@ -53,12 +55,29 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-kinesis</artifactId>
+			<version>${aws-java-sdk.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>amazon-kinesis-deaggregator</artifactId>
+			<version>${aws-kinesis-deaggregator.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-core</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>amazon-kinesis-aggregator</artifactId>
+			<version>${aws-kinesis-aggregator.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
