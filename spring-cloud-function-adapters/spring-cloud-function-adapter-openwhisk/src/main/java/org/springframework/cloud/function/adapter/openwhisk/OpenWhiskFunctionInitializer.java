@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -55,7 +56,6 @@ public class OpenWhiskFunctionInitializer {
 	@Autowired
 	private FunctionProperties properties;
 
-	@SuppressWarnings("unchecked")
 	protected void initialize() {
 		logger.info("Initializing - OpenWhisk Function Initializer");
 		if (!this.initialized.compareAndSet(false, true)) {
@@ -65,9 +65,11 @@ public class OpenWhiskFunctionInitializer {
 		String type = this.properties.getType();
 		if ("function".equals(type)) {
 			this.function = this.catalog.lookup(Function.class, name);
-		} else if ("consumer".equals(type)) {
+		}
+		else if ("consumer".equals(type)) {
 			this.consumer = this.catalog.lookup(Consumer.class, name);
-		} else if ("supplier".equals(type)) {
+		}
+		else if ("supplier".equals(type)) {
 			this.supplier = this.catalog.lookup(Supplier.class, name);
 		}
 	}

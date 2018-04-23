@@ -16,16 +16,34 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
-import java.util.List;
+import static java.util.stream.Collectors.toList;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.amazonaws.kinesis.deagg.RecordDeaggregator;
+import com.amazonaws.services.kinesis.clientlibrary.types.UserRecord;
+import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
-import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.GenericMessage;
 
 /**
  * @author Mark Fisher
+ * @author Halvdan Hoem Grelland
  */
-public class SpringBootKinesisEventHandler
-		extends SpringBootRequestHandler<KinesisEvent, String> {
+public class SpringBootKinesisEventHandler<E, O>
+		extends SpringBootRequestHandler<KinesisEvent, O> {
+
+	@Autowired
+	private ObjectMapper mapper;
+
+	@Autowired
+	private FunctionInspector inspector;
 
 	public SpringBootKinesisEventHandler() {
 		super();
@@ -35,9 +53,47 @@ public class SpringBootKinesisEventHandler
 		super(configurationClass);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	protected List<KinesisEventRecord> convertEvent(KinesisEvent event) {
-		// TODO: maybe convert to List<Message>
-		return event.getRecords();
+	public List<O> handleRequest(KinesisEvent event, Context context) {
+		return (List<O>) super.handleRequest(event, context);
+	}
+
+	@Override
+	protected Object convertEvent(KinesisEvent event) {
+		List<E> payloads = deserializePayloads(event.getRecords());
+
+		if (functionAcceptsMessage()) {
+			return wrapInMessages(payloads);
+		} else {
+			return payloads;
+		}
+	}
+
+	private List<Message<E>> wrapInMessages(List<E> payloads) {
+		return payloads.stream()
+				.map(GenericMessage::new)
+				.collect(Collectors.toList());
+	}
+
+	private List<E> deserializePayloads(List<KinesisEvent.KinesisEventRecord> records) {
+		return RecordDeaggregator.deaggregate(records).stream()
+				.map(this::deserializeUserRecord)
+				.collect(toList());
+	}
+
+	@SuppressWarnings("unchecked")
+	private E deserializeUserRecord(UserRecord userRecord) {
+		try {
+			byte[] jsonBytes = userRecord.getData().array();
+			return (E) mapper.readValue(jsonBytes, getInputType());
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Cannot convert event", e);
+		}
+	}
+
+	private boolean functionAcceptsMessage() {
+		return inspector.isMessage(function());
 	}
 }

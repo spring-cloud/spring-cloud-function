@@ -16,9 +16,15 @@
 
 package org.springframework.cloud.function.adapter.openwhisk;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -30,10 +36,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -65,14 +67,14 @@ public class OpenWhiskActionHandlerTest {
 		actionRequest.setValue(eventData);
 		Object result = actionHandler.run(actionRequest);
 		assertNotNull(result);
-		assertEquals("{\"result\":{\"name\":\"Spring\",\"message\":\"Hello, Spring\"}}", result);
+		assertEquals("{\"result\":{\"name\":\"Spring\",\"message\":\"Hello, Spring\"}}",
+				result);
 	}
 
 	@Test
 	public void testHandlerWithoutPayload() {
 		Map<String, String> testData = new HashMap<>();
 		testData.put("name", "Spring");
-		Map<String, Object> eventData = new HashMap<>();
 		actionHandler.init(new OpenWhiskInitRequest());
 		OpenWhiskActionRequest actionRequest = new OpenWhiskActionRequest();
 		actionRequest.setActionName("test_action");
@@ -82,8 +84,8 @@ public class OpenWhiskActionHandlerTest {
 	}
 
 	@Configuration
-	@Import({ContextFunctionCatalogAutoConfiguration.class,
-			JacksonAutoConfiguration.class})
+	@Import({ ContextFunctionCatalogAutoConfiguration.class,
+			JacksonAutoConfiguration.class })
 	protected static class OWFunctionConfig {
 
 		@Bean
@@ -96,7 +98,6 @@ public class OpenWhiskActionHandlerTest {
 		public OpenWhiskActionHandler actionHandler() {
 			return new OpenWhiskActionHandler();
 		}
-
 
 		@Bean
 		public FunctionProperties properties() {
@@ -125,7 +126,8 @@ public class OpenWhiskActionHandlerTest {
 		}
 
 		public void setMessage(String message) {
-			this.message = String.format(GREETINGS_FORMAT, this.name != null ? name : "nobody");
+			this.message = String.format(GREETINGS_FORMAT,
+					this.name != null ? name : "nobody");
 		}
 
 		public String getName() {
