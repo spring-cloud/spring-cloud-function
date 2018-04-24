@@ -52,10 +52,21 @@ jar {
   }
 }
 
+import com.github.jengelman.gradle.plugins.shadow.transformers.*
+
 shadowJar {
   classifier = 'aws'
   dependencies {
     exclude(dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
+  }
+  // Required for Spring
+  mergeServiceFiles()
+  append 'META-INF/spring.handlers'
+  append 'META-INF/spring.schemas'
+  append 'META-INF/spring.tooling'
+  transform(PropertiesFileTransformer) {
+    paths = ['META-INF/spring.factories' ]
+    mergeStrategy = "append"
   }
 }
 
