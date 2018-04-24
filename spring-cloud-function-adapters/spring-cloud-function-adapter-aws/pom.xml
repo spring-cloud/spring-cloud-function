@@ -59,11 +59,19 @@
 			<artifactId>aws-java-sdk-kinesis</artifactId>
 			<version>${aws-java-sdk.version}</version>
 			<scope>provided</scope>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>amazon-kinesis-deaggregator</artifactId>
 			<version>${aws-kinesis-deaggregator.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.amazonaws</groupId>
+					<artifactId>aws-lambda-java-events</artifactId>
+				</exclusion>
+			</exclusions>
+			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>io.projectreactor</groupId>
