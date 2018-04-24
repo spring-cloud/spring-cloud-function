@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -172,11 +173,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Component
 	protected static class ContextFunctionRegistry {
 
-		private Map<String, Object> suppliers = new HashMap<>();
+		private Map<String, Object> suppliers = new ConcurrentHashMap<>();
 
-		private Map<String, Object> functions = new HashMap<>();
+		private Map<String, Object> functions = new ConcurrentHashMap<>();
 
-		private Map<String, Object> consumers = new HashMap<>();
+		private Map<String, Object> consumers = new ConcurrentHashMap<>();
 
 		@Autowired(required = false)
 		private ApplicationEventPublisher publisher;
@@ -184,9 +185,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@Autowired
 		private ConfigurableListableBeanFactory registry;
 
-		private Map<Object, String> names = new HashMap<>();
+		private Map<Object, String> names = new ConcurrentHashMap<>();
 
-		private Map<String, FunctionType> types = new HashMap<>();
+		private Map<String, FunctionType> types = new ConcurrentHashMap<>();
 
 		public Set<String> getSuppliers() {
 			return this.suppliers.keySet();
