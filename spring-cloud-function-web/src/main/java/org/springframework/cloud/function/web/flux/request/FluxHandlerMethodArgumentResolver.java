@@ -16,16 +16,12 @@
 
 package org.springframework.cloud.function.web.flux.request;
 
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,13 +30,14 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.HeaderUtils;
+import org.springframework.cloud.function.web.util.JsonMapper;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
-import org.springframework.core.ResolvableType;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -59,11 +56,12 @@ public class FluxHandlerMethodArgumentResolver
 	private static Log logger = LogFactory
 			.getLog(FluxHandlerMethodArgumentResolver.class);
 
-	private final Gson mapper;
+	private final JsonMapper mapper;
 
 	private FunctionInspector inspector;
 
-	public FluxHandlerMethodArgumentResolver(FunctionInspector inspector, Gson mapper) {
+	public FluxHandlerMethodArgumentResolver(FunctionInspector inspector,
+			JsonMapper mapper) {
 		this.inspector = inspector;
 		this.mapper = mapper;
 	}
@@ -84,7 +82,7 @@ public class FluxHandlerMethodArgumentResolver
 			type = Object.class;
 		}
 		boolean message = inspector.isMessage(handler);
-		List<Object> body;
+		List<?> body;
 		ContentCachingRequestWrapper nativeRequest = new ContentCachingRequestWrapper(
 				webRequest.getNativeRequest(HttpServletRequest.class));
 		if (logger.isDebugEnabled()) {
@@ -95,19 +93,22 @@ public class FluxHandlerMethodArgumentResolver
 					Charset.forName("UTF-8")));
 		}
 		else {
-			try {
-				body = mapper.fromJson(
-						new InputStreamReader(nativeRequest.getInputStream()),
-						ResolvableType.forClassWithGenerics(ArrayList.class, type)
-								.getType());
+			String json = new String(StreamUtils.copyToString(
+					nativeRequest.getInputStream(), Charset.forName("UTF-8")));
+			if (!StringUtils.hasText(json)) {
+				body = null;
 			}
-			catch (JsonSyntaxException e) {
-				nativeRequest.setAttribute(WebRequestConstants.INPUT_SINGLE, true);
-				body = Arrays.asList(mapper.fromJson(
-						new String(nativeRequest.getContentAsByteArray()), type));
+			else {
+				try {
+					body = mapper.toList(json, type);
+				}
+				catch (IllegalArgumentException e) {
+					nativeRequest.setAttribute(WebRequestConstants.INPUT_SINGLE, true);
+					body = Arrays.asList(mapper.toSingle(json, type));
+				}
 			}
 		}
-		if (message) {
+		if (body != null && message) {
 			List<Object> messages = new ArrayList<>();
 			MessageHeaders headers = HeaderUtils.fromHttp(new ServletServerHttpRequest(
 					webRequest.getNativeRequest(HttpServletRequest.class)).getHeaders());
@@ -116,7 +117,7 @@ public class FluxHandlerMethodArgumentResolver
 			}
 			body = messages;
 		}
-		return new FluxRequest<Object>(body);
+		return new FluxRequest<>(body);
 	}
 
 	private boolean isPlainText(NativeWebRequest webRequest) {

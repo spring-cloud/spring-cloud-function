@@ -19,22 +19,32 @@ package org.springframework.cloud.function.web.flux;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.web.flux.request.FluxHandlerMethodArgumentResolver;
 import org.springframework.cloud.function.web.flux.response.FluxReturnValueHandler;
+import org.springframework.cloud.function.web.util.GsonMapper;
+import org.springframework.cloud.function.web.util.JacksonMapper;
+import org.springframework.cloud.function.web.util.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.convert.ConversionService;
@@ -55,10 +65,13 @@ import reactor.core.publisher.Flux;
 @ConditionalOnWebApplication
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
 @Import(FunctionController.class)
+@AutoConfigureAfter({ JacksonAutoConfiguration.class, GsonAutoConfiguration.class })
 public class ReactorAutoConfiguration {
 
 	@Autowired
 	private ApplicationContext context;
+
+	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
 	@Bean
 	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog,
@@ -87,7 +100,7 @@ public class ReactorAutoConfiguration {
 	protected static class FluxArgumentResolverConfiguration {
 		@Bean
 		public FluxHandlerMethodArgumentResolver fluxHandlerMethodArgumentResolver(
-				FunctionInspector inspector, Gson mapper) {
+				FunctionInspector inspector, JsonMapper mapper) {
 			return new FluxHandlerMethodArgumentResolver(inspector, mapper);
 		}
 	}
@@ -114,6 +127,44 @@ public class ReactorAutoConfiguration {
 			}
 
 		};
+	}
+
+	@Configuration
+	@ConditionalOnClass(Gson.class)
+	@Conditional(PreferGsonOrMissingJacksonCondition.class)
+	protected static class GsonConfiguration {
+		@Bean
+		public GsonMapper jsonMapper(Gson gson) {
+			return new GsonMapper(gson);
+		}
+	}
+
+	@Configuration
+	@ConditionalOnClass(ObjectMapper.class)
+	@ConditionalOnProperty(name = ReactorAutoConfiguration.PREFERRED_MAPPER_PROPERTY, havingValue = "jackson", matchIfMissing = true)
+	protected static class JacksonConfiguration {
+		@Bean
+		public JacksonMapper jsonMapper(ObjectMapper mapper) {
+			return new JacksonMapper(mapper);
+		}
+	}
+
+	private static class PreferGsonOrMissingJacksonCondition extends AnyNestedCondition {
+
+		PreferGsonOrMissingJacksonCondition() {
+			super(ConfigurationPhase.REGISTER_BEAN);
+		}
+
+		@ConditionalOnProperty(name = ReactorAutoConfiguration.PREFERRED_MAPPER_PROPERTY, havingValue = "gson", matchIfMissing = false)
+		static class GsonPreferred {
+
+		}
+
+		@ConditionalOnMissingBean(ObjectMapper.class)
+		static class JacksonMissing {
+
+		}
+
 	}
 
 	private static class BasicStringConverter implements StringConverter {

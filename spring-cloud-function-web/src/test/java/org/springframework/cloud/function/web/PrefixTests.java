@@ -43,7 +43,8 @@ import reactor.core.publisher.Flux;
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.cloud.function.web.path=/functions")
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
+		"spring.cloud.function.web.path=/functions", "debug" })
 public class PrefixTests {
 
 	@LocalServerPort
