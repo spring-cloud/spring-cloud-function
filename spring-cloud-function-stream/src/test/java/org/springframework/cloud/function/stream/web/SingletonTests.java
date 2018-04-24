@@ -50,8 +50,7 @@ import reactor.core.publisher.Flux;
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "debug=true",
-		"spring.autoconfigure.exclude=org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration"})
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.autoconfigure.exclude=org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration")
 @ContextConfiguration(classes = TestApplicationConfiguration.class)
 public class SingletonTests {
 

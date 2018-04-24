@@ -20,7 +20,7 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring-cloud-function.version>1.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
-		<wrapper.version>1.0.10.RELEASE</wrapper.version>
+		<wrapper.version>1.0.11.BUILD-SNAPSHOT</wrapper.version>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
 		<maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
 	</properties>
