@@ -1,56 +1,20 @@
-Spring Cloud Function Deployer is an app that can deploy functions packaged as jars. Once the app is running it can deploy a basic Spring Cloud Function app from a jar with locally cached dependencies in about 500ms (compared to 1500ms for the same application launched from cold). It can be used in a pool as a "warm" JVM to deploy functions quicker than they could be started from scratch.
+Spring Cloud Function Deployer is an library for building apps that can deploy functions packaged as jars. It can deploy a basic Spring Cloud Function app from a jar with locally cached dependencies in about 500ms (compared to 1500ms for the same application launched from cold). It can be used in a pool as a "warm" JVM to deploy functions quicker than they could be started from scratch. Example usage:
 
-The app has a single endpoint called "/admin" that you can use to manage the deployed functions. You GET from it to list the deployed apps, POST to `/{name}` to deploy a named app with a `path` parameter pointing to a jar resource, and then DELETE `/{name}` to remove it. Functions in the apps are exposed as `/{name}/{function}` with the usual conventions for Spring Cloud Function (i.e. the function name is the bean name by default).
+```java
+@SpringBootApplication
+public class FunctionApplication {
 
-== Running the Deployer
+	public static void main(String[] args) throws IOException {
+		new ApplicationBootstrap().run(FunctionApplication.class, args);
+	}
 
-Run the main class `ApplicationRunner` in this project (from the command line or in the IDE). E.g.
-
-```
-$ ./mvnw install -DskipTests
-$ cd spring-cloud-function-deployer
-$ ../mvnw spring-boot:run
-```
-
-The app starts empty, so the admin resource shows no deployed apps:
-
-```
-$ curl localhost:8080/admin
-{}
+}
 ```
 
-Deploy a sample like this:
+There is a main class in the jar that alread looks like this. You can use it like that or you can create your own copy if you want to customize it. The `ApplicationBootstrap` is a utility that replaces `SpringApplication`, creating a class loader hierarchy that works with the function configuration. It needs to be launched with configuration for the `FunctionProperties`:
 
-```
-$ curl localhost:8080/admin/pojos -d path=maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT
-{"id":"81c568e36c7909ec1dd841aa7ee6d3e3"}
-```
-
-(takes about 500ms, once the local Maven cache is warm). Deploy another one:
-
-```
-$ curl localhost:8080/admin/sample -d path=maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT
-{"id":"cb2fdb3130f6349f143f4686848ea90f"}
-```
-
-Undeploy the first one:
-
-```
-$ curl localhost:8080/admin/pojos -X DELETE
-{"name":"81c568e36c7909ec1dd841aa7ee6d3e3","id":"pojos","path":"maven://com.example:function-sample-pojo:1.0.0.BUILD-SNAPSHOT"}
-```
-
-List the deployed apps:
-
-```
-$ curl localhost:8080/admin
-{"sample":{"name":"sample","id":"cb2fdb3130f6349f143f4686848ea90","path":"maven://com.example:function-sample:1.0.0.BUILD-SNAPSHOT"}}
-```
-
-Send an event to one of the functions:
-
-```
-$ curl -H "Content-Type: text/plain" localhost:8080/sample/uppercase -d foo
-FOO
-```
-
+| Option | Description          |
+|--------|----------------------|
+| `function.location` | Mandatory archive location(s) for building the classpath of the function. |
+| `function.bean`     | Mandatory bean class or name (if `function.main` is provided) to create the function. If multi-valued, the function is composed (outputs piped to inputs) |
+| `function.main`     | The main `@SpringBootApplication` to launch (optional). |

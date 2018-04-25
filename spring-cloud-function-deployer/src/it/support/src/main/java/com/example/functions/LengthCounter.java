@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.deployer;
+package com.example.functions;
 
-import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import java.util.function.Function;
 
 /**
- * A test suite for probing weird ordering problems in the tests.
- *
- * @author Dave Syer
+ * @author Eric Bottard
  */
-@RunWith(Suite.class)
-@SuiteClasses({ FunctionAppDeployerTests.class,
-		FunctionExtractingFunctionCatalogTests.class,
-		FunctionExtractingFunctionCatalogIntegrationTests.class })
-@Ignore
-public class AdhocTestSuite {
+public class LengthCounter implements Function<String, Integer> {
 
+	@Override
+	public Integer apply(String string) {
+		return string.length();
+	}
 }

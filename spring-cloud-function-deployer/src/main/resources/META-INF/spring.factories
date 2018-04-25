@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.function.deployer.FunctionExtractingAutoConfiguration
+org.springframework.cloud.function.deployer.FunctionConfiguration
