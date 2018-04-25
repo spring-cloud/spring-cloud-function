@@ -73,7 +73,18 @@ public class MessageUtilsTests {
 		Object output = MessageUtils.unpack(function, "foo");
 		assertThat(output).isInstanceOf(Message.class);
 		@SuppressWarnings("unchecked")
-		Message<String> message = (Message<String>)output;
+		Message<String> message = (Message<String>) output;
+		assertThat(message.getPayload()).isEqualTo("foo");
+	}
+
+	@Test
+	public void testUnpackIsolatedMessageNotAvailable() throws Exception {
+		Object function = create(Uppercase.class,
+				ClassLoaderUtils.createMinimalClassLoader());
+		Object output = MessageUtils.unpack(function, "foo");
+		assertThat(output).isInstanceOf(Message.class);
+		@SuppressWarnings("unchecked")
+		Message<String> message = (Message<String>) output;
 		assertThat(message.getPayload()).isEqualTo("foo");
 	}
 
@@ -89,6 +100,10 @@ public class MessageUtilsTests {
 	}
 
 	private Object create(Class<Uppercase> type) {
+		return create(type, loader);
+	}
+
+	private Object create(Class<Uppercase> type, ClassLoader loader) {
 		return new IsolatedFunction<>((Function<?, ?>) BeanUtils
 				.instantiate(ClassUtils.resolveClassName(type.getName(), loader)));
 	}

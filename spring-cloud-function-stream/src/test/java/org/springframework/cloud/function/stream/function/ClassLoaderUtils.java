@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.stream.function;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -38,17 +39,38 @@ import reactor.core.publisher.Flux;
  *
  */
 public class ClassLoaderUtils {
-	
+
 	@Test
 	public void fluxIsShared() {
-		Class<?> flux = ClassUtils.resolveClassName(Flux.class.getName(), createClassLoader());
+		Class<?> flux = ClassUtils.resolveClassName(Flux.class.getName(),
+				createClassLoader());
 		assertThat(flux).isEqualTo(Flux.class);
 	}
 
 	@Test
 	public void messageIsNotShared() {
-		Class<?> flux = ClassUtils.resolveClassName(Message.class.getName(), createClassLoader());
+		Class<?> flux = ClassUtils.resolveClassName(Message.class.getName(),
+				createClassLoader());
 		assertThat(flux).isNotEqualTo(Message.class);
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void messageIsNotAvailable() {
+		Class<?> flux = ClassUtils.resolveClassName(Message.class.getName(),
+				createMinimalClassLoader());
+		assertThat(flux).isNotEqualTo(Message.class);
+	}
+
+	public static ClassLoader createMinimalClassLoader() {
+		ClassLoader base = ClassLoaderUtils.class.getClassLoader();
+		try {
+			return new URLClassLoader(
+					new URL[] { new File("target/test-classes").toURI().toURL() },
+					base.getParent());
+		}
+		catch (MalformedURLException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	public static ClassLoader createClassLoader() {
@@ -171,4 +193,5 @@ public class ClassLoaderUtils {
 			}
 		}
 	}
+
 }

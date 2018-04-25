@@ -90,10 +90,12 @@ public abstract class MessageUtils {
 			return MessageBuilder.withPayload(message).build();
 		}
 		ClassLoader classLoader = ((Isolated) handler).getClassLoader();
-		Class<?> type = ClassUtils.resolveClassName(Message.class.getName(), classLoader);
+		Class<?> type = ClassUtils.isPresent(Message.class.getName(), classLoader)
+				? ClassUtils.resolveClassName(Message.class.getName(), classLoader)
+				: null;
 		Object payload;
 		Map<String, Object> headers;
-		if (type.isAssignableFrom(message.getClass())) {
+		if (type != null && type.isAssignableFrom(message.getClass())) {
 			Method getPayload = ClassUtils.getMethod(type, "getPayload");
 			Method getHeaders = ClassUtils.getMethod(type, "getHeaders");
 			payload = ReflectionUtils.invokeMethod(getPayload, message);
@@ -101,7 +103,8 @@ public abstract class MessageUtils {
 			Map<String, Object> map = (Map<String, Object>) ReflectionUtils
 					.invokeMethod(getHeaders, message);
 			headers = map;
-		} else {
+		}
+		else {
 			payload = message;
 			headers = Collections.emptyMap();
 		}
