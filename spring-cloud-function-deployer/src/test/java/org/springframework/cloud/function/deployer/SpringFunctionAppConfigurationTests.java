@@ -16,50 +16,45 @@
 
 package org.springframework.cloud.function.deployer;
 
-import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-import org.hamcrest.Matchers;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.cloud.stream.messaging.Sink;
-import org.springframework.cloud.stream.messaging.Source;
-import org.springframework.cloud.stream.test.binder.MessageCollector;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.boot.test.rule.OutputCapture;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = FunctionConfiguration.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = FunctionDeployerConfiguration.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @TestPropertySource(properties = {
 		"function.location=file:target/it/support/target/function-sample-1.0.0.M1-exec.jar", })
 public abstract class SpringFunctionAppConfigurationTests {
 
 	@Autowired
-	protected MessageCollector messageCollector;
+	protected FunctionCatalog catalog;
 
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.bean=myEmitter",
 			"function.main=com.example.functions.FunctionApp" })
 	public static class SourceTests extends SpringFunctionAppConfigurationTests {
 
-		@Autowired
-		private Source source;
-
 		@Test
 		public void test() throws Exception {
-
-			Message<?> received = messageCollector.forChannel(source.output()).poll(2,
-					TimeUnit.SECONDS);
-			assertThat(received.getPayload(), Matchers.is("one"));
-
+			Supplier<Flux<String>> function = catalog.lookup(Supplier.class, "function0");
+			assertThat(function.get().blockFirst()).isEqualTo("one");
 		}
 
 	}
@@ -69,16 +64,11 @@ public abstract class SpringFunctionAppConfigurationTests {
 			"function.main=com.example.functions.FunctionApp" })
 	public static class CompositeTests extends SpringFunctionAppConfigurationTests {
 
-		@Autowired
-		private Source source;
-
 		@Test
 		public void test() throws Exception {
-
-			Message<?> received = messageCollector.forChannel(source.output()).poll(2,
-					TimeUnit.SECONDS);
-			assertThat(received.getPayload(), Matchers.is(3));
-
+			Supplier<Flux<Integer>> function = catalog.lookup(Supplier.class,
+					"function0|function1");
+			assertThat(function.get().blockFirst()).isEqualTo(3);
 		}
 
 	}
@@ -88,16 +78,11 @@ public abstract class SpringFunctionAppConfigurationTests {
 			"function.main=com.example.functions.FunctionApp" })
 	public static class ProcessorTests extends SpringFunctionAppConfigurationTests {
 
-		@Autowired
-		private Processor processor;
-
 		@Test
 		public void test() throws Exception {
-			processor.input().send(MessageBuilder.withPayload("hello").build());
-			Message<?> received = messageCollector.forChannel(processor.output()).poll(1,
-					TimeUnit.SECONDS);
-			assertThat(received.getPayload(), Matchers.is("hello".length()));
-
+			Function<Flux<String>, Flux<Integer>> function = catalog
+					.lookup(Function.class, "function0");
+			assertThat(function.apply(Flux.just("spam")).blockFirst()).isEqualTo(4);
 		}
 
 	}
@@ -107,13 +92,16 @@ public abstract class SpringFunctionAppConfigurationTests {
 			"function.main=com.example.functions.FunctionApp" })
 	public static class SinkTests extends SpringFunctionAppConfigurationTests {
 
-		@Autowired
-		private Sink sink;
+		@Rule
+		public OutputCapture capture = new OutputCapture();
 
 		@Test
 		public void test() throws Exception {
 			// Can't assert side effects.
-			sink.input().send(MessageBuilder.withPayload(5).build());
+			Function<Flux<Integer>, Mono<Void>> function = catalog.lookup(Function.class,
+					"function0");
+			function.apply(Flux.just(5)).block();
+			capture.expect(containsString(String.format("10%n")));
 		}
 
 	}

@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.deployer;
+package org.springframework.cloud.function.test;
 
-import java.io.IOException;
+import java.util.function.Function;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-/**
- * @author Mark Fisher
- * @author Dave Syer
- */
-@SpringBootApplication
-@EnableFunctionDeployer
-public class FunctionApplication {
-
-	public static void main(String[] args) throws IOException {
-		new ApplicationBootstrap().run(FunctionApplication.class, args);
+public class Doubler implements Function<Integer, Integer> {
+	@Override
+	public Integer apply(Integer integer) {
+		return 2 * integer;
 	}
-
 }

@@ -16,20 +16,25 @@
 
 package org.springframework.cloud.function.deployer;
 
-import java.io.IOException;
+import java.util.Collections;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.junit.Test;
+
+import org.springframework.cloud.function.test.Doubler;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author Mark Fisher
  * @author Dave Syer
  */
-@SpringBootApplication
-@EnableFunctionDeployer
-public class FunctionApplication {
+public class ContextRunnerTests {
 
-	public static void main(String[] args) throws IOException {
-		new ApplicationBootstrap().run(FunctionApplication.class, args);
+	@Test
+	public void startEvaluateAndStop() {
+		ContextRunner runner = new ContextRunner();
+		runner.run(Doubler.class.getName(), Collections.emptyMap(),
+				"--spring.main.webEnvironment=false");
+		assertThat(runner.getContext()).isNotNull();
+		runner.close();
 	}
-
 }

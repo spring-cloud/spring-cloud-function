@@ -99,10 +99,10 @@ public class FluxHandlerMethodArgumentResolver
 				body = null;
 			}
 			else {
-				try {
+				if (json.startsWith("[")) {
 					body = mapper.toList(json, type);
 				}
-				catch (IllegalArgumentException e) {
+				else {
 					nativeRequest.setAttribute(WebRequestConstants.INPUT_SINGLE, true);
 					body = Arrays.asList(mapper.toSingle(json, type));
 				}

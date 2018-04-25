@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.deployer;
+package org.springframework.cloud.function.test;
 
-import java.io.IOException;
-
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.context.annotation.Bean;
 
 /**
- * @author Mark Fisher
  * @author Dave Syer
  */
-@SpringBootApplication
-@EnableFunctionDeployer
-public class FunctionApplication {
+@SpringBootConfiguration
+public class FunctionApp {
 
-	public static void main(String[] args) throws IOException {
-		new ApplicationBootstrap().run(FunctionApplication.class, args);
+	@Bean
+	public Doubler myDoubler() {
+		return new Doubler();
 	}
 
+	@Bean
+	public Frenchizer myFrenchizer() {
+		return new Frenchizer();
+	}
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(FunctionApp.class, args);
+	}
 }

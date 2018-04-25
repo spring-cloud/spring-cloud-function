@@ -14,22 +14,14 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.deployer;
+package org.springframework.cloud.function.test;
 
-import java.io.IOException;
+import java.util.function.Consumer;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+public class Printer implements Consumer<Object> {
 
-/**
- * @author Mark Fisher
- * @author Dave Syer
- */
-@SpringBootApplication
-@EnableFunctionDeployer
-public class FunctionApplication {
-
-	public static void main(String[] args) throws IOException {
-		new ApplicationBootstrap().run(FunctionApplication.class, args);
+	@Override
+	public void accept(Object o) {
+		System.err.println("Seen " + o);
 	}
-
 }

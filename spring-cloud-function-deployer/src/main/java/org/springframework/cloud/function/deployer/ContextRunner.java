@@ -57,11 +57,6 @@ public class ContextRunner {
 					running = true;
 					SpringApplicationBuilder builder = builder(
 							ClassUtils.resolveClassName(source, null));
-					if (ClassUtils.isPresent(
-							"org.springframework.cloud.stream.app.function.app.BeanCountingApplicationListener.BeanCountingApplicationListener()",
-							null)) {
-						builder.listeners(new BeanCountingApplicationListener());
-					}
 					context = builder.environment(environment).registerShutdownHook(false)
 							.run(args);
 				}

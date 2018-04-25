@@ -25,13 +25,12 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,25 +45,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
-import org.springframework.cloud.deployer.resource.maven.MavenProperties;
-import org.springframework.cloud.deployer.resource.maven.MavenResource;
-import org.springframework.cloud.deployer.resource.maven.MavenResourceLoader;
 import org.springframework.cloud.deployer.resource.support.DelegatingResourceLoader;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StreamUtils;
 
@@ -83,10 +74,9 @@ import org.springframework.util.StreamUtils;
  * @author Dave Syer
  */
 @Configuration
-@EnableConfigurationProperties
-public class FunctionConfiguration {
+class FunctionCreatorConfiguration {
 
-	private static Log logger = LogFactory.getLog(FunctionConfiguration.class);
+	private static Log logger = LogFactory.getLog(FunctionCreatorConfiguration.class);
 
 	@Autowired
 	private FunctionRegistry registry;
@@ -103,27 +93,6 @@ public class FunctionConfiguration {
 	private BeanCreatorClassLoader functionClassLoader;
 
 	private BeanCreator creator;
-
-	@Bean
-	@ConfigurationProperties("maven")
-	public MavenProperties mavenProperties() {
-		return new MavenProperties();
-	}
-
-	@Bean
-	@ConfigurationProperties("function")
-	public FunctionProperties functionProperties() {
-		return new FunctionProperties();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean(DelegatingResourceLoader.class)
-	public DelegatingResourceLoader delegatingResourceLoader(
-			MavenProperties mavenProperties) {
-		Map<String, ResourceLoader> loaders = new HashMap<>();
-		loaders.put(MavenResource.URI_SCHEME, new MavenResourceLoader(mavenProperties));
-		return new DelegatingResourceLoader(loaders);
-	}
 
 	/**
 	 * Registers a function for each of the function classes passed into the
@@ -222,6 +191,13 @@ public class FunctionConfiguration {
 		public URL[] getClassLoaderUrls() throws Exception {
 			List<Archive> archives = getClassPathArchives();
 			if (archives.isEmpty()) {
+				URL url = getArchive().getUrl();
+				if (url.toString().contains(".jar")) { // Surefire or IntelliJ?
+					URL[] classpath = extractClasspath(url.toString());
+					if (classpath != null) {
+						return classpath;
+					}
+				}
 				return new URL[] { getArchive().getUrl() };
 			}
 			return archives.stream().map(archive -> {
@@ -234,6 +210,36 @@ public class FunctionConfiguration {
 			}).collect(Collectors.toList()).toArray(new URL[0]);
 		}
 
+		private URL[] extractClasspath(String url) {
+			// This works for a jar indirection like in surefire and IntelliJ
+			if (url.endsWith(".jar!/")) {
+				url = url.substring(0, url.length() - "!/".length());
+				if (url.startsWith("jar:")) {
+					url = url.substring("jar:".length());
+				}
+				if (url.startsWith("file:")) {
+					url = url.substring("file:".length());
+				}
+			}
+			if (url.endsWith(".jar")) {
+				JarFile jar;
+				try {
+					jar = new JarFile(new File(url));
+					String path = jar.getManifest().getMainAttributes()
+							.getValue("Class-Path");
+					if (path != null) {
+						List<URL> result = new ArrayList<>();
+						for (String element : path.split(" ")) {
+							result.add(new URL(element));
+						}
+						return result.toArray(new URL[0]);
+					}
+				}
+				catch (Exception e) {
+				}
+			}
+			return null;
+		}
 	}
 
 	/**
@@ -269,7 +275,8 @@ public class FunctionConfiguration {
 					runner.run("--spring.main.webEnvironment=false",
 							"--spring.cloud.stream.enabled=false",
 							"--spring.main.bannerMode=OFF",
-							"--spring.main.webApplicationType=none");
+							"--spring.main.webApplicationType=none",
+							"--function.deployer.enabled=false");
 					this.runner = runner;
 				}
 				finally {

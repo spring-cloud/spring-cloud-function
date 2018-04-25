@@ -2,6 +2,7 @@ Spring Cloud Function Deployer is an library for building apps that can deploy f
 
 ```java
 @SpringBootApplication
+@EnableFunctionDeployer
 public class FunctionApplication {
 
 	public static void main(String[] args) throws IOException {

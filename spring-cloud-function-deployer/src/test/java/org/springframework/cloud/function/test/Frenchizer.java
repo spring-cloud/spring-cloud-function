@@ -14,22 +14,30 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.deployer;
+package org.springframework.cloud.function.test;
 
-import java.io.IOException;
+import java.util.function.Function;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import javax.annotation.PostConstruct;
 
-/**
- * @author Mark Fisher
- * @author Dave Syer
- */
-@SpringBootApplication
-@EnableFunctionDeployer
-public class FunctionApplication {
+public class Frenchizer implements Function<Integer, String> {
 
-	public static void main(String[] args) throws IOException {
-		new ApplicationBootstrap().run(FunctionApplication.class, args);
+	private String[] numbers;
+
+	@PostConstruct
+	public void init() {
+		this.numbers = new String[4];
+		numbers[0] = "un";
+		numbers[1] = "deux";
+		numbers[2] = "trois";
+		numbers[3] = "quatre";
 	}
 
+	@Override
+	public String apply(Integer integer) {
+		if (integer < this.numbers.length + 1) {
+			return this.numbers[integer - 1];
+		}
+		throw new RuntimeException();
+	}
 }
