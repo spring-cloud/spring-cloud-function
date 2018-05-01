@@ -17,18 +17,17 @@ package org.springframework.cloud.function.context;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.reactivestreams.Publisher;
-
 import org.springframework.core.ResolvableType;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.messaging.Message;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -38,6 +37,8 @@ public class FunctionType {
 
 	public static FunctionType UNCLASSIFIED = new FunctionType(ResolvableType
 			.forClassWithGenerics(Function.class, Object.class, Object.class).getType());
+
+	private static List<WrapperDetector> transformers;
 
 	final private Type type;
 
@@ -101,8 +102,17 @@ public class FunctionType {
 		if (type instanceof ParameterizedType) {
 			type = ((ParameterizedType) type).getRawType();
 		}
-		return Publisher.class.equals(type) || Flux.class.equals(type)
-				|| Mono.class.equals(type) || Optional.class.equals(type);
+		if (transformers == null) {
+			transformers = new ArrayList<>();
+			transformers.addAll(
+					SpringFactoriesLoader.loadFactories(WrapperDetector.class, null));
+		}
+		for (WrapperDetector transformer : transformers) {
+			if (transformer.isWrapper(type)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static FunctionType of(Type function) {

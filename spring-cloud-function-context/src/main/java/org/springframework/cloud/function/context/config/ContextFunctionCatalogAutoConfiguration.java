@@ -59,7 +59,6 @@ import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.function.core.FunctionFactoryMetadata;
-import org.springframework.cloud.function.core.FunctionFactoryUtils;
 import org.springframework.cloud.function.core.IsolatedConsumer;
 import org.springframework.cloud.function.core.IsolatedFunction;
 import org.springframework.cloud.function.core.IsolatedSupplier;
@@ -396,18 +395,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return names;
 		}
 
-		private void wrap(FunctionRegistration<Object> registration, String key) {
+		private void wrap(FunctionRegistration<?> registration, String key) {
 			Object target = registration.getTarget();
 			this.names.put(target, key);
 			if (registration.getType() != null) {
 				this.types.put(key, registration.getType());
 			}
 			else {
-				findType(target);
+				registration.type(findType(target).getType());
 			}
 			Class<?> type;
-			target = target(target, key);
-			registration.target(target);
+			registration = transform(registration);
+			target = registration.getTarget();
 			if (target instanceof Supplier) {
 				type = Supplier.class;
 				for (String name : registration.getNames()) {
@@ -437,6 +436,60 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 		}
 
+		private FunctionRegistration<?> transform(FunctionRegistration<?> registration) {
+			return fluxify(isolated(registration));
+		}
+
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		private FunctionRegistration<?> fluxify(FunctionRegistration<?> input) {
+			FunctionRegistration<Object> registration = (FunctionRegistration<Object>) input;
+			Object target = registration.getTarget();
+			FunctionType type = registration.getType();
+			boolean flux = hasFluxTypes(type);
+			if (!flux) {
+				if (target instanceof Supplier<?>) {
+					target = new FluxSupplier((Supplier<?>) target);
+				}
+				else if (target instanceof Function<?, ?>) {
+					target = new FluxFunction((Function<?, ?>) target);
+				}
+				else if (target instanceof Consumer<?>) {
+					target = new FluxConsumer((Consumer<?>) target);
+				}
+				registration.target(target);
+			}
+			return registration;
+		}
+
+		private boolean hasFluxTypes(FunctionType type) {
+			return type.isWrapper();
+		}
+
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		private FunctionRegistration<?> isolated(FunctionRegistration<?> input) {
+			FunctionRegistration<Object> registration = (FunctionRegistration<Object>) input;
+			Object target = registration.getTarget();
+			boolean isolated = getClass().getClassLoader() != target.getClass()
+					.getClassLoader();
+			if (target instanceof Supplier<?>) {
+				if (isolated) {
+					target = new IsolatedSupplier((Supplier<?>) target);
+				}
+			}
+			else if (target instanceof Function<?, ?>) {
+				if (isolated) {
+					target = new IsolatedFunction((Function<?, ?>) target);
+				}
+			}
+			else if (target instanceof Consumer<?>) {
+				if (isolated) {
+					target = new IsolatedConsumer((Consumer<?>) target);
+				}
+			}
+			registration.target(target);
+			return registration;
+		}
+
 		private String getQualifier(String key) {
 			if (registry != null && registry.containsBeanDefinition(key)) {
 				BeanDefinition beanDefinition = registry.getBeanDefinition(key);
@@ -451,59 +504,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			return key;
-		}
-
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private Object target(Object target, String key) {
-			boolean isolated = getClass().getClassLoader() != target.getClass()
-					.getClassLoader();
-			if (target instanceof Supplier<?>) {
-				boolean flux = isFluxSupplier(key, (Supplier<?>) target);
-				if (isolated) {
-					target = new IsolatedSupplier((Supplier<?>) target);
-				}
-				if (!flux) {
-					target = new FluxSupplier((Supplier<?>) target);
-				}
-			}
-			else if (target instanceof Function<?, ?>) {
-				boolean flux = isFluxFunction(key, (Function<?, ?>) target);
-				if (isolated) {
-					target = new IsolatedFunction((Function<?, ?>) target);
-				}
-				if (!flux) {
-					target = new FluxFunction((Function<?, ?>) target);
-				}
-			}
-			else if (target instanceof Consumer<?>) {
-				boolean flux = isFluxConsumer(key, (Consumer<?>) target);
-				if (isolated) {
-					target = new IsolatedConsumer((Consumer<?>) target);
-				}
-				if (!flux) {
-					target = new FluxConsumer((Consumer<?>) target);
-				}
-			}
-			return target;
-		}
-
-		private boolean isFluxFunction(String name, Function<?, ?> function) {
-			boolean fluxTypes = this.hasFluxTypes(function);
-			return fluxTypes || FunctionFactoryUtils.isFluxFunction(function);
-		}
-
-		private boolean isFluxConsumer(String name, Consumer<?> consumer) {
-			boolean fluxTypes = this.hasFluxTypes(consumer);
-			return fluxTypes || FunctionFactoryUtils.isFluxConsumer(consumer);
-		}
-
-		private boolean isFluxSupplier(String name, Supplier<?> supplier) {
-			boolean fluxTypes = this.hasFluxTypes(supplier);
-			return fluxTypes || FunctionFactoryUtils.isFluxSupplier(supplier);
-		}
-
-		private boolean hasFluxTypes(Object function) {
-			return findType(function).isWrapper();
 		}
 
 		private FunctionType findType(String name, AbstractBeanDefinition definition) {
