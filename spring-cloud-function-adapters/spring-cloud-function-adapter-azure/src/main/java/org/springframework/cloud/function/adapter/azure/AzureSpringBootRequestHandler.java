@@ -22,6 +22,8 @@ import java.util.List;
 
 import com.microsoft.azure.serverless.functions.ExecutionContext;
 
+import org.reactivestreams.Publisher;
+
 import reactor.core.publisher.Flux;
 
 /**
@@ -44,7 +46,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		initialize(context);
 
 		Object convertedEvent = convertEvent(foo);
-		Flux<?> output = apply(extract(convertedEvent));
+		Publisher<?> output = apply(extract(convertedEvent));
 		return result(convertedEvent, output);
 	}
 
@@ -59,9 +61,9 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		return Flux.just(input);
 	}
 
-	private O result(Object input, Flux<?> output) {
+	private O result(Object input, Publisher<?> output) {
 		List<Object> result = new ArrayList<>();
-		for (Object value : output.toIterable()) {
+		for (Object value : Flux.from(output).toIterable()) {
 			result.add(convertOutput(value));
 		}
 		if (isSingleValue(input) && result.size() == 1) {

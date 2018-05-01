@@ -23,6 +23,8 @@ import java.util.List;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
+import org.reactivestreams.Publisher;
+
 import reactor.core.publisher.Flux;
 
 /**
@@ -43,13 +45,13 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer
 	public Object handleRequest(E event, Context context) {
 		initialize();
 		Object input = convertEvent(event);
-		Flux<?> output = apply(extract(input));
+		Publisher<?> output = apply(extract(input));
 		return result(input, output);
 	}
 
-	private Object result(Object input, Flux<?> output) {
+	private Object result(Object input, Publisher<?> output) {
 		List<O> result = new ArrayList<>();
-		for (Object value : output.toIterable()) {
+		for (Object value : Flux.from(output).toIterable()) {
 			result.add(convertOutput(value));
 		}
 		if (isSingleValue(input) && result.size() == 1) {

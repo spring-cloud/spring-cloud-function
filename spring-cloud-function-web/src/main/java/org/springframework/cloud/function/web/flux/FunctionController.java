@@ -73,10 +73,10 @@ public class FunctionController {
 			@RequestBody FluxRequest<?> body) {
 
 		@SuppressWarnings("unchecked")
-		Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) request
+		Function<Publisher<?>, Publisher<?>> function = (Function<Publisher<?>, Publisher<?>>) request
 				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
 		@SuppressWarnings("unchecked")
-		Consumer<Flux<?>> consumer = (Consumer<Flux<?>>) request
+		Consumer<Publisher<?>> consumer = (Consumer<Publisher<?>>) request
 				.getAttribute(WebRequestConstants.CONSUMER, WebRequest.SCOPE_REQUEST);
 		Boolean single = (Boolean) request.getAttribute(WebRequestConstants.INPUT_SINGLE,
 				WebRequest.SCOPE_REQUEST);
@@ -116,7 +116,7 @@ public class FunctionController {
 	}
 
 	private Publisher<?> response(WebRequest request, Object handler, Boolean single,
-			Flux<?> result) {
+			Publisher<?> result) {
 
 		if (single != null && single && isOutputSingle(handler)) {
 			request.setAttribute(WebRequestConstants.OUTPUT_SINGLE, true,
@@ -146,10 +146,10 @@ public class FunctionController {
 	@ResponseBody
 	public Publisher<?> get(WebRequest request) {
 		@SuppressWarnings("unchecked")
-		Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) request
+		Function<Publisher<?>, Publisher<?>> function = (Function<Publisher<?>, Publisher<?>>) request
 				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
 		@SuppressWarnings("unchecked")
-		Supplier<Flux<?>> supplier = (Supplier<Flux<?>>) request
+		Supplier<Publisher<?>> supplier = (Supplier<Publisher<?>>) request
 				.getAttribute(WebRequestConstants.SUPPLIER, WebRequest.SCOPE_REQUEST);
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,
 				WebRequest.SCOPE_REQUEST);
@@ -160,15 +160,15 @@ public class FunctionController {
 		return response(request, supplier, true, supplier(supplier));
 	}
 
-	private Flux<?> supplier(Supplier<Flux<?>> supplier) {
-		Flux<?> result = supplier.get();
+	private Publisher<?> supplier(Supplier<Publisher<?>> supplier) {
+		Publisher<?> result = supplier.get();
 		if (logger.isDebugEnabled()) {
 			logger.debug("Handled GET with supplier");
 		}
-		return debug ? result.log() : result;
+		return debug ? Flux.from(result).log() : result;
 	}
 
-	private Mono<?> value(Function<Flux<?>, Flux<?>> function, String value) {
+	private Mono<?> value(Function<Publisher<?>, Publisher<?>> function, String value) {
 		Object input = converter.convert(function, value);
 		Mono<?> result = Mono.from(function.apply(Flux.just(input)));
 		if (logger.isDebugEnabled()) {

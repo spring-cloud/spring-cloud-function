@@ -53,7 +53,7 @@ public class SpringFunctionInitializerTests {
 	public void functionBean() {
 		initializer = new SpringFunctionInitializer(FluxFunctionConfig.class);
 		initializer.initialize();
-		Flux<?> result = initializer.apply(Flux.just(new Foo()));
+		Flux<?> result = Flux.from(initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
@@ -61,7 +61,7 @@ public class SpringFunctionInitializerTests {
 	public void functionCatalog() {
 		initializer = new SpringFunctionInitializer(FunctionConfig.class);
 		initializer.initialize();
-		Flux<?> result = initializer.apply(Flux.just(new Foo()));
+		Flux<?> result = Flux.from(initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
@@ -70,7 +70,7 @@ public class SpringFunctionInitializerTests {
 		initializer = new SpringFunctionInitializer(NamedFunctionConfig.class);
 		System.setProperty("function.name", "other");
 		initializer.initialize();
-		Flux<?> result = initializer.apply(Flux.just(new Foo()));
+		Flux<?> result = Flux.from(initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
@@ -78,7 +78,7 @@ public class SpringFunctionInitializerTests {
 	public void consumerCatalog() {
 		initializer = new SpringFunctionInitializer(ConsumerConfig.class);
 		initializer.initialize();
-		Flux<?> result = initializer.apply(Flux.just(new Foo()));
+		Flux<?> result = Flux.from(initializer.apply(Flux.just(new Foo())));
 		assertThat(result.toStream().collect(Collectors.toList())).isEmpty();
 	}
 
@@ -86,7 +86,7 @@ public class SpringFunctionInitializerTests {
 	public void supplierCatalog() {
 		initializer = new SpringFunctionInitializer(SupplierConfig.class);
 		initializer.initialize();
-		Flux<?> result = initializer.apply(Flux.empty());
+		Flux<?> result = Flux.from(initializer.apply(Flux.empty()));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 

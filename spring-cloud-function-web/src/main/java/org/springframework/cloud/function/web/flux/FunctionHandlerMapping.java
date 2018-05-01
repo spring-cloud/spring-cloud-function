@@ -22,6 +22,8 @@ import java.util.function.Supplier;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.reactivestreams.Publisher;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -118,7 +120,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
-		Consumer<Object> consumer = functions.lookup(Consumer.class, path);
+		Consumer<Publisher<?>> consumer = functions.lookup(Consumer.class, path);
 		if (consumer != null) {
 			request.setAttribute(WebRequestConstants.CONSUMER, consumer);
 			return consumer;
@@ -136,7 +138,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
-		Supplier<Object> supplier = functions.lookup(Supplier.class, path);
+		Supplier<Publisher<?>> supplier = functions.lookup(Supplier.class, path);
 		if (supplier != null) {
 			request.setAttribute(WebRequestConstants.SUPPLIER, supplier);
 			return supplier;

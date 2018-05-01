@@ -80,7 +80,7 @@ public abstract class AbstractStreamListeningInvoker
 	}
 
 	protected Mono<Void> consumer(String name, Flux<Message<?>> flux) {
-		Consumer<Object> consumer = functionCatalog.lookup(Consumer.class, name);
+		Consumer<Publisher<?>> consumer = functionCatalog.lookup(Consumer.class, name);
 		flux = flux.publish().refCount(2);
 		// The consumer will subscribe to the input flux, so we need to listen separately
 		consumer.accept(flux.map(message -> convertInput(consumer).apply(message))
@@ -89,7 +89,7 @@ public abstract class AbstractStreamListeningInvoker
 	}
 
 	protected Flux<Message<?>> function(String name, Flux<Message<?>> flux) {
-		Function<Object, Flux<?>> function = functionCatalog.lookup(Function.class, name);
+		Function<Publisher<?>, Publisher<?>> function = functionCatalog.lookup(Function.class, name);
 		return flux.publish(values -> {
 			Publisher<?> result = function
 					.apply(values.map(message -> convertInput(function).apply(message)));

@@ -27,6 +27,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.reactivestreams.Publisher;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import reactor.core.publisher.Flux;
@@ -53,13 +55,13 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 			throws IOException {
 		initialize();
 		Object value = convertStream(input);
-		Flux<?> flux = apply(extract(value));
+		Publisher<?> flux = apply(extract(value));
 		mapper.writeValue(output, result(value, flux));
 	}
 
-	private Object result(Object input, Flux<?> flux) {
+	private Object result(Object input, Publisher<?> flux) {
 		List<Object> result = new ArrayList<>();
-		for (Object value : flux.toIterable()) {
+		for (Object value : Flux.from(flux).toIterable()) {
 			result.add(value);
 		}
 		if (isSingleValue(input) && result.size()==1) {

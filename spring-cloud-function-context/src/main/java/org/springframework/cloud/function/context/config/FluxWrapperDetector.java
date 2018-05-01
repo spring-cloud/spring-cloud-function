@@ -22,9 +22,6 @@ import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.WrapperDetector;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 /**
  * @author Dave Syer
  *
@@ -33,8 +30,11 @@ public class FluxWrapperDetector implements WrapperDetector {
 
 	@Override
 	public boolean isWrapper(Type type) {
-		return Publisher.class.equals(type) || Flux.class.equals(type)
-				|| Mono.class.equals(type);
+		if (type instanceof Class<?>) {
+			Class<?> cls = (Class<?>) type;
+			return Publisher.class.isAssignableFrom(cls);
+		}
+		return false;
 	}
 
 }

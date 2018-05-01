@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -39,11 +40,11 @@ public class OpenWhiskFunctionInitializer {
 
 	private static Log logger = LogFactory.getLog(OpenWhiskFunctionInitializer.class);
 
-	private Function<Flux<?>, Flux<?>> function;
+	private Function<Publisher<?>, Publisher<?>> function;
 
-	private Consumer<Flux<?>> consumer;
+	private Consumer<Publisher<?>> consumer;
 
-	private Supplier<Flux<?>> supplier;
+	private Supplier<Publisher<?>> supplier;
 
 	private AtomicBoolean initialized = new AtomicBoolean();
 
@@ -86,7 +87,7 @@ public class OpenWhiskFunctionInitializer {
 				: (this.consumer != null ? this.consumer : this.supplier);
 	}
 
-	protected Flux<?> apply(Flux<?> input) {
+	protected Publisher<?> apply(Publisher<?> input) {
 		if (this.function != null) {
 			return function.apply(input);
 		}

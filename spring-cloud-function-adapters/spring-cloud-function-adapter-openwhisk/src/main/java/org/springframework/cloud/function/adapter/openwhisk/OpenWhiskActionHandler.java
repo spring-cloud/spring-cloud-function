@@ -16,17 +16,24 @@
 
 package org.springframework.cloud.function.adapter.openwhisk;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 
-import java.util.*;
+import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
@@ -55,15 +62,15 @@ public class OpenWhiskActionHandler extends OpenWhiskFunctionInitializer {
 		Object input = convertEvent(request.getValue());
 		Object result = NO_INPUT_PROVIDED;
 		if(input !=null ) {
-			Flux<?> output = apply(extract(input));
+			Publisher<?> output = apply(extract(input));
 			result = result(input, output);
 		}
 		return serializeBody(result);
 	}
 
-	private Object result(Object input, Flux<?> output) {
+	private Object result(Object input, Publisher<?> output) {
 		List<Object> result = new ArrayList<>();
-		for (Object value : output.toIterable()) {
+		for (Object value : Flux.from(output).toIterable()) {
 			result.add(value);
 		}
 		if (isSingleValue(input) && result.size() == 1) {

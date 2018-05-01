@@ -28,7 +28,8 @@ import java.util.function.Function;
 import java.util.jar.Manifest;
 
 import com.microsoft.azure.serverless.functions.ExecutionContext;
-import reactor.core.publisher.Flux;
+
+import org.reactivestreams.Publisher;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -37,12 +38,14 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
+import reactor.core.publisher.Flux;
+
 /**
  * @author Soby Chacko
  */
 public class AzureSpringFunctionInitializer implements Closeable {
 
-	private Function<Flux<?>, Flux<?>> function;
+	private Function<Publisher<?>, Publisher<?>> function;
 
 	private AtomicBoolean initialized = new AtomicBoolean();
 
@@ -110,7 +113,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	protected Flux<?> apply(Flux<?> input) {
+	protected Publisher<?> apply(Publisher<?> input) {
 		if (this.function != null) {
 			return function.apply(input);
 		}

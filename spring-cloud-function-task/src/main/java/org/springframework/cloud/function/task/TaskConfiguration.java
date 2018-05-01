@@ -20,6 +20,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.reactivestreams.Publisher;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -29,7 +31,6 @@ import org.springframework.cloud.task.configuration.EnableTask;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -46,11 +47,11 @@ public class TaskConfiguration {
 
 	@Bean
 	public CommandLineRunner commandLineRunner(FunctionCatalog registry) {
-		final Supplier<Flux<Object>> supplier = registry.lookup(Supplier.class,
+		final Supplier<Publisher<Object>> supplier = registry.lookup(Supplier.class,
 				properties.getSupplier());
-		final Function<Flux<Object>, Flux<Object>> function = registry
+		final Function<Publisher<Object>, Publisher<Object>> function = registry
 				.lookup(Function.class, properties.getFunction());
-		final Consumer<Flux<Object>> consumer = consumer(registry);
+		final Consumer<Publisher<Object>> consumer = consumer(registry);
 		CommandLineRunner runner = new CommandLineRunner() {
 
 			@Override
@@ -61,14 +62,14 @@ public class TaskConfiguration {
 		return runner;
 	}
 
-	private Consumer<Flux<Object>> consumer(FunctionCatalog registry) {
-		Consumer<Flux<Object>> consumer = registry.lookup(Consumer.class,
+	private Consumer<Publisher<Object>> consumer(FunctionCatalog registry) {
+		Consumer<Publisher<Object>> consumer = registry.lookup(Consumer.class,
 				properties.getConsumer());
 		if (consumer != null) {
 			return consumer;
 		}
-		Function<Flux<Object>, Mono<Void>> function = registry.lookup(Function.class,
+		Function<Publisher<Object>, Publisher<Void>> function = registry.lookup(Function.class,
 				properties.getConsumer());
-		return flux -> function.apply(flux).subscribe();
+		return flux -> Mono.from(function.apply(flux)).subscribe();
 	}
 }

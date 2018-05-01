@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.reactivestreams.Publisher;
+
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.stream.messaging.Source;
@@ -93,12 +95,12 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 		if (!disposables.containsKey(name)) {
 			synchronized (disposables) {
 				if (!disposables.containsKey(name)) {
-					Supplier<Flux<?>> supplier = functionCatalog.lookup(Supplier.class,
+					Supplier<Publisher<?>> supplier = functionCatalog.lookup(Supplier.class,
 							name);
 					if (supplier != null) {
 						suppliers.add(name);
 						disposables.put(name,
-								supplier.get().subscribeOn(Schedulers.elastic())
+								Flux.from(supplier.get()).subscribeOn(Schedulers.elastic())
 										.subscribe(m -> send(name, m)));
 					}
 				}
@@ -107,7 +109,7 @@ public class SupplierInvokingMessageProducer<T> extends MessageProducerSupport {
 	}
 
 	private void send(String name, Object payload) {
-		Supplier<Flux<?>> supplier = functionCatalog.lookup(Supplier.class, name);
+		Supplier<Publisher<?>> supplier = functionCatalog.lookup(Supplier.class, name);
 		Message<?> message = MessageUtils.unpack(supplier, payload);
 		message = MessageBuilder.fromMessage(message)
 				.setHeaderIfAbsent(StreamConfigurationProperties.ROUTE_KEY, name).build();

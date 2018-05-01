@@ -50,11 +50,11 @@ public class SpringFunctionInitializer implements Closeable {
 
 	private final Class<?> configurationClass;
 
-	private Function<Flux<?>, Publisher<?>> function;
+	private Function<Publisher<?>, Publisher<?>> function;
 
-	private Consumer<Flux<?>> consumer;
+	private Consumer<Publisher<?>> consumer;
 
-	private Supplier<Flux<?>> supplier;
+	private Supplier<Publisher<?>> supplier;
 
 	private AtomicBoolean initialized = new AtomicBoolean();
 
@@ -146,7 +146,7 @@ public class SpringFunctionInitializer implements Closeable {
 				: (this.consumer != null ? this.consumer : this.supplier);
 	}
 
-	protected Flux<?> apply(Flux<?> input) {
+	protected Publisher<?> apply(Publisher<?> input) {
 		if (this.function != null) {
 			return Flux.from(function.apply(input));
 		}
