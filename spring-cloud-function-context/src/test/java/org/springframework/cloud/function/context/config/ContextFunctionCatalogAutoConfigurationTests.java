@@ -451,7 +451,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		FileSystemResource resource = new FileSystemResource("target/foos.fun");
 		StreamUtils.copy(compiled.getGeneratedClassBytes(), resource.getOutputStream());
 		create(EmptyConfiguration.class,
-				"spring.cloud.function.import.foos.location=file:./target/foos.fun");
+				"spring.cloud.function.imports.foos.location=file:./target/foos.fun");
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
 		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);

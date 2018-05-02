@@ -55,16 +55,28 @@ public class FunctionProxyApplicationListener
 
 	private final ConsumerCompiler<?> consumerCompiler = new ConsumerCompiler<>();
 
-	private final Map<String, Object> toCompile = new HashMap<>();
+	/**
+	 * Configuration for function bodies, which will be compiled. The key in the map is
+	 * the function name and the value is a map containing a key "lambda" which is the
+	 * body to compile, and optionally a "type" (defaults to "function"). Can also contain
+	 * "inputType" and "outputType" in case it is ambiguous.
+	 */
+	private final Map<String, Object> compile = new HashMap<>();
 
-	private final Map<String, Object> toImport = new HashMap<>();
+	/**
+	 * Configuration for a set of files containing function bodies, which will be imported
+	 * and compiled. The key in the map is the function name and the value is another map,
+	 * containing a "location" of the file to compile and (optionally) a "type" (defaults
+	 * to "function").
+	 */
+	private final Map<String, Object> imports = new HashMap<>();
 
 	public Map<String, Object> getCompile() {
-		return toCompile;
+		return compile;
 	}
 
-	public Map<String, Object> getImport() {
-		return toImport;
+	public Map<String, Object> getImports() {
+		return imports;
 	}
 
 	@Override
@@ -73,7 +85,7 @@ public class FunctionProxyApplicationListener
 		DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context
 				.getBeanFactory();
 		bind(context);
-		for (Map.Entry<String, Object> entry : toCompile.entrySet()) {
+		for (Map.Entry<String, Object> entry : compile.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
@@ -88,7 +100,7 @@ public class FunctionProxyApplicationListener
 			registerLambdaCompilingProxy(name, type, inputType, outputType, lambda,
 					beanFactory);
 		}
-		for (Map.Entry<String, Object> entry : toImport.entrySet()) {
+		for (Map.Entry<String, Object> entry : imports.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
