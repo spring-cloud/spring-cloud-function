@@ -53,6 +53,7 @@ public abstract class AbstractFunctionCompiler<F> {
 	private static String SOURCE_CODE_TEMPLATE = "package "
 			+ AbstractFunctionCompiler.class.getPackage().getName() + ";\n"
 			+ "import java.util.*;\n" // Helpful to include this
+			+ "import java.time.*;\n" // Helpful to include this
 			+ "import java.util.function.*;\n"
 			+ "import reactor.core.publisher.Flux;\n"
 			+ "public class %s implements CompilationResultFactory<%s> {\n"

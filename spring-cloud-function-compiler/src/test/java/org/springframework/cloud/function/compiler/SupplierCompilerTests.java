@@ -19,6 +19,7 @@ package org.springframework.cloud.function.compiler;
 import java.util.function.Supplier;
 
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.core.FunctionFactoryUtils;
 
@@ -47,4 +48,13 @@ public class SupplierCompilerTests {
 		assertThat(compiled.getResult().get()).isEqualTo("foo");
 	}
 
+	@Test
+	public void supppliesFluxStreamString() {
+		CompiledFunctionFactory<Supplier<Flux<String>>> compiled = new SupplierCompiler<Flux<String>>(
+				String.class.getName()).compile("foos",
+				"() -> Flux.interval(Duration.ofMillis(1000)).map(Object::toString)",
+				"Flux<String>");
+		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod())).isTrue();
+		assertThat(compiled.getResult().get().blockFirst()).isEqualTo("0");
+	}
 }
