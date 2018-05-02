@@ -122,7 +122,7 @@ curl -X POST -H "Content-Type: text/plain" -d foo localhost:9002/print
 First register a streaming words supplier:
 
 ----
-./registerSupplier.sh -n wordstream -f "()->Flux.intervalMillis(1000).map(i->\"message-\"+i)"
+./registerSupplier.sh -n wordstream -f "()->Flux.interval(Duration.ofMillis(1000)).map(i->\"message-\"+i)"
 ----
 
 Then start the source (supplier), processor (function), and sink (consumer) apps
