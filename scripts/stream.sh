@@ -45,7 +45,7 @@ while getopts ":i:s:f:c:o:p:d:" opt; do
     esac
 done
 
-java -jar ../spring-cloud-function-samples/function-sample-compiler/target/function-sample-compiler-1.0.0.BUILD-SNAPSHOT.jar\
+java -jar ../spring-cloud-function-samples/function-sample-stream/target/function-sample-stream-1.0.0.BUILD-SNAPSHOT.jar\
  --management.security.enabled=false\
  --server.port=$PORT\
  --spring.cloud.function.stream.endpoint=$FUNC\

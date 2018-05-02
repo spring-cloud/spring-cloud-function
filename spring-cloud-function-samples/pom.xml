@@ -17,6 +17,7 @@
 		<module>function-sample-pof</module>
 		<module>function-sample-pojo</module>
 		<module>function-sample-compiler</module>
+		<module>function-sample-stream</module>
 		<module>function-sample-task</module>
 		<module>function-sample-aws</module>
 		<module>function-sample-azure</module>
