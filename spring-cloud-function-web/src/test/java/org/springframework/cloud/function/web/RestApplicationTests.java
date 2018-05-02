@@ -339,6 +339,14 @@ public class RestApplicationTests {
 	}
 
 	@Test
+	public void singleValuedText() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/bareUppercase")).contentType(MediaType.TEXT_PLAIN)
+				.body("foo"), String.class);
+		assertThat(result.getBody()).isEqualTo("(FOO)");
+	}
+
+	@Test
 	public void transform() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/transform")).contentType(MediaType.APPLICATION_JSON)

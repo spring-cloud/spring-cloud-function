@@ -91,6 +91,7 @@ public class FluxHandlerMethodArgumentResolver
 		if (isPlainText(webRequest) && CharSequence.class.isAssignableFrom(type)) {
 			body = Arrays.asList(StreamUtils.copyToString(nativeRequest.getInputStream(),
 					Charset.forName("UTF-8")));
+			nativeRequest.setAttribute(WebRequestConstants.INPUT_SINGLE, true);
 		}
 		else {
 			String json = new String(StreamUtils.copyToString(
