@@ -38,8 +38,6 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
-import reactor.core.publisher.Flux;
-
 /**
  * @author Soby Chacko
  */
