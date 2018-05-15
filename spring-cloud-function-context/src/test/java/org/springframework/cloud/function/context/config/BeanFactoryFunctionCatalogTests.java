@@ -17,7 +17,9 @@
 package org.springframework.cloud.function.context.config;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -76,6 +78,22 @@ public class BeanFactoryFunctionCatalogTests {
 										.wrap(Flux.class).getType()));
 		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class, "");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("i=2");
+	}
+
+	@Test
+	public void registerFunctionWithMonoType() {
+		processor.register(
+				new FunctionRegistration<Function<Flux<String>, Mono<Map<String, Integer>>>>(
+						flux -> flux.collect(HashMap::new,
+								(map, word) -> map.merge(word, 1, Integer::sum)))
+										.names("foos")
+										.type(FunctionType.from(String.class)
+												.to(Map.class)
+												.wrap(Flux.class, Mono.class).getType()));
+		Function<Flux<String>, Mono<Map<String, Integer>>> foos = processor
+				.lookup(Function.class, "");
+		assertThat(foos.apply(Flux.just("one", "one", "two")).block())
+				.containsEntry("one", 2);
 	}
 
 	@Test

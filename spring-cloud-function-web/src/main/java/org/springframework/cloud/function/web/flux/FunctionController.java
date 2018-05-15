@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.flux;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -124,10 +125,22 @@ public class FunctionController {
 			return Mono.from(result);
 		}
 
+		if (isInputMultiple(handler) && isOutputSingle(handler)) {
+			request.setAttribute(WebRequestConstants.OUTPUT_SINGLE, true,
+					WebRequest.SCOPE_REQUEST);
+			return Mono.from(result);
+		}
+
 		request.setAttribute(WebRequestConstants.OUTPUT_SINGLE, false,
 				WebRequest.SCOPE_REQUEST);
 
 		return result;
+	}
+
+	private boolean isInputMultiple(Object handler) {
+		Class<?> type = inspector.getInputType(handler);
+		Class<?> wrapper = inspector.getInputWrapper(handler);
+		return Collection.class.isAssignableFrom(type) || Flux.class.equals(wrapper);
 	}
 
 	private boolean isOutputSingle(Object handler) {

@@ -149,12 +149,25 @@ public class FunctionType {
 				.getType());
 	}
 
-	public FunctionType wrap(Class<?> wrapper) {
-		if (wrapper.isAssignableFrom(getInputWrapper()) || !isWrapper(wrapper)) {
+	public FunctionType wrap(Class<?> input, Class<?> output) {
+		if (!isWrapper(input) && !isWrapper(output)) {
+			return this;
+		}
+		if (!isWrapper(input) || !isWrapper(output)) {
+			throw new IllegalArgumentException("Both wrapper types must be wrappers in ("
+					+ input + ", " + output + ")");
+		}
+		if (input.isAssignableFrom(getInputWrapper())
+				&& output.isAssignableFrom(getOutputWrapper())) {
 			return this;
 		}
 		return new FunctionType(ResolvableType.forClassWithGenerics(Function.class,
-				wrap(wrapper, getInputType()), wrap(wrapper, getOutputType())).getType());
+				wrapper(input, getInputType()), wrapper(output, getOutputType()))
+				.getType());
+	}
+
+	public FunctionType wrap(Class<?> wrapper) {
+		return wrap(wrapper, wrapper);
 	}
 
 	public static FunctionType compose(FunctionType input, FunctionType output) {
@@ -173,7 +186,7 @@ public class FunctionType {
 				.getType());
 	}
 
-	private ResolvableType wrap(Class<?> wrapper, Class<?> type) {
+	private ResolvableType wrapper(Class<?> wrapper, Class<?> type) {
 		return wrap(this, wrapper, type);
 	}
 

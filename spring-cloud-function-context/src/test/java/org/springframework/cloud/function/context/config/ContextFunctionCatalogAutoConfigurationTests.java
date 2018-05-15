@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.config;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -234,6 +235,22 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.isAssignableFrom(String.class);
 		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Publisher.class);
+	}
+
+	@Test
+	public void monoFunction() {
+		create(MonoConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(Function.class);
+		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "function"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.isMessage(catalog.lookup(Function.class, "function")))
+				.isFalse();
+		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
+				.isAssignableFrom(String.class);
+		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "function")))
+				.isAssignableFrom(Flux.class);
+		assertThat(inspector.getOutputWrapper(catalog.lookup(Function.class, "function")))
+				.isAssignableFrom(Mono.class);
 	}
 
 	@Test
@@ -753,6 +770,16 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		public Function<Publisher<Message<String>>, Publisher<Message<String>>> function() {
 			return flux -> Flux.from(flux).map(m -> MessageBuilder
 					.withPayload(m.getPayload().toUpperCase()).build());
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class MonoConfiguration {
+		@Bean
+		public Function<Flux<String>, Mono<Map<String, Integer>>> function() {
+			return flux -> flux.collect(HashMap::new,
+					(map, word) -> map.merge(word, 1, Integer::sum));
 		}
 	}
 
