@@ -79,8 +79,8 @@ public class ApplicationRunner {
 
 	private Map<String, String> defaultProperties(String id) {
 		Map<String, String> map = new HashMap<>();
-		map.put(LiveBeansView.MBEAN_DOMAIN_PROPERTY_NAME, "function-invoker-" + id);
-		map.put("spring.jmx.default-domain", "function-invoker-" + id);
+		map.put(LiveBeansView.MBEAN_DOMAIN_PROPERTY_NAME, "function-deployer-" + id);
+		map.put("spring.jmx.default-domain", "function-deployer-" + id);
 		map.put("spring.jmx.enabled", "false");
 		return map;
 	}

@@ -60,8 +60,7 @@ public abstract class SpringFunctionAppConfigurationTests {
 	}
 
 	@EnableAutoConfiguration
-	@TestPropertySource(properties = { "function.bean=myEmitter,myCounter",
-			"function.main=com.example.functions.FunctionApp" })
+	@TestPropertySource(properties = { "function.bean=myEmitter,myCounter" })
 	public static class CompositeTests extends SpringFunctionAppConfigurationTests {
 
 		@Test
@@ -74,8 +73,7 @@ public abstract class SpringFunctionAppConfigurationTests {
 	}
 
 	@EnableAutoConfiguration
-	@TestPropertySource(properties = { "function.bean=myCounter",
-			"function.main=com.example.functions.FunctionApp" })
+	@TestPropertySource(properties = { "function.bean=myCounter" })
 	public static class ProcessorTests extends SpringFunctionAppConfigurationTests {
 
 		@Test
@@ -88,8 +86,7 @@ public abstract class SpringFunctionAppConfigurationTests {
 	}
 
 	@EnableAutoConfiguration
-	@TestPropertySource(properties = { "function.bean=myDoubler",
-			"function.main=com.example.functions.FunctionApp" })
+	@TestPropertySource(properties = { "function.bean=myDoubler" })
 	public static class SinkTests extends SpringFunctionAppConfigurationTests {
 
 		@Rule

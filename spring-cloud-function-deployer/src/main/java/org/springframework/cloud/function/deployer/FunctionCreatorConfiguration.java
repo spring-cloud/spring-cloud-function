@@ -108,7 +108,7 @@ class FunctionCreatorConfiguration {
 		try {
 			logger.info(
 					"Locating function from " + Arrays.asList(properties.getLocation()));
-			this.creator = new BeanCreator(expand(urls));
+			this.creator = new BeanCreator(urls);
 			this.creator.run(properties.getMain());
 			Arrays.stream(properties.getBean()).map(this.creator::create).sequential()
 					.forEach(this.creator::register);
@@ -122,30 +122,6 @@ class FunctionCreatorConfiguration {
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot create functions", e);
-		}
-	}
-
-	private URL[] expand(URL[] urls) {
-		List<URL> result = new ArrayList<>();
-		for (URL url : urls) {
-			result.addAll(expand(url));
-		}
-		return result.toArray(new URL[0]);
-	}
-
-	private List<URL> expand(URL url) {
-		if (!"file".equals(url.getProtocol())) {
-			return Collections.singletonList(url);
-		}
-		if (!url.toString().endsWith(".jar")) {
-			return Collections.singletonList(url);
-		}
-		try {
-			JarFileArchive archive = new JarFileArchive(new File(url.toURI()));
-			return Arrays.asList(new ComputeLauncher(archive).getClassLoaderUrls());
-		}
-		catch (Exception e) {
-			throw new IllegalStateException("Cannot create class loader for " + url, e);
 		}
 	}
 
@@ -186,6 +162,15 @@ class FunctionCreatorConfiguration {
 
 		public ComputeLauncher(JarFileArchive archive) {
 			super(archive);
+		}
+
+		@Override
+		public String getMainClass() throws Exception {
+			try {
+				return super.getMainClass();
+			} catch (Exception e) {
+				return null;
+			}
 		}
 
 		public URL[] getClassLoaderUrls() throws Exception {
@@ -254,12 +239,62 @@ class FunctionCreatorConfiguration {
 
 		private ApplicationRunner runner;
 
+		private String defaultMain;
+
 		public BeanCreator(URL[] urls) {
-			functionClassLoader = new BeanCreatorClassLoader(urls,
+			functionClassLoader = new BeanCreatorClassLoader(expand(urls),
 					getClass().getClassLoader().getParent());
+			this.defaultMain = findMain(urls);
+		}
+
+		private String findMain(URL[] urls) {
+			for (URL url : urls) {
+				try {
+					File file = new File(url.toURI());
+					if (file.exists()) {
+						JarFileArchive archive = new JarFileArchive(file);
+						String main = new ComputeLauncher(archive).getMainClass();
+						if (main !=null) {
+							return main;
+						}
+					}
+				}
+				catch (Exception e) {
+					// ignore
+				}
+			}
+			return null;
+		}
+
+		private URL[] expand(URL[] urls) {
+			List<URL> result = new ArrayList<>();
+			for (URL url : urls) {
+				result.addAll(expand(url));
+			}
+			return result.toArray(new URL[0]);
+		}
+
+		private List<URL> expand(URL url) {
+			if (!"file".equals(url.getProtocol())) {
+				return Collections.singletonList(url);
+			}
+			if (!url.toString().endsWith(".jar")) {
+				return Collections.singletonList(url);
+			}
+			try {
+				JarFileArchive archive = new JarFileArchive(new File(url.toURI()));
+				return Arrays.asList(new ComputeLauncher(archive).getClassLoaderUrls());
+			}
+			catch (Exception e) {
+				throw new IllegalStateException("Cannot create class loader for " + url,
+						e);
+			}
 		}
 
 		public void run(String main) {
+			if (main == null) {
+				main = this.defaultMain;
+			}
 			if (main == null) {
 				return;
 			}
