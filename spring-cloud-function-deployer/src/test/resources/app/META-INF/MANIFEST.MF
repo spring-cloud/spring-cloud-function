@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Implementation-Title: function-file-sample
+Implementation-Version: 1.0.0.M1
+Archiver-Version: Plexus Archiver
+Built-By: dsyer
+Implementation-Vendor-Id: com.example
+Spring-Boot-Version: 1.5.12.RELEASE
+Implementation-Vendor: Pivotal Software, Inc.
+Main-Class: org.springframework.boot.loader.JarLauncher
+Start-Class: org.springframework.cloud.function.test.FunctionApp
+Created-By: Apache Maven 3.5.0
+Build-Jdk: 1.8.0_131
+Implementation-URL: http://projects.spring.io/spring-boot/function-sam
+ ple/

@@ -47,6 +47,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.archive.Archive;
+import org.springframework.boot.loader.archive.ExplodedArchive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.deployer.resource.support.DelegatingResourceLoader;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -160,7 +161,7 @@ class FunctionCreatorConfiguration {
 
 	private class ComputeLauncher extends JarLauncher {
 
-		public ComputeLauncher(JarFileArchive archive) {
+		public ComputeLauncher(Archive archive) {
 			super(archive);
 		}
 
@@ -168,7 +169,8 @@ class FunctionCreatorConfiguration {
 		public String getMainClass() throws Exception {
 			try {
 				return super.getMainClass();
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				return null;
 			}
 		}
@@ -252,9 +254,11 @@ class FunctionCreatorConfiguration {
 				try {
 					File file = new File(url.toURI());
 					if (file.exists()) {
-						JarFileArchive archive = new JarFileArchive(file);
+						Archive archive = file.getName().endsWith(".jar")
+								? new JarFileArchive(file)
+								: new ExplodedArchive(file);
 						String main = new ComputeLauncher(archive).getMainClass();
-						if (main !=null) {
+						if (main != null) {
 							return main;
 						}
 					}
@@ -282,8 +286,13 @@ class FunctionCreatorConfiguration {
 				return Collections.singletonList(url);
 			}
 			try {
-				JarFileArchive archive = new JarFileArchive(new File(url.toURI()));
-				return Arrays.asList(new ComputeLauncher(archive).getClassLoaderUrls());
+				File file = new File(url.toURI());
+				if (file.exists()) {
+					JarFileArchive archive = new JarFileArchive(file);
+					return Arrays
+							.asList(new ComputeLauncher(archive).getClassLoaderUrls());
+				}
+				return Collections.singletonList(url);
 			}
 			catch (Exception e) {
 				throw new IllegalStateException("Cannot create class loader for " + url,
