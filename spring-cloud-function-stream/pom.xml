@@ -11,11 +11,11 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-function-parent</artifactId>
-		<version>1.0.0.BUILD-SNAPSHOT</version>
+		<version>1.0.0.RC1</version>
 	</parent>
 
 	<properties>
-		<servlet-binder.version>1.0.0.BUILD-SNAPSHOT</servlet-binder.version>
+		<servlet-binder.version>1.0.0.RC1</servlet-binder.version>
 	</properties>
 
 	<dependencies>
