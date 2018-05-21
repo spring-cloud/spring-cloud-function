@@ -50,6 +50,7 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueH
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -182,6 +183,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Configuration
 	@ConditionalOnClass(Gson.class)
+	@ConditionalOnBean(Gson.class)
 	@Conditional(PreferGsonOrMissingJacksonCondition.class)
 	protected static class GsonConfiguration {
 		@Bean
@@ -192,6 +194,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Configuration
 	@ConditionalOnClass(ObjectMapper.class)
+	@ConditionalOnBean(ObjectMapper.class)
 	@ConditionalOnProperty(name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, havingValue = "jackson", matchIfMissing = true)
 	protected static class JacksonConfiguration {
 		@Bean
