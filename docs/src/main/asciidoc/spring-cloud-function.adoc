@@ -48,6 +48,8 @@ transmit headers from any adapter that supports key-value metadata
 | `Consumer<Message<T>>` | `Function<Flux<Message<T>>, Mono<Void>>` |
 | `Consumer<Flux<T>>` | `Consumer<Flux<T>>` |
 
+|===
+
 Consumer is a little bit special because it has a `void` return type,
 which implies blocking, at least potentially. Most likely you will not
 need to write `Consumer<Flux<?>>`, but if you do need to do that,
@@ -63,8 +65,6 @@ as a `Function`, but it cannot contain a `Consumer<T>` and a
 `Function<T,S>` with the same name when `T` is not a `Publisher`
 because the consumer would be converted to a `Function` and only one
 of them can be registered.
-
-|===
 
 == Standalone Web Applications
 
@@ -120,5 +120,7 @@ OpenWhisk]. The Oracle Fn platform has its own Spring Cloud Function adapter.
 
 == Deploying a Packaged Function
 
-TBD: describe the deployer app.
+Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the https://projectriff.io[Riff] Java function invoker uses this library).
+
+The standard entry point of the API is the Spring configuration annotation `@EnableFunctionDeployer`. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a `function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by default).
 
