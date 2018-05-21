@@ -39,6 +39,9 @@ import java.util.function.Supplier;
 
 import javax.annotation.PreDestroy;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -46,7 +49,10 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -62,8 +68,11 @@ import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.cloud.function.core.IsolatedConsumer;
 import org.springframework.cloud.function.core.IsolatedFunction;
 import org.springframework.cloud.function.core.IsolatedSupplier;
+import org.springframework.cloud.function.json.GsonMapper;
+import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -85,6 +94,8 @@ import org.springframework.util.StringUtils;
 @Configuration
 @ConditionalOnMissingBean(FunctionCatalog.class)
 public class ContextFunctionCatalogAutoConfiguration {
+
+	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
 	@Autowired(required = false)
 	private Map<String, Supplier<?>> suppliers = Collections.emptyMap();
@@ -167,6 +178,26 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return registration;
 		}
 
+	}
+
+	@Configuration
+	@ConditionalOnClass(Gson.class)
+	@Conditional(PreferGsonOrMissingJacksonCondition.class)
+	protected static class GsonConfiguration {
+		@Bean
+		public GsonMapper jsonMapper(Gson gson) {
+			return new GsonMapper(gson);
+		}
+	}
+
+	@Configuration
+	@ConditionalOnClass(ObjectMapper.class)
+	@ConditionalOnProperty(name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, havingValue = "jackson", matchIfMissing = true)
+	protected static class JacksonConfiguration {
+		@Bean
+		public JacksonMapper jsonMapper(ObjectMapper mapper) {
+			return new JacksonMapper(mapper);
+		}
 	}
 
 	@Component
@@ -639,6 +670,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			types.computeIfAbsent(name, str -> param);
 			return param;
+		}
+
+	}
+
+	private static class PreferGsonOrMissingJacksonCondition extends AnyNestedCondition {
+
+		PreferGsonOrMissingJacksonCondition() {
+			super(ConfigurationPhase.REGISTER_BEAN);
+		}
+
+		@ConditionalOnProperty(name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, havingValue = "gson", matchIfMissing = false)
+		static class GsonPreferred {
+
+		}
+
+		@ConditionalOnMissingBean(ObjectMapper.class)
+		static class JacksonMissing {
+
 		}
 
 	}

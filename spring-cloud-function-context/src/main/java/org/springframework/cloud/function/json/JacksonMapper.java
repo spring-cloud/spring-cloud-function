@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.web.util;
+package org.springframework.cloud.function.json;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.cloud.function.json.JsonMapper;
 
 /**
  * @author Dave Syer
@@ -53,4 +56,13 @@ public class JacksonMapper implements JsonMapper {
 		}
 	}
 
+	@Override
+	public String toString(Object value) {
+		try {
+			return mapper.writeValueAsString(value);
+		}
+		catch (JsonProcessingException e) {
+			throw new IllegalArgumentException("Cannot convert to JSON", e);
+		}
+	}
 }

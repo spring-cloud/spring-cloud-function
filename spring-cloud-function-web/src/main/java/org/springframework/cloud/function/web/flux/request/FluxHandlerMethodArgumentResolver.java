@@ -28,9 +28,9 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.flux.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.HeaderUtils;
-import org.springframework.cloud.function.web.util.JsonMapper;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.Ordered;
 import org.springframework.http.MediaType;

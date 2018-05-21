@@ -13,36 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.web.util;
+package org.springframework.cloud.function.json;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import com.google.gson.Gson;
-
-import org.springframework.core.ResolvableType;
 
 /**
  * @author Dave Syer
  *
  */
-public class GsonMapper implements JsonMapper {
+public interface JsonMapper {
 
-	private final Gson gson;
+	<T> List<T> toList(String json, Class<T> type);
 
-	public GsonMapper(Gson gson) {
-		this.gson = gson;
-	}
+	<T> T toSingle(String json, Class<T> type);
 
-	@Override
-	public <T> List<T> toList(String json, Class<T> type) {
-		return gson.fromJson(json,
-				ResolvableType.forClassWithGenerics(ArrayList.class, type).getType());
-	}
-
-	@Override
-	public <T> T toSingle(String json, Class<T> type) {
-		return gson.fromJson(json, type);
-	}
+	String toString(Object value);
 
 }

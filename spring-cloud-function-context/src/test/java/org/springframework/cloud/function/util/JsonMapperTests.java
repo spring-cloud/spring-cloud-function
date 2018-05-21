@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.web.util;
+package org.springframework.cloud.function.util;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +26,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import org.springframework.cloud.function.json.GsonMapper;
+import org.springframework.cloud.function.json.JacksonMapper;
+import org.springframework.cloud.function.json.JsonMapper;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -33,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 @RunWith(Parameterized.class)
-public class MapperTests {
+public class JsonMapperTests {
 
 	private JsonMapper mapper;
 
@@ -43,16 +47,18 @@ public class MapperTests {
 				new Object[] { new JacksonMapper(new ObjectMapper()) });
 	}
 
-	public MapperTests(JsonMapper mapper) {
+	public JsonMapperTests(JsonMapper mapper) {
 		this.mapper = mapper;
 	}
 
 	@Test
 	public void vanillaArray() {
-		List<Foo> list = mapper.toList("[{\"value\":\"foo\"}, {\"value\":\"foo\"}]",
+		String json = "[{\"value\":\"foo\"},{\"value\":\"foo\"}]";
+		List<Foo> list = mapper.toList(json,
 				Foo.class);
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0).getValue()).isEqualTo("foo");
+		assertThat(mapper.toString(list)).isEqualTo(json);
 	}
 
 	@Test
@@ -70,8 +76,10 @@ public class MapperTests {
 
 	@Test
 	public void vanillaObject() {
-		Foo foo = mapper.toSingle("{\"value\":\"foo\"}", Foo.class);
+		String json = "{\"value\":\"foo\"}";
+		Foo foo = mapper.toSingle(json, Foo.class);
 		assertThat(foo.getValue()).isEqualTo("foo");
+		assertThat(mapper.toString(foo)).isEqualTo(json);
 	}
 
 	@Test
