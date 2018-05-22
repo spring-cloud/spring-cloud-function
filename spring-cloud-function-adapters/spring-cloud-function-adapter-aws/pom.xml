@@ -31,6 +31,7 @@
 			<artifactId>spring-cloud-function-context</artifactId>
 		</dependency>
 		<dependency>
+			<!-- Spring Boot autoconfiguration needs this to be able to create a Jackson ObjectMapper -->
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 		</dependency>
