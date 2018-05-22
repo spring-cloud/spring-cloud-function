@@ -21,10 +21,18 @@
 		<wrapper.version>1.0.10.RELEASE</wrapper.version>
 		<spring-boot.version>1.5.12.RELEASE</spring-boot.version>
 		<docs.main>spring-cloud-function</docs.main>
+		<reactor-bom.version>Bismuth-SR9</reactor-bom.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>io.projectreactor</groupId>
+				<artifactId>reactor-bom</artifactId>
+				<version>${reactor-bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-function-dependencies</artifactId>
