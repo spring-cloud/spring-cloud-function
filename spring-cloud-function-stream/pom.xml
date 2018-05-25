@@ -14,10 +14,6 @@
 		<version>1.0.0.BUILD-SNAPSHOT</version>
 	</parent>
 
-	<properties>
-		<servlet-binder.version>1.0.0.BUILD-SNAPSHOT</servlet-binder.version>
-	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>io.projectreactor</groupId>
