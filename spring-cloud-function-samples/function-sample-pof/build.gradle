@@ -1,7 +1,7 @@
 buildscript {
 	ext {
-		springBootVersion = '1.5.11.RELEASE.BUILD-SNAPSHOT'
-		wrapperVersion = '1.0.10.BUILD-SNAPSHOT'
+		springBootVersion = '1.5.12.RELEASE'
+		wrapperVersion = '1.0.11.RELEASE'
 	}
 	repositories {
 		mavenLocal()
@@ -12,8 +12,6 @@ buildscript {
 	dependencies {
 		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-		// Remove this when Boot 1.5.11.RELEASE is out.
-		classpath "io.spring.gradle:dependency-management-plugin:1.0.4.BUILD-SNAPSHOT"
 	}
 }
 
@@ -24,7 +22,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'io.spring.sample'
-version = '1.0.0.BUILD-SNAPSHOT'
+version = '1.0.0.RC2'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -36,9 +34,9 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "1.0.0.BUILD-SNAPSHOT"
+	springCloudFunctionVersion = "1.0.0.RC2"
 }
-ext['reactor.version'] = "3.1.2.RELEASE"
+ext['reactor.version'] = "3.1.7.RELEASE"
 
 dependencyManagement {
      imports {

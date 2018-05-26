@@ -1,7 +1,7 @@
 buildscript {
 	ext {
-		springBootVersion = '1.5.11.RELEASE'
-		wrapperVersion = '1.0.10.RELEASE'
+		springBootVersion = '1.5.12.RELEASE'
+		wrapperVersion = '1.0.11.RELEASE'
 		shadowVersion = '2.0.1'
 	}
 	repositories {
@@ -26,7 +26,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'io.spring.sample'
-version = '1.0.0.BUILD-SNAPSHOT'
+version = '1.0.0.RC2'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -38,11 +38,11 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "1.0.0.BUILD-SNAPSHOT"
+	springCloudFunctionVersion = "1.0.0.RC2"
     awsLambdaEventsVersion = "1.2.1"
     awsLambdaCoreVersion = "1.1.0"
 }
-ext['reactor.version'] = "3.1.2.RELEASE"
+ext['reactor.version'] = "3.1.7.RELEASE"
 
 assemble.dependsOn = [shadowJar, bootRepackage]
 
