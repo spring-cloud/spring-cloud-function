@@ -14,5 +14,5 @@ while getopts ":s:f:c:" opt; do
     esac
 done
 
-java -noverify -XX:TieredStopAtLevel=1 -Xss256K -Xms16M -Xmx256M -XX:MaxMetaspaceSize=128M -jar ../spring-cloud-function-task/target/spring-cloud-function-task-1.0.0.RC2.jar\
+java -noverify -XX:TieredStopAtLevel=1 -Xss256K -Xms16M -Xmx256M -XX:MaxMetaspaceSize=128M -jar ../spring-cloud-function-task/target/spring-cloud-function-task-1.0.0.BUILD-SNAPSHOT.jar\
  --lambda.supplier=$SUPP --lambda.function=$FUNC --lambda.consumer=$CONS
