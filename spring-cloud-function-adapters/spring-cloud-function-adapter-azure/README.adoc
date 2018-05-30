@@ -47,4 +47,4 @@ The Azure tooling needs to find some JSON configuration files to tell it how to 
 ----
 
 == Sample Function
-Go to the link:../../spring-cloud-function-samples/function-sample-azure/README.adoc[function-sample-azure] to learn about how the sample works, and how to run and test it.
+Go to the link:../../spring-cloud-function-samples/function-sample-azure/[function-sample-azure] to learn about how the sample works, and how to run and test it.
