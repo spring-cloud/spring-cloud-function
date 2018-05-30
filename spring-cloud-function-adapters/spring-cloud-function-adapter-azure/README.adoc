@@ -3,7 +3,10 @@
 This project provides an adapter layer for a Spring Cloud Function application onto Azure.
 You can write an app with a single `@Bean` of type `Function` and it will be deployable in Azure if you get the JAR file laid out right.
 
-The adapter has a generic http request handler that you can use.
+This project provides an adapter layer for a Spring Cloud Function application onto Azure.
+You can write an app with a single `@Bean` of type `Function` and it will be deployable in Azure if you get the JAR file laid out right.
+
+The adapter has a generic HTTP request handler that you can use optionally.
 There is a `AzureSpringBootRequestHandler` which you must extend, and provide the input and output types as type parameters (enabling Azure to inspect the class and do the JSON conversions itself).
 
 If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name`.
@@ -71,3 +74,7 @@ The input type for the function in the Azure sample is a Foo with a single prope
   "value": "foobar"
 }
 ----
+
+== Sample Function
+
+Go to the link:../../spring-cloud-function-samples/function-sample-azure/[function-sample-azure] to learn about how the sample works, and how to run and test it.

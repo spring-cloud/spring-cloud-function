@@ -1,0 +1,32 @@
+You can run this sample locally, just like the other Spring Cloud Function samples:
+
+----
+mvn spring-boot:run
+----
+
+and `curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'`.
+
+To run locally on top of Azure Functions, and to deploy to your live Azure environment, you will need the Azure Functions Core Tools installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more details). 
+
+Run Azure Function locally:
+
+----
+mvn azure-functions:run
+----
+
+To deploy the function on your live Azure environment:
+
+----
+$ az login
+$ mvn azure-functions:deploy
+----
+
+On another terminal try this: `curl https://<azure-function-url-from-the-log>/api/uppercase -d '{"value": "hello foobar!"}'`. Please ensure that you use the right URL for the function above. Alternatively you can test the function in the Azure Dashboard UI (click on the function name, go to the right hand side and click "Test" and to the bottom right, "Run").
+
+The input type for the function in the Azure sample is a Foo with a single property called "value". So you need this to test it with something like below:
+
+----
+{
+  "value": "foobar"
+}
+----

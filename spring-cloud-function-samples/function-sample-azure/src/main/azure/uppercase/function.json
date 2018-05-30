@@ -8,7 +8,6 @@
 			"direction": "in",
 			"authLevel": "anonymous",
 			"methods": [
-				"get",
 				"post"
 			]
 		},
