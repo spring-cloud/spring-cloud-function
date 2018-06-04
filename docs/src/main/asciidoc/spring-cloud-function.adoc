@@ -110,13 +110,17 @@ NOTE: some binders will fail on startup if the message broker is not available a
 
 As well as being able to run as a standalone process, a Spring Cloud
 Function application can be adapted to run one of the existing
-servlerless platforms. In the project there are adapters for
+serverless platforms. In the project there are adapters for
 https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS
 Lambda],
 https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure],
 and
 https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache
-OpenWhisk]. The Oracle Fn platform has its own Spring Cloud Function adapter.
+OpenWhisk]. The https://github.com/fnproject/fn[Oracle Fn platform]
+has its own Spring Cloud Function adapter. And
+https://projectriff.io[Riff] supports Java functions and its
+https://github.com/projectriff/java-function-invoker[Java Function
+Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
 == Deploying a Packaged Function
 
