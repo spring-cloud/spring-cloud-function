@@ -117,69 +117,6 @@ one-per-jar. It&#8217;s up to the developer to choose. An app with multiple
 functions can be deployed multiple times in different "personalities",
 exposing different functions over different physical transports.</simpara>
 </chapter>
-<chapter xml:id="_dynamic_compilation">
-<title>Dynamic Compilation</title>
-<simpara>There is a sample app that uses the function compiler to create a
-function from a configuration property. The vanilla "function-sample"
-also has that feature. And there are some examples that you can run to
-see the compilation happening at run time. To run these examples,
-change into the <literal>scripts</literal> directory:</simpara>
-<screen>cd scripts</screen>
-<simpara>Also, start a RabbitMQ server locally (e.g. execute <literal>rabbitmq-server</literal>).</simpara>
-<section xml:id="_start_the_function_registry_service">
-<title>Start the Function Registry Service:</title>
-<screen>./function-registry.sh</screen>
-</section>
-<section xml:id="_register_a_function">
-<title>Register a Function:</title>
-<screen>./registerFunction.sh -n uppercase -f "f-&gt;f.map(s-&gt;s.toString().toUpperCase())"</screen>
-</section>
-<section xml:id="_run_a_rest_microservice_using_that_function">
-<title>Run a REST Microservice using that Function:</title>
-<screen>./web.sh -f uppercase -p 9000
-curl -H "Content-Type: text/plain" -H "Accept: text/plain" localhost:9000/uppercase -d foo</screen>
-</section>
-<section xml:id="_register_a_supplier">
-<title>Register a Supplier:</title>
-<screen>./registerSupplier.sh -n words -f "()-&gt;Flux.just(\"foo\",\"bar\")"</screen>
-</section>
-<section xml:id="_run_a_rest_microservice_using_that_supplier">
-<title>Run a REST Microservice using that Supplier:</title>
-<screen>./web.sh -s words -p 9001
-curl -H "Accept: application/json" localhost:9001/words</screen>
-</section>
-<section xml:id="_register_a_consumer">
-<title>Register a Consumer:</title>
-<screen>./registerConsumer.sh -n print -t String -f "System.out::println"</screen>
-</section>
-<section xml:id="_run_a_rest_microservice_using_that_consumer">
-<title>Run a REST Microservice using that Consumer:</title>
-<screen>./web.sh -c print -p 9002
-curl -X POST -H "Content-Type: text/plain" -d foo localhost:9002/print</screen>
-</section>
-<section xml:id="_run_stream_processing_microservices">
-<title>Run Stream Processing Microservices:</title>
-<simpara>First register a streaming words supplier:</simpara>
-<screen>./registerSupplier.sh -n wordstream -f "()-&gt;Flux.interval(Duration.ofMillis(1000)).map(i-&gt;\"message-\"+i)"</screen>
-<simpara>Then start the source (supplier), processor (function), and sink (consumer) apps
-(in reverse order):</simpara>
-<screen>./stream.sh -p 9103 -i uppercaseWords -c print
-./stream.sh -p 9102 -i words -f uppercase -o uppercaseWords
-./stream.sh -p 9101 -s wordstream -o words</screen>
-<simpara>The output will appear in the console of the sink app (one message per second, converted to uppercase):</simpara>
-<screen>MESSAGE-0
-MESSAGE-1
-MESSAGE-2
-MESSAGE-3
-MESSAGE-4
-MESSAGE-5
-MESSAGE-6
-MESSAGE-7
-MESSAGE-8
-MESSAGE-9
-...</screen>
-</section>
-</chapter>
 <chapter xml:id="_function_catalog_and_flexible_function_signatures">
 <title>Function Catalog and Flexible Function Signatures</title>
 <simpara>One of the main features of Spring Cloud Function is to adapt and
@@ -357,6 +294,53 @@ plain text and JSON.</simpara>
 <simpara>Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the <link xl:href="https://projectriff.io">Riff</link> Java function invoker uses this library).</simpara>
 <simpara>The standard entry point of the API is the Spring configuration annotation <literal>@EnableFunctionDeployer</literal>. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a <literal>function.location</literal> which is a URL or resource location for the archive containing the functions. It can optionally use a <literal>maven:</literal> prefix to locate the artifact via a dependency lookup (see <literal>FunctionProperties</literal> for complete details). A Spring Boot application is bootstrapped from the jar file, using the <literal>MANIFEST.MF</literal> to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application&#8217;s <literal>FunctionCatalog</literal>. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).</simpara>
 </chapter>
+<chapter xml:id="_dynamic_compilation">
+<title>Dynamic Compilation</title>
+<simpara>There is a sample app that uses the function compiler to create a
+function from a configuration property. The vanilla "function-sample"
+also has that feature. And there are some scripts that you can run to
+see the compilation happening at run time. To run these examples,
+change into the <literal>scripts</literal> directory:</simpara>
+<screen>cd scripts</screen>
+<simpara>Also, start a RabbitMQ server locally (e.g. execute <literal>rabbitmq-server</literal>).</simpara>
+<simpara>Start the Function Registry Service:</simpara>
+<screen>./function-registry.sh</screen>
+<simpara>Register a Function:</simpara>
+<screen>./registerFunction.sh -n uppercase -f "f-&gt;f.map(s-&gt;s.toString().toUpperCase())"</screen>
+<simpara>Run a REST Microservice using that Function:</simpara>
+<screen>./web.sh -f uppercase -p 9000
+curl -H "Content-Type: text/plain" -H "Accept: text/plain" localhost:9000/uppercase -d foo</screen>
+<simpara>Register a Supplier:</simpara>
+<screen>./registerSupplier.sh -n words -f "()-&gt;Flux.just(\"foo\",\"bar\")"</screen>
+<simpara>Run a REST Microservice using that Supplier:</simpara>
+<screen>./web.sh -s words -p 9001
+curl -H "Accept: application/json" localhost:9001/words</screen>
+<simpara>Register a Consumer:</simpara>
+<screen>./registerConsumer.sh -n print -t String -f "System.out::println"</screen>
+<simpara>Run a REST Microservice using that Consumer:</simpara>
+<screen>./web.sh -c print -p 9002
+curl -X POST -H "Content-Type: text/plain" -d foo localhost:9002/print</screen>
+<simpara>Run Stream Processing Microservices:</simpara>
+<simpara>First register a streaming words supplier:</simpara>
+<screen>./registerSupplier.sh -n wordstream -f "()-&gt;Flux.interval(Duration.ofMillis(1000)).map(i-&gt;\"message-\"+i)"</screen>
+<simpara>Then start the source (supplier), processor (function), and sink (consumer) apps
+(in reverse order):</simpara>
+<screen>./stream.sh -p 9103 -i uppercaseWords -c print
+./stream.sh -p 9102 -i words -f uppercase -o uppercaseWords
+./stream.sh -p 9101 -s wordstream -o words</screen>
+<simpara>The output will appear in the console of the sink app (one message per second, converted to uppercase):</simpara>
+<screen>MESSAGE-0
+MESSAGE-1
+MESSAGE-2
+MESSAGE-3
+MESSAGE-4
+MESSAGE-5
+MESSAGE-6
+MESSAGE-7
+MESSAGE-8
+MESSAGE-9
+...</screen>
+</chapter>
 <chapter xml:id="_serverless_platform_adapters">
 <title>Serverless Platform Adapters</title>
 <simpara>As well as being able to run as a standalone process, a Spring Cloud
@@ -394,6 +378,45 @@ Invoker</link> acts natively is an adapter for Spring Cloud Function jars.</simp
 <screen>{
   "value": "test"
 }</screen>
+</section>
+<section xml:id="_platfom_specific_features">
+<title>Platfom Specific Features</title>
+<section xml:id="_http_and_api_gateway">
+<title>HTTP and API Gateway</title>
+<simpara>AWS has some platform-specific data types, including batching of messages, which is much more efficient than processing each one individually. To make use of these types you can write a function that depends on those types. Or you can rely on Spring to extract the data from the AWS types and convert it to a Spring <literal>Message</literal>. To do this you tell AWS that the function is of a specific generic handler type (depending on the AWS service) and provide a bean of type <literal>Function&lt;Message&lt;S&gt;,Message&lt;T&gt;&gt;</literal>, where <literal>S</literal> and <literal>T</literal> are your business data types. If there is more than one bean of type <literal>Function</literal> you may also need to configure the Spring Boot property <literal>function.name</literal> to be the name of the target bean (e.g. use <literal>FUNCTION_NAME</literal> as an environment variable).</simpara>
+<simpara>The supported AWS services and generic handler types are listed below:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<tgroup cols="4">
+<colspec colname="col_1" colwidth="25*"/>
+<colspec colname="col_2" colwidth="25*"/>
+<colspec colname="col_3" colwidth="25*"/>
+<colspec colname="col_4" colwidth="25*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Service</entry>
+<entry align="left" valign="top">AWS Types</entry>
+<entry align="left" valign="top">Generic Handler</entry>
+<entry align="left" valign="top"></entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>API Gateway</simpara></entry>
+<entry align="left" valign="top"><simpara><literal>APIGatewayProxyRequestEvent</literal>, <literal>APIGatewayProxyResponseEvent</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>org.springframework.cloud.function.adapter.aws.SpringBootApiGatewayRequestHandler</literal></simpara></entry>
+<entry align="left" valign="top"></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>Kinesis</simpara></entry>
+<entry align="left" valign="top"><simpara>KinesisEvent</simpara></entry>
+<entry align="left" valign="top"><simpara>org.springframework.cloud.function.adapter.aws.SpringBootKinesisEventHandler</simpara></entry>
+<entry align="left" valign="top"></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+<simpara>For example, to deploy behind an API Gateway, use <literal>--handler org.springframework.cloud.function.adapter.aws.SpringBootApiGatewayRequestHandler</literal> in your AWS command line (in via the UI) and define a <literal>@Bean</literal> of type <literal>Function&lt;Message&lt;Foo&gt;,Message&lt;Bar&gt;&gt;</literal> where <literal>Foo</literal> and <literal>Bar</literal> are POJO types (the data will be marshalled and unmarshalled by AWS using Jackson).</simpara>
+</section>
 </section>
 </section>
 <section xml:id="_azure_functions">
