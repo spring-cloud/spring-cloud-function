@@ -23,6 +23,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<functionAppName>function-sample-azure</functionAppName>
 		<functionAppRegion>westus</functionAppRegion>
+		<functionResourceGroup>java-function-group</functionResourceGroup>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
 		<start-class>example.Config</start-class>
 	</properties>
@@ -35,12 +36,6 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-function-web</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.microsoft.azure</groupId>
-			<artifactId>azure-functions-java-core</artifactId>
-			<version>1.0.0-beta-3</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -91,7 +86,7 @@
 				<groupId>com.microsoft.azure</groupId>
 				<artifactId>azure-functions-maven-plugin</artifactId>
 				<configuration>
-					<resourceGroup>java-functions-group</resourceGroup>
+					<resourceGroup>${functionResourceGroup}</resourceGroup>
 					<appName>${functionAppName}</appName>
 					<region>${functionAppRegion}</region>
 					<appSettings>
