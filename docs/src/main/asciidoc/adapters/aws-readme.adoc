@@ -1,0 +1,3 @@
+This project provides an adapter layer for a Spring Cloud Function application onto AWS Lambda. You can write an app with a single `@Bean` of type `Function`, `Consumer` or `Supplier` and it will be deployable in AWS if you get the JAR file laid out right. The best way to make it work is to include `spring-cloud-function-context` as a dependency, but not the higher level adapters (e.g. `spring-cloud-function-stream`).
+
+include::aws-intro.adoc[]

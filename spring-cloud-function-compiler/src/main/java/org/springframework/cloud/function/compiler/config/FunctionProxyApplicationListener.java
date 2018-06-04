@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -41,6 +42,8 @@ import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Mark Fisher
@@ -117,9 +120,7 @@ public class FunctionProxyApplicationListener
 
 	private void bind(ConfigurableApplicationContext context) {
 		ConfigurationPropertiesBindingPostProcessor post = new ConfigurationPropertiesBindingPostProcessor();
-		post.setBeanFactory(new DefaultListableBeanFactory());
-		post.setEnvironment(context.getEnvironment());
-		post.setApplicationContext(new StaticApplicationContext());
+		maybeSetBeanFactory(context, post);
 		try {
 			post.afterPropertiesSet();
 		}
@@ -127,6 +128,23 @@ public class FunctionProxyApplicationListener
 			throw new IllegalStateException("Cannot bind properties", e);
 		}
 		post.postProcessBeforeInitialization(this, getClass().getName());
+	}
+
+	private void maybeSetBeanFactory(ConfigurableApplicationContext context,
+			ConfigurationPropertiesBindingPostProcessor post) {
+		StaticApplicationContext other = new StaticApplicationContext();
+		other.setEnvironment(context.getEnvironment());
+		if (ReflectionUtils.findMethod(ConfigurationPropertiesBindingPostProcessor.class,
+				"setBeanFactory", BeanFactory.class) != null) {
+			post.setBeanFactory(new DefaultListableBeanFactory());
+			post.setEnvironment(context.getEnvironment());
+		}
+		else {
+			String name = "org.springframework.boot.context.properties.ConfigurationBeanFactoryMetadata";
+			other.registerSingleton(name, ClassUtils.resolveClassName(name, null));
+			other.setParent(context);
+		}
+		post.setApplicationContext(other);
 	}
 
 	private void registerByteCodeLoadingProxy(String name, String type, Resource resource,

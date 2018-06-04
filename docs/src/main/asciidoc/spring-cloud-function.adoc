@@ -106,21 +106,128 @@ An incoming message is routed to a function (or consumer). If there is only one,
 
 NOTE: some binders will fail on startup if the message broker is not available and the function catalog contains suppliers that immediately produce messages when accessed. You can switch off the automatic publishing from suppliers on startup using the `spring.cloud.function.strean.supplier.enabled=false` flag.
 
+== Deploying a Packaged Function
+
+Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the https://projectriff.io[Riff] Java function invoker uses this library).
+
+The standard entry point of the API is the Spring configuration annotation `@EnableFunctionDeployer`. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a `function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).
+
+== Dynamic Compilation
+
+There is a sample app that uses the function compiler to create a
+function from a configuration property. The vanilla "function-sample"
+also has that feature. And there are some scripts that you can run to
+see the compilation happening at run time. To run these examples,
+change into the `scripts` directory:
+
+----
+cd scripts
+----
+
+Also, start a RabbitMQ server locally (e.g. execute `rabbitmq-server`).
+
+Start the Function Registry Service:
+
+----
+./function-registry.sh
+----
+
+Register a Function:
+
+----
+./registerFunction.sh -n uppercase -f "f->f.map(s->s.toString().toUpperCase())"
+----
+
+Run a REST Microservice using that Function:
+
+----
+./web.sh -f uppercase -p 9000
+curl -H "Content-Type: text/plain" -H "Accept: text/plain" localhost:9000/uppercase -d foo
+----
+
+Register a Supplier:
+
+----
+./registerSupplier.sh -n words -f "()->Flux.just(\"foo\",\"bar\")"
+----
+
+Run a REST Microservice using that Supplier:
+
+----
+./web.sh -s words -p 9001
+curl -H "Accept: application/json" localhost:9001/words
+----
+
+Register a Consumer:
+
+----
+./registerConsumer.sh -n print -t String -f "System.out::println"
+----
+
+Run a REST Microservice using that Consumer:
+
+----
+./web.sh -c print -p 9002
+curl -X POST -H "Content-Type: text/plain" -d foo localhost:9002/print
+----
+
+Run Stream Processing Microservices:
+
+First register a streaming words supplier:
+
+----
+./registerSupplier.sh -n wordstream -f "()->Flux.interval(Duration.ofMillis(1000)).map(i->\"message-\"+i)"
+----
+
+Then start the source (supplier), processor (function), and sink (consumer) apps
+(in reverse order):
+
+----
+./stream.sh -p 9103 -i uppercaseWords -c print
+./stream.sh -p 9102 -i words -f uppercase -o uppercaseWords
+./stream.sh -p 9101 -s wordstream -o words
+----
+
+The output will appear in the console of the sink app (one message per second, converted to uppercase):
+
+----
+MESSAGE-0
+MESSAGE-1
+MESSAGE-2
+MESSAGE-3
+MESSAGE-4
+MESSAGE-5
+MESSAGE-6
+MESSAGE-7
+MESSAGE-8
+MESSAGE-9
+...
+----
+
 == Serverless Platform Adapters
 
 As well as being able to run as a standalone process, a Spring Cloud
 Function application can be adapted to run one of the existing
-servlerless platforms. In the project there are adapters for
+serverless platforms. In the project there are adapters for
 https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS
 Lambda],
 https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure],
 and
 https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache
-OpenWhisk]. The Oracle Fn platform has its own Spring Cloud Function adapter.
+OpenWhisk]. The https://github.com/fnproject/fn[Oracle Fn platform]
+has its own Spring Cloud Function adapter. And
+https://projectriff.io[Riff] supports Java functions and its
+https://github.com/projectriff/java-function-invoker[Java Function
+Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
-== Deploying a Packaged Function
+=== AWS Lambda
 
-Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the https://projectriff.io[Riff] Java function invoker uses this library).
+include::adapters/aws.adoc[leveloffset=+2]
 
-The standard entry point of the API is the Spring configuration annotation `@EnableFunctionDeployer`. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a `function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by default).
+=== Azure Functions
 
+include::adapters/azure.adoc[leveloffset=+2]
+
+=== Apache Openwhisk
+
+include::adapters/openwhisk.adoc[leveloffset=+2]

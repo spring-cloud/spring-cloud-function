@@ -1,0 +1,13 @@
+== Quick Start
+
+include::openwhisk-quick-start.adoc[]
+
+== Examples
+
+The following examples are built based on the details and explanations above, on how to deploy Spring Cloud Functions on to https://openwhisk.apache.org/[OpenWhisk]
+
+* https://github.com/redhat-developer-demos/ow-scf-fruiteason[Spring Cloud Function PoF Example]. This example shows how to use Spring Cloud Functions by defining simple Plain Old Function (POF)
+
+* https://github.com/redhat-developer-demos/ow-scf-greeter[Spring Cloud Function Application Example]. This example shows how to use Spring Cloud Functions with a complete Spring Boot Application that has functions defined by extending `java.util.function.Function` interfaces.
+
+The base docker images used for above examples is available https://github.com/redhat-developer-demos/openwhisk-scf-docker[here].

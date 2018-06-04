@@ -1,0 +1,4 @@
+The https://openwhisk.apache.org/[OpenWhisk] adapter is in the form of an executable jar that can be used in a a docker image to be deployed to Openwhisk. The platform works in request-response mode, listening on port 8080 on a specific endpoint, so the adapter is a simple Spring MVC application.
+
+== Quick Start
+include::openwhisk-quick-start.adoc[]

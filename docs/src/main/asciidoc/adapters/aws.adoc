@@ -1,0 +1,23 @@
+The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.
+
+== Introduction
+
+include::aws-intro.adoc[]
+
+== Platfom Specific Features
+
+=== HTTP and API Gateway
+
+AWS has some platform-specific data types, including batching of messages, which is much more efficient than processing each one individually. To make use of these types you can write a function that depends on those types. Or you can rely on Spring to extract the data from the AWS types and convert it to a Spring `Message`. To do this you tell AWS that the function is of a specific generic handler type (depending on the AWS service) and provide a bean of type `Function<Message<S>,Message<T>>`, where `S` and `T` are your business data types. If there is more than one bean of type `Function` you may also need to configure the Spring Boot property `function.name` to be the name of the target bean (e.g. use `FUNCTION_NAME` as an environment variable).
+
+The supported AWS services and generic handler types are listed below:
+
+|===
+| Service     | AWS Types | Generic Handler |
+
+| API Gateway | `APIGatewayProxyRequestEvent`, `APIGatewayProxyResponseEvent` | `org.springframework.cloud.function.adapter.aws.SpringBootApiGatewayRequestHandler` |
+| Kinesis     | KinesisEvent | org.springframework.cloud.function.adapter.aws.SpringBootKinesisEventHandler |
+|===
+
+
+For example, to deploy behind an API Gateway, use `--handler org.springframework.cloud.function.adapter.aws.SpringBootApiGatewayRequestHandler` in your AWS command line (in via the UI) and define a `@Bean` of type `Function<Message<Foo>,Message<Bar>>` where `Foo` and `Bar` are POJO types (the data will be marshalled and unmarshalled by AWS using Jackson).
