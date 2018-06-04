@@ -106,6 +106,12 @@ An incoming message is routed to a function (or consumer). If there is only one,
 
 NOTE: some binders will fail on startup if the message broker is not available and the function catalog contains suppliers that immediately produce messages when accessed. You can switch off the automatic publishing from suppliers on startup using the `spring.cloud.function.strean.supplier.enabled=false` flag.
 
+== Deploying a Packaged Function
+
+Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the https://projectriff.io[Riff] Java function invoker uses this library).
+
+The standard entry point of the API is the Spring configuration annotation `@EnableFunctionDeployer`. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a `function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).
+
 == Serverless Platform Adapters
 
 As well as being able to run as a standalone process, a Spring Cloud
@@ -122,9 +128,14 @@ https://projectriff.io[Riff] supports Java functions and its
 https://github.com/projectriff/java-function-invoker[Java Function
 Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
-== Deploying a Packaged Function
+=== AWS Lambda
 
-Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the https://projectriff.io[Riff] Java function invoker uses this library).
+include::adapters/aws.adoc[leveloffset=+2]
 
-The standard entry point of the API is the Spring configuration annotation `@EnableFunctionDeployer`. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a `function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by default).
+=== Azure Functions
 
+include::adapters/azure.adoc[leveloffset=+2]
+
+=== Apache Openwhisk
+
+include::adapters/openwhisk.adoc[leveloffset=+2]

@@ -1,0 +1,5 @@
+The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.
+
+== Introduction
+
+include::aws-intro.adoc[]
