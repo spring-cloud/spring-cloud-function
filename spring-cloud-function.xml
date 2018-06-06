@@ -422,7 +422,9 @@ Invoker</link> acts natively is an adapter for Spring Cloud Function jars.</simp
 <section xml:id="_azure_functions">
 <title>Azure Functions</title>
 <simpara>The <link xl:href="https://azure.microsoft.com">Azure</link> adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but invasive programming model, involving annotations in user code that are specific to the platform. The Spring Cloud Function Azure adapter trades the convenience of these annotations for portability of the function implementations. Instead of using the annotations you have to write some JSON by hand (at least for now) to guide the platform to call the right methods in the adapter.</simpara>
-<simpara>The adapter has a generic http request handler that you can use.
+<simpara>This project provides an adapter layer for a Spring Cloud Function application onto Azure.
+You can write an app with a single <literal>@Bean</literal> of type <literal>Function</literal> and it will be deployable in Azure if you get the JAR file laid out right.</simpara>
+<simpara>The adapter has a generic HTTP request handler that you can use optionally.
 There is a <literal>AzureSpringBootRequestHandler</literal> which you must extend, and provide the input and output types as type parameters (enabling Azure to inspect the class and do the JSON conversions itself).</simpara>
 <simpara>If your app has more than one <literal>@Bean</literal> of type <literal>Function</literal> etc. then you can choose the one to use by configuring <literal>function.name</literal>.
 The functions are extracted from the Spring Cloud <literal>FunctionCatalog</literal>.</simpara>
