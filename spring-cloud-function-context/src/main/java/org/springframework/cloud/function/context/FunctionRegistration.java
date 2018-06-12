@@ -24,6 +24,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.util.Assert;
+
 import reactor.core.publisher.Flux;
 
 /**
@@ -42,6 +44,7 @@ public class FunctionRegistration<T> {
 	private FunctionType type;
 
 	public FunctionRegistration(T target) {
+		Assert.notNull(target, "'target' must not be null");
 		this.target = target;
 	}
 
