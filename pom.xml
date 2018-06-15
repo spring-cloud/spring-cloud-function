@@ -4,7 +4,7 @@
 
 	<artifactId>spring-cloud-function-parent</artifactId>
 	<name>Spring Cloud Function Parent</name>
-	<version>1.0.0.BUILD-SNAPSHOT</version>
+	<version>1.0.0.RELEASE</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -16,12 +16,12 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-cloud-stream.version>Ditmars.SR3</spring-cloud-stream.version>
-		<spring-cloud-task.version>1.1.2.RELEASE</spring-cloud-task.version>
-		<wrapper.version>1.0.10.RELEASE</wrapper.version>
-		<spring-boot.version>1.5.12.RELEASE</spring-boot.version>
+		<spring-cloud-stream.version>Ditmars.SR4</spring-cloud-stream.version>
+		<spring-cloud-task.version>1.2.2.RELEASE</spring-cloud-task.version>
+		<wrapper.version>1.0.11.RELEASE</wrapper.version>
+		<spring-boot.version>1.5.13.RELEASE</spring-boot.version>
 		<docs.main>spring-cloud-function</docs.main>
-		<reactor-bom.version>Bismuth-SR9</reactor-bom.version>
+		<reactor-bom.version>Bismuth-SR10</reactor-bom.version>
 	</properties>
 
 	<dependencyManagement>
