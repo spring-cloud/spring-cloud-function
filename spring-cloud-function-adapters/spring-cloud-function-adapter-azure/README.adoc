@@ -24,7 +24,7 @@ The Azure tooling needs to find some JSON configuration files to tell it how to 
 
 ```
 {
-  "scriptFile" : "../function-sample-azure-1.0.0.RELEASE-azure.jar",
+  "scriptFile" : "../function-sample-azure-1.0.1.BUILD-SNAPSHOT-azure.jar",
   "entryPoint" : "example.FooHandler.execute",
   "bindings" : [ {
     "type" : "httpTrigger",
