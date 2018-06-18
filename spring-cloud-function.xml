@@ -373,7 +373,7 @@ Invoker</link> acts natively is an adapter for Spring Cloud Function jars.</simp
 <simpara>Build the sample under <literal>spring-cloud-function-samples/function-sample-aws</literal> and upload the <literal>-aws</literal> jar file to Lambda. The handler can be <literal>example.Handler</literal> or <literal>org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler</literal> (FQN of the class, <emphasis>not</emphasis> a method reference, although Lambda does accept method references).</simpara>
 <screen>./mvnw -U clean package</screen>
 <simpara>Using the AWS command line tools it looks like this:</simpara>
-<screen>aws lambda create-function --function-name Uppercase --role arn:aws:iam::[USERID]:role/service-role/[ROLE] --zip-file fileb://function-sample-aws/target/function-sample-aws-1.0.0.BUILD-SNAPSHOT-aws.jar --handler org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler --description "Spring Cloud Function Adapter Example" --runtime java8 --region us-east-1 --timeout 30 --memory-size 1024 --publish</screen>
+<screen>aws lambda create-function --function-name Uppercase --role arn:aws:iam::[USERID]:role/service-role/[ROLE] --zip-file fileb://function-sample-aws/target/function-sample-aws-1.0.1.BUILD-SNAPSHOT-aws.jar --handler org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler --description "Spring Cloud Function Adapter Example" --runtime java8 --region us-east-1 --timeout 30 --memory-size 1024 --publish</screen>
 <simpara>The input type for the function in the AWS sample is a Foo with a single property called "value". So you would need this to test it:</simpara>
 <screen>{
   "value": "test"
@@ -438,7 +438,7 @@ The sample app creates the shaded jar file, with an <literal>azure</literal> cla
 <title>JSON Configuration</title>
 <simpara>The Azure tooling needs to find some JSON configuration files to tell it how to deploy and integrate the function (e.g. which Java class to use as the entry point, and which triggers to use). Those files can be created with the Maven plugin for a non-Spring function, but the tooling doesn&#8217;t work yet with the adapter in its current form. There is an example <literal>function.json</literal> in the sample which hooks the function up as an HTTP endpoint:</simpara>
 <screen>{
-  "scriptFile" : "../function-sample-azure-1.0.0.BUILD-SNAPSHOT-azure.jar",
+  "scriptFile" : "../function-sample-azure-1.0.1.BUILD-SNAPSHOT-azure.jar",
   "entryPoint" : "example.FooHandler.execute",
   "bindings" : [ {
     "type" : "httpTrigger",
@@ -495,7 +495,7 @@ public class Uppercase implements Function&lt;String, String&gt; {
 <simpara>Create a <literal>function.properties</literal> file that provides its Maven coordinates. For example:</simpara>
 <screen>dependencies.function: com.example:pof:0.0.1-SNAPSHOT</screen>
 <simpara>Copy the openwhisk runner JAR to the working directory (same directory as the properties file):</simpara>
-<screen>cp spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk/target/spring-cloud-function-adapter-openwhisk-1.0.0.BUILD-SNAPSHOT.jar runner.jar</screen>
+<screen>cp spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk/target/spring-cloud-function-adapter-openwhisk-1.0.1.BUILD-SNAPSHOT.jar runner.jar</screen>
 <simpara>Generate a m2 repo from the <literal>--thin.dryrun</literal> of the runner JAR with the above properties file:</simpara>
 <screen>java -jar -Dthin.root=m2 runner.jar --thin.name=function --thin.dryrun</screen>
 <simpara>Use the following Dockerfile:</simpara>
