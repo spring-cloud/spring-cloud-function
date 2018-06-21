@@ -20,11 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.MutablePropertyValues;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
+import org.springframework.boot.context.properties.ConfigurationBeanFactoryMetadata;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.cloud.function.compiler.ConsumerCompiler;
@@ -42,8 +42,6 @@ import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Mark Fisher
@@ -134,16 +132,8 @@ public class FunctionProxyApplicationListener
 			ConfigurationPropertiesBindingPostProcessor post) {
 		StaticApplicationContext other = new StaticApplicationContext();
 		other.setEnvironment(context.getEnvironment());
-		if (ReflectionUtils.findMethod(ConfigurationPropertiesBindingPostProcessor.class,
-				"setBeanFactory", BeanFactory.class) != null) {
-			post.setBeanFactory(new DefaultListableBeanFactory());
-			post.setEnvironment(context.getEnvironment());
-		}
-		else {
-			String name = "org.springframework.boot.context.properties.ConfigurationBeanFactoryMetadata";
-			other.registerSingleton(name, ClassUtils.resolveClassName(name, null));
-			other.setParent(context);
-		}
+		other.registerSingleton(ConfigurationBeanFactoryMetadata.class.getName(), ConfigurationBeanFactoryMetadata.class);
+		other.setParent(context);
 		post.setApplicationContext(other);
 	}
 

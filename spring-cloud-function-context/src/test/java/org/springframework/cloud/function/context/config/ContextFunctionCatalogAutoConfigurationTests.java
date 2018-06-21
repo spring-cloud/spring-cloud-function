@@ -526,7 +526,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	private void create(Class<?>[] types, String... props) {
-		context = new SpringApplicationBuilder((Object[]) types).properties(props).run();
+		context = new SpringApplicationBuilder((Class[]) types).properties(props).run();
 		catalog = context.getBean(FunctionCatalog.class);
 		inspector = context.getBean(FunctionInspector.class);
 	}
