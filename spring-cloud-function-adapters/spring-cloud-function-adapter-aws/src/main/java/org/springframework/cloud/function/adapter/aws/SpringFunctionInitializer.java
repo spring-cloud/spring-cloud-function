@@ -33,9 +33,12 @@ import org.reactivestreams.Publisher;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
@@ -87,8 +90,8 @@ public class SpringFunctionInitializer implements Closeable {
 			return;
 		}
 		logger.info("Initializing: " + configurationClass);
-		SpringApplicationBuilder builder = springApplication();
-		ConfigurableApplicationContext context = builder.web(false).run();
+		SpringApplication builder = springApplication();
+		ConfigurableApplicationContext context = builder.run();
 		context.getAutowireCapableBeanFactory().autowireBean(this);
 		String name = context.getEnvironment().getProperty("function.name");
 		boolean defaultName = false;
@@ -121,17 +124,27 @@ public class SpringFunctionInitializer implements Closeable {
 
 	}
 
-	private SpringApplicationBuilder springApplication() {
-		if (ClassUtils.hasConstructor(SpringApplicationBuilder.class, Object[].class)) {
-			SpringApplicationBuilder builder = new SpringApplicationBuilder(
-					configurationClass);
-			return builder;
+	private SpringApplication springApplication() {
+		ApplicationContextInitializer<?> initializer = null;
+		Class<?> sourceClass = configurationClass;
+		if (ApplicationContextInitializer.class.isAssignableFrom(sourceClass)) {
+			initializer = BeanUtils.instantiateClass(configurationClass, ApplicationContextInitializer.class);
+			sourceClass = Object.class;
 		}
-		// Forward compatibility with Spring Boot 2.0 via reflection
-		return BeanUtils.instantiateClass(
-				ClassUtils.getConstructorIfAvailable(SpringApplicationBuilder.class,
-						Class[].class),
-				new Object[] { new Class<?>[] { configurationClass } });
+		SpringApplication application;
+		if (initializer!=null) {
+			application = new SpringApplication(sourceClass) {
+				@Override
+				protected void load(ApplicationContext context, Object[] sources) {
+				}
+			};
+			application.addInitializers(initializer);
+			application.setDefaultProperties(Collections.singletonMap("spring.functional.enabled", "true"));
+		} else {
+			application = new SpringApplication(sourceClass);
+		}
+		application.setWebApplicationType(WebApplicationType.NONE);
+		return application;
 	}
 
 	protected Class<?> getInputType() {

@@ -53,12 +53,28 @@ public class FunctionType {
 	final private boolean message;
 
 	public FunctionType(Type type) {
-		this.type = type;
+		this.type = functionType(type);
 		this.inputWrapper = findType(ParamType.INPUT_WRAPPER);
 		this.outputWrapper = findType(ParamType.OUTPUT_WRAPPER);
 		this.inputType = findType(ParamType.INPUT);
 		this.outputType = findType(ParamType.OUTPUT);
 		this.message = messageType();
+	}
+
+	private Type functionType(Type type) {
+		if (Supplier.class.isAssignableFrom(extractClass(type, ParamType.OUTPUT))) {
+			Type product = extractType(type, ParamType.OUTPUT, 0);
+			Class<?> output = extractClass(product, ParamType.OUTPUT);
+			if (FunctionRegistration.class.isAssignableFrom(output)) {
+				type = extractType(product, ParamType.OUTPUT, 0);
+			}
+			else if (Function.class.isAssignableFrom(output)
+					|| Supplier.class.isAssignableFrom(output)
+					|| Consumer.class.isAssignableFrom(output)) {
+				type = product;
+			}
+		}
+		return type;
 	}
 
 	private boolean messageType() {
@@ -122,6 +138,16 @@ public class FunctionType {
 	public static FunctionType from(Class<?> input) {
 		return new FunctionType(ResolvableType
 				.forClassWithGenerics(Function.class, input, Object.class).getType());
+	}
+
+	public static FunctionType supplier(Class<?> input) {
+		return new FunctionType(
+				ResolvableType.forClassWithGenerics(Supplier.class, input).getType());
+	}
+
+	public static FunctionType consumer(Class<?> input) {
+		return new FunctionType(
+				ResolvableType.forClassWithGenerics(Consumer.class, input).getType());
 	}
 
 	public FunctionType to(Class<?> output) {
@@ -245,6 +271,11 @@ public class FunctionType {
 	private Class<?> findType(ParamType paramType) {
 		int index = paramType.isOutput() ? 1 : 0;
 		Type type = this.type;
+		if (Supplier.class.isAssignableFrom(extractClass(this.type, null))) {
+			if (paramType.isInput()) {
+				return Void.class;
+			}
+		}
 		boolean found = false;
 		while (!found && type instanceof Class && type != Object.class) {
 			Class<?> clz = (Class<?>) type;
@@ -317,6 +348,15 @@ public class FunctionType {
 			}
 		}
 		else {
+			if (type != null) {
+				Type[] interfaces = ((Class<?>) type).getGenericInterfaces();
+				for (Type ifc : interfaces) {
+					Type value = extractType(ifc, paramType, index);
+					if (value != Object.class) {
+						return value;
+					}
+				}
+			}
 			param = Object.class;
 		}
 		return param;

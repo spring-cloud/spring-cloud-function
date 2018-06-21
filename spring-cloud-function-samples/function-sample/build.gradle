@@ -1,7 +1,7 @@
 buildscript {
 	ext {
-		springBootVersion = '1.5.12.RELEASE'
-		wrapperVersion = '1.0.11.RELEASE'
+		springBootVersion = '2.0.3.RELEASE'
+		wrapperVersion = '1.0.12.RELEASE'
 	}
 	repositories {
 		mavenLocal()
@@ -36,7 +36,6 @@ repositories {
 ext {
 	springCloudFunctionVersion = "2.0.0.BUILD-SNAPSHOT"
 }
-ext['reactor.version'] = "3.1.7.RELEASE"
 
 dependencyManagement {
      imports {

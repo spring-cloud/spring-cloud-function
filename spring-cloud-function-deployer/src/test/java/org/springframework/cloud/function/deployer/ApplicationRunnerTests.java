@@ -18,8 +18,10 @@ package org.springframework.cloud.function.deployer;
 
 import org.junit.Test;
 
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.test.Doubler;
 import org.springframework.cloud.function.test.FunctionApp;
+import org.springframework.cloud.function.test.FunctionRegistrar;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +37,17 @@ public class ApplicationRunnerTests {
 		runner.run("--spring.main.webEnvironment=false");
 		assertThat(runner.containsBean(Doubler.class.getName())).isTrue();
 		assertThat(runner.getBean(Doubler.class.getName())).isNotNull();
+		runner.close();
+	}
+
+	@Test
+	public void functional() {
+		ApplicationRunner runner = new ApplicationRunner(getClass().getClassLoader(),
+				FunctionRegistrar.class.getName());
+		runner.run();
+		assertThat(runner.containsBean(Doubler.class.getName())).isTrue();
+		assertThat(runner.getBean(Doubler.class.getName())).isNotNull();
+		assertThat(runner.getBean(FunctionCatalog.class.getName())).isNotNull();
 		runner.close();
 	}
 }

@@ -23,10 +23,17 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import org.springframework.cloud.function.core.FluxConsumer;
+import org.springframework.cloud.function.core.FluxFunction;
+import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.util.Assert;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -86,6 +93,11 @@ public class FunctionRegistration<T> {
 		return this;
 	}
 
+	public FunctionRegistration<T> type(FunctionType type) {
+		this.type = type;
+		return this;
+	}
+
 	/**
 	 * Allows to override the target of this registration with a new target that typically
 	 * wraps the original target. This typically happens when original target is wrapped
@@ -109,6 +121,37 @@ public class FunctionRegistration<T> {
 
 	public FunctionRegistration<T> names(String... names) {
 		return this.names(Arrays.asList(names));
+	}
+
+	public <S> FunctionRegistration<S> wrap() {
+		if (type == null || type.isWrapper()) {
+			@SuppressWarnings("unchecked")
+			FunctionRegistration<S> value = (FunctionRegistration<S>) this;
+			return value;
+		}
+		@SuppressWarnings("unchecked")
+		S target = (S) this.target;
+		FunctionRegistration<S> result = new FunctionRegistration<S>(target);
+		result.type(this.type.getType());
+		if (target instanceof Function) {
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			S wrapped = (S) new FluxFunction((Function) target);
+			target = wrapped;
+			result.type = result.type.wrap(Flux.class);
+		}
+		else if (target instanceof Supplier) {
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			S wrapped = (S) new FluxSupplier((Supplier) target);
+			target = wrapped;
+			result.type = result.type.wrap(Flux.class);
+		}
+		else if (target instanceof Consumer) {
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			S wrapped = (S) new FluxConsumer((Consumer) target);
+			target = wrapped;
+			result.type = result.type.wrap(Flux.class, Mono.class);
+		}
+		return result.target(target).names(this.names).properties(this.properties);
 	}
 
 }

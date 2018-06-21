@@ -173,7 +173,7 @@ public class ContextFunctionPostProcessorTests {
 				((URLClassLoader) getClass().getClassLoader()).getURLs(),
 				getClass().getClassLoader().getParent());
 		return BeanUtils
-				.instantiate(ClassUtils.resolveClassName(type.getName(), classLoader));
+				.instantiateClass(ClassUtils.resolveClassName(type.getName(), classLoader));
 	}
 
 	public static class Foos implements Function<Integer, String> {

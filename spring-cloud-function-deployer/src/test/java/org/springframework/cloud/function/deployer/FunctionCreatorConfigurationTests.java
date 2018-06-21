@@ -75,6 +75,38 @@ public abstract class FunctionCreatorConfigurationTests {
 	}
 
 	@EnableAutoConfiguration
+	@TestPropertySource(properties = {
+			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
+			"function.bean=myDoubler",
+			"function.main=org.springframework.cloud.function.test.FunctionApp"})
+	public static class SingleFunctionWithMainTests
+			extends FunctionCreatorConfigurationTests {
+
+		@Test
+		public void testDouble() {
+			Function<Flux<Integer>, Flux<Integer>> function = catalog
+					.lookup(Function.class, "function0");
+			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
+		}
+	}
+
+	@EnableAutoConfiguration
+	@TestPropertySource(properties = {
+			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
+			"function.bean=myDoubler",
+			"function.main=org.springframework.cloud.function.test.FunctionRegistrar"})
+	public static class SingleFunctionWithRegistrarTests
+			extends FunctionCreatorConfigurationTests {
+
+		@Test
+		public void testDouble() {
+			Function<Flux<Integer>, Flux<Integer>> function = catalog
+					.lookup(Function.class, "function0");
+			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
+		}
+	}
+
+	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.location=app:classpath",
 			"function.bean=org.springframework.cloud.function.test.SpringDoubler" })
 	public static class ManualSpringFunctionTests

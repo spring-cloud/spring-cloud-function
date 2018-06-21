@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.context.ApplicationEventPublisher;
@@ -40,11 +39,12 @@ import org.springframework.util.Assert;
  * @author Oleg Zhurakousky
  */
 public class InMemoryFunctionCatalog
-		implements FunctionRegistry, ApplicationEventPublisherAware {
+		implements FunctionRegistry, FunctionInspector, ApplicationEventPublisherAware {
 
 	private final Map<Class<?>, Map<String, Object>> functions;
 
-	@Autowired(required = false)
+	private final Map<Object, FunctionRegistration<?>> registrations;
+
 	private ApplicationEventPublisher publisher;
 
 	public InMemoryFunctionCatalog() {
@@ -54,7 +54,13 @@ public class InMemoryFunctionCatalog
 	public InMemoryFunctionCatalog(Set<FunctionRegistration<?>> registrations) {
 		Assert.notNull(registrations, "'registrations' must not be null");
 		this.functions = new HashMap<>();
+		this.registrations = new HashMap<>();
 		registrations.stream().forEach(reg -> register(reg));
+	}
+
+	@Override
+	public FunctionRegistration<?> getRegistration(Object function) {
+		return this.registrations.get(function);
 	}
 
 	@Override
@@ -80,6 +86,15 @@ public class InMemoryFunctionCatalog
 			type = Object.class;
 			event = new FunctionRegistrationEvent(this, Object.class,
 					registration.getNames());
+		}
+		registrations.put(registration.getTarget(), registration);
+		FunctionRegistration<T> wrapped = registration.wrap();
+		if (wrapped != registration) {
+			registration = wrapped;
+			registrations.put(wrapped.getTarget(), wrapped);
+			if (type == Consumer.class) {
+				type = Function.class;
+			}
 		}
 		Map<String, Object> map = functions.computeIfAbsent(type, key -> new HashMap<>());
 		for (String name : registration.getNames()) {

@@ -18,10 +18,13 @@ package org.springframework.cloud.function.deployer;
 
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
@@ -55,10 +58,20 @@ public class ContextRunner {
 							StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
 							new MapPropertySource("appDeployer", properties));
 					running = true;
-					SpringApplicationBuilder builder = builder(
-							ClassUtils.resolveClassName(source, null));
-					context = builder.environment(environment).registerShutdownHook(false)
-							.run(args);
+					Class<?> sourceClass = ClassUtils.resolveClassName(source, null);
+					ApplicationContextInitializer<?> initializer = null;
+					if (ApplicationContextInitializer.class.isAssignableFrom(sourceClass)) {
+						initializer = BeanUtils.instantiateClass(sourceClass, ApplicationContextInitializer.class);
+						sourceClass = Dummy.class;
+					}
+					SpringApplication builder = builder(sourceClass);
+					if (initializer!=null) {
+						builder.addInitializers(initializer);
+						builder.setDefaultProperties(Collections.singletonMap("spring.functional.enabled", "true"));
+					}
+					builder.setEnvironment(environment);
+					builder.setRegisterShutdownHook(false);
+					context = builder.run(args);
 				}
 				catch (Throwable ex) {
 					error = ex;
@@ -117,20 +130,20 @@ public class ContextRunner {
 		return this.error;
 	}
 
-	public static SpringApplicationBuilder builder(Class<?> type) {
-		// Defensive reflective builder to work with Boot 1.5 and 2.0
-		if (ClassUtils.hasConstructor(SpringApplicationBuilder.class, Class[].class)) {
-			return BeanUtils
-					.instantiateClass(
-							ClassUtils.getConstructorIfAvailable(
-									SpringApplicationBuilder.class, Class[].class),
-							(Object) new Class<?>[] { type });
+	private static SpringApplication builder(Class<?> type) {
+		if (type==Dummy.class) {
+			SpringApplication application = new SpringApplication() {
+				@Override
+				protected void load(ApplicationContext context, Object[] sources) {
+				}
+			};
+			// Boot doesn't allow null sources
+			application.setSources(Collections.singleton(Dummy.class.getName()));
+			return application;
 		}
-		return BeanUtils
-				.instantiateClass(
-						ClassUtils.getConstructorIfAvailable(
-								SpringApplicationBuilder.class, Object[].class),
-						(Object) new Object[] { type.getName() });
+		return new SpringApplication(type);
 	}
+	
+	private class Dummy {}
 
 }

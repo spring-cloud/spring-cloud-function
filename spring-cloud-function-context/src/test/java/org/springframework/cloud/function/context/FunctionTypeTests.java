@@ -49,6 +49,26 @@ public class FunctionTypeTests {
 	}
 
 	@Test
+	public void supplierOfRegistration() {
+		FunctionType function = new FunctionType(SupplierOfRegistrationOfIntegerToString.class);
+		assertThat(function.getInputType()).isEqualTo(Integer.class);
+		assertThat(function.getOutputType()).isEqualTo(String.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Integer.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(String.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
+	public void supplier() {
+		FunctionType function = new FunctionType(SupplierOfIntegerToString.class);
+		assertThat(function.getInputType()).isEqualTo(Integer.class);
+		assertThat(function.getOutputType()).isEqualTo(String.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Integer.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(String.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
 	public void genericFunction() {
 		FunctionType function = new FunctionType(StringToMap.class);
 		assertThat(function.getInputType()).isEqualTo(String.class);
@@ -126,6 +146,36 @@ public class FunctionTypeTests {
 	}
 
 	@Test
+	public void pojoSupplierFrom() {
+		FunctionType function = new FunctionType(Supplier.class).to(Foo.class);
+		assertThat(function.getInputType()).isEqualTo(Void.class);
+		assertThat(function.getOutputType()).isEqualTo(Foo.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Void.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(Foo.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
+	public void pojoSupplier() {
+		FunctionType function = FunctionType.supplier(Foo.class);
+		assertThat(function.getInputType()).isEqualTo(Void.class);
+		assertThat(function.getOutputType()).isEqualTo(Foo.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Void.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(Foo.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
+	public void pojoConsumer() {
+		FunctionType function = FunctionType.consumer(Foo.class);
+		assertThat(function.getOutputType()).isEqualTo(Void.class);
+		assertThat(function.getInputType()).isEqualTo(Foo.class);
+		assertThat(function.getOutputWrapper()).isEqualTo(Void.class);
+		assertThat(function.getInputWrapper()).isEqualTo(Foo.class);
+		assertThat(function.isMessage()).isEqualTo(false);
+	}
+
+	@Test
 	public void plainFunctionFromApi() {
 		FunctionType function = FunctionType.from(Integer.class).to(String.class);
 		assertThat(function.getInputType()).isEqualTo(Integer.class);
@@ -197,6 +247,20 @@ public class FunctionTypeTests {
 		assertThat(function).isSameAs(function.wrap(Object.class));
 	}
 
+	private static class SupplierOfRegistrationOfIntegerToString implements Supplier<FunctionRegistration<Function<Integer, String>>> {
+		@Override
+		public FunctionRegistration<Function<Integer, String>> get() {
+			return new FunctionRegistration<Function<Integer,String>>(new IntegerToString());
+		}
+	}
+	
+	private static class SupplierOfIntegerToString implements Supplier<Function<Integer, String>> {
+		@Override
+		public Function<Integer, String> get() {
+			return new IntegerToString();
+		}
+	}
+	
 	private static class IntegerToString implements Function<Integer, String> {
 		@Override
 		public String apply(Integer t) {

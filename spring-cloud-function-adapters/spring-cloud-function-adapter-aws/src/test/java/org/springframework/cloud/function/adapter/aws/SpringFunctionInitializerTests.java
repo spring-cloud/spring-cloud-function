@@ -24,10 +24,14 @@ import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
 
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.support.GenericApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,6 +70,14 @@ public class SpringFunctionInitializerTests {
 	}
 
 	@Test
+	public void functionRegistrar() {
+		initializer = new SpringFunctionInitializer(FunctionRegistrar.class);
+		initializer.initialize();
+		Flux<?> result = Flux.from(initializer.apply(Flux.just(new Foo())));
+		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
+	}
+
+	@Test
 	public void namedFunctionCatalog() {
 		initializer = new SpringFunctionInitializer(NamedFunctionConfig.class);
 		System.setProperty("function.name", "other");
@@ -95,6 +107,23 @@ public class SpringFunctionInitializerTests {
 		@Bean
 		public Function<Flux<Foo>, Flux<Bar>> function() {
 			return flux -> flux.map(foo -> new Bar());
+		}
+	}
+
+	protected static class FunctionRegistrar
+			implements ApplicationContextInitializer<GenericApplicationContext> {
+
+		public Function<Flux<Foo>, Flux<Bar>> function() {
+			return flux -> flux.map(foo -> new Bar());
+		}
+
+		@Override
+		public void initialize(GenericApplicationContext context) {
+			context.registerBean("function", FunctionRegistration.class,
+					() -> new FunctionRegistration<Function<Flux<Foo>, Flux<Bar>>>(
+							function()).name("function")
+									.type(FunctionType.from(Foo.class).to(Bar.class)
+											.wrap(Flux.class).getType()));
 		}
 	}
 
