@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.google.gson.Gson;
+
 import org.junit.After;
 import org.junit.Test;
 
@@ -45,7 +47,7 @@ import reactor.core.publisher.Mono;
  * @author Dave Syert
  *
  */
-public class ContextFunctionCatalogBeanRegistrarTests {
+public class ContextFunctionCatalogInitializerTests {
 
 	private GenericApplicationContext context;
 	private FunctionCatalog catalog;
@@ -67,7 +69,7 @@ public class ContextFunctionCatalogBeanRegistrarTests {
 		// TODO: support for function composition
 	}
 
-	@Test(expected=BeanCreationException.class)
+	@Test(expected = BeanCreationException.class)
 	public void missingType() {
 		create(MissingTypeConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
@@ -110,8 +112,8 @@ public class ContextFunctionCatalogBeanRegistrarTests {
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
 		assertThat(inspector.getRegistration(function)).isNotNull();
-		assertThat(inspector.getRegistration(function).getType())
-				.isEqualTo(FunctionType.from(String.class).to(String.class).wrap(Flux.class));
+		assertThat(inspector.getRegistration(function).getType()).isEqualTo(
+				FunctionType.from(String.class).to(String.class).wrap(Flux.class));
 	}
 
 	@Test
@@ -132,6 +134,14 @@ public class ContextFunctionCatalogBeanRegistrarTests {
 		assertThat(context.getBean(SimpleConfiguration.class).list).hasSize(2);
 	}
 
+	@Test
+	public void overrideGson() {
+		create(GsonConfiguration.class);
+		Gson user = context.getBean(GsonConfiguration.class).gson();
+		Gson bean = context.getBean(Gson.class);
+		assertThat(user).isSameAs(bean);
+	}
+
 	@SuppressWarnings("unchecked")
 	private void create(
 			Class<? extends ApplicationContextInitializer<GenericApplicationContext>> type,
@@ -146,7 +156,8 @@ public class ContextFunctionCatalogBeanRegistrarTests {
 		for (ApplicationContextInitializer<GenericApplicationContext> type : types) {
 			type.initialize(context);
 		}
-		new ContextFunctionCatalogBeanRegistrar().register(context);
+		new ContextFunctionCatalogInitializer.ContextFunctionCatalogBeanRegistrar(context)
+				.postProcessBeanDefinitionRegistry(context);
 		context.refresh();
 		catalog = context.getBean(FunctionCatalog.class);
 		inspector = context.getBean(FunctionInspector.class);
@@ -210,6 +221,24 @@ public class ContextFunctionCatalogBeanRegistrarTests {
 		public Consumer<String> consumer() {
 			return value -> list.add(value);
 		}
+	}
+
+	protected static class GsonConfiguration
+			implements ApplicationContextInitializer<GenericApplicationContext> {
+
+		private Gson gson = new Gson();
+
+		@Override
+		public void initialize(GenericApplicationContext context) {
+			context.registerBean("gson", Gson.class, this::gson);
+			context.registerBean(GsonConfiguration.class, () -> this);
+		}
+
+		@Bean
+		public Gson gson() {
+			return this.gson;
+		}
+
 	}
 
 	protected static class DependencyInjectionConfiguration
