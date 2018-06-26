@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -110,62 +111,37 @@ public class InMemoryFunctionCatalog
 
 	@PostConstruct
 	public void init() {
-		if (publisher != null) {
-			if (!functions.isEmpty()) {
-				for (Class<?> type : functions.keySet()) {
-					publisher.publishEvent(new FunctionRegistrationEvent(this, type,
-							functions.get(type).keySet()));
-				}
-			}
+		if (publisher != null && !functions.isEmpty()) {
+			functions.keySet()
+				.forEach(type -> publisher.publishEvent(new FunctionRegistrationEvent(this, type, functions.get(type).keySet())));
 		}
 	}
 
 	@PreDestroy
 	public void close() {
-		if (publisher != null) {
-			if (!functions.isEmpty()) {
-				for (Class<?> type : functions.keySet()) {
-					publisher.publishEvent(new FunctionUnregistrationEvent(this, type,
-							functions.get(type).keySet()));
-				}
-			}
+		if (publisher != null && !functions.isEmpty()) {
+			functions.keySet()
+				.forEach(type -> publisher.publishEvent(new FunctionUnregistrationEvent(this, type, functions.get(type).keySet())));
 		}
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public <T> T lookup(Class<?> type, String name) {
-		Map<String, Object> map = null;
-		for (Class<?> key : functions.keySet()) {
-			if (key != Object.class) {
-				if (key.isAssignableFrom(type)) {
-					map = functions.get(key);
-					break;
-				}
-			}
-		}
-		if (map == null) {
-			map = functions.get(Object.class);
-		}
-		@SuppressWarnings("unchecked")
-		T result = (T) map.get(name);
-		return result;
+		Map<String, Object> map = this.extractTypeMap(type);
+		return (T) map.get(name);
 	}
 
 	@Override
 	public Set<String> getNames(Class<?> type) {
-		Map<String, Object> map = null;
-		for (Class<?> key : functions.keySet()) {
-			if (key != Object.class) {
-				if (key.isAssignableFrom(type)) {
-					map = functions.get(key);
-					break;
-				}
-			}
-		}
-		if (map == null) {
-			map = functions.get(Object.class);
-		}
+		Map<String, Object> map = this.extractTypeMap(type);
 		return map == null ? Collections.emptySet() : map.keySet();
 	}
 
+	private Map<String, Object> extractTypeMap(Class<?> type) {
+		return functions.keySet().stream()
+				.filter(key -> key != Object.class && key.isAssignableFrom(type))
+				.map(key -> functions.get(key))
+				.findFirst().orElse(functions.get(Object.class));
+	}
 }
