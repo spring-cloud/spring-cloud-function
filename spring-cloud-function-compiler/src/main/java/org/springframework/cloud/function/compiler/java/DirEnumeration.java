@@ -1,12 +1,12 @@
 /*
  * Copyright 2016 the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,21 +24,19 @@ import java.util.NoSuchElementException;
 
 /**
  * Walks a directory hierarchy from some base directory discovering files.
- * 
+ *
  * @author Andy Clement
  */
 public class DirEnumeration implements Enumeration<File> {
-	
-//	private final static Logger logger = LoggerFactory.getLogger(DirEnumeration.class);
-	
+
 	// The starting point
-	private File basedir; 
-	
+	private File basedir;
+
 	// Candidates collected so far
-	private List<File> filesToReturn; 
+	private List<File> filesToReturn;
 
 	// Places still to explore for candidates
-	private List<File> directoriesToExplore; 
+	private List<File> directoriesToExplore;
 
 	public DirEnumeration(File basedir) {
 		this.basedir = basedir;
@@ -58,7 +56,7 @@ public class DirEnumeration implements Enumeration<File> {
 			}
 		}
 	}
-	
+
 	@Override
 	public boolean hasMoreElements() {
 		computeValue();
@@ -87,7 +85,6 @@ public class DirEnumeration implements Enumeration<File> {
 				}
 			}
 		}
-//		logger.debug("after visiting {} filesToReturn=#{} dirsToExplore=#{}",dir,filesToReturn.size(), directoriesToExplore.size());
 	}
 
 	public File getDirectory() {
@@ -97,7 +94,7 @@ public class DirEnumeration implements Enumeration<File> {
 	/**
 	 * Return the relative path of this file to the base directory that the directory enumeration was
 	 * started for.
-	 * @param file a file discovered returned by this enumeration 
+	 * @param file a file discovered returned by this enumeration
 	 * @return the relative path of the file (for example: a/b/c/D.class)
 	 */
 	public String getName(File file) {

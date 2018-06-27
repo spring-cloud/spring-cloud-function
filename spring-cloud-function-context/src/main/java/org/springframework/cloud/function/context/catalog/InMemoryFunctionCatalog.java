@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -66,28 +65,18 @@ public class InMemoryFunctionCatalog
 
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
-		FunctionRegistrationEvent event;
-		Class<?> type;
+		Class<?> type = Object.class;
 		if (registration.getTarget() instanceof Function) {
 			type = Function.class;
-			event = new FunctionRegistrationEvent(this, Function.class,
-					registration.getNames());
 		}
 		else if (registration.getTarget() instanceof Supplier) {
 			type = Supplier.class;
-			event = new FunctionRegistrationEvent(this, Supplier.class,
-					registration.getNames());
 		}
 		else if (registration.getTarget() instanceof Consumer) {
 			type = Consumer.class;
-			event = new FunctionRegistrationEvent(this, Consumer.class,
-					registration.getNames());
 		}
-		else {
-			type = Object.class;
-			event = new FunctionRegistrationEvent(this, Object.class,
-					registration.getNames());
-		}
+		FunctionRegistrationEvent event = new FunctionRegistrationEvent(this, type, registration.getNames());
+
 		registrations.put(registration.getTarget(), registration);
 		FunctionRegistration<T> wrapped = registration.wrap();
 		if (wrapped != registration) {

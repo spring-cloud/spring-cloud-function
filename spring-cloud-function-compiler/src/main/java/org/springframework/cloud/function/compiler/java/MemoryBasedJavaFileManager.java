@@ -62,24 +62,22 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 	final static String BOOT_PACKAGING_PREFIX_FOR_CLASSES = "BOOT-INF/classes/";
 
 	final static String BOOT_PACKAGING_PREFIX_FOR_LIBRARIES = "BOOT-INF/lib/";
-	
+
 	private static Logger logger = LoggerFactory
 			.getLogger(MemoryBasedJavaFileManager.class);
 
 	private CompilationOutputCollector outputCollector;
 
-//	private List<CloseableFilterableJavaFileObjectIterable> toClose = new ArrayList<>();
-
 	private Map<String, File> resolvedAdditionalDependencies = new LinkedHashMap<>();
-	
+
 	private String platformClasspath;
 
 	private String classpath;
 
 	private CompilationInfoCache compilationInfoCache;
-	
+
 	private Map<Key, IterableClasspath> iterables = new HashMap<>();
-	
+
 	public MemoryBasedJavaFileManager() {
 		outputCollector = new CompilationOutputCollector();
 		compilationInfoCache = new CompilationInfoCache();
@@ -98,19 +96,19 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		logger.debug("getClassLoader({})", location);
 		return null; // Do not currently need to load plugins
 	}
-	
+
 	// Holds information that may help speed up compilation
 	static class CompilationInfoCache {
 
 		private Map<File, ArchiveInfo> archivePackageCache;
-		
+
 		static class ArchiveInfo {
-			
+
 			// The packages identified in a particular archive
 			private List<String> packageNames;
-			
+
 			private boolean isBootJar = false;
-			
+
 			public ArchiveInfo(List<String> packageNames, boolean isBootJar) {
 				this.packageNames = packageNames;
 				Collections.sort(this.packageNames);
@@ -140,7 +138,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 				}
 			}
 		}
-		
+
 		ArchiveInfo getArchiveInfoFor(File archive) {
 			if (!archive.isFile() || !(archive.getName().endsWith(".zip") || archive.getName().endsWith(".jar"))) {
 				// it is not an archive
@@ -160,12 +158,12 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 				throw new IllegalStateException("Unexpected problem caching entries from "+archive.getName(), e);
 			}
 		}
-		
+
 		/**
 		 * Walk the specified archive and collect up the package names of any .class files encountered. If
 		 * the archive contains nested jars packaged in a BOOT style way (under a BOOT-INF/lib folder) then
 		 * walk those too and include relevant packages.
-		 * 
+		 *
 		 * @param file archive file to discover packages from
 		 * @return an ArchiveInfo encapsulating package info from the archive
 		 */
@@ -194,9 +192,6 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 							}
 						} else {
 							int idx = name.lastIndexOf('/') + 1;
-//							if (name.contains("TestX")) {
-//								System.out.println("For TestX: "+name+" "+idx+" "+BOOT_PACKAGING_PREFIX_FOR_CLASSES.length());
-//							}
 							if (idx != 0 ) {
 								// Normalize to forward slashes
 								name = name.replace('\\', '/');
@@ -243,19 +238,19 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		private String packageName;
 		private Set<Kind> kinds;
 		private boolean recurse;
-		
+
 		public Key(String classpath, String packageName, Set<Kind> kinds, boolean recurse) {
 			this.classpath = classpath;
 			this.packageName = packageName;
 			this.kinds = kinds;
 			this.recurse = recurse;
 		}
-		
+
 		@Override
 		public int hashCode() {
 			return ((classpath.hashCode()*37+(packageName==null?0:packageName.hashCode()))*37+kinds.hashCode())*37+(recurse?1:0);
 		}
-	
+
 		@Override
 		public boolean equals(Object obj) {
 			if (!(obj instanceof Key)) {
@@ -270,12 +265,12 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 	}
 
 	private String getPlatformClassPath() {
-		if (platformClasspath == null) {			
+		if (platformClasspath == null) {
 			platformClasspath = System.getProperty("sun.boot.class.path");
 		}
 		return platformClasspath;
 	}
-	
+
 	@Override
 	public Iterable<JavaFileObject> list(Location location, String packageName,
 			Set<Kind> kinds, boolean recurse) throws IOException {

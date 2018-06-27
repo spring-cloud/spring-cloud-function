@@ -34,15 +34,15 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Compile Java source at runtime and load it.
- * 
+ *
  * @author Andy Clement
  */
 public class RuntimeJavaCompiler {
 
 	private JavaCompiler compiler =  ToolProvider.getSystemJavaCompiler();
-	
+
 	private static Logger logger = LoggerFactory.getLogger(RuntimeJavaCompiler.class);
-	
+
 	/**
 	 * Compile the named class consisting of the supplied source code. If successful load the class
 	 * and return it. Multiple classes may get loaded if the source code included anonymous/inner/local
@@ -54,18 +54,12 @@ public class RuntimeJavaCompiler {
 	 */
 	public CompilationResult compile(String className, String classSourceCode, String... dependencies) {
 		logger.info("Compiling source for class {} using compiler {}",className,compiler.getClass().getName());
-		
+
 		DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<JavaFileObject>();
 		MemoryBasedJavaFileManager fileManager = new MemoryBasedJavaFileManager();
 		List<CompilationMessage> resolutionMessages = fileManager.addAndResolveDependencies(dependencies);
-//		JavaFileObject sourceFile = new StringBasedJavaSourceFileObject(className, classSourceCode);
 		JavaFileObject sourceFile = InMemoryJavaFileObject.getSourceJavaFileObject(className, classSourceCode);
-//				new InMemoryJavaFileObject(StandardLocation.SOURCE_PATH, className, javax.tools.JavaFileObject.Kind.SOURCE, null);
-//		try (Writer w = sourceFile.openWriter()) {
-//			w.write(classSourceCode);
-//		} catch (IOException ioe) {
-//			ioe.printStackTrace();
-//		}
+
 		Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(sourceFile);
 		CompilationTask task = compiler.getTask(null, fileManager , diagnosticCollector, null, null, compilationUnits);
 
@@ -73,7 +67,7 @@ public class RuntimeJavaCompiler {
 		CompilationResult compilationResult = new CompilationResult(success);
 		compilationResult.recordCompilationMessages(resolutionMessages);
 		compilationResult.setResolvedAdditionalDependencies(new ArrayList<>(fileManager.getResolvedAdditionalDependencies().values()));
-		
+
 		// If successful there may be no errors but there might be info/warnings
 		for (Diagnostic<? extends JavaFileObject> diagnostic : diagnosticCollector.getDiagnostics()) {
 			CompilationMessage.Kind kind = (diagnostic.getKind()==Kind.ERROR?CompilationMessage.Kind.ERROR:CompilationMessage.Kind.OTHER);
@@ -95,8 +89,8 @@ public class RuntimeJavaCompiler {
 			CompilationMessage compilationMessage = new CompilationMessage(kind,diagnostic.getMessage(null),sourceCode,startPosition,(int)diagnostic.getEndPosition());
 			compilationResult.recordCompilationMessage(compilationMessage);
 		}
-		if (success) {			
-			List<CompiledClassDefinition> ccds = fileManager.getCompiledClasses();			
+		if (success) {
+			List<CompiledClassDefinition> ccds = fileManager.getCompiledClasses();
 			List<Class<?>> classes = new ArrayList<>();
 			try (SimpleClassLoader ccl = new SimpleClassLoader(this.getClass().getClassLoader())) {
 				for (CompiledClassDefinition ccd: ccds) {

@@ -39,7 +39,7 @@ public abstract class MessageUtils {
 	 * isolated class loader, then the message will be created with the target class
 	 * loader (therefore the {@link Message} class must be on the classpath of the target
 	 * class loader).
-	 * 
+	 *
 	 * @param handler the function that will be applied to the message
 	 * @param payload the payload of the message
 	 * @param headers the headers for the message
@@ -71,10 +71,10 @@ public abstract class MessageUtils {
 
 	/**
 	 * Convert a message from the handler into one that is safe to consume in the caller's
-	 * class laoder. If the handler is a wrapper for a function in an isolated class
+	 * class loader. If the handler is a wrapper for a function in an isolated class
 	 * loader, then the message will be created with the target class loader (therefore
 	 * the {@link Message} class must be on the classpath of the target class loader).
-	 * 
+	 *
 	 * @param handler the function that generated the message
 	 * @param message the message to convert
 	 * @return a message with the correct class loader
