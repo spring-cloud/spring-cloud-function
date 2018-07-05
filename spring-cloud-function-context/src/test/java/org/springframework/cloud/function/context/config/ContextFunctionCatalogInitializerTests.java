@@ -177,7 +177,7 @@ public class ContextFunctionCatalogInitializerTests {
 		@Override
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<Function<String, String>>(function()));
+					() -> new FunctionRegistration<>(function()));
 		}
 
 		@Bean
@@ -195,14 +195,13 @@ public class ContextFunctionCatalogInitializerTests {
 		@Override
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<Function<String, String>>(function())
-							.type(FunctionType.from(String.class).to(String.class)
-									.getType()));
+					() -> new FunctionRegistration<>(function()).type(
+							FunctionType.from(String.class).to(String.class).getType()));
 			context.registerBean("supplier", FunctionRegistration.class,
-					() -> new FunctionRegistration<Supplier<String>>(supplier())
+					() -> new FunctionRegistration<>(supplier())
 							.type(FunctionType.supplier(String.class).getType()));
 			context.registerBean("consumer", FunctionRegistration.class,
-					() -> new FunctionRegistration<Consumer<String>>(consumer())
+					() -> new FunctionRegistration<>(consumer())
 							.type(FunctionType.consumer(String.class).getType()));
 			context.registerBean(SimpleConfiguration.class, () -> this);
 		}
@@ -248,10 +247,9 @@ public class ContextFunctionCatalogInitializerTests {
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean(String.class, () -> value());
 			context.registerBean("foos", FunctionRegistration.class,
-					() -> new FunctionRegistration<Function<String, Foo>>(
-							foos(context.getBean(String.class)))
-									.type(FunctionType.from(String.class).to(Foo.class)
-											.getType()));
+					() -> new FunctionRegistration<>(foos(context.getBean(String.class)))
+							.type(FunctionType.from(String.class).to(Foo.class)
+									.getType()));
 		}
 
 		@Bean
@@ -273,8 +271,8 @@ public class ContextFunctionCatalogInitializerTests {
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("foos", FunctionConfiguration.class, () -> this);
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<Function<Flux<String>, Flux<Foo>>>(
-							this).type(FunctionConfiguration.class).name("foos"));
+					() -> new FunctionRegistration<>(this)
+							.type(FunctionConfiguration.class).name("foos"));
 		}
 
 		@Override
