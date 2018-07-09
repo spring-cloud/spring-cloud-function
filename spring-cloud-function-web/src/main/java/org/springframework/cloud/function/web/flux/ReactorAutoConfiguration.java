@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2017 the original author or authors.
+ * Copyright 2013-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
@@ -41,7 +40,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.util.ClassUtils;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
@@ -52,6 +50,7 @@ import reactor.core.publisher.Flux;
 /**
  * @author Dave Syer
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
 @Configuration
 @ConditionalOnWebApplication
@@ -77,7 +76,6 @@ public class ReactorAutoConfiguration {
 	}
 
 	@Configuration
-	@ConditionalOnMissingClass("org.springframework.core.ReactiveAdapter")
 	protected static class FluxReturnValueConfiguration {
 		@Bean
 		public FluxReturnValueHandler fluxReturnValueHandler(FunctionInspector inspector,
@@ -107,13 +105,10 @@ public class ReactorAutoConfiguration {
 						adapter.getArgumentResolvers());
 				resolvers.add(0, resolver);
 				adapter.setArgumentResolvers(resolvers);
-				if (!ClassUtils.isPresent("org.springframework.core.ReactiveAdapter",
-						null)) {
-					List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(
-							adapter.getReturnValueHandlers());
-					handlers.add(0, context.getBean(FluxReturnValueHandler.class));
-					adapter.setReturnValueHandlers(handlers);
-				}
+				List<HandlerMethodReturnValueHandler> handlers = new ArrayList<>(
+						adapter.getReturnValueHandlers());
+				handlers.add(0, context.getBean(FluxReturnValueHandler.class));
+				adapter.setReturnValueHandlers(handlers);
 			}
 
 		};
