@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,10 @@ import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.util.ObjectUtils;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 public class HeaderUtils {
 
@@ -35,20 +34,7 @@ public class HeaderUtils {
 		for (String name : headers.keySet()) {
 			Object value = headers.get(name);
 			name = name.toLowerCase();
-			if (MessageHeaders.ID.equals(name)) {
-				continue;
-			}
-			if (request.containsKey(name)) {
-				if (name.startsWith("x-")) {
-					if (!name.startsWith("x-forwarded")) {
-						Collection<?> values = multi(value);
-						for (Object object : values) {
-							result.set(name, object.toString());
-						}
-					}
-				}
-			}
-			else {
+			if (!MessageHeaders.ID.equals(name)) {
 				Collection<?> values = multi(value);
 				for (Object object : values) {
 					result.set(name, object.toString());
@@ -59,15 +45,7 @@ public class HeaderUtils {
 	}
 
 	private static Collection<?> multi(Object value) {
-		if (value instanceof Collection) {
-			Collection<?> collection = (Collection<?>) value;
-			return collection;
-		}
-		else if (ObjectUtils.isArray(value)) {
-			Object[] values = ObjectUtils.toObjectArray(value);
-			return Arrays.asList(values);
-		}
-		return Arrays.asList(value);
+		return value instanceof Collection ? (Collection<?>) value : Arrays.asList(value);
 	}
 
 	public static MessageHeaders fromHttp(HttpHeaders headers) {
