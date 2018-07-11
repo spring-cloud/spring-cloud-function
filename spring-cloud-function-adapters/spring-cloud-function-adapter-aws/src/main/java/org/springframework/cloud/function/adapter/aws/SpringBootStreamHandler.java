@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-1018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,18 +28,18 @@ import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.reactivestreams.Publisher;
-
 import org.springframework.beans.factory.annotation.Autowired;
 
 import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  */
 public class SpringBootStreamHandler extends SpringFunctionInitializer
 		implements RequestStreamHandler {
 
-	@Autowired
+	@Autowired(required=false)
 	private ObjectMapper mapper;
 
 	public SpringBootStreamHandler() {
@@ -48,6 +48,14 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 
 	public SpringBootStreamHandler(Class<?> configurationClass) {
 		super(configurationClass);
+	}
+
+	@Override
+	protected void initialize() {
+		super.initialize();
+		if (this.mapper == null) {
+			this.mapper = new ObjectMapper();
+		}
 	}
 
 	@Override

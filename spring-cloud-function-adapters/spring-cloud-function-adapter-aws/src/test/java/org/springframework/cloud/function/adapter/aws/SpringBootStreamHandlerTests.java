@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,15 +32,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 public class SpringBootStreamHandlerTests {
 
 	private SpringBootStreamHandler handler;
 
 	@Test
-	public void functionBean() throws Exception {
-		handler = new SpringBootStreamHandler(FunctionConfig.class);
+	public void functionBeanWithJacksonConfig() throws Exception {
+		handler = new SpringBootStreamHandler(FunctionConfigWithJackson.class);
+		handler.initialize();
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		handler.handleRequest(new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()),
+				output, null);
+		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Test
+	public void functionBeanWithoutJacksonConfig() throws Exception {
+		handler = new SpringBootStreamHandler(FunctionConfigWithoutJackson.class);
 		handler.initialize();
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		handler.handleRequest(new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()),
@@ -51,7 +61,16 @@ public class SpringBootStreamHandlerTests {
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class,
 			JacksonAutoConfiguration.class })
-	protected static class FunctionConfig {
+	protected static class FunctionConfigWithJackson {
+		@Bean
+		public Function<Foo, Bar> function() {
+			return foo -> new Bar(foo.getValue().toUpperCase());
+		}
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class})
+	protected static class FunctionConfigWithoutJackson {
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
