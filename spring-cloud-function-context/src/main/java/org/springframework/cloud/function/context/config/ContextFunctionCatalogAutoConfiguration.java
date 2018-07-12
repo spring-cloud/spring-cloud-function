@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.annotation.PreDestroy;
 
@@ -382,40 +383,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 				registrations.add(registration);
 				targets.put(registration.getTarget(), key);
 			}
-			// Add consumers that were not already registered
-			for (String key : consumers.keySet()) {
-				if (!targets.containsKey(consumers.get(key))) {
-					FunctionRegistration<Object> target = new FunctionRegistration<Object>(
-							consumers.get(key)).names(getAliases(key));
-					targets.put(target.getTarget(), key);
-					registrations.add(target);
-				}
-			}
-			// Add suppliers that were not already registered
-			for (String key : suppliers.keySet()) {
-				if (!targets.containsKey(suppliers.get(key))) {
-					FunctionRegistration<Object> target = new FunctionRegistration<Object>(
-							suppliers.get(key)).names(getAliases(key));
-					targets.put(target.getTarget(), key);
-					registrations.add(target);
-				}
-			}
-			// Add functions that were not already registered
-			for (String key : functions.keySet()) {
-				if (!targets.containsKey(functions.get(key))) {
-					FunctionRegistration<Object> target = new FunctionRegistration<Object>(
-							functions.get(key)).names(getAliases(key));
-					targets.put(target.getTarget(), key);
-					registrations.add(target);
-				}
-			}
+
+			Stream.concat(consumers.entrySet().stream(), Stream.concat(suppliers.entrySet().stream(), functions.entrySet().stream()))
+				.forEach(entry -> {
+					if (!targets.containsKey(entry.getValue())) {
+						FunctionRegistration<Object> target = new FunctionRegistration<Object>(
+								entry.getValue()).names(getAliases(entry.getKey()));
+						targets.put(target.getTarget(), entry.getKey());
+						registrations.add(target);
+					}
+				});
 			// Wrap the functions so they handle reactive inputs and outputs
-			for (FunctionRegistration<?> registration : registrations) {
-				@SuppressWarnings("unchecked")
-				FunctionRegistration<Object> target = (FunctionRegistration<Object>) registration;
-				String key = targets.get(target.getTarget());
-				wrap(target, key);
-			}
+			registrations.forEach(registration -> wrap(registration, targets.get(registration.getTarget())));
 			return registrations;
 		}
 
