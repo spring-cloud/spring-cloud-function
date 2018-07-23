@@ -267,13 +267,12 @@ public class RestApplicationTests {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
 				.header("x-foo", "bar").body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 		assertThat(result.getHeaders().getFirst("x-foo")).isEqualTo("bar");
 		assertThat(result.getHeaders()).doesNotContainKey("id");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
 	@Test
-	@Ignore("FIXME")
 	public void headers() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/headers")).contentType(MediaType.APPLICATION_JSON)
@@ -284,7 +283,6 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	@Ignore("FIXME")
 	public void uppercaseSingleValue() throws Exception {
 		ResponseEntity<String> result = rest
 				.exchange(
@@ -389,7 +387,6 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	@Ignore("FIXME")
 	public void convertPost() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/wrap"))
 				.contentType(MediaType.TEXT_PLAIN).body("123"), String.class);
