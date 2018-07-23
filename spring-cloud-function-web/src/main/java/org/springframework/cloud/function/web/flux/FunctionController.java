@@ -96,8 +96,7 @@ public class FunctionController {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Handled POST with function");
 			}
-			return ResponseEntity.ok()
-					.body(response(request, function, single, result));
+			return ResponseEntity.ok().body(response(request, function, single, result));
 		}
 
 		if (consumer != null) {
@@ -175,9 +174,8 @@ public class FunctionController {
 			result = response(request, supplier, true, supplier(supplier));
 		}
 		if (inspector.isMessage(function)) {
-			if (inspector.isMessage(function)) {
-				result = Flux.from(result).map(message -> MessageUtils.unpack(function, message));
-			}
+			result = Flux.from(result)
+					.map(message -> MessageUtils.unpack(function, message));
 		}
 		return ResponseEntity.ok().body(result);
 	}

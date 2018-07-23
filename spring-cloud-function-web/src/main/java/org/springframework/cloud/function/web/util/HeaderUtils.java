@@ -17,10 +17,8 @@ package org.springframework.cloud.function.web.util;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.messaging.MessageHeaders;
