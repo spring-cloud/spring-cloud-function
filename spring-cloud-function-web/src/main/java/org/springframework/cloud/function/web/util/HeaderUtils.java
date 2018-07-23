@@ -17,8 +17,10 @@ package org.springframework.cloud.function.web.util;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.messaging.MessageHeaders;
@@ -29,12 +31,19 @@ import org.springframework.messaging.MessageHeaders;
  */
 public class HeaderUtils {
 
+	private static HttpHeaders IGNORED = new HttpHeaders();
+	
+	static {
+		IGNORED.add(MessageHeaders.ID, "");
+		IGNORED.add(HttpHeaders.CONTENT_LENGTH, "0");
+	}
+
 	public static HttpHeaders fromMessage(MessageHeaders headers, HttpHeaders request) {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : headers.keySet()) {
 			Object value = headers.get(name);
 			name = name.toLowerCase();
-			if (!MessageHeaders.ID.equals(name)) {
+			if (!IGNORED.containsKey(name)) {
 				Collection<?> values = multi(value);
 				for (Object object : values) {
 					result.set(name, object.toString());

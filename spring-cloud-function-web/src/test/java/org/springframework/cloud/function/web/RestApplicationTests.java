@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -262,7 +263,7 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	@Ignore("FIXME")
+	// @Ignore("FIXME")
 	public void messages() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
@@ -349,9 +350,11 @@ public class RestApplicationTests {
 
 	@Test
 	public void singleValuedText() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
-				.post(new URI("/bareUppercase")).contentType(MediaType.TEXT_PLAIN)
-				.body("foo"), String.class);
+		ResponseEntity<String> result = rest
+				.exchange(
+						RequestEntity.post(new URI("/bareUppercase"))
+								.contentType(MediaType.TEXT_PLAIN).body("foo"),
+						String.class);
 		assertThat(result.getBody()).isEqualTo("(FOO)");
 	}
 
@@ -470,6 +473,11 @@ public class RestApplicationTests {
 	public static class ApplicationConfiguration {
 
 		private List<String> list = new ArrayList<>();
+
+		public static void main(String[] args) throws Exception {
+			SpringApplication.run(RestApplicationTests.ApplicationConfiguration.class,
+					args);
+		}
 
 		@Bean({ "uppercase", "transform", "post/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {

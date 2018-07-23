@@ -96,8 +96,8 @@ public class FunctionController {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Handled POST with function");
 			}
-			return ResponseEntity.ok().body(
-					debug ? result.log() : response(request, function, single, result));
+			return ResponseEntity.ok()
+					.body(response(request, function, single, result));
 		}
 
 		if (consumer != null) {
@@ -157,7 +157,7 @@ public class FunctionController {
 
 	@GetMapping(path = "/**")
 	@ResponseBody
-	public Publisher<?> get(WebRequest request) {
+	public ResponseEntity<Publisher<?>> get(WebRequest request) {
 		@SuppressWarnings("unchecked")
 		Function<Publisher<?>, Publisher<?>> function = (Function<Publisher<?>, Publisher<?>>) request
 				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
@@ -167,10 +167,19 @@ public class FunctionController {
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,
 				WebRequest.SCOPE_REQUEST);
 
+		Publisher<?> result;
 		if (function != null) {
-			return value(function, argument);
+			result = value(function, argument);
 		}
-		return response(request, supplier, true, supplier(supplier));
+		else {
+			result = response(request, supplier, true, supplier(supplier));
+		}
+		if (inspector.isMessage(function)) {
+			if (inspector.isMessage(function)) {
+				result = Flux.from(result).map(message -> MessageUtils.unpack(function, message));
+			}
+		}
+		return ResponseEntity.ok().body(result);
 	}
 
 	private Publisher<?> supplier(Supplier<Publisher<?>> supplier) {
