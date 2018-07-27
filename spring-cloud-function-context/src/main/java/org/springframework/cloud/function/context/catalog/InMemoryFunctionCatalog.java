@@ -90,7 +90,7 @@ public class InMemoryFunctionCatalog
 		for (String name : registration.getNames()) {
 			map.put(name, registration.getTarget());
 		}
-		publisher.publishEvent(event);
+		this.publishEvent(event);
 	}
 
 	@Override
@@ -102,7 +102,7 @@ public class InMemoryFunctionCatalog
 	public void init() {
 		if (publisher != null && !functions.isEmpty()) {
 			functions.keySet()
-				.forEach(type -> publisher.publishEvent(new FunctionRegistrationEvent(this, type, functions.get(type).keySet())));
+				.forEach(type -> this.publishEvent(new FunctionRegistrationEvent(this, type, functions.get(type).keySet())));
 		}
 	}
 
@@ -110,7 +110,7 @@ public class InMemoryFunctionCatalog
 	public void close() {
 		if (publisher != null && !functions.isEmpty()) {
 			functions.keySet()
-				.forEach(type -> publisher.publishEvent(new FunctionUnregistrationEvent(this, type, functions.get(type).keySet())));
+				.forEach(type -> this.publishEvent(new FunctionUnregistrationEvent(this, type, functions.get(type).keySet())));
 		}
 	}
 
@@ -132,5 +132,11 @@ public class InMemoryFunctionCatalog
 				.filter(key -> key != Object.class && key.isAssignableFrom(type))
 				.map(key -> functions.get(key))
 				.findFirst().orElse(functions.get(Object.class));
+	}
+
+	private void publishEvent(Object event) {
+		if (this.publisher != null) {
+			this.publisher.publishEvent(event);
+		}
 	}
 }
