@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
 import java.util.function.Supplier;
@@ -28,10 +28,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.function.web.RestApplication;
+import org.springframework.cloud.function.web.mvc.PrefixTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +47,9 @@ import reactor.core.publisher.Flux;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.cloud.function.web.path=/functions", "debug" })
+		"spring.main.web-application-type=servlet",
+		"spring.cloud.function.web.path=/functions" })
+@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
 public class PrefixTests {
 
 	@LocalServerPort

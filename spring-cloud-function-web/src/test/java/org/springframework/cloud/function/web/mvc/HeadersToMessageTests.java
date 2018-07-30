@@ -13,26 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.web;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cloud.function.web.RestApplication;
+import org.springframework.cloud.function.web.mvc.HeadersToMessageTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -40,7 +45,9 @@ import org.springframework.test.context.junit4.SpringRunner;
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {"spring.cloud.function.web.path=/functions" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
+		"spring.main.web-application-type=servlet", "spring.cloud.function.web.path=/functions" })
+@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
 public class HeadersToMessageTests {
 
 	@Autowired
@@ -48,26 +55,28 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
-		ResponseEntity<String> postForEntity = rest.postForEntity(new URI("/functions/employee"), "{\"name\":\"Bob\",\"age\":25}", String.class);
+		ResponseEntity<String> postForEntity = rest.postForEntity(
+				new URI("/functions/employee"), "{\"name\":\"Bob\",\"age\":25}",
+				String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
-		assertEquals("application/xml", postForEntity.getHeaders().get("x-content-type").get(0));
+		assertEquals("application/xml",
+				postForEntity.getHeaders().get("x-content-type").get(0));
 		assertEquals("bar", postForEntity.getHeaders().get("foo").get(0));
 	}
 
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
-		@Bean({ "employee"})
-	    public Function<Message<String>, Message<String>> function() {
+		@Bean({ "employee" })
+		public Function<Message<Map<String, Object>>, Message<Map<String, Object>>> function() {
 			return request -> {
-				Message<String> message = MessageBuilder.withPayload(request.getPayload())
+				Message<Map<String, Object>> message = MessageBuilder
+						.withPayload(request.getPayload())
 						.setHeader("X-Content-Type", "application/xml")
-						.setHeader("foo", "bar")
-						.build();
+						.setHeader("foo", "bar").build();
 				return message;
 			};
-	    }
+		}
 	}
 }
-

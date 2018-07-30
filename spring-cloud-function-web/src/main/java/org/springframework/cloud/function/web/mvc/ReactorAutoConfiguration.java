@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux;
+package org.springframework.cloud.function.web.mvc;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -43,9 +43,9 @@ import reactor.core.publisher.Flux;
  * @author Oleg Zhurakousky
  */
 @Configuration
+@ConditionalOnWebApplication(type=Type.SERVLET)
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
-@ConditionalOnWebApplication(type=Type.REACTIVE)
-@Import({FunctionController.class, RequestProcessor.class})
+@Import({ FunctionController.class, RequestProcessor.class })
 @AutoConfigureAfter({ JacksonAutoConfiguration.class, GsonAutoConfiguration.class })
 public class ReactorAutoConfiguration {
 
@@ -61,7 +61,6 @@ public class ReactorAutoConfiguration {
 			ConfigurableListableBeanFactory beanFactory) {
 		return new BasicStringConverter(inspector, beanFactory);
 	}
-
 
 	private static class BasicStringConverter implements StringConverter {
 

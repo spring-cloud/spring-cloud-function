@@ -14,25 +14,32 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.function.web.RestApplication;
+import org.springframework.cloud.function.web.mvc.SingletonTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,8 +51,9 @@ import reactor.core.publisher.Flux;
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "")
-public class DefaultRouteTests {
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
+public class SingletonTests {
 
 	@LocalServerPort
 	private int port;
@@ -53,29 +61,41 @@ public class DefaultRouteTests {
 	private TestRestTemplate rest;
 
 	@Test
-	@Ignore("FIXME")
-	public void explicit() throws Exception {
+	public void words() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/uppercase")).body("foo"), String.class);
+				RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("FOO");
-	}
-
-	@Test
-	@Ignore("FIXME")
-	public void implicit() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/")).body("foo"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("FOO");
+		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
 		@Bean
-		public Function<Flux<String>, Flux<String>> uppercase() {
-			return flux -> flux.map(value -> value.toUpperCase());
+		public static BeanDefinitionRegistryPostProcessor processor() {
+			return new BeanDefinitionRegistryPostProcessor() {
+
+				@Override
+				public void postProcessBeanFactory(
+						ConfigurableListableBeanFactory beanFactory)
+						throws BeansException {
+				}
+
+				@Override
+				public void postProcessBeanDefinitionRegistry(
+						BeanDefinitionRegistry registry) throws BeansException {
+					// Simulates what happens when you add a compiled function
+					RootBeanDefinition beanDefinition = new RootBeanDefinition(MySupplier.class);
+					registry.registerBeanDefinition("words", beanDefinition);
+				}
+			};
+		}
+	}
+	
+	static class MySupplier implements Supplier<Flux<String>> {
+		@Override
+		public Flux<String> get() {
+			return Flux.just("foo", "bar");
 		}
 	}
 }
