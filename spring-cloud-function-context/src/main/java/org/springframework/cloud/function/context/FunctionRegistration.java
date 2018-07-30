@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2012-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import reactor.core.publisher.Mono;
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
- *
  */
 public class FunctionRegistration<T> {
 
@@ -50,9 +49,28 @@ public class FunctionRegistration<T> {
 
 	private FunctionType type;
 
+	/**
+	 * @deprecated as of v1.0.0 in favor of {@link #FunctionRegistration(Object, String, String...)}
+	 */
+	@Deprecated
 	public FunctionRegistration(T target) {
 		Assert.notNull(target, "'target' must not be null");
 		this.target = target;
+	}
+
+	/**
+	 * Creates instance of FunctionRegistration.
+	 *
+	 * @param target instance of {@link Supplier}, {@link Function} or {@link Consumer}
+	 * @param name initial name for this registration.
+	 * @param names additional set of names for this registration. Additional names
+	 * can be provided {@link #name(String)} or {@link #names(String...)} operations.
+	 */
+	public FunctionRegistration(T target, String name, String... additionalNames) {
+		Assert.notNull(target, "'target' must not be null");
+		this.target = target;
+		this.names(name);
+		this.names(additionalNames);
 	}
 
 	public Map<String, String> getProperties() {

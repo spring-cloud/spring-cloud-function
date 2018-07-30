@@ -65,6 +65,7 @@ public class InMemoryFunctionCatalog
 
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
+		Assert.notEmpty(registration.getNames(), "'registration' must contain at least one name before it is registered in catalog.");
 		Class<?> type = Object.class;
 		if (registration.getTarget() instanceof Function) {
 			type = Function.class;

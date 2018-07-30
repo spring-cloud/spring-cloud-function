@@ -82,6 +82,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -128,6 +129,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		public <T> void register(FunctionRegistration<T> registration) {
+			Assert.notEmpty(registration.getNames(), "'registration' must contain at least one name before it is registered in catalog.");
 			processor.register(registration);
 		}
 
