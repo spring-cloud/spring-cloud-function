@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.web;
+package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.Before;
@@ -42,6 +39,8 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.function.web.RestApplication;
+import org.springframework.cloud.function.web.mvc.HttpPostIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,6 +48,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -63,8 +63,9 @@ import reactor.core.publisher.Mono;
  * @author Dave Syer
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-public class RestApplicationTests {
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties="spring.main.web-application-type=servlet")
+@ContextConfiguration(classes= {RestApplication.class, ApplicationConfiguration.class})
+public class HttpPostIntegrationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;
 	@LocalServerPort
@@ -78,61 +79,6 @@ public class RestApplicationTests {
 	public void init() {
 		test.list.clear();
 	}
-
-	@Test
-	public void staticResource() {
-		assertThat(rest.getForObject("/test.html", String.class)).contains("<body>Test");
-	}
-
-	@Test
-	public void wordsSSE() throws Exception {
-		assertThat(rest.exchange(
-				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
-				String.class).getBody()).isEqualTo(sse("foo", "bar"));
-	}
-
-	@Test
-	public void wordsJson() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/words"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\",\"bar\"]");
-	}
-
-	@Test
-	@Ignore("Fix error handling")
-	public void errorJson() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/bang"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\"]");
-	}
-
-	@Test
-	public void words() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
-	}
-
-	@Test
-	public void word() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/word")).build(), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("foo");
-	}
-
-	@Test
-	public void foos() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
-	}
-
 	@Test
 	public void qualifierFoos() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/foos"))
@@ -144,29 +90,13 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void getMore() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/get/more")).build(), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
-	}
-
-	@Test
-	public void bareWords() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(RequestEntity.get(new URI("/bareWords")).build(), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
-	}
-
-	@Test
-	@Ignore("Should this even work? Or do we need to be explicit about the JSON?")
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+				RequestEntity.post(new URI("/updates")).body("[\"one\", \"two\"]"),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
-		assertThat(result.getBody()).isEqualTo("onetwo");
+		assertThat(result.getBody()).isNull();
 	}
 
 	@Test
@@ -176,7 +106,7 @@ public class RestApplicationTests {
 				.body("[\"one\",\"two\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
-		assertThat(result.getBody()).isEqualTo("[\"one\",\"two\"]");
+		assertThat(result.getBody()).isEqualTo(null);
 	}
 
 	@Test
@@ -187,7 +117,7 @@ public class RestApplicationTests {
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
 		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+				.isEqualTo(null);
 	}
 
 	@Test
@@ -201,60 +131,6 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void timeoutJson() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/timeout"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\"]");
-	}
-
-	@Test
-	public void emptyJson() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/empty"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[]");
-	}
-
-	@Test
-	public void sentences() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class)
-				.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
-	}
-
-	@Test
-	public void sentencesAcceptAny() throws Exception {
-		assertThat(rest.exchange(
-				RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(),
-				String.class).getBody())
-						.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
-	}
-
-	@Test
-	public void sentencesAcceptJson() throws Exception {
-		ResponseEntity<String> result = rest
-				.exchange(
-						RequestEntity.get(new URI("/sentences"))
-								.accept(MediaType.APPLICATION_JSON).build(),
-						String.class);
-		assertThat(result.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
-		assertThat(result.getHeaders().getContentType())
-				.isGreaterThanOrEqualTo(MediaType.APPLICATION_JSON);
-	}
-
-	@Test
-	public void sentencesAcceptSse() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.get(new URI("/sentences")).accept(EVENT_STREAM).build(),
-				String.class);
-		assertThat(result.getBody())
-				.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
-		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM))
-				.isTrue();
-	}
-
-	@Test
 	public void uppercase() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
@@ -263,10 +139,11 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	// @Ignore("FIXME")
 	public void messages() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
+				// Remove this when Spring 5.0.8 is used
+				.accept(MediaType.valueOf("application/stream+json"))
 				.header("x-foo", "bar").body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getHeaders().getFirst("x-foo")).isEqualTo("bar");
 		assertThat(result.getHeaders()).doesNotContainKey("id");
@@ -277,10 +154,12 @@ public class RestApplicationTests {
 	public void headers() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/headers")).contentType(MediaType.APPLICATION_JSON)
+				// Remove this when Spring 5.0.8 is used
+				.accept(MediaType.valueOf("application/stream+json"))
 				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 		assertThat(result.getHeaders().getFirst("foo")).isEqualTo("bar");
 		assertThat(result.getHeaders()).doesNotContainKey("id");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
 	@Test
@@ -290,7 +169,8 @@ public class RestApplicationTests {
 						RequestEntity.post(new URI("/uppercase"))
 								.contentType(MediaType.TEXT_PLAIN).body("foo"),
 						String.class);
-		assertThat(result.getBody()).isEqualTo("(FOO)");
+		// Result is multi-valued so it has to come out as an array
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\"]");
 	}
 
 	@Test
@@ -375,25 +255,11 @@ public class RestApplicationTests {
 	}
 
 	@Test
-	public void postMoreFoo() {
-		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("(FOO)");
-	}
-
-	@Test
-	public void uppercaseGet() {
-		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("(FOO)");
-	}
-
-	@Test
-	public void convertGet() {
-		assertThat(rest.getForObject("/wrap/123", String.class)).isEqualTo("..123..");
-	}
-
-	@Test
 	public void convertPost() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/wrap"))
 				.contentType(MediaType.TEXT_PLAIN).body("123"), String.class);
-		assertThat(result.getBody()).isEqualTo("..123..");
+		// Result is multi-valued so it has to come out as an array
+		assertThat(result.getBody()).isEqualTo("[\"..123..\"]");
 	}
 
 	@Test
@@ -406,20 +272,6 @@ public class RestApplicationTests {
 								.contentType(MediaType.TEXT_PLAIN).body("123"),
 						String.class);
 		assertThat(result.getBody()).isEqualTo("[246]");
-	}
-
-	@Test
-	public void supplierFirst() {
-		assertThat(rest.getForObject("/not/a/function", String.class))
-				.isEqualTo("[\"hello\"]");
-	}
-
-	@Test
-	public void convertGetJson() throws Exception {
-		assertThat(rest
-				.exchange(RequestEntity.get(new URI("/entity/321"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("{\"value\":321}");
 	}
 
 	@Test
@@ -475,7 +327,7 @@ public class RestApplicationTests {
 		private List<String> list = new ArrayList<>();
 
 		public static void main(String[] args) throws Exception {
-			SpringApplication.run(RestApplicationTests.ApplicationConfiguration.class,
+			SpringApplication.run(HttpPostIntegrationTests.ApplicationConfiguration.class,
 					args);
 		}
 
@@ -526,12 +378,6 @@ public class RestApplicationTests {
 		}
 
 		@Bean
-		public Function<Flux<Integer>, Flux<Map<String, Object>>> entity() {
-			return flux -> flux.log()
-					.map(value -> Collections.singletonMap("value", value));
-		}
-
-		@Bean
 		public Function<Flux<HashMap<String, String>>, Flux<Map<String, String>>> maps() {
 			return flux -> flux.map(value -> {
 				value.put("value", value.get("value").trim().toUpperCase());
@@ -539,30 +385,10 @@ public class RestApplicationTests {
 			});
 		}
 
-		@Bean({ "words", "get/more" })
-		public Supplier<Flux<String>> words() {
-			return () -> Flux.just("foo", "bar");
-		}
-
-		@Bean
-		public Supplier<String> word() {
-			return () -> "foo";
-		}
-
-		@Bean
-		public Supplier<Flux<Foo>> foos() {
-			return () -> Flux.just(new Foo("foo"), new Foo("bar"));
-		}
-
 		@Bean
 		@Qualifier("foos")
 		public Function<String, Foo> qualifier() {
 			return value -> new Foo("[" + value.trim().toUpperCase() + "]");
-		}
-
-		@Bean
-		public Supplier<List<String>> bareWords() {
-			return () -> Arrays.asList("foo", "bar");
 		}
 
 		@Bean
@@ -580,42 +406,9 @@ public class RestApplicationTests {
 			return value -> list.add(value);
 		}
 
-		@Bean
-		public Supplier<Flux<String>> bang() {
-			return () -> Flux.fromArray(new String[] { "foo", "bar" }).map(value -> {
-				if (value.equals("bar")) {
-					throw new RuntimeException("Bar");
-				}
-				return value;
-			});
-		}
-
-		@Bean
-		public Supplier<Flux<String>> empty() {
-			return () -> Flux.fromIterable(Collections.emptyList());
-		}
-
-		@Bean("not/a/function")
-		public Supplier<Flux<String>> supplier() {
-			return () -> Flux.just("hello");
-		}
-
 		@Bean("not/a")
 		public Function<Flux<String>, Flux<String>> function() {
 			return input -> Flux.just("bye");
-		}
-
-		@Bean
-		public Supplier<Flux<String>> timeout() {
-			return () -> Flux.defer(() -> Flux.<String>create(emitter -> {
-				emitter.next("foo");
-			}).timeout(Duration.ofMillis(100L), Flux.empty()));
-		}
-
-		@Bean
-		public Supplier<Flux<List<String>>> sentences() {
-			return () -> Flux.just(Arrays.asList("go", "home"),
-					Arrays.asList("come", "back"));
 		}
 
 		@Bean

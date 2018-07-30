@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux.constants;
+package org.springframework.cloud.function.web.constants;
 
 /**
  * Common storage for web request attribute names (in a separate package to avoid cycles).
@@ -33,9 +33,5 @@ public abstract class WebRequestConstants {
 			+ ".argument";
 	public static final String HANDLER = WebRequestConstants.class.getName()
 			+ ".handler";
-	public static final String INPUT_SINGLE = WebRequestConstants.class.getName()
-			+ ".input_single";
-	public static final String OUTPUT_SINGLE = WebRequestConstants.class.getName()
-			+ ".output_single";
 
 }

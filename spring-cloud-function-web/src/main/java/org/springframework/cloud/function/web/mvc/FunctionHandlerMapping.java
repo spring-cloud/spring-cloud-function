@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux;
+package org.springframework.cloud.function.web.mvc;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.reactivestreams.Publisher;
 
@@ -29,13 +31,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.reactive.result.method.annotation.RequestMappingHandlerMapping;
-import org.springframework.web.server.ServerWebExchange;
-
-import reactor.core.publisher.Mono;
+import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * @author Dave Syer
@@ -65,7 +64,6 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
-		// this.controller.setDebug(!"false".equals(debug));
 		detectHandlerMethods(controller);
 		while (prefix.endsWith("/")) {
 			prefix = prefix.substring(0, prefix.length() - 1);
@@ -77,58 +75,68 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	}
 
 	@Override
-	public Mono<HandlerMethod> getHandlerInternal(ServerWebExchange request) {
-		String path = request.getRequest().getPath().pathWithinApplication().value();
-		if (StringUtils.hasText(prefix) && !path.startsWith(prefix)) {
-			return Mono.empty();
+	protected HandlerMethod getHandlerInternal(HttpServletRequest request)
+			throws Exception {
+		HandlerMethod handler = super.getHandlerInternal(request);
+		if (handler == null) {
+			return null;
 		}
-		Mono<HandlerMethod> handler = super.getHandlerInternal(request);
-		if (path == null) {
-			return handler;
+		String path = (String) request
+				.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		if (StringUtils.hasText(prefix) && !path.startsWith(prefix)) {
+			return null;
 		}
 		if (path.startsWith(prefix)) {
 			path = path.substring(prefix.length());
 		}
-		Object function = findFunctionForGet(request, path);
-		if (function == null) {
-			function = findFunctionForPost(request, path);
+		if (path == null) {
+			return handler;
 		}
+		Object function = findFunctionForGet(request, path);
+		if (function != null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Found function for GET: " + path);
+			}
+			request.setAttribute(WebRequestConstants.HANDLER, function);
+			return handler;
+		}
+		function = findFunctionForPost(request, path);
 		if (function != null) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Found function for POST: " + path);
 			}
-			request.getAttributes().put(WebRequestConstants.HANDLER, function);
+			request.setAttribute(WebRequestConstants.HANDLER, function);
+			return handler;
 		}
-		Object actual = function;
-		return handler.filter(method -> actual != null);
+		return null;
 	}
 
-	private Object findFunctionForPost(ServerWebExchange request, String path) {
-		if (!request.getRequest().getMethod().equals(HttpMethod.POST)) {
+	private Object findFunctionForPost(HttpServletRequest request, String path) {
+		if (!request.getMethod().equals("POST")) {
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
 		Consumer<Publisher<?>> consumer = functions.lookup(Consumer.class, path);
 		if (consumer != null) {
-			request.getAttributes().put(WebRequestConstants.CONSUMER, consumer);
+			request.setAttribute(WebRequestConstants.CONSUMER, consumer);
 			return consumer;
 		}
 		Function<Object, Object> function = functions.lookup(Function.class, path);
 		if (function != null) {
-			request.getAttributes().put(WebRequestConstants.FUNCTION, function);
+			request.setAttribute(WebRequestConstants.FUNCTION, function);
 			return function;
 		}
 		return null;
 	}
 
-	private Object findFunctionForGet(ServerWebExchange request, String path) {
-		if (!request.getRequest().getMethod().equals(HttpMethod.GET)) {
+	private Object findFunctionForGet(HttpServletRequest request, String path) {
+		if (!request.getMethod().equals("GET")) {
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
 		Supplier<Publisher<?>> supplier = functions.lookup(Supplier.class, path);
 		if (supplier != null) {
-			request.getAttributes().put(WebRequestConstants.SUPPLIER, supplier);
+			request.setAttribute(WebRequestConstants.SUPPLIER, supplier);
 			return supplier;
 		}
 		StringBuilder builder = new StringBuilder();
@@ -144,8 +152,8 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 					: null;
 			Function<Object, Object> function = functions.lookup(Function.class, name);
 			if (function != null) {
-				request.getAttributes().put(WebRequestConstants.FUNCTION, function);
-				request.getAttributes().put(WebRequestConstants.ARGUMENT, value);
+				request.setAttribute(WebRequestConstants.FUNCTION, function);
+				request.setAttribute(WebRequestConstants.ARGUMENT, value);
 				return function;
 			}
 		}

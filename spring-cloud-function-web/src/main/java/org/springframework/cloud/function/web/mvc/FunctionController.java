@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux;
+package org.springframework.cloud.function.web.mvc;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,7 +34,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.context.request.WebRequest;
 
 import reactor.core.publisher.Mono;
 
@@ -51,15 +53,14 @@ public class FunctionController {
 
 	@PostMapping(path = "/**", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
 	@ResponseBody
-	public Mono<ResponseEntity<?>> form(ServerWebExchange request) {
+	public Mono<ResponseEntity<?>> form(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return request.getFormData().doOnSuccess(params -> wrapper.params(params))
-				.then(processor.post(wrapper, null, false));
+		return processor.post(wrapper, null, false);
 	}
 
 	@PostMapping(path = "/**")
 	@ResponseBody
-	public Mono<ResponseEntity<?>> post(ServerWebExchange request,
+	public Mono<ResponseEntity<?>> post(WebRequest request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
 		return processor.post(wrapper, body, false);
@@ -67,40 +68,48 @@ public class FunctionController {
 
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
-	public Mono<ResponseEntity<?>> postStream(ServerWebExchange request,
+	public Mono<ResponseEntity<Publisher<?>>> postStream(WebRequest request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.post(wrapper, body, true);
+		return processor.post(wrapper, body, true).map(response -> ResponseEntity.ok()
+				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
 	@GetMapping(path = "/**")
 	@ResponseBody
-	public Mono<ResponseEntity<?>> get(ServerWebExchange request) {
+	public Mono<ResponseEntity<?>> get(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
 		return processor.get(wrapper);
 	}
 
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
-	public Mono<ResponseEntity<?>> getStream(ServerWebExchange request) {
+	public Mono<ResponseEntity<Publisher<?>>> getStream(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.stream(wrapper);
+		return processor.stream(wrapper).map(response -> ResponseEntity.ok()
+				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
-	private FunctionWrapper wrapper(ServerWebExchange request) {
+	private FunctionWrapper wrapper(WebRequest request) {
 		@SuppressWarnings("unchecked")
 		Function<Publisher<?>, Publisher<?>> function = (Function<Publisher<?>, Publisher<?>>) request
-				.getAttribute(WebRequestConstants.FUNCTION);
+				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
 		@SuppressWarnings("unchecked")
 		Consumer<Publisher<?>> consumer = (Consumer<Publisher<?>>) request
-				.getAttribute(WebRequestConstants.CONSUMER);
+				.getAttribute(WebRequestConstants.CONSUMER, WebRequest.SCOPE_REQUEST);
 		@SuppressWarnings("unchecked")
 		Supplier<Publisher<?>> supplier = (Supplier<Publisher<?>>) request
-				.getAttribute(WebRequestConstants.SUPPLIER);
+				.getAttribute(WebRequestConstants.SUPPLIER, WebRequest.SCOPE_REQUEST);
 		FunctionWrapper wrapper = RequestProcessor.wrapper(function, consumer, supplier);
-		wrapper.headers(request.getRequest().getHeaders());
-		wrapper.params(request.getRequest().getQueryParams());
-		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT);
+		for (String key : request.getParameterMap().keySet()) {
+			wrapper.params().addAll(key, Arrays.asList(request.getParameterValues(key)));
+		}
+		for (Iterator<String> keys = request.getHeaderNames(); keys.hasNext();) {
+			String key = keys.next();
+			wrapper.headers().addAll(key, Arrays.asList(request.getHeaderValues(key)));
+		}
+		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,
+				WebRequest.SCOPE_REQUEST);
 		wrapper.argument(argument);
 		return wrapper;
 	}

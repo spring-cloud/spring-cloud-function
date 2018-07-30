@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.cloud.function.mvc;
+package org.springframework.cloud.function.flux;
 
 import java.net.URI;
 import java.time.Duration;
@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.reactivestreams.Publisher;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -34,7 +35,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.cloud.function.mvc.MvcRestApplicationTests.TestConfiguration;
+import org.springframework.cloud.function.flux.FluxRestApplicationTests.TestConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -61,9 +62,9 @@ import reactor.core.publisher.Mono;
  * @author Dave Syer
  *
  */
-@SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
 @RunWith(SpringRunner.class)
-public class MvcRestApplicationTests {
+@SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=reactive")
+public class FluxRestApplicationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");
 	@LocalServerPort
@@ -234,13 +235,17 @@ public class MvcRestApplicationTests {
 	}
 
 	@Test
-	public void uppercaseGet() {
-		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
+	public void uppercaseGet() throws Exception {
+		assertThat(rest.exchange(RequestEntity.get(new URI("/uppercase/foo"))
+				.accept(MediaType.TEXT_PLAIN).build(), String.class).getBody())
+						.isEqualTo("[FOO]");
 	}
 
 	@Test
-	public void convertGet() {
-		assertThat(rest.getForObject("/wrap/123", String.class)).isEqualTo("..123..");
+	public void convertGet() throws Exception {
+		assertThat(rest.exchange(RequestEntity.get(new URI("/wrap/123"))
+				.accept(MediaType.TEXT_PLAIN).build(), String.class).getBody())
+						.isEqualTo("..123..");
 	}
 
 	@Test
@@ -270,6 +275,13 @@ public class MvcRestApplicationTests {
 						.isEqualTo(sse("[FOO]", "[BAR]"));
 	}
 
+	@Test
+	public void altSSE() throws Exception {
+		assertThat(rest.exchange(RequestEntity.post(new URI("/alt")).accept(EVENT_STREAM)
+				.contentType(MediaType.APPLICATION_JSON).body("[\"foo\",\"bar\"]"),
+				String.class).getBody()).isEqualTo(sse("[FOO]", "[BAR]"));
+	}
+
 	private String sse(String... values) {
 		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
 	}
@@ -287,6 +299,14 @@ public class MvcRestApplicationTests {
 					.map(value -> "[" + value.trim().toUpperCase() + "]");
 		}
 
+		@PostMapping({ "/alt" })
+		public Mono<ResponseEntity<?>> alt(@RequestBody List<String> flux) {
+			Publisher<?> result = Flux.fromIterable(flux)
+					.map(value -> "[" + value.trim().toUpperCase() + "]");
+			return Flux.from(result).log()
+					.then(Mono.fromSupplier(() -> ResponseEntity.ok(result)));
+		}
+
 		@PostMapping("/upFoos")
 		public Flux<Foo> upFoos(@RequestBody List<Foo> list) {
 			return Flux.fromIterable(list).log()
@@ -294,13 +314,15 @@ public class MvcRestApplicationTests {
 		}
 
 		@GetMapping("/uppercase/{id}")
-		public Mono<?> uppercaseGet(@PathVariable String id) {
-			return Mono.just(id).map(value -> "[" + value.trim().toUpperCase() + "]");
+		public Mono<ResponseEntity<?>> uppercaseGet(@PathVariable String id) {
+			return Mono.just(id).map(value -> "[" + value.trim().toUpperCase() + "]")
+					.flatMap(body -> Mono.just(ResponseEntity.ok(body)));
 		}
 
 		@GetMapping("/wrap/{id}")
-		public Mono<?> wrapGet(@PathVariable int id) {
-			return Mono.just(id).log().map(value -> ".." + value + "..");
+		public Mono<ResponseEntity<?>> wrapGet(@PathVariable int id) {
+			return Mono.just(id).log().map(value -> ".." + value + "..")
+					.flatMap(body -> Mono.just(ResponseEntity.ok(body)));
 		}
 
 		@GetMapping("/entity/{id}")
