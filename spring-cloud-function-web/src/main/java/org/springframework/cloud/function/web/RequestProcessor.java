@@ -146,7 +146,7 @@ public class RequestProcessor {
 
 		Object function = wrapper.handler();
 		if (!StringUtils.hasText(body)) {
-			return post(wrapper, (List<?>) null, null, null, stream);
+			return post(wrapper, (List<?>) null, null, stream);
 		}
 		body = body.trim();
 		Object input;
@@ -169,13 +169,13 @@ public class RequestProcessor {
 			}
 		}
 		if (input instanceof List) {
-			return post(wrapper, (List<?>) input, null, false, stream);
+			return post(wrapper, (List<?>) input, null, stream);
 		}
-		return post(wrapper, Collections.singletonList(input), null, true, stream);
+		return post(wrapper, Collections.singletonList(input), null, stream);
 	}
 
 	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, List<?> body,
-			MultiValueMap<String, String> params, Boolean single, boolean stream) {
+			MultiValueMap<String, String> params, boolean stream) {
 
 		Function<Publisher<?>, Publisher<?>> function = wrapper.function();
 		Consumer<Publisher<?>> consumer = wrapper.consumer();
@@ -197,7 +197,7 @@ public class RequestProcessor {
 			if (stream) {
 				return stream(wrapper, result);
 			}
-			return response(function, result, single, false);
+			return response(function, result, body == null ? null : body.size()<=1, false);
 		}
 
 		if (consumer != null) {
