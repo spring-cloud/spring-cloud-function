@@ -90,13 +90,13 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
-	@Ignore("Should this even work? Or do we need to be explicit about the JSON?")
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+				RequestEntity.post(new URI("/updates")).body("[\"one\", \"two\"]"),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
-		assertThat(result.getBody()).isEqualTo("onetwo");
+		assertThat(result.getBody()).isNull();
 	}
 
 	@Test
@@ -121,7 +121,6 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
-	@Ignore("Probably need to get this one working")
 	public void bareUpdates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
@@ -140,7 +139,6 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
-	// @Ignore("FIXME")
 	public void messages() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
@@ -171,7 +169,7 @@ public class HttpPostIntegrationTests {
 						RequestEntity.post(new URI("/uppercase"))
 								.contentType(MediaType.TEXT_PLAIN).body("foo"),
 						String.class);
-		// TODO: expect not JSON to come out?
+		// Result is multi-valued so it has to come out as an array
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\"]");
 	}
 
@@ -260,7 +258,7 @@ public class HttpPostIntegrationTests {
 	public void convertPost() throws Exception {
 		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/wrap"))
 				.contentType(MediaType.TEXT_PLAIN).body("123"), String.class);
-		// TODO: expect plain text to come out
+		// Result is multi-valued so it has to come out as an array
 		assertThat(result.getBody()).isEqualTo("[\"..123..\"]");
 	}
 
