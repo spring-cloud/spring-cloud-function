@@ -17,12 +17,14 @@
 package org.springframework.cloud.function.web;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
 /**
  * @author Mark Fisher
  */
-@SpringBootApplication
+@SpringBootConfiguration
+@EnableAutoConfiguration
 public class RestApplication {
 
 	public static void main(String[] args) {

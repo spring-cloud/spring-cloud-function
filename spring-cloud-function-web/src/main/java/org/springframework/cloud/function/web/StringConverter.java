@@ -13,33 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.springframework.cloud.function.web.flux.request;
-
-import java.util.List;
-
-import reactor.core.publisher.Flux;
+package org.springframework.cloud.function.web;
 
 /**
  * @author Dave Syer
  *
  */
-public class FluxRequest<T> {
-	
-	private List<T> body;
+public interface StringConverter {
 
-	public FluxRequest(List<T> body) {
-		this.body = body;
-	}
+	Object convert(Object function, String value);
 
-	public Flux<T> flux() {
-		return Flux.fromIterable(body);
-	}
-	
-	public List<T> body() {
-		return body;
-	}
-	
 }
-
-
