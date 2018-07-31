@@ -49,17 +49,17 @@ import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 public class RequestProcessor {
 
 	private static Log logger = LogFactory.getLog(RequestProcessor.class);
 
-	private FunctionInspector inspector;
+	private final FunctionInspector inspector;
 
-	private StringConverter converter;
+	private final StringConverter converter;
 
-	private JsonMapper mapper;
+	private final JsonMapper mapper;
 
 	@Value("${debug:${DEBUG:false}}")
 	private String debug = "false";
@@ -76,13 +76,159 @@ public class RequestProcessor {
 		return new FunctionWrapper(function, consumer, supplier);
 	}
 
+	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
+		if (wrapper.function() != null) {
+			return response(wrapper.function(), value(wrapper.function(), wrapper.argument()), true, true);
+		}
+		else {
+			return response(wrapper.supplier(), wrapper.supplier().get(), null, true);
+		}
+	}
+
+	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body, boolean stream) {
+		Mono<ResponseEntity<?>> responseEntityMono;
+		Object function = wrapper.handler();
+
+		Object input = null;
+		if (StringUtils.hasText(body)) {
+			Class<?> inputType = inspector.getInputType(function);
+			if (body.startsWith("[")) {
+				input = mapper.toList(body, inputType);
+			}
+			else {
+				if (inputType == String.class) {
+					input = body;
+				}
+				else if (body.startsWith("{")) {
+					input = mapper.toSingle(body, inputType);
+				}
+				else if (body.startsWith("\"")) {
+					input = body.substring(1, body.length() - 2);
+				}
+				else {
+					input = converter.convert(function, body);
+				}
+			}
+		}
+		responseEntityMono = post(wrapper, input, null, stream);
+		return responseEntityMono;
+	}
+
+	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
+		Publisher<?> result = request.function() != null
+				? value(request.function(), request.argument())
+						: request.supplier().get();
+		return stream(request, result);
+	}
+
+	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, Object body,
+			MultiValueMap<String, String> params, boolean stream) {
+
+		Iterable<?> iterable = body instanceof Collection ? (List<?>) body : Collections.singletonList(body);
+
+		Function<Publisher<?>, Publisher<?>> function = wrapper.function();
+		Consumer<Publisher<?>> consumer = wrapper.consumer();
+
+		MultiValueMap<String, String> form = wrapper.params();
+		if (params != null) {
+			form.putAll(params);
+		}
+
+		Flux<?> flux = body == null ? Flux.just(form) : Flux.fromIterable(iterable);
+		if (inspector.isMessage(function)) {
+			flux = messages(wrapper, function == null ? consumer : function, flux);
+		}
+		Mono<ResponseEntity<?>> responseEntityMono = null;
+		if (function != null) {
+			Flux<?> result = Flux.from(function.apply(flux));
+			logger.debug("Handled POST with function");
+			if (stream) {
+				responseEntityMono = stream(wrapper, result);
+			}
+			else {
+				responseEntityMono = response(function, result, body == null ? null : !(body instanceof Collection), false);
+			}
+		}
+		else if (consumer != null) {
+			consumer.accept(flux);
+			logger.debug("Handled POST with consumer");
+			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
+		}
+		return responseEntityMono;
+	}
+
+	private Flux<?> messages(FunctionWrapper request, Object function, Flux<?> flux) {
+		Map<String, Object> headers = HeaderUtils.fromHttp(request.headers());
+		return flux.map(payload -> MessageUtils.create(function, payload, headers));
+	}
+
+	private void addHeaders(BodyBuilder builder, Message<?> message) {
+		HttpHeaders headers = new HttpHeaders();
+		builder.headers(HeaderUtils.fromMessage(message.getHeaders(), headers));
+	}
+
+	private Mono<ResponseEntity<?>> stream(FunctionWrapper request, Publisher<?> result) {
+		BodyBuilder builder = ResponseEntity.ok();
+		if (inspector.isMessage(request.handler())) {
+			result = Flux.from(result)
+					.doOnNext(value -> addHeaders(builder, (Message<?>) value))
+					.map(message -> MessageUtils.unpack(request.handler(), message)
+							.getPayload());
+		}
+
+		Publisher<?> output = result;
+		return Flux.from(output).then(Mono.fromSupplier(() -> builder.body(output)));
+	}
+
+	private Mono<ResponseEntity<?>> response(Object handler, Publisher<?> result,
+			Boolean single, boolean getter) {
+
+		BodyBuilder builder = ResponseEntity.ok();
+		if (inspector.isMessage(handler)) {
+			result = Flux.from(result)
+					.doOnNext(value -> addHeaders(builder, (Message<?>) value))
+					.map(message -> MessageUtils.unpack(handler, message).getPayload());
+		}
+
+		if (isOutputSingle(handler) && (single != null && single || getter || isInputMultiple(handler))) {
+			result = Mono.from(result);
+		}
+
+		if (result instanceof Flux) {
+			result = Flux.from(result).collectList();
+		}
+		return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
+	}
+
+	private boolean isInputMultiple(Object handler) {
+		Class<?> type = inspector.getInputType(handler);
+		Class<?> wrapper = inspector.getInputWrapper(handler);
+		return Collection.class.isAssignableFrom(type) || Flux.class.equals(wrapper);
+	}
+
+	private boolean isOutputSingle(Object handler) {
+		Class<?> type = inspector.getOutputType(handler);
+		Class<?> wrapper = inspector.getOutputWrapper(handler);
+		if (Stream.class.isAssignableFrom(type)) {
+			return false;
+		}
+		else {
+			return wrapper == type || Mono.class.equals(wrapper) || Optional.class.equals(wrapper);
+		}
+	}
+
+	private Mono<?> value(Function<Publisher<?>, Publisher<?>> function, String value) {
+		Object input = converter.convert(function, value);
+		return Mono.from(function.apply(Flux.just(input)));
+	}
+
 	public static class FunctionWrapper {
 
-		private Function<Publisher<?>, Publisher<?>> function;
+		private final Function<Publisher<?>, Publisher<?>> function;
 
-		private Consumer<Publisher<?>> consumer;
+		private final Consumer<Publisher<?>> consumer;
 
-		private Supplier<Publisher<?>> supplier;
+		private final Supplier<Publisher<?>> supplier;
 
 		private MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
@@ -140,178 +286,4 @@ public class RequestProcessor {
 			return this.argument;
 		}
 	}
-
-	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
-			boolean stream) {
-
-		Object function = wrapper.handler();
-		if (!StringUtils.hasText(body)) {
-			return post(wrapper, (List<?>) null, null, stream);
-		}
-		body = body.trim();
-		Object input;
-		Class<?> inputType = inspector.getInputType(function);
-		if (body.startsWith("[")) {
-			input = mapper.toList(body, inputType);
-		}
-		else {
-			if (inputType == String.class) {
-				input = body;
-			}
-			else if (body.startsWith("{")) {
-				input = mapper.toSingle(body, inputType);
-			}
-			else if (body.startsWith("\"")) {
-				input = body.substring(1, body.length() - 2);
-			}
-			else {
-				input = converter.convert(function, body);
-			}
-		}
-		if (input instanceof List) {
-			return post(wrapper, (List<?>) input, null, stream);
-		}
-		return post(wrapper, Collections.singletonList(input), null, stream);
-	}
-
-	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, List<?> body,
-			MultiValueMap<String, String> params, boolean stream) {
-
-		Function<Publisher<?>, Publisher<?>> function = wrapper.function();
-		Consumer<Publisher<?>> consumer = wrapper.consumer();
-
-		MultiValueMap<String, String> form = wrapper.params();
-		if (params != null) {
-			form.putAll(params);
-		}
-
-		Flux<?> flux = body == null ? Flux.just(form) : Flux.fromIterable(body);
-		if (inspector.isMessage(function)) {
-			flux = messages(wrapper, function == null ? consumer : function, flux);
-		}
-		if (function != null) {
-			Flux<?> result = Flux.from(function.apply(flux));
-			if (logger.isDebugEnabled()) {
-				logger.debug("Handled POST with function");
-			}
-			if (stream) {
-				return stream(wrapper, result);
-			}
-			return response(function, result, body == null ? null : body.size()<=1, false);
-		}
-
-		if (consumer != null) {
-			consumer.accept(flux);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Handled POST with consumer");
-			}
-			return Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
-		}
-
-		throw new IllegalArgumentException("no such function");
-	}
-
-	private Flux<?> messages(FunctionWrapper request, Object function, Flux<?> flux) {
-		Map<String, Object> headers = HeaderUtils.fromHttp(request.headers());
-		flux = flux.map(payload -> MessageUtils.create(function, payload, headers));
-		return flux;
-	}
-
-	private void addHeaders(BodyBuilder builder, Message<?> message) {
-		HttpHeaders headers = new HttpHeaders();
-		builder.headers(HeaderUtils.fromMessage(message.getHeaders(), headers));
-	}
-
-	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
-		Publisher<?> result;
-		if (request.function()!=null) {
-			result = value(request.function(), request.argument());
-		} else {
-			result = supplier(request.supplier());
-		}
-		return stream(request, result);
-	}
-	
-	
-	private Mono<ResponseEntity<?>> stream(FunctionWrapper request, Publisher<?> result) {
-
-		BodyBuilder builder = ResponseEntity.ok();
-		if (inspector.isMessage(request.handler())) {
-			result = Flux.from(result)
-					.doOnNext(value -> addHeaders(builder, (Message<?>) value))
-					.map(message -> MessageUtils.unpack(request.handler(), message)
-							.getPayload());
-		}
-		
-		Publisher<?> output = result;
-		return Flux.from(output).then(Mono.fromSupplier(() -> builder.body(output)));
-
-	}
-
-	private Mono<ResponseEntity<?>> response(Object handler, Publisher<?> result,
-			Boolean single, boolean getter) {
-
-		BodyBuilder builder = ResponseEntity.ok();
-		if (inspector.isMessage(handler)) {
-			result = Flux.from(result)
-					.doOnNext(value -> addHeaders(builder, (Message<?>) value))
-					.map(message -> MessageUtils.unpack(handler, message).getPayload());
-		}
-
-		if (single != null && single && isOutputSingle(handler)) {
-			result = Mono.from(result);
-		}
-		else if (getter && single == null && isOutputSingle(handler)) {
-			result = Mono.from(result);
-		}
-		else if (isInputMultiple(handler) && isOutputSingle(handler)) {
-			result = Mono.from(result);
-		}
-		Publisher<?> output = result;
-		if (output instanceof Mono) {
-			return Mono.from(output).flatMap(body -> Mono.just(builder.body(body)));
-		}
-		return Flux.from(output).collectList()
-				.flatMap(body -> Mono.just(builder.body(body)));
-	}
-
-	private boolean isInputMultiple(Object handler) {
-		Class<?> type = inspector.getInputType(handler);
-		Class<?> wrapper = inspector.getInputWrapper(handler);
-		return Collection.class.isAssignableFrom(type) || Flux.class.equals(wrapper);
-	}
-
-	private boolean isOutputSingle(Object handler) {
-		Class<?> type = inspector.getOutputType(handler);
-		Class<?> wrapper = inspector.getOutputWrapper(handler);
-		if (Stream.class.isAssignableFrom(type)) {
-			return false;
-		}
-		if (wrapper == type) {
-			return true;
-		}
-		return Mono.class.equals(wrapper) || Optional.class.equals(wrapper);
-	}
-
-	private Publisher<?> supplier(Supplier<Publisher<?>> supplier) {
-		Publisher<?> result = supplier.get();
-		return result;
-	}
-
-	private Mono<?> value(Function<Publisher<?>, Publisher<?>> function, String value) {
-		Object input = converter.convert(function, value);
-		Mono<?> result = Mono.from(function.apply(Flux.just(input)));
-		return result;
-	}
-
-	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
-		if (wrapper.function() != null) {
-			return response(wrapper.function(), value(wrapper.function(), wrapper.argument()), true, true);
-		}
-		else {
-			return response(wrapper.supplier(), supplier(wrapper.supplier()), null, true);
-		}
-	}
-	
-
 }

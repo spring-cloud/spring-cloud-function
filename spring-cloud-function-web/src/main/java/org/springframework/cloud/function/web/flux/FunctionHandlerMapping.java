@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,6 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
-		// this.controller.setDebug(!"false".equals(debug));
 		detectHandlerMethods(controller);
 		while (prefix.endsWith("/")) {
 			prefix = prefix.substring(0, prefix.length() - 1);
@@ -126,30 +125,39 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
+
+		Object functionForGet = null;
 		Supplier<Publisher<?>> supplier = functions.lookup(Supplier.class, path);
 		if (supplier != null) {
 			request.getAttributes().put(WebRequestConstants.SUPPLIER, supplier);
-			return supplier;
+			functionForGet = supplier;
 		}
-		StringBuilder builder = new StringBuilder();
-		String name = path;
-		String value = null;
-		for (String element : path.split("/")) {
-			if (builder.length() > 0) {
-				builder.append("/");
-			}
-			builder.append(element);
-			name = builder.toString();
-			value = path.length() > name.length() ? path.substring(name.length() + 1)
-					: null;
-			Function<Object, Object> function = functions.lookup(Function.class, name);
-			if (function != null) {
-				request.getAttributes().put(WebRequestConstants.FUNCTION, function);
-				request.getAttributes().put(WebRequestConstants.ARGUMENT, value);
-				return function;
+		else {
+			StringBuilder builder = new StringBuilder();
+			String name = path;
+			String[] splitPath =  path.split("/");
+			Function<Object, Object> function = null;
+			for (int i = 0; i < splitPath.length || function != null; i++) {
+				String element = splitPath[i];
+				if (builder.length() > 0) {
+					builder.append("/");
+				}
+				builder.append(element);
+				name = builder.toString();
+
+				function = functions.lookup(Function.class, name);
+				if (function != null) {
+					request.getAttributes().put(WebRequestConstants.FUNCTION, function);
+					String value = path.length() > name.length()
+							? path.substring(name.length() + 1)
+								: null;
+					request.getAttributes().put(WebRequestConstants.ARGUMENT, value);
+					functionForGet = function;
+				}
 			}
 		}
-		return null;
+
+		return functionForGet;
 	}
 
 }
