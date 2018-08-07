@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.microsoft.azure.functions.ExecutionContext;
+import com.microsoft.azure.functions.OutputBinding;
 
 import org.reactivestreams.Publisher;
 
@@ -48,6 +49,17 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		Object convertedEvent = convertEvent(foo);
 		Publisher<?> output = apply(extract(convertedEvent));
 		return result(convertedEvent, output);
+	}
+
+	public void handleOutput(I foo, OutputBinding<O> bar, ExecutionContext context) {
+		if (context != null) {
+			context.getLogger().fine("Handler trigger processed a request.");
+		}
+		initialize(context);
+
+		Object convertedEvent = convertEvent(foo);
+		Publisher<?> output = apply(extract(convertedEvent));
+		bar.setValue(result(convertedEvent, output));
 	}
 
 	protected Object convertEvent(I input) {

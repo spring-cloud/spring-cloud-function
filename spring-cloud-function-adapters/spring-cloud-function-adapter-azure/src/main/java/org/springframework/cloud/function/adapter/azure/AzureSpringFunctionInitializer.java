@@ -53,10 +53,11 @@ public class AzureSpringFunctionInitializer implements Closeable {
 	@Autowired(required = false)
 	private FunctionCatalog catalog;
 
-	private static ConfigurableApplicationContext context;
+	private volatile static ConfigurableApplicationContext context;
 
 	public AzureSpringFunctionInitializer(Class<?> configurationClass) {
-		this.configurationClass = configurationClass;
+		this.configurationClass = configurationClass == null ? getClass()
+				: configurationClass;
 	}
 
 	public AzureSpringFunctionInitializer() {
@@ -108,8 +109,13 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 		else {
 			Set<String> functionNames = this.catalog.getNames(Function.class);
-			this.function = this.catalog.lookup(Function.class,
-					functionNames.iterator().next());
+			if (functionNames.size() == 1) {
+				this.function = this.catalog.lookup(Function.class,
+						functionNames.iterator().next());
+			}
+			else {
+				this.function = this.catalog.lookup(Function.class, name);
+			}
 		}
 	}
 
