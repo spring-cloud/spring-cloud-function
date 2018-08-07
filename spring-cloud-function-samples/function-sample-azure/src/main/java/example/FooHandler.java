@@ -16,7 +16,7 @@
 
 package example;
 
-import com.microsoft.azure.serverless.functions.ExecutionContext;
+import com.microsoft.azure.functions.ExecutionContext;
 
 import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHandler;
 

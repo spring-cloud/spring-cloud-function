@@ -27,11 +27,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.jar.Manifest;
 
-import com.microsoft.azure.serverless.functions.ExecutionContext;
+import com.microsoft.azure.functions.ExecutionContext;
 
 import org.reactivestreams.Publisher;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -89,7 +90,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 					ClassUtils.overrideThreadContextClassLoader(
 							AzureSpringFunctionInitializer.class.getClassLoader());
 
-					context = builder.web(false).run();
+					context = builder.web(WebApplicationType.NONE).run();
 					AzureSpringFunctionInitializer.context = context;
 				}
 			}
@@ -107,7 +108,8 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 		else {
 			Set<String> functionNames = this.catalog.getNames(Function.class);
-			this.function = this.catalog.lookup(Function.class, functionNames.iterator().next());
+			this.function = this.catalog.lookup(Function.class,
+					functionNames.iterator().next());
 		}
 	}
 

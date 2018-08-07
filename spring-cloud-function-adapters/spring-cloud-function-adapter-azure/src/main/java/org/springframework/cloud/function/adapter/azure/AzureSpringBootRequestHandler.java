@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import com.microsoft.azure.serverless.functions.ExecutionContext;
+import com.microsoft.azure.functions.ExecutionContext;
 
 import org.reactivestreams.Publisher;
 
@@ -41,7 +41,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 
 	public O handleRequest(I foo, ExecutionContext context) {
 		if (context != null) {
-			context.getLogger().fine("Handler Java HTTP trigger processed a request.");
+			context.getLogger().fine("Handler trigger processed a request.");
 		}
 		initialize(context);
 
