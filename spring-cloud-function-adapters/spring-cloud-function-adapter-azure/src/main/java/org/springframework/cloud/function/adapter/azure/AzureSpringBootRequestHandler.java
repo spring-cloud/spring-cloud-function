@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.azure;
 
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,26 +41,64 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		super();
 	}
 
-	public O handleRequest(I foo, ExecutionContext context) {
-		if (context != null) {
-			context.getLogger().fine("Handler trigger processed a request.");
-		}
-		initialize(context);
+	public O handleRequest(I input, ExecutionContext context) {
+		try {
+			if (context != null) {
+				context.getLogger().fine("Handler processed a request.");
+			}
+			initialize(context);
 
-		Object convertedEvent = convertEvent(foo);
-		Publisher<?> output = apply(extract(convertedEvent));
-		return result(convertedEvent, output);
+			Object convertedEvent = convertEvent(input);
+			Publisher<?> output = apply(extract(convertedEvent));
+			return result(convertedEvent, output);
+		}
+		catch (Throwable ex) {
+			if (context != null) {
+				context.getLogger().throwing(getClass().getName(), "handle", ex);
+			}
+			if (ex instanceof RuntimeException) {
+				throw (RuntimeException) ex;
+			}
+			if (ex instanceof Error) {
+				throw (Error) ex;
+			}
+			throw new UndeclaredThrowableException(ex);
+		}
+		finally {
+			if (context != null) {
+				context.getLogger().fine("Handler processed a request.");
+			}
+		}
 	}
 
-	public void handleOutput(I foo, OutputBinding<O> bar, ExecutionContext context) {
-		if (context != null) {
-			context.getLogger().fine("Handler trigger processed a request.");
-		}
-		initialize(context);
+	public void handleOutput(I input, OutputBinding<O> binding,
+			ExecutionContext context) {
+		try {
+			if (context != null) {
+				context.getLogger().fine("Handler processing a request.");
+			}
+			initialize(context);
 
-		Object convertedEvent = convertEvent(foo);
-		Publisher<?> output = apply(extract(convertedEvent));
-		bar.setValue(result(convertedEvent, output));
+			Object convertedEvent = convertEvent(input);
+			Publisher<?> output = apply(extract(convertedEvent));
+			binding.setValue(result(convertedEvent, output));
+
+			if (context != null) {
+				context.getLogger().fine("Handler processed a request.");
+			}
+		}
+		catch (Throwable ex) {
+			if (context != null) {
+				context.getLogger().throwing(getClass().getName(), "handle", ex);
+			}
+			if (ex instanceof RuntimeException) {
+				throw (RuntimeException) ex;
+			}
+			if (ex instanceof Error) {
+				throw (Error) ex;
+			}
+			throw new UndeclaredThrowableException(ex);
+		}
 	}
 
 	protected Object convertEvent(I input) {
