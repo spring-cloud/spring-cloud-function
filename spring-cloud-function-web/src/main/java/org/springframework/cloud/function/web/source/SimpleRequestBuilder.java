@@ -28,13 +28,13 @@ import org.springframework.http.HttpHeaders;
  * @author Dave Syer
  *
  */
-public class SimpleRequestBuilder implements RequestBuilder {
+class SimpleRequestBuilder implements RequestBuilder {
 
 	private String baseUrl = "http://${destination}";
 	private Map<String, String> headers = new LinkedHashMap<>();
 	private Environment environment;
 
-	public SimpleRequestBuilder(Environment environment) {
+	SimpleRequestBuilder(Environment environment) {
 		this.environment = environment;
 	}
 

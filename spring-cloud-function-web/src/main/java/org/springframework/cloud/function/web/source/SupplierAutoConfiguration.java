@@ -39,10 +39,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Conditional(SourceActiveCondition.class)
 @EnableConfigurationProperties(SupplierProperties.class)
 @ConditionalOnProperty(prefix = "spring.cloud.function.web.supplier", name = "enabled", matchIfMissing = true)
-public class SupplierAutoConfiguration {
+class SupplierAutoConfiguration {
 
 	@Bean
-	@ConditionalOnMissingBean
 	public SupplierExporter sourceForwarder(RequestBuilder requestBuilder,
 			DestinationResolver destinationResolver, FunctionCatalog catalog,
 			WebClient.Builder builder, SupplierProperties props) {
@@ -51,7 +50,6 @@ public class SupplierAutoConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnMissingBean
 	public RequestBuilder simpleRequestBuilder(SupplierProperties props,
 			Environment environment) {
 		SimpleRequestBuilder builder = new SimpleRequestBuilder(environment);

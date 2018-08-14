@@ -36,23 +36,31 @@ import reactor.core.scheduler.Schedulers;
 /**
  * Forwards items obtained from a {@link Supplier} or set of suppliers to an external HTTP
  * endpoint.
- * 
+ *
  * @author Dave Syer
  *
  */
-public class SupplierExporter implements SmartLifecycle {
+class SupplierExporter implements SmartLifecycle {
 
-	private FunctionCatalog catalog;
-	private WebClient client;
+	private final FunctionCatalog catalog;
+
+	private final WebClient client;
+
+	private final DestinationResolver destinationResolver;
+
+	private final RequestBuilder requestBuilder;
+
+	private final String supplier;
+
 	private volatile boolean running;
-	private volatile boolean ok = true;
-	private boolean autoStartup = true;
-	private boolean debug = true;
-	private String supplier;
-	private volatile Disposable subscription;
 
-	private DestinationResolver destinationResolver;
-	private RequestBuilder requestBuilder;
+	private volatile boolean ok = true;
+
+	private boolean autoStartup = true;
+
+	private boolean debug = true;
+
+	private volatile Disposable subscription;
 
 	public SupplierExporter(RequestBuilder requestBuilder,
 			DestinationResolver destinationResolver, FunctionCatalog catalog,
@@ -68,7 +76,6 @@ public class SupplierExporter implements SmartLifecycle {
 
 	@Override
 	public void start() {
-		
 		if (this.running) {
 			return;
 		}
