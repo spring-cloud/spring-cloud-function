@@ -61,6 +61,13 @@ public class BeanFactoryFunctionCatalogTests {
 	}
 
 	@Test
+	public void lookupFunctionWithNoType() {
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		Function<Flux<Integer>, Flux<String>> foos = processor.lookup("foos");
+		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
+	}
+
+	@Test
 	public void registerFunctionWithType() {
 		processor.register(new FunctionRegistration<Function<Integer, String>>(
 				(Integer i) -> "i=" + i).names("foos").type(

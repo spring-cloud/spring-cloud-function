@@ -16,13 +16,17 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.function.Function;
 
 import org.junit.Test;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.core.FluxFunction;
 
 /**
  *
@@ -40,6 +44,22 @@ public class InMemoryFunctionCatalogTests {
 		catalog.register(registration);
 		FunctionRegistration<?> registration2 = catalog.getRegistration(function);
 		assertSame(registration, registration2);
+	}
+
+	@Test
+	public void testFunctionLookup() {
+		TestFunction function = new TestFunction();
+		FunctionRegistration<TestFunction> registration = new FunctionRegistration<>(function, "foo")
+				.type(FunctionType.of(TestFunction.class).getType());
+		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
+		catalog.register(registration);
+
+		Object lookedUpFunction = catalog.lookup("hello");
+		assertNull(lookedUpFunction);
+
+		lookedUpFunction = catalog.lookup("foo");
+		assertNotNull(lookedUpFunction);
+		assertTrue(lookedUpFunction instanceof FluxFunction);
 	}
 
 	private static class TestFunction implements Function<Integer, String> {

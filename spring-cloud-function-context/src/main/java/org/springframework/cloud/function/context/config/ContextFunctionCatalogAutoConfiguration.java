@@ -135,17 +135,27 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		@SuppressWarnings("unchecked")
-		public <T> T lookup(Class<?> type, String name) {
-			if (Supplier.class.isAssignableFrom(type)) {
-				return (T) processor.lookupSupplier(name);
+		public <T> T lookup(Class<T> type, String name) {
+			T function = null;
+			if (type == null) {
+				function = (T) processor.lookupFunction(name);
+				if (function == null) {
+					function = (T) processor.lookupConsumer(name);
+				}
+				if (function == null) {
+					function = (T) processor.lookupSupplier(name);
+				}
 			}
-			if (Consumer.class.isAssignableFrom(type)) {
-				return (T) processor.lookupConsumer(name);
+			else if (Supplier.class.isAssignableFrom(type)) {
+				function = (T) processor.lookupSupplier(name);
 			}
-			if (Function.class.isAssignableFrom(type)) {
-				return (T) processor.lookupFunction(name);
+			else if (Consumer.class.isAssignableFrom(type)) {
+				function = (T) processor.lookupConsumer(name);
 			}
-			return null;
+			else if (Function.class.isAssignableFrom(type)) {
+				function = (T) processor.lookupFunction(name);
+			}
+			return function;
 		}
 
 		@Override
@@ -233,7 +243,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (function == null || !names.containsKey(function)) {
 				return null;
 			}
-			return new FunctionRegistration<>(function).name(names.get(function))
+			return new FunctionRegistration<>(function, names.get(function))
 					.type(findType(function).getType());
 		}
 
@@ -390,7 +400,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				.forEach(entry -> {
 					if (!targets.containsKey(entry.getValue())) {
 						FunctionRegistration<Object> target = new FunctionRegistration<Object>(
-								entry.getValue()).names(getAliases(entry.getKey()));
+								entry.getValue(), getAliases(entry.getKey()).toArray(new String[] {}));
 						targets.put(target.getTarget(), entry.getKey());
 						registrations.add(target);
 					}

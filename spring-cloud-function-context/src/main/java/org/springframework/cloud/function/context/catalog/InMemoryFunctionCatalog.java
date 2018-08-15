@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -117,9 +118,15 @@ public class InMemoryFunctionCatalog
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T> T lookup(Class<?> type, String name) {
-		Map<String, Object> map = this.extractTypeMap(type);
-		return (T) map.get(name);
+	public <T> T lookup(Class<T> type, String name) {
+		T function = null;
+		if (type == null) {
+			function = (T) functions.values().stream().filter(map -> map.get(name) != null).map(map -> map.get(name)).findFirst().orElse(null);
+		}
+		else {
+			function = (T) this.extractTypeMap(type).get(name);
+		}
+		return function;
 	}
 
 	@Override

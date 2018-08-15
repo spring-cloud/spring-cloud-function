@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * @author Dave Syert
+ * @author Dave Syer
  *
  */
 public class ContextFunctionCatalogInitializerTests {
@@ -64,7 +64,7 @@ public class ContextFunctionCatalogInitializerTests {
 	public void lookUps() {
 		create(SimpleConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
-		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "function"))
+		assertThat(catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		// TODO: support for function composition
 	}
@@ -73,7 +73,7 @@ public class ContextFunctionCatalogInitializerTests {
 	public void missingType() {
 		create(MissingTypeConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
-		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "function"))
+		assertThat(catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		// TODO: support for type inference from functional bean regsitrations
 	}
@@ -82,7 +82,7 @@ public class ContextFunctionCatalogInitializerTests {
 	public void configurationFunction() {
 		create(FunctionConfiguration.class);
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
+		assertThat(catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -96,7 +96,7 @@ public class ContextFunctionCatalogInitializerTests {
 	public void dependencyInjection() {
 		create(DependencyInjectionConfiguration.class);
 		assertThat(context.getBean("foos")).isInstanceOf(FunctionRegistration.class);
-		assertThat(catalog.<Function<?, ?>>lookup(Function.class, "foos"))
+		assertThat(catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);

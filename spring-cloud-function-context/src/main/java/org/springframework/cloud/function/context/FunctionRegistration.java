@@ -31,6 +31,7 @@ import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -58,6 +59,7 @@ public class FunctionRegistration<T> {
 		this.target = target;
 	}
 
+
 	/**
 	 * Creates instance of FunctionRegistration.
 	 *
@@ -66,11 +68,11 @@ public class FunctionRegistration<T> {
 	 * @param names additional set of names for this registration. Additional names
 	 * can be provided {@link #name(String)} or {@link #names(String...)} operations.
 	 */
-	public FunctionRegistration(T target, String name, String... additionalNames) {
+	public FunctionRegistration(T target, String... names) {
 		Assert.notNull(target, "'target' must not be null");
+		Assert.notEmpty(names, "'names' must not be null or empty");
 		this.target = target;
-		this.names(name);
-		this.names(additionalNames);
+		this.names(names);
 	}
 
 	public Map<String, String> getProperties() {
