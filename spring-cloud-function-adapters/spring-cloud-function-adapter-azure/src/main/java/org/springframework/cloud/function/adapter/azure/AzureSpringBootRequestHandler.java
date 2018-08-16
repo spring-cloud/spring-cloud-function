@@ -20,6 +20,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
@@ -45,14 +46,15 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		String name = null;
 		try {
 			if (context != null) {
-				context.getLogger().fine("Handler processed a request.");
 				name = context.getFunctionName();
+				context.getLogger().info("Handler processing a request for: " + name);
 			}
 			initialize(context);
 
-			Object convertedEvent = convertEvent(input);
-			Publisher<?> output = apply(name, extract(convertedEvent));
-			return result(convertedEvent, output);
+			Function<Publisher<?>, Publisher<?>> function = lookup(name);
+			Publisher<?> events = extract(function, convertEvent(input));
+			Publisher<?> output = function.apply(events);
+			return result(function, input, output);
 		}
 		catch (Throwable ex) {
 			if (context != null) {
@@ -68,7 +70,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		}
 		finally {
 			if (context != null) {
-				context.getLogger().fine("Handler processed a request.");
+				context.getLogger().fine("Handler processed a request for: " + name);
 			}
 		}
 	}
@@ -83,19 +85,26 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		return input;
 	}
 
-	private Flux<?> extract(Object input) {
-		if (input instanceof Collection) {
-			return Flux.fromIterable((Iterable<?>) input);
+	private Flux<?> extract(Function<?, ?> function, Object input) {
+		if (!isSingleInput(function, input)) {
+			if (input instanceof Collection) {
+				return Flux.fromIterable((Iterable<?>) input);
+			}
 		}
 		return Flux.just(input);
 	}
 
-	private O result(Object input, Publisher<?> output) {
+	private O result(Function<?, ?> function, Object input, Publisher<?> output) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : Flux.from(output).toIterable()) {
 			result.add(convertOutput(value));
 		}
-		if (isSingleValue(input) && result.size() == 1) {
+		if (isSingleInput(function, input) && result.size() == 1) {
+			@SuppressWarnings("unchecked")
+			O value = (O) result.get(0);
+			return value;
+		}
+		if (isSingleOutput(function, input) && result.size() == 1) {
 			@SuppressWarnings("unchecked")
 			O value = (O) result.get(0);
 			return value;
@@ -103,10 +112,6 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		@SuppressWarnings("unchecked")
 		O value = (O) result;
 		return value;
-	}
-
-	private boolean isSingleValue(Object input) {
-		return !(input instanceof Collection);
 	}
 
 	@SuppressWarnings("unchecked")

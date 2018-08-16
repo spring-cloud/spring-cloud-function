@@ -1,6 +1,4 @@
+extensions.csproj
+obj/
 lib/
-node/
-package-lock.json
-node_modules/
-etc/
 	

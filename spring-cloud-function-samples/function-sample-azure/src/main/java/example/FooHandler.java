@@ -17,6 +17,10 @@
 package example;
 
 import com.microsoft.azure.functions.ExecutionContext;
+import com.microsoft.azure.functions.HttpMethod;
+import com.microsoft.azure.functions.annotation.AuthorizationLevel;
+import com.microsoft.azure.functions.annotation.FunctionName;
+import com.microsoft.azure.functions.annotation.HttpTrigger;
 
 import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHandler;
 
@@ -24,8 +28,11 @@ import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHa
  * @author Soby Chacko
  */
 public class FooHandler extends AzureSpringBootRequestHandler<Foo, Bar> {
-
-	public Bar execute(Foo foo, ExecutionContext context) {
+	@FunctionName("uppercase")
+	public Bar execute(
+			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
+					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) Foo foo,
+			ExecutionContext context) {
 		return handleRequest(foo, context);
 	}
 

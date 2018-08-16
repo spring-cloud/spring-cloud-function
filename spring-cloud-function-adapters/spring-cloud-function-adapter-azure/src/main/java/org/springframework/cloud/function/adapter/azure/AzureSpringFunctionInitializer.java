@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -36,6 +37,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
@@ -53,6 +55,9 @@ public class AzureSpringFunctionInitializer implements Closeable {
 	@Autowired(required = false)
 	private FunctionCatalog catalog;
 
+	@Autowired(required = false)
+	private FunctionInspector inspector;
+
 	private volatile static ConfigurableApplicationContext context;
 
 	public AzureSpringFunctionInitializer(Class<?> configurationClass) {
@@ -68,6 +73,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 	public void close() throws IOException {
 		if (AzureSpringFunctionInitializer.context != null) {
 			AzureSpringFunctionInitializer.context.close();
+			AzureSpringFunctionInitializer.context = null;
 		}
 	}
 
@@ -80,7 +86,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 			return;
 		}
 		if (ctxt != null) {
-			ctxt.getLogger().info("Initializing function");
+			ctxt.getLogger().info("Initializing functions");
 		}
 
 		if (context == null) {
@@ -119,13 +125,37 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	protected Publisher<?> apply(String name, Publisher<?> input) {
+	protected boolean isSingleInput(Function<?,?> function, Object input) {
+		if (!(input instanceof Collection)) {
+			return true;
+		}
+		if (this.inspector != null) {
+			return Collection.class.isAssignableFrom(inspector.getInputType(function));
+		}
+		return ((Collection<?>)input).size() <= 1;
+	}
+
+	protected boolean isSingleOutput(Function<?,?> function, Object output) {
+		if (!(output instanceof Collection)) {
+			return true;
+		}
+		if (this.inspector != null) {
+			return Collection.class.isAssignableFrom(inspector.getOutputType(function));
+		}
+		return ((Collection<?>)output).size() <= 1;
+	}
+
+	protected Function<Publisher<?>, Publisher<?>> lookup(String name) {
 		Function<Publisher<?>, Publisher<?>> function = this.function;
-		if (function == null && name != null) {
-			function = this.catalog.lookup(Function.class, name);
+		if (name != null && this.catalog != null) {
+			Function<Publisher<?>, Publisher<?>> preferred = this.catalog
+					.lookup(Function.class, name);
+			if (preferred != null) {
+				function = preferred;
+			}
 		}
 		if (function != null) {
-			return function.apply(input);
+			return function;
 		}
 		throw new IllegalStateException("No function defined");
 	}

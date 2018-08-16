@@ -24,7 +24,9 @@
 		<functionAppName>function-sample-azure</functionAppName>
 		<functionAppRegion>westus</functionAppRegion>
 		<functionResourceGroup>java-function-group</functionResourceGroup>
+		<stagingDirectory>${project.build.directory}/azure-functions/${functionAppName}</stagingDirectory>
 		<start-class>example.Config</start-class>
+		<wrapper.version>1.0.11.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>
@@ -62,13 +64,33 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-clean-plugin</artifactId>
+					<configuration>
+						<filesets>
+							<fileset>
+								<directory>${basedir}</directory>
+								<includes>
+									<include>obj/**</include>
+								</includes>
+							</fileset>
+							<fileset>
+								<directory>${basedir}</directory>
+								<includes>
+									<include>extensions.csproj</include>
+								</includes>
+							</fileset>
+						</filesets>
+					</configuration>
+				</plugin>
+				<plugin>
 					<artifactId>maven-resources-plugin</artifactId>
 					<version>3.0.2</version>
 				</plugin>
 				<plugin>
 					<groupId>com.microsoft.azure</groupId>
 					<artifactId>azure-functions-maven-plugin</artifactId>
-					<version>1.0.0-beta-1</version>
+					<version>1.0.0-beta-4</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -82,6 +104,26 @@
 				</configuration>
 			</plugin>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${stagingDirectory}/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+							<includeScope>runtime</includeScope>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>com.microsoft.azure</groupId>
 				<artifactId>azure-functions-maven-plugin</artifactId>
 				<configuration>
@@ -93,8 +135,20 @@
 							<name>FUNCTIONS_EXTENSION_VERSION</name>
 							<value>beta</value>
 						</property>
+						<property>
+							<name>MSDEPLOY_RENAME_LOCKED_FILES</name>
+							<value>1</value>
+						</property>
 					</appSettings>
 				</configuration>
+				<executions>
+					<execution>
+						<id>package-functions</id>
+						<goals>
+							<goal>package</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
@@ -121,42 +175,17 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<configuration>
-					<createDependencyReducedPom>false</createDependencyReducedPom>
-					<shadedArtifactAttached>true</shadedArtifactAttached>
-					<shadedClassifierName>azure</shadedClassifierName>
-					<outputDirectory>${project.build.directory}/azure-functions/${functionAppName}</outputDirectory>
-				</configuration>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.boot.experimental</groupId>
+						<artifactId>spring-boot-thin-layout</artifactId>
+						<version>${wrapper.version}</version>
+					</dependency>
+				</dependencies>
 			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>azure</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-						<inherited>false</inherited>
-						<configuration>
-							<attach>false</attach>
-							<descriptors>
-								<descriptor>${basedir}/src/assembly/azure.xml</descriptor>
-							</descriptors>
-							<outputDirectory>${project.build.directory}/azure-functions</outputDirectory>
-							<appendAssemblyId>false</appendAssemblyId>
-							<finalName>${functionAppName}</finalName>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
 		</plugins>
 
 	</build>
