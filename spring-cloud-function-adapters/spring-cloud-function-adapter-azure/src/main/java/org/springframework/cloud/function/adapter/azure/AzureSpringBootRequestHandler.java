@@ -42,14 +42,16 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 	}
 
 	public O handleRequest(I input, ExecutionContext context) {
+		String name = null;
 		try {
 			if (context != null) {
 				context.getLogger().fine("Handler processed a request.");
+				name = context.getFunctionName();
 			}
 			initialize(context);
 
 			Object convertedEvent = convertEvent(input);
-			Publisher<?> output = apply(extract(convertedEvent));
+			Publisher<?> output = apply(name, extract(convertedEvent));
 			return result(convertedEvent, output);
 		}
 		catch (Throwable ex) {
@@ -73,32 +75,8 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 
 	public void handleOutput(I input, OutputBinding<O> binding,
 			ExecutionContext context) {
-		try {
-			if (context != null) {
-				context.getLogger().fine("Handler processing a request.");
-			}
-			initialize(context);
-
-			Object convertedEvent = convertEvent(input);
-			Publisher<?> output = apply(extract(convertedEvent));
-			binding.setValue(result(convertedEvent, output));
-
-			if (context != null) {
-				context.getLogger().fine("Handler processed a request.");
-			}
-		}
-		catch (Throwable ex) {
-			if (context != null) {
-				context.getLogger().throwing(getClass().getName(), "handle", ex);
-			}
-			if (ex instanceof RuntimeException) {
-				throw (RuntimeException) ex;
-			}
-			if (ex instanceof Error) {
-				throw (Error) ex;
-			}
-			throw new UndeclaredThrowableException(ex);
-		}
+		O result = handleRequest(input, context);
+		binding.setValue(result);
 	}
 
 	protected Object convertEvent(I input) {

@@ -119,8 +119,12 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	protected Publisher<?> apply(Publisher<?> input) {
-		if (this.function != null) {
+	protected Publisher<?> apply(String name, Publisher<?> input) {
+		Function<Publisher<?>, Publisher<?>> function = this.function;
+		if (function == null && name != null) {
+			function = this.catalog.lookup(Function.class, name);
+		}
+		if (function != null) {
 			return function.apply(input);
 		}
 		throw new IllegalStateException("No function defined");
