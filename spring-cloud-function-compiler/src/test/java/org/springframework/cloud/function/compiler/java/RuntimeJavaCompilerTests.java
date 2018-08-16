@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
 
 import org.junit.Test;
@@ -41,6 +42,7 @@ public class RuntimeJavaCompilerTests {
 	
 	@Test
 	public void missingType() throws Exception {
+		Locale.setDefault(Locale.ENGLISH);
 		RuntimeJavaCompiler rjc = new RuntimeJavaCompiler();
 		CompilationResult cr = rjc.compile("A", 
 				"public class A implements java.util.function.Supplier { "+
