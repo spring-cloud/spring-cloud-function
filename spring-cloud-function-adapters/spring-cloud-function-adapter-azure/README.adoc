@@ -5,6 +5,23 @@ You can write an app with a single `@Bean` of type `Function` and it will be dep
 
 There is a `AzureSpringBootRequestHandler` which you must extend, and provide the input and output types as annotated method parameters (enabling Azure to inspect the class and create JSON bindings). The base class has two useful methods (`handleRequest` and `handleOutput`) to which you can delegate the actual function call, so mostly the function will only ever have one line.
 
+Example:
+
+```java
+public class FooHandler extends AzureSpringBootRequestHandler<Foo, Bar> {
+	@FunctionName("uppercase")
+	public Bar execute(
+			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
+					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS)
+                    Foo foo,
+			ExecutionContext context) {
+		return handleRequest(foo, context);
+	}
+}
+```
+
+This Azure handler will delegate to a `Function<Foo,Bar>` bean (or a `Function<Publisher<Foo>,Publisher<Bar>>`). Some Azure triggers (e.g. `@CosmosDBTrigger`) result in a input type of `List` and in that case you can bind to `List` in the Azure handler, or `String` (the raw JSON). The `List` input delegates to a `Function` with input type `Map<String,Object>`, or `Publisher` or `List` of the same type. The output of the `Function` can be a `List` (one-for-one) or a single value (aggregation), and the output binding in the Azure declaration should match.
+
 If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name`. Or if you make the `@FunctionName` in the Azure handler method match the function name it should work that way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud `FunctionCatalog`.
 
 === Notes on JAR Layout
