@@ -71,7 +71,9 @@ JVM.</simpara>
 <simpara>Adapters for <link xl:href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws">AWS Lambda</link>, <link xl:href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure">Azure</link>, <link xl:href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk">Apache OpenWhisk</link> and possibly other "serverless" service providers.</simpara>
 </listitem>
 </orderedlist>
-<simpara>Unresolved directive in spring-cloud-function.adoc - include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing-docs.adoc[]</simpara>
+<note>
+<simpara>Spring Cloud is released under the non-restrictive Apache 2.0 license. If you would like to contribute to this section of the documentation or if you find an error, please find the source code and issue trackers in the project at <link xl:href="https://github.com/spring-cloud/spring-cloud-function/tree/master/docs/src/main/asciidoc">github</link>.</simpara>
+</note>
 </chapter>
 <chapter xml:id="_getting_started">
 <title>Getting Started</title>
