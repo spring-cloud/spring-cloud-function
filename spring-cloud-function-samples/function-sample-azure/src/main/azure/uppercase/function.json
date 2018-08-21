@@ -1,5 +1,5 @@
 {
-	"scriptFile": "../function-sample-azure-1.0.1.RELEASE-azure.jar",
+	"scriptFile": "../function-sample-azure-1.0.2.BUILD-SNAPSHOT-azure.jar",
 	"entryPoint": "example.FooHandler.execute",
 	"bindings": [
 		{
