@@ -20,7 +20,7 @@ while getopts ":s:f:c:p:" opt; do
     esac
 done
 
-java -jar ../spring-cloud-function-samples/function-sample-compiler/target/function-sample-compiler-1.0.1.BUILD-SNAPSHOT.jar\
+java -jar ../spring-cloud-function-samples/function-sample-compiler/target/function-sample-compiler-1.0.1.RELEASE.jar\
  --spring.cloud.function.import.$FUNC.type=$TYPE\
  --spring.cloud.function.import.$FUNC.location=file:///tmp/function-registry/$TYPE's'/$FUNC.fun\
  --management.security.enabled=false\
