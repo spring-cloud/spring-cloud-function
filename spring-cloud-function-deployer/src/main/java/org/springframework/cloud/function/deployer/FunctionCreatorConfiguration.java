@@ -244,9 +244,22 @@ class FunctionCreatorConfiguration {
 		private String defaultMain;
 
 		public BeanCreator(URL[] urls) {
-			functionClassLoader = new BeanCreatorClassLoader(expand(urls),
-					getClass().getClassLoader().getParent());
+			functionClassLoader = new BeanCreatorClassLoader(expand(urls), getParent());
 			this.defaultMain = findMain(urls);
+		}
+
+		private ClassLoader getParent() {
+			ClassLoader loader = getClass().getClassLoader().getParent();
+			ClassLoader parent = loader;
+			while (loader.getParent() != null) {
+				// If launched from a fat jar with spring.factories skip this parent level
+				// (which was added by the JarLauncher).
+				if (loader.getResource("META-INF/spring.factories") != null) {
+					parent = loader.getParent();
+				}
+				loader = loader.getParent();
+			}
+			return parent;
 		}
 
 		private String findMain(URL[] urls) {
