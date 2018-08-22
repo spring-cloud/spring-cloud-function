@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Dave Syer
  */
-@Ignore
+
 public class ApplicationRunnerTests {
 
 	@Test
@@ -43,6 +43,7 @@ public class ApplicationRunnerTests {
 	}
 
 	@Test
+	@Ignore // related to boot 2.1 no bean override change
 	public void functional() {
 		ApplicationRunner runner = new ApplicationRunner(getClass().getClassLoader(),
 				FunctionRegistrar.class.getName());

@@ -6,7 +6,7 @@
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *      
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,7 +42,6 @@ import reactor.core.publisher.Mono;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { FunctionDeployerConfiguration.class })
 @DirtiesContext
-@Ignore
 public abstract class FunctionCreatorConfigurationTests {
 
 	@Autowired
@@ -51,7 +50,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.Doubler" })
-	@Ignore
 	public static class SingleFunctionTests extends FunctionCreatorConfigurationTests {
 
 		@Test
@@ -66,7 +64,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler" })
-	@Ignore
 	public static class SingleFunctionWithAutoMainTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -83,7 +80,6 @@ public abstract class FunctionCreatorConfigurationTests {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler",
 			"function.main=org.springframework.cloud.function.test.FunctionApp"})
-	@Ignore
 	public static class SingleFunctionWithMainTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -100,11 +96,11 @@ public abstract class FunctionCreatorConfigurationTests {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler",
 			"function.main=org.springframework.cloud.function.test.FunctionRegistrar"})
-	@Ignore
 	public static class SingleFunctionWithRegistrarTests
 			extends FunctionCreatorConfigurationTests {
 
 		@Test
+		@Ignore // related to boot 2.1 no bean override change
 		public void testDouble() {
 			Function<Flux<Integer>, Flux<Integer>> function = catalog
 					.lookup(Function.class, "function0");
@@ -115,7 +111,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.location=app:classpath",
 			"function.bean=org.springframework.cloud.function.test.SpringDoubler" })
-	@Ignore
 	public static class ManualSpringFunctionTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -131,7 +126,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.NumberEmitter,"
 					+ "org.springframework.cloud.function.test.Frenchizer" })
-	@Ignore
 	public static class SupplierCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -154,7 +148,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.Doubler,"
 					+ "org.springframework.cloud.function.test.Frenchizer" })
-	@Ignore
 	public static class FunctionCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -177,7 +170,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.Frenchizer,"
 					+ "org.springframework.cloud.function.test.Printer" })
-	@Ignore
 	public static class ConsumerCompositionTests
 			extends FunctionCreatorConfigurationTests {
 

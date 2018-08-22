@@ -42,7 +42,6 @@ import reactor.core.publisher.Flux;
  * @author Dave Syer
  *
  */
- @Ignore
 public class SpringFunctionInitializerTests {
 
 	private SpringFunctionInitializer initializer;
@@ -72,6 +71,7 @@ public class SpringFunctionInitializerTests {
 	}
 
 	@Test
+	@Ignore // related to boot 2.1 no bean override change
 	public void functionRegistrar() {
 		initializer = new SpringFunctionInitializer(FunctionRegistrar.class);
 		initializer.initialize();
