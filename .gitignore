@@ -28,3 +28,4 @@ coverage-error.log
 .apt_generated
 credentials.yml
 .flattened-pom.xml
+pom.xml.versionsBackup

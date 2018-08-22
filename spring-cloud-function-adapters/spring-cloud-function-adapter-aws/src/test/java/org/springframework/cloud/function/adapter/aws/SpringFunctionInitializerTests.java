@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -41,6 +42,7 @@ import reactor.core.publisher.Flux;
  * @author Dave Syer
  *
  */
+ @Ignore
 public class SpringFunctionInitializerTests {
 
 	private SpringFunctionInitializer initializer;

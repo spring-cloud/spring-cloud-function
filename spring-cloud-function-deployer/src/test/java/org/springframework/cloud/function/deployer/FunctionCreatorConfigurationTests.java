@@ -19,6 +19,7 @@ package org.springframework.cloud.function.deployer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,6 +42,7 @@ import reactor.core.publisher.Mono;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { FunctionDeployerConfiguration.class })
 @DirtiesContext
+@Ignore
 public abstract class FunctionCreatorConfigurationTests {
 
 	@Autowired
@@ -49,6 +51,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.Doubler" })
+	@Ignore
 	public static class SingleFunctionTests extends FunctionCreatorConfigurationTests {
 
 		@Test
@@ -63,6 +66,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler" })
+	@Ignore
 	public static class SingleFunctionWithAutoMainTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -79,6 +83,7 @@ public abstract class FunctionCreatorConfigurationTests {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler",
 			"function.main=org.springframework.cloud.function.test.FunctionApp"})
+	@Ignore
 	public static class SingleFunctionWithMainTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -95,6 +100,7 @@ public abstract class FunctionCreatorConfigurationTests {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler",
 			"function.main=org.springframework.cloud.function.test.FunctionRegistrar"})
+	@Ignore
 	public static class SingleFunctionWithRegistrarTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -109,6 +115,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.location=app:classpath",
 			"function.bean=org.springframework.cloud.function.test.SpringDoubler" })
+	@Ignore
 	public static class ManualSpringFunctionTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -124,6 +131,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.NumberEmitter,"
 					+ "org.springframework.cloud.function.test.Frenchizer" })
+	@Ignore
 	public static class SupplierCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -146,6 +154,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.Doubler,"
 					+ "org.springframework.cloud.function.test.Frenchizer" })
+	@Ignore
 	public static class FunctionCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -168,6 +177,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = { "function.location=file:target/test-classes",
 			"function.bean=org.springframework.cloud.function.test.Frenchizer,"
 					+ "org.springframework.cloud.function.test.Printer" })
+	@Ignore
 	public static class ConsumerCompositionTests
 			extends FunctionCreatorConfigurationTests {
 

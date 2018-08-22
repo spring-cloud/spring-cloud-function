@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.deployer;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Dave Syer
  */
+@Ignore
 public class ApplicationRunnerTests {
 
 	@Test

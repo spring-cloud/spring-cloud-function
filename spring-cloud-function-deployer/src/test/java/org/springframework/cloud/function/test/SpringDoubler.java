@@ -23,6 +23,7 @@ import javax.annotation.PreDestroy;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner.Mode;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -35,7 +36,7 @@ public class SpringDoubler implements Function<Integer, Integer> {
 	public void init() {
 		if (this.context == null) {
 			context = new SpringApplicationBuilder(FunctionApp.class).bannerMode(Mode.OFF).registerShutdownHook(false)
-					.web(false).run();
+					.web(WebApplicationType.NONE).run();
 		}
 	}
 
