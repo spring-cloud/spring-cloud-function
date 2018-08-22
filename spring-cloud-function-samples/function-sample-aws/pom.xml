@@ -26,7 +26,6 @@
 		<aws-lambda-events.version>2.0.2</aws-lambda-events.version>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
 		<spring-cloud-function.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
-		<spring-cloud-stream-servlet.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-stream-servlet.version>
 		<start-class>example.Config</start-class>
 	</properties>
 
@@ -72,11 +71,6 @@
 				<version>${spring-cloud-function.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-servlet</artifactId>
-				<version>${spring-cloud-stream-servlet.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
