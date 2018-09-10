@@ -51,7 +51,7 @@ public class FunctionRegistration<T> {
 	private FunctionType type;
 
 	/**
-	 * @deprecated as of v1.0.0 in favor of {@link #FunctionRegistration(Object, String, String...)}
+	 * @deprecated as of v1.0.0 in favor of {@link #FunctionRegistration(Object, String...)}
 	 */
 	@Deprecated
 	public FunctionRegistration(T target) {
@@ -64,7 +64,6 @@ public class FunctionRegistration<T> {
 	 * Creates instance of FunctionRegistration.
 	 *
 	 * @param target instance of {@link Supplier}, {@link Function} or {@link Consumer}
-	 * @param name initial name for this registration.
 	 * @param names additional set of names for this registration. Additional names
 	 * can be provided {@link #name(String)} or {@link #names(String...)} operations.
 	 */

@@ -27,6 +27,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
 import org.junit.After;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
@@ -48,6 +50,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionScan;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.inject.FooConfiguration;
+import org.springframework.cloud.function.kotlin.KotlinLambdasConfiguration;
 import org.springframework.cloud.function.scan.ScannedFunction;
 import org.springframework.cloud.function.test.GenericFunction;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -370,6 +373,34 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		finally {
 			ClassUtils.overrideThreadContextClassLoader(getClass().getClassLoader());
 		}
+	}
+
+	@Test
+	public void kotlinLambdas() {
+		create(KotlinLambdasConfiguration.class);
+
+		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function.class);
+		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
+		assertThat(catalog.lookup(Function.class, "kotlinFunction"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookup(Function.class, "kotlinFunction")))
+				.isAssignableFrom(String.class);
+		assertThat(inspector.getOutputType(catalog.lookup(Function.class, "kotlinFunction")))
+				.isAssignableFrom(String.class);
+
+		assertThat(context.getBean("kotlinConsumer")).isInstanceOf(Consumer.class);
+		assertThat(context.getBean("kotlinConsumer")).isInstanceOf(Function1.class);
+		assertThat(catalog.lookup(Function.class, "kotlinConsumer"))
+				.isInstanceOf(Function.class);
+		assertThat(inspector.getInputType(catalog.lookup(Function.class, "kotlinConsumer")))
+				.isAssignableFrom(String.class);
+
+		assertThat(context.getBean("kotlinSupplier")).isInstanceOf(Supplier.class);
+		assertThat(context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
+		assertThat(catalog.lookup(Supplier.class, "kotlinSupplier"))
+				.isInstanceOf(Supplier.class);
+		assertThat(inspector.getOutputType(catalog.lookup(Supplier.class, "kotlinSupplier")))
+				.isAssignableFrom(String.class);
 	}
 
 	private void create(String jarfile, Class<?> config, String... props) {
