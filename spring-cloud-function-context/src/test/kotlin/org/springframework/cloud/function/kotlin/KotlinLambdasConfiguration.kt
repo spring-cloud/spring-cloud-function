@@ -34,7 +34,7 @@ open class KotlinLambdasConfiguration {
 
     @Bean
     open fun kotlinConsumer(): (String) -> Unit {
-        return  { }
+        return  { println(it) }
     }
 
     @Bean

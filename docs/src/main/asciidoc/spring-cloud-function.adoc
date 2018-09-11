@@ -21,13 +21,20 @@ include::getting-started.adoc[]
 
 == Function Catalog and Flexible Function Signatures
 
-One of the main features of Spring Cloud Function is to adapt and
-support a range of type signatures for user-defined functions. So
-users can supply a bean of type `Function<String,String>`, for
-instance, and the `FunctionCatalog` will wrap it into a
-`Function<Flux<String>,Flux<String>>`. Users don't normally have to
-care about the `FunctionCatalog` at all, but it is useful to know what
+One of the main features of Spring Cloud Function is to adapt and support a range of type signatures for user-defined functions,
+while providing a consistent execution model.
+That's why all user defined functions are transformed into a canonical representation by `FunctionCatalog`, using primitives
+defined by the https://projectreactor.io/[Project Reactor] (i.e., `Flux<T>` and `Mono<T>`).
+Users can supply a bean of type `Function<String,String>`, for instance, and the `FunctionCatalog` will wrap it into a
+`Function<Flux<String>,Flux<String>>`.
+
+Using Reactor based primitives not only helps with the canonical representation of user defined functions, but it also
+facilitates a more robust and flexible(reactive) execution model.
+
+While users don't normally have to care about the `FunctionCatalog` at all, it is useful to know what
 kind of functions are supported in user code.
+
+=== Java 8 function support
 
 Generally speaking users can expect that if they write a function for
 a plain old Java type (or primitive wrapper), then the function
@@ -58,13 +65,33 @@ of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.
 
-A function catalog can contain a `Supplier` and a `Function` (or
-`Consumer`) with the same name (like a GET and a POST to the same
-resource). It can even contain a `Consumer<Flux<>>` with the same name
-as a `Function`, but it cannot contain a `Consumer<T>` and a
-`Function<T,S>` with the same name when `T` is not a `Publisher`
-because the consumer would be converted to a `Function` and only one
-of them can be registered.
+=== Kotlin Lambda support
+
+We also provide support for Kotlin lambdas (since v2.0).
+Consider the following:
+
+[source, java]
+----
+@Bean
+open fun kotlinSupplier(): () -> String {
+    return  { "Hello from Kotlin" }
+}
+
+@Bean
+open fun kotlinFunction(): (String) -> String {
+    return  { it.toUpperCase() }
+}
+
+@Bean
+open fun kotlinConsumer(): (String) -> Unit {
+    return  { println(it) }
+}
+
+----
+The above represents Kotlin lambdas configured as Spring beans. The signature of each maps to a Java equivalent of
+`Supplier`, `Function` and `Consumer`, and thus supported/recognized signatures by the framework.
+While mechanics of Kotlin-to-Java mapping are outside of the scope of this documentation, it is important to understand that the
+same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.
 
 == Standalone Web Applications
 
