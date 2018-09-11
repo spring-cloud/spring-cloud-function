@@ -119,13 +119,18 @@ exposing different functions over different physical transports.</simpara>
 </chapter>
 <chapter xml:id="_function_catalog_and_flexible_function_signatures">
 <title>Function Catalog and Flexible Function Signatures</title>
-<simpara>One of the main features of Spring Cloud Function is to adapt and
-support a range of type signatures for user-defined functions. So
-users can supply a bean of type <literal>Function&lt;String,String&gt;</literal>, for
-instance, and the <literal>FunctionCatalog</literal> will wrap it into a
-<literal>Function&lt;Flux&lt;String&gt;,Flux&lt;String&gt;&gt;</literal>. Users don&#8217;t normally have to
-care about the <literal>FunctionCatalog</literal> at all, but it is useful to know what
+<simpara>One of the main features of Spring Cloud Function is to adapt and support a range of type signatures for user-defined functions,
+while providing a consistent execution model.
+That&#8217;s why all user defined functions are transformed into a canonical representation by <literal>FunctionCatalog</literal>, using primitives
+defined by the <link xl:href="https://projectreactor.io/">Project Reactor</link> (i.e., <literal>Flux&lt;T&gt;</literal> and <literal>Mono&lt;T&gt;</literal>).
+Users can supply a bean of type <literal>Function&lt;String,String&gt;</literal>, for instance, and the <literal>FunctionCatalog</literal> will wrap it into a
+<literal>Function&lt;Flux&lt;String&gt;,Flux&lt;String&gt;&gt;</literal>.</simpara>
+<simpara>Using Reactor based primitives not only helps with the canonical representation of user defined functions, but it also
+facilitates a more robust and flexible(reactive) execution model.</simpara>
+<simpara>While users don&#8217;t normally have to care about the <literal>FunctionCatalog</literal> at all, it is useful to know what
 kind of functions are supported in user code.</simpara>
+<section xml:id="_java_8_function_support">
+<title>Java 8 function support</title>
 <simpara>Generally speaking users can expect that if they write a function for
 a plain old Java type (or primitive wrapper), then the function
 catalog will wrap it to a <literal>Flux</literal> of the same type. If the user writes
@@ -195,13 +200,30 @@ remember to subscribe to the input flux. If you declare a <literal>Consumer</lit
 of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.</simpara>
-<simpara>A function catalog can contain a <literal>Supplier</literal> and a <literal>Function</literal> (or
-<literal>Consumer</literal>) with the same name (like a GET and a POST to the same
-resource). It can even contain a <literal>Consumer&lt;Flux&lt;&gt;&gt;</literal> with the same name
-as a <literal>Function</literal>, but it cannot contain a <literal>Consumer&lt;T&gt;</literal> and a
-<literal>Function&lt;T,S&gt;</literal> with the same name when <literal>T</literal> is not a <literal>Publisher</literal>
-because the consumer would be converted to a <literal>Function</literal> and only one
-of them can be registered.</simpara>
+</section>
+<section xml:id="_kotlin_lambda_support">
+<title>Kotlin Lambda support</title>
+<simpara>We also provide support for Kotlin lambdas (since v2.0).
+Consider the following:</simpara>
+<programlisting language="java" linenumbering="unnumbered">@Bean
+open fun kotlinSupplier(): () -&gt; String {
+    return  { "Hello from Kotlin" }
+}
+
+@Bean
+open fun kotlinFunction(): (String) -&gt; String {
+    return  { it.toUpperCase() }
+}
+
+@Bean
+open fun kotlinConsumer(): (String) -&gt; Unit {
+    return  { println(it) }
+}</programlisting>
+<simpara>The above represents Kotlin lambdas configured as Spring beans. The signature of each maps to a Java equivalent of
+<literal>Supplier</literal>, <literal>Function</literal> and <literal>Consumer</literal>, and thus supported/recognized signatures by the framework.
+While mechanics of Kotlin-to-Java mapping are outside of the scope of this documentation, it is important to understand that the
+same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.</simpara>
+</section>
 </chapter>
 <chapter xml:id="_standalone_web_applications">
 <title>Standalone Web Applications</title>
