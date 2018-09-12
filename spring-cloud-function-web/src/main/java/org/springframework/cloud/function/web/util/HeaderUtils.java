@@ -18,6 +18,7 @@ package org.springframework.cloud.function.web.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
@@ -30,10 +31,17 @@ import org.springframework.messaging.MessageHeaders;
 public class HeaderUtils {
 
 	private static HttpHeaders IGNORED = new HttpHeaders();
-	
+
+	private static HttpHeaders REQUEST_ONLY = new HttpHeaders();
+
 	static {
 		IGNORED.add(MessageHeaders.ID, "");
 		IGNORED.add(HttpHeaders.CONTENT_LENGTH, "0");
+		// Headers that would typically be added by a downstream client
+		REQUEST_ONLY.add(HttpHeaders.ACCEPT, "");
+		REQUEST_ONLY.add(HttpHeaders.CONTENT_LENGTH, "");
+		REQUEST_ONLY.add(HttpHeaders.CONTENT_TYPE, "");
+		REQUEST_ONLY.add(HttpHeaders.HOST, "");
 	}
 
 	public static HttpHeaders fromMessage(MessageHeaders headers, HttpHeaders request) {
@@ -46,6 +54,18 @@ public class HeaderUtils {
 				for (Object object : values) {
 					result.set(name, object.toString());
 				}
+			}
+		}
+		return result;
+	}
+
+	public static HttpHeaders sanitize(HttpHeaders request) {
+		HttpHeaders result = new HttpHeaders();
+		for (String name : request.keySet()) {
+			List<String> value = request.get(name);
+			name = name.toLowerCase();
+			if (!IGNORED.containsKey(name) && !REQUEST_ONLY.containsKey(name)) {
+				result.put(name, value);
 			}
 		}
 		return result;

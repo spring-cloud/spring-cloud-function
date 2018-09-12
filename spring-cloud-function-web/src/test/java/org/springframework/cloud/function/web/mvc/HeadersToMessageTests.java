@@ -16,6 +16,7 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -30,6 +31,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.mvc.HeadersToMessageTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -46,8 +49,9 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.main.web-application-type=servlet", "spring.cloud.function.web.path=/functions" })
-@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
+		"spring.main.web-application-type=servlet",
+		"spring.cloud.function.web.path=/functions" })
+@ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class HeadersToMessageTests {
 
 	@Autowired
@@ -65,6 +69,17 @@ public class HeadersToMessageTests {
 		assertEquals("bar", postForEntity.getHeaders().get("foo").get(0));
 	}
 
+	@Test
+	public void testHeadersPropagatedByDefault() throws Exception {
+		HttpEntity<String> postForEntity = rest.exchange(RequestEntity
+				.post(new URI("/functions/vanilla")).header("x-context-type", "rubbish")
+				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+		assertEquals("{\"name\":\"Bob\",\"age\":25,\"foo\":\"bar\"}",
+				postForEntity.getBody());
+		assertTrue(postForEntity.getHeaders().containsKey("x-context-type"));
+		assertEquals("rubbish", postForEntity.getHeaders().get("x-context-type").get(0));
+	}
+
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
@@ -75,6 +90,15 @@ public class HeadersToMessageTests {
 						.withPayload(request.getPayload())
 						.setHeader("X-Content-Type", "application/xml")
 						.setHeader("foo", "bar").build();
+				return message;
+			};
+		}
+
+		@Bean
+		public Function<Map<String, Object>, Map<String, Object>> vanilla() {
+			return request -> {
+				Map<String, Object> message = new LinkedHashMap<>(request);
+				message.put("foo", "bar");
 				return message;
 			};
 		}

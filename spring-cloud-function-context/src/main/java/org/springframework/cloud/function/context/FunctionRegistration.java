@@ -31,7 +31,6 @@ import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -51,7 +50,8 @@ public class FunctionRegistration<T> {
 	private FunctionType type;
 
 	/**
-	 * @deprecated as of v1.0.0 in favor of {@link #FunctionRegistration(Object, String...)}
+	 * @deprecated as of v1.0.0 in favor of
+	 * {@link #FunctionRegistration(Object, String...)}
 	 */
 	@Deprecated
 	public FunctionRegistration(T target) {
@@ -59,13 +59,12 @@ public class FunctionRegistration<T> {
 		this.target = target;
 	}
 
-
 	/**
 	 * Creates instance of FunctionRegistration.
 	 *
 	 * @param target instance of {@link Supplier}, {@link Function} or {@link Consumer}
-	 * @param names additional set of names for this registration. Additional names
-	 * can be provided {@link #name(String)} or {@link #names(String...)} operations.
+	 * @param names additional set of names for this registration. Additional names can be
+	 * provided {@link #name(String)} or {@link #names(String...)} operations.
 	 */
 	public FunctionRegistration(T target, String... names) {
 		Assert.notNull(target, "'target' must not be null");

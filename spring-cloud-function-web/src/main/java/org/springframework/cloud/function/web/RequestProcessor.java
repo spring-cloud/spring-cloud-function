@@ -78,14 +78,17 @@ public class RequestProcessor {
 
 	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
 		if (wrapper.function() != null) {
-			return response(wrapper.function(), value(wrapper.function(), wrapper.argument()), true, true);
+			return response(wrapper, wrapper.function(),
+					value(wrapper.function(), wrapper.argument()), true, true);
 		}
 		else {
-			return response(wrapper.supplier(), wrapper.supplier().get(), null, true);
+			return response(wrapper, wrapper.supplier(), wrapper.supplier().get(), null,
+					true);
 		}
 	}
 
-	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body, boolean stream) {
+	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
+			boolean stream) {
 		Mono<ResponseEntity<?>> responseEntityMono;
 		Object function = wrapper.handler();
 
@@ -117,14 +120,15 @@ public class RequestProcessor {
 	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
 		Publisher<?> result = request.function() != null
 				? value(request.function(), request.argument())
-						: request.supplier().get();
+				: request.supplier().get();
 		return stream(request, result);
 	}
 
 	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, Object body,
 			MultiValueMap<String, String> params, boolean stream) {
 
-		Iterable<?> iterable = body instanceof Collection ? (List<?>) body : Collections.singletonList(body);
+		Iterable<?> iterable = body instanceof Collection ? (List<?>) body
+				: Collections.singletonList(body);
 
 		Function<Publisher<?>, Publisher<?>> function = wrapper.function();
 		Consumer<Publisher<?>> consumer = wrapper.consumer();
@@ -146,13 +150,15 @@ public class RequestProcessor {
 				responseEntityMono = stream(wrapper, result);
 			}
 			else {
-				responseEntityMono = response(function, result, body == null ? null : !(body instanceof Collection), false);
+				responseEntityMono = response(wrapper, function, result,
+						body == null ? null : !(body instanceof Collection), false);
 			}
 		}
 		else if (consumer != null) {
 			consumer.accept(flux);
 			logger.debug("Handled POST with consumer");
-			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
+			responseEntityMono = Mono
+					.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
 		}
 		return responseEntityMono;
 	}
@@ -175,13 +181,16 @@ public class RequestProcessor {
 					.map(message -> MessageUtils.unpack(request.handler(), message)
 							.getPayload());
 		}
+		else {
+			builder.headers(HeaderUtils.sanitize(request.headers()));
+		}
 
 		Publisher<?> output = result;
 		return Flux.from(output).then(Mono.fromSupplier(() -> builder.body(output)));
 	}
 
-	private Mono<ResponseEntity<?>> response(Object handler, Publisher<?> result,
-			Boolean single, boolean getter) {
+	private Mono<ResponseEntity<?>> response(FunctionWrapper request, Object handler,
+			Publisher<?> result, Boolean single, boolean getter) {
 
 		BodyBuilder builder = ResponseEntity.ok();
 		if (inspector.isMessage(handler)) {
@@ -189,8 +198,12 @@ public class RequestProcessor {
 					.doOnNext(value -> addHeaders(builder, (Message<?>) value))
 					.map(message -> MessageUtils.unpack(handler, message).getPayload());
 		}
+		else {
+			builder.headers(HeaderUtils.sanitize(request.headers()));
+		}
 
-		if (isOutputSingle(handler) && (single != null && single || getter || isInputMultiple(handler))) {
+		if (isOutputSingle(handler)
+				&& (single != null && single || getter || isInputMultiple(handler))) {
 			result = Mono.from(result);
 		}
 
@@ -213,7 +226,8 @@ public class RequestProcessor {
 			return false;
 		}
 		else {
-			return wrapper == type || Mono.class.equals(wrapper) || Optional.class.equals(wrapper);
+			return wrapper == type || Mono.class.equals(wrapper)
+					|| Optional.class.equals(wrapper);
 		}
 	}
 
