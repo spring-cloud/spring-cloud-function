@@ -47,4 +47,12 @@ public interface FunctionCatalog {
 
 	Set<String> getNames(Class<?> type);
 
+	/**
+	 * Return the count of functions registered in this catalog
+	 * @return the count of functions registered in this catalog
+	 */
+	default int size() {
+		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
+	}
+
 }

@@ -169,6 +169,13 @@ public class ContextFunctionCatalogAutoConfiguration {
             return Collections.emptySet();
         }
 
+        @Override
+        public int size() {
+            return this.processor.getSuppliers().size() +
+                    this.processor.getFunctions().size() +
+                    this.processor.getConsumers().size();
+        }
+
         public BeanFactoryFunctionCatalog(ContextFunctionRegistry processor) {
             this.processor = processor;
         }
