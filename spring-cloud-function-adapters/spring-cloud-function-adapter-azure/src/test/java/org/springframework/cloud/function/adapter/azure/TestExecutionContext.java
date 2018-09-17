@@ -30,7 +30,7 @@ public class TestExecutionContext implements ExecutionContext {
 
 	@Override
 	public Logger getLogger() {
-		return Logger.getAnonymousLogger();
+		return Logger.getLogger(TestExecutionContext.class.getName());
 	}
 
 	@Override

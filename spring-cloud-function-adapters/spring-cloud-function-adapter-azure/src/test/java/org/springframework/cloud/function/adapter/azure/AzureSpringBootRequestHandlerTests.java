@@ -105,7 +105,8 @@ public class AzureSpringBootRequestHandlerTests {
 
 	@Test
 	public void collectConfig() {
-		AzureSpringBootRequestHandler<List<Foo>, Bar> handler = handler(CollectConfig.class);
+		AzureSpringBootRequestHandler<List<Foo>, Bar> handler = handler(
+				CollectConfig.class);
 		Bar bar = handler.handleRequest(Arrays.asList(new Foo("bar")),
 				new TestExecutionContext("uppercase"));
 		assertThat(bar.getValue()).isEqualTo("BAR");

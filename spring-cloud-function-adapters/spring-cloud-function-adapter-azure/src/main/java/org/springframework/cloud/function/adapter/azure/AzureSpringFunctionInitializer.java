@@ -46,17 +46,17 @@ import org.springframework.util.ClassUtils;
  */
 public class AzureSpringFunctionInitializer implements Closeable {
 
-	private Function<Publisher<?>, Publisher<?>> function;
+	private volatile Function<Publisher<?>, Publisher<?>> function;
 
 	private AtomicBoolean initialized = new AtomicBoolean();
 
-	private Class<?> configurationClass;
+	private final Class<?> configurationClass;
 
 	@Autowired(required = false)
-	private FunctionCatalog catalog;
+	private volatile FunctionCatalog catalog;
 
 	@Autowired(required = false)
-	private FunctionInspector inspector;
+	private volatile FunctionInspector inspector;
 
 	private volatile static ConfigurableApplicationContext context;
 
@@ -105,13 +105,22 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 
 		context.getAutowireCapableBeanFactory().autowireBean(this);
+		if (ctxt != null) {
+			ctxt.getLogger().info("Initialized context: catalog=" + this.catalog);
+		}
 		String name = context.getEnvironment().getProperty("function.name");
 
 		if (name == null) {
 			name = "function";
 		}
 		if (this.catalog == null) {
-			this.function = context.getBean(name, Function.class);
+			if (context.containsBean(name)) {
+				if (ctxt != null) {
+					ctxt.getLogger()
+							.info("No catalog. Looking for Function bean name=" + name);
+				}
+				this.function = context.getBean(name, Function.class);
+			}
 		}
 		else {
 			Set<String> functionNames = this.catalog.getNames(Function.class);
@@ -125,29 +134,30 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	protected boolean isSingleInput(Function<?,?> function, Object input) {
+	protected boolean isSingleInput(Function<?, ?> function, Object input) {
 		if (!(input instanceof Collection)) {
 			return true;
 		}
 		if (this.inspector != null) {
 			return Collection.class.isAssignableFrom(inspector.getInputType(function));
 		}
-		return ((Collection<?>)input).size() <= 1;
+		return ((Collection<?>) input).size() <= 1;
 	}
 
-	protected boolean isSingleOutput(Function<?,?> function, Object output) {
+	protected boolean isSingleOutput(Function<?, ?> function, Object output) {
 		if (!(output instanceof Collection)) {
 			return true;
 		}
 		if (this.inspector != null) {
 			return Collection.class.isAssignableFrom(inspector.getOutputType(function));
 		}
-		return ((Collection<?>)output).size() <= 1;
+		return ((Collection<?>) output).size() <= 1;
 	}
 
 	protected Function<Publisher<?>, Publisher<?>> lookup(String name) {
 		Function<Publisher<?>, Publisher<?>> function = this.function;
 		if (name != null && this.catalog != null) {
+			@SuppressWarnings("unchecked")
 			Function<Publisher<?>, Publisher<?>> preferred = this.catalog
 					.lookup(Function.class, name);
 			if (preferred != null) {
@@ -157,7 +167,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		if (function != null) {
 			return function;
 		}
-		throw new IllegalStateException("No function defined");
+		throw new IllegalStateException("No function defined with name=" + name);
 	}
 
 	private static Class<?> getStartClass() {
