@@ -195,8 +195,9 @@ public class RequestProcessor {
 		BodyBuilder builder = ResponseEntity.ok();
 		if (inspector.isMessage(handler)) {
 			result = Flux.from(result)
-					.doOnNext(value -> addHeaders(builder, (Message<?>) value))
-					.map(message -> MessageUtils.unpack(handler, message).getPayload());
+					.map(message -> MessageUtils.unpack(handler, message))
+					.doOnNext(value -> addHeaders(builder, value))
+					.map(message -> message.getPayload());
 		}
 		else {
 			builder.headers(HeaderUtils.sanitize(request.headers()));
