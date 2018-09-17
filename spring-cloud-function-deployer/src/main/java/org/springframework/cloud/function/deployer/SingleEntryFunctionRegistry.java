@@ -37,7 +37,7 @@ public class SingleEntryFunctionRegistry implements FunctionRegistry {
 	}
 
 	@Override
-	public <T> T lookup(Class<T> type, String name) {
+	public <T> T lookup(Class<?> type, String name) {
 		return this.name.equals(name) ? this.delegate.lookup(type, name) : null;
 	}
 

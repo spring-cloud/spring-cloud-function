@@ -47,7 +47,7 @@ public class BeanFactoryFunctionCatalogTests {
 
 	@Test
 	public void basicRegistrationFeatures() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class,
 				"foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
@@ -55,7 +55,7 @@ public class BeanFactoryFunctionCatalogTests {
 
 	@Test
 	public void lookupFunctionWithEmptyName() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class, "");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
@@ -70,7 +70,7 @@ public class BeanFactoryFunctionCatalogTests {
 	@Test
 	public void registerFunctionWithType() {
 		processor.register(new FunctionRegistration<Function<Integer, String>>(
-				(Integer i) -> "i=" + i).names("foos").type(
+				(Integer i) -> "i=" + i, "foos").type(
 						FunctionType.from(Integer.class).to(String.class).getType()));
 		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class, "");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("i=2");
@@ -80,7 +80,7 @@ public class BeanFactoryFunctionCatalogTests {
 	public void registerFunctionWithFluxType() {
 		processor
 				.register(new FunctionRegistration<Function<Flux<Integer>, Flux<String>>>(
-						ints -> ints.map(i -> "i=" + i)).names("foos")
+						ints -> ints.map(i -> "i=" + i), "foos")
 								.type(FunctionType.from(Integer.class).to(String.class)
 										.wrap(Flux.class).getType()));
 		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class, "");
@@ -92,8 +92,7 @@ public class BeanFactoryFunctionCatalogTests {
 		processor.register(
 				new FunctionRegistration<Function<Flux<String>, Mono<Map<String, Integer>>>>(
 						flux -> flux.collect(HashMap::new,
-								(map, word) -> map.merge(word, 1, Integer::sum)))
-										.names("foos")
+								(map, word) -> map.merge(word, 1, Integer::sum)), "foos")
 										.type(FunctionType.from(String.class)
 												.to(Map.class)
 												.wrap(Flux.class, Mono.class).getType()));
@@ -105,15 +104,15 @@ public class BeanFactoryFunctionCatalogTests {
 
 	@Test
 	public void lookupNonExistentConsumerWithEmptyName() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		Consumer<Flux<String>> foos = processor.lookup(Consumer.class, "");
 		assertThat(foos).isNull();
 	}
 
 	@Test
 	public void composeFunction() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
-		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		processor.register(new FunctionRegistration<>(new Bars(), "bars"));
 		Function<Flux<Integer>, Flux<String>> foos = processor.lookup(Function.class,
 				"foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
@@ -121,24 +120,24 @@ public class BeanFactoryFunctionCatalogTests {
 
 	@Test
 	public void composeSupplier() {
-		processor.register(new FunctionRegistration<>(new Source()).names("numbers"));
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new Source(), "numbers"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		Supplier<Flux<String>> foos = processor.lookup(Supplier.class, "numbers,foos");
 		assertThat(foos.get().blockFirst()).isEqualTo("6");
 	}
 
 	@Test
 	public void composeUniqueSupplier() {
-		processor.register(new FunctionRegistration<>(new Source()).names("numbers"));
+		processor.register(new FunctionRegistration<>(new Source(), "numbers"));
 		Supplier<Flux<Integer>> foos = processor.lookup(Supplier.class, "");
 		assertThat(foos.get().blockFirst()).isEqualTo(3);
 	}
 
 	@Test
 	public void composeConsumer() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		Sink sink = new Sink();
-		processor.register(new FunctionRegistration<>(sink).names("sink"));
+		processor.register(new FunctionRegistration<>(sink, "sink"));
 		Function<Flux<Integer>, Mono<Void>> foos = processor.lookup(Function.class,
 				"foos,sink");
 		foos.apply(Flux.just(2)).subscribe();
@@ -148,7 +147,7 @@ public class BeanFactoryFunctionCatalogTests {
 	@Test
 	public void composeUniqueConsumer() {
 		Sink sink = new Sink();
-		processor.register(new FunctionRegistration<>(sink).names("sink"));
+		processor.register(new FunctionRegistration<>(sink, "sink"));
 		Function<Flux<String>, Mono<Void>> foos = processor.lookup(Function.class, "");
 		foos.apply(Flux.just("2")).subscribe();
 		assertThat(sink.values).contains("2");

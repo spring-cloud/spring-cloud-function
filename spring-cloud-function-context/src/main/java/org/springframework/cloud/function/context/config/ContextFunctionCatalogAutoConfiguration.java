@@ -119,7 +119,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		@SuppressWarnings("unchecked")
-		public <T> T lookup(Class<T> type, String name) {
+		public <T> T lookup(Class<?> type, String name) {
 			T function = null;
 			if (type == null) {
 				function = (T) processor.lookupFunction(name);

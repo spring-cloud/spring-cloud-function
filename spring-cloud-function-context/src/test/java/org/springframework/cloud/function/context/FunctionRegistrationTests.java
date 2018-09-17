@@ -29,16 +29,16 @@ public class FunctionRegistrationTests {
 
 	@Test
 	public void noTypeByDefault() {
-		FunctionRegistration<?> registration = new FunctionRegistration<>(new Foos())
-				.names("foos");
+		FunctionRegistration<?> registration = new FunctionRegistration<>(new Foos(),
+				"foos");
 		assertThat(registration.getType()).isNull();
 		assertThat(registration.getNames()).contains("foos");
 	}
 
 	@Test
 	public void wrap() {
-		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos())
-				.names("foos").type(FunctionType.of(Foos.class).getType());
+		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos(),
+				"foos").type(FunctionType.of(Foos.class).getType());
 		FunctionRegistration<?> other = registration.wrap();
 		assertThat(registration.getType().isWrapper()).isFalse();
 		assertThat(other.getType().isWrapper()).isTrue();

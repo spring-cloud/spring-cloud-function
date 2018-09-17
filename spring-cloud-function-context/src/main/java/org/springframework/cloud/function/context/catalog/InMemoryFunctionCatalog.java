@@ -118,7 +118,7 @@ public class InMemoryFunctionCatalog
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T> T lookup(Class<T> type, String name) {
+	public <T> T lookup(Class<?> type, String name) {
 		T function = null;
 		if (type == null) {
 			function = (T) functions.values().stream().filter(map -> map.get(name) != null).map(map -> map.get(name)).findFirst().orElse(null);

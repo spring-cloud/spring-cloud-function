@@ -27,8 +27,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import kotlin.jvm.functions.Function0;
-import kotlin.jvm.functions.Function1;
 import org.junit.After;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
@@ -69,6 +67,8 @@ import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -92,15 +92,14 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		ContextFunctionCatalogAutoConfigurationTests.value = null;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void lookUps() {
 		create(SimpleConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(context.getBean("function2")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function,function2"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function,function2"))
 				.isInstanceOf(Function.class);
 		Function<Flux<String>, Flux<String>> f = catalog.lookup(Function.class,
 				"function,function2,function3");
@@ -108,10 +107,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(f.apply(Flux.just("hello")).blockFirst())
 				.isEqualTo("HELLOfunction2function3");
 		assertThat(context.getBean("supplierFoo")).isInstanceOf(Supplier.class);
-		assertThat(catalog.lookup(Supplier.class, "supplierFoo"))
+		assertThat((Supplier<?>)catalog.lookup(Supplier.class, "supplierFoo"))
 				.isInstanceOf(Supplier.class);
 		assertThat(context.getBean("supplier_Foo")).isInstanceOf(Supplier.class);
-		assertThat(catalog.lookup(Supplier.class, "supplier_Foo"))
+		assertThat((Supplier<?>)catalog.lookup(Supplier.class, "supplier_Foo"))
 				.isInstanceOf(Supplier.class);
 	}
 
@@ -119,9 +118,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void ambiguousFunction() {
 		create(AmbiguousConfiguration.class);
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "foos"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Supplier.class, "foos"))
+		assertThat((Supplier<?>)catalog.lookup(Supplier.class, "foos"))
 				.isInstanceOf(Supplier.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -133,7 +132,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void configurationFunction() {
 		create(FunctionConfiguration.class);
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "foos"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -147,7 +146,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void dependencyInjection() {
 		create(DependencyInjectionConfiguration.class);
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "foos"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -157,7 +156,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void externalDependencyInjection() {
 		create(ExternalDependencyConfiguration.class);
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "foos"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -166,9 +165,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test
 	public void composedFunction() {
 		create(MultipleConfiguration.class);
-		assertThat(catalog.lookup(Function.class, "foos,bars"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos,bars"))
 				.isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "names,foos")).isNull();
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "names,foos")).isNull();
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos,bars")))
 				.isAssignableFrom(String.class);
 		assertThat(inspector.getOutputType(catalog.lookup(Function.class, "foos,bars")))
@@ -178,9 +177,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test
 	public void composedSupplier() {
 		create(MultipleConfiguration.class);
-		assertThat(catalog.lookup(Supplier.class, "names,foos"))
+		assertThat((Supplier<?>)catalog.lookup(Supplier.class, "names,foos"))
 				.isInstanceOf(Supplier.class);
-		assertThat(catalog.lookup(Function.class, "names,foos")).isNull();
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "names,foos")).isNull();
 		assertThat(inspector.getOutputType(catalog.lookup(Supplier.class, "names,foos")))
 				.isAssignableFrom(Foo.class);
 		// The input type is the same as the input type of the first element in the chain
@@ -191,8 +190,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test
 	public void composedConsumer() {
 		create(MultipleConfiguration.class);
-		assertThat(catalog.lookup(Consumer.class, "foos,print")).isNull();
-		assertThat(catalog.lookup(Function.class, "foos,print"))
+		assertThat((Consumer<?>)catalog.lookup(Consumer.class, "foos,print")).isNull();
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos,print"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos,print")))
 				.isAssignableFrom(String.class);
@@ -205,7 +204,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void genericFunction() {
 		create(GenericConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Map.class);
@@ -217,7 +216,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void fluxMessageFunction() {
 		create(FluxMessageConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.isMessage(catalog.lookup(Function.class, "function")))
 				.isTrue();
@@ -231,7 +230,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void publisherMessageFunction() {
 		create(PublisherMessageConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.isMessage(catalog.lookup(Function.class, "function")))
 				.isTrue();
@@ -245,7 +244,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void monoFunction() {
 		create(MonoConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.isMessage(catalog.lookup(Function.class, "function")))
 				.isFalse();
@@ -261,7 +260,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void messageFunction() {
 		create(MessageConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.isMessage(catalog.lookup(Function.class, "function")))
 				.isTrue();
@@ -275,7 +274,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void genericFluxFunction() {
 		create(GenericFluxConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Map.class);
@@ -287,7 +286,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void externalFunction() {
 		create(ExternalConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Map.class);
@@ -299,7 +298,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void singletonFunction() {
 		create(SingletonConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Integer.class);
@@ -311,7 +310,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void singletonMessageFunction() {
 		create(SingletonMessageConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Integer.class);
@@ -325,7 +324,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void nonParametericTypeFunction() {
 		create(NonParametricTypeSingletonConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Integer.class);
@@ -337,7 +336,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void componentScanBeanFunction() {
 		create(ComponentScanBeanConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Map.class);
@@ -349,7 +348,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void componentScanFunction() {
 		create(ComponentScanConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "function")))
 				.isAssignableFrom(Map.class);
@@ -362,7 +361,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		try {
 			create("greeter.jar", ComponentScanJarConfiguration.class);
 			assertThat(context.getBean("greeter")).isInstanceOf(Function.class);
-			assertThat(catalog.lookup(Function.class, "greeter"))
+			assertThat((Function<?,?>)catalog.lookup(Function.class, "greeter"))
 					.isInstanceOf(Function.class);
 			assertThat(inspector.getInputType(catalog.lookup(Function.class, "greeter")))
 					.isAssignableFrom(String.class);
@@ -381,7 +380,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function.class);
 		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
-		assertThat(catalog.lookup(Function.class, "kotlinFunction"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "kotlinFunction"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "kotlinFunction")))
 				.isAssignableFrom(String.class);
@@ -390,7 +389,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		assertThat(context.getBean("kotlinConsumer")).isInstanceOf(Consumer.class);
 		assertThat(context.getBean("kotlinConsumer")).isInstanceOf(Function1.class);
-		assertThat(catalog.lookup(Function.class, "kotlinConsumer"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "kotlinConsumer"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "kotlinConsumer")))
 				.isAssignableFrom(String.class);
@@ -399,7 +398,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
 		Supplier<Flux<String>> supplier = catalog.lookup(Supplier.class, "kotlinSupplier");
 		supplier.get().subscribe(System.out::println);
-		assertThat(catalog.lookup(Supplier.class, "kotlinSupplier"))
+		assertThat((Supplier<?>)catalog.lookup(Supplier.class, "kotlinSupplier"))
 				.isInstanceOf(Supplier.class);
 		assertThat(inspector.getOutputType(catalog.lookup(Supplier.class, "kotlinSupplier")))
 				.isAssignableFrom(String.class);
@@ -417,7 +416,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void simpleFunction() {
 		create(SimpleConfiguration.class);
@@ -432,7 +430,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.isEqualTo(inspector.getRegistration(function).getType());
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void simpleSupplier() {
 		create(SimpleConfiguration.class);
@@ -441,7 +438,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(supplier.get().blockFirst()).isEqualTo("hello");
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void simpleConsumer() {
 		create(SimpleConfiguration.class);
@@ -456,8 +452,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void qualifiedBean() {
 		create(QualifiedConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function")).isNull();
-		assertThat(catalog.lookup(Function.class, "other"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function")).isNull();
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "other"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputType(catalog.lookup(Function.class, "other")))
 				.isEqualTo(String.class);
@@ -467,9 +463,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void aliasBean() {
 		create(AliasConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isNotNull();
-		assertThat(catalog.lookup(Function.class, "other"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "other"))
 				.isInstanceOf(Function.class);
 	}
 
@@ -477,10 +473,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void registrationBean() {
 		create(RegistrationConfiguration.class);
 		assertThat(context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "function")).isNull();
-		assertThat(catalog.lookup(Function.class, "registration"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function")).isNull();
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "registration"))
 				.isNull();
-		assertThat(catalog.lookup(Function.class, "other"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "other"))
 				.isInstanceOf(Function.class);
 	}
 
@@ -491,7 +487,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				"spring.cloud.function.compile.foos.inputType=String",
 				"spring.cloud.function.compile.foos.outputType=String");
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "foos"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -507,7 +503,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		create(EmptyConfiguration.class,
 				"spring.cloud.function.imports.foos.location=file:./target/foos.fun");
 		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat(catalog.lookup(Function.class, "foos"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -520,7 +516,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 						+ "::set",
 				"spring.cloud.function.compile.foos.type=consumer",
 				"spring.cloud.function.compile.foos.inputType=String");
-		assertThat(catalog.lookup(Function.class, "foos"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
 		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "foos")))
 				.isEqualTo(String.class);
@@ -536,7 +532,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				"spring.cloud.function.compile.foos.lambda=f -> f.subscribe("
 						+ getClass().getName() + "::set)",
 				"spring.cloud.function.compile.foos.type=consumer");
-		assertThat(catalog.lookup(Consumer.class, "foos"))
+		assertThat((Consumer<?>)catalog.lookup(Consumer.class, "foos"))
 				.isInstanceOf(Consumer.class);
 		assertThat(inspector.getInputWrapper(catalog.lookup(Consumer.class, "foos")))
 				.isEqualTo(Flux.class);
@@ -547,12 +543,11 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
 	}
 
-	@SuppressWarnings("unchecked")
 	@Test
 	public void factoryBeanFunction() {
 		create(FactoryBeanConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat(this.catalog.lookup(Function.class, "function"))
+		assertThat((Function<?,?>)catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class,
 				"function");

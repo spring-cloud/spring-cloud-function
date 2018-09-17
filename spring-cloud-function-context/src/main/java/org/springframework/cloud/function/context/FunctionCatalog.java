@@ -43,7 +43,7 @@ public interface FunctionCatalog {
 	 * @param name the name of the functional interface. Must not be null;
 	 * @return instance of the functional interface registered with this catalog
 	 */
-	<T> T lookup(Class<T> type, String name);
+	<T> T lookup(Class<?> type, String name);
 
 	Set<String> getNames(Class<?> type);
 

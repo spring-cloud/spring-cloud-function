@@ -250,7 +250,7 @@ public class FunctionTypeTests {
 	private static class SupplierOfRegistrationOfIntegerToString implements Supplier<FunctionRegistration<Function<Integer, String>>> {
 		@Override
 		public FunctionRegistration<Function<Integer, String>> get() {
-			return new FunctionRegistration<Function<Integer,String>>(new IntegerToString());
+			return new FunctionRegistration<Function<Integer,String>>(new IntegerToString(), "ints");
 		}
 	}
 	

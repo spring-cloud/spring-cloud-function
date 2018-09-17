@@ -62,7 +62,7 @@ public class ContextFunctionPostProcessorTests {
 
 	@Test
 	public void basicRegistrationFeatures() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
 				.lookupFunction("foos");
@@ -71,8 +71,7 @@ public class ContextFunctionPostProcessorTests {
 
 	@Test
 	public void registrationThroughMerge() {
-		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos())
-				.names("foos");
+		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos(), "foos");
 		processor.merge(Collections.singletonMap("foos", registration),
 				Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
 		@SuppressWarnings("unchecked")
@@ -93,8 +92,8 @@ public class ContextFunctionPostProcessorTests {
 
 	@Test
 	public void composeWithComma() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
-		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		processor.register(new FunctionRegistration<>(new Bars(), "bars"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
 				.lookupFunction("foos,bars");
@@ -105,8 +104,8 @@ public class ContextFunctionPostProcessorTests {
 
 	@Test
 	public void compose() {
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
-		processor.register(new FunctionRegistration<>(new Bars()).names("bars"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		processor.register(new FunctionRegistration<>(new Bars(), "bars"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
 				.lookupFunction("foos|bars");
@@ -117,8 +116,8 @@ public class ContextFunctionPostProcessorTests {
 
 	@Test
 	public void composeWrapper() {
-		processor.register(new FunctionRegistration<>(new WrappedSource()).names("ints"));
-		processor.register(new FunctionRegistration<>(new Foos()).names("foos"));
+		processor.register(new FunctionRegistration<>(new WrappedSource(), "ints"));
+		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<String>> foos = (Supplier<Flux<String>>) processor
 				.lookupSupplier("ints|foos");
@@ -133,7 +132,7 @@ public class ContextFunctionPostProcessorTests {
 	public void isolatedFunction() {
 		contextClassLoader = ClassUtils
 				.overrideThreadContextClassLoader(getClass().getClassLoader());
-		processor.register(new FunctionRegistration<>(create(Foos.class)).names("foos"));
+		processor.register(new FunctionRegistration<>(create(Foos.class), "foos"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
 				.lookupFunction("foos");
@@ -145,7 +144,7 @@ public class ContextFunctionPostProcessorTests {
 		contextClassLoader = ClassUtils
 				.overrideThreadContextClassLoader(getClass().getClassLoader());
 		processor.register(
-				new FunctionRegistration<>(create(Source.class)).names("source"));
+				new FunctionRegistration<>(create(Source.class), "source"));
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<Integer>> source = (Supplier<Flux<Integer>>) processor
 				.lookupSupplier("source");
@@ -157,7 +156,7 @@ public class ContextFunctionPostProcessorTests {
 		contextClassLoader = ClassUtils
 				.overrideThreadContextClassLoader(getClass().getClassLoader());
 		Object target = create(Sink.class);
-		processor.register(new FunctionRegistration<>(target).names("sink"));
+		processor.register(new FunctionRegistration<>(target, "sink"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<String>, Mono<Void>> sink = (Function<Flux<String>, Mono<Void>>) processor
 				.lookupFunction("sink");
