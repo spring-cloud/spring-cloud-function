@@ -271,8 +271,8 @@ public class ContextFunctionCatalogInitializerTests {
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("foos", FunctionConfiguration.class, () -> this);
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(this)
-							.type(FunctionConfiguration.class).name("foos"));
+					() -> new FunctionRegistration<>(this, "foos")
+							.type(FunctionConfiguration.class));
 		}
 
 		@Override

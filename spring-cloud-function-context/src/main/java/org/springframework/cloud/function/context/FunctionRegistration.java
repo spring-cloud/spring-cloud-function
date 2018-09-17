@@ -171,5 +171,5 @@ public class FunctionRegistration<T> {
 		}
 		return result.target(target).names(this.names).properties(this.properties);
 	}
-
+	
 }
