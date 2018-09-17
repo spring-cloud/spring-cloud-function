@@ -379,8 +379,7 @@ class FunctionCreatorConfiguration {
 				return;
 			}
 			FunctionRegistration<Object> registration = new FunctionRegistration<Object>(
-					bean).names(
-							FunctionProperties.functionName(counter.getAndIncrement()));
+					bean, FunctionProperties.functionName(counter.getAndIncrement()));
 			if (this.runner != null) {
 				if (this.runner.containsBean(FunctionInspector.class.getName())) {
 					Object inspector = this.runner
