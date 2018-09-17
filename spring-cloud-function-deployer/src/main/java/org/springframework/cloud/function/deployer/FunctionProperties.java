@@ -82,7 +82,7 @@ public class FunctionProperties {
 		for (int i = 0; i <= StringUtils.countOccurrencesOf(name, ","); i++) {
 			names.add("function" + i);
 		}
-		return StringUtils.collectionToDelimitedString(names, ",");
+		return StringUtils.collectionToDelimitedString(names, "|");
 	}
 
 	public static String functionName(int value) {
