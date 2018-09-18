@@ -38,6 +38,7 @@ import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.format.support.DefaultFormattingConversionService;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -175,9 +176,7 @@ public class ContextFunctionCatalogInitializer
 					throws BeansException {
 				if (bean instanceof FunctionRegistration) {
 					FunctionRegistration<?> registration = (FunctionRegistration<?>) bean;
-					if (registration.getNames().isEmpty()) {
-						registration = registration.name(beanName);
-					}
+					Assert.notEmpty(registration.getNames(), "FunctionRegistration must define at least one name. Was empty");;
 					if (registration.getType() == null) {
 						throw new IllegalStateException(
 								"You need an explicit type for the function: "

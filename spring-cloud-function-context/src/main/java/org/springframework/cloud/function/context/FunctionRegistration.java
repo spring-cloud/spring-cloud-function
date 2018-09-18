@@ -27,10 +27,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -39,7 +41,7 @@ import reactor.core.publisher.Mono;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-public class FunctionRegistration<T> {
+public class FunctionRegistration<T> implements BeanNameAware {
 
 	private T target;
 
@@ -50,16 +52,6 @@ public class FunctionRegistration<T> {
 	private FunctionType type;
 
 	/**
-	 * @deprecated as of v1.0.0 in favor of
-	 * {@link #FunctionRegistration(Object, String...)}
-	 */
-	@Deprecated
-	public FunctionRegistration(T target) {
-		Assert.notNull(target, "'target' must not be null");
-		this.target = target;
-	}
-
-	/**
 	 * Creates instance of FunctionRegistration.
 	 *
 	 * @param target instance of {@link Supplier}, {@link Function} or {@link Consumer}
@@ -68,7 +60,6 @@ public class FunctionRegistration<T> {
 	 */
 	public FunctionRegistration(T target, String... names) {
 		Assert.notNull(target, "'target' must not be null");
-		Assert.notEmpty(names, "'names' must not be null or empty");
 		this.target = target;
 		this.names(names);
 	}
@@ -171,5 +162,12 @@ public class FunctionRegistration<T> {
 		}
 		return result.target(target).names(this.names).properties(this.properties);
 	}
-	
+
+	@Override
+	public void setBeanName(String name) {
+		if (CollectionUtils.isEmpty(this.names)) {
+			this.name(name);
+		}
+	}
+
 }
