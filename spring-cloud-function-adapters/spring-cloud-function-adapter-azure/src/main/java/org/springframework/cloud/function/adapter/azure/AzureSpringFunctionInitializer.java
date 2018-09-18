@@ -157,7 +157,6 @@ public class AzureSpringFunctionInitializer implements Closeable {
 	protected Function<Publisher<?>, Publisher<?>> lookup(String name) {
 		Function<Publisher<?>, Publisher<?>> function = this.function;
 		if (name != null && this.catalog != null) {
-			@SuppressWarnings("unchecked")
 			Function<Publisher<?>, Publisher<?>> preferred = this.catalog
 					.lookup(Function.class, name);
 			if (preferred != null) {
