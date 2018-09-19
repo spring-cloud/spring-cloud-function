@@ -16,24 +16,24 @@
 
 package org.springframework.cloud.function.context.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.After;
 import org.junit.Test;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.ClassUtils;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -100,6 +100,24 @@ public class ContextFunctionPostProcessorTests {
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
 		assertThat(processor.getRegistration(foos).getNames())
 				.containsExactly("foos|bars");
+	}
+
+	@Test
+	public void supplierAndFunction() {
+		processor.register(new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
+		processor.register(new FunctionRegistration<Function<String, String>>((x) -> x.toUpperCase(), "function"));
+		@SuppressWarnings("unchecked")
+		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) processor.lookupSupplier("supplier|function");
+		assertThat(supplier.get().blockFirst()).isEqualTo("FOO");
+		assertThat(processor.getRegistration(supplier).getNames()).containsExactly("supplier|function");
+	}
+
+	//TODO we should support it at some point since this is really a Runnable
+	@Test(expected=UnsupportedOperationException.class)
+	public void supplierAndConsumer() {
+		processor.register(new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
+		processor.register(new FunctionRegistration<Consumer<String>>(System.out::println, "consumer"));
+		processor.lookupSupplier("supplier|consumer");
 	}
 
 	@Test

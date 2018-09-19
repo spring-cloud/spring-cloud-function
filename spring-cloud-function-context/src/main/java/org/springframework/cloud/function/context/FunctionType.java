@@ -61,31 +61,6 @@ public class FunctionType {
 		this.message = messageType();
 	}
 
-	private Type functionType(Type type) {
-		if (Supplier.class.isAssignableFrom(extractClass(type, ParamType.OUTPUT))) {
-			Type product = extractType(type, ParamType.OUTPUT, 0);
-			Class<?> output = extractClass(product, ParamType.OUTPUT);
-			if (FunctionRegistration.class.isAssignableFrom(output)) {
-				type = extractType(product, ParamType.OUTPUT, 0);
-			}
-			else if (Function.class.isAssignableFrom(output)
-					|| Supplier.class.isAssignableFrom(output)
-					|| Consumer.class.isAssignableFrom(output)) {
-				type = product;
-			}
-		}
-		return type;
-	}
-
-	private boolean messageType() {
-		Class<?> inputType = findType(ParamType.INPUT_INNER_WRAPPER);
-		Class<?> outputType = findType(ParamType.OUTPUT_INNER_WRAPPER);
-		return inputType.getName().startsWith(Message.class.getName())
-				|| Message.class.isAssignableFrom(inputType)
-				|| outputType.getName().startsWith(Message.class.getName())
-				|| Message.class.isAssignableFrom(outputType);
-	}
-
 	public Type getType() {
 		return type;
 	}
@@ -179,17 +154,19 @@ public class FunctionType {
 		if (!isWrapper(input) && !isWrapper(output)) {
 			return this;
 		}
-		if (!isWrapper(input) || !isWrapper(output)) {
+		else if (isWrapper(input) && isWrapper(output)) {
+			if (input.isAssignableFrom(getInputWrapper())
+					&& output.isAssignableFrom(getOutputWrapper())) {
+				return this;
+			}
+			return new FunctionType(ResolvableType.forClassWithGenerics(Function.class,
+					wrapper(input, getInputType()), wrapper(output, getOutputType()))
+					.getType());
+		}
+		else {
 			throw new IllegalArgumentException("Both wrapper types must be wrappers in ("
 					+ input + ", " + output + ")");
 		}
-		if (input.isAssignableFrom(getInputWrapper())
-				&& output.isAssignableFrom(getOutputWrapper())) {
-			return this;
-		}
-		return new FunctionType(ResolvableType.forClassWithGenerics(Function.class,
-				wrapper(input, getInputType()), wrapper(output, getOutputType()))
-				.getType());
 	}
 
 	public FunctionType wrap(Class<?> wrapper) {
@@ -210,6 +187,60 @@ public class FunctionType {
 		return new FunctionType(ResolvableType
 				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
 				.getType());
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((inputType == null) ? 0 : inputType.toString().hashCode());
+		result = prime * result
+				+ ((inputWrapper == null) ? 0 : inputWrapper.toString().hashCode());
+		result = prime * result + (message ? 1231 : 1237);
+		result = prime * result
+				+ ((outputType == null) ? 0 : outputType.toString().hashCode());
+		result = prime * result
+				+ ((outputWrapper == null) ? 0 : outputWrapper.toString().hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FunctionType other = (FunctionType) obj;
+		if (inputType == null) {
+			if (other.inputType != null)
+				return false;
+		}
+		else if (!inputType.toString().equals(other.inputType.toString()))
+			return false;
+		if (inputWrapper == null) {
+			if (other.inputWrapper != null)
+				return false;
+		}
+		else if (!inputWrapper.toString().equals(other.inputWrapper.toString()))
+			return false;
+		if (message != other.message)
+			return false;
+		if (outputType == null) {
+			if (other.outputType != null)
+				return false;
+		}
+		else if (!outputType.toString().equals(other.outputType.toString()))
+			return false;
+		if (outputWrapper == null) {
+			if (other.outputWrapper != null)
+				return false;
+		}
+		else if (!outputWrapper.toString().equals(other.outputWrapper.toString()))
+			return false;
+		return true;
 	}
 
 	private ResolvableType wrapper(Class<?> wrapper, Class<?> type) {
@@ -383,58 +414,29 @@ public class FunctionType {
 		return param;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((inputType == null) ? 0 : inputType.toString().hashCode());
-		result = prime * result
-				+ ((inputWrapper == null) ? 0 : inputWrapper.toString().hashCode());
-		result = prime * result + (message ? 1231 : 1237);
-		result = prime * result
-				+ ((outputType == null) ? 0 : outputType.toString().hashCode());
-		result = prime * result
-				+ ((outputWrapper == null) ? 0 : outputWrapper.toString().hashCode());
-		return result;
+	private Type functionType(Type type) {
+		if (Supplier.class.isAssignableFrom(extractClass(type, ParamType.OUTPUT))) {
+			Type product = extractType(type, ParamType.OUTPUT, 0);
+			Class<?> output = extractClass(product, ParamType.OUTPUT);
+			if (FunctionRegistration.class.isAssignableFrom(output)) {
+				type = extractType(product, ParamType.OUTPUT, 0);
+			}
+			else if (Function.class.isAssignableFrom(output)
+					|| Supplier.class.isAssignableFrom(output)
+					|| Consumer.class.isAssignableFrom(output)) {
+				type = product;
+			}
+		}
+		return type;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		FunctionType other = (FunctionType) obj;
-		if (inputType == null) {
-			if (other.inputType != null)
-				return false;
-		}
-		else if (!inputType.toString().equals(other.inputType.toString()))
-			return false;
-		if (inputWrapper == null) {
-			if (other.inputWrapper != null)
-				return false;
-		}
-		else if (!inputWrapper.toString().equals(other.inputWrapper.toString()))
-			return false;
-		if (message != other.message)
-			return false;
-		if (outputType == null) {
-			if (other.outputType != null)
-				return false;
-		}
-		else if (!outputType.toString().equals(other.outputType.toString()))
-			return false;
-		if (outputWrapper == null) {
-			if (other.outputWrapper != null)
-				return false;
-		}
-		else if (!outputWrapper.toString().equals(other.outputWrapper.toString()))
-			return false;
-		return true;
+	private boolean messageType() {
+		Class<?> inputType = findType(ParamType.INPUT_INNER_WRAPPER);
+		Class<?> outputType = findType(ParamType.OUTPUT_INNER_WRAPPER);
+		return inputType.getName().startsWith(Message.class.getName())
+				|| Message.class.isAssignableFrom(inputType)
+				|| outputType.getName().startsWith(Message.class.getName())
+				|| Message.class.isAssignableFrom(outputType);
 	}
 
 	enum ParamType {

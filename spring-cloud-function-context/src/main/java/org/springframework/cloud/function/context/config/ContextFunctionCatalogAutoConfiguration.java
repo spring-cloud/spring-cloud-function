@@ -327,6 +327,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@SuppressWarnings("unchecked")
 		private Object compose(Object a, Object b) {
 			if (a instanceof Supplier && b instanceof Function) {
+				if (b instanceof FluxConsumer) {
+					throw new UnsupportedOperationException("Composing Supplier and Consumer is not supported at the moment");
+				}
 				Supplier<Object> supplier = (Supplier<Object>) a;
 				Function<Object, Object> function = (Function<Object, Object>) b;
 				return (Supplier<Object>) () -> function.apply(supplier.get());
