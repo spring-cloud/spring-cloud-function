@@ -20,7 +20,7 @@
 		<wrapper.version>1.0.12.RELEASE</wrapper.version>
 		<spring-boot.version>2.1.0.BUILD-SNAPSHOT</spring-boot.version>
 		<docs.main>spring-cloud-function</docs.main>
-		<reactor-bom.version>Californium-BUILD-SNAPSHOT</reactor-bom.version>
+		<reactor-bom.version>Californium-RC1</reactor-bom.version>
 	</properties>
 
 	<dependencyManagement>
