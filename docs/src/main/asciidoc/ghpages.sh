@@ -155,7 +155,7 @@ function copy_docs_for_current_version() {
                 file=${f#docs/target/generated-docs/*}
                 if ! git ls-files -i -o --exclude-standard --directory | grep -q ^$file$; then
                     # Not ignored...
-                    # We want users to access 2.0.0.BUILD-SNAPSHOT/ instead of 1.0.0.RELEASE/spring-cloud.sleuth.html
+                    # We want users to access 2.0.0.M3/ instead of 1.0.0.RELEASE/spring-cloud.sleuth.html
                     if [[ "${file}" == "${MAIN_ADOC_VALUE}.html" ]] ; then
                         # We don't want to copy the spring-cloud-sleuth.html
                         # we want it to be converted to index.html
@@ -197,7 +197,7 @@ function copy_docs_for_branch() {
     local destination=$2
     if ! git ls-files -i -o --exclude-standard --directory | grep -q ^${file}$; then
         # Not ignored...
-        # We want users to access 2.0.0.BUILD-SNAPSHOT/ instead of 1.0.0.RELEASE/spring-cloud.sleuth.html
+        # We want users to access 2.0.0.M3/ instead of 1.0.0.RELEASE/spring-cloud.sleuth.html
         if [[ ("${file}" == "${MAIN_ADOC_VALUE}.html") || ("${file}" == "${REPO_NAME}.html") ]] ; then
             # We don't want to copy the spring-cloud-sleuth.html
             # we want it to be converted to index.html

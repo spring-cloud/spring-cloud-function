@@ -5,7 +5,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-pojo</artifactId>
-	<version>2.0.0.BUILD-SNAPSHOT</version>
+	<version>2.0.0.M3</version>
 	<packaging>jar</packaging>
 	<name>function-sample-pojo</name>
 	<description>Spring Cloud Function Web Support</description>
@@ -19,7 +19,7 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-cloud-function.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>2.0.0.M3</spring-cloud-function.version>
 		<wrapper.version>1.0.13.RELEASE</wrapper.version>
 	</properties>
 
