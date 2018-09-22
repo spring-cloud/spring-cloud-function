@@ -34,7 +34,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "2.0.0.M3"
+	springCloudFunctionVersion = "2.0.0.BUILD-SNAPSHOT"
 }
 
 dependencyManagement {
