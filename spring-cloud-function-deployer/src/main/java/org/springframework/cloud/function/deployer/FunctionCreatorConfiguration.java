@@ -295,13 +295,19 @@ class FunctionCreatorConfiguration {
 			if (!"file".equals(url.getProtocol())) {
 				return Collections.singletonList(url);
 			}
-			if (!url.toString().endsWith(".jar")) {
-				return Collections.singletonList(url);
-			}
 			try {
 				File file = new File(url.toURI());
 				if (file.exists()) {
-					JarFileArchive archive = new JarFileArchive(file);
+					Archive archive;
+					if (!url.toString().endsWith(".jar")) {
+						if (!new File(file, "BOOT-INF").exists()) {
+							return Collections.singletonList(url);
+						}
+						archive = new ExplodedArchive(file);
+					}
+					else {
+						archive = new JarFileArchive(file);
+					}
 					return Arrays
 							.asList(new ComputeLauncher(archive).getClassLoaderUrls());
 				}
