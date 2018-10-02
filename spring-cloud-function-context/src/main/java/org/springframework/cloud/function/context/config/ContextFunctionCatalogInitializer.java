@@ -26,7 +26,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.boot.autoconfigure.BackgroundPreinitializer;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationBeanFactoryMetadata;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
@@ -49,6 +48,8 @@ import org.springframework.util.ClassUtils;
  */
 public class ContextFunctionCatalogInitializer
 		implements ApplicationContextInitializer<GenericApplicationContext> {
+
+	public static final String IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME = "spring.backgroundpreinitializer.ignore";
 
 	@Override
 	public void initialize(GenericApplicationContext applicationContext) {
@@ -97,20 +98,20 @@ public class ContextFunctionCatalogInitializer
 
 			performPreinitialization();
 
-			if (context.getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class,
+			if (context.getBeanFactory().getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class,
 					false, false).length == 0) {
 				context.registerBean(PropertySourcesPlaceholderConfigurer.class,
 						() -> PropertyPlaceholderAutoConfiguration
 								.propertySourcesPlaceholderConfigurer());
 			}
 
-			if (!context.containsBean(
+			if (!context.getBeanFactory().containsBean(
 					AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 				context.registerBean(
 						AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME,
 						AutowiredAnnotationBeanPostProcessor.class);
 			}
-			if (!context.containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
+			if (!context.getBeanFactory().containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
 				context.registerBean(ConfigurationBeanFactoryMetadata.BEAN_NAME,
 						ConfigurationBeanFactoryMetadata.class,
 						() -> new ConfigurationBeanFactoryMetadata());
@@ -124,7 +125,7 @@ public class ContextFunctionCatalogInitializer
 					&& !"gson".equals(context.getEnvironment().getProperty(
 							ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY,
 							"gson"))) {
-				if (context.getBeanNamesForType(Gson.class, false, false).length == 0) {
+				if (context.getBeanFactory().getBeanNamesForType(Gson.class, false, false).length == 0) {
 					context.registerBean(Gson.class, () -> new Gson());
 				}
 				context.registerBean(JsonMapper.class,
@@ -132,8 +133,8 @@ public class ContextFunctionCatalogInitializer
 								.jsonMapper(context.getBean(Gson.class)));
 			}
 			else if (ClassUtils.isPresent(
-					"com.fasterxml.jackson.databind.ObjectMapper.ObjectMapper", null)) {
-				if (context.getBeanNamesForType(ObjectMapper.class, false,
+					"com.fasterxml.jackson.databind.ObjectMapper", null)) {
+				if (context.getBeanFactory().getBeanNamesForType(ObjectMapper.class, false,
 						false).length == 0) {
 					context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
 				}
@@ -143,7 +144,7 @@ public class ContextFunctionCatalogInitializer
 
 			}
 
-			if (context.getBeanNamesForType(FunctionCatalog.class, false,
+			if (context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class, false,
 					false).length == 0) {
 				context.registerBean(InMemoryFunctionCatalog.class,
 						() -> new InMemoryFunctionCatalog());
@@ -154,7 +155,7 @@ public class ContextFunctionCatalogInitializer
 		}
 
 		private void performPreinitialization() {
-			if (Boolean.getBoolean(BackgroundPreinitializer.IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME)) {
+			if (Boolean.getBoolean(IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME)) {
 				return;
 			}
 			try {

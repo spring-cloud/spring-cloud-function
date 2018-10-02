@@ -7,7 +7,7 @@
 	<artifactId>spring-cloud-function-adapter-azure</artifactId>
 	<packaging>jar</packaging>
 
-	<name>spring-cloud-function-adapter-aws</name>
+	<name>spring-cloud-function-adapter-azure</name>
 	<description>Azure Function Adapter for Spring Cloud Function</description>
 
 	<parent>

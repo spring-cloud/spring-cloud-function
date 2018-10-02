@@ -97,7 +97,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 				if (context == null) {
 					ClassUtils.overrideThreadContextClassLoader(
 							AzureSpringFunctionInitializer.class.getClassLoader());
-					springApplication().run();
+					context = springApplication().run();
 					AzureSpringFunctionInitializer.context = context;
 				}
 			}
