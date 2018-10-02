@@ -26,9 +26,11 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.boot.autoconfigure.BackgroundPreinitializer;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationBeanFactoryMetadata;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.InMemoryFunctionCatalog;
@@ -95,19 +97,28 @@ public class ContextFunctionCatalogInitializer
 
 			performPreinitialization();
 
-			context.registerBean(PropertySourcesPlaceholderConfigurer.class,
-					() -> PropertyPlaceholderAutoConfiguration
-							.propertySourcesPlaceholderConfigurer());
+			if (context.getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class,
+					false, false).length == 0) {
+				context.registerBean(PropertySourcesPlaceholderConfigurer.class,
+						() -> PropertyPlaceholderAutoConfiguration
+								.propertySourcesPlaceholderConfigurer());
+			}
 
-			context.registerBean(
-					AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME,
-					AutowiredAnnotationBeanPostProcessor.class);
-			context.registerBean(ConfigurationBeanFactoryMetadata.BEAN_NAME,
-					ConfigurationBeanFactoryMetadata.class,
-					() -> new ConfigurationBeanFactoryMetadata());
-			context.registerBean(ConfigurationPropertiesBindingPostProcessor.BEAN_NAME,
-					ConfigurationPropertiesBindingPostProcessor.class,
-					() -> new ConfigurationPropertiesBindingPostProcessor());
+			if (!context.containsBean(
+					AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+				context.registerBean(
+						AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME,
+						AutowiredAnnotationBeanPostProcessor.class);
+			}
+			if (!context.containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
+				context.registerBean(ConfigurationBeanFactoryMetadata.BEAN_NAME,
+						ConfigurationBeanFactoryMetadata.class,
+						() -> new ConfigurationBeanFactoryMetadata());
+				context.registerBean(
+						ConfigurationPropertiesBindingPostProcessor.BEAN_NAME,
+						ConfigurationPropertiesBindingPostProcessor.class,
+						() -> new ConfigurationPropertiesBindingPostProcessor());
+			}
 
 			if (ClassUtils.isPresent("com.google.gson.Gson", null)
 					&& !"gson".equals(context.getEnvironment().getProperty(
@@ -132,14 +143,20 @@ public class ContextFunctionCatalogInitializer
 
 			}
 
-			context.registerBean(InMemoryFunctionCatalog.class,
-					() -> new InMemoryFunctionCatalog());
-			context.registerBean(FunctionRegistrationPostProcessor.class,
-					() -> new FunctionRegistrationPostProcessor(
-							context.getBean(FunctionRegistry.class)));
+			if (context.getBeanNamesForType(FunctionCatalog.class, false,
+					false).length == 0) {
+				context.registerBean(InMemoryFunctionCatalog.class,
+						() -> new InMemoryFunctionCatalog());
+				context.registerBean(FunctionRegistrationPostProcessor.class,
+						() -> new FunctionRegistrationPostProcessor(
+								context.getBean(FunctionRegistry.class)));
+			}
 		}
 
 		private void performPreinitialization() {
+			if (Boolean.getBoolean(BackgroundPreinitializer.IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME)) {
+				return;
+			}
 			try {
 				Thread thread = new Thread(new Runnable() {
 
@@ -176,7 +193,9 @@ public class ContextFunctionCatalogInitializer
 					throws BeansException {
 				if (bean instanceof FunctionRegistration) {
 					FunctionRegistration<?> registration = (FunctionRegistration<?>) bean;
-					Assert.notEmpty(registration.getNames(), "FunctionRegistration must define at least one name. Was empty");;
+					Assert.notEmpty(registration.getNames(),
+							"FunctionRegistration must define at least one name. Was empty");
+					;
 					if (registration.getType() == null) {
 						throw new IllegalStateException(
 								"You need an explicit type for the function: "

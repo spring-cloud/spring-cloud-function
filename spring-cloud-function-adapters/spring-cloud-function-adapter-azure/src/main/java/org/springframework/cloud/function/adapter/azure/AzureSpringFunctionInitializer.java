@@ -32,12 +32,15 @@ import com.microsoft.azure.functions.ExecutionContext;
 
 import org.reactivestreams.Publisher;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
@@ -92,12 +95,9 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		if (context == null) {
 			synchronized (AzureSpringFunctionInitializer.class) {
 				if (context == null) {
-					SpringApplicationBuilder builder = new SpringApplicationBuilder(
-							configurationClass);
 					ClassUtils.overrideThreadContextClassLoader(
 							AzureSpringFunctionInitializer.class.getClassLoader());
-
-					context = builder.web(WebApplicationType.NONE).run();
+					springApplication().run();
 					AzureSpringFunctionInitializer.context = context;
 				}
 			}
@@ -132,6 +132,29 @@ public class AzureSpringFunctionInitializer implements Closeable {
 				this.function = this.catalog.lookup(Function.class, name);
 			}
 		}
+	}
+
+	private SpringApplication springApplication() {
+		ApplicationContextInitializer<?> initializer = null;
+		Class<?> sourceClass = configurationClass;
+		if (ApplicationContextInitializer.class.isAssignableFrom(sourceClass)) {
+			initializer = BeanUtils.instantiateClass(configurationClass, ApplicationContextInitializer.class);
+			sourceClass = Object.class;
+		}
+		SpringApplication application;
+		if (initializer!=null) {
+			application = new SpringApplication(sourceClass) {
+				@Override
+				protected void load(ApplicationContext context, Object[] sources) {
+				}
+			};
+			application.addInitializers(initializer);
+			application.setDefaultProperties(Collections.singletonMap("spring.functional.enabled", "true"));
+		} else {
+			application = new SpringApplication(sourceClass);
+		}
+		application.setWebApplicationType(WebApplicationType.NONE);
+		return application;
 	}
 
 	protected boolean isSingleInput(Function<?, ?> function, Object input) {
