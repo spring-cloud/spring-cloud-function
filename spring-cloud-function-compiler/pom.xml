@@ -6,6 +6,9 @@
 	<packaging>jar</packaging>
 	<name>Spring Cloud Function Compiler</name>
 	<description>Spring Cloud Function Compiler</description>
+	<properties>
+		<maven.version>3.3.9</maven.version>
+	</properties>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -44,12 +47,12 @@
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-core</artifactId>
-			<version>3.3.9</version>
+			<version>${maven.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-embedder</artifactId>
-			<version>3.3.9</version>
+			<version>${maven.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.aether</groupId>
