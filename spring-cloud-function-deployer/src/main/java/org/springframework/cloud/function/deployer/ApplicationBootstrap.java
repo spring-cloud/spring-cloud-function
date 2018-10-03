@@ -83,6 +83,10 @@ public class ApplicationBootstrap {
 		}
 	}
 
+	public ApplicationRunner getRunner() {
+		return this.runner;
+	}
+
 	private ApplicationRunner runner(Class<?> mainClass) {
 		if (this.runner == null) {
 			synchronized (this) {
