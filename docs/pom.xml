@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-<!-- 	<groupId>org.springframework.cloud</groupId> -->
+	<!-- 	<groupId>org.springframework.cloud</groupId> -->
 	<artifactId>spring-cloud-function-docs</artifactId>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
@@ -12,86 +14,90 @@
 	<name>Spring Cloud Function Docs</name>
 	<description>Spring Cloud Function Docs</description>
 	<properties>
-        <docs.main>spring-cloud-function</docs.main>
+		<docs.main>spring-cloud-function</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 		<docs.whitelisted.branches>1.0.x</docs.whitelisted.branches>
 	</properties>
- 	<build>
+	<build>
 		<plugins>
-	        <plugin>
-		      <!--skip deploy -->
-		      <artifactId>maven-deploy-plugin</artifactId>
-			  <version>2.8.2</version>
-		      <configuration>
-		        <skip>true</skip>
-		      </configuration>
-	        </plugin>
+			<plugin>
+				<!--skip deploy -->
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>2.8.2</version>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
-    <profiles>
+	<profiles>
 		<profile>
 			<id>docs</id>
 			<properties>
-				<adapters.path>${main.basedir}/spring-cloud-function-adapters</adapters.path>
+				<adapters.path>${main.basedir}/spring-cloud-function-adapters
+				</adapters.path>
 			</properties>
-            <build>
-               <plugins>
-				   <plugin>
-					   <groupId>org.apache.maven.plugins</groupId>
-					   <artifactId>maven-dependency-plugin</artifactId>
-					   <inherited>false</inherited>
-				   </plugin>
-		           <plugin>
-					   <groupId>org.asciidoctor</groupId>
-					   <artifactId>asciidoctor-maven-plugin</artifactId>
-					   <inherited>false</inherited>
-                   </plugin>
-				   <plugin>
-					   <groupId>com.agilejava.docbkx</groupId>
-					   <artifactId>docbkx-maven-plugin</artifactId>
-				   </plugin>
-				   <plugin>
-					   <groupId>org.apache.maven.plugins</groupId>
-					   <artifactId>maven-antrun-plugin</artifactId>
-					   <executions>
-						   <execution>
-							   <id>adapters</id>
-							   <phase>process-resources</phase>
-							   <goals>
-								   <goal>run</goal>
-							   </goals>
-							   <configuration>
-								   <target>
-									   <java classname="org.jruby.Main" failonerror="yes">
-										   <arg value="${docs.resources.dir}/ruby/generate_readme.sh"/>
-										   <arg value="-o"/>
-										   <arg value="${adapters.path}/spring-cloud-function-adapter-aws/README.adoc"/>
-										   <arg value="${basedir}/src/main/asciidoc/adapters/aws-readme.adoc"/>
-									   </java>
-									   <java classname="org.jruby.Main" failonerror="yes">
-										   <arg value="${docs.resources.dir}/ruby/generate_readme.sh"/>
-										   <arg value="-o"/>
-										   <arg value="${adapters.path}/spring-cloud-function-adapter-azure/README.adoc"/>
-										   <arg value="${basedir}/src/main/asciidoc/adapters/azure-readme.adoc"/>
-									   </java>
-									   <java classname="org.jruby.Main" failonerror="yes">
-										   <arg value="${docs.resources.dir}/ruby/generate_readme.sh"/>
-										   <arg value="-o"/>
-										   <arg value="${adapters.path}/spring-cloud-function-adapter-openwhisk/README.adoc"/>
-										   <arg value="${basedir}/src/main/asciidoc/adapters/openwhisk-readme.adoc"/>
-									   </java>
-								   </target>
-							   </configuration>
-						   </execution>
-					   </executions>
-				   </plugin>
- 				   <plugin>
-					   <groupId>org.codehaus.mojo</groupId>
-					   <artifactId>build-helper-maven-plugin</artifactId>
-					   <inherited>false</inherited>
-                   </plugin>
-               </plugins>
-            </build>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<inherited>false</inherited>
+					</plugin>
+					<plugin>
+						<groupId>org.asciidoctor</groupId>
+						<artifactId>asciidoctor-maven-plugin</artifactId>
+						<inherited>false</inherited>
+					</plugin>
+					<plugin>
+						<groupId>com.agilejava.docbkx</groupId>
+						<artifactId>docbkx-maven-plugin</artifactId>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>adapters</id>
+								<phase>process-resources</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+										<java classname="org.jruby.Main"
+											  failonerror="yes">
+											<arg value="${docs.resources.dir}/ruby/generate_readme.sh"/>
+											<arg value="-o"/>
+											<arg value="${adapters.path}/spring-cloud-function-adapter-aws/README.adoc"/>
+											<arg value="${basedir}/src/main/asciidoc/adapters/aws-readme.adoc"/>
+										</java>
+										<java classname="org.jruby.Main"
+											  failonerror="yes">
+											<arg value="${docs.resources.dir}/ruby/generate_readme.sh"/>
+											<arg value="-o"/>
+											<arg value="${adapters.path}/spring-cloud-function-adapter-azure/README.adoc"/>
+											<arg value="${basedir}/src/main/asciidoc/adapters/azure-readme.adoc"/>
+										</java>
+										<java classname="org.jruby.Main"
+											  failonerror="yes">
+											<arg value="${docs.resources.dir}/ruby/generate_readme.sh"/>
+											<arg value="-o"/>
+											<arg value="${adapters.path}/spring-cloud-function-adapter-openwhisk/README.adoc"/>
+											<arg value="${basedir}/src/main/asciidoc/adapters/openwhisk-readme.adoc"/>
+										</java>
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>build-helper-maven-plugin</artifactId>
+						<inherited>false</inherited>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
-    </profiles>
+	</profiles>
 </project>
