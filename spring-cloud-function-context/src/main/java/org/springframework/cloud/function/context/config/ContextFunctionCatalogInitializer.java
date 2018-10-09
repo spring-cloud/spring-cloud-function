@@ -41,6 +41,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * @author Dave Syer
@@ -220,25 +221,4 @@ public class ContextFunctionCatalogInitializer
 
 	}
 
-	// https://jira.spring.io/browse/SPR-17333
-	static class ClassUtils {
-
-		public static boolean isPresent(String string, ClassLoader classLoader) {
-			if (classLoader == null) {
-				classLoader = ClassUtils.class.getClassLoader();
-			}
-			try {
-				return Class.forName(string, false, classLoader) != null;
-			}
-			catch (Throwable e) {
-				try {
-					return Class.forName(string) != null;
-				}
-				catch (Throwable t) {
-					return false;
-				}
-			}
-		}
-
-	}
 }
