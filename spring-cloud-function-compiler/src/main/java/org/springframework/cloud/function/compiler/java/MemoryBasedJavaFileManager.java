@@ -21,11 +21,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -76,7 +84,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	private CompilationInfoCache compilationInfoCache;
 
-	private Map<Key, IterableClasspath> iterables = new HashMap<>();
+	private Map<Key, CloseableFilterableJavaFileObjectIterable> iterables = new HashMap<>();
 
 	public MemoryBasedJavaFileManager() {
 		outputCollector = new CompilationOutputCollector();
@@ -159,6 +167,46 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 			}
 		}
 
+		private boolean packageCacheInitialized = false;
+		private Map<String, Path> packageCache = new HashMap<String, Path>();
+		private ArchiveInfo moduleArchiveInfo;
+
+		private class PackageCacheBuilderVisitor extends SimpleFileVisitor<Path> {
+			
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				if (file.getNameCount() > 3 && file.toString().endsWith(".class")) {
+					int fnc = file.getNameCount();
+					if (fnc > 3) { // There is a package name - e.g. /modules/java.base/java/lang/Object.class
+						Path packagePath = file.subpath(2, fnc-1); // e.g. java/lang
+						String packagePathString = packagePath.toString()+"/";
+						packageCache.put(packagePathString, file.subpath(0, fnc-1)); // java/lang -> /modules/java.base/java/lang
+					}
+				}
+				return FileVisitResult.CONTINUE;
+			}
+		}
+		
+		private synchronized ArchiveInfo buildPackageMap() {
+			if (!packageCacheInitialized) {
+				packageCacheInitialized = true;
+				Iterable<java.nio.file.Path> roots = getJrtFs().getRootDirectories();
+				PackageCacheBuilderVisitor visitor = new PackageCacheBuilderVisitor();
+				try {
+					for (java.nio.file.Path path : roots) {
+						Files.walkFileTree(path, visitor);
+		 			}
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				List<String> ls = new ArrayList<>();
+				ls.addAll(packageCache.keySet());
+				Collections.sort(ls);
+				moduleArchiveInfo = new ArchiveInfo(ls, false);
+			}
+			return moduleArchiveInfo;
+		}
+
 		/**
 		 * Walk the specified archive and collect up the package names of any .class files encountered. If
 		 * the archive contains nested jars packaged in a BOOT style way (under a BOOT-INF/lib folder) then
@@ -168,6 +216,10 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		 * @return an ArchiveInfo encapsulating package info from the archive
 		 */
 		private ArchiveInfo buildArchiveInfo(File file) {
+			if (file.toString().endsWith("jrt-fs.jar")) {
+				// Special treatment for >=JDK9 - treat this as intention to use modules
+				return buildPackageMap();
+			}
 			List<String> packageNames = new ArrayList<>();
 			boolean isBootJar = false;
 			try (ZipFile openArchive = new ZipFile(file)) {
@@ -234,12 +286,14 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 	}
 
 	static class Key {
+		private Location location;
 		private String classpath;
 		private String packageName;
 		private Set<Kind> kinds;
 		private boolean recurse;
 
-		public Key(String classpath, String packageName, Set<Kind> kinds, boolean recurse) {
+		public Key(Location location, String classpath, String packageName, Set<Kind> kinds, boolean recurse) {
+			this.location = location;
 			this.classpath = classpath;
 			this.packageName = packageName;
 			this.kinds = kinds;
@@ -248,7 +302,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 		@Override
 		public int hashCode() {
-			return ((classpath.hashCode()*37+(packageName==null?0:packageName.hashCode()))*37+kinds.hashCode())*37+(recurse?1:0);
+			return (((location.hashCode()*37)+classpath.hashCode()*37+(packageName==null?0:packageName.hashCode()))*37+kinds.hashCode())*37+(recurse?1:0);
 		}
 
 		@Override
@@ -257,7 +311,8 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 				return false;
 			}
 			Key that = (Key)obj;
-			return classpath.equals(that.classpath) &&
+			return  location.equals(that.location) &&
+					classpath.equals(that.classpath) &&
 					kinds.equals(that.kinds) &&
 					(recurse==that.recurse) &&
 					(packageName==null?(that.packageName==null):this.packageName.equals(that.packageName));
@@ -268,6 +323,9 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		if (platformClasspath == null) {
 			platformClasspath = System.getProperty("sun.boot.class.path");
 		}
+		if (platformClasspath == null) {
+			platformClasspath = "";
+		}
 		return platformClasspath;
 	}
 
@@ -276,9 +334,20 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 			Set<Kind> kinds, boolean recurse) throws IOException {
 		logger.debug("list({},{},{},{})", location, packageName, kinds, recurse);
 		String classpath = "";
-		if (location == StandardLocation.PLATFORM_CLASS_PATH
+		Path moduleRootPath = null;
+		if (location instanceof JDKModuleLocation && (kinds == null || kinds.contains(Kind.CLASS))) {
+			// list(org.springframework.cloud.function.compiler.java.MemoryBasedJavaFileManager$JDKModuleLocation@550a1967,
+			//      java.lang,[SOURCE, CLASS, HTML, OTHER],false)
+			moduleRootPath = ((JDKModuleLocation)location).getModuleRootPath();
+			logger.debug("For JDKModuleLocation "+location.toString()+" root path is "+moduleRootPath);
+		} else if (location == StandardLocation.PLATFORM_CLASS_PATH
 				&& (kinds == null || kinds.contains(Kind.CLASS))) {
 			classpath = getPlatformClassPath();
+//			if (classpath.length() == 0) {
+//			if (hasJrtFsPath()) {
+//				classpath = getJrtFsPath();
+//			}
+//		}
 			logger.debug("Creating iterable for boot class path: {}", classpath);
 		}
 		else if (location == StandardLocation.CLASS_PATH
@@ -294,10 +363,14 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 			classpath = javaClassPath;
 			logger.debug("Creating iterable for class path: {}", classpath);
 		}
-		Key k = new Key(classpath, packageName, kinds, recurse);
-		IterableClasspath resultIterable = iterables.get(k);
+		Key k = new Key(location, classpath, packageName, kinds, recurse);
+		CloseableFilterableJavaFileObjectIterable resultIterable = iterables.get(k);
 		if (resultIterable == null) {
-			resultIterable = new IterableClasspath(compilationInfoCache, classpath, packageName, recurse);
+			if (moduleRootPath != null) {
+				resultIterable = new IterableJrtModule(compilationInfoCache, moduleRootPath, packageName, recurse);
+			} else {
+				resultIterable = new IterableClasspath(compilationInfoCache, classpath, packageName, recurse);
+			}
 			iterables.put(k, resultIterable);
 		}
 		resultIterable.reset();
@@ -329,6 +402,9 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 			}
 			if (cp == null) {
 				cp = System.getProperty("java.class.path");
+			}
+			if (hasJrtFsPath()) {
+				cp = cp + File.pathSeparator + getJrtFsPath();
 			}
 			classpath = pathWithPlatformClassPathRemoved(cp);
 		}
@@ -394,6 +470,10 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 	public JavaFileObject getJavaFileForInput(Location location, String className,
 			Kind kind) throws IOException {
 		logger.debug("getJavaFileForInput({},{},{})", location, className, kind);
+		// getJavaFileForInput(SOURCE_PATH,module-info,SOURCE)
+		if (className.equals("module-info")) {
+			return null;
+		}
 		throw new IllegalStateException("Not expected to be used in this context");
 	}
 
@@ -432,8 +512,8 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	@Override
 	public void close() throws IOException {
-		Collection<IterableClasspath> toClose = iterables.values();
-		for (IterableClasspath icp: toClose) {
+		Collection<CloseableFilterableJavaFileObjectIterable> toClose = iterables.values();
+		for (CloseableFilterableJavaFileObjectIterable icp: toClose) {
 			icp.close();
 		}
 	}
@@ -482,4 +562,138 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		return resolvedAdditionalDependencies;
 	}
 
+	private static URI JRT_URI = URI.create("jrt:/");
+	
+	private static FileSystem fs;
+	
+	static class JDKModuleLocation implements Location {
+		private String moduleName;
+		private Path moduleRootPath;
+		
+		public JDKModuleLocation(String moduleName, Path moduleRootPath) {
+			this.moduleName = moduleName;
+			this.moduleRootPath = moduleRootPath;
+		}
+
+		@Override
+		public String getName() {
+			return "MODULE";
+		}
+
+		@Override
+		public boolean isOutputLocation() {
+			return false;
+		}
+
+		public String getModuleName() {
+			return moduleName;
+		}
+		
+		public Path getModuleRootPath() {
+			return moduleRootPath;
+		}
+		
+		public String toString() {
+			return "JDKModuleLocation(" + moduleName + ")";
+		}
+
+		public int hashCode() {
+			return moduleName.hashCode();
+		}
+		
+		public boolean equals(Object other) {
+			if (!(other instanceof JDKModuleLocation)) {
+				return false;
+			}
+			return this.hashCode() == ((JDKModuleLocation)other).hashCode();
+		}
+		
+	}
+	
+	public String inferModuleName(Location location) throws IOException {
+		if (location instanceof JDKModuleLocation) {
+			JDKModuleLocation m = (JDKModuleLocation)location;
+			return m.getModuleName();
+		}
+		throw new IllegalStateException("Asked to inferModuleName from a "+location.getClass().getName());
+	}
+	
+	static class ModuleIdentifierVisitor extends SimpleFileVisitor<Path> {
+		
+		private Map<String, Path> modules = new HashMap<>();
+		
+		@Override
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+			if (file.getNameCount() > 2 && file.toString().endsWith(".class")) {
+				// /modules/jdk.rmic/sun/tools/tree/CaseStatement.class
+				String moduleName = file.getName(1).toString(); // jdk.rmic
+				Path moduleRootPath = file.subpath(0, 2); // /modules/jdk.rmic
+				if (!modules.containsKey(moduleName)) {
+					modules.put(moduleName, moduleRootPath);
+				}
+			}
+			return FileVisitResult.CONTINUE;
+		}
+
+		public Set<Location> getModuleLocations() {
+			if (modules.size()==0) {
+				return Collections.emptySet();
+			} else {
+				Set<Location> locations = new HashSet<>();
+				for (Map.Entry<String,Path> moduleEntry: modules.entrySet()) {
+					locations.add(new JDKModuleLocation(moduleEntry.getKey(),moduleEntry.getValue()));
+				}
+				return locations;
+			}
+		}
+	}
+
+	private String jrtFsFilePath = null;
+	
+	private boolean checkedForJrtFsPath = false;
+
+	private boolean hasJrtFsPath() {
+		return getJrtFsPath() != null;
+	}
+	
+	private String getJrtFsPath() {
+		if (!checkedForJrtFsPath) {
+			String javaHome = System.getProperty("java.home");
+			String jrtFsFilePath = javaHome + File.separator + "lib" + File.separator + "jrt-fs.jar";
+			File jrtFsFile = new File(jrtFsFilePath);
+			if (jrtFsFile.exists()) {
+				this.jrtFsFilePath = jrtFsFilePath;
+			}
+			checkedForJrtFsPath = true;
+		}
+		return jrtFsFilePath;
+	}
+	
+	public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
+		if (getJrtFsPath()!=null && location == StandardLocation.valueOf("SYSTEM_MODULES")) {
+			Set<Set<Location>> ss = new HashSet<>();
+			HashSet<Location> moduleLocations = new HashSet<>();
+			ModuleIdentifierVisitor visitor = new ModuleIdentifierVisitor();
+			Iterable<Path> roots = getJrtFs().getRootDirectories();
+			try {
+				for (Path path: roots) {
+					Files.walkFileTree(path, visitor);
+				}
+				moduleLocations.addAll(visitor.getModuleLocations());
+			} catch (IOException ioe) {
+				throw new RuntimeException(ioe);
+			}
+			ss.add(moduleLocations);
+			return ss;
+		} else {
+			return Collections.emptySet();
+		}
+	}
+
+	private static FileSystem getJrtFs() {
+		if (fs == null) {
+			 fs = FileSystems.getFileSystem(JRT_URI);
+		}
+		return fs;
+	}
 }

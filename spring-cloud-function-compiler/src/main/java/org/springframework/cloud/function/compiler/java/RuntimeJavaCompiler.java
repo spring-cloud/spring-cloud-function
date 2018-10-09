@@ -61,7 +61,10 @@ public class RuntimeJavaCompiler {
 		JavaFileObject sourceFile = InMemoryJavaFileObject.getSourceJavaFileObject(className, classSourceCode);
 
 		Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(sourceFile);
-		CompilationTask task = compiler.getTask(null, fileManager , diagnosticCollector, null, null, compilationUnits);
+		List<String> options = new ArrayList<>();
+		options.add("-source");
+		options.add("1.8");
+		CompilationTask task = compiler.getTask(null, fileManager , diagnosticCollector, options,  null, compilationUnits);
 
 		boolean success = task.call();
 		CompilationResult compilationResult = new CompilationResult(success);

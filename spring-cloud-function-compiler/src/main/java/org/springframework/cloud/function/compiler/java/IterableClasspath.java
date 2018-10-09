@@ -97,7 +97,7 @@ public class IterableClasspath extends CloseableFilterableJavaFileObjectIterable
 	class ClasspathEntriesIterator implements Iterator<JavaFileObject> {
 		private int currentClasspathEntriesIndex = 0;
 
-		// Either a directory or an archive will be open at any one time
+		// Walking one of three possible things: directory tree, zip, or Java runtime packaged in JDK9+ form
 		private File openDirectory = null;
 		private DirEnumeration openDirectoryEnumeration = null;
 
@@ -105,19 +105,25 @@ public class IterableClasspath extends CloseableFilterableJavaFileObjectIterable
 		private File openFile = null;
 		private ZipEntry nestedZip = null;
 		private Stack<Enumeration<? extends ZipEntry>> openArchiveEnumeration = null;
+		
+		private File openJrt;
+		private JrtFsEnumeration openJrtEnumeration = null;
 
 		private JavaFileObject nextEntry = null;
 
 		private void findNext() {
 			if (nextEntry == null) {
 				try {
-					while (openArchive!=null || openDirectory!=null || currentClasspathEntriesIndex < classpathEntries.size()) {
-						if (openArchive == null && openDirectory == null) {
+					while (openArchive!=null || openDirectory!=null || openJrt != null || currentClasspathEntriesIndex < classpathEntries.size()) {
+						if (openArchive == null && openDirectory == null && openJrt == null) {
 							// Open the next item
 							File nextFile = classpathEntries.get(currentClasspathEntriesIndex);
 							if (nextFile.isDirectory()) {
 								openDirectory = nextFile;
 								openDirectoryEnumeration = new DirEnumeration(nextFile);
+							} else if (nextFile.getName().endsWith("jrt-fs.jar")) {
+								openJrt = nextFile;
+								openJrtEnumeration = new JrtFsEnumeration(nextFile,null);
 							} else {
 								openFile = nextFile;
 								openArchive = new ZipFile(nextFile);
@@ -166,6 +172,17 @@ public class IterableClasspath extends CloseableFilterableJavaFileObjectIterable
 							}
 							openDirectoryEnumeration = null;
 							openDirectory = null;
+						} else if (openJrtEnumeration != null) {
+							while (openJrtEnumeration.hasMoreElements()) {
+								JrtEntryJavaFileObject jrtEntry = openJrtEnumeration.nextElement();
+								String name = openJrtEnumeration.getName(jrtEntry);
+								if (accept(name)) {
+									nextEntry = jrtEntry;
+									return;
+								}
+							}
+							openJrtEnumeration = null;
+							openJrt = null;
 						}
 					}
 				} catch (IOException ioe) {
