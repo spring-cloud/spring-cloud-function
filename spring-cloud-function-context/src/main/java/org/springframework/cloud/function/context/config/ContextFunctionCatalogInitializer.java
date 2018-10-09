@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -97,8 +98,9 @@ public class ContextFunctionCatalogInitializer
 
 			performPreinitialization();
 
-			if (context.getBeanFactory().getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class,
-					false, false).length == 0) {
+			if (context.getBeanFactory().getBeanNamesForType(
+					PropertySourcesPlaceholderConfigurer.class, false,
+					false).length == 0) {
 				context.registerBean(PropertySourcesPlaceholderConfigurer.class,
 						() -> PropertyPlaceholderAutoConfiguration
 								.propertySourcesPlaceholderConfigurer());
@@ -110,7 +112,8 @@ public class ContextFunctionCatalogInitializer
 						AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME,
 						AutowiredAnnotationBeanPostProcessor.class);
 			}
-			if (!context.getBeanFactory().containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
+			if (!context.getBeanFactory()
+					.containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
 				context.registerBean(ConfigurationBeanFactoryMetadata.BEAN_NAME,
 						ConfigurationBeanFactoryMetadata.class,
 						() -> new ConfigurationBeanFactoryMetadata());
@@ -124,17 +127,18 @@ public class ContextFunctionCatalogInitializer
 					&& "gson".equals(context.getEnvironment().getProperty(
 							ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY,
 							"gson"))) {
-				if (context.getBeanFactory().getBeanNamesForType(Gson.class, false, false).length == 0) {
+				if (context.getBeanFactory().getBeanNamesForType(Gson.class, false,
+						false).length == 0) {
 					context.registerBean(Gson.class, () -> new Gson());
 				}
 				context.registerBean(JsonMapper.class,
 						() -> new ContextFunctionCatalogAutoConfiguration.GsonConfiguration()
 								.jsonMapper(context.getBean(Gson.class)));
 			}
-			else if (ClassUtils.isPresent(
-					"com.fasterxml.jackson.databind.ObjectMapper", null)) {
-				if (context.getBeanFactory().getBeanNamesForType(ObjectMapper.class, false,
-						false).length == 0) {
+			else if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper",
+					null)) {
+				if (context.getBeanFactory().getBeanNamesForType(ObjectMapper.class,
+						false, false).length == 0) {
 					context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
 				}
 				context.registerBean(JsonMapper.class,
@@ -149,7 +153,8 @@ public class ContextFunctionCatalogInitializer
 						() -> new InMemoryFunctionCatalog());
 				context.registerBean(FunctionRegistrationPostProcessor.class,
 						() -> new FunctionRegistrationPostProcessor(
-								context.getBean(FunctionRegistry.class)));
+								context.getAutowireCapableBeanFactory()
+										.getBeanProvider(FunctionRegistration.class)));
 			}
 		}
 
@@ -182,33 +187,35 @@ public class ContextFunctionCatalogInitializer
 		}
 
 		private class FunctionRegistrationPostProcessor implements BeanPostProcessor {
-			private final FunctionRegistry catalog;
+			@SuppressWarnings("rawtypes")
+			private final ObjectProvider<FunctionRegistration> functions;
 
-			public FunctionRegistrationPostProcessor(FunctionRegistry catalog) {
-				this.catalog = catalog;
+			public FunctionRegistrationPostProcessor(
+					@SuppressWarnings("rawtypes") ObjectProvider<FunctionRegistration> functions) {
+				this.functions = functions;
 			}
 
 			@Override
-			public Object postProcessAfterInitialization(Object bean, String beanName)
+			public Object postProcessBeforeInitialization(Object bean, String beanName)
 					throws BeansException {
-				if (bean instanceof FunctionRegistration) {
-					FunctionRegistration<?> registration = (FunctionRegistration<?>) bean;
-					Assert.notEmpty(registration.getNames(),
-							"FunctionRegistration must define at least one name. Was empty");
-					;
-					if (registration.getType() == null) {
-						throw new IllegalStateException(
-								"You need an explicit type for the function: "
-										+ beanName);
-						// TODO: in principle Spring could know how to extract this from
-						// the supplier, but in practice there is no functional bean
-						// registration with parametric types.
+				if (bean instanceof FunctionRegistry) {
+					FunctionRegistry catalog = (FunctionRegistry) bean;
+					for (FunctionRegistration<?> registration : functions) {
+						Assert.notEmpty(registration.getNames(),
+								"FunctionRegistration must define at least one name. Was empty");
+						if (registration.getType() == null) {
+							throw new IllegalStateException(
+									"You need an explicit type for the function: "
+											+ registration.getNames());
+							// TODO: in principle Spring could know how to extract this
+							// from the supplier, but in practice there is no functional
+							// bean registration with parametric types.
+						}
+						catalog.register(registration);
 					}
-					catalog.register(registration);
 				}
 				return bean;
 			}
-
 		}
 
 	}
@@ -217,7 +224,7 @@ public class ContextFunctionCatalogInitializer
 	static class ClassUtils {
 
 		public static boolean isPresent(String string, ClassLoader classLoader) {
-			if (classLoader==null) {
+			if (classLoader == null) {
 				classLoader = ClassUtils.class.getClassLoader();
 			}
 			try {
@@ -232,6 +239,6 @@ public class ContextFunctionCatalogInitializer
 				}
 			}
 		}
-		
+
 	}
 }
