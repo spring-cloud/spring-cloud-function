@@ -19,11 +19,13 @@ package org.springframework.cloud.function.deployer;
 import java.util.function.Function;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.system.JavaVersion;
 import org.springframework.cloud.function.context.FunctionCatalog;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +43,8 @@ public class SpringFunctionFluxConfigurationTests {
 
 	@Before
 	public void run() {
+		Assume.assumeTrue("Java > 8",
+				JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
 		if (bootstrap == null) {
 			bootstrap = new ApplicationBootstrap();
 			bootstrap.run(SpringFunctionFluxConfigurationTests.class,

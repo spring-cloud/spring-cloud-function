@@ -268,7 +268,8 @@ class FunctionCreatorConfiguration {
 		}
 
 		private ClassLoader getParent() {
-			ClassLoader loader = getClass().getClassLoader().getParent();
+			ClassLoader loader = getClass().getClassLoader();
+			loader = loader.getParent();
 			ClassLoader parent = loader;
 			while (loader.getParent() != null) {
 				// If launched from a fat jar with spring.factories skip this parent level
@@ -462,7 +463,8 @@ class FunctionCreatorConfiguration {
 				return super.loadClass(name, resolve);
 			}
 			catch (ClassNotFoundException e) {
-				if (name.contains(ContextRunner.class.getName())) {
+				if (name.contains(ContextRunner.class.getName())
+						|| name.contains(PostConstruct.class.getName())) {
 					// Special case for the ContextRunner. We can re-use the bytes for it,
 					// and the function jar doesn't have to include them since it is only
 					// used here.

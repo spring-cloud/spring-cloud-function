@@ -19,6 +19,8 @@ package org.springframework.cloud.function.deployer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,6 +28,7 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.system.JavaVersion;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.rule.OutputCapture;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -79,7 +82,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler",
-			"function.main=org.springframework.cloud.function.test.FunctionApp"})
+			"function.main=org.springframework.cloud.function.test.FunctionApp" })
 	public static class SingleFunctionWithMainTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -95,7 +98,7 @@ public abstract class FunctionCreatorConfigurationTests {
 	@TestPropertySource(properties = {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
 			"function.bean=myDoubler",
-			"function.main=org.springframework.cloud.function.test.FunctionRegistrar"})
+			"function.main=org.springframework.cloud.function.test.FunctionRegistrar" })
 	public static class SingleFunctionWithRegistrarTests
 			extends FunctionCreatorConfigurationTests {
 
@@ -129,6 +132,12 @@ public abstract class FunctionCreatorConfigurationTests {
 	public static class SupplierCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
+		@BeforeClass
+		public static void init() {
+			Assume.assumeTrue("Java > 8",
+					JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
+		}
+
 		@Test
 		public void testSupplier() {
 			Supplier<Integer> function = catalog.lookup(Supplier.class, "function0");
@@ -151,6 +160,12 @@ public abstract class FunctionCreatorConfigurationTests {
 	public static class FunctionCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
+		@BeforeClass
+		public static void init() {
+			Assume.assumeTrue("Java > 8",
+					JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
+		}
+
 		@Test
 		public void testFunction() {
 			Function<Flux<Integer>, Flux<String>> function = catalog
@@ -172,6 +187,12 @@ public abstract class FunctionCreatorConfigurationTests {
 					+ "org.springframework.cloud.function.test.Printer" })
 	public static class ConsumerCompositionTests
 			extends FunctionCreatorConfigurationTests {
+
+		@BeforeClass
+		public static void init() {
+			Assume.assumeTrue("Java > 8",
+					JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
+		}
 
 		@Rule
 		public OutputCapture capture = new OutputCapture();
