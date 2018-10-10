@@ -44,7 +44,7 @@ public class SpringFunctionFluxConfigurationTests {
 	@Before
 	public void run() {
 		Assume.assumeTrue("Java > 8",
-				JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
+				JavaVersion.getJavaVersion().isOlderThan(JavaVersion.EIGHT));
 		if (bootstrap == null) {
 			bootstrap = new ApplicationBootstrap();
 			bootstrap.run(SpringFunctionFluxConfigurationTests.class,
