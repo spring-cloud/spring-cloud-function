@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.0.M1</version>
+		<version>2.1.0.M4</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
@@ -26,7 +26,7 @@
 		<functionResourceGroup>java-function-group</functionResourceGroup>
 		<stagingDirectory>${project.build.directory}/azure-functions/${functionAppName}</stagingDirectory>
 		<start-class>example.Config</start-class>
-		<wrapper.version>1.0.11.RELEASE</wrapper.version>
+		<wrapper.version>1.0.15.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>
@@ -90,7 +90,14 @@
 				<plugin>
 					<groupId>com.microsoft.azure</groupId>
 					<artifactId>azure-functions-maven-plugin</artifactId>
-					<version>1.0.0-beta-4</version>
+					<version>1.0.0-beta-6</version>
+					<dependencies>
+						    <dependency>
+								<groupId>javax.xml.bind</groupId>
+								<artifactId>jaxb-api</artifactId>
+								<version>2.3.1</version>
+							</dependency>
+					</dependencies>
 				</plugin>
 			</plugins>
 		</pluginManagement>
