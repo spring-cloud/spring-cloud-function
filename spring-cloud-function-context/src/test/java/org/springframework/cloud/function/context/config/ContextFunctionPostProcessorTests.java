@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,14 @@ package org.springframework.cloud.function.context.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.StringTokenizer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -186,8 +189,19 @@ public class ContextFunctionPostProcessorTests {
 	}
 
 	private Object create(Class<?> type) {
+		// Want to load these the test types in a disposable classloader:
+		List<URL> urls = new ArrayList<>();
+		String jcp = System.getProperty("java.class.path");
+		StringTokenizer jcpEntries = new StringTokenizer(jcp, File.pathSeparator);
+		while (jcpEntries.hasMoreTokens()) {
+			String pathEntry = jcpEntries.nextToken();
+			try {
+				urls.add(new File(pathEntry).toURI().toURL());
+			} catch (MalformedURLException e) {
+			}
+		}
 		this.classLoader = new URLClassLoader(
-				((URLClassLoader) getClass().getClassLoader()).getURLs(),
+				urls.toArray(new URL[0]),
 				getClass().getClassLoader().getParent());
 		return BeanUtils
 				.instantiateClass(ClassUtils.resolveClassName(type.getName(), classLoader));
