@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -147,8 +148,7 @@ class FunctionCreatorConfiguration {
 			DelegatingResourceLoader resourceLoader) {
 		return l -> {
 			if (l.equals("app:classpath")) {
-				return Stream
-						.of(((URLClassLoader) getClass().getClassLoader()).getURLs());
+				return Stream.of(urls());
 			}
 			try {
 				return Stream.of(resourceLoader.getResource(l).getFile().toURI().toURL());
@@ -157,6 +157,25 @@ class FunctionCreatorConfiguration {
 				throw new UncheckedIOException(e);
 			}
 		};
+	}
+
+	private URL[] urls() {
+		if (getClass().getClassLoader() instanceof URLClassLoader) {
+			return ((URLClassLoader) getClass().getClassLoader()).getURLs();
+		}
+		// Want to load these the test types in a disposable classloader:
+		List<URL> urls = new ArrayList<>();
+		String jcp = System.getProperty("java.class.path");
+		StringTokenizer jcpEntries = new StringTokenizer(jcp, File.pathSeparator);
+		while (jcpEntries.hasMoreTokens()) {
+			String pathEntry = jcpEntries.nextToken();
+			try {
+				urls.add(new File(pathEntry).toURI().toURL());
+			}
+			catch (MalformedURLException e) {
+			}
+		}
+		return urls.toArray(new URL[urls.size()]);
 	}
 
 	private class ComputeLauncher extends JarLauncher {
