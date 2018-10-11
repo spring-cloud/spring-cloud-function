@@ -22,6 +22,7 @@
 		<module>function-sample-task</module>
 		<module>function-sample-aws</module>
 		<module>function-sample-azure</module>
+		<module>function-sample-spring-integration</module>
 	</modules>
 
 	<build>
