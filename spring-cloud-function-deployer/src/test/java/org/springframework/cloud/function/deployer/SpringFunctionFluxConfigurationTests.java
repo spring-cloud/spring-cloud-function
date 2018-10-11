@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.deployer;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 
 import org.junit.After;
@@ -27,10 +29,9 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.system.JavaVersion;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.FunctionInspector;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import reactor.core.publisher.Flux;
 
 @SpringBootConfiguration
 @EnableAutoConfiguration
@@ -39,12 +40,14 @@ public class SpringFunctionFluxConfigurationTests {
 
 	private Object catalog;
 
+	private Object inspector;
+
 	private ApplicationBootstrap bootstrap;
 
 	@Before
 	public void run() {
 		Assume.assumeTrue("Java > 8",
-				JavaVersion.getJavaVersion().isOlderThan(JavaVersion.EIGHT));
+				JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
 		if (bootstrap == null) {
 			bootstrap = new ApplicationBootstrap();
 			bootstrap.run(SpringFunctionFluxConfigurationTests.class,
@@ -52,6 +55,7 @@ public class SpringFunctionFluxConfigurationTests {
 					"--function.bean=foos",
 					"--function.main=com.example.functions.FunctionApp");
 			catalog = bootstrap.getRunner().getBean(FunctionCatalog.class.getName());
+			inspector = bootstrap.getRunner().getBean(FunctionInspector.class.getName());
 		}
 	}
 
@@ -62,18 +66,31 @@ public class SpringFunctionFluxConfigurationTests {
 		}
 	}
 
-	// @TestPropertySource(properties = { "",
-	// "function.main=com.example.functions.FunctionApp" })
-	// public static class SourceTests extends SpringFunctionFluxConfigurationTests {
-
 	@Test
 	public void test() throws Exception {
 		@SuppressWarnings("unchecked")
-		Function<Flux<Foo>, Flux<Foo>> function = (Function<Flux<Foo>, Flux<Foo>>) bootstrap
+		Function<Object, Object> function = (Function<Object, Object>) bootstrap
 				.getRunner()
 				.evaluate("lookup(T(java.util.function.Function), 'function0')", catalog);
-		assertThat(function.apply(Flux.just(new Foo("foo"))).blockFirst().getValue())
-				.isEqualTo("FOO");
+		assertThat(function).isNotNull();
+		Class<?> inputType = (Class<?>) bootstrap.getRunner()
+				.evaluate("getInputType(#function)", inspector, "function", function);
+		assertThat(inputType.getName()).isEqualTo("com.example.functions.Foo");
+		Object foo = create(inputType);
+		Class<?> outputType = (Class<?>) bootstrap.getRunner()
+				.evaluate("getOutputType(#function)", inspector, "function", function);
+		assertThat(outputType.getName()).isEqualTo("com.example.functions.Foo");
+		String value = (String) bootstrap.getRunner().evaluate(
+				"apply(T(reactor.core.publisher.Flux).just(#foo)).blockFirst().getValue()",
+				function, "foo", foo);
+		assertThat(value).isEqualTo("FOO");
+	}
+
+	private Object create(Class<?> inputType) throws InstantiationException,
+			IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+		Constructor<?> constructor = inputType.getConstructor(String.class);
+		constructor.setAccessible(true);
+		return constructor.newInstance("foo");
 	}
 
 }

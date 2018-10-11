@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.support.LiveBeansView;
 import org.springframework.expression.Expression;
+import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.expression.spel.support.StandardTypeLocator;
@@ -50,9 +51,15 @@ public class ApplicationRunner {
 
 	private StandardEvaluationContext app;
 
+	private final SpelParserConfiguration config;
+
+	private final StandardTypeLocator typeLocator;
+
 	public ApplicationRunner(ClassLoader classLoader, String source) {
 		this.classLoader = classLoader;
 		this.source = source;
+		this.config = new SpelParserConfiguration(null, this.classLoader);
+		this.typeLocator = new StandardTypeLocator(this.classLoader);
 	}
 
 	public void run(String... args) {
@@ -138,8 +145,10 @@ public class ApplicationRunner {
 	}
 
 	public Object evaluate(String expression, Object root, Object... attrs) {
-		Expression parsed = new SpelExpressionParser().parseExpression(expression);
+		Expression parsed = new SpelExpressionParser(this.config)
+				.parseExpression(expression);
 		StandardEvaluationContext context = new StandardEvaluationContext(root);
+		context.setTypeLocator(this.typeLocator);
 		if (attrs.length % 2 != 0) {
 			throw new IllegalArgumentException(
 					"Context attributes must be name, value pairs");

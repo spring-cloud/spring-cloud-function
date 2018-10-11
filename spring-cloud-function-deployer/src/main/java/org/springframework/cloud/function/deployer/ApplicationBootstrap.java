@@ -51,6 +51,9 @@ public class ApplicationBootstrap {
 	/**
 	 * Run the provided main class as a Spring Boot application with the provided command
 	 * line arguments.
+	 * 
+	 * @param mainClass the main class
+	 * @param args the command line arguments
 	 */
 	public void run(Class<?> mainClass, String... args) {
 		if (ApplicationBootstrap.isolated(args)) {
@@ -91,7 +94,7 @@ public class ApplicationBootstrap {
 		if (this.runner == null) {
 			synchronized (this) {
 				if (this.runner == null) {
-					this.classLoader = createClassLoader();
+					this.classLoader = createClassLoader(mainClass);
 					this.runner = new ApplicationRunner(this.classLoader,
 							mainClass.getName());
 					Runtime.getRuntime().addShutdownHook(new Thread(this::close));
@@ -110,8 +113,8 @@ public class ApplicationBootstrap {
 		return true;
 	}
 
-	private URLClassLoader createClassLoader() {
-		URL[] urls = findClassPath();
+	private URLClassLoader createClassLoader(Class<?> mainClass) {
+		URL[] urls = findClassPath(mainClass);
 		if (urls.length == 1) {
 			URL[] classpath = extractClasspath(urls[0]);
 			if (classpath != null) {
@@ -138,16 +141,15 @@ public class ApplicationBootstrap {
 		return new URLClassLoader(child.toArray(new URL[0]), base);
 	}
 
-	private URL[] findClassPath() {
-		ClassLoader base = getClass().getClassLoader();
+	private URL[] findClassPath(Class<?> mainClass) {
+		ClassLoader base = mainClass.getClassLoader();
 		if (!(base instanceof URLClassLoader)) {
 			try {
 				// Guess the classpath, based on where we can resolve existing resources
 				List<URL> list = Collections
-						.list(getClass().getClassLoader().getResources("META-INF"));
+						.list(mainClass.getClassLoader().getResources("META-INF"));
 				List<URL> result = new ArrayList<>();
-				result.add(
-						getClass().getProtectionDomain().getCodeSource().getLocation());
+				result.add(mainClass.getProtectionDomain().getCodeSource().getLocation());
 				for (URL url : list) {
 					String path = url.toString();
 					path = path.substring(0, path.length() - "/META-INF".length());
