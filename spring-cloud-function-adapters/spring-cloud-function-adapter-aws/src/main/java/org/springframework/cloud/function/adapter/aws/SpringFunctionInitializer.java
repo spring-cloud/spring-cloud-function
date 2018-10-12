@@ -30,18 +30,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.ClassUtils;
 
 import reactor.core.publisher.Flux;
@@ -115,41 +109,9 @@ public class SpringFunctionInitializer implements Closeable {
 	}
 
 	private SpringApplication springApplication() {
-		ApplicationContextInitializer<GenericApplicationContext> initializer = null;
 		Class<?> sourceClass = configurationClass;
-		if (ApplicationContextInitializer.class.isAssignableFrom(sourceClass)) {
-			@SuppressWarnings("unchecked")
-			ApplicationContextInitializer<GenericApplicationContext> instance = BeanUtils
-					.instantiateClass(configurationClass,
-							ApplicationContextInitializer.class);
-			initializer = instance;
-			sourceClass = Object.class;
-		}
-		else if (Function.class.isAssignableFrom(sourceClass)) {
-			@SuppressWarnings("unchecked")
-			final Class<Function<?, ?>> type = (Class<Function<?, ?>>) sourceClass;
-			initializer = context -> {
-				context.registerBean(FunctionRegistration.class,
-						() -> new FunctionRegistration<>(
-								context.getAutowireCapableBeanFactory().createBean(type))
-										.type(FunctionType.of(type)));
-			};
-			sourceClass = Object.class;
-		}
-		SpringApplication application;
-		if (initializer != null) {
-			application = new SpringApplication(sourceClass) {
-				@Override
-				protected void load(ApplicationContext context, Object[] sources) {
-				}
-			};
-			application.addInitializers(initializer);
-			application.setDefaultProperties(
-					Collections.singletonMap("spring.functional.enabled", "true"));
-		}
-		else {
-			application = new SpringApplication(sourceClass);
-		}
+		SpringApplication application = new org.springframework.cloud.function.context.SpringApplication(
+				sourceClass);
 		application.setWebApplicationType(WebApplicationType.NONE);
 		return application;
 	}
