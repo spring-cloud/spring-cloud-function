@@ -18,7 +18,6 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.After;
@@ -63,6 +62,14 @@ public class SpringFunctionInitializerTests {
 	}
 
 	@Test
+	public void functionApp() {
+		initializer = new SpringFunctionInitializer(FluxFunctionApp.class);
+		initializer.initialize();
+		Flux<?> result = Flux.from(initializer.apply(Flux.just(new Foo())));
+		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
+	}
+
+	@Test
 	public void functionCatalog() {
 		initializer = new SpringFunctionInitializer(FunctionConfig.class);
 		initializer.initialize();
@@ -96,19 +103,18 @@ public class SpringFunctionInitializerTests {
 		assertThat(result.toStream().collect(Collectors.toList())).isEmpty();
 	}
 
-	@Test
-	public void supplierCatalog() {
-		initializer = new SpringFunctionInitializer(SupplierConfig.class);
-		initializer.initialize();
-		Flux<?> result = Flux.from(initializer.apply(Flux.empty()));
-		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
-	}
-
 	@Configuration
 	protected static class FluxFunctionConfig {
 		@Bean
 		public Function<Flux<Foo>, Flux<Bar>> function() {
 			return flux -> flux.map(foo -> new Bar());
+		}
+	}
+
+	protected static class FluxFunctionApp implements Function<Flux<Foo>, Flux<Bar>> {
+		@Override
+		public Flux<Bar> apply(Flux<Foo> flux) {
+			return flux.map(foo -> new Bar());
 		}
 	}
 
@@ -144,15 +150,6 @@ public class SpringFunctionInitializerTests {
 		@Bean
 		public Function<Foo, Bar> other() {
 			return foo -> new Bar();
-		}
-	}
-
-	@Configuration
-	@Import(ContextFunctionCatalogAutoConfiguration.class)
-	protected static class SupplierConfig {
-		@Bean
-		public Supplier<Bar> supplier() {
-			return () -> new Bar();
 		}
 	}
 
