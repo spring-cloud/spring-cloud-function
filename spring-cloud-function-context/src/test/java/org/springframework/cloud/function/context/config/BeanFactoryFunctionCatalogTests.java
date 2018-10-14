@@ -179,6 +179,20 @@ public class BeanFactoryFunctionCatalogTests {
 		processor.lookup("supplier|consumer|z");
 	}
 
+	@Test
+	public void composeSupplierAndMultipleFunctions() {
+		Supplier<String> s = () -> "hello";
+		processor.register(new FunctionRegistration<>(s, "supplier"));
+		Function<String, String> uppercase = x -> x.toUpperCase();
+		processor.register(new FunctionRegistration<>(uppercase, "uppercase"));
+		Function<String, String> concat = x -> x + x;
+		processor.register(new FunctionRegistration<>(concat, "concat"));
+
+		Supplier<Flux<String>> f = processor.lookup("supplier|uppercase|concat");
+
+		assertThat(f.get().blockFirst()).isEqualTo("HELLOHELLO");
+	}
+
 	protected static class Source implements Supplier<Integer> {
 
 		@Override
