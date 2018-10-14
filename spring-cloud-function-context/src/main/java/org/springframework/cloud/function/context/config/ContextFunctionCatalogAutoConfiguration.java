@@ -32,9 +32,6 @@ import java.util.stream.Stream;
 
 import javax.annotation.PreDestroy;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -69,6 +66,11 @@ import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+
+import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -327,12 +329,21 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@SuppressWarnings("unchecked")
 		private Object compose(Object a, Object b) {
 			if (a instanceof Supplier && b instanceof Function) {
+				Supplier<Flux<Object>> supplier = (Supplier<Flux<Object>>) a;
 				if (b instanceof FluxConsumer) {
-					throw new UnsupportedOperationException("Composing Supplier and Consumer is not supported at the moment");
+					if (supplier instanceof FluxSupplier) {
+						FluxConsumer<Object> fConsumer = ((FluxConsumer<Object>)b);
+						return (Supplier<Flux<Void>>) () -> supplier.get().compose(v -> fConsumer.apply(supplier.get()));
+					}
+					else {
+						throw new IllegalStateException("The provided supplier is terminal (i.e., already composed with Consumer) "
+								+ "therefore it can not be composed with another consumer");
+					}
 				}
-				Supplier<Object> supplier = (Supplier<Object>) a;
-				Function<Object, Object> function = (Function<Object, Object>) b;
-				return (Supplier<Object>) () -> function.apply(supplier.get());
+				else {
+					Function<Object, Object> function = (Function<Object, Object>) b;
+					return (Supplier<Object>) () -> function.apply(supplier.get());
+				}
 			}
 			else if (a instanceof Function && b instanceof Function) {
 				Function<Object, Object> function1 = (Function<Object, Object>) a;

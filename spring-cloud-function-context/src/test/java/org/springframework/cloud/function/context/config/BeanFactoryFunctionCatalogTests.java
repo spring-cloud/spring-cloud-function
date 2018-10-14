@@ -16,22 +16,24 @@
 
 package org.springframework.cloud.function.context.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicStampedReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.Test;
-
+import org.reactivestreams.Publisher;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.BeanFactoryFunctionCatalog;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -151,6 +153,30 @@ public class BeanFactoryFunctionCatalogTests {
 		Function<Flux<String>, Mono<Void>> foos = processor.lookup(Function.class, "");
 		foos.apply(Flux.just("2")).subscribe();
 		assertThat(sink.values).contains("2");
+	}
+
+	@Test
+	public void composeSupplierAndConsumer() {
+		AtomicReference<String> ref = new AtomicReference<String>();
+		Supplier<String> s = () -> "hello";
+		processor.register(new FunctionRegistration<>(s, "supplier"));
+		Consumer<String> c = x -> ref.set(x.toUpperCase());
+		processor.register(new FunctionRegistration<>(c, "consumer"));
+		Supplier<Flux<Void>> f = processor.lookup("supplier|consumer");
+		f.get().blockFirst();
+		assertThat(ref.get()).isEqualTo("HELLO");
+	}
+
+	@Test(expected=IllegalStateException.class)
+	public void failComposeSupplierWithMultipleConsumers() {
+		AtomicReference<String> ref = new AtomicReference<String>();
+		Supplier<String> s = () -> "hello";
+		processor.register(new FunctionRegistration<>(s, "supplier"));
+		Consumer<String> c = x -> ref.set(x.toUpperCase());
+		processor.register(new FunctionRegistration<>(c, "consumer"));
+		Consumer<String> z = x -> ref.set(x.toUpperCase());
+		processor.register(new FunctionRegistration<>(z, "z"));
+		processor.lookup("supplier|consumer|z");
 	}
 
 	protected static class Source implements Supplier<Integer> {

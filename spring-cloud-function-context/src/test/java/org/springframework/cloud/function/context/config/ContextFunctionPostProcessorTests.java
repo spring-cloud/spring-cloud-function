@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -115,12 +116,13 @@ public class ContextFunctionPostProcessorTests {
 		assertThat(processor.getRegistration(supplier).getNames()).containsExactly("supplier|function");
 	}
 
-	//TODO we should support it at some point since this is really a Runnable
-	@Test(expected=UnsupportedOperationException.class)
+	@SuppressWarnings("unchecked")
+	@Test
 	public void supplierAndConsumer() {
 		processor.register(new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
 		processor.register(new FunctionRegistration<Consumer<String>>(System.out::println, "consumer"));
-		processor.lookupSupplier("supplier|consumer");
+		Supplier<Flux<Void>> supplier = (Supplier<Flux<Void>>) processor.lookupSupplier("supplier|consumer");
+		assertNull(supplier.get().blockFirst());
 	}
 
 	@Test
