@@ -121,6 +121,33 @@ public class BeanFactoryFunctionCatalogTests {
 	}
 
 	@Test
+	public void composeWithFiniteFunction() {
+		Function<String, String> func1 = x -> x.toUpperCase();
+		processor.register(new FunctionRegistration<>(func1, "func1"));
+		processor.register(new FunctionRegistration<>(new FluxThenMonoFunction(), "func2"));
+		Function<Flux<String>, Mono<Long>> foos = processor.lookup(Function.class, "func1,func2");
+		assertThat(foos.apply(Flux.fromArray(new String[] {"a", "b", "c"})).block()).isEqualTo(3);
+	}
+
+	@Test
+	public void composeWithFiniteFunctionAndContinueWithCompatible() {
+		Function<String, String> func1 = x -> x.toUpperCase();
+		processor.register(new FunctionRegistration<>(func1, "func1"));
+		processor.register(new FunctionRegistration<>(new FluxThenMonoFunction(), "func2"));
+		processor.register(new FunctionRegistration<>(new MonoThenFluxFunction(), "func3"));
+		Function<Flux<String>, Flux<Integer>> foos = processor.lookup(Function.class, "func1,func2,func3");
+		assertThat(foos.apply(Flux.fromArray(new String[] {"a", "b", "c"})).collectList().block().size()).isEqualTo(3);
+	}
+
+	@Test(expected=IllegalStateException.class)
+	public void composeIncompatibleFunctions() {
+		Function<String, String> func1 = x -> x.toUpperCase();
+		processor.register(new FunctionRegistration<>(func1, "func1"));
+		processor.register(new FunctionRegistration<>(new FluxThenMonoFunction(), "func2"));
+		processor.lookup(Function.class, "func2,func1");
+	}
+
+	@Test
 	public void composeSupplier() {
 		processor.register(new FunctionRegistration<>(new Source(), "numbers"));
 		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
@@ -229,6 +256,22 @@ public class BeanFactoryFunctionCatalogTests {
 			return "Hello " + t;
 		}
 
+	}
+
+	protected static class FluxThenMonoFunction implements Function<Flux<String>, Mono<Long>> {
+
+		@Override
+		public Mono<Long> apply(Flux<String> t) {
+			return t.count();
+		}
+	}
+
+	protected static class MonoThenFluxFunction implements Function<Mono<Long>, Flux<Integer>> {
+
+		@Override
+		public Flux<Integer> apply(Mono<Long> t) {
+			return Flux.range(0, Integer.parseInt(t.block().toString()));
+		}
 	}
 
 }

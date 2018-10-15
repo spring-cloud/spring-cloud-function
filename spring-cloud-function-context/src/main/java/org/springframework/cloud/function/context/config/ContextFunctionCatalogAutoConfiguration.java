@@ -52,9 +52,11 @@ import org.springframework.cloud.function.context.catalog.FunctionUnregistration
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
+import org.springframework.cloud.function.core.FluxToMonoFunction;
 import org.springframework.cloud.function.core.IsolatedConsumer;
 import org.springframework.cloud.function.core.IsolatedFunction;
 import org.springframework.cloud.function.core.IsolatedSupplier;
+import org.springframework.cloud.function.core.MonoToFluxFunction;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ApplicationEventPublisher;
@@ -349,7 +351,22 @@ public class ContextFunctionCatalogAutoConfiguration {
 			else if (a instanceof Function && b instanceof Function) {
 				Function<Object, Object> function1 = (Function<Object, Object>) a;
 				Function<Object, Object> function2 = (Function<Object, Object>) b;
-				return function1.andThen(function2);
+				if (function1 instanceof FluxToMonoFunction) {
+					if (function2 instanceof MonoToFluxFunction) {
+						return function1.andThen(function2);
+					}
+					else {
+						throw new IllegalStateException("The provided function is finite (i.e., returns Mono<?>) "
+								+ "therefore it can *only* be composed with compatible function (i.e., Function<Mono, Flux>");
+					}
+				}
+				else if (function2 instanceof FluxToMonoFunction) {
+					return new FluxToMonoFunction<Object, Object>(((Function<Flux<Object>, Flux<Object>>)a)
+							.andThen(((FluxToMonoFunction<Object,Object>) b).getTarget()));
+				}
+				else {
+					return function1.andThen(function2);
+				}
 			}
 			else if (a instanceof Function && b instanceof Consumer) {
 				Function<Object, Object> function = (Function<Object, Object>) a;
@@ -489,6 +506,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 					target = new FluxConsumer((Consumer<?>) target);
 				}
 				registration.target(target);
+			}
+			if (Mono.class.isAssignableFrom(type.getOutputWrapper())) {
+				registration.target(new FluxToMonoFunction<>((Function) target));
+			}
+			else if (Mono.class.isAssignableFrom(type.getInputWrapper())) {
+				registration.target(new MonoToFluxFunction<>((Function) target));
 			}
 			return registration;
 		}
