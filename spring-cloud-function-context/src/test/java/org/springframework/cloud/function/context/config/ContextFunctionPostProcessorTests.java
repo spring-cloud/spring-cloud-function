@@ -121,8 +121,8 @@ public class ContextFunctionPostProcessorTests {
 	public void supplierAndConsumer() {
 		processor.register(new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
 		processor.register(new FunctionRegistration<Consumer<String>>(System.out::println, "consumer"));
-		Supplier<Flux<Void>> supplier = (Supplier<Flux<Void>>) processor.lookupSupplier("supplier|consumer");
-		assertNull(supplier.get().blockFirst());
+		Supplier<Mono<Void>> supplier = (Supplier<Mono<Void>>) processor.lookupSupplier("supplier|consumer");
+		assertNull(supplier.get().block());
 	}
 
 	@Test

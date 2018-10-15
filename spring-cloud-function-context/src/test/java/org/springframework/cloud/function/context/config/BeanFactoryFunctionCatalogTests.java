@@ -162,8 +162,8 @@ public class BeanFactoryFunctionCatalogTests {
 		processor.register(new FunctionRegistration<>(s, "supplier"));
 		Consumer<String> c = x -> ref.set(x.toUpperCase());
 		processor.register(new FunctionRegistration<>(c, "consumer"));
-		Supplier<Flux<Void>> f = processor.lookup("supplier|consumer");
-		f.get().blockFirst();
+		Supplier<Mono<Void>> f = processor.lookup("supplier|consumer");
+		((Mono<Void>)f.get()).block();
 		assertThat(ref.get()).isEqualTo("HELLO");
 	}
 

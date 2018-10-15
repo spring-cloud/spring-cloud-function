@@ -71,6 +71,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -333,10 +334,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 				if (b instanceof FluxConsumer) {
 					if (supplier instanceof FluxSupplier) {
 						FluxConsumer<Object> fConsumer = ((FluxConsumer<Object>)b);
-						return (Supplier<Flux<Void>>) () -> supplier.get().compose(v -> fConsumer.apply(supplier.get()));
+						return (Supplier<Mono<Void>>) () -> Mono.from(supplier.get().compose(v -> fConsumer.apply(supplier.get())));
 					}
 					else {
-						throw new IllegalStateException("The provided supplier is terminal (i.e., already composed with Consumer) "
+						throw new IllegalStateException("The provided supplier is finite (i.e., already composed with Consumer) "
 								+ "therefore it can not be composed with another consumer");
 					}
 				}
