@@ -40,7 +40,7 @@ import org.springframework.util.ClassUtils;
 public class SpringApplication extends org.springframework.boot.SpringApplication {
 
 	/**
-	 * Name of default propery source.
+	 * Name of default property source.
 	 */
 	private static final String DEFAULT_PROPERTIES = "defaultProperties";
 
