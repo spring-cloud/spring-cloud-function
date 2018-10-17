@@ -24,14 +24,12 @@ import java.util.function.Supplier;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.web.reactive.context.ReactiveWebServerApplicationContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
-import org.springframework.util.ClassUtils;
 
 /**
  * @author Dave Syer
@@ -61,19 +59,9 @@ public class SpringApplication extends org.springframework.boot.SpringApplicatio
 
 	public SpringApplication(Class<?>... primarySources) {
 		super(primarySources);
-		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler",
-				null)) {
-			// prefer reactive if it is present
-			setWebApplicationType(WebApplicationType.REACTIVE);
-		}
-	}
-
-	@Override
-	public ConfigurableApplicationContext run(String... args) {
-		if (getWebApplicationType() == WebApplicationType.REACTIVE) {
-			setApplicationContextClass(ReactiveWebServerApplicationContext.class);
-		}
-		return super.run(args);
+		// Prefer non-web applications, even if a server is on the classpath
+		setWebApplicationType(WebApplicationType.NONE);
+		setApplicationContextClass(GenericApplicationContext.class);
 	}
 
 	@Override
