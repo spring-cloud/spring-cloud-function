@@ -183,15 +183,9 @@ http://eclipse.org/m2e/[m2eclipse] eclipse plugin for maven support. Other IDEs 
 should also work without issue as long as they use Maven 3.3.3 or better.
 
 ==== Importing into eclipse with m2eclipse
-
 We recommend the http://eclipse.org/m2e/[m2eclipse] eclipse plugin when working with
 eclipse. If you don't already have m2eclipse installed it is available from the "eclipse
 marketplace".
-
-Also, you will need to install Kotlin plug-in from the "eclipse marketplace" to ensure projects 
-that depend on Kotlin complile under `m2eclipse` plugin (mentioned above). 
-
-NOTE: If you still see compile errors after installing Kotlin plugin, simply right-click on the project with error and _remove_ and then _add_ Kotlin Nature via ***Configure Kotlin*** feature. 
 
 NOTE: Older versions of m2e do not support Maven 3.3, so once the
 projects are imported into Eclipse you will also need to tell

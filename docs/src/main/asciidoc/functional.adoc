@@ -1,0 +1,145 @@
+Spring Cloud Function supports a "functional" style of bean declarations for small apps where you need fast startup. The functional style of bean declaration was a feature of Spring Framework 5.0 with significant enhancements in 5.1.
+
+== Comparing Functional with Traditional Bean Definitions
+
+Here's a vanilla Spring Cloud Function application from with the
+familiar `@Configuration` and `@Bean` declaration style:
+
+```java
+@SpringBootApplication
+public class DemoApplication {
+
+  @Bean
+  public Function<String, String> uppercase() {
+    return value -> value.toUpperCase();
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(DemoApplication.class, args);
+  }
+
+}
+```
+
+You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including `spring-cloud-function-starter-web` on the classpath. Running the main method would expose an endpoint that you can use to ping that `uppercase` function:
+
+```
+$ curl localhost:8080 -d foo
+FOO
+```
+
+The web adapter in `spring-cloud-function-starter-web` uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the `spring-cloud-starter-function-webflux` dependency instead. The functionality is the same, and the user application code can be used in both.
+
+Now for the functional beans: the user application code can be recast into "functional"
+form, like this:
+
+```java
+@SpringBootConfiguration
+public class DemoApplication implements ApplicationContextInitializer<GenericApplicationContext> {
+
+  public static void main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.class, args);
+  }
+
+  public Function<String, String> uppercase() {
+    return value -> value.toUpperCase();
+  }
+
+  @Override
+  public void initialize(GenericApplicationContext context) {
+    context.registerBean("demo", FunctionRegistration.class,
+        () -> new FunctionRegistration<>(uppercase())
+            .type(FunctionType.from(String.class).to(String.class)));
+  }
+
+}
+```
+
+The main differences are:
+
+* The main class is an `ApplicationContextInitializer`.
+
+* The `@Bean` methods have been converted to calls to `context.registerBean()`
+
+* The `@SpringBootApplication` has been replaced with
+`@SpringBootConfiguration` to signify that we are not enabling Spring
+Boot autoconfiguration, and yet still marking the class as an "entry
+point".
+
+* The `SpringApplication` from Spring Boot has been replaced with a
+`FunctionalSpringApplication` from Spring Cloud Function (it's a
+subclass).
+
+The business logic beans that you register in a Spring Cloud Function app are of type `FunctionRegistration`. This is a wrapper that contains both the function and information about the input and output types. In the `@Bean` form of the application that information can be derived reflectively, but in a functional bean registration some of it is lost unless we use a `FunctionRegistration`.
+
+An alternative to using an `ApplicationContextInitializer` and `FunctionRegistration` is to make the application itself implement `Function` (or `Consumer` or `Supplier`). Example (equivalent to the above):
+
+```java
+@SpringBootConfiguration
+public class DemoApplication implements Function<String, String> {
+
+  public static void main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.class, args);
+  }
+
+  @Override
+  public String uppercase(String value) {
+    return value.toUpperCase();
+  }
+
+}
+```
+
+It would also work to add a separate, standalone class of type `Function` and register it with the `SpringApplication` using an alternative form of the `run()` method. The main thing is that the generic type information is available at runtime through the class declaration.
+
+The app runs in its own HTTP server if you add `spring-cloud-starter-function-webflux` (it won't work with the MVC starter at the moment because the functional form of the embedded Servlet container hasn't been implemented).  The app also runs just fine in AWS Lambda or Azure Functions, and the improvements in startup time are dramatic.
+
+== Testing Functional Applications
+
+Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users. For example, here is an integration test for the HTTP server wrapping the app above:
+
+```java
+@RunWith(SpringRunner.class)
+@FunctionalSpringBootTest
+@AutoConfigureWebTestClient
+public class FunctionalTests {
+
+	@Autowired
+	private WebTestClient client;
+
+	@Test
+	public void words() throws Exception {
+		client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
+				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
+	}
+
+}
+```
+
+This test is almost identical to the one you would write for the `@Bean` version of the same app - the only difference is the `@FunctionalSpringBootTest` annotation, instead of the regular `@SpringBootTest`. All the other pieces, like the `@Autowired` `WebTestClient`, are standard Spring Boot features.
+
+Or you could write a test for a non-HTTP app using just the `FunctionCatalog`. For example:
+
+```java
+@RunWith(SpringRunner.class)
+@FunctionalSpringBootTest
+public class FunctionalTests {
+
+	@Autowired
+	private FunctionCatalog catalog;
+
+	@Test
+	public void words() throws Exception {
+		Function<Flux<String>, Flux<String>> function = catalog.lookup(Function.class,
+				"function");
+		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
+	}
+
+}
+```
+
+(The `FunctionCatalog` always returns functions from `Flux` to `Flux`, even if the user declares them with a simpler signature.)
+
+== Limitations of Functional Bean Declaration
+
+Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot, so we are able to adapt it to these functional bean definitions easily. If you step outside that limited scope, you can extend your Spring Cloud Function app by switching back to `@Bean` style configuration, or by using a hybrid approach. If you want to take advantage of Spring Boot autoconfiguration for integrations with external datastores, for example, you will need to use `@EnableAutoConfiguration`. Your functions can still be defined using the functional declarations if you want (i.e. the "hybrid" style), but in that case you will need to explicitly switch off the "full functional mode" using `spring.functional.enabled=false` so that Spring Boot can take back control.
