@@ -110,7 +110,7 @@ public class SpringFunctionInitializer implements Closeable {
 
 	private SpringApplication springApplication() {
 		Class<?> sourceClass = configurationClass;
-		SpringApplication application = new org.springframework.cloud.function.context.SpringApplication(
+		SpringApplication application = new org.springframework.cloud.function.context.FunctionalSpringApplication(
 				sourceClass);
 		application.setWebApplicationType(WebApplicationType.NONE);
 		return application;

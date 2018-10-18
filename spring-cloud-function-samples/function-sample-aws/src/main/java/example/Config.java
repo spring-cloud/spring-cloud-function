@@ -22,7 +22,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
-import org.springframework.cloud.function.context.SpringApplication;
+import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
@@ -47,7 +47,7 @@ public class Config implements ApplicationContextInitializer<GenericApplicationC
 	}
 
 	public static void main(String[] args) throws Exception {
-		SpringApplication.run(Config.class, args);
+		FunctionalSpringApplication.run(Config.class, args);
 	}
 
 	@Override

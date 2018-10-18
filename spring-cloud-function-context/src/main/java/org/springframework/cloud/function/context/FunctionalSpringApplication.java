@@ -35,7 +35,7 @@ import org.springframework.core.env.MutablePropertySources;
  * @author Dave Syer
  *
  */
-public class SpringApplication extends org.springframework.boot.SpringApplication {
+public class FunctionalSpringApplication extends org.springframework.boot.SpringApplication {
 
 	/**
 	 * Name of default property source.
@@ -54,10 +54,10 @@ public class SpringApplication extends org.springframework.boot.SpringApplicatio
 
 	public static ConfigurableApplicationContext run(Class<?>[] primarySources,
 			String[] args) {
-		return new SpringApplication(primarySources).run(args);
+		return new FunctionalSpringApplication(primarySources).run(args);
 	}
 
-	public SpringApplication(Class<?>... primarySources) {
+	public FunctionalSpringApplication(Class<?>... primarySources) {
 		super(primarySources);
 		// Prefer non-web applications, even if a server is on the classpath
 		setWebApplicationType(WebApplicationType.NONE);
