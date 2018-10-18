@@ -18,7 +18,9 @@ package org.springframework.cloud.function.context.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -26,10 +28,13 @@ import java.util.function.Supplier;
 import com.google.gson.Gson;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
@@ -37,6 +42,8 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,6 +73,40 @@ public class ContextFunctionCatalogInitializerTests {
 		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
 		assertThat((Function<?, ?>) catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
+	}
+
+	@Test
+	public void properties() {
+		create(PropertiesConfiguration.class, "app.greeting=hello");
+		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
+		@SuppressWarnings("unchecked")
+		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) catalog
+				.lookup(Function.class, "function");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("hello foo");
+	}
+
+	@Test
+	public void value() {
+		create(ValueConfiguration.class, "app.greeting=hello");
+		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
+		@SuppressWarnings("unchecked")
+		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) catalog
+				.lookup(Function.class, "function");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("hello foo");
+	}
+
+	@Test
+	@Ignore
+	public void compose() {
+		create(SimpleConfiguration.class);
+		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
+		@SuppressWarnings("unchecked")
+		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) catalog
+				.lookup(Supplier.class, "supplier|function");
+		assertThat(supplier).isInstanceOf(Supplier.class);
+		assertThat(supplier.get().blockFirst()).isEqualTo("HELLO");
 		// TODO: support for function composition
 	}
 
@@ -153,6 +194,17 @@ public class ContextFunctionCatalogInitializerTests {
 	private void create(ApplicationContextInitializer<GenericApplicationContext>[] types,
 			String... props) {
 		context = new GenericApplicationContext();
+		Map<String, Object> map = new HashMap<>();
+		for (String prop : props) {
+			String[] array = StringUtils.delimitedListToStringArray(prop, "=");
+			String key = array[0];
+			String value = array.length > 1 ? array[1] : "";
+			map.put(key, value);
+		}
+		if (!map.isEmpty()) {
+			context.getEnvironment().getPropertySources()
+					.addFirst(new MapPropertySource("testProperties", map));
+		}
 		for (ApplicationContextInitializer<GenericApplicationContext> type : types) {
 			type.initialize(context);
 		}
@@ -220,6 +272,56 @@ public class ContextFunctionCatalogInitializerTests {
 		public Consumer<String> consumer() {
 			return value -> list.add(value);
 		}
+	}
+
+	@ConfigurationProperties("app")
+	protected static class PropertiesConfiguration
+			implements ApplicationContextInitializer<GenericApplicationContext> {
+
+		private String greeting;
+
+		public String getGreeting() {
+			return this.greeting;
+		}
+
+		public void setGreeting(String greeting) {
+			this.greeting = greeting;
+		}
+
+		@Override
+		public void initialize(GenericApplicationContext context) {
+			context.registerBean("function", FunctionRegistration.class,
+					() -> new FunctionRegistration<>(function()).type(
+							FunctionType.from(String.class).to(String.class).getType()));
+			context.registerBean(PropertiesConfiguration.class, () -> this);
+		}
+
+		@Bean
+		public Function<String, String> function() {
+			return value -> greeting + " " + value;
+		}
+
+	}
+
+	protected static class ValueConfiguration
+			implements ApplicationContextInitializer<GenericApplicationContext> {
+
+		@Value("${app.greeting}")
+		private String greeting;
+
+		@Override
+		public void initialize(GenericApplicationContext context) {
+			context.registerBean("function", FunctionRegistration.class,
+					() -> new FunctionRegistration<>(function()).type(
+							FunctionType.from(String.class).to(String.class).getType()));
+			context.registerBean(ValueConfiguration.class, () -> this);
+		}
+
+		@Bean
+		public Function<String, String> function() {
+			return value -> greeting + " " + value;
+		}
+
 	}
 
 	protected static class GsonConfiguration

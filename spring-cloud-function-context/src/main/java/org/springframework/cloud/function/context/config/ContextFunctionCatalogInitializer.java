@@ -22,7 +22,6 @@ import com.google.gson.Gson;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -39,6 +38,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -108,10 +108,13 @@ public class ContextFunctionCatalogInitializer
 			}
 
 			if (!context.getBeanFactory().containsBean(
-					AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+					AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+				// Switch off the ConfigurationClassPostProcessor
 				context.registerBean(
-						AnnotationConfigUtils.AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME,
-						AutowiredAnnotationBeanPostProcessor.class);
+						AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME,
+						DummyProcessor.class, () -> new DummyProcessor());
+				// But switch on other annotation processing
+				AnnotationConfigUtils.registerAnnotationConfigProcessors(context);
 			}
 			if (!context.getBeanFactory()
 					.containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
@@ -219,6 +222,10 @@ public class ContextFunctionCatalogInitializer
 			}
 		}
 
+	}
+	
+	public static class DummyProcessor {
+		public void setMetadataReaderFactory(MetadataReaderFactory obj) {}
 	}
 
 }
