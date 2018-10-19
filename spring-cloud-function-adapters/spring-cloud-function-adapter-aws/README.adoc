@@ -31,3 +31,5 @@ The input type for the function in the AWS sample is a Foo with a single propert
   "value": "test"
 }
 ----
+
+NOTE: The AWS sample app is written in the "functional" style (as an `ApplicationContextInitializer`). This is much faster on startup in Lambda than the traditional `@Bean` style, so if you don't need `@Beans` (or `@EnableAutoConfiguration`) it's a good choice. Warm starts are not affected.

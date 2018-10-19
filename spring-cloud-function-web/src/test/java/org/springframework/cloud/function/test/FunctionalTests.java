@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.web.flux;
+package org.springframework.cloud.function.test;
 
 import java.util.function.Function;
 

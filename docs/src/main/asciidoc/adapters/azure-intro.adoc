@@ -42,7 +42,7 @@ You can run the sample locally, just like the other Spring Cloud Function sample
 
 and `curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'`.
 
-You will need the `az` CLI app and some node.js fu (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more detail). To deploy the function on Azure runtime:
+You will need the `az` CLI app (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more detail). To deploy the function on Azure runtime:
 
 ----
 $ az login
@@ -58,3 +58,5 @@ The input type for the function in the Azure sample is a Foo with a single prope
   "value": "foobar"
 }
 ----
+
+NOTE: The Azure sample app is written in the "non-functional" style (using `@Bean`). The functional style (with just `Function` or `ApplicationContextInitializer`) is is much faster on startup in Azure than the traditional `@Bean` style, so if you don't need `@Beans` (or `@EnableAutoConfiguration`) it's a good choice. Warm starts are not affected.
