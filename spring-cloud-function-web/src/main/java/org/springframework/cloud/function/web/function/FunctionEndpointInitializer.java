@@ -118,11 +118,13 @@ public class FunctionEndpointInitializer
 			}
 			Integer port = Integer.valueOf(context.getEnvironment()
 					.resolvePlaceholders("${server.port:${PORT:8080}}"));
+			String address = context.getEnvironment()
+					.resolvePlaceholders("${server.address:0.0.0.0}");
 			if (port >= 0) {
 				HttpHandler handler = context.getBean(HttpHandler.class);
 				ReactorHttpHandlerAdapter adapter = new ReactorHttpHandlerAdapter(
 						handler);
-				HttpServer httpServer = HttpServer.create().host("localhost").port(port)
+				HttpServer httpServer = HttpServer.create().host(address).port(port)
 						.handle(adapter);
 				Thread thread = new Thread(() -> httpServer
 						.bindUntilJavaShutdown(Duration.ofSeconds(60), this::callback),
