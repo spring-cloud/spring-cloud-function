@@ -101,7 +101,9 @@ public class FunctionController {
 		wrapper.headers(request.getRequest().getHeaders());
 		wrapper.params(request.getRequest().getQueryParams());
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT);
-		wrapper.argument(argument);
+		if (argument != null) {
+			wrapper.argument(argument);
+		}
 		return wrapper;
 	}
 }

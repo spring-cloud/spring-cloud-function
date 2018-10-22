@@ -110,7 +110,9 @@ public class FunctionController {
 		}
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,
 				WebRequest.SCOPE_REQUEST);
-		wrapper.argument(argument);
+		if (argument != null) {
+			wrapper.argument(argument);
+		}
 		return wrapper;
 	}
 }

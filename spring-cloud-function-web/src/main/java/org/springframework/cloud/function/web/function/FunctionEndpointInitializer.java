@@ -31,6 +31,11 @@ import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.web.BasicStringConverter;
+import org.springframework.cloud.function.web.RequestProcessor;
+import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
+import org.springframework.cloud.function.web.StringConverter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
@@ -38,6 +43,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
@@ -51,7 +57,7 @@ import org.springframework.web.server.adapter.WebHttpHandlerBuilder;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-import static org.springframework.web.reactive.function.server.ServerResponse.ok;
+import static org.springframework.web.reactive.function.server.ServerResponse.status;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -70,7 +76,9 @@ class FunctionEndpointInitializer
 	@Override
 	public void initialize(GenericApplicationContext context) {
 		if (context.getEnvironment().getProperty("spring.functional.enabled",
-				Boolean.class, false) && ClassUtils.isPresent("org.springframework.http.server.reactive.HttpHandler", null)) {
+				Boolean.class, false)
+				&& ClassUtils.isPresent(
+						"org.springframework.http.server.reactive.HttpHandler", null)) {
 			registerEndpoint(context);
 			registerWebFluxAutoConfiguration(context);
 		}
@@ -85,9 +93,17 @@ class FunctionEndpointInitializer
 	}
 
 	private void registerEndpoint(GenericApplicationContext context) {
+		context.registerBean(StringConverter.class,
+				() -> new BasicStringConverter(context.getBean(FunctionInspector.class),
+						context.getBeanFactory()));
+		context.registerBean(RequestProcessor.class,
+				() -> new RequestProcessor(context.getBean(FunctionInspector.class),
+						context.getBean(JsonMapper.class),
+						context.getBean(StringConverter.class)));
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),
 						context.getBean(FunctionInspector.class),
+						context.getBean(RequestProcessor.class),
 						context.getEnvironment()));
 		context.registerBean(RouterFunction.class,
 				() -> context.getBean(FunctionEndpointFactory.class).functionEndpoints());
@@ -183,12 +199,15 @@ class FunctionEndpointFactory {
 
 	private FunctionInspector inspector;
 
+	private RequestProcessor processor;
+
 	public FunctionEndpointFactory(FunctionCatalog catalog, FunctionInspector inspector,
-			Environment environment) {
+			RequestProcessor processor, Environment environment) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
 			handler = null;
 		}
+		this.processor = processor;
 		this.inspector = inspector;
 		this.function = extract(catalog, handler);
 	}
@@ -212,12 +231,13 @@ class FunctionEndpointFactory {
 	@SuppressWarnings({ "unchecked" })
 	public <T> RouterFunction<?> functionEndpoints() {
 		return route(POST("/"), request -> {
-			Class<?> inputType = this.inspector.getInputType(this.function);
 			Class<T> outputType = (Class<T>) this.inspector.getOutputType(this.function);
-			return ok().body(
-					Mono.from(
-							(Flux<T>) this.function.apply(request.bodyToFlux(inputType))),
-					outputType);
+			FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
+			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
+					.flatMap(content -> processor.post(wrapper, content, false));
+			return stream.flatMap(entity -> status(entity.getStatusCode())
+					.headers(headers -> headers.addAll(entity.getHeaders()))
+					.body(Mono.just((T) entity.getBody()), outputType));
 		});
 	}
 

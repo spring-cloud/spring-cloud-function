@@ -33,6 +33,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
+import org.springframework.cloud.function.core.FluxWrapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.http.HttpHeaders;
@@ -64,16 +65,20 @@ public class RequestProcessor {
 	@Value("${debug:${DEBUG:false}}")
 	private String debug = "false";
 
-	public RequestProcessor(JsonMapper mapper, FunctionInspector inspector,
+	public RequestProcessor(FunctionInspector inspector, JsonMapper mapper,
 			StringConverter converter) {
 		this.mapper = mapper;
 		this.inspector = inspector;
 		this.converter = converter;
 	}
 
-	public static FunctionWrapper wrapper(Function<Publisher<?>, Publisher<?>> function,
-			Consumer<Publisher<?>> consumer, Supplier<Publisher<?>> supplier) {
+	public static FunctionWrapper wrapper(Function<? extends Publisher<?>, ? extends Publisher<?>> function,
+			Consumer<? extends Publisher<?>> consumer, Supplier<? extends Publisher<?>> supplier) {
 		return new FunctionWrapper(function, consumer, supplier);
+	}
+
+	public static FunctionWrapper wrapper(Function<? extends Publisher<?>, ? extends Publisher<?>> function) {
+		return new FunctionWrapper(function, null, null);
 	}
 
 	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
@@ -169,8 +174,7 @@ public class RequestProcessor {
 	}
 
 	private void addHeaders(BodyBuilder builder, Message<?> message) {
-		HttpHeaders headers = new HttpHeaders();
-		builder.headers(HeaderUtils.fromMessage(message.getHeaders(), headers));
+		builder.headers(HeaderUtils.fromMessage(message.getHeaders()));
 	}
 
 	private Mono<ResponseEntity<?>> stream(FunctionWrapper request, Publisher<?> result) {
@@ -221,6 +225,9 @@ public class RequestProcessor {
 	}
 
 	private boolean isOutputSingle(Object handler) {
+		if (handler instanceof FluxWrapper) {
+			handler = ((FluxWrapper<?>) handler).getTarget();
+		}
 		Class<?> type = inspector.getOutputType(handler);
 		Class<?> wrapper = inspector.getOutputWrapper(handler);
 		if (Stream.class.isAssignableFrom(type)) {
@@ -232,9 +239,9 @@ public class RequestProcessor {
 		}
 	}
 
-	private Mono<?> value(Function<Publisher<?>, Publisher<?>> function, String value) {
-		Object input = converter.convert(function, value);
-		return Mono.from(function.apply(Flux.just(input)));
+	private Publisher<?> value(Function<Publisher<?>, Publisher<?>> function, Publisher<String> value) {
+		Flux<?> input = Flux.from(value).map(body -> converter.convert(function, body));
+		return Mono.from(function.apply(input));
 	}
 
 	public static class FunctionWrapper {
@@ -249,13 +256,14 @@ public class RequestProcessor {
 
 		private HttpHeaders headers = new HttpHeaders();
 
-		private String argument;
+		private Publisher<String> argument;
 
-		public FunctionWrapper(Function<Publisher<?>, Publisher<?>> function,
-				Consumer<Publisher<?>> consumer, Supplier<Publisher<?>> supplier) {
-			this.function = function;
-			this.consumer = consumer;
-			this.supplier = supplier;
+		@SuppressWarnings("unchecked")
+		public FunctionWrapper(Function<? extends Publisher<?>, ? extends Publisher<?>> function,
+				Consumer<? extends Publisher<?>> consumer, Supplier<? extends Publisher<?>> supplier) {
+			this.function = (Function<Publisher<?>, Publisher<?>>) function;
+			this.consumer = (Consumer<Publisher<?>>) consumer;
+			this.supplier = (Supplier<Publisher<?>>) supplier;
 		}
 
 		public Object handler() {
@@ -292,12 +300,17 @@ public class RequestProcessor {
 			return this;
 		}
 
-		public FunctionWrapper argument(String argument) {
+		public FunctionWrapper argument(Publisher<String> argument) {
 			this.argument = argument;
 			return this;
 		}
 
-		public String argument() {
+		public FunctionWrapper argument(String argument) {
+			this.argument = Mono.just(argument);
+			return this;
+		}
+
+		public Publisher<String> argument() {
 			return this.argument;
 		}
 	}

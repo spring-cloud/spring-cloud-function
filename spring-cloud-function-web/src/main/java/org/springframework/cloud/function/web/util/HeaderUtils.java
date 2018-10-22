@@ -44,7 +44,7 @@ public class HeaderUtils {
 		REQUEST_ONLY.add(HttpHeaders.HOST, "");
 	}
 
-	public static HttpHeaders fromMessage(MessageHeaders headers, HttpHeaders request) {
+	public static HttpHeaders fromMessage(MessageHeaders headers) {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : headers.keySet()) {
 			Object value = headers.get(name);
