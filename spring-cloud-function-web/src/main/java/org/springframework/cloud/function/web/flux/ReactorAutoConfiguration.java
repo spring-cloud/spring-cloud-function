@@ -26,13 +26,12 @@ import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.web.BasicStringConverter;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.StringConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandler;
 
 import reactor.core.publisher.Flux;
@@ -62,32 +61,4 @@ public class ReactorAutoConfiguration {
 		return new BasicStringConverter(inspector, beanFactory);
 	}
 
-
-	private static class BasicStringConverter implements StringConverter {
-
-		private ConversionService conversionService;
-		private ConfigurableListableBeanFactory registry;
-		private FunctionInspector inspector;
-
-		public BasicStringConverter(FunctionInspector inspector,
-				ConfigurableListableBeanFactory registry) {
-			this.inspector = inspector;
-			this.registry = registry;
-		}
-
-		@Override
-		public Object convert(Object function, String value) {
-			if (conversionService == null && registry != null) {
-				ConversionService conversionService = this.registry
-						.getConversionService();
-				this.conversionService = conversionService != null ? conversionService
-						: new DefaultConversionService();
-			}
-			Class<?> type = inspector.getInputType(function);
-			return conversionService.canConvert(String.class, type)
-					? conversionService.convert(value, type)
-					: value;
-		}
-
-	}
 }
