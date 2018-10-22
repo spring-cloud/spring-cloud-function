@@ -313,6 +313,134 @@ Please refer to <link xl:href="https://docs.spring.io/spring-cloud-stream/docs/c
 <simpara>Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the <link xl:href="https://projectriff.io">Riff</link> Java function invoker uses this library).</simpara>
 <simpara>The standard entry point of the API is the Spring configuration annotation <literal>@EnableFunctionDeployer</literal>. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a <literal>function.location</literal> which is a URL or resource location for the archive containing the functions. It can optionally use a <literal>maven:</literal> prefix to locate the artifact via a dependency lookup (see <literal>FunctionProperties</literal> for complete details). A Spring Boot application is bootstrapped from the jar file, using the <literal>MANIFEST.MF</literal> to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application&#8217;s <literal>FunctionCatalog</literal>. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).</simpara>
 </chapter>
+<chapter xml:id="_functional_bean_definitions">
+<title>Functional Bean Definitions</title>
+<simpara>Spring Cloud Function supports a "functional" style of bean declarations for small apps where you need fast startup. The functional style of bean declaration was a feature of Spring Framework 5.0 with significant enhancements in 5.1.</simpara>
+<section xml:id="_comparing_functional_with_traditional_bean_definitions">
+<title>Comparing Functional with Traditional Bean Definitions</title>
+<simpara>Here&#8217;s a vanilla Spring Cloud Function application from with the
+familiar <literal>@Configuration</literal> and <literal>@Bean</literal> declaration style:</simpara>
+<programlisting language="java" linenumbering="unnumbered">@SpringBootApplication
+public class DemoApplication {
+
+  @Bean
+  public Function&lt;String, String&gt; uppercase() {
+    return value -&gt; value.toUpperCase();
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(DemoApplication.class, args);
+  }
+
+}</programlisting>
+<simpara>You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including <literal>spring-cloud-function-starter-web</literal> on the classpath. Running the main method would expose an endpoint that you can use to ping that <literal>uppercase</literal> function:</simpara>
+<screen>$ curl localhost:8080 -d foo
+FOO</screen>
+<simpara>The web adapter in <literal>spring-cloud-function-starter-web</literal> uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the <literal>spring-cloud-starter-function-webflux</literal> dependency instead. The functionality is the same, and the user application code can be used in both.</simpara>
+<simpara>Now for the functional beans: the user application code can be recast into "functional"
+form, like this:</simpara>
+<programlisting language="java" linenumbering="unnumbered">@SpringBootConfiguration
+public class DemoApplication implements ApplicationContextInitializer&lt;GenericApplicationContext&gt; {
+
+  public static void main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.class, args);
+  }
+
+  public Function&lt;String, String&gt; uppercase() {
+    return value -&gt; value.toUpperCase();
+  }
+
+  @Override
+  public void initialize(GenericApplicationContext context) {
+    context.registerBean("demo", FunctionRegistration.class,
+        () -&gt; new FunctionRegistration&lt;&gt;(uppercase())
+            .type(FunctionType.from(String.class).to(String.class)));
+  }
+
+}</programlisting>
+<simpara>The main differences are:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>The main class is an <literal>ApplicationContextInitializer</literal>.</simpara>
+</listitem>
+<listitem>
+<simpara>The <literal>@Bean</literal> methods have been converted to calls to <literal>context.registerBean()</literal></simpara>
+</listitem>
+<listitem>
+<simpara>The <literal>@SpringBootApplication</literal> has been replaced with
+<literal>@SpringBootConfiguration</literal> to signify that we are not enabling Spring
+Boot autoconfiguration, and yet still marking the class as an "entry
+point".</simpara>
+</listitem>
+<listitem>
+<simpara>The <literal>SpringApplication</literal> from Spring Boot has been replaced with a
+<literal>FunctionalSpringApplication</literal> from Spring Cloud Function (it&#8217;s a
+subclass).</simpara>
+</listitem>
+</itemizedlist>
+<simpara>The business logic beans that you register in a Spring Cloud Function app are of type <literal>FunctionRegistration</literal>. This is a wrapper that contains both the function and information about the input and output types. In the <literal>@Bean</literal> form of the application that information can be derived reflectively, but in a functional bean registration some of it is lost unless we use a <literal>FunctionRegistration</literal>.</simpara>
+<simpara>An alternative to using an <literal>ApplicationContextInitializer</literal> and <literal>FunctionRegistration</literal> is to make the application itself implement <literal>Function</literal> (or <literal>Consumer</literal> or <literal>Supplier</literal>). Example (equivalent to the above):</simpara>
+<programlisting language="java" linenumbering="unnumbered">@SpringBootConfiguration
+public class DemoApplication implements Function&lt;String, String&gt; {
+
+  public static void main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.class, args);
+  }
+
+  @Override
+  public String uppercase(String value) {
+    return value.toUpperCase();
+  }
+
+}</programlisting>
+<simpara>It would also work if you add a separate, standalone class of type <literal>Function</literal> and register it with the <literal>SpringApplication</literal> using an alternative form of the <literal>run()</literal> method. The main thing is that the generic type information is available at runtime through the class declaration.</simpara>
+<simpara>The app runs in its own HTTP server if you add <literal>spring-cloud-starter-function-webflux</literal> (it won&#8217;t work with the MVC starter at the moment because the functional form of the embedded Servlet container hasn&#8217;t been implemented).  The app also runs just fine in AWS Lambda or Azure Functions, and the improvements in startup time are dramatic.</simpara>
+<note>
+<simpara>The "lite" web server has some limitations for the range of <literal>Function</literal> signatures - in particular it doesn&#8217;t (yet) support <literal>Message</literal> input and output, but POJOs and any kind of <literal>Publisher</literal> should be fine.</simpara>
+</note>
+</section>
+<section xml:id="_testing_functional_applications">
+<title>Testing Functional Applications</title>
+<simpara>Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users. For example, here is an integration test for the HTTP server wrapping the app above:</simpara>
+<programlisting language="java" linenumbering="unnumbered">@RunWith(SpringRunner.class)
+@FunctionalSpringBootTest
+@AutoConfigureWebTestClient
+public class FunctionalTests {
+
+	@Autowired
+	private WebTestClient client;
+
+	@Test
+	public void words() throws Exception {
+		client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
+				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
+	}
+
+}</programlisting>
+<simpara>This test is almost identical to the one you would write for the <literal>@Bean</literal> version of the same app - the only difference is the <literal>@FunctionalSpringBootTest</literal> annotation, instead of the regular <literal>@SpringBootTest</literal>. All the other pieces, like the <literal>@Autowired</literal> <literal>WebTestClient</literal>, are standard Spring Boot features.</simpara>
+<simpara>Or you could write a test for a non-HTTP app using just the <literal>FunctionCatalog</literal>. For example:</simpara>
+<programlisting language="java" linenumbering="unnumbered">@RunWith(SpringRunner.class)
+@FunctionalSpringBootTest
+public class FunctionalTests {
+
+	@Autowired
+	private FunctionCatalog catalog;
+
+	@Test
+	public void words() throws Exception {
+		Function&lt;Flux&lt;String&gt;, Flux&lt;String&gt;&gt; function = catalog.lookup(Function.class,
+				"function");
+		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
+	}
+
+}</programlisting>
+<simpara>(The <literal>FunctionCatalog</literal> always returns functions from <literal>Flux</literal> to <literal>Flux</literal>, even if the user declares them with a simpler signature.)</simpara>
+</section>
+<section xml:id="_limitations_of_functional_bean_declaration">
+<title>Limitations of Functional Bean Declaration</title>
+<simpara>Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot, so we are able to adapt it to these functional bean definitions easily. If you step outside that limited scope, you can extend your Spring Cloud Function app by switching back to <literal>@Bean</literal> style configuration, or by using a hybrid approach. If you want to take advantage of Spring Boot autoconfiguration for integrations with external datastores, for example, you will need to use <literal>@EnableAutoConfiguration</literal>. Your functions can still be defined using the functional declarations if you want (i.e. the "hybrid" style), but in that case you will need to explicitly switch off the "full functional mode" using <literal>spring.functional.enabled=false</literal> so that Spring Boot can take back control.</simpara>
+</section>
+</chapter>
 <chapter xml:id="_dynamic_compilation">
 <title>Dynamic Compilation</title>
 <simpara>There is a sample app that uses the function compiler to create a
@@ -397,6 +525,9 @@ Invoker</link> acts natively is an adapter for Spring Cloud Function jars.</simp
 <screen>{
   "value": "test"
 }</screen>
+<note>
+<simpara>The AWS sample app is written in the "functional" style (as an <literal>ApplicationContextInitializer</literal>). This is much faster on startup in Lambda than the traditional <literal>@Bean</literal> style, so if you don&#8217;t need <literal>@Beans</literal> (or <literal>@EnableAutoConfiguration</literal>) it&#8217;s a good choice. Warm starts are not affected.</simpara>
+</note>
 </section>
 <section xml:id="_platfom_specific_features">
 <title>Platfom Specific Features</title>
@@ -471,7 +602,7 @@ You can write an app with a single <literal>@Bean</literal> of type <literal>Fun
 <simpara><?asciidoc-hr?></simpara>
 <simpara><?asciidoc-hr?></simpara>
 <simpara>and <literal>curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'</literal>.</simpara>
-<simpara>You will need the <literal>az</literal> CLI app and some node.js fu (see <link xl:href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven">https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven</link> for more detail). To deploy the function on Azure runtime:</simpara>
+<simpara>You will need the <literal>az</literal> CLI app (see <link xl:href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven">https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven</link> for more detail). To deploy the function on Azure runtime:</simpara>
 <screen>$ az login
 $ mvn azure-functions:deploy</screen>
 <simpara>On another terminal try this: <literal>curl <link xl:href="https://&lt;azure-function-url-from-the-log&gt;/api/uppercase">https://&lt;azure-function-url-from-the-log&gt;/api/uppercase</link> -d '{"value": "hello foobar!"}'</literal>. Please ensure that you use the right URL for the function above. Alternatively you can test the function in the Azure Dashboard UI (click on the function name, go to the right hand side and click "Test" and to the bottom right, "Run").</simpara>
@@ -479,6 +610,9 @@ $ mvn azure-functions:deploy</screen>
 <screen>{
   "value": "foobar"
 }</screen>
+<note>
+<simpara>The Azure sample app is written in the "non-functional" style (using <literal>@Bean</literal>). The functional style (with just <literal>Function</literal> or <literal>ApplicationContextInitializer</literal>) is much faster on startup in Azure than the traditional <literal>@Bean</literal> style, so if you don&#8217;t need <literal>@Beans</literal> (or <literal>@EnableAutoConfiguration</literal>) it&#8217;s a good choice. Warm starts are not affected.</simpara>
+</note>
 </section>
 </section>
 <section xml:id="_apache_openwhisk">

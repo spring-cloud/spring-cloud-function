@@ -1,0 +1,81 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>8.&nbsp;Functional Bean Definitions</title><link rel="stylesheet" type="text/css" href="css/manual-multipage.css"><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="multi_spring-cloud-function.html" title="Spring Cloud Function"><link rel="up" href="multi_spring-cloud-function.html" title="Spring Cloud Function"><link rel="prev" href="multi__deploying_a_packaged_function.html" title="7.&nbsp;Deploying a Packaged Function"><link rel="next" href="multi__dynamic_compilation.html" title="9.&nbsp;Dynamic Compilation"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">8.&nbsp;Functional Bean Definitions</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="multi__deploying_a_packaged_function.html">Prev</a>&nbsp;</td><th width="60%" align="center">&nbsp;</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="multi__dynamic_compilation.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="_functional_bean_definitions" href="#_functional_bean_definitions"></a>8.&nbsp;Functional Bean Definitions</h1></div></div></div><p>Spring Cloud Function supports a "functional" style of bean declarations for small apps where you need fast startup. The functional style of bean declaration was a feature of Spring Framework 5.0 with significant enhancements in 5.1.</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_comparing_functional_with_traditional_bean_definitions" href="#_comparing_functional_with_traditional_bean_definitions"></a>8.1&nbsp;Comparing Functional with Traditional Bean Definitions</h2></div></div></div><p>Here&#8217;s a vanilla Spring Cloud Function application from with the
+familiar <code class="literal">@Configuration</code> and <code class="literal">@Bean</code> declaration style:</p><pre class="programlisting"><em><span class="hl-annotation" style="color: gray">@SpringBootApplication</span></em>
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span> DemoApplication {
+
+  <em><span class="hl-annotation" style="color: gray">@Bean</span></em>
+  <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> Function&lt;String, String&gt; uppercase() {
+    <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">return</span> value -&gt; value.toUpperCase();
+  }
+
+  <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">static</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">void</span> main(String[] args) {
+    SpringApplication.run(DemoApplication.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>, args);
+  }
+
+}</pre><p>You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including <code class="literal">spring-cloud-function-starter-web</code> on the classpath. Running the main method would expose an endpoint that you can use to ping that <code class="literal">uppercase</code> function:</p><pre class="screen">$ curl localhost:8080 -d foo
+FOO</pre><p>The web adapter in <code class="literal">spring-cloud-function-starter-web</code> uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the <code class="literal">spring-cloud-starter-function-webflux</code> dependency instead. The functionality is the same, and the user application code can be used in both.</p><p>Now for the functional beans: the user application code can be recast into "functional"
+form, like this:</p><pre class="programlisting"><em><span class="hl-annotation" style="color: gray">@SpringBootConfiguration</span></em>
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span> DemoApplication <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">implements</span> ApplicationContextInitializer&lt;GenericApplicationContext&gt; {
+
+  <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">static</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">void</span> main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>, args);
+  }
+
+  <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> Function&lt;String, String&gt; uppercase() {
+    <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">return</span> value -&gt; value.toUpperCase();
+  }
+
+  <em><span class="hl-annotation" style="color: gray">@Override</span></em>
+  <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">void</span> initialize(GenericApplicationContext context) {
+    context.registerBean(<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"demo"</span>, FunctionRegistration.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>,
+        () -&gt; <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">new</span> FunctionRegistration&lt;&gt;(uppercase())
+            .type(FunctionType.from(String.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>).to(String.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>)));
+  }
+
+}</pre><p>The main differences are:</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">The main class is an <code class="literal">ApplicationContextInitializer</code>.</li><li class="listitem">The <code class="literal">@Bean</code> methods have been converted to calls to <code class="literal">context.registerBean()</code></li><li class="listitem">The <code class="literal">@SpringBootApplication</code> has been replaced with
+<code class="literal">@SpringBootConfiguration</code> to signify that we are not enabling Spring
+Boot autoconfiguration, and yet still marking the class as an "entry
+point".</li><li class="listitem">The <code class="literal">SpringApplication</code> from Spring Boot has been replaced with a
+<code class="literal">FunctionalSpringApplication</code> from Spring Cloud Function (it&#8217;s a
+subclass).</li></ul></div><p>The business logic beans that you register in a Spring Cloud Function app are of type <code class="literal">FunctionRegistration</code>. This is a wrapper that contains both the function and information about the input and output types. In the <code class="literal">@Bean</code> form of the application that information can be derived reflectively, but in a functional bean registration some of it is lost unless we use a <code class="literal">FunctionRegistration</code>.</p><p>An alternative to using an <code class="literal">ApplicationContextInitializer</code> and <code class="literal">FunctionRegistration</code> is to make the application itself implement <code class="literal">Function</code> (or <code class="literal">Consumer</code> or <code class="literal">Supplier</code>). Example (equivalent to the above):</p><pre class="programlisting"><em><span class="hl-annotation" style="color: gray">@SpringBootConfiguration</span></em>
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span> DemoApplication <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">implements</span> Function&lt;String, String&gt; {
+
+  <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">static</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">void</span> main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>, args);
+  }
+
+  <em><span class="hl-annotation" style="color: gray">@Override</span></em>
+  <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> String uppercase(String value) {
+    <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">return</span> value.toUpperCase();
+  }
+
+}</pre><p>It would also work if you add a separate, standalone class of type <code class="literal">Function</code> and register it with the <code class="literal">SpringApplication</code> using an alternative form of the <code class="literal">run()</code> method. The main thing is that the generic type information is available at runtime through the class declaration.</p><p>The app runs in its own HTTP server if you add <code class="literal">spring-cloud-starter-function-webflux</code> (it won&#8217;t work with the MVC starter at the moment because the functional form of the embedded Servlet container hasn&#8217;t been implemented).  The app also runs just fine in AWS Lambda or Azure Functions, and the improvements in startup time are dramatic.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="images/note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>The "lite" web server has some limitations for the range of <code class="literal">Function</code> signatures - in particular it doesn&#8217;t (yet) support <code class="literal">Message</code> input and output, but POJOs and any kind of <code class="literal">Publisher</code> should be fine.</p></td></tr></table></div></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_testing_functional_applications" href="#_testing_functional_applications"></a>8.2&nbsp;Testing Functional Applications</h2></div></div></div><p>Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users. For example, here is an integration test for the HTTP server wrapping the app above:</p><pre class="programlisting"><em><span class="hl-annotation" style="color: gray">@RunWith(SpringRunner.class)</span></em>
+<em><span class="hl-annotation" style="color: gray">@FunctionalSpringBootTest</span></em>
+<em><span class="hl-annotation" style="color: gray">@AutoConfigureWebTestClient</span></em>
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span> FunctionalTests {
+
+	<em><span class="hl-annotation" style="color: gray">@Autowired</span></em>
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">private</span> WebTestClient client;
+
+	<em><span class="hl-annotation" style="color: gray">@Test</span></em>
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">void</span> words() <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">throws</span> Exception {
+		client.post().uri(<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"/"</span>).body(Mono.just(<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"foo"</span>), String.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>).exchange()
+				.expectStatus().isOk().expectBody(String.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>).isEqualTo(<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"FOO"</span>);
+	}
+
+}</pre><p>This test is almost identical to the one you would write for the <code class="literal">@Bean</code> version of the same app - the only difference is the <code class="literal">@FunctionalSpringBootTest</code> annotation, instead of the regular <code class="literal">@SpringBootTest</code>. All the other pieces, like the <code class="literal">@Autowired</code> <code class="literal">WebTestClient</code>, are standard Spring Boot features.</p><p>Or you could write a test for a non-HTTP app using just the <code class="literal">FunctionCatalog</code>. For example:</p><pre class="programlisting"><em><span class="hl-annotation" style="color: gray">@RunWith(SpringRunner.class)</span></em>
+<em><span class="hl-annotation" style="color: gray">@FunctionalSpringBootTest</span></em>
+<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span> FunctionalTests {
+
+	<em><span class="hl-annotation" style="color: gray">@Autowired</span></em>
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">private</span> FunctionCatalog catalog;
+
+	<em><span class="hl-annotation" style="color: gray">@Test</span></em>
+	<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">public</span> <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">void</span> words() <span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">throws</span> Exception {
+		Function&lt;Flux&lt;String&gt;, Flux&lt;String&gt;&gt; function = catalog.lookup(Function.<span xmlns:d="http://docbook.org/ns/docbook" class="hl-keyword">class</span>,
+				<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"function"</span>);
+		assertThat(function.apply(Flux.just(<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"foo"</span>)).blockFirst()).isEqualTo(<span xmlns:d="http://docbook.org/ns/docbook" class="hl-string">"FOO"</span>);
+	}
+
+}</pre><p>(The <code class="literal">FunctionCatalog</code> always returns functions from <code class="literal">Flux</code> to <code class="literal">Flux</code>, even if the user declares them with a simpler signature.)</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="_limitations_of_functional_bean_declaration" href="#_limitations_of_functional_bean_declaration"></a>8.3&nbsp;Limitations of Functional Bean Declaration</h2></div></div></div><p>Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot, so we are able to adapt it to these functional bean definitions easily. If you step outside that limited scope, you can extend your Spring Cloud Function app by switching back to <code class="literal">@Bean</code> style configuration, or by using a hybrid approach. If you want to take advantage of Spring Boot autoconfiguration for integrations with external datastores, for example, you will need to use <code class="literal">@EnableAutoConfiguration</code>. Your functions can still be defined using the functional declarations if you want (i.e. the "hybrid" style), but in that case you will need to explicitly switch off the "full functional mode" using <code class="literal">spring.functional.enabled=false</code> so that Spring Boot can take back control.</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="multi__deploying_a_packaged_function.html">Prev</a>&nbsp;</td><td width="20%" align="center">&nbsp;</td><td width="40%" align="right">&nbsp;<a accesskey="n" href="multi__dynamic_compilation.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">7.&nbsp;Deploying a Packaged Function&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="multi_spring-cloud-function.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;9.&nbsp;Dynamic Compilation</td></tr></table></div></body></html>
