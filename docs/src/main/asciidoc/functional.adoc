@@ -94,6 +94,8 @@ It would also work if you add a separate, standalone class of type `Function` an
 
 The app runs in its own HTTP server if you add `spring-cloud-starter-function-webflux` (it won't work with the MVC starter at the moment because the functional form of the embedded Servlet container hasn't been implemented).  The app also runs just fine in AWS Lambda or Azure Functions, and the improvements in startup time are dramatic.
 
+NOTE: The "lite" web server has some limitations for the range of `Function` signatures - in particular it doesn't (yet) support `Message` input and output, but POJOs and any kind of `Publisher` should be fine.
+
 == Testing Functional Applications
 
 Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users. For example, here is an integration test for the HTTP server wrapping the app above:
