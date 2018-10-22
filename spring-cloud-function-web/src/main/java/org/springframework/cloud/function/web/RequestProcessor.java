@@ -252,7 +252,7 @@ public class RequestProcessor {
 
 		private final Supplier<Publisher<?>> supplier;
 
-		private MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		private final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
 		private HttpHeaders headers = new HttpHeaders();
 

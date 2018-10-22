@@ -47,6 +47,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.web.reactive.function.server.HandlerStrategies;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -179,6 +180,7 @@ class FunctionEndpointInitializer
 				System.err.println("JVM running for " + uptime + "ms");
 			}
 			catch (Throwable e) {
+				// ignore
 			}
 		}
 
@@ -218,9 +220,7 @@ class FunctionEndpointFactory {
 			logger.info("Found functions: " + names);
 			if (handler != null) {
 				logger.info("Configured function: " + handler);
-				if (!names.contains(handler)) {
-					throw new IllegalStateException("Cannot locate function: " + handler);
-				}
+				Assert.isTrue(names.contains(handler), "Cannot locate function: " + handler);
 				return catalog.lookup(Function.class, handler);
 			}
 			return catalog.lookup(Function.class, names.iterator().next());

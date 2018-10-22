@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  *
+ * @author Dave Syer
  * @author Oleg Zhurakousky
  *
  */
@@ -55,8 +56,19 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
+		// test POJO paylod
 		ResponseEntity<String> postForEntity = rest.postForEntity(
 				new URI("/functions/employee"), "{\"name\":\"Bob\",\"age\":25}",
+				String.class);
+		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
+		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
+		assertEquals("application/xml",
+				postForEntity.getHeaders().get("x-content-type").get(0));
+		assertEquals("bar", postForEntity.getHeaders().get("foo").get(0));
+
+		// test simple type payload
+		postForEntity = rest.postForEntity(
+				new URI("/functions/string"), "{\"name\":\"Bob\",\"age\":25}",
 				String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
@@ -68,14 +80,42 @@ public class HeadersToMessageTests {
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
-		@Bean({ "employee" })
-		public Function<Message<String>, Message<String>> function() {
+		@Bean({ "string" })
+		public Function<Message<String>, Message<String>> functiono() {
 			return request -> {
 				Message<String> message = MessageBuilder.withPayload(request.getPayload())
 						.setHeader("X-Content-Type", "application/xml")
 						.setHeader("foo", "bar").build();
 				return message;
 			};
+		}
+
+		@Bean({ "employee" })
+		public Function<Message<Employee>, Message<Employee>> function1() {
+			return request -> {
+				Message<Employee> message = MessageBuilder.withPayload(request.getPayload())
+						.setHeader("X-Content-Type", "application/xml")
+						.setHeader("foo", "bar").build();
+				return message;
+			};
+		}
+	}
+	@SuppressWarnings("unused") // used by json converter
+	private static class Employee {
+		private String name;
+		private int age;
+
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public int getAge() {
+			return age;
+		}
+		public void setAge(int age) {
+			this.age = age;
 		}
 	}
 }
