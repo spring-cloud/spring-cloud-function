@@ -24,11 +24,11 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogI
 /**
  * A test context loader for Spring Boot applications that use the
  * {@link ContextFunctionCatalogInitializer}.
- * 
- * @author Dave Syer
  *
+ * @author Dave Syer
+ * @since 2.0
  */
-public class FunctionalTestContextLoader extends SpringBootContextLoader {
+class FunctionalTestContextLoader extends SpringBootContextLoader {
 
 	@Override
 	protected SpringApplication getSpringApplication() {

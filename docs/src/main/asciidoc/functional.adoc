@@ -90,7 +90,7 @@ public class DemoApplication implements Function<String, String> {
 }
 ```
 
-It would also work to add a separate, standalone class of type `Function` and register it with the `SpringApplication` using an alternative form of the `run()` method. The main thing is that the generic type information is available at runtime through the class declaration.
+It would also work if you add a separate, standalone class of type `Function` and register it with the `SpringApplication` using an alternative form of the `run()` method. The main thing is that the generic type information is available at runtime through the class declaration.
 
 The app runs in its own HTTP server if you add `spring-cloud-starter-function-webflux` (it won't work with the MVC starter at the moment because the functional form of the embedded Servlet container hasn't been implemented).  The app also runs just fine in AWS Lambda or Azure Functions, and the improvements in startup time are dramatic.
 
