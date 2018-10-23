@@ -35,7 +35,8 @@ import reactor.core.publisher.Mono;
  *
  */
 @RunWith(SpringRunner.class)
-@FunctionalSpringBootTest
+//Only need web-application-type because MVC is on the classpath
+@FunctionalSpringBootTest("spring.main.web-application-type=reactive")
 @AutoConfigureWebTestClient
 public class PojoTests {
 

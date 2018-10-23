@@ -30,12 +30,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.util.ClassUtils;
 
 /**
  * @author Dave Syer
  *
  */
-public class FunctionalSpringApplication extends org.springframework.boot.SpringApplication {
+public class FunctionalSpringApplication
+		extends org.springframework.boot.SpringApplication {
 
 	/**
 	 * Name of default property source.
@@ -45,7 +47,12 @@ public class FunctionalSpringApplication extends org.springframework.boot.Spring
 	/**
 	 * Flag to say that context is functional beans.
 	 */
-	private static final String SPRING_FUNCTIONAL_ENABLED = "spring.functional.enabled";
+	public static final String SPRING_FUNCTIONAL_ENABLED = "spring.functional.enabled";
+
+	/**
+	 * Enumeration of web application types.
+	 */
+	public static final String SPRING_WEB_APPLICATION_TYPE = "spring.main.web-application-type";
 
 	public static ConfigurableApplicationContext run(Class<?> primarySource,
 			String... args) {
@@ -59,9 +66,13 @@ public class FunctionalSpringApplication extends org.springframework.boot.Spring
 
 	public FunctionalSpringApplication(Class<?>... primarySources) {
 		super(primarySources);
-		// Prefer non-web applications, even if a server is on the classpath
-		setWebApplicationType(WebApplicationType.NONE);
 		setApplicationContextClass(GenericApplicationContext.class);
+		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler",
+				null)) {
+			setWebApplicationType(WebApplicationType.REACTIVE);
+		} else {
+			setWebApplicationType(WebApplicationType.NONE);
+		}
 	}
 
 	@Override
@@ -134,6 +145,7 @@ public class FunctionalSpringApplication extends org.springframework.boot.Spring
 				.getSource();
 		Map<String, Object> map = new HashMap<>(source);
 		map.put(SPRING_FUNCTIONAL_ENABLED, "true");
+		map.put(SPRING_WEB_APPLICATION_TYPE, getWebApplicationType());
 		sources.replace(DEFAULT_PROPERTIES,
 				new MapPropertySource(DEFAULT_PROPERTIES, map));
 	}

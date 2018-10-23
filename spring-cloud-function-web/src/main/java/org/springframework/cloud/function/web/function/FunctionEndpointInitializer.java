@@ -24,12 +24,14 @@ import java.util.function.Function;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.DefaultErrorWebExceptionHandler;
 import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.BasicStringConverter;
@@ -76,8 +78,12 @@ class FunctionEndpointInitializer
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		if (context.getEnvironment().getProperty("spring.functional.enabled",
-				Boolean.class, false)
+		if (context.getEnvironment().getProperty(
+				FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
+				WebApplicationType.class,
+				WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
+				&& context.getEnvironment().getProperty("spring.functional.enabled",
+						Boolean.class, false)
 				&& ClassUtils.isPresent(
 						"org.springframework.http.server.reactive.HttpHandler", null)) {
 			registerEndpoint(context);

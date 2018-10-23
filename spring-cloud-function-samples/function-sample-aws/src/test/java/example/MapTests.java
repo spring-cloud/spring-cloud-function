@@ -16,7 +16,6 @@
 
 package example;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.function.adapter.aws.SpringBootRequestHandler;
@@ -27,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@Ignore
 public class MapTests {
 
 	@Test
