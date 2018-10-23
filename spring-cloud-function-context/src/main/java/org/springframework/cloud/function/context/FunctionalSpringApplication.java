@@ -54,6 +54,10 @@ public class FunctionalSpringApplication
 	 */
 	public static final String SPRING_WEB_APPLICATION_TYPE = "spring.main.web-application-type";
 
+	public static void main(String[] args) throws Exception {
+		FunctionalSpringApplication.run(new Class<?>[0], args);
+	}
+
 	public static ConfigurableApplicationContext run(Class<?> primarySource,
 			String... args) {
 		return run(new Class<?>[] { primarySource }, args);
@@ -70,7 +74,8 @@ public class FunctionalSpringApplication
 		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler",
 				null)) {
 			setWebApplicationType(WebApplicationType.REACTIVE);
-		} else {
+		}
+		else {
 			setWebApplicationType(WebApplicationType.NONE);
 		}
 	}
@@ -82,40 +87,39 @@ public class FunctionalSpringApplication
 		if (context instanceof GenericApplicationContext) {
 			GenericApplicationContext generic = (GenericApplicationContext) context;
 			for (Object source : getAllSources()) {
-				if (source instanceof Class<?>) {
-					Class<?> type = (Class<?>) source;
-					if (ApplicationContextInitializer.class.isAssignableFrom(type)) {
-						@SuppressWarnings("unchecked")
-						ApplicationContextInitializer<GenericApplicationContext> initializer = BeanUtils
-								.instantiateClass(type,
-										ApplicationContextInitializer.class);
-						initializer.initialize(generic);
-						functional = true;
-					}
-					else if (Function.class.isAssignableFrom(type)
-							|| Consumer.class.isAssignableFrom(type)
-							|| Supplier.class.isAssignableFrom(type)) {
-						generic.registerBean("function", FunctionRegistration.class,
-								() -> new FunctionRegistration<>(context
-										.getAutowireCapableBeanFactory().createBean(type))
-												.type(FunctionType.of(type)));
-						functional = true;
+				Class<?> type = null;
+				Object handler = null;
+				if (source instanceof String) {
+					String name = (String) source;
+					if (ClassUtils.isPresent(name, null)) {
+						type = ClassUtils.resolveClassName(name, null);
 					}
 				}
+				else if (source instanceof Class<?>) {
+					type = (Class<?>) source;
+				}
 				else {
-					Class<?> type = source.getClass();
+					type = source.getClass();
+					handler = source;
+				}
+				if (type != null) {
 					if (ApplicationContextInitializer.class.isAssignableFrom(type)) {
+						if (handler == null) {
+							handler = BeanUtils.instantiateClass(type);
+						}
 						@SuppressWarnings("unchecked")
-						ApplicationContextInitializer<GenericApplicationContext> initializer = (ApplicationContextInitializer<GenericApplicationContext>) source;
+						ApplicationContextInitializer<GenericApplicationContext> initializer = (ApplicationContextInitializer<GenericApplicationContext>) handler;
 						initializer.initialize(generic);
 						functional = true;
 					}
 					else if (Function.class.isAssignableFrom(type)
 							|| Consumer.class.isAssignableFrom(type)
 							|| Supplier.class.isAssignableFrom(type)) {
+						Class<?> functionType = type;
+						Object function = handler;
 						generic.registerBean("function", FunctionRegistration.class,
-								() -> new FunctionRegistration<>(source)
-										.type(FunctionType.of(type)));
+								() -> new FunctionRegistration<>(handler(generic, function, functionType))
+										.type(FunctionType.of(functionType)));
 						functional = true;
 					}
 				}
@@ -124,6 +128,13 @@ public class FunctionalSpringApplication
 				defaultProperties(generic);
 			}
 		}
+	}
+
+	private Object handler(GenericApplicationContext generic, Object handler, Class<?> type) {
+		if (handler == null) {
+			handler = generic.getAutowireCapableBeanFactory().createBean(type);
+		}
+		return handler;
 	}
 
 	@Override
