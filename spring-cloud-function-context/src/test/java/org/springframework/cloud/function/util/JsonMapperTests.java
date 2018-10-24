@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2016-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  *
  */
 @RunWith(Parameterized.class)
@@ -54,7 +55,7 @@ public class JsonMapperTests {
 	@Test
 	public void vanillaArray() {
 		String json = "[{\"value\":\"foo\"},{\"value\":\"foo\"}]";
-		List<Foo> list = mapper.toList(json,
+		List<Foo> list = mapper.toObject(json,
 				Foo.class);
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0).getValue()).isEqualTo("foo");
@@ -63,34 +64,34 @@ public class JsonMapperTests {
 
 	@Test
 	public void intArray() {
-		List<Integer> list = mapper.toList("[123,456]", Integer.class);
+		List<Integer> list = mapper.toObject("[123,456]", Integer.class);
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0)).isEqualTo(123);
 	}
 
 	@Test
 	public void emptyArray() {
-		List<Foo> list = mapper.toList("[]", Foo.class);
+		List<Foo> list = mapper.toObject("[]", Foo.class);
 		assertThat(list).hasSize(0);
 	}
 
 	@Test
 	public void vanillaObject() {
 		String json = "{\"value\":\"foo\"}";
-		Foo foo = mapper.toSingle(json, Foo.class);
+		Foo foo = mapper.toObject(json, Foo.class);
 		assertThat(foo.getValue()).isEqualTo("foo");
 		assertThat(mapper.toString(foo)).isEqualTo(json);
 	}
 
 	@Test
 	public void intValue() {
-		int foo = mapper.toSingle("123", Integer.class);
+		int foo = mapper.toObject("123", Integer.class);
 		assertThat(foo).isEqualTo(123);
 	}
 
 	@Test
 	public void empty() {
-		Foo foo = mapper.toSingle("{}", Foo.class);
+		Foo foo = mapper.toObject("{}", Foo.class);
 		assertThat(foo.getValue()).isNull();
 	}
 

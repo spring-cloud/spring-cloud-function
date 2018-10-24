@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.web;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +31,6 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -92,23 +93,23 @@ public class RequestProcessor {
 		}
 	}
 
-	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
-			boolean stream) {
-		Mono<ResponseEntity<?>> responseEntityMono;
+	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body, boolean stream) {
 		Object function = wrapper.handler();
+		Class<?> rawInputType = inspector.getInputType(function);
+		Type inputType = this.retrieveInputType(function);
 
 		Object input = null;
 		if (StringUtils.hasText(body)) {
-			Class<?> inputType = inspector.getInputType(function);
 			if (body.startsWith("[")) {
-				input = mapper.toList(body, inputType);
+				input = Collection.class.isAssignableFrom(rawInputType)
+						? mapper.toObject(body, inputType) : mapper.toObject(body, rawInputType);
 			}
 			else {
-				if (inputType == String.class) {
+				if (rawInputType == String.class) {
 					input = body;
 				}
 				else if (body.startsWith("{")) {
-					input = mapper.toSingle(body, inputType);
+					input = mapper.toObject(body, rawInputType);
 				}
 				else if (body.startsWith("\"")) {
 					input = body.substring(1, body.length() - 2);
@@ -118,8 +119,31 @@ public class RequestProcessor {
 				}
 			}
 		}
-		responseEntityMono = post(wrapper, input, null, stream);
-		return responseEntityMono;
+		return post(wrapper, input, null, stream, !Collection.class.isAssignableFrom(rawInputType));
+	}
+
+	private Object getTargetFunction(Object fluxifiedFunction) {
+		//we need to get the actual un-fluxed function so we can interrogate for types
+		Object target = inspector.getRegistration(fluxifiedFunction).getTarget();
+		if (target instanceof FluxWrapper) {
+			target = ((FluxWrapper<?>)target).getTarget();
+		}
+		return target;
+	}
+
+	private Type retrieveInputType(Object function) {
+		Type type =  inspector.getRegistration(this.getTargetFunction(function)).getType().getType();
+		if (type instanceof ParameterizedType) {
+			return ((ParameterizedType)type).getActualTypeArguments()[0];
+		}
+		else {
+			for (Type iface : ((Class<?>)type).getGenericInterfaces()) {
+				if (iface.getTypeName().startsWith("java.util.function")) {
+					return ((ParameterizedType)iface).getActualTypeArguments()[0];
+				}
+			}
+		}
+		return inspector.getInputType(function);
 	}
 
 	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
@@ -130,7 +154,7 @@ public class RequestProcessor {
 	}
 
 	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, Object body,
-			MultiValueMap<String, String> params, boolean stream) {
+			MultiValueMap<String, String> params, boolean stream, boolean shouldFluxAsIterable) {
 
 		Iterable<?> iterable = body instanceof Collection ? (List<?>) body
 				: Collections.singletonList(body);
@@ -143,7 +167,7 @@ public class RequestProcessor {
 			form.putAll(params);
 		}
 
-		Flux<?> flux = body == null ? Flux.just(form) : Flux.fromIterable(iterable);
+		Flux<?> flux = body == null ? Flux.just(form) : shouldFluxAsIterable ? Flux.fromIterable(iterable) : Flux.just(body);
 		if (inspector.isMessage(function)) {
 			flux = messages(wrapper, function == null ? consumer : function, flux);
 		}
