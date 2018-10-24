@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FluxWrapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.util.HeaderUtils;
+import org.springframework.core.ResolvableType;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -72,12 +74,15 @@ public class RequestProcessor {
 		this.converter = converter;
 	}
 
-	public static FunctionWrapper wrapper(Function<? extends Publisher<?>, ? extends Publisher<?>> function,
-			Consumer<? extends Publisher<?>> consumer, Supplier<? extends Publisher<?>> supplier) {
+	public static FunctionWrapper wrapper(
+			Function<? extends Publisher<?>, ? extends Publisher<?>> function,
+			Consumer<? extends Publisher<?>> consumer,
+			Supplier<? extends Publisher<?>> supplier) {
 		return new FunctionWrapper(function, consumer, supplier);
 	}
 
-	public static FunctionWrapper wrapper(Function<? extends Publisher<?>, ? extends Publisher<?>> function) {
+	public static FunctionWrapper wrapper(
+			Function<? extends Publisher<?>, ? extends Publisher<?>> function) {
 		return new FunctionWrapper(function, null, null);
 	}
 
@@ -94,21 +99,24 @@ public class RequestProcessor {
 
 	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
 			boolean stream) {
-		Mono<ResponseEntity<?>> responseEntityMono;
 		Object function = wrapper.handler();
+		Class<?> inputType = inspector.getInputType(function);
 
 		Object input = null;
 		if (StringUtils.hasText(body)) {
-			Class<?> inputType = inspector.getInputType(function);
 			if (body.startsWith("[")) {
-				input = mapper.toList(body, inputType);
+				input = Collection.class.isAssignableFrom(inputType)
+						? mapper.toObject(body, inputType)
+						: mapper.toObject(body, ResolvableType
+								.forClassWithGenerics(ArrayList.class, (Class<?>) inputType)
+								.getType());
 			}
 			else {
 				if (inputType == String.class) {
 					input = body;
 				}
 				else if (body.startsWith("{")) {
-					input = mapper.toSingle(body, inputType);
+					input = mapper.toObject(body, inputType);
 				}
 				else if (body.startsWith("\"")) {
 					input = body.substring(1, body.length() - 2);
@@ -118,8 +126,8 @@ public class RequestProcessor {
 				}
 			}
 		}
-		responseEntityMono = post(wrapper, input, null, stream);
-		return responseEntityMono;
+		return post(wrapper, input, null, stream,
+				!Collection.class.isAssignableFrom(inputType));
 	}
 
 	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
@@ -130,7 +138,8 @@ public class RequestProcessor {
 	}
 
 	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, Object body,
-			MultiValueMap<String, String> params, boolean stream) {
+			MultiValueMap<String, String> params, boolean stream,
+			boolean shouldFluxAsIterable) {
 
 		Iterable<?> iterable = body instanceof Collection ? (List<?>) body
 				: Collections.singletonList(body);
@@ -143,7 +152,8 @@ public class RequestProcessor {
 			form.putAll(params);
 		}
 
-		Flux<?> flux = body == null ? Flux.just(form) : Flux.fromIterable(iterable);
+		Flux<?> flux = body == null ? Flux.just(form)
+				: shouldFluxAsIterable ? Flux.fromIterable(iterable) : Flux.just(body);
 		if (inspector.isMessage(function)) {
 			flux = messages(wrapper, function == null ? consumer : function, flux);
 		}
@@ -239,7 +249,8 @@ public class RequestProcessor {
 		}
 	}
 
-	private Publisher<?> value(Function<Publisher<?>, Publisher<?>> function, Publisher<String> value) {
+	private Publisher<?> value(Function<Publisher<?>, Publisher<?>> function,
+			Publisher<String> value) {
 		Flux<?> input = Flux.from(value).map(body -> converter.convert(function, body));
 		return Mono.from(function.apply(input));
 	}
@@ -259,8 +270,10 @@ public class RequestProcessor {
 		private Publisher<String> argument;
 
 		@SuppressWarnings("unchecked")
-		public FunctionWrapper(Function<? extends Publisher<?>, ? extends Publisher<?>> function,
-				Consumer<? extends Publisher<?>> consumer, Supplier<? extends Publisher<?>> supplier) {
+		public FunctionWrapper(
+				Function<? extends Publisher<?>, ? extends Publisher<?>> function,
+				Consumer<? extends Publisher<?>> consumer,
+				Supplier<? extends Publisher<?>> supplier) {
 			this.function = (Function<Publisher<?>, Publisher<?>>) function;
 			this.consumer = (Consumer<Publisher<?>>) consumer;
 			this.supplier = (Supplier<Publisher<?>>) supplier;
