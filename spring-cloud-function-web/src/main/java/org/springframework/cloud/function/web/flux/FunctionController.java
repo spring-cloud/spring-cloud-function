@@ -49,7 +49,8 @@ public class FunctionController {
 		this.processor = processor;
 	}
 
-	@PostMapping(path = "/**", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+	@PostMapping(path = "/**", consumes = { MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+			MediaType.MULTIPART_FORM_DATA_VALUE })
 	@ResponseBody
 	public Mono<ResponseEntity<?>> form(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
