@@ -86,7 +86,7 @@ public class SampleApplicationTests {
 		map.put("B", Arrays.asList("5", "6"));
 
 		assertThat(new TestRestTemplate().exchange(RequestEntity.post(new URI("http://localhost:" + port + "/sum"))
-				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.MULTIPART_FORM_DATA)
+				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_FORM_URLENCODED)
 				.body(map), String.class).getBody())
 				.isEqualTo("[{\"A\":6,\"B\":11}]");
 	}

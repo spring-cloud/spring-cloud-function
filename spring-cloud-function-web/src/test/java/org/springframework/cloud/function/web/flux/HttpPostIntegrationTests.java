@@ -302,6 +302,21 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@Ignore
+	public void multipart() throws Exception {
+
+		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+
+		map.put("A", Arrays.asList("1", "2", "3"));
+		map.put("B", Arrays.asList("5", "6"));
+
+		assertThat(rest.exchange(
+				RequestEntity.post(new URI("/sum")).accept(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
+				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+	}
+
+	@Test
 	public void count() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
 		assertThat(rest.exchange(
