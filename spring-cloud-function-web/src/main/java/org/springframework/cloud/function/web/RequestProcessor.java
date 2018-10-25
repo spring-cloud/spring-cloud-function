@@ -31,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FluxWrapper;
@@ -63,9 +62,6 @@ public class RequestProcessor {
 	private final StringConverter converter;
 
 	private final JsonMapper mapper;
-
-	@Value("${debug:${DEBUG:false}}")
-	private String debug = "false";
 
 	public RequestProcessor(FunctionInspector inspector, JsonMapper mapper,
 			StringConverter converter) {
