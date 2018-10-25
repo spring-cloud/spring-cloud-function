@@ -44,9 +44,15 @@ public class PojoTests {
 	private WebTestClient client;
 
 	@Test
-	public void words() throws Exception {
+	public void single() throws Exception {
 		client.post().uri("/").body(Mono.just("{\"value\":\"foo\"}"), String.class).exchange()
 				.expectStatus().isOk().expectBody(String.class).isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Test
+	public void multiple() throws Exception {
+		client.post().uri("/").body(Mono.just("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class).exchange()
+				.expectStatus().isOk().expectBody(String.class).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@SpringBootConfiguration

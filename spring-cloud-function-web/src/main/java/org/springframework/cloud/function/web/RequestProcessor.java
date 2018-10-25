@@ -107,9 +107,9 @@ public class RequestProcessor {
 			if (body.startsWith("[")) {
 				input = Collection.class.isAssignableFrom(inputType)
 						? mapper.toObject(body, inputType)
-						: mapper.toObject(body, ResolvableType
-								.forClassWithGenerics(ArrayList.class, (Class<?>) inputType)
-								.getType());
+						: mapper.toObject(body,
+								ResolvableType.forClassWithGenerics(ArrayList.class,
+										(Class<?>) inputType).getType());
 			}
 			else {
 				if (inputType == String.class) {
@@ -126,8 +126,7 @@ public class RequestProcessor {
 				}
 			}
 		}
-		return post(wrapper, input, null, stream,
-				!Collection.class.isAssignableFrom(inputType));
+		return post(wrapper, input, null, stream);
 	}
 
 	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
@@ -138,8 +137,7 @@ public class RequestProcessor {
 	}
 
 	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, Object body,
-			MultiValueMap<String, String> params, boolean stream,
-			boolean shouldFluxAsIterable) {
+			MultiValueMap<String, String> params, boolean stream) {
 
 		Iterable<?> iterable = body instanceof Collection ? (List<?>) body
 				: Collections.singletonList(body);
@@ -152,8 +150,10 @@ public class RequestProcessor {
 			form.putAll(params);
 		}
 
+		boolean inputIsCollection =
+				Collection.class.isAssignableFrom(inspector.getInputType(wrapper.handler()));
 		Flux<?> flux = body == null ? Flux.just(form)
-				: shouldFluxAsIterable ? Flux.fromIterable(iterable) : Flux.just(body);
+				: inputIsCollection ? Flux.just(body) : Flux.fromIterable(iterable);
 		if (inspector.isMessage(function)) {
 			flux = messages(wrapper, function == null ? consumer : function, flux);
 		}
@@ -229,6 +229,9 @@ public class RequestProcessor {
 	}
 
 	private boolean isInputMultiple(Object handler) {
+		if (handler instanceof FluxWrapper) {
+			handler = ((FluxWrapper<?>) handler).getTarget();
+		}
 		Class<?> type = inspector.getInputType(handler);
 		Class<?> wrapper = inspector.getInputWrapper(handler);
 		return Collection.class.isAssignableFrom(type) || Flux.class.equals(wrapper);
