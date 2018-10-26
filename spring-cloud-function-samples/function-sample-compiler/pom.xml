@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.1.0.M1</version>
+		<version>2.1.0.RC1</version>
 		<relativePath/>
 	</parent>
 
@@ -22,7 +22,7 @@
 		<spring-cloud-function.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<spring-cloud-stream.version>Fishtown.BUILD-SNAPSHOT</spring-cloud-stream.version>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
-		<wrapper.version>1.0.10.RELEASE</wrapper.version>
+		<wrapper.version>1.0.17.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>

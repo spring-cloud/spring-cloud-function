@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.web;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -97,15 +99,14 @@ public class RequestProcessor {
 			boolean stream) {
 		Object function = wrapper.handler();
 		Class<?> inputType = inspector.getInputType(function);
+		Type itemType = getItemType(function);
 
 		Object input = null;
 		if (StringUtils.hasText(body)) {
 			if (body.startsWith("[")) {
-				input = Collection.class.isAssignableFrom(inputType)
-						? mapper.toObject(body, inputType)
-						: mapper.toObject(body,
-								ResolvableType.forClassWithGenerics(ArrayList.class,
-										(Class<?>) inputType).getType());
+				input = mapper.toObject(body, ResolvableType
+						.forClassWithGenerics(ArrayList.class, (Class<?>) itemType)
+						.getType());
 			}
 			else {
 				if (inputType == String.class) {
@@ -146,8 +147,8 @@ public class RequestProcessor {
 			form.putAll(params);
 		}
 
-		boolean inputIsCollection =
-				Collection.class.isAssignableFrom(inspector.getInputType(wrapper.handler()));
+		boolean inputIsCollection = Collection.class
+				.isAssignableFrom(inspector.getInputType(wrapper.handler()));
 		Flux<?> flux = body == null ? Flux.just(form)
 				: inputIsCollection ? Flux.just(body) : Flux.fromIterable(iterable);
 		if (inspector.isMessage(function)) {
@@ -252,6 +253,42 @@ public class RequestProcessor {
 			Publisher<String> value) {
 		Flux<?> input = Flux.from(value).map(body -> converter.convert(function, body));
 		return Mono.from(function.apply(input));
+	}
+
+	private Object getTargetFunction(Object function) {
+		// we need to get the actual un-fluxed function so we can interrogate for types
+		Object target = inspector.getRegistration(function).getTarget();
+		if (target instanceof FluxWrapper) {
+			target = ((FluxWrapper<?>) target).getTarget();
+		}
+		return target;
+	}
+
+	private Type getItemType(Object function) {
+		Class<?> inputType = inspector.getInputType(function);
+		if (!Collection.class.isAssignableFrom(inputType)) {
+			return inputType;
+		}
+		Type type = inspector.getRegistration(this.getTargetFunction(function)).getType()
+				.getType();
+		if (type instanceof ParameterizedType) {
+			type = ((ParameterizedType) type).getActualTypeArguments()[0];
+		}
+		else {
+			for (Type iface : ((Class<?>) type).getGenericInterfaces()) {
+				if (iface.getTypeName().startsWith("java.util.function")) {
+					type = ((ParameterizedType) iface).getActualTypeArguments()[0];
+					break;
+				}
+			}
+		}
+		if (type instanceof ParameterizedType) {
+			type = ((ParameterizedType) type).getActualTypeArguments()[0];
+		}
+		else {
+			type = inputType;
+		}
+		return type;
 	}
 
 	public static class FunctionWrapper {

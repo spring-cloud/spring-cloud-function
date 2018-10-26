@@ -18,6 +18,7 @@ package org.springframework.cloud.function.test;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,15 +46,43 @@ public class FunctionalWithInputCollectionTests {
 
 	@Test
 	public void words() throws Exception {
-		client.post().uri("/").body(Mono.just("[\"foo\", \"bar\"]"), String.class).exchange()
-				.expectStatus().isOk().expectBody(String.class).isEqualTo("[FOO, BAR]");
+		client.post().uri("/").body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
+				.exchange().expectStatus().isOk().expectBody(String.class)
+				.isEqualTo("{\"value\":\"FOOBAR\"}");
 	}
 
 	@SpringBootConfiguration
-	protected static class TestConfiguration implements Function<List<String>, String> {
+	protected static class TestConfiguration implements Function<List<Foo>, Foo> {
 		@Override
-		public String apply(List<String> value) {
-			return value.toString().toUpperCase();
+		public Foo apply(List<Foo> value) {
+			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase())
+					.collect(Collectors.joining()));
 		}
+	}
+
+	public static class Foo {
+
+		private String value;
+
+		public Foo() {
+		}
+
+		public Foo(String value) {
+			this.value = value;
+		}
+
+		public String getValue() {
+			return this.value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			return "Foo [value=" + this.value + "]";
+		}
+
 	}
 }

@@ -18,6 +18,7 @@ package com.example;
 import java.net.URI;
 import java.util.Arrays;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,40 +42,38 @@ public class SampleApplicationTests {
 
 	@LocalServerPort
 	private int port;
+	private TestRestTemplate rest = new TestRestTemplate();
 
 	@Test
 	public void words() {
-		assertThat(new TestRestTemplate()
-				.getForObject("http://localhost:" + port + "/words", String.class))
+		assertThat(rest.getForObject("http://localhost:" + port + "/words", String.class))
 				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void uppercase() {
-		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/uppercase", "[{\"value\":\"foo\"}]",
-				String.class)).isEqualTo("[{\"value\":\"FOO\"}]");
+		assertThat(rest.postForObject("http://localhost:" + port + "/uppercase",
+				"[{\"value\":\"foo\"}]", String.class))
+						.isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
 	@Test
 	public void composite() {
-		assertThat(new TestRestTemplate()
-				.getForObject("http://localhost:" + port + "/words,uppercase", String.class))
-				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+		assertThat(rest.getForObject("http://localhost:" + port + "/words,uppercase",
+				String.class)).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
 	public void single() {
-		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/uppercase", "{\"value\":\"foo\"}",
-				String.class)).isEqualTo("{\"value\":\"FOO\"}");
+		assertThat(rest.postForObject("http://localhost:" + port + "/uppercase",
+				"{\"value\":\"foo\"}", String.class)).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test
 	public void lowercase() {
-		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/lowercase", "[{\"value\":\"Foo\"}]",
-				String.class)).isEqualTo("[{\"value\":\"foo\"}]");
+		assertThat(rest.postForObject("http://localhost:" + port + "/lowercase",
+				"[{\"value\":\"Foo\"}]", String.class))
+						.isEqualTo("[{\"value\":\"foo\"}]");
 	}
 
 	@Test
@@ -85,10 +84,25 @@ public class SampleApplicationTests {
 		map.put("A", Arrays.asList("1", "2", "3"));
 		map.put("B", Arrays.asList("5", "6"));
 
-		assertThat(new TestRestTemplate().exchange(RequestEntity.post(new URI("http://localhost:" + port + "/sum"))
-				.accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_FORM_URLENCODED)
-				.body(map), String.class).getBody())
-				.isEqualTo("[{\"A\":6,\"B\":11}]");
+		assertThat(rest.exchange(
+				RequestEntity.post(new URI("http://localhost:" + port + "/sum"))
+						.accept(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_FORM_URLENCODED).body(map),
+				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
 	}
 
+	@Test
+	@Ignore
+	public void multipart() throws Exception {
+
+		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+
+		map.put("A", Arrays.asList("1", "2", "3"));
+		map.put("B", Arrays.asList("5", "6"));
+
+		assertThat(rest.exchange(
+				RequestEntity.post(new URI("http://localhost:" + port + "/sum")).accept(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
+				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+	}
 }
