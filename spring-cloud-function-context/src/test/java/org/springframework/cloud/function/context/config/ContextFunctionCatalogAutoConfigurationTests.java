@@ -376,7 +376,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@Test
 	public void kotlinLambdas() {
-		create(KotlinLambdasConfiguration.class);
+		create(new Class[] {KotlinLambdasConfiguration.class, SimpleConfiguration.class});
 
 		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function.class);
 		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
@@ -402,6 +402,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.isInstanceOf(Supplier.class);
 		assertThat(inspector.getOutputType(catalog.lookup(Supplier.class, "kotlinSupplier")))
 				.isAssignableFrom(String.class);
+
+		Function<Flux<String>, Flux<String>> function = catalog.lookup(Function.class, "kotlinFunction|function2");
+		assertThat(function.apply(Flux.just("Hello")).blockFirst()).isEqualTo("HELLOfunction2");
 	}
 
 	private void create(String jarfile, Class<?> config, String... props) {
