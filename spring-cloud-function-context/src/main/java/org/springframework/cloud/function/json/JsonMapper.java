@@ -28,7 +28,7 @@ import org.springframework.core.ResolvableType;
 public interface JsonMapper {
 
 	/**
-	 * @deprecated in favor of {@link #toObject(String, Type)}
+	 * @deprecated since v2.0 in favor of {@link #toObject(String, Type)}
 	 */
 	@Deprecated
 	default <T> List<T> toList(String json, Class<T> type) {
@@ -45,7 +45,7 @@ public interface JsonMapper {
 	<T> T toObject(String json, Type type);
 
 	/**
-	 * @deprecated in favor of {@link #toObject(String, Type)}
+	 * @deprecated since v2.0 in favor of {@link #toObject(String, Type)}
 	 */
 	default <T> T toSingle(String json, Class<T> type) {
 		return toObject(json, type);
