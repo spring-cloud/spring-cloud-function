@@ -302,7 +302,6 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
-	@Ignore
 	public void multipart() throws Exception {
 
 		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();

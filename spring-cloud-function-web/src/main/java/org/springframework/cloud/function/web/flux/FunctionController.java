@@ -27,7 +27,11 @@ import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FormFieldPart;
+import org.springframework.http.codec.multipart.Part;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,13 +53,34 @@ public class FunctionController {
 		this.processor = processor;
 	}
 
-	@PostMapping(path = "/**", consumes = { MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-			MediaType.MULTIPART_FORM_DATA_VALUE })
+	@PostMapping(path = "/**", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<?>> form(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
 		return request.getFormData().doOnSuccess(params -> wrapper.params(params))
-				.then(processor.post(wrapper, null, false));
+				.then(Mono.defer(() -> processor.post(wrapper, null, false)));
+	}
+
+	@PostMapping(path = "/**", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@ResponseBody
+	public Mono<ResponseEntity<?>> multipart(ServerWebExchange request) {
+		FunctionWrapper wrapper = wrapper(request);
+		return request.getMultipartData()
+				.doOnSuccess(params -> wrapper.params(multi(params)))
+				.then(Mono.defer(() -> processor.post(wrapper, null, false)));
+	}
+
+	private MultiValueMap<String, String> multi(MultiValueMap<String, Part> body) {
+		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+		for (String key : body.keySet()) {
+			for (Part part : body.get(key)) {
+				if (part instanceof FormFieldPart) {
+					FormFieldPart form = (FormFieldPart) part;
+					map.add(key, form.value());
+				}
+			}
+		}
+		return map;
 	}
 
 	@PostMapping(path = "/**")

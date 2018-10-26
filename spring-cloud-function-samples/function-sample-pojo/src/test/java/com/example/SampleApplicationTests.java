@@ -92,7 +92,7 @@ public class SampleApplicationTests {
 	}
 
 	@Test
-	@Ignore
+	// @Ignore
 	public void multipart() throws Exception {
 
 		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
