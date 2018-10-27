@@ -18,12 +18,11 @@ package org.springframework.cloud.function.web;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -104,8 +103,9 @@ public class RequestProcessor {
 		Object input = null;
 		if (StringUtils.hasText(body)) {
 			if (body.startsWith("[")) {
+				Class<?> collectionType = Collection.class.isAssignableFrom(inputType) ? inputType : Collection.class;
 				input = mapper.toObject(body, ResolvableType
-						.forClassWithGenerics(ArrayList.class, (Class<?>) itemType)
+						.forClassWithGenerics(collectionType, (Class<?>) itemType)
 						.getType());
 			}
 			else {
@@ -136,8 +136,8 @@ public class RequestProcessor {
 	private Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, Object body,
 			MultiValueMap<String, String> params, boolean stream) {
 
-		Iterable<?> iterable = body instanceof Collection ? (List<?>) body
-				: Collections.singletonList(body);
+		Iterable<?> iterable = body instanceof Collection ? (Collection<?>) body
+				: (body instanceof Set ? Collections.singleton(body) : Collections.singletonList(body));
 
 		Function<Publisher<?>, Publisher<?>> function = wrapper.function();
 		Consumer<Publisher<?>> consumer = wrapper.consumer();

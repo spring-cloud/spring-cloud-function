@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.function.test;
 
-import java.util.List;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,22 +41,24 @@ import reactor.core.publisher.Mono;
 @RunWith(SpringRunner.class)
 @FunctionalSpringBootTest("spring.main.web-application-type=reactive")
 @AutoConfigureWebTestClient
-public class FunctionalWithInputCollectionTests {
+public class FunctionalWithInputSetTests {
 
 	@Autowired
 	private WebTestClient client;
 
 	@Test
 	public void words() throws Exception {
-		client.post().uri("/").body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
-				.exchange().expectStatus().isOk().expectBody(String.class)
-				.isEqualTo("{\"value\":\"FOOBAR\"}");
+		String reply = client.post().uri("/").body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
+				.exchange().expectStatus().isOk().expectBody(String.class).returnResult().getResponseBody();
+		assertTrue(reply.contains("FOO"));
+		assertTrue(reply.contains("BAR"));
+		assertTrue(reply.contains("{\"value\":\""));
 	}
 
 	@SpringBootConfiguration
-	protected static class TestConfiguration implements Function<List<Foo>, Foo> {
+	protected static class TestConfiguration implements Function<Set<Foo>, Foo> {
 		@Override
-		public Foo apply(List<Foo> value) {
+		public Foo apply(Set<Foo> value) {
 			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase())
 					.collect(Collectors.joining()));
 		}
