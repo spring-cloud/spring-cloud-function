@@ -183,7 +183,7 @@ class FunctionEndpointInitializer
 			logger.info("Server started");
 			try {
 				double uptime = ManagementFactory.getRuntimeMXBean().getUptime();
-				logger.error("JVM running for " + uptime + "ms");
+				logger.info("JVM running for " + uptime + "ms");
 			}
 			catch (Throwable e) {
 				// ignore
