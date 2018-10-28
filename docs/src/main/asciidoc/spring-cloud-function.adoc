@@ -98,7 +98,7 @@ same rules for signature transformation outlined in "Java 8 function support" se
 The `spring-cloud-function-web` module has autoconfiguration that
 activates when it is included in a Spring Boot web application (with
 MVC support). There is also a `spring-cloud-starter-function-web` to
-collect all the optional dependnecies in case you just want a simple
+collect all the optional dependencies in case you just want a simple
 getting started experience.
 
 With the web configurations activated your app will have an MVC
