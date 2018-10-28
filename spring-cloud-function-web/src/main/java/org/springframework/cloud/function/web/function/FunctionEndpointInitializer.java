@@ -105,7 +105,7 @@ class FunctionEndpointInitializer
 						context.getBeanFactory()));
 		context.registerBean(RequestProcessor.class,
 				() -> new RequestProcessor(context.getBean(FunctionInspector.class),
-						context.getBean(JsonMapper.class),
+						context.getBeanProvider(JsonMapper.class),
 						context.getBean(StringConverter.class)));
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),

@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FluxWrapper;
@@ -64,9 +65,9 @@ public class RequestProcessor {
 
 	private final JsonMapper mapper;
 
-	public RequestProcessor(FunctionInspector inspector, JsonMapper mapper,
+	public RequestProcessor(FunctionInspector inspector, ObjectProvider<JsonMapper> mapper,
 			StringConverter converter) {
-		this.mapper = mapper;
+		this.mapper = mapper.getIfAvailable();
 		this.inspector = inspector;
 		this.converter = converter;
 	}
@@ -100,8 +101,8 @@ public class RequestProcessor {
 		Class<?> inputType = inspector.getInputType(function);
 		Type itemType = getItemType(function);
 
-		Object input = null;
-		if (StringUtils.hasText(body)) {
+		Object input = body;
+		if (StringUtils.hasText(body) && this.mapper!=null) {
 			if (body.startsWith("[")) {
 				Class<?> collectionType = Collection.class.isAssignableFrom(inputType) ? inputType : Collection.class;
 				input = mapper.toObject(body, ResolvableType
