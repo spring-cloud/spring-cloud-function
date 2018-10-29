@@ -34,11 +34,7 @@ string like that.)</p></div><div class="chapter"><div class="titlepage"><div><di
 decorated at runtime by Spring Cloud Function to be an HTTP endpoint,
 or a Stream processor, for instance with RabbitMQ, Apache Kafka or
 JMS.</p><p>The <code class="literal">@Beans</code> can be <code class="literal">Function</code>, <code class="literal">Consumer</code> or <code class="literal">Supplier</code> (all from
-<code class="literal">java.util</code>), and their parametric types can be String or POJO. A
-<code class="literal">Function</code> is exposed as a Spring Cloud Stream <code class="literal">Processor</code> if
-<code class="literal">spring-cloud-function-stream</code> is on the classpath.  A <code class="literal">Consumer</code> is
-also exposed as a Stream <code class="literal">Sink</code>, and a <code class="literal">Supplier</code> translates to a
-Stream <code class="literal">Source</code>.</p><p>Functions can also be of <code class="literal">Flux&lt;String&gt;</code> or <code class="literal">Flux&lt;Pojo&gt;</code> and Spring
+<code class="literal">java.util</code>), and their parametric types can be String or POJO.</p><p>Functions can also be of <code class="literal">Flux&lt;String&gt;</code> or <code class="literal">Flux&lt;Pojo&gt;</code> and Spring
 Cloud Function takes care of converting the data to and from the
 desired types, as long as it comes in as plain text or (in the case of
 the POJO) JSON. There is also support for <code class="literal">Message&lt;Pojo&gt;</code> where the

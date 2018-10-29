@@ -101,11 +101,7 @@ decorated at runtime by Spring Cloud Function to be an HTTP endpoint,
 or a Stream processor, for instance with RabbitMQ, Apache Kafka or
 JMS.</simpara>
 <simpara>The <literal>@Beans</literal> can be <literal>Function</literal>, <literal>Consumer</literal> or <literal>Supplier</literal> (all from
-<literal>java.util</literal>), and their parametric types can be String or POJO. A
-<literal>Function</literal> is exposed as a Spring Cloud Stream <literal>Processor</literal> if
-<literal>spring-cloud-function-stream</literal> is on the classpath.  A <literal>Consumer</literal> is
-also exposed as a Stream <literal>Sink</literal>, and a <literal>Supplier</literal> translates to a
-Stream <literal>Source</literal>.</simpara>
+<literal>java.util</literal>), and their parametric types can be String or POJO.</simpara>
 <simpara>Functions can also be of <literal>Flux&lt;String&gt;</literal> or <literal>Flux&lt;Pojo&gt;</literal> and Spring
 Cloud Function takes care of converting the data to and from the
 desired types, as long as it comes in as plain text or (in the case of
