@@ -40,11 +40,7 @@ or a Stream processor, for instance with RabbitMQ, Apache Kafka or
 JMS.
 
 The `@Beans` can be `Function`, `Consumer` or `Supplier` (all from
-`java.util`), and their parametric types can be String or POJO. A
-`Function` is exposed as a Spring Cloud Stream `Processor` if
-`spring-cloud-function-stream` is on the classpath.  A `Consumer` is
-also exposed as a Stream `Sink`, and a `Supplier` translates to a
-Stream `Source`.
+`java.util`), and their parametric types can be String or POJO.
 
 Functions can also be of `Flux<String>` or `Flux<Pojo>` and Spring
 Cloud Function takes care of converting the data to and from the
