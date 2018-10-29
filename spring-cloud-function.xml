@@ -103,15 +103,18 @@ JMS.</simpara>
 <simpara>The <literal>@Beans</literal> can be <literal>Function</literal>, <literal>Consumer</literal> or <literal>Supplier</literal> (all from
 <literal>java.util</literal>), and their parametric types can be String or POJO. A
 <literal>Function</literal> is exposed as a Spring Cloud Stream <literal>Processor</literal> if
-<literal>spring-cloud-function-stream</literal> is on the classpath.
-A <literal>Consumer</literal> is also exposed as a Stream
-<literal>Sink</literal> and a <literal>Supplier</literal> translates to a Stream <literal>Source</literal>.
-HTTP endpoints are exposed if the Stream binder is <literal>spring-cloud-stream-binder-servlet</literal>.</simpara>
-<simpara>Functions can be of <literal>Flux&lt;String&gt;</literal> or <literal>Flux&lt;Pojo&gt;</literal> and Spring Cloud
-Function takes care of converting the data to and from the desired
-types, as long as it comes in as plain text or (in the case of the
-POJO) JSON. TBD: support for <literal>Flux&lt;Message&lt;Pojo&gt;&gt;</literal> and maybe plain
-<literal>Pojo</literal> types (Fluxes implied and implemented by the framework).</simpara>
+<literal>spring-cloud-function-stream</literal> is on the classpath.  A <literal>Consumer</literal> is
+also exposed as a Stream <literal>Sink</literal>, and a <literal>Supplier</literal> translates to a
+Stream <literal>Source</literal>.</simpara>
+<simpara>Functions can also be of <literal>Flux&lt;String&gt;</literal> or <literal>Flux&lt;Pojo&gt;</literal> and Spring
+Cloud Function takes care of converting the data to and from the
+desired types, as long as it comes in as plain text or (in the case of
+the POJO) JSON. There is also support for <literal>Message&lt;Pojo&gt;</literal> where the
+message headers are copied from the incoming event, depending on the
+adapter. The web adapter also supports conversion from form-encoded
+data to a <literal>Map</literal>, and if you are using the function with Spring Cloud
+Stream then all the conversion and coercion features for message
+payloads will be applicable as well.</simpara>
 <simpara>Functions can be grouped together in a single application, or deployed
 one-per-jar. It&#8217;s up to the developer to choose. An app with multiple
 functions can be deployed multiple times in different "personalities",
