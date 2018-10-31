@@ -71,10 +71,6 @@ public class HeaderUtils {
 		return result;
 	}
 
-	private static Collection<?> multi(Object value) {
-		return value instanceof Collection ? (Collection<?>) value : Arrays.asList(value);
-	}
-
 	public static MessageHeaders fromHttp(HttpHeaders headers) {
 		Map<String, Object> map = new LinkedHashMap<>();
 		for (String name : headers.keySet()) {
@@ -85,5 +81,9 @@ public class HeaderUtils {
 			map.put(name, value);
 		}
 		return new MessageHeaders(map);
+	}
+
+	private static Collection<?> multi(Object value) {
+		return value instanceof Collection ? (Collection<?>) value : Arrays.asList(value);
 	}
 }
