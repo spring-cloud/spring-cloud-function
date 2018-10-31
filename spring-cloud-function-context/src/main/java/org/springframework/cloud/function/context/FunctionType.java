@@ -418,13 +418,15 @@ public class FunctionType {
 		if (Supplier.class.isAssignableFrom(extractClass(type, ParamType.OUTPUT))) {
 			Type product = extractType(type, ParamType.OUTPUT, 0);
 			Class<?> output = extractClass(product, ParamType.OUTPUT);
-			if (FunctionRegistration.class.isAssignableFrom(output)) {
-				type = extractType(product, ParamType.OUTPUT, 0);
-			}
-			else if (Function.class.isAssignableFrom(output)
-					|| Supplier.class.isAssignableFrom(output)
-					|| Consumer.class.isAssignableFrom(output)) {
-				type = product;
+			if (output != null) {
+				if (FunctionRegistration.class.isAssignableFrom(output)) {
+					type = extractType(product, ParamType.OUTPUT, 0);
+				}
+				else if (Function.class.isAssignableFrom(output)
+						|| Supplier.class.isAssignableFrom(output)
+						|| Consumer.class.isAssignableFrom(output)) {
+					type = product;
+				}
 			}
 		}
 		return type;

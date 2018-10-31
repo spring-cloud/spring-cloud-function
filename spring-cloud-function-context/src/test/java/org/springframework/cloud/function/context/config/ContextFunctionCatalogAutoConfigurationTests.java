@@ -397,7 +397,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(context.getBean("kotlinSupplier")).isInstanceOf(Supplier.class);
 		assertThat(context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
 		Supplier<Flux<String>> supplier = catalog.lookup(Supplier.class, "kotlinSupplier");
-		supplier.get().subscribe(System.out::println);
+		assertThat(supplier.get().blockFirst()).isEqualTo("Hello");
 		assertThat((Supplier<?>)catalog.lookup(Supplier.class, "kotlinSupplier"))
 				.isInstanceOf(Supplier.class);
 		assertThat(inspector.getOutputType(catalog.lookup(Supplier.class, "kotlinSupplier")))
