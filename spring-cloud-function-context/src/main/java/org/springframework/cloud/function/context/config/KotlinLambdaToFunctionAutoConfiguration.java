@@ -74,7 +74,7 @@ class KotlinLambdaToFunctionAutoConfiguration {
 					if (source instanceof MethodMetadata) {
 						String returnTypeName = ((MethodMetadata)source).getReturnTypeName();
 						if (returnTypeName.startsWith("kotlin.jvm.functions.Function")) {
-							FunctionType functionType =  FunctionContextUtils.findType(beanDefinitionName, beanFactory);
+							FunctionType functionType = new FunctionType(FunctionContextUtils.findType(beanDefinitionName, beanFactory));
 							if (returnTypeName.equals("kotlin.jvm.functions.Function1")) {
 								if (Unit.class.isAssignableFrom(functionType.getOutputType())) {
 									logger.debug("Transforming Kotlin lambda " + beanDefinitionName + " to java Consumer");

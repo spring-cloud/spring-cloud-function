@@ -16,11 +16,18 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
@@ -29,15 +36,6 @@ import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author Oleg Zhurakousky
  *
@@ -45,56 +43,38 @@ import java.util.List;
  */
 abstract class FunctionContextUtils {
 
-    public static FunctionType findType(String name, ConfigurableListableBeanFactory registry) {
+    public static Type findType(String name, ConfigurableListableBeanFactory registry) {
         AbstractBeanDefinition definition = (AbstractBeanDefinition) registry.getBeanDefinition(name);
         Object source = definition.getSource();
-        FunctionType param = null;
+        Type param = null;
         // Start by assuming output -> Function
         if (source instanceof StandardMethodMetadata) {
             // Standard @Bean metadata
-            Type beanType = ((StandardMethodMetadata) source).getIntrospectedMethod()
+            param = ((StandardMethodMetadata) source).getIntrospectedMethod()
                     .getGenericReturnType();
-            if (beanType instanceof ParameterizedType) {
-                ParameterizedType type = (ParameterizedType) beanType;
-                param = new FunctionType(type);
-            }
-            else {
-                param = new FunctionType(beanType);
-            }
         }
         else if (source instanceof MethodMetadataReadingVisitor) {
             // A component scan with @Beans
             MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
-            Type type = findBeanType(definition, visitor);
-            param = new FunctionType(type);
+            param = findBeanType(definition, visitor);
         }
         else if (source instanceof Resource) {
-            Class<?> beanType = registry.getType(name);
-            param = new FunctionType(beanType);
+            param = registry.getType(name);
         }
         else {
-            ResolvableType resolvable = (ResolvableType) getField(definition,
-                    "targetType");
-            if (resolvable != null) {
-                param = new FunctionType(resolvable.getType());
+        	ResolvableType type = (ResolvableType) getField(definition, "targetType");
+            if (type != null) {
+                param = type.getType();
             }
             else {
                 Class<?> beanClass = definition.getBeanClass();
-                if (beanClass != null && !FunctionFactoryMetadata.class
-                        .isAssignableFrom(beanClass)) {
-                    Type type = beanClass;
-                    param = new FunctionType(type);
+                if (beanClass != null && !FunctionFactoryMetadata.class.isAssignableFrom(beanClass)) {
+                    param = beanClass;
                 }
                 else {
-                    Object bean = registry.getBean(name);
-                    if (bean instanceof FunctionFactoryMetadata) {
-                        FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) bean;
-                        Type type = factory.getFactoryMethod().getGenericReturnType();
-                        param = new FunctionType(type);
-                    }
-                    else {
-                        param = new FunctionType(bean.getClass());
-                    }
+                    //assume FunctionFactoryMetadata
+                    FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) registry.getBean(name);
+                    param = factory.getFactoryMethod().getGenericReturnType();
                 }
             }
         }

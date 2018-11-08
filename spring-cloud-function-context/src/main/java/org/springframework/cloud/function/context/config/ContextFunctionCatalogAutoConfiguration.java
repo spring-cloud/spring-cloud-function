@@ -577,7 +577,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			else {
-				param = FunctionContextUtils.findType(name, registry);
+				param = new FunctionType(FunctionContextUtils.findType(name, registry));
 			}
 			types.computeIfAbsent(name, str -> param);
 			return param;
