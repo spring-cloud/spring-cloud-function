@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -97,13 +96,45 @@ public abstract class FunctionCreatorConfigurationTests {
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = {
 			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
-			"function.bean=myDoubler",
+			"function.bean=doubler",
 			"function.main=org.springframework.cloud.function.test.FunctionRegistrar" })
 	public static class SingleFunctionWithRegistrarTests
 			extends FunctionCreatorConfigurationTests {
 
 		@Test
-		@Ignore // related to boot 2.1 no bean override change
+		public void testDouble() {
+			Function<Flux<Integer>, Flux<Integer>> function = catalog
+					.lookup(Function.class, "function0");
+			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@TestPropertySource(properties = {
+			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
+			"function.bean=frenchizer",
+			"function.main=org.springframework.cloud.function.test.FunctionRegistrar" })
+	public static class SingleFunctionWithRegistrarAndRegistrationTests
+			extends FunctionCreatorConfigurationTests {
+
+		@Test
+		public void testFrenchize() {
+			Function<Flux<Integer>, Flux<String>> function = catalog
+					.lookup(Function.class, "function0");
+			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo("deux");
+		}
+	}
+
+	@EnableAutoConfiguration
+	@TestPropertySource(properties = {
+			"function.location=app:classpath,file:target/test-classes,file:target/test-classes/app",
+			"function.bean=myDoubler",
+			"function.main=org.springframework.cloud.function.test.FunctionInitializer" })
+	public static class SingleFunctionWithInitializerTests
+			extends FunctionCreatorConfigurationTests {
+
+		@Test
 		public void testDouble() {
 			Function<Flux<Integer>, Flux<Integer>> function = catalog
 					.lookup(Function.class, "function0");

@@ -51,10 +51,12 @@ import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.ExplodedArchive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.deployer.resource.support.DelegatingResourceLoader;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -381,6 +383,32 @@ class FunctionCreatorConfiguration {
 				Object result = null;
 				if (this.runner != null) {
 					result = this.runner.getBean(type);
+					if (result == null) {
+						if (this.runner.containsBean(FunctionCatalog.class.getName())) {
+							Object catalog = this.runner
+									.getBean(FunctionCatalog.class.getName());
+							result = this.runner.evaluate("lookup(#function).getTarget()",
+									catalog, "function", type);
+							if (result != null) {
+								logger.info("Located registration: " + type + " of type "
+										+ result.getClass());
+							}
+						}
+					}
+					else {
+						logger.info("Located bean: " + type + " of type "
+								+ result.getClass());
+						if (result.getClass().getName()
+								.equals(FunctionRegistration.class.getName())) {
+							result = this.runner.evaluate("getTarget()", result);
+						}
+					}
+					if (result != null) {
+						if (result.getClass().getName()
+								.equals(FluxFunction.class.getName())) {
+							result = this.runner.evaluate("getTarget()", result);
+						}
+					}
 				}
 				if (result == null) {
 					logger.info("No bean found. Instantiating: " + type);
@@ -390,7 +418,6 @@ class FunctionCreatorConfiguration {
 					}
 				}
 				if (result != null) {
-					logger.info("Located bean: " + type);
 					return result;
 				}
 				throw new IllegalStateException("Cannot create bean for: " + type);

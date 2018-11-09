@@ -18,13 +18,10 @@ package org.springframework.cloud.function.deployer;
 
 import java.lang.reflect.Field;
 import java.net.URL;
-import java.util.Collections;
 import java.util.Map;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
@@ -59,16 +56,7 @@ public class ContextRunner {
 							new MapPropertySource("appDeployer", properties));
 					running = true;
 					Class<?> sourceClass = ClassUtils.resolveClassName(source, null);
-					ApplicationContextInitializer<?> initializer = null;
-					if (ApplicationContextInitializer.class.isAssignableFrom(sourceClass)) {
-						initializer = BeanUtils.instantiateClass(sourceClass, ApplicationContextInitializer.class);
-						sourceClass = Dummy.class;
-					}
 					SpringApplication builder = builder(sourceClass);
-					if (initializer!=null) {
-						builder.addInitializers(initializer);
-						builder.setDefaultProperties(Collections.singletonMap("spring.functional.enabled", "true"));
-					}
 					builder.setEnvironment(environment);
 					builder.setRegisterShutdownHook(false);
 					context = builder.run(args);
@@ -131,19 +119,8 @@ public class ContextRunner {
 	}
 
 	private static SpringApplication builder(Class<?> type) {
-		if (type==Dummy.class) {
-			SpringApplication application = new SpringApplication() {
-				@Override
-				protected void load(ApplicationContext context, Object[] sources) {
-				}
-			};
-			// Boot doesn't allow null sources
-			application.setSources(Collections.singleton(Dummy.class.getName()));
-			return application;
-		}
-		return new SpringApplication(type);
+		SpringApplication application = new FunctionalSpringApplication(type);
+		return application;
 	}
-	
-	private class Dummy {}
 
 }

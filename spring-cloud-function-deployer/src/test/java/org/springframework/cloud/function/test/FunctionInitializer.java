@@ -17,8 +17,6 @@
 package org.springframework.cloud.function.test;
 
 import org.springframework.boot.SpringApplication;
-import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +25,7 @@ import org.springframework.context.support.GenericApplicationContext;
 /**
  * @author Dave Syer
  */
-public class FunctionRegistrar
+public class FunctionInitializer
 		implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	@Bean
@@ -42,20 +40,14 @@ public class FunctionRegistrar
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication application = new FunctionalSpringApplication(
-				FunctionRegistrar.class);
+				FunctionInitializer.class);
 		application.run(args);
 	}
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		context.registerBean("theDoubler", FunctionRegistration.class,
-				() -> new FunctionRegistration<>(myDoubler(), "doubler")
-						.type(FunctionType.of((Doubler.class))));
-		context.registerBean("frenchizer", FunctionRegistration.class, () -> {
-			Frenchizer function = myFrenchizer();
-			function.init();
-			return new FunctionRegistration<>(function, "theFrenchizer")
-					.type(FunctionType.of((Frenchizer.class)));
-		});
+		// TODO: support for FunctionRegistration
+		context.registerBean("myDoubler", Doubler.class, () -> myDoubler());
+		context.registerBean("myFrenchizer", Frenchizer.class, () -> myFrenchizer());
 	}
 }

@@ -5,7 +5,7 @@
 
 	<groupId>com.example</groupId>
 	<artifactId>flux-sample</artifactId>
-	<version>1.0.0.M1</version>
+	<version>1.0.0.RC1</version>
 	<packaging>jar</packaging>
 
 	<parent>
@@ -18,7 +18,7 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring-cloud-function.version>2.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
-		<wrapper.version>1.0.15.RELEASE</wrapper.version>
+		<wrapper.version>1.0.17.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>

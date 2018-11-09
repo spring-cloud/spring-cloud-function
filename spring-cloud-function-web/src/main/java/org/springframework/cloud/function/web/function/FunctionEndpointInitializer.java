@@ -106,7 +106,8 @@ class FunctionEndpointInitializer
 		context.registerBean(RequestProcessor.class,
 				() -> new RequestProcessor(context.getBean(FunctionInspector.class),
 						context.getBeanProvider(JsonMapper.class),
-						context.getBean(StringConverter.class)));
+						context.getBean(StringConverter.class),
+						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),
 						context.getBean(FunctionInspector.class),
@@ -226,7 +227,8 @@ class FunctionEndpointFactory {
 			logger.info("Found functions: " + names);
 			if (handler != null) {
 				logger.info("Configured function: " + handler);
-				Assert.isTrue(names.contains(handler), "Cannot locate function: " + handler);
+				Assert.isTrue(names.contains(handler),
+						"Cannot locate function: " + handler);
 				return catalog.lookup(Function.class, handler);
 			}
 			return catalog.lookup(Function.class, names.iterator().next());

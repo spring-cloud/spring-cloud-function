@@ -83,6 +83,13 @@ public class FunctionController {
 		return map;
 	}
 
+	@PostMapping(path = "/**", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	@ResponseBody
+	public Mono<ResponseEntity<?>> post(ServerWebExchange request) {
+		FunctionWrapper wrapper = wrapper(request);
+		return processor.post(wrapper, request);
+	}
+
 	@PostMapping(path = "/**")
 	@ResponseBody
 	public Mono<ResponseEntity<?>> post(ServerWebExchange request,
