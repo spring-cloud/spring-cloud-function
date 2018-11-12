@@ -24,6 +24,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.SimpleCommandLinePropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -54,11 +55,13 @@ public class ContextRunner {
 					environment.getPropertySources().addAfter(
 							StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
 							new MapPropertySource("appDeployer", properties));
+					if (args != null && args.length > 0) {
+						environment.getPropertySources().addFirst(
+								new SimpleCommandLinePropertySource("args", args));
+					}
 					running = true;
 					Class<?> sourceClass = ClassUtils.resolveClassName(source, null);
-					SpringApplication builder = builder(sourceClass);
-					builder.setEnvironment(environment);
-					builder.setRegisterShutdownHook(false);
+					SpringApplication builder = builder(sourceClass, environment);
 					context = builder.run(args);
 				}
 				catch (Throwable ex) {
@@ -118,9 +121,27 @@ public class ContextRunner {
 		return this.error;
 	}
 
-	private static SpringApplication builder(Class<?> type) {
-		SpringApplication application = new FunctionalSpringApplication(type);
+	private static SpringApplication builder(Class<?> type,
+			StandardEnvironment environment) {
+		SpringApplication application;
+		if (!isFunctional(environment)) {
+			application = new SpringApplication(type);
+		}
+		else {
+			application = new FunctionalSpringApplication(type);
+		}
+		application.setEnvironment(environment);
+		application.setRegisterShutdownHook(false);
 		return application;
 	}
 
+	private static boolean isFunctional(StandardEnvironment environment) {
+		if (!ClassUtils.isPresent(
+				"org.springframework.cloud.function.context.FunctionalSpringApplication",
+				null)) {
+			return false;
+		}
+		return environment.resolvePlaceholders("${spring.functional.enabled:true}")
+				.equals("true");
+	}
 }
