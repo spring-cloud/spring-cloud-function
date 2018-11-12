@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.deployer;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
