@@ -121,14 +121,13 @@ public class ContextRunner {
 		return this.error;
 	}
 
-	private static SpringApplication builder(Class<?> type,
-			StandardEnvironment environment) {
+	private SpringApplication builder(Class<?> type, StandardEnvironment environment) {
 		SpringApplication application;
 		if (!isFunctional(environment)) {
 			application = new SpringApplication(type);
 		}
 		else {
-			application = new FunctionalSpringApplication(type);
+			application = FunctionalSpringApplicationCreator.create(type);
 		}
 		application.setEnvironment(environment);
 		application.setRegisterShutdownHook(false);
@@ -143,5 +142,13 @@ public class ContextRunner {
 		}
 		return environment.resolvePlaceholders("${spring.functional.enabled:true}")
 				.equals("true");
+	}
+	
+	private static class FunctionalSpringApplicationCreator {
+
+		public static SpringApplication create(Class<?> type) {
+			return new FunctionalSpringApplication(type);
+		}
+		
 	}
 }
