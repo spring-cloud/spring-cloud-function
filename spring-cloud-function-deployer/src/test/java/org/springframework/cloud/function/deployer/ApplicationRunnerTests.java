@@ -20,6 +20,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.test.Doubler;
 import org.springframework.cloud.function.test.FunctionApp;
 import org.springframework.cloud.function.test.FunctionRegistrar;
@@ -43,14 +44,13 @@ public class ApplicationRunnerTests {
 	}
 
 	@Test
-	@Ignore // related to boot 2.1 no bean override change
 	public void functional() {
 		ApplicationRunner runner = new ApplicationRunner(getClass().getClassLoader(),
 				FunctionRegistrar.class.getName());
 		runner.run();
-		assertThat(runner.containsBean(Doubler.class.getName())).isTrue();
-		assertThat(runner.getBean(Doubler.class.getName())).isNotNull();
+		assertThat(runner.containsBean(Doubler.class.getName())).isFalse();
 		assertThat(runner.getBean(FunctionCatalog.class.getName())).isNotNull();
+		assertThat(runner.getBeanNames(FunctionRegistration.class.getName())).hasSize(2);
 		runner.close();
 	}
 }

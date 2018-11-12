@@ -95,9 +95,5 @@ public class FunctionProperties {
 			throw new IllegalStateException(
 					"No archive location provided, please configure function.location as a jar or directory.");
 		}
-		if (bean.length == 0) {
-			throw new IllegalStateException(
-					"No function bean locator provided, please configure function.bean as a bean name or class name.");
-		}
 	}
 }

@@ -16,8 +16,10 @@
 
 package org.springframework.cloud.function.deployer;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.annotation.PreDestroy;
@@ -142,6 +144,28 @@ public class ApplicationRunner {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * List the bean names in the application context for a given type (by its fully qualified name).
+	 * 
+	 * @param type the name of the type (Class)
+	 * @return the bean names of that type
+	 */
+	public Set<String> getBeanNames(String type) {
+		if (this.app != null) {
+			Expression parsed = new SpelExpressionParser()
+					.parseExpression("context.getBeansOfType(T(" + type + "))");
+			try {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> beans = (Map<String, Object>) parsed
+						.getValue(this.app);
+				return beans.keySet();
+			}
+			catch (Exception e) {
+			}
+		}
+		return Collections.emptySet();
 	}
 
 	public Object evaluate(String expression, Object root, Object... attrs) {

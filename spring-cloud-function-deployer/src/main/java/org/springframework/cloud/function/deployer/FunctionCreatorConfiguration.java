@@ -25,7 +25,9 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -114,7 +116,7 @@ class FunctionCreatorConfiguration {
 					"Locating function from " + Arrays.asList(properties.getLocation()));
 			this.creator = new BeanCreator(urls);
 			this.creator.run(properties.getMain());
-			Arrays.stream(properties.getBean()).map(this.creator::create).sequential()
+			Arrays.stream(functionNames()).map(this.creator::create).sequential()
 					.forEach(this.creator::register);
 			if (properties.getName().contains("|")) {
 				// A composite function has to be explicitly registered before it is
@@ -127,6 +129,13 @@ class FunctionCreatorConfiguration {
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot create functions", e);
 		}
+	}
+
+	private String[] functionNames() {
+		if (properties.getBean() != null && properties.getBean().length > 0) {
+			return properties.getBean();
+		}
+		return this.creator.getFunctionNames();
 	}
 
 	@PreDestroy
@@ -372,6 +381,38 @@ class FunctionCreatorConfiguration {
 				throw new IllegalStateException(
 						"SpringApplication not available and main class requested: "
 								+ main);
+			}
+		}
+
+		public String[] getFunctionNames() {
+			Set<String> list = new LinkedHashSet<>();
+			ClassLoader contextClassLoader = ClassUtils
+					.overrideThreadContextClassLoader(functionClassLoader);
+			try {
+				if (this.runner.containsBean(FunctionCatalog.class.getName())) {
+					Object catalog = this.runner.getBean(FunctionCatalog.class.getName());
+					@SuppressWarnings("unchecked")
+					Set<String> functions = (Set<String>) this.runner
+							.evaluate("getNames(#type)", catalog, "type", Function.class);
+					list.addAll(functions);
+					@SuppressWarnings("unchecked")
+					Set<String> consumers = (Set<String>) this.runner
+							.evaluate("getNames(#type)", catalog, "type", Consumer.class);
+					list.addAll(consumers);
+					@SuppressWarnings("unchecked")
+					Set<String> suppliers = (Set<String>) this.runner
+							.evaluate("getNames(#type)", catalog, "type", Supplier.class);
+					list.addAll(suppliers);
+				}
+				if (list.isEmpty()) {
+					list.addAll(this.runner.getBeanNames(Function.class.getName()));
+					list.addAll(this.runner.getBeanNames(Consumer.class.getName()));
+					list.addAll(this.runner.getBeanNames(Supplier.class.getName()));
+				}
+				return list.toArray(new String[0]);
+			}
+			finally {
+				ClassUtils.overrideThreadContextClassLoader(contextClassLoader);
 			}
 		}
 
