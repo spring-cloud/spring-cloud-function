@@ -132,19 +132,12 @@ public class RequestProcessor {
 
 		if (StringUtils.hasText(body)) {
 			MediaType contentType = wrapper.headers.getContentType();
-			if (contentType != null && "text".equalsIgnoreCase(contentType.getType())) {
-				input = converter.convert(function, body);
-			}
-			else if (body.startsWith("[")) {
-				Class<?> collectionType = Collection.class.isAssignableFrom(inputType) ? inputType : Collection.class;
-				input = mapper.toObject(body,
-						ResolvableType.forClassWithGenerics(collectionType, (Class<?>) itemType).getType());
-			}
-			else if (body.startsWith("{")) {
-				input = mapper.toObject(body, inputType);
-			}
-			else if (body.startsWith("\"")) {
-				input = body.substring(1, body.length() - 2);
+			if (this.shouldUseJsonConversion(body, contentType)) {
+				Type jsonType = body.startsWith("[") && Collection.class.isAssignableFrom(inputType) || body.startsWith("{") ? inputType : Collection.class;
+				if (body.startsWith("[")) {
+					jsonType = ResolvableType.forClassWithGenerics((Class<?>)jsonType, (Class<?>) itemType).getType();
+				}
+				input = mapper.toObject(body, jsonType);
 			}
 			else {
 				input = converter.convert(function, body);
@@ -154,11 +147,20 @@ public class RequestProcessor {
 		return response(wrapper, input, stream);
 	}
 
+	private boolean shouldUseJsonConversion(String body, MediaType contentType) {
+		return (body.startsWith("[") || body.startsWith("{"))
+				&& (contentType == null || (contentType != null && !"text".equalsIgnoreCase(contentType.getType())));
+	}
+
 	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
 		Publisher<?> result = request.function() != null
 				? value(request.function(), request.argument())
 				: request.supplier().get();
 		return stream(request, result);
+	}
+
+	private List<HttpMessageReader<?>> getMessageReaders() {
+		return this.messageReaders;
 	}
 
 	private Mono<ResponseEntity<?>> response(FunctionWrapper wrapper, Object body,
@@ -345,10 +347,6 @@ public class RequestProcessor {
 
 	private Method handlerMethod(Object handler) {
 		return ReflectionUtils.findMethod(handler.getClass(), "apply", (Class<?>[]) null);
-	}
-
-	public List<HttpMessageReader<?>> getMessageReaders() {
-		return this.messageReaders;
 	}
 
 	private Throwable handleReadError(MethodParameter parameter, Throwable ex) {
