@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,6 +64,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ResourceUtils;
 import org.springframework.util.StreamUtils;
 
 /**
@@ -110,11 +112,13 @@ class FunctionCreatorConfiguration {
 	public void init() {
 		URL[] urls = Arrays.stream(properties.getLocation())
 				.flatMap(toResourceURL(delegatingResourceLoader)).toArray(URL[]::new);
+		URL[] roots = Arrays.stream(properties.getLocation()).map(this::toUrl)
+				.toArray(URL[]::new);
 
 		try {
 			logger.info(
 					"Locating function from " + Arrays.asList(properties.getLocation()));
-			this.creator = new BeanCreator(urls);
+			this.creator = new BeanCreator(roots, urls);
 			this.creator.run(properties.getMain());
 			Arrays.stream(functionNames()).map(this.creator::create).sequential()
 					.forEach(this.creator::register);
@@ -128,6 +132,18 @@ class FunctionCreatorConfiguration {
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot create functions", e);
+		}
+	}
+
+	private URL toUrl(String url) {
+		if (url.equals("app:classpath")) {
+			return urls()[0];
+		}
+		try {
+			return new URL(url);
+		}
+		catch (MalformedURLException e) {
+			throw new UncheckedIOException(e);
 		}
 	}
 
@@ -197,12 +213,19 @@ class FunctionCreatorConfiguration {
 
 		@Override
 		public String getMainClass() throws Exception {
-			try {
-				return super.getMainClass();
+			Manifest manifest = getArchive().getManifest();
+			String mainClass = null;
+			if (manifest != null) {
+				mainClass = manifest.getMainAttributes().getValue("Function-Class");
+				if (mainClass == null) {
+					mainClass = manifest.getMainAttributes().getValue("Start-Class");
+				}
+				if (mainClass == null) {
+					// Not a Spring Boot jar but it might have a "main" class
+					mainClass = manifest.getMainAttributes().getValue("Main-Class");
+				}
 			}
-			catch (Exception e) {
-				return null;
-			}
+			return mainClass;
 		}
 
 		public URL[] getClassLoaderUrls() throws Exception {
@@ -273,9 +296,9 @@ class FunctionCreatorConfiguration {
 
 		private String defaultMain;
 
-		public BeanCreator(URL[] urls) {
+		public BeanCreator(URL[] roots, URL[] urls) {
 			functionClassLoader = new BeanCreatorClassLoader(expand(urls), getParent());
-			this.defaultMain = findMain(urls);
+			this.defaultMain = findMain(roots);
 		}
 
 		private ClassLoader getParent() {
@@ -296,7 +319,7 @@ class FunctionCreatorConfiguration {
 		private String findMain(URL[] urls) {
 			for (URL url : urls) {
 				try {
-					File file = new File(url.toURI());
+					File file = ResourceUtils.getFile(url);
 					if (file.exists()) {
 						Archive archive = file.getName().endsWith(".jar")
 								? new JarFileArchive(file)
