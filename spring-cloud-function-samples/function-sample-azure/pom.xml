@@ -90,7 +90,7 @@
 				<plugin>
 					<groupId>com.microsoft.azure</groupId>
 					<artifactId>azure-functions-maven-plugin</artifactId>
-					<version>1.0.0-beta-6</version>
+					<version>1.2.0</version>
 					<dependencies>
 						    <dependency>
 								<groupId>javax.xml.bind</groupId>
