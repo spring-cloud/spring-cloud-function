@@ -32,8 +32,8 @@ import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.mvc.HeadersToMessageTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.ContextConfiguration;
@@ -59,9 +59,9 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
-		ResponseEntity<String> postForEntity = rest.postForEntity(
-				new URI("/functions/employee"), "{\"name\":\"Bob\",\"age\":25}",
-				String.class);
+		HttpEntity<String> postForEntity = rest.exchange(RequestEntity
+				.post(new URI("/functions/employee")).contentType(MediaType.APPLICATION_JSON)
+				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
 		assertEquals("application/xml",
@@ -72,7 +72,7 @@ public class HeadersToMessageTests {
 	@Test
 	public void testHeadersPropagatedByDefault() throws Exception {
 		HttpEntity<String> postForEntity = rest.exchange(RequestEntity
-				.post(new URI("/functions/vanilla")).header("x-context-type", "rubbish")
+				.post(new URI("/functions/vanilla")).contentType(MediaType.APPLICATION_JSON).header("x-context-type", "rubbish")
 				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25,\"foo\":\"bar\"}",
 				postForEntity.getBody());

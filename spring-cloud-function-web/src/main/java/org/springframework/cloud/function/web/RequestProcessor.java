@@ -123,38 +123,34 @@ public class RequestProcessor {
 				.flatMap(body -> response(wrapper, body, false));
 	}
 
-	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
-			boolean stream) {
+	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body, boolean stream) {
 		Object function = wrapper.handler();
 		Class<?> inputType = inspector.getInputType(function);
 		Type itemType = getItemType(function);
 
 		Object input = body;
-		if (StringUtils.hasText(body) && this.mapper != null) {
-			if (body.startsWith("[")) {
-				Class<?> collectionType = Collection.class.isAssignableFrom(inputType)
-						? inputType
-						: Collection.class;
+
+		if (StringUtils.hasText(body)) {
+			MediaType contentType = wrapper.headers.getContentType();
+			if (contentType != null && "text".equalsIgnoreCase(contentType.getType())) {
+				input = converter.convert(function, body);
+			}
+			else if (body.startsWith("[")) {
+				Class<?> collectionType = Collection.class.isAssignableFrom(inputType) ? inputType : Collection.class;
 				input = mapper.toObject(body,
-						ResolvableType
-								.forClassWithGenerics(collectionType, (Class<?>) itemType)
-								.getType());
+						ResolvableType.forClassWithGenerics(collectionType, (Class<?>) itemType).getType());
+			}
+			else if (body.startsWith("{")) {
+				input = mapper.toObject(body, inputType);
+			}
+			else if (body.startsWith("\"")) {
+				input = body.substring(1, body.length() - 2);
 			}
 			else {
-				if (inputType == String.class) {
-					input = body;
-				}
-				else if (body.startsWith("{")) {
-					input = mapper.toObject(body, inputType);
-				}
-				else if (body.startsWith("\"")) {
-					input = body.substring(1, body.length() - 2);
-				}
-				else {
-					input = converter.convert(function, body);
-				}
+				input = converter.convert(function, body);
 			}
 		}
+
 		return response(wrapper, input, stream);
 	}
 

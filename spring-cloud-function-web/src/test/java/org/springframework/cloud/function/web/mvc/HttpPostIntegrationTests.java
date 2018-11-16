@@ -92,7 +92,7 @@ public class HttpPostIntegrationTests {
 	@Test
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/updates")).body("[\"one\", \"two\"]"),
+				RequestEntity.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON).body("[\"one\", \"two\"]"),
 				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);

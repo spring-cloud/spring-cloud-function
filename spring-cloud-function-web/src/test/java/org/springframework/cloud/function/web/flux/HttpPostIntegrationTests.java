@@ -50,6 +50,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -93,7 +94,7 @@ public class HttpPostIntegrationTests {
 	@Test
 	public void updates() throws Exception {
 		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/updates")).body("[\"one\", \"two\"]"),
+				RequestEntity.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON).body("[\"one\", \"two\"]"),
 				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(test.list).hasSize(2);
@@ -203,6 +204,15 @@ public class HttpPostIntegrationTests {
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getBody())
 				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+	}
+
+	@Test
+	public void typelessFunctionPassingArray() throws Exception {
+		ResponseEntity<String> result = rest.exchange(RequestEntity
+				.post(new URI("/typelessFunctionExpectingText")).contentType(MediaType.TEXT_PLAIN)
+				.body("[{\"value\":\"foo\"}]"), String.class);
+		assertThat(result.getBody())
+				.isEqualTo("[{\"value\":\"foo\"}]");
 	}
 
 	@Test
@@ -376,6 +386,20 @@ public class HttpPostIntegrationTests {
 		}
 
 		@Bean
+		public Function<?, ?> typelessFunctionExpectingText() {
+			return value -> {
+				Assert.isInstanceOf(String.class, value);
+				return value;
+				};
+		}
+
+//		@Bean
+//		public Function<byte[],?> byteArrayInputFunction() {
+////			return value -> new Foo(value.getValue().trim().toUpperCase());
+//			throw new UnsupportedOperationException("boom?");
+//		}
+
+		@Bean
 		public Function<Flux<Integer>, Flux<String>> wrap() {
 			return flux -> flux.log().map(value -> ".." + value + "..");
 		}
@@ -396,7 +420,9 @@ public class HttpPostIntegrationTests {
 		@Bean
 		@Qualifier("foos")
 		public Function<String, Foo> qualifier() {
-			return value -> new Foo("[" + value.trim().toUpperCase() + "]");
+			return value -> {
+				return new Foo("[" + value.trim().toUpperCase() + "]");
+				};
 		}
 
 		@Bean
