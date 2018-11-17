@@ -83,14 +83,14 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		}
 		String path = (String) request
 				.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		if (path == null) {
+			return handler;
+		}
 		if (StringUtils.hasText(prefix) && !path.startsWith(prefix)) {
 			return null;
 		}
 		if (path.startsWith(prefix)) {
 			path = path.substring(prefix.length());
-		}
-		if (path == null) {
-			return handler;
 		}
 		Object function = findFunctionForGet(request, path);
 		if (function != null) {
