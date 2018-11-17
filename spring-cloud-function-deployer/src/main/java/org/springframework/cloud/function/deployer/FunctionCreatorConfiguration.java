@@ -220,7 +220,9 @@ class FunctionCreatorConfiguration {
 				if (mainClass == null) {
 					mainClass = manifest.getMainAttributes().getValue("Start-Class");
 				}
-				if (mainClass == null) {
+				if (mainClass == null
+						// Not surefire or IntelliJ
+						&& !getArchive().getUrl().toString().endsWith(".jar!/")) {
 					// Not a Spring Boot jar but it might have a "main" class
 					mainClass = manifest.getMainAttributes().getValue("Main-Class");
 				}
