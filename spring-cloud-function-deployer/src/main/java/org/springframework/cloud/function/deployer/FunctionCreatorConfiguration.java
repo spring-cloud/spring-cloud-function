@@ -64,8 +64,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.ResourceUtils;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -216,6 +218,10 @@ class FunctionCreatorConfiguration {
 			Manifest manifest = getArchive().getManifest();
 			String mainClass = null;
 			if (manifest != null) {
+				String functionClass = manifest.getMainAttributes().getValue("Function-Class");
+				if (StringUtils.hasText(functionClass) && ObjectUtils.isEmpty(properties.getBean())) {
+					properties.setBean(new String[] {functionClass});
+				}
 				mainClass = manifest.getMainAttributes().getValue("Start-Class");
 				if (mainClass == null
 						// Not surefire or IntelliJ
