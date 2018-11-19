@@ -216,10 +216,7 @@ class FunctionCreatorConfiguration {
 			Manifest manifest = getArchive().getManifest();
 			String mainClass = null;
 			if (manifest != null) {
-				mainClass = manifest.getMainAttributes().getValue("Function-Class");
-				if (mainClass == null) {
-					mainClass = manifest.getMainAttributes().getValue("Start-Class");
-				}
+				mainClass = manifest.getMainAttributes().getValue("Start-Class");
 				if (mainClass == null
 						// Not surefire or IntelliJ
 						&& !getArchive().getUrl().toString().endsWith(".jar!/")) {
