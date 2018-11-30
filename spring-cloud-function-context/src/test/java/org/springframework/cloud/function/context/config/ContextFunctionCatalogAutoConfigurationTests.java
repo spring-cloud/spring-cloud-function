@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
 
@@ -67,15 +66,13 @@ import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import kotlin.jvm.functions.Function0;
-import kotlin.jvm.functions.Function1;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
  * @author Artem Bilan
- *
+ * @author Oleg Zhurakousky
  */
 public class ContextFunctionCatalogAutoConfigurationTests {
 
@@ -376,47 +373,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		}
 	}
 
-	@Test
-	@Ignore("Cannot make this work in Eclipse (since the tools upgraded to 0.8.9)")
-	public void kotlinLambdas() {
-		create("org.springframework.cloud.function.context.config.KotlinLambdasConfiguration",
-				new Class[] { SimpleConfiguration.class });
-
-		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function.class);
-		assertThat(context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
-		assertThat((Function<?, ?>) catalog.lookup(Function.class, "kotlinFunction"))
-				.isInstanceOf(Function.class);
-		assertThat(
-				inspector.getInputType(catalog.lookup(Function.class, "kotlinFunction")))
-						.isAssignableFrom(String.class);
-		assertThat(
-				inspector.getOutputType(catalog.lookup(Function.class, "kotlinFunction")))
-						.isAssignableFrom(String.class);
-
-		assertThat(context.getBean("kotlinConsumer")).isInstanceOf(Consumer.class);
-		assertThat(context.getBean("kotlinConsumer")).isInstanceOf(Function1.class);
-		assertThat((Function<?, ?>) catalog.lookup(Function.class, "kotlinConsumer"))
-				.isInstanceOf(Function.class);
-		assertThat(
-				inspector.getInputType(catalog.lookup(Function.class, "kotlinConsumer")))
-						.isAssignableFrom(String.class);
-
-		assertThat(context.getBean("kotlinSupplier")).isInstanceOf(Supplier.class);
-		assertThat(context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
-		Supplier<Flux<String>> supplier = catalog.lookup(Supplier.class,
-				"kotlinSupplier");
-		assertThat(supplier.get().blockFirst()).isEqualTo("Hello");
-		assertThat((Supplier<?>) catalog.lookup(Supplier.class, "kotlinSupplier"))
-				.isInstanceOf(Supplier.class);
-		assertThat(
-				inspector.getOutputType(catalog.lookup(Supplier.class, "kotlinSupplier")))
-						.isAssignableFrom(String.class);
-
-		Function<Flux<String>, Flux<String>> function = catalog.lookup(Function.class,
-				"kotlinFunction|function2");
-		assertThat(function.apply(Flux.just("Hello")).blockFirst())
-				.isEqualTo("HELLOfunction2");
-	}
 
 	private void create(String jarfile, Class<?> config, String... props) {
 		try {
@@ -570,13 +526,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	private void create(Class<?> type, String... props) {
 		create(new Class<?>[] { type }, props);
-	}
-
-	private void create(String typeName, Class<?>[] types, String... props) {
-		Class<?>[] typesToUse = new Class<?>[types.length + 1];
-		typesToUse[0] = ClassUtils.resolveClassName(typeName, null);
-		System.arraycopy(types, 0, typesToUse, 1, types.length);
-		create(typesToUse, props);
 	}
 
 	private void create(Class<?>[] types, String... props) {
