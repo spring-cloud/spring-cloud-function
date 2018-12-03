@@ -80,7 +80,8 @@ open fun kotlinConsumer(): (String) -&gt; Unit {
 }</pre><p>The above represents Kotlin lambdas configured as Spring beans. The signature of each maps to a Java equivalent of
 <code class="literal">Supplier</code>, <code class="literal">Function</code> and <code class="literal">Consumer</code>, and thus supported/recognized signatures by the framework.
 While mechanics of Kotlin-to-Java mapping are outside of the scope of this documentation, it is important to understand that the
-same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.</p></div></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="_standalone_web_applications" href="#_standalone_web_applications"></a>5.&nbsp;Standalone Web Applications</h1></div></div></div><p>The <code class="literal">spring-cloud-function-web</code> module has autoconfiguration that
+same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.</p><p>To enable Kotlin support all you need is to add <code class="literal">spring-cloud-function-kotlin</code> module to your classpath which contains the appropriate
+autoconfiguration and supporting classes.</p></div></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="_standalone_web_applications" href="#_standalone_web_applications"></a>5.&nbsp;Standalone Web Applications</h1></div></div></div><p>The <code class="literal">spring-cloud-function-web</code> module has autoconfiguration that
 activates when it is included in a Spring Boot web application (with
 MVC support). There is also a <code class="literal">spring-cloud-starter-function-web</code> to
 collect all the optional dependencies in case you just want a simple

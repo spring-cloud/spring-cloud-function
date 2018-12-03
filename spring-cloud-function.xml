@@ -222,6 +222,8 @@ open fun kotlinConsumer(): (String) -&gt; Unit {
 <literal>Supplier</literal>, <literal>Function</literal> and <literal>Consumer</literal>, and thus supported/recognized signatures by the framework.
 While mechanics of Kotlin-to-Java mapping are outside of the scope of this documentation, it is important to understand that the
 same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.</simpara>
+<simpara>To enable Kotlin support all you need is to add <literal>spring-cloud-function-kotlin</literal> module to your classpath which contains the appropriate
+autoconfiguration and supporting classes.</simpara>
 </section>
 </chapter>
 <chapter xml:id="_standalone_web_applications">
