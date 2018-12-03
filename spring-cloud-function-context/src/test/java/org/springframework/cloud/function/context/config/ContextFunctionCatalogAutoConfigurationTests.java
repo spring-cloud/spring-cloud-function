@@ -45,7 +45,6 @@ import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionScan;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.inject.FooConfiguration;
 import org.springframework.cloud.function.scan.ScannedFunction;
@@ -742,7 +741,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
-	@FunctionScan
 	protected static class ComponentScanJarConfiguration {
 	}
 

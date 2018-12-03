@@ -44,7 +44,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.FunctionScan;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionRegistrationEvent;
@@ -61,8 +60,11 @@ import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.stereotype.Component;
@@ -81,9 +83,10 @@ import reactor.core.publisher.Mono;
  * @author Oleg Zhurakousky
  * @author Artem Bilan
  */
-@FunctionScan
 @Configuration
 @ConditionalOnMissingBean(FunctionCatalog.class)
+@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}",
+      includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {Supplier.class, Function.class, Consumer.class}))
 public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
