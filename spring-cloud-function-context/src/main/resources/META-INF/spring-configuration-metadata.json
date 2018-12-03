@@ -1,0 +1,12 @@
+{
+  "hints": [],
+  "groups": [],
+  "properties": [
+  	{
+        "name": "spring.cloud.function.scan.packages",
+        "type": "java.lang.String",
+        "description": "Triggers scanning within the specified base packages for any class that is assignable to java.util.function.Function. For each detected Function class, a bean instance will be added to the context.",
+        "defaultValue": "functions"
+    }
+  ]
+}
