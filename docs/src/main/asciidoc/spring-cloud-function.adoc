@@ -93,6 +93,9 @@ The above represents Kotlin lambdas configured as Spring beans. The signature of
 While mechanics of Kotlin-to-Java mapping are outside of the scope of this documentation, it is important to understand that the
 same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.
 
+To enable Kotlin support all you need is to add `spring-cloud-function-kotlin` module to your classpath which contains the appropriate
+autoconfiguration and supporting classes.
+
 == Standalone Web Applications
 
 The `spring-cloud-function-web` module has autoconfiguration that
@@ -110,7 +113,7 @@ plain text and JSON.
 |===
 | Method | Path | Request | Response | Status
 
-| GET    | /{supplier} | - | Items from the named supplier              | 200 OK 
+| GET    | /{supplier} | - | Items from the named supplier              | 200 OK
 | POST   | /{consumer} | JSON object or text | Mirrors input and pushes request body into consumer           | 202 Accepted
 | POST   | /{consumer} | JSON array or text with new lines | Mirrors input and pushes body into consumer one by one | 202 Accepted
 | POST   | /{function} | JSON object or text | The result of applying the named function | 200 OK
