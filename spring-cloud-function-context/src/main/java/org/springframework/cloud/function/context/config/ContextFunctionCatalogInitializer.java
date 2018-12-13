@@ -52,10 +52,12 @@ public class ContextFunctionCatalogInitializer
 
 	public static final String IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME = "spring.backgroundpreinitializer.ignore";
 
+	public static boolean enabled = true;
+
 	@Override
 	public void initialize(GenericApplicationContext applicationContext) {
-		if (applicationContext.getEnvironment().getProperty("spring.functional.enabled",
-				Boolean.class, false)) {
+		if (enabled && applicationContext.getEnvironment()
+				.getProperty("spring.functional.enabled", Boolean.class, false)) {
 			ContextFunctionCatalogBeanRegistrar registrar = new ContextFunctionCatalogBeanRegistrar(
 					applicationContext);
 			applicationContext.addBeanFactoryPostProcessor(registrar);
@@ -223,9 +225,10 @@ public class ContextFunctionCatalogInitializer
 		}
 
 	}
-	
+
 	public static class DummyProcessor {
-		public void setMetadataReaderFactory(MetadataReaderFactory obj) {}
+		public void setMetadataReaderFactory(MetadataReaderFactory obj) {
+		}
 	}
 
 }

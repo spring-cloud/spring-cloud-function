@@ -33,6 +33,7 @@ import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.BasicStringConverter;
 import org.springframework.cloud.function.web.RequestProcessor;
@@ -78,10 +79,11 @@ class FunctionEndpointInitializer
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		if (context.getEnvironment().getProperty(
-				FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
-				WebApplicationType.class,
-				WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
+		if (ContextFunctionCatalogInitializer.enabled
+				&& context.getEnvironment().getProperty(
+						FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
+						WebApplicationType.class,
+						WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
 				&& context.getEnvironment().getProperty("spring.functional.enabled",
 						Boolean.class, false)
 				&& ClassUtils.isPresent(
