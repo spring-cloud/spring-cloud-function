@@ -203,13 +203,25 @@
 			<name>Spring Snapshots</name>
 			<url>https://repo.spring.io/libs-snapshot</url>
 		</repository>
+		<repository>
+			<id>central</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
 	</repositories>
 	<pluginRepositories>
+		<pluginRepository>
+			<id>libs-release</id>
+			<name>Libs Release</name>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</pluginRepository>
+		<!-- temporarily commented since int was causing issue with nimbus-jose-jwt/6.5.1/nimbus-jose-jwt-6.5.1.jar
 		<pluginRepository>
 			<id>spring-snapshots</id>
 			<name>Spring Snapshots</name>
 			<url>https://repo.spring.io/libs-snapshot</url>
 		</pluginRepository>
+		-->
 	</pluginRepositories>
 
 </project>
