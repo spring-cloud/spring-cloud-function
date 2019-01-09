@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.flux.HeadersToMessageTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -57,9 +59,9 @@ public class HeadersToMessageTests {
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		// test POJO paylod
-		ResponseEntity<String> postForEntity = rest.postForEntity(
-				new URI("/functions/employee"), "{\"name\":\"Bob\",\"age\":25}",
-				String.class);
+		ResponseEntity<String> postForEntity = rest.exchange(RequestEntity
+				.post(new URI("/functions/employee")).contentType(MediaType.APPLICATION_JSON)
+				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
 		assertEquals("application/xml",
