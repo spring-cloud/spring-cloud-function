@@ -35,7 +35,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.PostConstruct;
@@ -218,9 +217,11 @@ class FunctionCreatorConfiguration {
 			Manifest manifest = getArchive().getManifest();
 			String mainClass = null;
 			if (manifest != null) {
-				String functionClass = manifest.getMainAttributes().getValue("Function-Class");
-				if (StringUtils.hasText(functionClass) && ObjectUtils.isEmpty(properties.getBean())) {
-					properties.setBean(new String[] {functionClass});
+				String functionClass = manifest.getMainAttributes()
+						.getValue("Function-Class");
+				if (StringUtils.hasText(functionClass)
+						&& ObjectUtils.isEmpty(properties.getBean())) {
+					properties.setBean(new String[] { functionClass });
 				}
 				mainClass = manifest.getMainAttributes().getValue("Start-Class");
 				if (mainClass == null
@@ -252,7 +253,7 @@ class FunctionCreatorConfiguration {
 				catch (MalformedURLException e) {
 					throw new IllegalStateException("Bad URL: " + archive, e);
 				}
-			}).collect(Collectors.toList()).toArray(new URL[0]);
+			}).toArray(URL[]::new);
 		}
 
 		private URL[] extractClasspath(String url) {
@@ -597,10 +598,13 @@ class FunctionCreatorConfiguration {
 		@Override
 		public Object postProcessAfterInitialization(Object bean, String beanName)
 				throws BeansException {
-			String name = FunctionProperties
-					.functionName(env.getProperty("function.bean", ""));
-			if (bean instanceof FunctionRegistry && name.contains("|")) {
-				bean = new SingleEntryFunctionRegistry((FunctionRegistry) bean, name);
+			if (bean instanceof FunctionRegistry) {
+				String name = FunctionProperties
+						.functionName(env.getProperty("function.bean", ""));
+				if (name.contains("|")) {
+					// A single composite function with an empty name
+					bean = new SingleEntryFunctionRegistry((FunctionRegistry) bean, name);
+				}
 			}
 			return bean;
 		}

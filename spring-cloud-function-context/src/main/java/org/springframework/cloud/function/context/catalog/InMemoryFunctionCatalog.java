@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -65,7 +66,8 @@ public class InMemoryFunctionCatalog
 
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
-		Assert.notEmpty(registration.getNames(), "'registration' must contain at least one name before it is registered in catalog.");
+		Assert.notEmpty(registration.getNames(),
+				"'registration' must contain at least one name before it is registered in catalog.");
 		Class<?> type = Object.class;
 		if (registration.getTarget() instanceof Function) {
 			type = Function.class;
@@ -76,7 +78,8 @@ public class InMemoryFunctionCatalog
 		else if (registration.getTarget() instanceof Consumer) {
 			type = Consumer.class;
 		}
-		FunctionRegistrationEvent event = new FunctionRegistrationEvent(this, type, registration.getNames());
+		FunctionRegistrationEvent event = new FunctionRegistrationEvent(this, type,
+				registration.getNames());
 
 		registrations.put(registration.getTarget(), registration);
 		FunctionRegistration<T> wrapped = registration.wrap();
@@ -103,15 +106,17 @@ public class InMemoryFunctionCatalog
 	public void init() {
 		if (publisher != null && !functions.isEmpty()) {
 			functions.keySet()
-				.forEach(type -> this.publishEvent(new FunctionRegistrationEvent(this, type, functions.get(type).keySet())));
+					.forEach(type -> this.publishEvent(new FunctionRegistrationEvent(this,
+							type, functions.get(type).keySet())));
 		}
 	}
 
 	@PreDestroy
 	public void close() {
 		if (publisher != null && !functions.isEmpty()) {
-			functions.keySet()
-				.forEach(type -> this.publishEvent(new FunctionUnregistrationEvent(this, type, functions.get(type).keySet())));
+			functions.keySet().forEach(
+					type -> this.publishEvent(new FunctionUnregistrationEvent(this, type,
+							functions.get(type).keySet())));
 		}
 	}
 
@@ -120,7 +125,9 @@ public class InMemoryFunctionCatalog
 	public <T> T lookup(Class<?> type, String name) {
 		T function = null;
 		if (type == null) {
-			function = (T) functions.values().stream().filter(map -> map.get(name) != null).map(map -> map.get(name)).findFirst().orElse(null);
+			function = (T) functions.values().stream()
+					.filter(map -> map.get(name) != null).map(map -> map.get(name))
+					.findFirst().orElse(null);
 		}
 		else {
 			function = (T) this.extractTypeMap(type).get(name);
@@ -130,6 +137,10 @@ public class InMemoryFunctionCatalog
 
 	@Override
 	public Set<String> getNames(Class<?> type) {
+		if (type == null) {
+			return functions.values().stream().flatMap(map -> map.keySet().stream())
+					.collect(Collectors.toSet());
+		}
 		Map<String, Object> map = this.extractTypeMap(type);
 		return map == null ? Collections.emptySet() : map.keySet();
 	}
@@ -137,8 +148,8 @@ public class InMemoryFunctionCatalog
 	private Map<String, Object> extractTypeMap(Class<?> type) {
 		return functions.keySet().stream()
 				.filter(key -> key != Object.class && key.isAssignableFrom(type))
-				.map(key -> functions.get(key))
-				.findFirst().orElse(functions.get(Object.class));
+				.map(key -> functions.get(key)).findFirst()
+				.orElse(functions.get(Object.class));
 	}
 
 	private void publishEvent(Object event) {

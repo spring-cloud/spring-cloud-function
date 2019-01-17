@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -38,14 +39,18 @@ public class SingleEntryFunctionRegistry implements FunctionRegistry {
 
 	@Override
 	public <T> T lookup(Class<?> type, String name) {
-		return this.name.equals(name) ? this.delegate.lookup(type, name) : null;
+		if (StringUtils.isEmpty(name)) {
+			if (delegate.getNames(type).size() == 1) {
+				return delegate.lookup(type, delegate.getNames(type).iterator().next());
+			}
+			name = this.name;
+		}
+		return name.equals(this.name) ? delegate.lookup(type, name) : null;
 	}
 
 	@Override
 	public Set<String> getNames(Class<?> type) {
-		Set<String> names = this.delegate.getNames(type);
-		return names.contains(this.name) ? Collections.singleton(this.name)
-				: Collections.emptySet();
+		return Collections.singleton(this.name);
 	}
 
 	@Override
