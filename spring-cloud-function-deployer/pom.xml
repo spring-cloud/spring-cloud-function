@@ -17,6 +17,7 @@
 	<properties>
 		<wrapper.version>1.0.10.RELEASE</wrapper.version>
 		<spring.cloud.deployer.version>1.3.2.RELEASE</spring.cloud.deployer.version>
+		<skip.invoke>true</skip.invoke>
 	</properties>
 
 	<dependencies>
@@ -74,6 +75,7 @@
 				<version>3.0.1</version>
 				<configuration>
 					<localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+					<skipInvocation>${skip.invoke}</skipInvocation>
 				</configuration>
 				<executions>
 					<execution>
@@ -86,7 +88,6 @@
 							<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
 							<settingsFile>src/it/settings.xml</settingsFile>
 							<addTestClassPath>true</addTestClassPath>
-							<skipInvocation>${skipTests}</skipInvocation>
 							<streamLogs>true</streamLogs>
 						</configuration>
 					</execution>
@@ -130,4 +131,19 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>invoke</id>
+			<activation>
+				<file>
+					<missing>target/it/flux/pom.xml</missing>
+				</file>
+			</activation>
+			<properties>
+				<skip.invoke>false</skip.invoke>
+			</properties>
+		</profile>
+	</profiles>
+
 </project>
