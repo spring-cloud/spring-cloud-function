@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import org.springframework.util.ClassUtils;
  * Initialize an instance of this class with the class loader to be used and the name of
  * the main class (usually a <code>@SpringBootApplication</code>), and then
  * {@link #run(String...)} it, cleaning up with a call to {@link #close()}.
- * 
+ *
  * @author Dave Syer
  */
 public class ApplicationRunner {
@@ -148,7 +148,7 @@ public class ApplicationRunner {
 
 	/**
 	 * List the bean names in the application context for a given type (by its fully qualified name).
-	 * 
+	 *
 	 * @param type the name of the type (Class)
 	 * @return the bean names of that type
 	 */

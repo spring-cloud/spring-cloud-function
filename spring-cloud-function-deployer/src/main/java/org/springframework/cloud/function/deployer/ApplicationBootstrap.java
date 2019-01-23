@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.springframework.util.StringUtils;
  * reactor-core (if present). It can then share the reactor dependency with other class
  * loaders that the app itself creates, without any other classes being shared, other than
  * the core JDK.
- * 
+ *
  * @author Mark Fisher
  * @author Dave Syer
  */
@@ -51,7 +51,7 @@ public class ApplicationBootstrap {
 	/**
 	 * Run the provided main class as a Spring Boot application with the provided command
 	 * line arguments.
-	 * 
+	 *
 	 * @param mainClass the main class
 	 * @param args the command line arguments
 	 */
@@ -141,6 +141,7 @@ public class ApplicationBootstrap {
 		return new URLClassLoader(child.toArray(new URL[0]), base);
 	}
 
+
 	private URL[] findClassPath(Class<?> mainClass) {
 		ClassLoader base = mainClass.getClassLoader();
 		if (!(base instanceof URLClassLoader)) {
@@ -152,10 +153,7 @@ public class ApplicationBootstrap {
 				result.add(mainClass.getProtectionDomain().getCodeSource().getLocation());
 				for (URL url : list) {
 					String path = url.toString();
-					path = path.substring(0, path.length() - "/META-INF".length());
-					if (path.endsWith("!")) {
-						path = path + "/";
-					}
+					path = path.substring(0, path.length() - "/META-INF".length()) + "/";
 					result.add(new URL(path));
 				}
 				return result.toArray(new URL[result.size()]);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.function.Function;
 
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.system.JavaVersion;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 
@@ -46,8 +44,6 @@ public class SpringFunctionFluxConfigurationTests {
 
 	@Before
 	public void run() {
-		Assume.assumeTrue("Java > 8",
-				JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
 		if (bootstrap == null) {
 			bootstrap = new ApplicationBootstrap();
 			bootstrap.run(SpringFunctionFluxConfigurationTests.class,
