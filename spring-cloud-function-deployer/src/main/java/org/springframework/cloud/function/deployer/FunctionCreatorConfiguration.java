@@ -42,7 +42,6 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -52,6 +51,7 @@ import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.ExplodedArchive;
 import org.springframework.boot.loader.archive.JarFileArchive;
+import org.springframework.boot.system.JavaVersion;
 import org.springframework.cloud.deployer.resource.support.DelegatingResourceLoader;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -557,6 +557,9 @@ class FunctionCreatorConfiguration {
 		protected Class<?> loadClass(String name, boolean resolve)
 				throws ClassNotFoundException {
 			try {
+				if (name.startsWith("javax.annotation") && JavaVersion.getJavaVersion().isEqualOrNewerThan(JavaVersion.NINE)) {
+					return getClass().getClassLoader().loadClass(name);
+				}
 				return super.loadClass(name, resolve);
 			}
 			catch (ClassNotFoundException e) {

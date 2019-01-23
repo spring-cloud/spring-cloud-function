@@ -163,12 +163,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	public static class SupplierCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
-		@BeforeClass
-		public static void init() {
-			Assume.assumeTrue("Java > 8",
-					JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
-		}
-
 		@Test
 		public void testSupplier() {
 			Supplier<Integer> function = catalog.lookup(Supplier.class, "function0");
@@ -191,12 +185,6 @@ public abstract class FunctionCreatorConfigurationTests {
 	public static class FunctionCompositionTests
 			extends FunctionCreatorConfigurationTests {
 
-		@BeforeClass
-		public static void init() {
-			Assume.assumeTrue("Java > 8",
-					JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
-		}
-
 		@Test
 		public void testFunction() {
 			Function<Flux<Integer>, Flux<String>> function = catalog
@@ -218,12 +206,6 @@ public abstract class FunctionCreatorConfigurationTests {
 					+ "org.springframework.cloud.function.test.Printer" })
 	public static class ConsumerCompositionTests
 			extends FunctionCreatorConfigurationTests {
-
-		@BeforeClass
-		public static void init() {
-			Assume.assumeTrue("Java > 8",
-					JavaVersion.getJavaVersion().isOlderThan(JavaVersion.NINE));
-		}
 
 		@Rule
 		public OutputCapture capture = new OutputCapture();
