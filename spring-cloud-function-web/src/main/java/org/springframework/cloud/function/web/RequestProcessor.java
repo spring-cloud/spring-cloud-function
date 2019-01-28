@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,8 +131,7 @@ public class RequestProcessor {
 		Object input = body;
 
 		if (StringUtils.hasText(body)) {
-			MediaType contentType = wrapper.headers.getContentType();
-			if (this.shouldUseJsonConversion(body, contentType)) {
+			if (this.shouldUseJsonConversion(body, wrapper.headers.getContentType())) {
 				Type jsonType = body.startsWith("[") && Collection.class.isAssignableFrom(inputType) || body.startsWith("{") ? inputType : Collection.class;
 				if (body.startsWith("[")) {
 					jsonType = ResolvableType.forClassWithGenerics((Class<?>)jsonType, (Class<?>) itemType).getType();
@@ -166,19 +165,30 @@ public class RequestProcessor {
 	private Mono<ResponseEntity<?>> response(FunctionWrapper wrapper, Object body,
 			boolean stream) {
 
-		Iterable<?> iterable = body instanceof Collection ? (Collection<?>) body
-				: (body instanceof Set ? Collections.singleton(body)
-						: Collections.singletonList(body));
-
 		Function<Publisher<?>, Publisher<?>> function = wrapper.function();
 		Consumer<Publisher<?>> consumer = wrapper.consumer();
 
-		MultiValueMap<String, String> form = wrapper.params();
+		Flux<?> flux;
+		if (body != null) {
+			if (Collection.class
+					.isAssignableFrom(inspector.getInputType(wrapper.handler()))) {
+				flux = Flux.just(body);
+			}
+			else {
+				Iterable<?> iterable = body instanceof Collection ? (Collection<?>) body
+						: (body instanceof Set ? Collections.singleton(body)
+								: Collections.singletonList(body));
+				flux = Flux.fromIterable(iterable);
+			}
+		}
+		else if (MultiValueMap.class.isAssignableFrom(inspector.getInputType(wrapper.handler()))) {
+			flux = Flux.just(wrapper.params());
+		}
+		else {
+			throw new IllegalStateException("Failed to determine input for function call with parameters: '" + wrapper.params
+					+ "' and headers: `" + wrapper.headers + "`");
+		}
 
-		boolean inputIsCollection = Collection.class
-				.isAssignableFrom(inspector.getInputType(wrapper.handler()));
-		Flux<?> flux = body == null ? Flux.just(form)
-				: inputIsCollection ? Flux.just(body) : Flux.fromIterable(iterable);
 		if (inspector.isMessage(function)) {
 			flux = messages(wrapper, function == null ? consumer : function, flux);
 		}
