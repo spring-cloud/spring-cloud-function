@@ -42,6 +42,7 @@ import org.springframework.util.ClassUtils;
  * {@link #run(String...)} it, cleaning up with a call to {@link #close()}.
  *
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  */
 public class ApplicationRunner {
 
@@ -69,7 +70,7 @@ public class ApplicationRunner {
 		try {
 			ClassUtils.overrideThreadContextClassLoader(this.classLoader);
 			Class<?> cls = this.classLoader.loadClass(ContextRunner.class.getName());
-			this.app = new StandardEvaluationContext(cls.newInstance());
+			this.app = new StandardEvaluationContext(cls.getDeclaredConstructor().newInstance());
 			this.app.setTypeLocator(new StandardTypeLocator(this.classLoader));
 			runContext(this.source, defaultProperties(UUID.randomUUID().toString()),
 					args);

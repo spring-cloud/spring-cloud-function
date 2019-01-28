@@ -81,6 +81,7 @@ import org.springframework.util.StringUtils;
  * @author Eric Bottard
  * @author Mark Fisher
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  */
 @Configuration
 class FunctionCreatorConfiguration {
@@ -557,7 +558,7 @@ class FunctionCreatorConfiguration {
 		protected Class<?> loadClass(String name, boolean resolve)
 				throws ClassNotFoundException {
 			try {
-				if (name.startsWith("javax.annotation") && JavaVersion.getJavaVersion().isEqualOrNewerThan(JavaVersion.NINE)) {
+				if (name.startsWith("javax.") && JavaVersion.getJavaVersion().isEqualOrNewerThan(JavaVersion.NINE)) {
 					return getClass().getClassLoader().loadClass(name);
 				}
 				return super.loadClass(name, resolve);
