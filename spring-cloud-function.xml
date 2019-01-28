@@ -300,7 +300,17 @@ plain text and JSON.</simpara>
 </tbody>
 </tgroup>
 </informaltable>
-<simpara>As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or <literal>Flux</literal>), then the response will also contain a single value. For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream". If there is only one function (consumer etc.) then the name in the path is optional. Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).</simpara>
+<simpara>As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or <literal>Flux</literal>), then the response will also contain a single value.
+For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream".</simpara>
+<simpara>If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
+Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).</simpara>
+<simpara>For cases where there is more then a single function in catalog and you want to map a specific function to the root
+path (e.g., "/"), or you want to compose several functions and then map to the root path you can do so by providing
+<literal>spring.cloud.function.definition</literal> property which essentially used by spring-=cloud-function-web module to provide
+default mapping for cases where there is some type of a conflict (e.g., more then one function available etc).</simpara>
+<simpara>For example,</simpara>
+<screen>--spring.cloud.function.definition=foo|bar</screen>
+<simpara>The above property will compose 'foo' and 'bar' function and map the composed function to the "/" path.</simpara>
 <simpara>Functions and consumers that are declared with input and output in <literal>Message&lt;?&gt;</literal> will see the request headers on the input messages, and the output message headers will be converted to HTTP headers.</simpara>
 <simpara>When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accpt headers for the best results).</simpara>
 </chapter>
