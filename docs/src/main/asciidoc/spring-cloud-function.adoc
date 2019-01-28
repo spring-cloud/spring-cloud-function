@@ -122,7 +122,23 @@ plain text and JSON.
 
 |===
 
-As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or `Flux`), then the response will also contain a single value. For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream". If there is only one function (consumer etc.) then the name in the path is optional. Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).
+As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or `Flux`), then the response will also contain a single value.
+For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream".
+
+If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
+Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).
+
+For cases where there is more then a single function in catalog and you want to map a specific function to the root
+path (e.g., "/"), or you want to compose several functions and then map to the root path you can do so by providing
+`spring.cloud.function.definition` property which essentially used by spring-=cloud-function-web module to provide
+default mapping for cases where there is some type of a conflict (e.g., more then one function available etc).
+
+For example,
+----
+--spring.cloud.function.definition=foo|bar
+----
+
+The above property will compose 'foo' and 'bar' function and map the composed function to the "/" path.
 
 Functions and consumers that are declared with input and output in `Message<?>` will see the request headers on the input messages, and the output message headers will be converted to HTTP headers.
 

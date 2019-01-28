@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.function.context.AbstractFunctionRegistry;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -103,6 +104,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Autowired(required = false)
 	private Map<String, FunctionRegistration<?>> registrations = Collections.emptyMap();
 
+
+
 	@Bean
 	public FunctionRegistry functionCatalog(ContextFunctionRegistry processor) {
 		processor.merge(registrations, consumers, suppliers, functions);
@@ -114,7 +117,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return new BeanFactoryFunctionInspector(processor);
 	}
 
-	protected static class BeanFactoryFunctionCatalog implements FunctionRegistry {
+	protected static class BeanFactoryFunctionCatalog extends AbstractFunctionRegistry {
 
 		private final ContextFunctionRegistry processor;
 
@@ -127,7 +130,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		@SuppressWarnings("unchecked")
-		public <T> T lookup(Class<?> type, String name) {
+		protected <T> T doLookup(Class<?> type, String name) {
 			T function = null;
 			if (type == null) {
 				function = (T) processor.lookupFunction(name);

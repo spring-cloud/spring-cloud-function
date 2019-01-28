@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.springframework.cloud.function.context.AbstractFunctionRegistry;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.util.Assert;
@@ -39,8 +39,8 @@ import org.springframework.util.Assert;
  * @author Mark Fisher
  * @author Oleg Zhurakousky
  */
-public class InMemoryFunctionCatalog
-		implements FunctionRegistry, FunctionInspector, ApplicationEventPublisherAware {
+public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
+		implements FunctionInspector, ApplicationEventPublisherAware {
 
 	private final Map<Class<?>, Map<String, Object>> functions;
 
@@ -122,7 +122,7 @@ public class InMemoryFunctionCatalog
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T> T lookup(Class<?> type, String name) {
+	public <T> T doLookup(Class<?> type, String name) {
 		T function = null;
 		if (type == null) {
 			function = (T) functions.values().stream()
