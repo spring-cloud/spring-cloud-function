@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,16 @@ import java.util.stream.Stream;
 import reactor.core.publisher.Flux;
 
 /**
- * {@link Supplier} implementation that wraps a target Supplier so that the
- * target's simple output type will be wrapped in a {@link Flux} instance.
- * If a {@link Duration} is provided, the Flux will produce output
- * periodically, invoking the target Supplier's {@code get} method at each
- * interval. If no Duration is provided, the target will be invoked only once.
- *
- * @author Mark Fisher
+ * {@link Supplier} implementation that wraps a target Supplier so that the target's
+ * simple output type will be wrapped in a {@link Flux} instance. If a {@link Duration} is
+ * provided, the Flux will produce output periodically, invoking the target Supplier's
+ * {@code get} method at each interval. If no Duration is provided, the target will be
+ * invoked only once.
  *
  * @param <T> output type of target supplier
+ * @author Mark Fisher
  */
-public class FluxSupplier<T> implements Supplier<Flux<T>>, FluxWrapper<Supplier<T>>  {
+public class FluxSupplier<T> implements Supplier<Flux<T>>, FluxWrapper<Supplier<T>> {
 
 	private final Supplier<T> supplier;
 
@@ -42,7 +41,7 @@ public class FluxSupplier<T> implements Supplier<Flux<T>>, FluxWrapper<Supplier<
 	public FluxSupplier(Supplier<T> supplier) {
 		this(supplier, null);
 	}
-	
+
 	public FluxSupplier(Supplier<T> supplier, Duration period) {
 		this.supplier = supplier;
 		this.period = period;
@@ -52,12 +51,12 @@ public class FluxSupplier<T> implements Supplier<Flux<T>>, FluxWrapper<Supplier<
 	public Supplier<T> getTarget() {
 		return this.supplier;
 	}
-	
+
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Flux<T> get() {
 		if (this.period != null) {
-			return Flux.interval(this.period).map(i->this.supplier.get());
+			return Flux.interval(this.period).map(i -> this.supplier.get());
 		}
 		Object result = this.supplier.get();
 		if (result instanceof Stream) {
@@ -65,4 +64,5 @@ public class FluxSupplier<T> implements Supplier<Flux<T>>, FluxWrapper<Supplier<
 		}
 		return Flux.just((T) result);
 	}
+
 }

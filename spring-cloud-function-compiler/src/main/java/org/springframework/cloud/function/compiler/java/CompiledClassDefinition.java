@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,25 +24,30 @@ package org.springframework.cloud.function.compiler.java;
 public class CompiledClassDefinition {
 
 	private byte[] bytes;
+
 	private String filename;
+
 	private String classname;
 
 	public CompiledClassDefinition(String filename, byte[] bytes) {
 		this.filename = filename;
 		this.bytes = bytes;
 		this.classname = filename;
-		if (classname.startsWith("/")) {
-			classname = classname.substring(1);
+		if (this.classname.startsWith("/")) {
+			this.classname = this.classname.substring(1);
 		}
-		classname = classname.replace('/', '.').substring(0, classname.length() - 6); // strip off .class
+		this.classname = this.classname.replace('/', '.').substring(0,
+				this.classname.length() - 6); // strip
+		// off
+		// .class
 	}
 
 	public String getName() {
-		return filename;
+		return this.filename;
 	}
 
 	public byte[] getBytes() {
-		return bytes;
+		return this.bytes;
 	}
 
 	@Override

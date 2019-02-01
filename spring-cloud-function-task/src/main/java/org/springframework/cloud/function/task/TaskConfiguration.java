@@ -1,12 +1,12 @@
 /*
- * Copyright 2016-2017 the original author or authors.
- * 
+ * Copyright 2012-2019 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -30,8 +31,6 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.task.configuration.EnableTask;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import reactor.core.publisher.Mono;
 
 /**
  * @author Mark Fisher
@@ -48,9 +47,9 @@ public class TaskConfiguration {
 	@Bean
 	public CommandLineRunner commandLineRunner(FunctionCatalog registry) {
 		final Supplier<Publisher<Object>> supplier = registry.lookup(Supplier.class,
-				properties.getSupplier());
+				this.properties.getSupplier());
 		final Function<Publisher<Object>, Publisher<Object>> function = registry
-				.lookup(Function.class, properties.getFunction());
+				.lookup(Function.class, this.properties.getFunction());
 		final Consumer<Publisher<Object>> consumer = consumer(registry);
 		CommandLineRunner runner = new CommandLineRunner() {
 
@@ -64,12 +63,13 @@ public class TaskConfiguration {
 
 	private Consumer<Publisher<Object>> consumer(FunctionCatalog registry) {
 		Consumer<Publisher<Object>> consumer = registry.lookup(Consumer.class,
-				properties.getConsumer());
+				this.properties.getConsumer());
 		if (consumer != null) {
 			return consumer;
 		}
-		Function<Publisher<Object>, Publisher<Void>> function = registry.lookup(Function.class,
-				properties.getConsumer());
+		Function<Publisher<Object>, Publisher<Void>> function = registry
+				.lookup(Function.class, this.properties.getConsumer());
 		return flux -> Mono.from(function.apply(flux)).subscribe();
 	}
+
 }

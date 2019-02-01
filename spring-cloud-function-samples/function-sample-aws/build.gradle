@@ -11,8 +11,8 @@ buildscript {
 		maven { url "https://repo.spring.io/snapshot" }
 		maven { url "https://repo.spring.io/milestone" }
 	}
-    dependencies {
-        classpath "com.github.jengelman.gradle.plugins:shadow:${shadowVersion}"
+	dependencies {
+		classpath "com.github.jengelman.gradle.plugins:shadow:${shadowVersion}"
 		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
 	}
@@ -40,39 +40,40 @@ repositories {
 
 ext {
 	springCloudFunctionVersion = "2.0.0.BUILD-SNAPSHOT"
-    awsLambdaEventsVersion = "1.2.1"
-    awsLambdaCoreVersion = "1.1.0"
+	awsLambdaEventsVersion = "1.2.1"
+	awsLambdaCoreVersion = "1.1.0"
 }
 ext['reactor.version'] = "3.1.7.RELEASE"
 
 assemble.dependsOn = [shadowJar, thinJar]
 
 jar {
-  manifest {
-    attributes 'Main-Class': 'example.Config'
-  }
+	manifest {
+		attributes 'Main-Class': 'example.Config'
+	}
 }
 
 import com.github.jengelman.gradle.plugins.shadow.transformers.*
 
 shadowJar {
-  classifier = 'aws'
-  dependencies {
-    exclude(dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
-  }
-  // Required for Spring
-  mergeServiceFiles()
-  append 'META-INF/spring.handlers'
-  append 'META-INF/spring.schemas'
-  append 'META-INF/spring.tooling'
-  transform(PropertiesFileTransformer) {
-    paths = ['META-INF/spring.factories' ]
-    mergeStrategy = "append"
-  }
+	classifier = 'aws'
+	dependencies {
+		exclude(
+			dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
+	}
+	// Required for Spring
+	mergeServiceFiles()
+	append 'META-INF/spring.handlers'
+	append 'META-INF/spring.schemas'
+	append 'META-INF/spring.tooling'
+	transform(PropertiesFileTransformer) {
+		paths = ['META-INF/spring.factories']
+		mergeStrategy = "append"
+	}
 }
 
 configurations {
-    testCompile.extendsFrom(compileOnly)
+	testCompile.extendsFrom(compileOnly)
 }
 
 dependencies {

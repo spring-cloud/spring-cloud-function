@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -52,13 +54,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 /**
  * Tests for vanilla MVC handling (no function layer). Validates the MVC customizations
  * that are added in this project independently of the specific concerns of function.
- * 
+ *
  * @author Dave Syer
  *
  */
@@ -67,28 +66,31 @@ import reactor.core.publisher.Mono;
 public class FluxRestApplicationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");
+
 	@LocalServerPort
 	private int port;
+
 	@Autowired
 	private TestRestTemplate rest;
+
 	@Autowired
 	private TestConfiguration test;
 
 	@Before
 	public void init() {
-		test.list.clear();
+		this.test.list.clear();
 	}
 
 	@Test
 	public void wordsSSE() throws Exception {
-		assertThat(rest.exchange(
+		assertThat(this.rest.exchange(
 				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
 				String.class).getBody()).isEqualTo(sse("foo", "bar"));
 	}
 
 	@Test
 	public void wordsJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/words"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -97,7 +99,7 @@ public class FluxRestApplicationTests {
 	@Test
 	@Ignore("Fix error handling")
 	public void errorJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/bang"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("[\"foo\"]");
@@ -105,7 +107,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -113,7 +115,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void foos() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody())
@@ -122,7 +124,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void getMore() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/get/more")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -131,44 +133,44 @@ public class FluxRestApplicationTests {
 	@Test
 	@Ignore("Should this even work? Or do we need to be explicit about the JSON?")
 	public void updates() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
+		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-		assertThat(test.list).hasSize(2);
+		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("onetwo");
 	}
 
 	@Test
 	public void updatesJson() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"one\",\"two\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-		assertThat(test.list).hasSize(2);
+		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("[\"one\",\"two\"]");
 	}
 
 	@Test
 	public void addFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/addFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-		assertThat(test.list).hasSize(2);
+		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody())
 				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void timeout() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/timeout")).build(), String.class)
 				.getBody()).isEqualTo("[\"foo\"]");
 	}
 
 	@Test
 	public void emptyJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/empty"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("[]");
@@ -176,22 +178,23 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void sentences() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class)
 				.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptAny() throws Exception {
-		assertThat(rest.exchange(
-				RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(),
-				String.class).getBody())
-						.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+		assertThat(
+				this.rest
+						.exchange(RequestEntity.get(new URI("/sentences"))
+								.accept(MediaType.ALL).build(), String.class)
+						.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptJson() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(
 						RequestEntity.get(new URI("/sentences"))
 								.accept(MediaType.APPLICATION_JSON).build(),
@@ -203,7 +206,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void uppercase() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
@@ -211,7 +214,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void uppercaseFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getBody())
@@ -220,7 +223,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void transform() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/transform")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
@@ -228,7 +231,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void postMore() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/post/more")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
@@ -236,21 +239,21 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void uppercaseGet() throws Exception {
-		assertThat(rest.exchange(RequestEntity.get(new URI("/uppercase/foo"))
+		assertThat(this.rest.exchange(RequestEntity.get(new URI("/uppercase/foo"))
 				.accept(MediaType.TEXT_PLAIN).build(), String.class).getBody())
 						.isEqualTo("[FOO]");
 	}
 
 	@Test
 	public void convertGet() throws Exception {
-		assertThat(rest.exchange(RequestEntity.get(new URI("/wrap/123"))
+		assertThat(this.rest.exchange(RequestEntity.get(new URI("/wrap/123"))
 				.accept(MediaType.TEXT_PLAIN).build(), String.class).getBody())
 						.isEqualTo("..123..");
 	}
 
 	@Test
 	public void convertGetJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/entity/321"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("{\"value\":321}");
@@ -259,7 +262,7 @@ public class FluxRestApplicationTests {
 	@Test
 	public void uppercaseJsonStream() throws Exception {
 		assertThat(
-				rest.exchange(
+				this.rest.exchange(
 						RequestEntity.post(new URI("/maps"))
 								.contentType(MediaType.APPLICATION_JSON)
 								.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"),
@@ -269,7 +272,7 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void uppercaseSSE() throws Exception {
-		assertThat(rest.exchange(RequestEntity.post(new URI("/uppercase"))
+		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase"))
 				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class).getBody())
 						.isEqualTo(sse("[FOO]", "[BAR]"));
@@ -277,9 +280,10 @@ public class FluxRestApplicationTests {
 
 	@Test
 	public void altSSE() throws Exception {
-		assertThat(rest.exchange(RequestEntity.post(new URI("/alt")).accept(EVENT_STREAM)
-				.contentType(MediaType.APPLICATION_JSON).body("[\"foo\",\"bar\"]"),
-				String.class).getBody()).isEqualTo(sse("[FOO]", "[BAR]"));
+		assertThat(this.rest.exchange(RequestEntity.post(new URI("/alt"))
+				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class).getBody())
+						.isEqualTo(sse("[FOO]", "[BAR]"));
 	}
 
 	private String sse(String... values) {
@@ -396,6 +400,7 @@ public class FluxRestApplicationTests {
 	}
 
 	public static class Foo {
+
 		private String value;
 
 		public Foo(String value) {
@@ -406,11 +411,13 @@ public class FluxRestApplicationTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
+
 }

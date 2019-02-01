@@ -1,11 +1,11 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -81,16 +81,17 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 		FunctionRegistrationEvent event = new FunctionRegistrationEvent(this, type,
 				registration.getNames());
 
-		registrations.put(registration.getTarget(), registration);
+		this.registrations.put(registration.getTarget(), registration);
 		FunctionRegistration<T> wrapped = registration.wrap();
 		if (wrapped != registration) {
 			registration = wrapped;
-			registrations.put(wrapped.getTarget(), wrapped);
+			this.registrations.put(wrapped.getTarget(), wrapped);
 			if (type == Consumer.class) {
 				type = Function.class;
 			}
 		}
-		Map<String, Object> map = functions.computeIfAbsent(type, key -> new HashMap<>());
+		Map<String, Object> map = this.functions.computeIfAbsent(type,
+				key -> new HashMap<>());
 		for (String name : registration.getNames()) {
 			map.put(name, registration.getTarget());
 		}
@@ -104,19 +105,19 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 
 	@PostConstruct
 	public void init() {
-		if (publisher != null && !functions.isEmpty()) {
-			functions.keySet()
+		if (this.publisher != null && !this.functions.isEmpty()) {
+			this.functions.keySet()
 					.forEach(type -> this.publishEvent(new FunctionRegistrationEvent(this,
-							type, functions.get(type).keySet())));
+							type, this.functions.get(type).keySet())));
 		}
 	}
 
 	@PreDestroy
 	public void close() {
-		if (publisher != null && !functions.isEmpty()) {
-			functions.keySet().forEach(
+		if (this.publisher != null && !this.functions.isEmpty()) {
+			this.functions.keySet().forEach(
 					type -> this.publishEvent(new FunctionUnregistrationEvent(this, type,
-							functions.get(type).keySet())));
+							this.functions.get(type).keySet())));
 		}
 	}
 
@@ -125,7 +126,7 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 	public <T> T doLookup(Class<?> type, String name) {
 		T function = null;
 		if (type == null) {
-			function = (T) functions.values().stream()
+			function = (T) this.functions.values().stream()
 					.filter(map -> map.get(name) != null).map(map -> map.get(name))
 					.findFirst().orElse(null);
 		}
@@ -138,7 +139,7 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 	@Override
 	public Set<String> getNames(Class<?> type) {
 		if (type == null) {
-			return functions.values().stream().flatMap(map -> map.keySet().stream())
+			return this.functions.values().stream().flatMap(map -> map.keySet().stream())
 					.collect(Collectors.toSet());
 		}
 		Map<String, Object> map = this.extractTypeMap(type);
@@ -146,10 +147,10 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 	}
 
 	private Map<String, Object> extractTypeMap(Class<?> type) {
-		return functions.keySet().stream()
+		return this.functions.keySet().stream()
 				.filter(key -> key != Object.class && key.isAssignableFrom(type))
-				.map(key -> functions.get(key)).findFirst()
-				.orElse(functions.get(Object.class));
+				.map(key -> this.functions.get(key)).findFirst()
+				.orElse(this.functions.get(Object.class));
 	}
 
 	private void publishEvent(Object event) {
@@ -157,4 +158,5 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 			this.publisher.publishEvent(event);
 		}
 	}
+
 }

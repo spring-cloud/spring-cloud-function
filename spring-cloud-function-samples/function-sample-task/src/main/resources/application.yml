@@ -4,7 +4,7 @@ spring:
       task:
         supplier: words
         function: uppercase
-        consumer: print        
+        consumer: print
       compile:
         words:
           type: supplier

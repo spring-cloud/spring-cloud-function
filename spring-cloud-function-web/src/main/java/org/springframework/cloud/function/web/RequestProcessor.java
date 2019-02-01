@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -64,9 +66,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -123,23 +122,27 @@ public class RequestProcessor {
 				.flatMap(body -> response(wrapper, body, false));
 	}
 
-	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body, boolean stream) {
+	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
+			boolean stream) {
 		Object function = wrapper.handler();
-		Class<?> inputType = inspector.getInputType(function);
+		Class<?> inputType = this.inspector.getInputType(function);
 		Type itemType = getItemType(function);
 
 		Object input = body;
 
 		if (StringUtils.hasText(body)) {
 			if (this.shouldUseJsonConversion(body, wrapper.headers.getContentType())) {
-				Type jsonType = body.startsWith("[") && Collection.class.isAssignableFrom(inputType) || body.startsWith("{") ? inputType : Collection.class;
+				Type jsonType = body.startsWith("[")
+						&& Collection.class.isAssignableFrom(inputType)
+						|| body.startsWith("{") ? inputType : Collection.class;
 				if (body.startsWith("[")) {
-					jsonType = ResolvableType.forClassWithGenerics((Class<?>)jsonType, (Class<?>) itemType).getType();
+					jsonType = ResolvableType.forClassWithGenerics((Class<?>) jsonType,
+							(Class<?>) itemType).getType();
 				}
-				input = mapper.toObject(body, jsonType);
+				input = this.mapper.toObject(body, jsonType);
 			}
 			else {
-				input = converter.convert(function, body);
+				input = this.converter.convert(function, body);
 			}
 		}
 
@@ -148,7 +151,8 @@ public class RequestProcessor {
 
 	private boolean shouldUseJsonConversion(String body, MediaType contentType) {
 		return (body.startsWith("[") || body.startsWith("{"))
-				&& (contentType == null || (contentType != null && !"text".equalsIgnoreCase(contentType.getType())));
+				&& (contentType == null || (contentType != null
+						&& !"text".equalsIgnoreCase(contentType.getType())));
 	}
 
 	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
@@ -171,7 +175,7 @@ public class RequestProcessor {
 		Flux<?> flux;
 		if (body != null) {
 			if (Collection.class
-					.isAssignableFrom(inspector.getInputType(wrapper.handler()))) {
+					.isAssignableFrom(this.inspector.getInputType(wrapper.handler()))) {
 				flux = Flux.just(body);
 			}
 			else {
@@ -181,15 +185,18 @@ public class RequestProcessor {
 				flux = Flux.fromIterable(iterable);
 			}
 		}
-		else if (MultiValueMap.class.isAssignableFrom(inspector.getInputType(wrapper.handler()))) {
+		else if (MultiValueMap.class
+				.isAssignableFrom(this.inspector.getInputType(wrapper.handler()))) {
 			flux = Flux.just(wrapper.params());
 		}
 		else {
-			throw new IllegalStateException("Failed to determine input for function call with parameters: '" + wrapper.params
-					+ "' and headers: `" + wrapper.headers + "`");
+			throw new IllegalStateException(
+					"Failed to determine input for function call with parameters: '"
+							+ wrapper.params + "' and headers: `" + wrapper.headers
+							+ "`");
 		}
 
-		if (inspector.isMessage(function)) {
+		if (this.inspector.isMessage(function)) {
 			flux = messages(wrapper, function == null ? consumer : function, flux);
 		}
 		Mono<ResponseEntity<?>> responseEntityMono = null;
@@ -224,7 +231,7 @@ public class RequestProcessor {
 
 	private Mono<ResponseEntity<?>> stream(FunctionWrapper request, Publisher<?> result) {
 		BodyBuilder builder = ResponseEntity.ok();
-		if (inspector.isMessage(request.handler())) {
+		if (this.inspector.isMessage(request.handler())) {
 			result = Flux.from(result)
 					.doOnNext(value -> addHeaders(builder, (Message<?>) value))
 					.map(message -> MessageUtils.unpack(request.handler(), message)
@@ -242,7 +249,7 @@ public class RequestProcessor {
 			Publisher<?> result, Boolean single, boolean getter) {
 
 		BodyBuilder builder = ResponseEntity.ok();
-		if (inspector.isMessage(handler)) {
+		if (this.inspector.isMessage(handler)) {
 			result = Flux.from(result)
 					.map(message -> MessageUtils.unpack(handler, message))
 					.doOnNext(value -> addHeaders(builder, value))
@@ -267,8 +274,8 @@ public class RequestProcessor {
 		if (handler instanceof FluxWrapper) {
 			handler = ((FluxWrapper<?>) handler).getTarget();
 		}
-		Class<?> type = inspector.getInputType(handler);
-		Class<?> wrapper = inspector.getInputWrapper(handler);
+		Class<?> type = this.inspector.getInputType(handler);
+		Class<?> wrapper = this.inspector.getInputWrapper(handler);
 		return Collection.class.isAssignableFrom(type) || Flux.class.equals(wrapper);
 	}
 
@@ -276,8 +283,8 @@ public class RequestProcessor {
 		if (handler instanceof FluxWrapper) {
 			handler = ((FluxWrapper<?>) handler).getTarget();
 		}
-		Class<?> type = inspector.getOutputType(handler);
-		Class<?> wrapper = inspector.getOutputWrapper(handler);
+		Class<?> type = this.inspector.getOutputType(handler);
+		Class<?> wrapper = this.inspector.getOutputWrapper(handler);
 		if (Stream.class.isAssignableFrom(type)) {
 			return false;
 		}
@@ -294,8 +301,7 @@ public class RequestProcessor {
 		ResolvableType actualType = elementType;
 		Class<?> resolvedType = elementType.resolve();
 		ReactiveAdapter adapter = (resolvedType != null
-				? getAdapterRegistry().getAdapter(resolvedType)
-				: null);
+				? getAdapterRegistry().getAdapter(resolvedType) : null);
 
 		ServerHttpRequest request = exchange.getRequest();
 		ServerHttpResponse response = exchange.getResponse();
@@ -360,10 +366,8 @@ public class RequestProcessor {
 	}
 
 	private Throwable handleReadError(MethodParameter parameter, Throwable ex) {
-		return (ex instanceof DecodingException
-				? new ServerWebInputException("Failed to read HTTP message", parameter,
-						ex)
-				: ex);
+		return (ex instanceof DecodingException ? new ServerWebInputException(
+				"Failed to read HTTP message", parameter, ex) : ex);
 	}
 
 	private ServerWebInputException handleMissingBody(MethodParameter param) {
@@ -377,13 +381,14 @@ public class RequestProcessor {
 
 	private Publisher<?> value(Function<Publisher<?>, Publisher<?>> function,
 			Publisher<String> value) {
-		Flux<?> input = Flux.from(value).map(body -> converter.convert(function, body));
+		Flux<?> input = Flux.from(value)
+				.map(body -> this.converter.convert(function, body));
 		return Mono.from(function.apply(input));
 	}
 
 	private Object getTargetFunction(Object function) {
 		// we need to get the actual un-fluxed function so we can interrogate for types
-		Object target = inspector.getRegistration(function).getTarget();
+		Object target = this.inspector.getRegistration(function).getTarget();
 		if (target instanceof FluxWrapper) {
 			target = ((FluxWrapper<?>) target).getTarget();
 		}
@@ -391,12 +396,12 @@ public class RequestProcessor {
 	}
 
 	private Type getItemType(Object function) {
-		Class<?> inputType = inspector.getInputType(function);
+		Class<?> inputType = this.inspector.getInputType(function);
 		if (!Collection.class.isAssignableFrom(inputType)) {
 			return inputType;
 		}
-		Type type = inspector.getRegistration(this.getTargetFunction(function)).getType()
-				.getType();
+		Type type = this.inspector.getRegistration(this.getTargetFunction(function))
+				.getType().getType();
 		if (type instanceof ParameterizedType) {
 			type = ((ParameterizedType) type).getActualTypeArguments()[0];
 		}
@@ -417,6 +422,9 @@ public class RequestProcessor {
 		return type;
 	}
 
+	/**
+	 * Wrapper for functions.
+	 */
 	public static class FunctionWrapper {
 
 		private final Function<Publisher<?>, Publisher<?>> function;
@@ -442,7 +450,8 @@ public class RequestProcessor {
 		}
 
 		public Object handler() {
-			return function != null ? function : consumer != null ? consumer : supplier;
+			return this.function != null ? this.function
+					: this.consumer != null ? this.consumer : this.supplier;
 		}
 
 		public Function<Publisher<?>, Publisher<?>> function() {
@@ -458,7 +467,7 @@ public class RequestProcessor {
 		}
 
 		public MultiValueMap<String, String> params() {
-			return params;
+			return this.params;
 		}
 
 		public HttpHeaders headers() {
@@ -488,5 +497,7 @@ public class RequestProcessor {
 		public Publisher<String> argument() {
 			return this.argument;
 		}
+
 	}
+
 }

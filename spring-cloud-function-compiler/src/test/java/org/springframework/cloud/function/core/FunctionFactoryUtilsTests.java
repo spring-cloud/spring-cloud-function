@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,11 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -38,15 +37,17 @@ public class FunctionFactoryUtilsTests {
 
 	@Test
 	public void isFluxConsumer() {
-		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "fluxConsumer");
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class,
+				"fluxConsumer");
 		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isTrue();
 		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isFalse();
 		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isFalse();
 	}
-	
+
 	@Test
 	public void isFluxSupplier() {
-		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "fluxSupplier");
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class,
+				"fluxSupplier");
 		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isTrue();
 		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isFalse();
 		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isFalse();
@@ -54,20 +55,22 @@ public class FunctionFactoryUtilsTests {
 
 	@Test
 	public void isFluxFunction() {
-		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "fluxFunction");
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class,
+				"fluxFunction");
 		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isTrue();
 		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isFalse();
 		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isFalse();
 	}
-	
+
 	@Test
 	public void isReactiveFunction() {
-		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class, "reactiveFunction");
+		Method method = ReflectionUtils.findMethod(FunctionFactoryUtilsTests.class,
+				"reactiveFunction");
 		assertThat(FunctionFactoryUtils.isFluxFunction(method)).isTrue();
 		assertThat(FunctionFactoryUtils.isFluxSupplier(method)).isFalse();
 		assertThat(FunctionFactoryUtils.isFluxConsumer(method)).isFalse();
 	}
-	
+
 	public Function<Flux<Foo>, Flux<Foo>> fluxFunction() {
 		return foos -> foos.map(foo -> new Foo());
 	}
@@ -83,7 +86,9 @@ public class FunctionFactoryUtilsTests {
 	public Consumer<Flux<Foo>> fluxConsumer() {
 		return flux -> flux.subscribe(System.out::println);
 	}
-	
-	class Foo {}
+
+	class Foo {
+
+	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -56,34 +58,35 @@ import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 /**
  * @author Dave Syer
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties="spring.main.web-application-type=servlet")
-@ContextConfiguration(classes= {RestApplication.class, ApplicationConfiguration.class})
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
+@ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class HttpPostIntegrationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;
+
 	@LocalServerPort
 	private int port;
+
 	@Autowired
 	private TestRestTemplate rest;
+
 	@Autowired
 	private ApplicationConfiguration test;
 
 	@Before
 	public void init() {
-		test.list.clear();
+		this.test.list.clear();
 	}
+
 	@Test
 	public void qualifierFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/foos"))
-				.contentType(MediaType.APPLICATION_JSON).body("[\"foo\",\"bar\"]"),
-				String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
+				.post(new URI("/foos")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody())
 				.isEqualTo("[{\"value\":\"[FOO]\"},{\"value\":\"[BAR]\"}]");
@@ -91,48 +94,47 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void updates() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON).body("[\"one\", \"two\"]"),
-				String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
+				.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"one\", \"two\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-		assertThat(test.list).hasSize(2);
+		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody()).isNull();
 	}
 
 	@Test
 	public void updatesJson() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"one\",\"two\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-		assertThat(test.list).hasSize(2);
+		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo(null);
 	}
 
 	@Test
 	public void addFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/addFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-		assertThat(test.list).hasSize(2);
-		assertThat(result.getBody())
-				.isEqualTo(null);
+		assertThat(this.test.list).hasSize(2);
+		assertThat(result.getBody()).isEqualTo(null);
 	}
 
 	@Test
 	public void bareUpdates() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"one\",\"two\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(test.list).hasSize(2);
+		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("[]");
 	}
 
 	@Test
 	public void uppercase() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
@@ -140,7 +142,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void messages() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
 				// Remove this when Spring 5.0.8 is used
 				.accept(MediaType.valueOf("application/stream+json"))
@@ -152,7 +154,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void headers() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/headers")).contentType(MediaType.APPLICATION_JSON)
 				// Remove this when Spring 5.0.8 is used
 				.accept(MediaType.valueOf("application/stream+json"))
@@ -164,7 +166,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void uppercaseSingleValue() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(
 						RequestEntity.post(new URI("/uppercase"))
 								.contentType(MediaType.TEXT_PLAIN).body("foo"),
@@ -176,7 +178,7 @@ public class HttpPostIntegrationTests {
 	@Test
 	@Ignore("WebFlux would split the request body into lines: TODO make this work the same")
 	public void uppercasePlainText() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
+		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/uppercase"))
 						.contentType(MediaType.TEXT_PLAIN).body("foo\nbar"),
 				String.class);
@@ -185,7 +187,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void uppercaseFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getBody())
@@ -195,7 +197,7 @@ public class HttpPostIntegrationTests {
 	@Test
 	public void uppercaseFoo() throws Exception {
 		// Single Foo can be parsed
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("{\"value\":\"foo\"}"), String.class);
 		assertThat(result.getBody()).isEqualTo("[{\"value\":\"FOO\"}]");
@@ -203,7 +205,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void bareUppercaseFoos() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getBody())
@@ -214,7 +216,7 @@ public class HttpPostIntegrationTests {
 	public void bareUppercaseFoo() throws Exception {
 		// Single Foo can be parsed and returns a single value if the function is defined
 		// that way
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpFoos")).contentType(MediaType.APPLICATION_JSON)
 				.body("{\"value\":\"foo\"}"), String.class);
 		assertThat(result.getBody()).isEqualTo("{\"value\":\"FOO\"}");
@@ -222,7 +224,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void bareUppercase() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
@@ -230,7 +232,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void singleValuedText() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(
 						RequestEntity.post(new URI("/bareUppercase"))
 								.contentType(MediaType.TEXT_PLAIN).body("foo"),
@@ -240,7 +242,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void transform() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/transform")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
@@ -248,7 +250,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void postMore() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/post/more")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
@@ -256,8 +258,11 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void convertPost() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity.post(new URI("/wrap"))
-				.contentType(MediaType.TEXT_PLAIN).body("123"), String.class);
+		ResponseEntity<String> result = this.rest
+				.exchange(
+						RequestEntity.post(new URI("/wrap"))
+								.contentType(MediaType.TEXT_PLAIN).body("123"),
+						String.class);
 		// Result is multi-valued so it has to come out as an array
 		assertThat(result.getBody()).isEqualTo("[\"..123..\"]");
 	}
@@ -266,7 +271,7 @@ public class HttpPostIntegrationTests {
 	public void convertPostJson() throws Exception {
 		// If you POST a single value to a Function<Flux<Integer>,Flux<Integer>> it can't
 		// determine if the output is single valued, so it has to send an array back
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(
 						RequestEntity.post(new URI("/doubler"))
 								.contentType(MediaType.TEXT_PLAIN).body("123"),
@@ -276,7 +281,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void uppercaseJsonArray() throws Exception {
-		assertThat(rest.exchange(
+		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/maps"))
 						.contentType(MediaType.APPLICATION_JSON)
 						// The new line in the middle is optional
@@ -287,7 +292,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void uppercaseSSE() throws Exception {
-		assertThat(rest.exchange(RequestEntity.post(new URI("/uppercase"))
+		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase"))
 				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class).getBody())
 						.isEqualTo(sse("(FOO)", "(BAR)"));
@@ -301,7 +306,7 @@ public class HttpPostIntegrationTests {
 		map.put("A", Arrays.asList("1", "2", "3"));
 		map.put("B", Arrays.asList("5", "6"));
 
-		assertThat(rest.exchange(
+		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/sum")).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
 				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
@@ -315,7 +320,7 @@ public class HttpPostIntegrationTests {
 		map.put("A", Arrays.asList("1", "2", "3"));
 		map.put("B", Arrays.asList("5", "6"));
 
-		assertThat(rest.exchange(
+		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/sum")).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
 				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
@@ -324,7 +329,7 @@ public class HttpPostIntegrationTests {
 	@Test
 	public void count() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
-		assertThat(rest.exchange(
+		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/count")).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.APPLICATION_JSON).body(list),
 				String.class).getBody()).isEqualTo("{\"A\":2,\"B\":1}");
@@ -407,17 +412,17 @@ public class HttpPostIntegrationTests {
 
 		@Bean
 		public Consumer<Flux<String>> updates() {
-			return flux -> flux.subscribe(value -> list.add(value));
+			return flux -> flux.subscribe(value -> this.list.add(value));
 		}
 
 		@Bean
 		public Consumer<Flux<Foo>> addFoos() {
-			return flux -> flux.subscribe(value -> list.add(value.getValue()));
+			return flux -> flux.subscribe(value -> this.list.add(value.getValue()));
 		}
 
 		@Bean
 		public Consumer<String> bareUpdates() {
-			return value -> list.add(value);
+			return value -> this.list.add(value);
 		}
 
 		@Bean("not/a")
@@ -437,9 +442,11 @@ public class HttpPostIntegrationTests {
 			return flux -> flux.collect(HashMap::new,
 					(map, word) -> map.merge(word, 1, Integer::sum));
 		}
+
 	}
 
 	public static class Foo {
+
 		private String value;
 
 		public Foo(String value) {
@@ -450,12 +457,13 @@ public class HttpPostIntegrationTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 }

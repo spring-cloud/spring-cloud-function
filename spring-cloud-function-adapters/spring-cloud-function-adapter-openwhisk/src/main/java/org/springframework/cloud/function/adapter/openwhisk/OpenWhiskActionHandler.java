@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,15 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
@@ -43,6 +41,7 @@ import reactor.core.publisher.Flux;
 public class OpenWhiskActionHandler extends OpenWhiskFunctionInitializer {
 
 	private static final String NO_INPUT_PROVIDED = "No input provided";
+
 	private static Log logger = LogFactory.getLog(OpenWhiskFunctionInitializer.class);
 
 	@Autowired
@@ -61,7 +60,7 @@ public class OpenWhiskActionHandler extends OpenWhiskFunctionInitializer {
 	public Object run(@RequestBody OpenWhiskActionRequest request) {
 		Object input = convertEvent(request.getValue());
 		Object result = NO_INPUT_PROVIDED;
-		if(input !=null ) {
+		if (input != null) {
 			Publisher<?> output = apply(extract(input));
 			result = result(input, output);
 		}
@@ -104,17 +103,20 @@ public class OpenWhiskActionHandler extends OpenWhiskFunctionInitializer {
 
 	private Object convertToFunctionParamType(Object payload) {
 		try {
-			return mapper.convertValue(payload, getInputType());
-		} catch (Exception e) {
+			return this.mapper.convertValue(payload, getInputType());
+		}
+		catch (Exception e) {
 			throw new IllegalStateException("Cannot convert event payload", e);
 		}
 	}
 
 	private String serializeBody(Object body) {
 		try {
-			return "{\"result\":" + mapper.writeValueAsString(body) + "}";
-		} catch (JsonProcessingException e) {
+			return "{\"result\":" + this.mapper.writeValueAsString(body) + "}";
+		}
+		catch (JsonProcessingException e) {
 			throw new IllegalStateException("Cannot convert output", e);
 		}
 	}
+
 }

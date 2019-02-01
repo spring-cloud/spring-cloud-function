@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,16 +42,16 @@ import org.springframework.test.context.ContextConfiguration;
 @ContextConfiguration(loader = FunctionalTestContextLoader.class)
 public @interface FunctionalSpringBootTest {
 
-	@AliasFor(annotation=SpringBootTest.class, attribute="properties")
+	@AliasFor(annotation = SpringBootTest.class, attribute = "properties")
 	String[] value() default {};
 
-	@AliasFor(annotation=SpringBootTest.class, attribute="value")
+	@AliasFor(annotation = SpringBootTest.class, attribute = "value")
 	String[] properties() default {};
 
-	@AliasFor(annotation=SpringBootTest.class, attribute="classes")
+	@AliasFor(annotation = SpringBootTest.class, attribute = "classes")
 	Class<?>[] classes() default {};
 
-	@AliasFor(annotation=SpringBootTest.class, attribute="webEnvironment")
+	@AliasFor(annotation = SpringBootTest.class, attribute = "webEnvironment")
 	WebEnvironment webEnvironment() default WebEnvironment.MOCK;
 
 }

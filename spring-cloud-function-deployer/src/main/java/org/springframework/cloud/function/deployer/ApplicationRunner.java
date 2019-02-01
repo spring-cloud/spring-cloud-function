@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,11 @@ public class ApplicationRunner {
 
 	private final String source;
 
-	private StandardEvaluationContext app;
-
 	private final SpelParserConfiguration config;
 
 	private final StandardTypeLocator typeLocator;
+
+	private StandardEvaluationContext app;
 
 	public ApplicationRunner(ClassLoader classLoader, String source) {
 		this.classLoader = classLoader;
@@ -70,7 +70,8 @@ public class ApplicationRunner {
 		try {
 			ClassUtils.overrideThreadContextClassLoader(this.classLoader);
 			Class<?> cls = this.classLoader.loadClass(ContextRunner.class.getName());
-			this.app = new StandardEvaluationContext(cls.getDeclaredConstructor().newInstance());
+			this.app = new StandardEvaluationContext(
+					cls.getDeclaredConstructor().newInstance());
 			this.app.setTypeLocator(new StandardTypeLocator(this.classLoader));
 			runContext(this.source, defaultProperties(UUID.randomUUID().toString()),
 					args);
@@ -148,8 +149,8 @@ public class ApplicationRunner {
 	}
 
 	/**
-	 * List the bean names in the application context for a given type (by its fully qualified name).
-	 *
+	 * List the bean names in the application context for a given type (by its fully
+	 * qualified name).
 	 * @param type the name of the type (Class)
 	 * @return the bean names of that type
 	 */

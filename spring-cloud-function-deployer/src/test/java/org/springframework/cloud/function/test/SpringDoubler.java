@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,15 +35,16 @@ public class SpringDoubler implements Function<Integer, Integer> {
 	@PostConstruct
 	public void init() {
 		if (this.context == null) {
-			context = new SpringApplicationBuilder(FunctionApp.class).bannerMode(Mode.OFF).registerShutdownHook(false)
+			this.context = new SpringApplicationBuilder(FunctionApp.class)
+					.bannerMode(Mode.OFF).registerShutdownHook(false)
 					.web(WebApplicationType.NONE).run();
 		}
 	}
 
 	@PreDestroy
 	public void close() {
-		if (context != null) {
-			context.close();
+		if (this.context != null) {
+			this.context.close();
 		}
 	}
 
@@ -51,4 +52,5 @@ public class SpringDoubler implements Function<Integer, Integer> {
 	public Integer apply(Integer integer) {
 		return 2 * integer;
 	}
+
 }

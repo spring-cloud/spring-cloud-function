@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -39,8 +40,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-
 /**
  * @author Dave Syer
  *
@@ -49,17 +48,18 @@ import reactor.core.publisher.Flux;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
 		"spring.main.web-application-type=reactive",
 		"spring.cloud.function.web.path=/functions", "debug" })
-@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
+@ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class PrefixTests {
 
 	@LocalServerPort
 	private int port;
+
 	@Autowired
 	private TestRestTemplate rest;
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
+		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.get(new URI("/functions/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -67,7 +67,7 @@ public class PrefixTests {
 
 	@Test
 	public void missing() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
@@ -75,9 +75,12 @@ public class PrefixTests {
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
+
 		@Bean({ "words", "get/more" })
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
 		}
+
 	}
+
 }

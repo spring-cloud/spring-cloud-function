@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,6 @@ import java.util.function.Function;
 import java.util.jar.Manifest;
 
 import com.microsoft.azure.functions.ExecutionContext;
-
 import org.reactivestreams.Publisher;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,19 +45,19 @@ import org.springframework.util.ClassUtils;
  */
 public class AzureSpringFunctionInitializer implements Closeable {
 
+	private volatile static ConfigurableApplicationContext context;
+
+	private final Class<?> configurationClass;
+
 	private volatile Function<Publisher<?>, Publisher<?>> function;
 
 	private AtomicBoolean initialized = new AtomicBoolean();
-
-	private final Class<?> configurationClass;
 
 	@Autowired(required = false)
 	private volatile FunctionCatalog catalog;
 
 	@Autowired(required = false)
 	private volatile FunctionInspector inspector;
-
-	private volatile static ConfigurableApplicationContext context;
 
 	public AzureSpringFunctionInitializer(Class<?> configurationClass) {
 		this.configurationClass = configurationClass == null ? getClass()
@@ -67,6 +66,55 @@ public class AzureSpringFunctionInitializer implements Closeable {
 
 	public AzureSpringFunctionInitializer() {
 		this(getStartClass());
+	}
+
+	private static Class<?> getStartClass() {
+		ClassLoader classLoader = org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class
+				.getClassLoader();
+		if (System.getenv("MAIN_CLASS") != null) {
+			return ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
+		}
+		try {
+			Class<?> result = getStartClass(
+					Collections.list(classLoader.getResources("META-INF/MANIFEST.MF")));
+			if (result == null) {
+				result = getStartClass(Collections
+						.list(classLoader.getResources("meta-inf/manifest.mf")));
+			}
+			return result;
+		}
+		catch (Exception ex) {
+			return null;
+		}
+	}
+
+	private static Class<?> getStartClass(List<URL> list) {
+		for (URL url : list) {
+			try {
+				InputStream inputStream = url.openStream();
+				try {
+					Manifest manifest = new Manifest(inputStream);
+					String startClass = manifest.getMainAttributes()
+							.getValue("Main-Class");
+					if (startClass != null) {
+						Class<?> aClass = ClassUtils.forName(startClass,
+								org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class
+										.getClassLoader());
+						SpringBootApplication declaredAnnotation = aClass
+								.getDeclaredAnnotation(SpringBootApplication.class);
+						if (declaredAnnotation != null) {
+							return aClass;
+						}
+					}
+				}
+				finally {
+					inputStream.close();
+				}
+			}
+			catch (Exception ex) {
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -132,7 +180,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 	}
 
 	private SpringApplication springApplication() {
-		Class<?> sourceClass = configurationClass;
+		Class<?> sourceClass = this.configurationClass;
 		SpringApplication application = new org.springframework.cloud.function.context.FunctionalSpringApplication(
 				sourceClass);
 		application.setWebApplicationType(WebApplicationType.NONE);
@@ -144,7 +192,8 @@ public class AzureSpringFunctionInitializer implements Closeable {
 			return true;
 		}
 		if (this.inspector != null) {
-			return Collection.class.isAssignableFrom(inspector.getInputType(function));
+			return Collection.class
+					.isAssignableFrom(this.inspector.getInputType(function));
 		}
 		return ((Collection<?>) input).size() <= 1;
 	}
@@ -154,7 +203,8 @@ public class AzureSpringFunctionInitializer implements Closeable {
 			return true;
 		}
 		if (this.inspector != null) {
-			return Collection.class.isAssignableFrom(inspector.getOutputType(function));
+			return Collection.class
+					.isAssignableFrom(this.inspector.getOutputType(function));
 		}
 		return ((Collection<?>) output).size() <= 1;
 	}
@@ -174,64 +224,16 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		throw new IllegalStateException("No function defined with name=" + name);
 	}
 
-	private static Class<?> getStartClass() {
-		ClassLoader classLoader = org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class
-				.getClassLoader();
-		if (System.getenv("MAIN_CLASS") != null) {
-			return ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
-		}
-		try {
-			Class<?> result = getStartClass(
-					Collections.list(classLoader.getResources("META-INF/MANIFEST.MF")));
-			if (result == null) {
-				result = getStartClass(Collections
-						.list(classLoader.getResources("meta-inf/manifest.mf")));
-			}
-			return result;
-		}
-		catch (Exception ex) {
-			return null;
-		}
-	}
-
-	private static Class<?> getStartClass(List<URL> list) {
-		for (URL url : list) {
-			try {
-				InputStream inputStream = url.openStream();
-				try {
-					Manifest manifest = new Manifest(inputStream);
-					String startClass = manifest.getMainAttributes()
-							.getValue("Main-Class");
-					if (startClass != null) {
-						Class<?> aClass = ClassUtils.forName(startClass,
-								org.springframework.cloud.function.adapter.azure.AzureSpringFunctionInitializer.class
-										.getClassLoader());
-						SpringBootApplication declaredAnnotation = aClass
-								.getDeclaredAnnotation(SpringBootApplication.class);
-						if (declaredAnnotation != null) {
-							return aClass;
-						}
-					}
-				}
-				finally {
-					inputStream.close();
-				}
-			}
-			catch (Exception ex) {
-			}
-		}
-		return null;
-	}
-
 	public Function<Publisher<?>, Publisher<?>> getFunction() {
-		return function;
+		return this.function;
 	}
 
 	public FunctionCatalog getCatalog() {
-		return catalog;
+		return this.catalog;
 	}
 
 	public FunctionInspector getInspector() {
-		return inspector;
+		return this.inspector;
 	}
+
 }

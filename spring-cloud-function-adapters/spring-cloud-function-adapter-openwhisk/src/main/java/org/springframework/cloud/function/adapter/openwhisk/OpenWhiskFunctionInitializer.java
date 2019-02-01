@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,11 @@ import java.util.function.Supplier;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -76,8 +75,8 @@ public class OpenWhiskFunctionInitializer {
 	}
 
 	protected Class<?> getInputType() {
-		if (inspector != null) {
-			return inspector.getInputType(function());
+		if (this.inspector != null) {
+			return this.inspector.getInputType(function());
 		}
 		return Object.class;
 	}
@@ -89,7 +88,7 @@ public class OpenWhiskFunctionInitializer {
 
 	protected Publisher<?> apply(Publisher<?> input) {
 		if (this.function != null) {
-			return function.apply(input);
+			return this.function.apply(input);
 		}
 		if (this.consumer != null) {
 			this.consumer.accept(input);
@@ -100,4 +99,5 @@ public class OpenWhiskFunctionInitializer {
 		}
 		throw new IllegalStateException("No function defined");
 	}
+
 }

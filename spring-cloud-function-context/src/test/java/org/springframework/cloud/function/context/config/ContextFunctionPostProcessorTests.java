@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.function.context.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNull;
-
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,14 +30,17 @@ import java.util.function.Supplier;
 
 import org.junit.After;
 import org.junit.Test;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.ClassUtils;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Dave Syer
@@ -51,7 +51,9 @@ import reactor.core.publisher.Mono;
 public class ContextFunctionPostProcessorTests {
 
 	private ContextFunctionRegistry processor = new ContextFunctionRegistry();
+
 	private URLClassLoader classLoader;
+
 	private ClassLoader contextClassLoader;
 
 	@After
@@ -60,128 +62,136 @@ public class ContextFunctionPostProcessorTests {
 			this.classLoader.close();
 		}
 		if (Thread.currentThread().getContextClassLoader() != null) {
-			ClassUtils.overrideThreadContextClassLoader(contextClassLoader);
+			ClassUtils.overrideThreadContextClassLoader(this.contextClassLoader);
 		}
 	}
 
 	@Test
 	public void basicRegistrationFeatures() {
-		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		this.processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
 				.lookupFunction("foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
 	@Test
 	public void registrationThroughMerge() {
-		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos(), "foos");
-		processor.merge(Collections.singletonMap("foos", registration),
+		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos(),
+				"foos");
+		this.processor.merge(Collections.singletonMap("foos", registration),
 				Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
 		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
 				.lookupFunction("foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
 	@Test
 	public void registrationThroughMergeFromNamedFunction() {
-		processor.merge(Collections.emptyMap(), Collections.emptyMap(),
+		this.processor.merge(Collections.emptyMap(), Collections.emptyMap(),
 				Collections.emptyMap(), Collections.singletonMap("foos", new Foos()));
 		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
 				.lookupFunction("foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
 	@Test
 	public void composeWithComma() {
-		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
-		processor.register(new FunctionRegistration<>(new Bars(), "bars"));
+		this.processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		this.processor.register(new FunctionRegistration<>(new Bars(), "bars"));
 		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
 				.lookupFunction("foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
-		assertThat(processor.getRegistration(foos).getNames())
+		assertThat(this.processor.getRegistration(foos).getNames())
 				.containsExactly("foos|bars");
 	}
 
 	@Test
 	public void supplierAndFunction() {
-		processor.register(new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
-		processor.register(new FunctionRegistration<Function<String, String>>((x) -> x.toUpperCase(), "function"));
+		this.processor.register(
+				new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
+		this.processor.register(new FunctionRegistration<Function<String, String>>(
+				(x) -> x.toUpperCase(), "function"));
 		@SuppressWarnings("unchecked")
-		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) processor.lookupSupplier("supplier|function");
+		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) this.processor
+				.lookupSupplier("supplier|function");
 		assertThat(supplier.get().blockFirst()).isEqualTo("FOO");
-		assertThat(processor.getRegistration(supplier).getNames()).containsExactly("supplier|function");
+		assertThat(this.processor.getRegistration(supplier).getNames())
+				.containsExactly("supplier|function");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void supplierAndConsumer() {
-		processor.register(new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
-		processor.register(new FunctionRegistration<Consumer<String>>(System.out::println, "consumer"));
-		Supplier<Mono<Void>> supplier = (Supplier<Mono<Void>>) processor.lookupSupplier("supplier|consumer");
+		this.processor.register(
+				new FunctionRegistration<Supplier<String>>(() -> "foo", "supplier"));
+		this.processor.register(new FunctionRegistration<Consumer<String>>(
+				System.out::println, "consumer"));
+		Supplier<Mono<Void>> supplier = (Supplier<Mono<Void>>) this.processor
+				.lookupSupplier("supplier|consumer");
 		assertNull(supplier.get().block());
 	}
 
 	@Test
 	public void compose() {
-		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
-		processor.register(new FunctionRegistration<>(new Bars(), "bars"));
+		this.processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		this.processor.register(new FunctionRegistration<>(new Bars(), "bars"));
 		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
 				.lookupFunction("foos|bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
-		assertThat(processor.getRegistration(foos).getNames())
+		assertThat(this.processor.getRegistration(foos).getNames())
 				.containsExactly("foos|bars");
 	}
 
 	@Test
 	public void composeWrapper() {
-		processor.register(new FunctionRegistration<>(new WrappedSource(), "ints"));
-		processor.register(new FunctionRegistration<>(new Foos(), "foos"));
+		this.processor.register(new FunctionRegistration<>(new WrappedSource(), "ints"));
+		this.processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		@SuppressWarnings("unchecked")
-		Supplier<Flux<String>> foos = (Supplier<Flux<String>>) processor
+		Supplier<Flux<String>> foos = (Supplier<Flux<String>>) this.processor
 				.lookupSupplier("ints|foos");
 		assertThat(foos.get().blockFirst()).isEqualTo("8");
-		assertThat(processor.getRegistration(foos).getNames())
+		assertThat(this.processor.getRegistration(foos).getNames())
 				.containsExactly("ints|foos");
-		assertThat(processor.getRegistration(foos).getType().getOutputWrapper())
+		assertThat(this.processor.getRegistration(foos).getType().getOutputWrapper())
 				.isEqualTo(Flux.class);
 	}
 
 	@Test
 	public void isolatedFunction() {
-		contextClassLoader = ClassUtils
+		this.contextClassLoader = ClassUtils
 				.overrideThreadContextClassLoader(getClass().getClassLoader());
-		processor.register(new FunctionRegistration<>(create(Foos.class), "foos"));
+		this.processor.register(new FunctionRegistration<>(create(Foos.class), "foos"));
 		@SuppressWarnings("unchecked")
-		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) processor
+		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
 				.lookupFunction("foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
 	@Test
 	public void isolatedSupplier() {
-		contextClassLoader = ClassUtils
+		this.contextClassLoader = ClassUtils
 				.overrideThreadContextClassLoader(getClass().getClassLoader());
-		processor.register(
-				new FunctionRegistration<>(create(Source.class), "source"));
+		this.processor
+				.register(new FunctionRegistration<>(create(Source.class), "source"));
 		@SuppressWarnings("unchecked")
-		Supplier<Flux<Integer>> source = (Supplier<Flux<Integer>>) processor
+		Supplier<Flux<Integer>> source = (Supplier<Flux<Integer>>) this.processor
 				.lookupSupplier("source");
 		assertThat(source.get().blockFirst()).isEqualTo(4);
 	}
 
 	@Test
 	public void isolatedConsumer() {
-		contextClassLoader = ClassUtils
+		this.contextClassLoader = ClassUtils
 				.overrideThreadContextClassLoader(getClass().getClassLoader());
 		Object target = create(Sink.class);
-		processor.register(new FunctionRegistration<>(target, "sink"));
+		this.processor.register(new FunctionRegistration<>(target, "sink"));
 		@SuppressWarnings("unchecked")
-		Function<Flux<String>, Mono<Void>> sink = (Function<Flux<String>, Mono<Void>>) processor
+		Function<Flux<String>, Mono<Void>> sink = (Function<Flux<String>, Mono<Void>>) this.processor
 				.lookupFunction("sink");
 		sink.apply(Flux.just("Hello")).subscribe();
 		@SuppressWarnings("unchecked")
@@ -199,14 +209,14 @@ public class ContextFunctionPostProcessorTests {
 			String pathEntry = jcpEntries.nextToken();
 			try {
 				urls.add(new File(pathEntry).toURI().toURL());
-			} catch (MalformedURLException e) {
+			}
+			catch (MalformedURLException e) {
 			}
 		}
-		this.classLoader = new URLClassLoader(
-				urls.toArray(new URL[0]),
+		this.classLoader = new URLClassLoader(urls.toArray(new URL[0]),
 				getClass().getClassLoader().getParent());
-		return BeanUtils
-				.instantiateClass(ClassUtils.resolveClassName(type.getName(), classLoader));
+		return BeanUtils.instantiateClass(
+				ClassUtils.resolveClassName(type.getName(), this.classLoader));
 	}
 
 	public static class Foos implements Function<Integer, String> {
@@ -239,7 +249,7 @@ public class ContextFunctionPostProcessorTests {
 		public void accept(String t) {
 			assertThat(ClassUtils.resolveClassName(Bar.class.getName(), null)
 					.getClassLoader()).isEqualTo(getClass().getClassLoader());
-			values.add(t);
+			this.values.add(t);
 		}
 
 	}
@@ -263,6 +273,7 @@ public class ContextFunctionPostProcessorTests {
 	}
 
 	public static class Foo {
+
 		private String value;
 
 		public Foo(String value) {
@@ -273,15 +284,17 @@ public class ContextFunctionPostProcessorTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 	public static class Bar {
+
 		private String message;
 
 		public Bar(String value) {

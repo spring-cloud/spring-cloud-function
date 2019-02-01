@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- *
  * @author Dave Syer
  * @author Oleg Zhurakousky
  *
@@ -50,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
 		"spring.cloud.function.web.path=/functions",
 		"spring.main.web-application-type=reactive" })
-@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
+@ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class HeadersToMessageTests {
 
 	@Autowired
@@ -59,9 +58,10 @@ public class HeadersToMessageTests {
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		// test POJO paylod
-		ResponseEntity<String> postForEntity = rest.exchange(RequestEntity
-				.post(new URI("/functions/employee")).contentType(MediaType.APPLICATION_JSON)
-				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+		ResponseEntity<String> postForEntity = this.rest
+				.exchange(RequestEntity.post(new URI("/functions/employee"))
+						.contentType(MediaType.APPLICATION_JSON)
+						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
 		assertEquals("application/xml",
@@ -69,9 +69,8 @@ public class HeadersToMessageTests {
 		assertEquals("bar", postForEntity.getHeaders().get("foo").get(0));
 
 		// test simple type payload
-		postForEntity = rest.postForEntity(
-				new URI("/functions/string"), "{\"name\":\"Bob\",\"age\":25}",
-				String.class);
+		postForEntity = this.rest.postForEntity(new URI("/functions/string"),
+				"{\"name\":\"Bob\",\"age\":25}", String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
 		assertEquals("application/xml",
@@ -82,6 +81,7 @@ public class HeadersToMessageTests {
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
+
 		@Bean({ "string" })
 		public Function<Message<String>, Message<String>> functiono() {
 			return request -> {
@@ -95,29 +95,39 @@ public class HeadersToMessageTests {
 		@Bean({ "employee" })
 		public Function<Message<Employee>, Message<Employee>> function1() {
 			return request -> {
-				Message<Employee> message = MessageBuilder.withPayload(request.getPayload())
+				Message<Employee> message = MessageBuilder
+						.withPayload(request.getPayload())
 						.setHeader("X-Content-Type", "application/xml")
 						.setHeader("foo", "bar").build();
 				return message;
 			};
 		}
+
 	}
+
 	@SuppressWarnings("unused") // used by json converter
 	private static class Employee {
+
 		private String name;
+
 		private int age;
 
 		public String getName() {
-			return name;
+			return this.name;
 		}
+
 		public void setName(String name) {
 			this.name = name;
 		}
+
 		public int getAge() {
-			return age;
+			return this.age;
 		}
+
 		public void setAge(int age) {
 			this.age = age;
 		}
+
 	}
+
 }

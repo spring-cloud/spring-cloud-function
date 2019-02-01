@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -59,9 +58,10 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
-		HttpEntity<String> postForEntity = rest.exchange(RequestEntity
-				.post(new URI("/functions/employee")).contentType(MediaType.APPLICATION_JSON)
-				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+		HttpEntity<String> postForEntity = this.rest
+				.exchange(RequestEntity.post(new URI("/functions/employee"))
+						.contentType(MediaType.APPLICATION_JSON)
+						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
 		assertEquals("application/xml",
@@ -71,9 +71,11 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testHeadersPropagatedByDefault() throws Exception {
-		HttpEntity<String> postForEntity = rest.exchange(RequestEntity
-				.post(new URI("/functions/vanilla")).contentType(MediaType.APPLICATION_JSON).header("x-context-type", "rubbish")
-				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+		HttpEntity<String> postForEntity = this.rest
+				.exchange(RequestEntity.post(new URI("/functions/vanilla"))
+						.contentType(MediaType.APPLICATION_JSON)
+						.header("x-context-type", "rubbish")
+						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertEquals("{\"name\":\"Bob\",\"age\":25,\"foo\":\"bar\"}",
 				postForEntity.getBody());
 		assertTrue(postForEntity.getHeaders().containsKey("x-context-type"));
@@ -83,6 +85,7 @@ public class HeadersToMessageTests {
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
+
 		@Bean({ "employee" })
 		public Function<Message<Map<String, Object>>, Message<Map<String, Object>>> function() {
 			return request -> {
@@ -102,5 +105,7 @@ public class HeadersToMessageTests {
 				return message;
 			};
 		}
+
 	}
+
 }

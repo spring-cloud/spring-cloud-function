@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.graph.Dependency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.cloud.function.compiler.java.IterableClasspath.ZipEnumerator;
 
 /**
@@ -74,6 +75,10 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 	private static Logger logger = LoggerFactory
 			.getLogger(MemoryBasedJavaFileManager.class);
 
+	private static URI JRT_URI = URI.create("jrt:/");
+
+	private static FileSystem fs;
+
 	private CompilationOutputCollector outputCollector;
 
 	private Map<String, File> resolvedAdditionalDependencies = new LinkedHashMap<>();
@@ -86,9 +91,20 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	private Map<Key, CloseableFilterableJavaFileObjectIterable> iterables = new HashMap<>();
 
+	private String jrtFsFilePath = null;
+
+	private boolean checkedForJrtFsPath = false;
+
 	public MemoryBasedJavaFileManager() {
-		outputCollector = new CompilationOutputCollector();
-		compilationInfoCache = new CompilationInfoCache();
+		this.outputCollector = new CompilationOutputCollector();
+		this.compilationInfoCache = new CompilationInfoCache();
+	}
+
+	private static FileSystem getJrtFs() {
+		if (fs == null) {
+			fs = FileSystems.getFileSystem(JRT_URI);
+		}
+		return fs;
 	}
 
 	@Override
@@ -105,228 +121,14 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		return null; // Do not currently need to load plugins
 	}
 
-	// Holds information that may help speed up compilation
-	static class CompilationInfoCache {
-
-		private Map<File, ArchiveInfo> archivePackageCache;
-
-		static class ArchiveInfo {
-
-			// The packages identified in a particular archive
-			private List<String> packageNames;
-
-			private boolean isBootJar = false;
-
-			public ArchiveInfo(List<String> packageNames, boolean isBootJar) {
-				this.packageNames = packageNames;
-				Collections.sort(this.packageNames);
-				this.isBootJar = isBootJar;
-			}
-
-			public List<String> getPackageNames() {
-				return packageNames;
-			}
-
-			public boolean isBootJar() {
-				return isBootJar;
-			}
-
-			public boolean containsPackage(String packageName, boolean subpackageMatchesAllowed) {
-				if (subpackageMatchesAllowed) {
-					for (String candidatePackageName: packageNames) {
-						if (candidatePackageName.startsWith(packageName)) {
-							return true;
-						}
-					}
-					return false;
-				} else {
-					// Must be an exact match, fast binary search:
-					int pos = Collections.binarySearch(packageNames, packageName);
-					return  (pos >= 0);
-				}
-			}
-		}
-
-		ArchiveInfo getArchiveInfoFor(File archive) {
-			if (!archive.isFile() || !(archive.getName().endsWith(".zip") || archive.getName().endsWith(".jar"))) {
-				// it is not an archive
-				return null;
-			}
-			if (archivePackageCache == null) {
-				archivePackageCache = new HashMap<>();
-			}
-			try {
-				ArchiveInfo result = archivePackageCache.get(archive);
-				if (result == null) {
-					result = buildArchiveInfo(archive);
-					archivePackageCache.put(archive, result);
-				}
-				return result;
-			} catch (Exception e) {
-				throw new IllegalStateException("Unexpected problem caching entries from "+archive.getName(), e);
-			}
-		}
-
-		private boolean packageCacheInitialized = false;
-		private Map<String, Path> packageCache = new HashMap<String, Path>();
-		private ArchiveInfo moduleArchiveInfo;
-
-		private class PackageCacheBuilderVisitor extends SimpleFileVisitor<Path> {
-			
-			@Override
-			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-				if (file.getNameCount() > 3 && file.toString().endsWith(".class")) {
-					int fnc = file.getNameCount();
-					if (fnc > 3) { // There is a package name - e.g. /modules/java.base/java/lang/Object.class
-						Path packagePath = file.subpath(2, fnc-1); // e.g. java/lang
-						String packagePathString = packagePath.toString()+"/";
-						packageCache.put(packagePathString, file.subpath(0, fnc-1)); // java/lang -> /modules/java.base/java/lang
-					}
-				}
-				return FileVisitResult.CONTINUE;
-			}
-		}
-		
-		private synchronized ArchiveInfo buildPackageMap() {
-			if (!packageCacheInitialized) {
-				packageCacheInitialized = true;
-				Iterable<java.nio.file.Path> roots = getJrtFs().getRootDirectories();
-				PackageCacheBuilderVisitor visitor = new PackageCacheBuilderVisitor();
-				try {
-					for (java.nio.file.Path path : roots) {
-						Files.walkFileTree(path, visitor);
-		 			}
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-				List<String> ls = new ArrayList<>();
-				ls.addAll(packageCache.keySet());
-				Collections.sort(ls);
-				moduleArchiveInfo = new ArchiveInfo(ls, false);
-			}
-			return moduleArchiveInfo;
-		}
-
-		/**
-		 * Walk the specified archive and collect up the package names of any .class files encountered. If
-		 * the archive contains nested jars packaged in a BOOT style way (under a BOOT-INF/lib folder) then
-		 * walk those too and include relevant packages.
-		 *
-		 * @param file archive file to discover packages from
-		 * @return an ArchiveInfo encapsulating package info from the archive
-		 */
-		private ArchiveInfo buildArchiveInfo(File file) {
-			if (file.toString().endsWith("jrt-fs.jar")) {
-				// Special treatment for >=JDK9 - treat this as intention to use modules
-				return buildPackageMap();
-			}
-			List<String> packageNames = new ArrayList<>();
-			boolean isBootJar = false;
-			try (ZipFile openArchive = new ZipFile(file)) {
-				Enumeration<? extends ZipEntry> entries = openArchive.entries();
-				while (entries.hasMoreElements()) {
-					ZipEntry entry = entries.nextElement();
-					String name = entry.getName();
-					if (name.endsWith(".class")) {
-						if (name.startsWith(BOOT_PACKAGING_PREFIX_FOR_CLASSES)) {
-							isBootJar = true;
-							int idx = name.lastIndexOf('/') + 1;
-							if (idx != 0 ) {
-								if (idx == BOOT_PACKAGING_PREFIX_FOR_CLASSES.length()) {
-									// default package
-									packageNames.add("/");
-								} else {
-									// Normalize to forward slashes
-									name = name.substring(BOOT_PACKAGING_PREFIX_FOR_CLASSES.length(), idx);
-									name = name.replace('\\', '/');
-									packageNames.add(name);
-								}
-							}
-						} else {
-							int idx = name.lastIndexOf('/') + 1;
-							if (idx != 0 ) {
-								// Normalize to forward slashes
-								name = name.replace('\\', '/');
-								name = name.substring(0, idx);
-								packageNames.add(name);
-							} else if (idx == 0) {
-								// default package entries in here
-								packageNames.add("/");
-							}
-						}
-					} else if (name.startsWith(BOOT_PACKAGING_PREFIX_FOR_LIBRARIES) && name.endsWith(".jar")) {
-						isBootJar = true;
-						try (ZipInputStream zis = new ZipInputStream(openArchive.getInputStream(entry))) {
-							Enumeration<? extends ZipEntry> nestedZipEnumerator = new ZipEnumerator(zis);
-							while (nestedZipEnumerator.hasMoreElements()) {
-								ZipEntry innerEntry = nestedZipEnumerator.nextElement();
-								String innerEntryName = innerEntry.getName();
-								if (innerEntryName.endsWith(".class")) {
-									int idx = innerEntryName.lastIndexOf('/') + 1;
-									if (idx != 0 ) {
-										// Normalize to forward slashes
-										innerEntryName = innerEntryName.replace('\\', '/');
-										innerEntryName = innerEntryName.substring(0, idx);
-										packageNames.add(innerEntryName);
-									} else if (idx == 0) {
-										// default package entries in here
-										packageNames.add("/");
-									}
-								}
-							}
-						}
-					}
-				}
-			} catch (IOException ioe) {
-				throw new IllegalStateException("Unexpected problem determining packages in "+file,ioe);
-			}
-			return new ArchiveInfo(packageNames, isBootJar);
-		}
-
-	}
-
-	static class Key {
-		private Location location;
-		private String classpath;
-		private String packageName;
-		private Set<Kind> kinds;
-		private boolean recurse;
-
-		public Key(Location location, String classpath, String packageName, Set<Kind> kinds, boolean recurse) {
-			this.location = location;
-			this.classpath = classpath;
-			this.packageName = packageName;
-			this.kinds = kinds;
-			this.recurse = recurse;
-		}
-
-		@Override
-		public int hashCode() {
-			return (((location.hashCode()*37)+classpath.hashCode()*37+(packageName==null?0:packageName.hashCode()))*37+kinds.hashCode())*37+(recurse?1:0);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof Key)) {
-				return false;
-			}
-			Key that = (Key)obj;
-			return  location.equals(that.location) &&
-					classpath.equals(that.classpath) &&
-					kinds.equals(that.kinds) &&
-					(recurse==that.recurse) &&
-					(packageName==null?(that.packageName==null):this.packageName.equals(that.packageName));
-		}
-	}
-
 	private String getPlatformClassPath() {
-		if (platformClasspath == null) {
-			platformClasspath = System.getProperty("sun.boot.class.path");
+		if (this.platformClasspath == null) {
+			this.platformClasspath = System.getProperty("sun.boot.class.path");
 		}
-		if (platformClasspath == null) {
-			platformClasspath = "";
+		if (this.platformClasspath == null) {
+			this.platformClasspath = "";
 		}
-		return platformClasspath;
+		return this.platformClasspath;
 	}
 
 	@Override
@@ -335,26 +137,29 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		logger.debug("list({},{},{},{})", location, packageName, kinds, recurse);
 		String classpath = "";
 		Path moduleRootPath = null;
-		if (location instanceof JDKModuleLocation && (kinds == null || kinds.contains(Kind.CLASS))) {
+		if (location instanceof JDKModuleLocation
+				&& (kinds == null || kinds.contains(Kind.CLASS))) {
 			// list(org.springframework.cloud.function.compiler.java.MemoryBasedJavaFileManager$JDKModuleLocation@550a1967,
-			//      java.lang,[SOURCE, CLASS, HTML, OTHER],false)
-			moduleRootPath = ((JDKModuleLocation)location).getModuleRootPath();
-			logger.debug("For JDKModuleLocation "+location.toString()+" root path is "+moduleRootPath);
-		} else if (location == StandardLocation.PLATFORM_CLASS_PATH
+			// java.lang,[SOURCE, CLASS, HTML, OTHER],false)
+			moduleRootPath = ((JDKModuleLocation) location).getModuleRootPath();
+			logger.debug("For JDKModuleLocation " + location.toString() + " root path is "
+					+ moduleRootPath);
+		}
+		else if (location == StandardLocation.PLATFORM_CLASS_PATH
 				&& (kinds == null || kinds.contains(Kind.CLASS))) {
 			classpath = getPlatformClassPath();
-//			if (classpath.length() == 0) {
-//			if (hasJrtFsPath()) {
-//				classpath = getJrtFsPath();
-//			}
-//		}
+			// if (classpath.length() == 0) {
+			// if (hasJrtFsPath()) {
+			// classpath = getJrtFsPath();
+			// }
+			// }
 			logger.debug("Creating iterable for boot class path: {}", classpath);
 		}
 		else if (location == StandardLocation.CLASS_PATH
 				&& (kinds == null || kinds.contains(Kind.CLASS))) {
 			String javaClassPath = getClassPath();
-			if (!resolvedAdditionalDependencies.isEmpty()) {
-				for (File resolvedAdditionalDependency : resolvedAdditionalDependencies
+			if (!this.resolvedAdditionalDependencies.isEmpty()) {
+				for (File resolvedAdditionalDependency : this.resolvedAdditionalDependencies
 						.values()) {
 					javaClassPath += File.pathSeparatorChar + resolvedAdditionalDependency
 							.toURI().toString().substring("file:".length());
@@ -364,41 +169,28 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 			logger.debug("Creating iterable for class path: {}", classpath);
 		}
 		Key k = new Key(location, classpath, packageName, kinds, recurse);
-		CloseableFilterableJavaFileObjectIterable resultIterable = iterables.get(k);
+		CloseableFilterableJavaFileObjectIterable resultIterable = this.iterables.get(k);
 		if (resultIterable == null) {
 			if (moduleRootPath != null) {
-				resultIterable = new IterableJrtModule(compilationInfoCache, moduleRootPath, packageName, recurse);
-			} else {
-				resultIterable = new IterableClasspath(compilationInfoCache, classpath, packageName, recurse);
+				resultIterable = new IterableJrtModule(this.compilationInfoCache,
+						moduleRootPath, packageName, recurse);
 			}
-			iterables.put(k, resultIterable);
+			else {
+				resultIterable = new IterableClasspath(this.compilationInfoCache,
+						classpath, packageName, recurse);
+			}
+			this.iterables.put(k, resultIterable);
 		}
 		resultIterable.reset();
 		return resultIterable;
 	}
 
 	private String getClassPath() {
-		if (classpath == null) {
+		if (this.classpath == null) {
 			ClassLoader loader = InMemoryJavaFileObject.class.getClassLoader();
 			String cp = null;
 			if (loader instanceof URLClassLoader) {
-				URL[] urls = ((URLClassLoader) loader).getURLs();
-				if (urls.length > 1) { // heuristic that catches Maven surefire tests
-					if (!urls[0].toString().startsWith("jar:file:")) { // heuristic for Spring Boot fat jar
-						StringBuilder builder = new StringBuilder();
-						for (URL url : urls) {
-							if (builder.length() > 0) {
-								builder.append(File.pathSeparator);
-							}
-							String path = url.toString();
-							if (path.startsWith("file:")) {
-								path = path.substring("file:".length());
-							}
-							builder.append(path);
-						}
-						cp = builder.toString();
-					}
-				}
+				cp = classPath((URLClassLoader) loader, cp);
 			}
 			if (cp == null) {
 				cp = System.getProperty("java.class.path");
@@ -406,9 +198,32 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 			if (hasJrtFsPath()) {
 				cp = cp + File.pathSeparator + getJrtFsPath();
 			}
-			classpath = pathWithPlatformClassPathRemoved(cp);
+			this.classpath = pathWithPlatformClassPathRemoved(cp);
 		}
-		return classpath;
+		return this.classpath;
+	}
+
+	private String classPath(URLClassLoader loader, String cp) {
+		URL[] urls = loader.getURLs();
+		if (urls.length > 1) { // heuristic that catches Maven surefire tests
+			if (!urls[0].toString().startsWith("jar:file:")) { // heuristic for
+																// Spring Boot fat
+																// jar
+				StringBuilder builder = new StringBuilder();
+				for (URL url : urls) {
+					if (builder.length() > 0) {
+						builder.append(File.pathSeparator);
+					}
+					String path = url.toString();
+					if (path.startsWith("file:")) {
+						path = path.substring("file:".length());
+					}
+					builder.append(path);
+				}
+				cp = builder.toString();
+			}
+		}
+		return cp;
 	}
 
 	// remove the platform classpath entries, they will be search separately (and earlier)
@@ -417,7 +232,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		Set<String> cps = toList(classpath);
 		cps.removeAll(pcps);
 		StringBuilder builder = new StringBuilder();
-		for (String cpe: cps) {
+		for (String cpe : cps) {
 			if (builder.length() > 0) {
 				builder.append(File.pathSeparator);
 			}
@@ -428,7 +243,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	private Set<String> toList(String path) {
 		Set<String> result = new LinkedHashSet<>();
-		StringTokenizer tokenizer = new StringTokenizer(path,File.pathSeparator);
+		StringTokenizer tokenizer = new StringTokenizer(path, File.pathSeparator);
 		while (tokenizer.hasMoreTokens()) {
 			result.add(tokenizer.nextToken());
 		}
@@ -484,7 +299,8 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 				sibling);
 		// Example parameters: CLASS_OUTPUT, Foo, CLASS,
 		// StringBasedJavaSourceFileObject[string:///a/b/c/Foo.java]
-		return outputCollector.getJavaFileForOutput(location, className, kind, sibling);
+		return this.outputCollector.getJavaFileForOutput(location, className, kind,
+				sibling);
 	}
 
 	@Override
@@ -502,7 +318,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		// This can be called when the annotation config processor runs
 		// Example parameters: CLASS_OUTPUT, ,
 		// META-INF/spring-configuration-metadata.json, null
-		return outputCollector.getFileForOutput(location, packageName, relativeName,
+		return this.outputCollector.getFileForOutput(location, packageName, relativeName,
 				sibling);
 	}
 
@@ -512,14 +328,15 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 
 	@Override
 	public void close() throws IOException {
-		Collection<CloseableFilterableJavaFileObjectIterable> toClose = iterables.values();
-		for (CloseableFilterableJavaFileObjectIterable icp: toClose) {
+		Collection<CloseableFilterableJavaFileObjectIterable> toClose = this.iterables
+				.values();
+		for (CloseableFilterableJavaFileObjectIterable icp : toClose) {
 			icp.close();
 		}
 	}
 
 	public List<CompiledClassDefinition> getCompiledClasses() {
-		return outputCollector.getCompiledClasses();
+		return this.outputCollector.getCompiledClasses();
 	}
 
 	public List<CompilationMessage> addAndResolveDependencies(String[] dependencies) {
@@ -536,16 +353,19 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 					// dependency =
 					// maven://org.springframework:spring-expression:4.3.9.RELEASE
 					// resolved.toURI() =
-					// file:/Users/aclement/.m2/repository/org/springframework/spring-expression/4.3.9.RELEASE/spring-expression-4.3.9.RELEASE.jar
-					resolvedAdditionalDependencies.put(dependency, resolved);
+					// file:/Users/aclement/.m2/repository/
+					// org/springframework/spring-expression/4.3.9.RELEASE/spring-expression-4.3.9.RELEASE.jar
+					this.resolvedAdditionalDependencies.put(dependency, resolved);
 				}
 				catch (RuntimeException re) {
 					CompilationMessage compilationMessage = new CompilationMessage(
 							CompilationMessage.Kind.ERROR, re.getMessage(), null, 0, 0);
 					resolutionMessages.add(compilationMessage);
 				}
-			} else if (dependency.startsWith("file:")) {
-				resolvedAdditionalDependencies.put(dependency, new File(URI.create(dependency)));
+			}
+			else if (dependency.startsWith("file:")) {
+				this.resolvedAdditionalDependencies.put(dependency,
+						new File(URI.create(dependency)));
 			}
 			else {
 				resolutionMessages.add(new CompilationMessage(
@@ -559,18 +379,320 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 	}
 
 	public Map<String, File> getResolvedAdditionalDependencies() {
-		return resolvedAdditionalDependencies;
+		return this.resolvedAdditionalDependencies;
 	}
 
-	private static URI JRT_URI = URI.create("jrt:/");
-	
-	private static FileSystem fs;
-	
+	public String inferModuleName(Location location) throws IOException {
+		if (location instanceof JDKModuleLocation) {
+			JDKModuleLocation m = (JDKModuleLocation) location;
+			return m.getModuleName();
+		}
+		throw new IllegalStateException(
+				"Asked to inferModuleName from a " + location.getClass().getName());
+	}
+
+	private boolean hasJrtFsPath() {
+		return getJrtFsPath() != null;
+	}
+
+	private String getJrtFsPath() {
+		if (!this.checkedForJrtFsPath) {
+			String javaHome = System.getProperty("java.home");
+			String jrtFsFilePath = javaHome + File.separator + "lib" + File.separator
+					+ "jrt-fs.jar";
+			File jrtFsFile = new File(jrtFsFilePath);
+			if (jrtFsFile.exists()) {
+				this.jrtFsFilePath = jrtFsFilePath;
+			}
+			this.checkedForJrtFsPath = true;
+		}
+		return this.jrtFsFilePath;
+	}
+
+	public Iterable<Set<Location>> listLocationsForModules(Location location)
+			throws IOException {
+		if (getJrtFsPath() != null
+				&& location == StandardLocation.valueOf("SYSTEM_MODULES")) {
+			Set<Set<Location>> ss = new HashSet<>();
+			HashSet<Location> moduleLocations = new HashSet<>();
+			ModuleIdentifierVisitor visitor = new ModuleIdentifierVisitor();
+			Iterable<Path> roots = getJrtFs().getRootDirectories();
+			try {
+				for (Path path : roots) {
+					Files.walkFileTree(path, visitor);
+				}
+				moduleLocations.addAll(visitor.getModuleLocations());
+			}
+			catch (IOException ioe) {
+				throw new RuntimeException(ioe);
+			}
+			ss.add(moduleLocations);
+			return ss;
+		}
+		else {
+			return Collections.emptySet();
+		}
+	}
+
+	// Holds information that may help speed up compilation
+	static class CompilationInfoCache {
+
+		private Map<File, ArchiveInfo> archivePackageCache;
+
+		private boolean packageCacheInitialized = false;
+
+		private Map<String, Path> packageCache = new HashMap<String, Path>();
+
+		private ArchiveInfo moduleArchiveInfo;
+
+		ArchiveInfo getArchiveInfoFor(File archive) {
+			if (!archive.isFile() || !(archive.getName().endsWith(".zip")
+					|| archive.getName().endsWith(".jar"))) {
+				// it is not an archive
+				return null;
+			}
+			if (this.archivePackageCache == null) {
+				this.archivePackageCache = new HashMap<>();
+			}
+			try {
+				ArchiveInfo result = this.archivePackageCache.get(archive);
+				if (result == null) {
+					result = buildArchiveInfo(archive);
+					this.archivePackageCache.put(archive, result);
+				}
+				return result;
+			}
+			catch (Exception e) {
+				throw new IllegalStateException(
+						"Unexpected problem caching entries from " + archive.getName(),
+						e);
+			}
+		}
+
+		private synchronized ArchiveInfo buildPackageMap() {
+			if (!this.packageCacheInitialized) {
+				this.packageCacheInitialized = true;
+				Iterable<java.nio.file.Path> roots = getJrtFs().getRootDirectories();
+				PackageCacheBuilderVisitor visitor = new PackageCacheBuilderVisitor();
+				try {
+					for (java.nio.file.Path path : roots) {
+						Files.walkFileTree(path, visitor);
+					}
+				}
+				catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				List<String> ls = new ArrayList<>();
+				ls.addAll(this.packageCache.keySet());
+				Collections.sort(ls);
+				this.moduleArchiveInfo = new ArchiveInfo(ls, false);
+			}
+			return this.moduleArchiveInfo;
+		}
+
+		/**
+		 * Walk the specified archive and collect up the package names of any .class files
+		 * encountered. If the archive contains nested jars packaged in a BOOT style way
+		 * (under a BOOT-INF/lib folder) then walk those too and include relevant
+		 * packages.
+		 * @param file archive file to discover packages from
+		 * @return an ArchiveInfo encapsulating package info from the archive
+		 */
+		private ArchiveInfo buildArchiveInfo(File file) {
+			if (file.toString().endsWith("jrt-fs.jar")) {
+				// Special treatment for >=JDK9 - treat this as intention to use modules
+				return buildPackageMap();
+			}
+			List<String> packageNames = new ArrayList<>();
+			boolean isBootJar = false;
+			try (ZipFile openArchive = new ZipFile(file)) {
+				Enumeration<? extends ZipEntry> entries = openArchive.entries();
+				while (entries.hasMoreElements()) {
+					ZipEntry entry = entries.nextElement();
+					String name = entry.getName();
+					if (name.endsWith(".class")) {
+						if (name.startsWith(BOOT_PACKAGING_PREFIX_FOR_CLASSES)) {
+							isBootJar = true;
+							int idx = name.lastIndexOf('/') + 1;
+							if (idx != 0) {
+								if (idx == BOOT_PACKAGING_PREFIX_FOR_CLASSES.length()) {
+									// default package
+									packageNames.add("/");
+								}
+								else {
+									// Normalize to forward slashes
+									name = name.substring(
+											BOOT_PACKAGING_PREFIX_FOR_CLASSES.length(),
+											idx);
+									name = name.replace('\\', '/');
+									packageNames.add(name);
+								}
+							}
+						}
+						else {
+							int idx = name.lastIndexOf('/') + 1;
+							if (idx != 0) {
+								// Normalize to forward slashes
+								name = name.replace('\\', '/');
+								name = name.substring(0, idx);
+								packageNames.add(name);
+							}
+							else if (idx == 0) {
+								// default package entries in here
+								packageNames.add("/");
+							}
+						}
+					}
+					else if (name.startsWith(BOOT_PACKAGING_PREFIX_FOR_LIBRARIES)
+							&& name.endsWith(".jar")) {
+						isBootJar = true;
+						try (ZipInputStream zis = new ZipInputStream(
+								openArchive.getInputStream(entry))) {
+							Enumeration<? extends ZipEntry> nestedZipEnumerator = new ZipEnumerator(
+									zis);
+							while (nestedZipEnumerator.hasMoreElements()) {
+								ZipEntry innerEntry = nestedZipEnumerator.nextElement();
+								String innerEntryName = innerEntry.getName();
+								if (innerEntryName.endsWith(".class")) {
+									int idx = innerEntryName.lastIndexOf('/') + 1;
+									if (idx != 0) {
+										// Normalize to forward slashes
+										innerEntryName = innerEntryName.replace('\\',
+												'/');
+										innerEntryName = innerEntryName.substring(0, idx);
+										packageNames.add(innerEntryName);
+									}
+									else if (idx == 0) {
+										// default package entries in here
+										packageNames.add("/");
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			catch (IOException ioe) {
+				throw new IllegalStateException(
+						"Unexpected problem determining packages in " + file, ioe);
+			}
+			return new ArchiveInfo(packageNames, isBootJar);
+		}
+
+		static class ArchiveInfo {
+
+			// The packages identified in a particular archive
+			private List<String> packageNames;
+
+			private boolean isBootJar = false;
+
+			ArchiveInfo(List<String> packageNames, boolean isBootJar) {
+				this.packageNames = packageNames;
+				Collections.sort(this.packageNames);
+				this.isBootJar = isBootJar;
+			}
+
+			public List<String> getPackageNames() {
+				return this.packageNames;
+			}
+
+			public boolean isBootJar() {
+				return this.isBootJar;
+			}
+
+			public boolean containsPackage(String packageName,
+					boolean subpackageMatchesAllowed) {
+				if (subpackageMatchesAllowed) {
+					for (String candidatePackageName : this.packageNames) {
+						if (candidatePackageName.startsWith(packageName)) {
+							return true;
+						}
+					}
+					return false;
+				}
+				else {
+					// Must be an exact match, fast binary search:
+					int pos = Collections.binarySearch(this.packageNames, packageName);
+					return (pos >= 0);
+				}
+			}
+
+		}
+
+		private class PackageCacheBuilderVisitor extends SimpleFileVisitor<Path> {
+
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+					throws IOException {
+				if (file.getNameCount() > 3 && file.toString().endsWith(".class")) {
+					int fnc = file.getNameCount();
+					if (fnc > 3) { // There is a package name - e.g.
+									// /modules/java.base/java/lang/Object.class
+						Path packagePath = file.subpath(2, fnc - 1); // e.g. java/lang
+						String packagePathString = packagePath.toString() + "/";
+						CompilationInfoCache.this.packageCache.put(packagePathString,
+								file.subpath(0, fnc - 1)); // java/lang
+						// ->
+						// /modules/java.base/java/lang
+					}
+				}
+				return FileVisitResult.CONTINUE;
+			}
+
+		}
+
+	}
+
+	static class Key {
+
+		private Location location;
+
+		private String classpath;
+
+		private String packageName;
+
+		private Set<Kind> kinds;
+
+		private boolean recurse;
+
+		Key(Location location, String classpath, String packageName, Set<Kind> kinds,
+				boolean recurse) {
+			this.location = location;
+			this.classpath = classpath;
+			this.packageName = packageName;
+			this.kinds = kinds;
+			this.recurse = recurse;
+		}
+
+		@Override
+		public int hashCode() {
+			return (((this.location.hashCode() * 37) + this.classpath.hashCode() * 37
+					+ (this.packageName == null ? 0 : this.packageName.hashCode())) * 37
+					+ this.kinds.hashCode()) * 37 + (this.recurse ? 1 : 0);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof Key)) {
+				return false;
+			}
+			Key that = (Key) obj;
+			return this.location.equals(that.location)
+					&& this.classpath.equals(that.classpath)
+					&& this.kinds.equals(that.kinds) && (this.recurse == that.recurse)
+					&& (this.packageName == null ? (that.packageName == null)
+							: this.packageName.equals(that.packageName));
+		}
+
+	}
+
 	static class JDKModuleLocation implements Location {
+
 		private String moduleName;
+
 		private Path moduleRootPath;
-		
-		public JDKModuleLocation(String moduleName, Path moduleRootPath) {
+
+		JDKModuleLocation(String moduleName, Path moduleRootPath) {
 			this.moduleName = moduleName;
 			this.moduleRootPath = moduleRootPath;
 		}
@@ -586,114 +708,62 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		}
 
 		public String getModuleName() {
-			return moduleName;
+			return this.moduleName;
 		}
-		
+
 		public Path getModuleRootPath() {
-			return moduleRootPath;
+			return this.moduleRootPath;
 		}
-		
+
 		public String toString() {
-			return "JDKModuleLocation(" + moduleName + ")";
+			return "JDKModuleLocation(" + this.moduleName + ")";
 		}
 
 		public int hashCode() {
-			return moduleName.hashCode();
+			return this.moduleName.hashCode();
 		}
-		
+
 		public boolean equals(Object other) {
 			if (!(other instanceof JDKModuleLocation)) {
 				return false;
 			}
-			return this.hashCode() == ((JDKModuleLocation)other).hashCode();
+			return this.hashCode() == ((JDKModuleLocation) other).hashCode();
 		}
-		
+
 	}
-	
-	public String inferModuleName(Location location) throws IOException {
-		if (location instanceof JDKModuleLocation) {
-			JDKModuleLocation m = (JDKModuleLocation)location;
-			return m.getModuleName();
-		}
-		throw new IllegalStateException("Asked to inferModuleName from a "+location.getClass().getName());
-	}
-	
+
 	static class ModuleIdentifierVisitor extends SimpleFileVisitor<Path> {
-		
+
 		private Map<String, Path> modules = new HashMap<>();
-		
+
 		@Override
-		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+				throws IOException {
 			if (file.getNameCount() > 2 && file.toString().endsWith(".class")) {
 				// /modules/jdk.rmic/sun/tools/tree/CaseStatement.class
 				String moduleName = file.getName(1).toString(); // jdk.rmic
 				Path moduleRootPath = file.subpath(0, 2); // /modules/jdk.rmic
-				if (!modules.containsKey(moduleName)) {
-					modules.put(moduleName, moduleRootPath);
+				if (!this.modules.containsKey(moduleName)) {
+					this.modules.put(moduleName, moduleRootPath);
 				}
 			}
 			return FileVisitResult.CONTINUE;
 		}
 
 		public Set<Location> getModuleLocations() {
-			if (modules.size()==0) {
+			if (this.modules.size() == 0) {
 				return Collections.emptySet();
-			} else {
+			}
+			else {
 				Set<Location> locations = new HashSet<>();
-				for (Map.Entry<String,Path> moduleEntry: modules.entrySet()) {
-					locations.add(new JDKModuleLocation(moduleEntry.getKey(),moduleEntry.getValue()));
+				for (Map.Entry<String, Path> moduleEntry : this.modules.entrySet()) {
+					locations.add(new JDKModuleLocation(moduleEntry.getKey(),
+							moduleEntry.getValue()));
 				}
 				return locations;
 			}
 		}
+
 	}
 
-	private String jrtFsFilePath = null;
-	
-	private boolean checkedForJrtFsPath = false;
-
-	private boolean hasJrtFsPath() {
-		return getJrtFsPath() != null;
-	}
-	
-	private String getJrtFsPath() {
-		if (!checkedForJrtFsPath) {
-			String javaHome = System.getProperty("java.home");
-			String jrtFsFilePath = javaHome + File.separator + "lib" + File.separator + "jrt-fs.jar";
-			File jrtFsFile = new File(jrtFsFilePath);
-			if (jrtFsFile.exists()) {
-				this.jrtFsFilePath = jrtFsFilePath;
-			}
-			checkedForJrtFsPath = true;
-		}
-		return jrtFsFilePath;
-	}
-	
-	public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
-		if (getJrtFsPath()!=null && location == StandardLocation.valueOf("SYSTEM_MODULES")) {
-			Set<Set<Location>> ss = new HashSet<>();
-			HashSet<Location> moduleLocations = new HashSet<>();
-			ModuleIdentifierVisitor visitor = new ModuleIdentifierVisitor();
-			Iterable<Path> roots = getJrtFs().getRootDirectories();
-			try {
-				for (Path path: roots) {
-					Files.walkFileTree(path, visitor);
-				}
-				moduleLocations.addAll(visitor.getModuleLocations());
-			} catch (IOException ioe) {
-				throw new RuntimeException(ioe);
-			}
-			ss.add(moduleLocations);
-			return ss;
-		} else {
-			return Collections.emptySet();
-		}
-	}
-
-	private static FileSystem getJrtFs() {
-		if (fs == null) {
-			 fs = FileSystems.getFileSystem(JRT_URI);
-		}
-		return fs;
-	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
@@ -37,8 +38,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ServerWebExchange;
-
-import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -58,7 +57,7 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> form(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
 		return request.getFormData().doOnSuccess(params -> wrapper.params(params))
-				.then(Mono.defer(() -> processor.post(wrapper, null, false)));
+				.then(Mono.defer(() -> this.processor.post(wrapper, null, false)));
 	}
 
 	@PostMapping(path = "/**", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -67,7 +66,7 @@ public class FunctionController {
 		FunctionWrapper wrapper = wrapper(request);
 		return request.getMultipartData()
 				.doOnSuccess(params -> wrapper.params(multi(params)))
-				.then(Mono.defer(() -> processor.post(wrapper, null, false)));
+				.then(Mono.defer(() -> this.processor.post(wrapper, null, false)));
 	}
 
 	private MultiValueMap<String, String> multi(MultiValueMap<String, Part> body) {
@@ -87,7 +86,7 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> post(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.post(wrapper, request);
+		return this.processor.post(wrapper, request);
 	}
 
 	@PostMapping(path = "/**")
@@ -95,7 +94,7 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> post(ServerWebExchange request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.post(wrapper, body, false);
+		return this.processor.post(wrapper, body, false);
 	}
 
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -103,21 +102,21 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> postStream(ServerWebExchange request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.post(wrapper, body, true);
+		return this.processor.post(wrapper, body, true);
 	}
 
 	@GetMapping(path = "/**")
 	@ResponseBody
 	public Mono<ResponseEntity<?>> get(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.get(wrapper);
+		return this.processor.get(wrapper);
 	}
 
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<?>> getStream(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.stream(wrapper);
+		return this.processor.stream(wrapper);
 	}
 
 	private FunctionWrapper wrapper(ServerWebExchange request) {
@@ -139,4 +138,5 @@ public class FunctionController {
 		}
 		return wrapper;
 	}
+
 }

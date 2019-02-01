@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2012-2019-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.gson.Gson;
-
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanCreationException;
@@ -47,9 +48,6 @@ import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 /**
  * @author Dave Syer
  *
@@ -57,30 +55,34 @@ import reactor.core.publisher.Mono;
 public class ContextFunctionCatalogInitializerTests {
 
 	private GenericApplicationContext context;
+
 	private FunctionCatalog catalog;
+
 	private FunctionInspector inspector;
 
 	@After
 	public void close() {
-		if (context != null) {
-			context.close();
+		if (this.context != null) {
+			this.context.close();
 		}
 	}
 
 	@Test
 	public void lookUps() {
 		create(SimpleConfiguration.class);
-		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
-		assertThat((Function<?, ?>) catalog.lookup(Function.class, "function"))
+		assertThat(this.context.getBean("function"))
+				.isInstanceOf(FunctionRegistration.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 	}
 
 	@Test
 	public void properties() {
 		create(PropertiesConfiguration.class, "app.greeting=hello");
-		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
+		assertThat(this.context.getBean("function"))
+				.isInstanceOf(FunctionRegistration.class);
 		@SuppressWarnings("unchecked")
-		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) catalog
+		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) this.catalog
 				.lookup(Function.class, "function");
 		assertThat(function).isInstanceOf(Function.class);
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("hello foo");
@@ -89,9 +91,10 @@ public class ContextFunctionCatalogInitializerTests {
 	@Test
 	public void value() {
 		create(ValueConfiguration.class, "app.greeting=hello");
-		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
+		assertThat(this.context.getBean("function"))
+				.isInstanceOf(FunctionRegistration.class);
 		@SuppressWarnings("unchecked")
-		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) catalog
+		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) this.catalog
 				.lookup(Function.class, "function");
 		assertThat(function).isInstanceOf(Function.class);
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("hello foo");
@@ -101,9 +104,10 @@ public class ContextFunctionCatalogInitializerTests {
 	@Ignore
 	public void compose() {
 		create(SimpleConfiguration.class);
-		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
+		assertThat(this.context.getBean("function"))
+				.isInstanceOf(FunctionRegistration.class);
 		@SuppressWarnings("unchecked")
-		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) catalog
+		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) this.catalog
 				.lookup(Supplier.class, "supplier|function");
 		assertThat(supplier).isInstanceOf(Supplier.class);
 		assertThat(supplier.get().blockFirst()).isEqualTo("HELLO");
@@ -113,8 +117,9 @@ public class ContextFunctionCatalogInitializerTests {
 	@Test(expected = BeanCreationException.class)
 	public void missingType() {
 		create(MissingTypeConfiguration.class);
-		assertThat(context.getBean("function")).isInstanceOf(FunctionRegistration.class);
-		assertThat((Function<?, ?>) catalog.lookup(Function.class, "function"))
+		assertThat(this.context.getBean("function"))
+				.isInstanceOf(FunctionRegistration.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
 		// TODO: support for type inference from functional bean registrations
 	}
@@ -122,64 +127,70 @@ public class ContextFunctionCatalogInitializerTests {
 	@Test
 	public void configurationFunction() {
 		create(FunctionConfiguration.class);
-		assertThat(context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) catalog.lookup(Function.class, "foos"))
+		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
-		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
-				.isEqualTo(String.class);
-		assertThat(inspector.getOutputType(catalog.lookup(Function.class, "foos")))
-				.isEqualTo(Foo.class);
-		assertThat(inspector.getInputWrapper(catalog.lookup(Function.class, "foos")))
-				.isEqualTo(Flux.class);
+		assertThat(
+				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
+						.isEqualTo(String.class);
+		assertThat(
+				this.inspector.getOutputType(this.catalog.lookup(Function.class, "foos")))
+						.isEqualTo(Foo.class);
+		assertThat(this.inspector
+				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
+						.isEqualTo(Flux.class);
 	}
 
 	@Test
 	public void dependencyInjection() {
 		create(DependencyInjectionConfiguration.class);
-		assertThat(context.getBean("foos")).isInstanceOf(FunctionRegistration.class);
-		assertThat((Function<?, ?>) catalog.lookup(Function.class, "foos"))
+		assertThat(this.context.getBean("foos")).isInstanceOf(FunctionRegistration.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
-		assertThat(inspector.getInputType(catalog.lookup(Function.class, "foos")))
-				.isEqualTo(String.class);
+		assertThat(
+				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
+						.isEqualTo(String.class);
 	}
 
 	@Test
 	public void simpleFunction() {
 		create(SimpleConfiguration.class);
-		Object bean = context.getBean("function");
+		Object bean = this.context.getBean("function");
 		assertThat(bean).isInstanceOf(FunctionRegistration.class);
-		Function<Flux<String>, Flux<String>> function = catalog.lookup(Function.class,
-				"function");
+		Function<Flux<String>, Flux<String>> function = this.catalog
+				.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
-		assertThat(inspector.getRegistration(function)).isNotNull();
-		assertThat(inspector.getRegistration(function).getType()).isEqualTo(
+		assertThat(this.inspector.getRegistration(function)).isNotNull();
+		assertThat(this.inspector.getRegistration(function).getType()).isEqualTo(
 				FunctionType.from(String.class).to(String.class).wrap(Flux.class));
 	}
 
 	@Test
 	public void simpleSupplier() {
 		create(SimpleConfiguration.class);
-		assertThat(context.getBean("supplier")).isInstanceOf(FunctionRegistration.class);
-		Supplier<Flux<String>> supplier = catalog.lookup(Supplier.class, "supplier");
+		assertThat(this.context.getBean("supplier"))
+				.isInstanceOf(FunctionRegistration.class);
+		Supplier<Flux<String>> supplier = this.catalog.lookup(Supplier.class, "supplier");
 		assertThat(supplier.get().blockFirst()).isEqualTo("hello");
 	}
 
 	@Test
 	public void simpleConsumer() {
 		create(SimpleConfiguration.class);
-		assertThat(context.getBean("consumer")).isInstanceOf(FunctionRegistration.class);
-		Function<Flux<String>, Mono<Void>> consumer = catalog.lookup(Function.class,
+		assertThat(this.context.getBean("consumer"))
+				.isInstanceOf(FunctionRegistration.class);
+		Function<Flux<String>, Mono<Void>> consumer = this.catalog.lookup(Function.class,
 				"consumer");
 		consumer.apply(Flux.just("foo", "bar")).subscribe();
-		assertThat(context.getBean(SimpleConfiguration.class).list).hasSize(2);
+		assertThat(this.context.getBean(SimpleConfiguration.class).list).hasSize(2);
 	}
 
 	@Test
 	public void overrideGson() {
 		create(GsonConfiguration.class);
-		Gson user = context.getBean(GsonConfiguration.class).gson();
-		Gson bean = context.getBean(Gson.class);
+		Gson user = this.context.getBean(GsonConfiguration.class).gson();
+		Gson bean = this.context.getBean(Gson.class);
 		assertThat(user).isSameAs(bean);
 	}
 
@@ -193,7 +204,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 	private void create(ApplicationContextInitializer<GenericApplicationContext>[] types,
 			String... props) {
-		context = new GenericApplicationContext();
+		this.context = new GenericApplicationContext();
 		Map<String, Object> map = new HashMap<>();
 		for (String prop : props) {
 			String[] array = StringUtils.delimitedListToStringArray(prop, "=");
@@ -202,17 +213,17 @@ public class ContextFunctionCatalogInitializerTests {
 			map.put(key, value);
 		}
 		if (!map.isEmpty()) {
-			context.getEnvironment().getPropertySources()
+			this.context.getEnvironment().getPropertySources()
 					.addFirst(new MapPropertySource("testProperties", map));
 		}
 		for (ApplicationContextInitializer<GenericApplicationContext> type : types) {
-			type.initialize(context);
+			type.initialize(this.context);
 		}
-		new ContextFunctionCatalogInitializer.ContextFunctionCatalogBeanRegistrar(context)
-				.postProcessBeanDefinitionRegistry(context);
-		context.refresh();
-		catalog = context.getBean(FunctionCatalog.class);
-		inspector = context.getBean(FunctionInspector.class);
+		new ContextFunctionCatalogInitializer.ContextFunctionCatalogBeanRegistrar(
+				this.context).postProcessBeanDefinitionRegistry(this.context);
+		this.context.refresh();
+		this.catalog = this.context.getBean(FunctionCatalog.class);
+		this.inspector = this.context.getBean(FunctionInspector.class);
 	}
 
 	protected static class EmptyConfiguration
@@ -221,6 +232,7 @@ public class ContextFunctionCatalogInitializerTests {
 		@Override
 		public void initialize(GenericApplicationContext applicationContext) {
 		}
+
 	}
 
 	protected static class MissingTypeConfiguration
@@ -270,8 +282,9 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Bean
 		public Consumer<String> consumer() {
-			return value -> list.add(value);
+			return value -> this.list.add(value);
 		}
+
 	}
 
 	@ConfigurationProperties("app")
@@ -298,7 +311,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Bean
 		public Function<String, String> function() {
-			return value -> greeting + " " + value;
+			return value -> this.greeting + " " + value;
 		}
 
 	}
@@ -319,7 +332,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Bean
 		public Function<String, String> function() {
-			return value -> greeting + " " + value;
+			return value -> this.greeting + " " + value;
 		}
 
 	}
@@ -363,6 +376,7 @@ public class ContextFunctionCatalogInitializerTests {
 		public String value() {
 			return "Hello";
 		}
+
 	}
 
 	protected static class FunctionConfiguration
@@ -386,9 +400,11 @@ public class ContextFunctionCatalogInitializerTests {
 		public String value() {
 			return "Hello";
 		}
+
 	}
 
 	public static class Foo {
+
 		private String value;
 
 		public Foo(String value) {
@@ -399,12 +415,13 @@ public class ContextFunctionCatalogInitializerTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 }

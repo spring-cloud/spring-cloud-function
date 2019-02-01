@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class OpenWhiskActionRequest {
 	private Map<String, Object> value;
 
 	public String getActionName() {
-		return actionName;
+		return this.actionName;
 	}
 
 	public void setActionName(String actionName) {
@@ -49,7 +49,7 @@ public class OpenWhiskActionRequest {
 	}
 
 	public String getActivationId() {
-		return activationId;
+		return this.activationId;
 	}
 
 	public void setActivationId(String activationId) {
@@ -57,7 +57,7 @@ public class OpenWhiskActionRequest {
 	}
 
 	public String getApiKey() {
-		return apiKey;
+		return this.apiKey;
 	}
 
 	public void setApiKey(String apiKey) {
@@ -65,7 +65,7 @@ public class OpenWhiskActionRequest {
 	}
 
 	public String getDeadline() {
-		return deadline;
+		return this.deadline;
 	}
 
 	public void setDeadline(String deadline) {
@@ -73,7 +73,7 @@ public class OpenWhiskActionRequest {
 	}
 
 	public String getNamespace() {
-		return namespace;
+		return this.namespace;
 	}
 
 	public void setNamespace(String namespace) {
@@ -81,10 +81,11 @@ public class OpenWhiskActionRequest {
 	}
 
 	public Map<String, Object> getValue() {
-		return value;
+		return this.value;
 	}
 
 	public void setValue(Map<String, Object> value) {
 		this.value = value;
 	}
+
 }

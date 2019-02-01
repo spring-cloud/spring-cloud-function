@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -28,14 +29,12 @@ import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import reactor.core.publisher.Mono;
-
 /**
  * @author Dave Syer
  *
  */
 @RunWith(SpringRunner.class)
-//Only need web-application-type because MVC is on the classpath
+// Only need web-application-type because MVC is on the classpath
 @FunctionalSpringBootTest("spring.main.web-application-type=reactive")
 @AutoConfigureWebTestClient
 public class FunctionalTests {
@@ -45,15 +44,18 @@ public class FunctionalTests {
 
 	@Test
 	public void words() throws Exception {
-		client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
+		this.client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
 				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
 	}
 
 	@SpringBootConfiguration
 	protected static class TestConfiguration implements Function<String, String> {
+
 		@Override
 		public String apply(String value) {
 			return value.toUpperCase();
 		}
+
 	}
+
 }

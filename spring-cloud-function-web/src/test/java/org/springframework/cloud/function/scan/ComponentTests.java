@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.function.Function;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -39,8 +40,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-
 /**
  * @author Dave Syer
  *
@@ -51,20 +50,22 @@ public class ComponentTests {
 
 	@LocalServerPort
 	private int port;
+
 	@Autowired
 	private Greeter greeter;
+
 	@Autowired
 	private TestRestTemplate rest;
 
 	@Test
 	public void contextLoads() throws Exception {
-		assertThat(greeter).isNotNull();
+		assertThat(this.greeter).isNotNull();
 	}
 
 	@Test
 	@Ignore("FIXME")
 	public void greeter() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(
 						RequestEntity.post(new URI("/greeter"))
 								.contentType(MediaType.TEXT_PLAIN).body("World"),
@@ -76,14 +77,17 @@ public class ComponentTests {
 	@SpringBootApplication
 	@ComponentScan
 	protected static class TestConfiguration {
+
 	}
 
 	@Component("greeter")
 	protected static class Greeter implements Function<Flux<String>, Flux<String>> {
+
 		@Override
 		public Flux<String> apply(Flux<String> flux) {
 			return flux.map(name -> "Hello " + name);
 		}
+
 	}
 
 }

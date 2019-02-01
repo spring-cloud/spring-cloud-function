@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,8 +15,6 @@
  */
 
 package org.springframework.cloud.function.adapter.aws;
-
-import static java.util.stream.Collectors.toList;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,7 +30,11 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
+import static java.util.stream.Collectors.toList;
+
 /**
+ * @param <E> payload type
+ * @param <O> response type
  * @author Mark Fisher
  * @author Halvdan Hoem Grelland
  */
@@ -65,28 +67,26 @@ public class SpringBootKinesisEventHandler<E, O>
 
 		if (functionAcceptsMessage()) {
 			return wrapInMessages(payloads);
-		} else {
+		}
+		else {
 			return payloads;
 		}
 	}
 
 	private List<Message<E>> wrapInMessages(List<E> payloads) {
-		return payloads.stream()
-				.map(GenericMessage::new)
-				.collect(Collectors.toList());
+		return payloads.stream().map(GenericMessage::new).collect(Collectors.toList());
 	}
 
 	private List<E> deserializePayloads(List<KinesisEvent.KinesisEventRecord> records) {
 		return RecordDeaggregator.deaggregate(records).stream()
-				.map(this::deserializeUserRecord)
-				.collect(toList());
+				.map(this::deserializeUserRecord).collect(toList());
 	}
 
 	@SuppressWarnings("unchecked")
 	private E deserializeUserRecord(UserRecord userRecord) {
 		try {
 			byte[] jsonBytes = userRecord.getData().array();
-			return (E) mapper.readValue(jsonBytes, getInputType());
+			return (E) this.mapper.readValue(jsonBytes, getInputType());
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot convert event", e);
@@ -94,6 +94,7 @@ public class SpringBootKinesisEventHandler<E, O>
 	}
 
 	private boolean functionAcceptsMessage() {
-		return inspector.isMessage(function());
+		return this.inspector.isMessage(function());
 	}
+
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
 
+// @checkstyle:off
 @SpringBootApplication
 @EnableConfigurationProperties(Properties.class)
 public class Config implements ApplicationContextInitializer<GenericApplicationContext> {
@@ -40,14 +41,14 @@ public class Config implements ApplicationContextInitializer<GenericApplicationC
 		this.props = props;
 	}
 
+	public static void main(String[] args) throws Exception {
+		FunctionalSpringApplication.run(Config.class, args);
+	}
+
 	@Bean
 	public Function<Foo, Bar> function() {
 		return value -> new Bar(
-				value.uppercase() + (props.getFoo() != null ? "-" + props.getFoo() : ""));
-	}
-
-	public static void main(String[] args) throws Exception {
-		FunctionalSpringApplication.run(Config.class, args);
+				value.uppercase() + (this.props.getFoo() != null ? "-" + this.props.getFoo() : ""));
 	}
 
 	@Override
@@ -61,6 +62,7 @@ public class Config implements ApplicationContextInitializer<GenericApplicationC
 	}
 
 }
+// @checkstyle:on
 
 class Foo {
 
@@ -69,25 +71,26 @@ class Foo {
 	Foo() {
 	}
 
-	public String lowercase() {
-		return value.toLowerCase();
-	}
-
-	public Foo(String value) {
+	Foo(String value) {
 		this.value = value;
 	}
 
+	public String lowercase() {
+		return this.value.toLowerCase();
+	}
+
 	public String uppercase() {
-		return value.toUpperCase();
+		return this.value.toUpperCase();
 	}
 
 	public String getValue() {
-		return value;
+		return this.value;
 	}
 
 	public void setValue(String value) {
 		this.value = value;
 	}
+
 }
 
 class Bar {
@@ -97,12 +100,12 @@ class Bar {
 	Bar() {
 	}
 
-	public Bar(String value) {
+	Bar(String value) {
 		this.value = value;
 	}
 
 	public String getValue() {
-		return value;
+		return this.value;
 	}
 
 	public void setValue(String value) {

@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,9 +23,13 @@ import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.core.io.Resource;
 
 /**
+ * @param <T> input argument type
+ * @param <R> output argument type
  * @author Mark Fisher
  */
-public class LambdaCompilingFunction<T, R> extends AbstractLambdaCompilingProxy<Function<T, R>> implements FunctionFactoryMetadata<Function<T, R>>, Function<T, R> {
+public class LambdaCompilingFunction<T, R>
+		extends AbstractLambdaCompilingProxy<Function<T, R>>
+		implements FunctionFactoryMetadata<Function<T, R>>, Function<T, R> {
 
 	public LambdaCompilingFunction(Resource resource, FunctionCompiler<T, R> compiler) {
 		super(resource, compiler);
@@ -35,4 +39,5 @@ public class LambdaCompilingFunction<T, R> extends AbstractLambdaCompilingProxy<
 	public R apply(T input) {
 		return this.getTarget().apply(input);
 	}
+
 }

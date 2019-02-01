@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,13 @@ import java.util.function.Supplier;
 import org.springframework.util.ClassUtils;
 
 /**
+ * @param <T> supplied type
  * @author Dave Syer
- *
  */
 public class IsolatedSupplier<T> implements Supplier<T>, Isolated {
 
 	private final Supplier<T> supplier;
+
 	private final ClassLoader classLoader;
 
 	public IsolatedSupplier(Supplier<T> supplier) {
@@ -44,7 +45,7 @@ public class IsolatedSupplier<T> implements Supplier<T>, Isolated {
 		ClassLoader context = ClassUtils
 				.overrideThreadContextClassLoader(this.classLoader);
 		try {
-			return supplier.get();
+			return this.supplier.get();
 		}
 		finally {
 			ClassUtils.overrideThreadContextClassLoader(context);

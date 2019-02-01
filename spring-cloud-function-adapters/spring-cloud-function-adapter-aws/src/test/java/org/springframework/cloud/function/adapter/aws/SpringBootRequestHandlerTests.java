@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,9 @@ public class SpringBootRequestHandlerTests {
 
 	@Test
 	public void functionBean() throws Exception {
-		handler = new SpringBootRequestHandler<Foo, Bar>(FunctionConfig.class);
-		handler.initialize();
-		Object output = handler.handleRequest(new Foo("foo"), null);
+		this.handler = new SpringBootRequestHandler<Foo, Bar>(FunctionConfig.class);
+		this.handler.initialize();
+		Object output = this.handler.handleRequest(new Foo("foo"), null);
 		assertThat(output).isInstanceOf(Bar.class);
 	}
 
@@ -48,13 +48,16 @@ public class SpringBootRequestHandlerTests {
 	@Import({ ContextFunctionCatalogAutoConfiguration.class,
 			JacksonAutoConfiguration.class })
 	protected static class FunctionConfig {
+
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
 		}
+
 	}
 
 	protected static class Foo {
+
 		private String value;
 
 		public Foo(String value) {
@@ -62,15 +65,17 @@ public class SpringBootRequestHandlerTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 	protected static class Bar {
+
 		private String value;
 
 		public Bar() {
@@ -81,11 +86,13 @@ public class SpringBootRequestHandlerTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
+
 }

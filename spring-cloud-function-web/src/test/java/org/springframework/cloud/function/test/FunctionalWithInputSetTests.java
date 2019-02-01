@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package org.springframework.cloud.function.test;
 
-import static org.junit.Assert.assertTrue;
-
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -32,7 +31,7 @@ import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import reactor.core.publisher.Mono;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Dave Syer
@@ -48,8 +47,11 @@ public class FunctionalWithInputSetTests {
 
 	@Test
 	public void words() throws Exception {
-		String reply = client.post().uri("/").body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
-				.exchange().expectStatus().isOk().expectBody(String.class).returnResult().getResponseBody();
+		String reply = this.client.post().uri("/")
+				.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"),
+						String.class)
+				.exchange().expectStatus().isOk().expectBody(String.class).returnResult()
+				.getResponseBody();
 		assertTrue(reply.contains("FOO"));
 		assertTrue(reply.contains("BAR"));
 		assertTrue(reply.contains("{\"value\":\""));
@@ -57,11 +59,13 @@ public class FunctionalWithInputSetTests {
 
 	@SpringBootConfiguration
 	protected static class TestConfiguration implements Function<Set<Foo>, Foo> {
+
 		@Override
 		public Foo apply(Set<Foo> value) {
 			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase())
 					.collect(Collectors.joining()));
 		}
+
 	}
 
 	public static class Foo {
@@ -89,4 +93,5 @@ public class FunctionalWithInputSetTests {
 		}
 
 	}
+
 }

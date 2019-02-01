@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,13 @@ import java.util.stream.Collectors;
 
 import org.junit.After;
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -114,50 +113,60 @@ public class AzureSpringBootRequestHandlerTests {
 
 	@After
 	public void close() throws IOException {
-		if (handler != null)
-			handler.close();
+		if (this.handler != null) {
+			this.handler.close();
+		}
 	}
 
 	@Configuration
 	protected static class BareConfig {
+
 		@Bean
 		public Function<Flux<Foo>, Flux<Bar>> function() {
 			return foos -> foos.map(foo -> new Bar(foo.getValue().toUpperCase()));
 		}
+
 	}
 
 	@Configuration
 	@EnableAutoConfiguration
 	protected static class AutoConfig {
+
 		@Bean
 		public Function<Foo, Bar> uppercase() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
 		}
+
 	}
 
 	@Configuration
 	@EnableAutoConfiguration
 	protected static class ListConfig {
+
 		@Bean
 		public Function<List<Foo>, List<Bar>> uppercase() {
 			return foos -> foos.stream().map(foo -> new Bar(foo.getValue().toUpperCase()))
 					.collect(Collectors.toList());
 		}
+
 	}
 
 	@Configuration
 	@EnableAutoConfiguration
 	protected static class CollectConfig {
+
 		@Bean
 		public Function<List<Foo>, Bar> uppercase() {
 			return foos -> new Bar(foos.stream().map(foo -> foo.getValue().toUpperCase())
 					.collect(Collectors.joining(",")));
 		}
+
 	}
 
 	@Configuration
 	@EnableAutoConfiguration
 	protected static class MultiConfig {
+
 		@Bean
 		public Function<Foo, Bar> uppercase() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
@@ -167,6 +176,7 @@ public class AzureSpringBootRequestHandlerTests {
 		public Function<Bar, Foo> lowercase() {
 			return bar -> new Foo(bar.getValue().toLowerCase());
 		}
+
 	}
 
 }
@@ -178,25 +188,26 @@ class Foo {
 	Foo() {
 	}
 
-	public String lowercase() {
-		return value.toLowerCase();
-	}
-
 	public Foo(String value) {
 		this.value = value;
 	}
 
+	public String lowercase() {
+		return this.value.toLowerCase();
+	}
+
 	public String uppercase() {
-		return value.toUpperCase();
+		return this.value.toUpperCase();
 	}
 
 	public String getValue() {
-		return value;
+		return this.value;
 	}
 
 	public void setValue(String value) {
 		this.value = value;
 	}
+
 }
 
 class Bar {
@@ -211,7 +222,7 @@ class Bar {
 	}
 
 	public String getValue() {
-		return value;
+		return this.value;
 	}
 
 	public void setValue(String value) {

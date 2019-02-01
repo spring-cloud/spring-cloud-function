@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,19 @@ public class FunctionCompilerTests {
 	public void transformsFluxString() {
 		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
 				String.class.getName()).compile("foos",
-						"flux -> flux.map(v -> v.toUpperCase())", "Flux<String>", "Flux<String>");
-		assertThat(FunctionFactoryUtils.isFluxFunction(compiled.getFactoryMethod())).isTrue();
+						"flux -> flux.map(v -> v.toUpperCase())", "Flux<String>",
+						"Flux<String>");
+		assertThat(FunctionFactoryUtils.isFluxFunction(compiled.getFactoryMethod()))
+				.isTrue();
 	}
 
 	@Test
 	public void transformsString() {
 		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
-				String.class.getName()).compile("foos", "v -> v.toUpperCase()", "String", "String");
-		assertThat(FunctionFactoryUtils.isFluxFunction(compiled.getFactoryMethod())).isFalse();
+				String.class.getName()).compile("foos", "v -> v.toUpperCase()", "String",
+						"String");
+		assertThat(FunctionFactoryUtils.isFluxFunction(compiled.getFactoryMethod()))
+				.isFalse();
 		assertThat(compiled.getResult().apply("hello")).isEqualTo("HELLO");
 	}
 

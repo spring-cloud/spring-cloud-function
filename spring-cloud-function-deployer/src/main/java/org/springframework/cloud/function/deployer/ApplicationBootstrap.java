@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,13 +45,23 @@ import org.springframework.util.StringUtils;
 public class ApplicationBootstrap {
 
 	private static Log logger = LogFactory.getLog(ApplicationBootstrap.class);
+
 	private ApplicationRunner runner;
+
 	private URLClassLoader classLoader;
+
+	private static boolean isolated(String[] args) {
+		for (String arg : args) {
+			if (arg.equals("--function.runner.isolated=false")) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	/**
 	 * Run the provided main class as a Spring Boot application with the provided command
 	 * line arguments.
-	 *
 	 * @param mainClass the main class
 	 * @param args the command line arguments
 	 */
@@ -104,15 +114,6 @@ public class ApplicationBootstrap {
 		return this.runner;
 	}
 
-	private static boolean isolated(String[] args) {
-		for (String arg : args) {
-			if (arg.equals("--function.runner.isolated=false")) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	private URLClassLoader createClassLoader(Class<?> mainClass) {
 		URL[] urls = findClassPath(mainClass);
 		if (urls.length == 1) {
@@ -140,7 +141,6 @@ public class ApplicationBootstrap {
 		}
 		return new URLClassLoader(child.toArray(new URL[0]), base);
 	}
-
 
 	private URL[] findClassPath(Class<?> mainClass) {
 		ClassLoader base = mainClass.getClassLoader();
@@ -200,4 +200,5 @@ public class ApplicationBootstrap {
 		}
 		return null;
 	}
+
 }

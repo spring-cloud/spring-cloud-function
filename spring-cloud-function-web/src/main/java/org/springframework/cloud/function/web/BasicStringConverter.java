@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,17 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 
+/**
+ * Simple implementation of a {@link StringConverter}.
+ *
+ * @author Dave Syer
+ */
 public class BasicStringConverter implements StringConverter {
 
 	private ConversionService conversionService;
+
 	private ConfigurableListableBeanFactory registry;
+
 	private FunctionInspector inspector;
 
 	public BasicStringConverter(FunctionInspector inspector,
@@ -35,16 +42,14 @@ public class BasicStringConverter implements StringConverter {
 
 	@Override
 	public Object convert(Object function, String value) {
-		if (conversionService == null && registry != null) {
-			ConversionService conversionService = this.registry
-					.getConversionService();
+		if (this.conversionService == null && this.registry != null) {
+			ConversionService conversionService = this.registry.getConversionService();
 			this.conversionService = conversionService != null ? conversionService
 					: new DefaultConversionService();
 		}
-		Class<?> type = inspector.getInputType(function);
-		return conversionService.canConvert(String.class, type)
-				? conversionService.convert(value, type)
-				: value;
+		Class<?> type = this.inspector.getInputType(function);
+		return this.conversionService.canConvert(String.class, type)
+				? this.conversionService.convert(value, type) : value;
 	}
 
 }

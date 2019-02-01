@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,15 +36,16 @@ public class SupplierCompilerTests {
 		CompiledFunctionFactory<Supplier<String>> compiled = new SupplierCompiler<String>(
 				String.class.getName()).compile("foos",
 						"() -> Flux.just(\"foo\", \"bar\")", "Flux<String>");
-		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod())).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod()))
+				.isTrue();
 	}
 
 	@Test
 	public void supppliesString() {
 		CompiledFunctionFactory<Supplier<String>> compiled = new SupplierCompiler<String>(
-				String.class.getName()).compile("foos",
-						"() -> \"foo\"", "String");
-		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod())).isFalse();
+				String.class.getName()).compile("foos", "() -> \"foo\"", "String");
+		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod()))
+				.isFalse();
 		assertThat(compiled.getResult().get()).isEqualTo("foo");
 	}
 
@@ -52,9 +53,11 @@ public class SupplierCompilerTests {
 	public void supppliesFluxStreamString() {
 		CompiledFunctionFactory<Supplier<Flux<String>>> compiled = new SupplierCompiler<Flux<String>>(
 				String.class.getName()).compile("foos",
-				"() -> Flux.interval(Duration.ofMillis(1000)).map(Object::toString)",
-				"Flux<String>");
-		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod())).isTrue();
+						"() -> Flux.interval(Duration.ofMillis(1000)).map(Object::toString)",
+						"Flux<String>");
+		assertThat(FunctionFactoryUtils.isFluxSupplier(compiled.getFactoryMethod()))
+				.isTrue();
 		assertThat(compiled.getResult().get().blockFirst()).isEqualTo("0");
 	}
+
 }

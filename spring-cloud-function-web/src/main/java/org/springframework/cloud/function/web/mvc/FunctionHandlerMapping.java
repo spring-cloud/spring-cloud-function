@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	public FunctionHandlerMapping(FunctionCatalog catalog,
 			FunctionController controller) {
 		this.functions = catalog;
-		logger.info("FunctionCatalog: " + catalog);
+		this.logger.info("FunctionCatalog: " + catalog);
 		setOrder(super.getOrder() - 5);
 		this.controller = controller;
 	}
@@ -64,9 +64,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
-		detectHandlerMethods(controller);
-		while (prefix.endsWith("/")) {
-			prefix = prefix.substring(0, prefix.length() - 1);
+		detectHandlerMethods(this.controller);
+		while (this.prefix.endsWith("/")) {
+			this.prefix = this.prefix.substring(0, this.prefix.length() - 1);
 		}
 	}
 
@@ -86,24 +86,24 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		if (path == null) {
 			return handler;
 		}
-		if (StringUtils.hasText(prefix) && !path.startsWith(prefix)) {
+		if (StringUtils.hasText(this.prefix) && !path.startsWith(this.prefix)) {
 			return null;
 		}
-		if (path.startsWith(prefix)) {
-			path = path.substring(prefix.length());
+		if (path.startsWith(this.prefix)) {
+			path = path.substring(this.prefix.length());
 		}
 		Object function = findFunctionForGet(request, path);
 		if (function != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Found function for GET: " + path);
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Found function for GET: " + path);
 			}
 			request.setAttribute(WebRequestConstants.HANDLER, function);
 			return handler;
 		}
 		function = findFunctionForPost(request, path);
 		if (function != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Found function for POST: " + path);
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Found function for POST: " + path);
 			}
 			request.setAttribute(WebRequestConstants.HANDLER, function);
 			return handler;
@@ -116,12 +116,12 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
-		Consumer<Publisher<?>> consumer = functions.lookup(Consumer.class, path);
+		Consumer<Publisher<?>> consumer = this.functions.lookup(Consumer.class, path);
 		if (consumer != null) {
 			request.setAttribute(WebRequestConstants.CONSUMER, consumer);
 			return consumer;
 		}
-		Function<Object, Object> function = functions.lookup(Function.class, path);
+		Function<Object, Object> function = this.functions.lookup(Function.class, path);
 		if (function != null) {
 			request.setAttribute(WebRequestConstants.FUNCTION, function);
 			return function;
@@ -134,7 +134,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
-		Supplier<Publisher<?>> supplier = functions.lookup(Supplier.class, path);
+		Supplier<Publisher<?>> supplier = this.functions.lookup(Supplier.class, path);
 		if (supplier != null) {
 			request.setAttribute(WebRequestConstants.SUPPLIER, supplier);
 			return supplier;
@@ -150,7 +150,8 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			name = builder.toString();
 			value = path.length() > name.length() ? path.substring(name.length() + 1)
 					: null;
-			Function<Object, Object> function = functions.lookup(Function.class, name);
+			Function<Object, Object> function = this.functions.lookup(Function.class,
+					name);
 			if (function != null) {
 				request.setAttribute(WebRequestConstants.FUNCTION, function);
 				request.setAttribute(WebRequestConstants.ARGUMENT, value);

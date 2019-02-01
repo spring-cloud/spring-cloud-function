@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import java.net.URI;
 import java.util.Arrays;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -48,43 +47,45 @@ public class SampleApplicationTests {
 
 	@LocalServerPort
 	private int port;
+
 	private TestRestTemplate rest = new TestRestTemplate();
 
 	@Before
 	public void before() {
-		headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+		this.headers = new HttpHeaders();
+		this.headers.setContentType(MediaType.APPLICATION_JSON);
 	}
 
 	@Test
 	public void words() {
-		assertThat(rest.getForObject("http://localhost:" + port + "/words", String.class))
+		assertThat(this.rest.getForObject("http://localhost:" + this.port + "/words", String.class))
 				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void uppercase() {
-		assertThat(rest.postForObject("http://localhost:" + port + "/uppercase",
-				new HttpEntity<>("[{\"value\":\"foo\"}]", headers), String.class))
+		assertThat(this.rest.postForObject("http://localhost:" + this.port + "/uppercase",
+				new HttpEntity<>("[{\"value\":\"foo\"}]", this.headers), String.class))
 						.isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
 	@Test
 	public void composite() {
-		assertThat(rest.getForObject("http://localhost:" + port + "/words,uppercase",
+		assertThat(this.rest.getForObject("http://localhost:" + this.port + "/words,uppercase",
 				String.class)).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
 	public void single() {
-		assertThat(rest.postForObject("http://localhost:" + port + "/uppercase",
-				new HttpEntity<>("{\"value\":\"foo\"}", headers), String.class)).isEqualTo("{\"value\":\"FOO\"}");
+		assertThat(this.rest.postForObject("http://localhost:" + this.port + "/uppercase",
+				new HttpEntity<>("{\"value\":\"foo\"}", this.headers), String.class))
+						.isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test
 	public void lowercase() {
-		assertThat(rest.postForObject("http://localhost:" + port + "/lowercase",
-				new HttpEntity<>("[{\"value\":\"Foo\"}]", headers), String.class))
+		assertThat(this.rest.postForObject("http://localhost:" + this.port + "/lowercase",
+				new HttpEntity<>("[{\"value\":\"Foo\"}]", this.headers), String.class))
 						.isEqualTo("[{\"value\":\"foo\"}]");
 	}
 
@@ -96,8 +97,8 @@ public class SampleApplicationTests {
 		map.put("A", Arrays.asList("1", "2", "3"));
 		map.put("B", Arrays.asList("5", "6"));
 
-		assertThat(rest.exchange(
-				RequestEntity.post(new URI("http://localhost:" + port + "/sum"))
+		assertThat(this.rest.exchange(
+				RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
 						.accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.APPLICATION_FORM_URLENCODED).body(map),
 				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
@@ -112,9 +113,11 @@ public class SampleApplicationTests {
 		map.put("A", Arrays.asList("1", "2", "3"));
 		map.put("B", Arrays.asList("5", "6"));
 
-		assertThat(rest.exchange(
-				RequestEntity.post(new URI("http://localhost:" + port + "/sum")).accept(MediaType.APPLICATION_JSON)
+		assertThat(this.rest.exchange(
+				RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
+						.accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
 				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
 	}
+
 }

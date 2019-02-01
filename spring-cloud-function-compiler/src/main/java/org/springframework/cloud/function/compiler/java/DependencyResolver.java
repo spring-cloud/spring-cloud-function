@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
 import org.apache.maven.artifact.repository.MavenArtifactRepository;
@@ -98,23 +97,31 @@ import org.eclipse.sisu.plexus.ClassRealmManager;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 
-public class DependencyResolver {
+/**
+ * Dependency resolver utility class.
+ *
+ * @author Andy Clement
+ */
+public final class DependencyResolver {
 
 	private static DependencyResolver instance = new DependencyResolver();
 
 	private static Properties globals;
 
+	private final Object lock = new Object();
+
 	private LocalRepositoryManagerFactory localRepositoryManagerFactory;
 
 	private PlexusContainer container;
-
-	private final Object lock = new Object();
 
 	private ProjectBuilder projectBuilder;
 
 	private RepositorySystem repositorySystem;
 
 	private MavenSettings settings;
+
+	private DependencyResolver() {
+	}
 
 	public static DependencyResolver instance() {
 		return instance;
@@ -124,12 +131,13 @@ public class DependencyResolver {
 		instance = new DependencyResolver();
 	}
 
-	private DependencyResolver() {
+	static Properties getGlobals() {
+		return globals;
 	}
 
 	private void initialize() {
 		if (this.container == null) {
-			synchronized (lock) {
+			synchronized (this.lock) {
 				if (this.container == null) {
 					ClassWorld classWorld = new ClassWorld("plexus.core",
 							Thread.currentThread().getContextClassLoader());
@@ -142,14 +150,14 @@ public class DependencyResolver {
 					try {
 						container = new DefaultPlexusContainer(config, new AetherModule(),
 								new DependencyResolutionModule());
-						localRepositoryManagerFactory = container
+						this.localRepositoryManagerFactory = container
 								.lookup(LocalRepositoryManagerFactory.class);
 						container.addComponent(
 								new ClassRealmManager((MutablePlexusContainer) container,
 										new DefaultBeanLocator()),
 								ClassRealmManager.class.getName());
-						projectBuilder = container.lookup(ProjectBuilder.class);
-						repositorySystem = container.lookup(RepositorySystem.class);
+						this.projectBuilder = container.lookup(ProjectBuilder.class);
+						this.repositorySystem = container.lookup(RepositorySystem.class);
 					}
 					catch (Exception e) {
 						throw new IllegalStateException("Cannot create container", e);
@@ -172,7 +180,7 @@ public class DependencyResolver {
 			ProjectBuildingRequest request = getProjectBuildingRequest(properties);
 			request.setResolveDependencies(true);
 			synchronized (DependencyResolver.class) {
-				ProjectBuildingResult result = projectBuilder
+				ProjectBuildingResult result = this.projectBuilder
 						.build(new PropertiesModelSource(properties, resource), request);
 				DependencyResolver.globals = null;
 				DependencyResolutionResult dependencies = result
@@ -224,7 +232,7 @@ public class DependencyResolver {
 		projectBuildingRequest.setRepositoryMerging(RepositoryMerging.REQUEST_DOMINANT);
 		projectBuildingRequest.setRemoteRepositories(mavenRepositories(properties));
 		projectBuildingRequest.getRemoteRepositories()
-				.addAll(mavenRepositories(settings));
+				.addAll(mavenRepositories(this.settings));
 		projectBuildingRequest.setRepositorySession(session);
 		projectBuildingRequest.setProcessPlugins(false);
 		projectBuildingRequest.setBuildStartTime(new Date());
@@ -250,8 +258,10 @@ public class DependencyResolver {
 
 	private List<ArtifactRepository> mavenRepositories(Properties properties) {
 		List<ArtifactRepository> list = new ArrayList<>();
-		addRepositoryIfMissing(list, "spring-snapshots", "https://repo.spring.io/libs-snapshot", true, true);
-		addRepositoryIfMissing(list, "central", "https://repo1.maven.org/maven2", true, false);
+		addRepositoryIfMissing(list, "spring-snapshots",
+				"https://repo.spring.io/libs-snapshot", true, true);
+		addRepositoryIfMissing(list, "central", "https://repo1.maven.org/maven2", true,
+				false);
 		return list;
 	}
 
@@ -309,7 +319,7 @@ public class DependencyResolver {
 		DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 		LocalRepository repository = localRepository(properties);
 		session.setLocalRepositoryManager(
-				localRepositoryManagerFactory.newInstance(session, repository));
+				this.localRepositoryManagerFactory.newInstance(session, repository));
 		applySettings(session);
 		ProxySelector existing = session.getProxySelector();
 		if (existing == null || !(existing instanceof CompositeProxySelector)) {
@@ -322,7 +332,7 @@ public class DependencyResolver {
 	}
 
 	private void applySettings(DefaultRepositorySystemSession session) {
-		MavenSettingsReader.applySettings(settings, session);
+		MavenSettingsReader.applySettings(this.settings, session);
 	}
 
 	private LocalRepository localRepository(Properties properties) {
@@ -338,7 +348,7 @@ public class DependencyResolver {
 		try {
 			ProjectBuildingRequest request = getProjectBuildingRequest(properties);
 			request.setResolveDependencies(false);
-			ProjectBuildingResult result = projectBuilder
+			ProjectBuildingResult result = this.projectBuilder
 					.build(new PropertiesModelSource(properties, resource), request);
 			return result.getProject().getModel();
 		}
@@ -383,13 +393,10 @@ public class DependencyResolver {
 		return list;
 	}
 
-	static Properties getGlobals() {
-		return globals;
-	}
-
 	@SuppressWarnings("deprecation")
 	private static final class PropertiesModelSource
 			implements org.apache.maven.model.building.ModelSource {
+
 		private final Properties properties;
 
 		private final Resource resource;
@@ -401,8 +408,8 @@ public class DependencyResolver {
 
 		@Override
 		public InputStream getInputStream() throws IOException {
-			DependencyResolver.globals = properties;
-			return new BufferedInputStream(resource.getInputStream()) {
+			DependencyResolver.globals = this.properties;
+			return new BufferedInputStream(this.resource.getInputStream()) {
 				@Override
 				public void close() throws IOException {
 					DependencyResolver.globals = null;
@@ -413,8 +420,9 @@ public class DependencyResolver {
 
 		@Override
 		public String getLocation() {
-			return resource.getDescription();
+			return this.resource.getDescription();
 		}
+
 	}
 
 }

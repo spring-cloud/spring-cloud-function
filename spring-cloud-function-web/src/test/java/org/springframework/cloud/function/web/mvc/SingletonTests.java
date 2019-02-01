@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,26 +45,25 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-
 /**
  * @author Dave Syer
  *
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
+@ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class SingletonTests {
 
 	@LocalServerPort
 	private int port;
+
 	@Autowired
 	private TestRestTemplate rest;
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.get(new URI("/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest
+				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
@@ -71,6 +71,7 @@ public class SingletonTests {
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
+
 		@Bean
 		public static BeanDefinitionRegistryPostProcessor processor() {
 			return new BeanDefinitionRegistryPostProcessor() {
@@ -85,17 +86,22 @@ public class SingletonTests {
 				public void postProcessBeanDefinitionRegistry(
 						BeanDefinitionRegistry registry) throws BeansException {
 					// Simulates what happens when you add a compiled function
-					RootBeanDefinition beanDefinition = new RootBeanDefinition(MySupplier.class);
+					RootBeanDefinition beanDefinition = new RootBeanDefinition(
+							MySupplier.class);
 					registry.registerBeanDefinition("words", beanDefinition);
 				}
 			};
 		}
+
 	}
-	
+
 	static class MySupplier implements Supplier<Flux<String>> {
+
 		@Override
 		public Flux<String> get() {
 			return Flux.just("foo", "bar");
 		}
+
 	}
+
 }

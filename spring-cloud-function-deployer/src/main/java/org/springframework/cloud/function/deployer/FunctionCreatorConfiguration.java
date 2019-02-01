@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -112,24 +113,25 @@ class FunctionCreatorConfiguration {
 	 */
 	@PostConstruct
 	public void init() {
-		URL[] urls = Arrays.stream(properties.getLocation())
-				.flatMap(toResourceURL(delegatingResourceLoader)).toArray(URL[]::new);
-		URL[] roots = Arrays.stream(properties.getLocation()).map(this::toUrl)
+		URL[] urls = Arrays.stream(this.properties.getLocation())
+				.flatMap(toResourceURL(this.delegatingResourceLoader))
+				.toArray(URL[]::new);
+		URL[] roots = Arrays.stream(this.properties.getLocation()).map(this::toUrl)
 				.toArray(URL[]::new);
 
 		try {
-			logger.info(
-					"Locating function from " + Arrays.asList(properties.getLocation()));
+			logger.info("Locating function from "
+					+ Arrays.asList(this.properties.getLocation()));
 			this.creator = new BeanCreator(roots, urls);
-			this.creator.run(properties.getMain());
+			this.creator.run(this.properties.getMain());
 			Arrays.stream(functionNames()).map(this.creator::create).sequential()
 					.forEach(this.creator::register);
-			if (properties.getName().contains("|")) {
+			if (this.properties.getName().contains("|")) {
 				// A composite function has to be explicitly registered before it is
 				// looked up because we are using the SingleEntryFunctionRegistry
-				this.registry.lookup(Consumer.class, properties.getName());
-				this.registry.lookup(Function.class, properties.getName());
-				this.registry.lookup(Supplier.class, properties.getName());
+				this.registry.lookup(Consumer.class, this.properties.getName());
+				this.registry.lookup(Function.class, this.properties.getName());
+				this.registry.lookup(Supplier.class, this.properties.getName());
 			}
 		}
 		catch (Exception e) {
@@ -150,8 +152,8 @@ class FunctionCreatorConfiguration {
 	}
 
 	private String[] functionNames() {
-		if (properties.getBean() != null && properties.getBean().length > 0) {
-			return properties.getBean();
+		if (this.properties.getBean() != null && this.properties.getBean().length > 0) {
+			return this.properties.getBean();
 		}
 		return this.creator.getFunctionNames();
 	}
@@ -207,9 +209,78 @@ class FunctionCreatorConfiguration {
 		return urls.toArray(new URL[urls.size()]);
 	}
 
+	private static final class BeanCreatorClassLoader extends URLClassLoader {
+
+		private BeanCreatorClassLoader(URL[] urls, ClassLoader parent) {
+			super(urls, parent);
+		}
+
+		@Override
+		protected Class<?> loadClass(String name, boolean resolve)
+				throws ClassNotFoundException {
+			try {
+				if (name.startsWith("javax.") && JavaVersion.getJavaVersion()
+						.isEqualOrNewerThan(JavaVersion.NINE)) {
+					return getClass().getClassLoader().loadClass(name);
+				}
+				return super.loadClass(name, resolve);
+			}
+			catch (ClassNotFoundException e) {
+				if (name.contains(ContextRunner.class.getName())
+						|| name.contains(PostConstruct.class.getName())) {
+					// Special case for the ContextRunner. We can re-use the bytes for it,
+					// and the function jar doesn't have to include them since it is only
+					// used here.
+					byte[] bytes;
+					try {
+						bytes = StreamUtils.copyToByteArray(
+								getClass().getClassLoader().getResourceAsStream(
+										ClassUtils.convertClassNameToResourcePath(name)
+												+ ".class"));
+						return defineClass(name, bytes, 0, bytes.length);
+					}
+					catch (IOException ex) {
+						throw new ClassNotFoundException(
+								"Cannot find runner class: " + name, ex);
+					}
+				}
+				throw e;
+			}
+		}
+
+	}
+
+	@Configuration
+	protected static class SingleEntryConfiguration implements BeanPostProcessor {
+
+		@Autowired
+		private Environment env;
+
+		@Override
+		public Object postProcessBeforeInitialization(Object bean, String beanName)
+				throws BeansException {
+			return bean;
+		}
+
+		@Override
+		public Object postProcessAfterInitialization(Object bean, String beanName)
+				throws BeansException {
+			if (bean instanceof FunctionRegistry) {
+				String name = FunctionProperties
+						.functionName(this.env.getProperty("function.bean", ""));
+				if (name.contains("|")) {
+					// A single composite function with an empty name
+					bean = new SingleEntryFunctionRegistry((FunctionRegistry) bean, name);
+				}
+			}
+			return bean;
+		}
+
+	}
+
 	private class ComputeLauncher extends JarLauncher {
 
-		public ComputeLauncher(Archive archive) {
+		ComputeLauncher(Archive archive) {
 			super(archive);
 		}
 
@@ -220,9 +291,10 @@ class FunctionCreatorConfiguration {
 			if (manifest != null) {
 				String functionClass = manifest.getMainAttributes()
 						.getValue("Function-Class");
-				if (StringUtils.hasText(functionClass)
-						&& ObjectUtils.isEmpty(properties.getBean())) {
-					properties.setBean(new String[] { functionClass });
+				if (StringUtils.hasText(functionClass) && ObjectUtils.isEmpty(
+						FunctionCreatorConfiguration.this.properties.getBean())) {
+					FunctionCreatorConfiguration.this.properties
+							.setBean(new String[] { functionClass });
 				}
 				mainClass = manifest.getMainAttributes().getValue("Start-Class");
 				if (mainClass == null
@@ -287,6 +359,7 @@ class FunctionCreatorConfiguration {
 			}
 			return null;
 		}
+
 	}
 
 	/**
@@ -303,8 +376,9 @@ class FunctionCreatorConfiguration {
 
 		private String defaultMain;
 
-		public BeanCreator(URL[] roots, URL[] urls) {
-			functionClassLoader = new BeanCreatorClassLoader(expand(urls), getParent());
+		BeanCreator(URL[] roots, URL[] urls) {
+			FunctionCreatorConfiguration.this.functionClassLoader = new BeanCreatorClassLoader(
+					expand(urls), getParent());
 			this.defaultMain = findMain(roots);
 		}
 
@@ -329,8 +403,7 @@ class FunctionCreatorConfiguration {
 					File file = ResourceUtils.getFile(url);
 					if (file.exists()) {
 						Archive archive = file.getName().endsWith(".jar")
-								? new JarFileArchive(file)
-								: new ExplodedArchive(file);
+								? new JarFileArchive(file) : new ExplodedArchive(file);
 						String main = new ComputeLauncher(archive).getMainClass();
 						if (main != null) {
 							return main;
@@ -388,13 +461,14 @@ class FunctionCreatorConfiguration {
 				return;
 			}
 			if (ClassUtils.isPresent(SpringApplication.class.getName(),
-					functionClassLoader)) {
+					FunctionCreatorConfiguration.this.functionClassLoader)) {
 				logger.info("SpringApplication available. Bootstrapping: " + main);
 				ClassLoader contextClassLoader = ClassUtils
-						.overrideThreadContextClassLoader(functionClassLoader);
+						.overrideThreadContextClassLoader(
+								FunctionCreatorConfiguration.this.functionClassLoader);
 				try {
-					ApplicationRunner runner = new ApplicationRunner(functionClassLoader,
-							main);
+					ApplicationRunner runner = new ApplicationRunner(
+							FunctionCreatorConfiguration.this.functionClassLoader, main);
 					// TODO: make the runtime properties configurable
 					runner.run("--spring.main.webEnvironment=false",
 							"--spring.cloud.stream.enabled=false",
@@ -416,8 +490,8 @@ class FunctionCreatorConfiguration {
 
 		public String[] getFunctionNames() {
 			Set<String> list = new LinkedHashSet<>();
-			ClassLoader contextClassLoader = ClassUtils
-					.overrideThreadContextClassLoader(functionClassLoader);
+			ClassLoader contextClassLoader = ClassUtils.overrideThreadContextClassLoader(
+					FunctionCreatorConfiguration.this.functionClassLoader);
 			try {
 				if (this.runner.containsBean(FunctionCatalog.class.getName())) {
 					Object catalog = this.runner.getBean(FunctionCatalog.class.getName());
@@ -447,9 +521,10 @@ class FunctionCreatorConfiguration {
 		}
 
 		public Object create(String type) {
-			ClassLoader contextClassLoader = ClassUtils
-					.overrideThreadContextClassLoader(functionClassLoader);
-			AutowireCapableBeanFactory factory = context.getAutowireCapableBeanFactory();
+			ClassLoader contextClassLoader = ClassUtils.overrideThreadContextClassLoader(
+					FunctionCreatorConfiguration.this.functionClassLoader);
+			AutowireCapableBeanFactory factory = FunctionCreatorConfiguration.this.context
+					.getAutowireCapableBeanFactory();
 			try {
 				Object result = null;
 				if (this.runner != null) {
@@ -483,9 +558,10 @@ class FunctionCreatorConfiguration {
 				}
 				if (result == null) {
 					logger.info("No bean found. Instantiating: " + type);
-					if (ClassUtils.isPresent(type, functionClassLoader)) {
-						result = factory.createBean(
-								ClassUtils.resolveClassName(type, functionClassLoader));
+					if (ClassUtils.isPresent(type,
+							FunctionCreatorConfiguration.this.functionClassLoader)) {
+						result = factory.createBean(ClassUtils.resolveClassName(type,
+								FunctionCreatorConfiguration.this.functionClassLoader));
 					}
 				}
 				if (result != null) {
@@ -503,7 +579,8 @@ class FunctionCreatorConfiguration {
 				return;
 			}
 			FunctionRegistration<Object> registration = new FunctionRegistration<Object>(
-					bean, FunctionProperties.functionName(counter.getAndIncrement()));
+					bean,
+					FunctionProperties.functionName(this.counter.getAndIncrement()));
 			if (this.runner != null) {
 				if (this.runner.containsBean(FunctionInspector.class.getName())) {
 					Object inspector = this.runner
@@ -533,7 +610,7 @@ class FunctionCreatorConfiguration {
 				registration.type(FunctionType.of(bean.getClass()).getType());
 			}
 			registration.target(bean);
-			registry.register(registration);
+			FunctionCreatorConfiguration.this.registry.register(registration);
 		}
 
 		private Class<?> findType(String method, Object inspector, Object bean) {
@@ -549,69 +626,4 @@ class FunctionCreatorConfiguration {
 
 	}
 
-	private static final class BeanCreatorClassLoader extends URLClassLoader {
-		private BeanCreatorClassLoader(URL[] urls, ClassLoader parent) {
-			super(urls, parent);
-		}
-
-		@Override
-		protected Class<?> loadClass(String name, boolean resolve)
-				throws ClassNotFoundException {
-			try {
-				if (name.startsWith("javax.") && JavaVersion.getJavaVersion().isEqualOrNewerThan(JavaVersion.NINE)) {
-					return getClass().getClassLoader().loadClass(name);
-				}
-				return super.loadClass(name, resolve);
-			}
-			catch (ClassNotFoundException e) {
-				if (name.contains(ContextRunner.class.getName())
-						|| name.contains(PostConstruct.class.getName())) {
-					// Special case for the ContextRunner. We can re-use the bytes for it,
-					// and the function jar doesn't have to include them since it is only
-					// used here.
-					byte[] bytes;
-					try {
-						bytes = StreamUtils.copyToByteArray(
-								getClass().getClassLoader().getResourceAsStream(
-										ClassUtils.convertClassNameToResourcePath(name)
-												+ ".class"));
-						return defineClass(name, bytes, 0, bytes.length);
-					}
-					catch (IOException ex) {
-						throw new ClassNotFoundException(
-								"Cannot find runner class: " + name, ex);
-					}
-				}
-				throw e;
-			}
-		}
-	}
-
-	@Configuration
-	protected static class SingleEntryConfiguration implements BeanPostProcessor {
-
-		@Autowired
-		private Environment env;
-
-		@Override
-		public Object postProcessBeforeInitialization(Object bean, String beanName)
-				throws BeansException {
-			return bean;
-		}
-
-		@Override
-		public Object postProcessAfterInitialization(Object bean, String beanName)
-				throws BeansException {
-			if (bean instanceof FunctionRegistry) {
-				String name = FunctionProperties
-						.functionName(env.getProperty("function.bean", ""));
-				if (name.contains("|")) {
-					// A single composite function with an empty name
-					bean = new SingleEntryFunctionRegistry((FunctionRegistry) bean, name);
-				}
-			}
-			return bean;
-		}
-
-	}
 }

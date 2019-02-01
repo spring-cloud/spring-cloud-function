@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ import org.springframework.http.HttpHeaders;
 class SimpleRequestBuilder implements RequestBuilder {
 
 	private String baseUrl = "http://${destination}";
+
 	private Map<String, String> headers = new LinkedHashMap<>();
+
 	private Environment environment;
 
 	SimpleRequestBuilder(Environment environment) {
@@ -42,10 +44,10 @@ class SimpleRequestBuilder implements RequestBuilder {
 	public HttpHeaders headers(String destination, Object value) {
 		// TODO: add message headers if any
 		HttpHeaders result = new HttpHeaders();
-		for (String key : headers.keySet()) {
-			String header = headers.get(key);
+		for (String key : this.headers.keySet()) {
+			String header = this.headers.get(key);
 			header = header.replace("${destination}", destination);
-			header = environment.resolvePlaceholders(header);
+			header = this.environment.resolvePlaceholders(header);
 			result.add(key, header);
 		}
 		return result;
@@ -54,8 +56,8 @@ class SimpleRequestBuilder implements RequestBuilder {
 	@Override
 	public URI uri(String destination) {
 		try {
-			return new URI(environment
-					.resolvePlaceholders(baseUrl.replace("${destination}", destination)));
+			return new URI(this.environment.resolvePlaceholders(
+					this.baseUrl.replace("${destination}", destination)));
 		}
 		catch (URISyntaxException e) {
 			throw new IllegalStateException("Cannot create URI", e);

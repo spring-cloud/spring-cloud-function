@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.function.Function;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -40,26 +41,25 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-
 /**
  * @author Dave Syer
  *
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "")
-@ContextConfiguration(classes= {RestApplication.class, TestConfiguration.class})
+@ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class DefaultRouteTests {
 
 	@LocalServerPort
 	private int port;
+
 	@Autowired
 	private TestRestTemplate rest;
 
 	@Test
 	@Ignore("FIXME")
 	public void explicit() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
+		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/uppercase")).body("foo"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("FOO");
@@ -68,8 +68,8 @@ public class DefaultRouteTests {
 	@Test
 	@Ignore("FIXME")
 	public void implicit() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
-				RequestEntity.post(new URI("/")).body("foo"), String.class);
+		ResponseEntity<String> result = this.rest
+				.exchange(RequestEntity.post(new URI("/")).body("foo"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("FOO");
 	}
@@ -77,9 +77,12 @@ public class DefaultRouteTests {
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
+
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.map(value -> value.toUpperCase());
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,8 +50,14 @@ import org.springframework.util.ClassUtils;
 public class ContextFunctionCatalogInitializer
 		implements ApplicationContextInitializer<GenericApplicationContext> {
 
+	/**
+	 * Property name for ignoring pre initilizer.
+	 */
 	public static final String IGNORE_BACKGROUNDPREINITIALIZER_PROPERTY_NAME = "spring.backgroundpreinitializer.ignore";
 
+	/**
+	 * Flag for enabling the context function catalog initializer.
+	 */
 	public static boolean enabled = true;
 
 	@Override
@@ -69,7 +75,7 @@ public class ContextFunctionCatalogInitializer
 
 		private GenericApplicationContext context;
 
-		public ContextFunctionCatalogBeanRegistrar(
+		ContextFunctionCatalogBeanRegistrar(
 				GenericApplicationContext applicationContext) {
 			this.context = applicationContext;
 		}
@@ -101,65 +107,67 @@ public class ContextFunctionCatalogInitializer
 
 			performPreinitialization();
 
-			if (context.getBeanFactory().getBeanNamesForType(
+			if (this.context.getBeanFactory().getBeanNamesForType(
 					PropertySourcesPlaceholderConfigurer.class, false,
 					false).length == 0) {
-				context.registerBean(PropertySourcesPlaceholderConfigurer.class,
+				this.context.registerBean(PropertySourcesPlaceholderConfigurer.class,
 						() -> PropertyPlaceholderAutoConfiguration
 								.propertySourcesPlaceholderConfigurer());
 			}
 
-			if (!context.getBeanFactory().containsBean(
+			if (!this.context.getBeanFactory().containsBean(
 					AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 				// Switch off the ConfigurationClassPostProcessor
-				context.registerBean(
+				this.context.registerBean(
 						AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME,
 						DummyProcessor.class, () -> new DummyProcessor());
 				// But switch on other annotation processing
-				AnnotationConfigUtils.registerAnnotationConfigProcessors(context);
+				AnnotationConfigUtils.registerAnnotationConfigProcessors(this.context);
 			}
-			if (!context.getBeanFactory()
+			if (!this.context.getBeanFactory()
 					.containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
-				context.registerBean(ConfigurationBeanFactoryMetadata.BEAN_NAME,
+				this.context.registerBean(ConfigurationBeanFactoryMetadata.BEAN_NAME,
 						ConfigurationBeanFactoryMetadata.class,
 						() -> new ConfigurationBeanFactoryMetadata());
-				context.registerBean(
+				this.context.registerBean(
 						ConfigurationPropertiesBindingPostProcessor.BEAN_NAME,
 						ConfigurationPropertiesBindingPostProcessor.class,
 						() -> new ConfigurationPropertiesBindingPostProcessor());
 			}
 
 			if (ClassUtils.isPresent("com.google.gson.Gson", null)
-					&& "gson".equals(context.getEnvironment().getProperty(
+					&& "gson".equals(this.context.getEnvironment().getProperty(
 							ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY,
 							"gson"))) {
-				if (context.getBeanFactory().getBeanNamesForType(Gson.class, false,
+				if (this.context.getBeanFactory().getBeanNamesForType(Gson.class, false,
 						false).length == 0) {
-					context.registerBean(Gson.class, () -> new Gson());
+					this.context.registerBean(Gson.class, () -> new Gson());
 				}
-				context.registerBean(JsonMapper.class,
+				this.context.registerBean(JsonMapper.class,
 						() -> new ContextFunctionCatalogAutoConfiguration.GsonConfiguration()
-								.jsonMapper(context.getBean(Gson.class)));
+								.jsonMapper(this.context.getBean(Gson.class)));
 			}
 			else if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper",
 					null)) {
-				if (context.getBeanFactory().getBeanNamesForType(ObjectMapper.class,
+				if (this.context.getBeanFactory().getBeanNamesForType(ObjectMapper.class,
 						false, false).length == 0) {
-					context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
+					this.context.registerBean(ObjectMapper.class,
+							() -> new ObjectMapper());
 				}
-				context.registerBean(JsonMapper.class,
+				this.context.registerBean(JsonMapper.class,
 						() -> new ContextFunctionCatalogAutoConfiguration.JacksonConfiguration()
-								.jsonMapper(context.getBean(ObjectMapper.class)));
+								.jsonMapper(this.context.getBean(ObjectMapper.class)));
 
 			}
 
-			if (context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class, false,
-					false).length == 0) {
-				context.registerBean(InMemoryFunctionCatalog.class,
+			if (this.context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class,
+					false, false).length == 0) {
+				this.context.registerBean(InMemoryFunctionCatalog.class,
 						() -> new InMemoryFunctionCatalog());
-				context.registerBean(FunctionRegistrationPostProcessor.class,
-						() -> new FunctionRegistrationPostProcessor(
-								context.getAutowireCapableBeanFactory()
+				this.context
+						.registerBean(FunctionRegistrationPostProcessor.class,
+								() -> new FunctionRegistrationPostProcessor(this.context
+										.getAutowireCapableBeanFactory()
 										.getBeanProvider(FunctionRegistration.class)));
 			}
 		}
@@ -193,10 +201,11 @@ public class ContextFunctionCatalogInitializer
 		}
 
 		private class FunctionRegistrationPostProcessor implements BeanPostProcessor {
+
 			@SuppressWarnings("rawtypes")
 			private final ObjectProvider<FunctionRegistration> functions;
 
-			public FunctionRegistrationPostProcessor(
+			FunctionRegistrationPostProcessor(
 					@SuppressWarnings("rawtypes") ObjectProvider<FunctionRegistration> functions) {
 				this.functions = functions;
 			}
@@ -206,7 +215,7 @@ public class ContextFunctionCatalogInitializer
 					throws BeansException {
 				if (bean instanceof FunctionRegistry) {
 					FunctionRegistry catalog = (FunctionRegistry) bean;
-					for (FunctionRegistration<?> registration : functions) {
+					for (FunctionRegistration<?> registration : this.functions) {
 						Assert.notEmpty(registration.getNames(),
 								"FunctionRegistration must define at least one name. Was empty");
 						if (registration.getType() == null) {
@@ -222,13 +231,19 @@ public class ContextFunctionCatalogInitializer
 				}
 				return bean;
 			}
+
 		}
 
 	}
 
+	/**
+	 * Dummy implementation of a processor.
+	 */
 	public static class DummyProcessor {
+
 		public void setMetadataReaderFactory(MetadataReaderFactory obj) {
 		}
+
 	}
 
 }

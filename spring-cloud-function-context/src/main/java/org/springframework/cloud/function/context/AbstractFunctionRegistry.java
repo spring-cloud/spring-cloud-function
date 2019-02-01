@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.StringUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
- *
  * @since 2.0.1
  *
  */
@@ -33,12 +31,14 @@ public abstract class AbstractFunctionRegistry implements FunctionRegistry {
 	@Autowired
 	private Environment environment = new StandardEnvironment();
 
-
 	public <T> T lookup(Class<?> type, String name) {
-		String functionDefinitionName = !StringUtils.hasText(name) && environment.containsProperty("spring.cloud.function.definition")
-				? environment.getProperty("spring.cloud.function.definition") : name;
+		String functionDefinitionName = !StringUtils.hasText(name)
+				&& this.environment.containsProperty("spring.cloud.function.definition")
+						? this.environment.getProperty("spring.cloud.function.definition")
+						: name;
 		return this.doLookup(type, functionDefinitionName);
 	}
 
 	protected abstract <T> T doLookup(Class<?> type, String name);
+
 }

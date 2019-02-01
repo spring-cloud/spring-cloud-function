@@ -1,18 +1,18 @@
 {
-  "hints": [],
-  "groups": [],
-  "properties": [
-  	{
-        "name": "spring.cloud.function.scan.packages",
-        "type": "java.lang.String",
-        "description": "Triggers scanning within the specified base packages for any class that is assignable to java.util.function.Function. For each detected Function class, a bean instance will be added to the context.",
-        "defaultValue": "functions"
-    },
-    {
-        "name": "spring.cloud.function.definition",
-        "type": "java.lang.String",
-        "description": "Name (e.g., 'foo') or composition instruction (e.g., 'foo|bar') used to resolve default function especially for cases where there is more then once function available in catalog.",
-        "defaultValue": ""
-    }
-  ]
+	"hints": [],
+	"groups": [],
+	"properties": [
+		{
+			"name": "spring.cloud.function.scan.packages",
+			"type": "java.lang.String",
+			"description": "Triggers scanning within the specified base packages for any class that is assignable to java.util.function.Function. For each detected Function class, a bean instance will be added to the context.",
+			"defaultValue": "functions"
+		},
+		{
+			"name": "spring.cloud.function.definition",
+			"type": "java.lang.String",
+			"description": "Name (e.g., 'foo') or composition instruction (e.g., 'foo|bar') used to resolve default function especially for cases where there is more then once function available in catalog.",
+			"defaultValue": ""
+		}
+	]
 }

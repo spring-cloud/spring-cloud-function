@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -61,11 +60,11 @@ public class OpenWhiskActionHandlerTest {
 		testData.put("name", "Spring");
 		Map<String, Object> eventData = new HashMap<>();
 		eventData.put("payload", testData);
-		actionHandler.init(new OpenWhiskInitRequest());
+		this.actionHandler.init(new OpenWhiskInitRequest());
 		OpenWhiskActionRequest actionRequest = new OpenWhiskActionRequest();
 		actionRequest.setActionName("test_action");
 		actionRequest.setValue(eventData);
-		Object result = actionHandler.run(actionRequest);
+		Object result = this.actionHandler.run(actionRequest);
 		assertNotNull(result);
 		assertEquals("{\"result\":{\"name\":\"Spring\",\"message\":\"Hello, Spring\"}}",
 				result);
@@ -75,10 +74,10 @@ public class OpenWhiskActionHandlerTest {
 	public void testHandlerWithoutPayload() {
 		Map<String, String> testData = new HashMap<>();
 		testData.put("name", "Spring");
-		actionHandler.init(new OpenWhiskInitRequest());
+		this.actionHandler.init(new OpenWhiskInitRequest());
 		OpenWhiskActionRequest actionRequest = new OpenWhiskActionRequest();
 		actionRequest.setActionName("test_action");
-		Object result = actionHandler.run(actionRequest);
+		Object result = this.actionHandler.run(actionRequest);
 		assertNotNull(result);
 		assertEquals("{\"result\":\"No input provided\"}", result);
 	}
@@ -111,6 +110,7 @@ public class OpenWhiskActionHandlerTest {
 		private final String GREETINGS_FORMAT = "Hello, %s";
 
 		private String name;
+
 		private String message;
 
 		public Greetings() {
@@ -122,21 +122,22 @@ public class OpenWhiskActionHandlerTest {
 		}
 
 		public String getMessage() {
-			return message;
+			return this.message;
 		}
 
 		public void setMessage(String message) {
-			this.message = String.format(GREETINGS_FORMAT,
-					this.name != null ? name : "nobody");
+			this.message = String.format(this.GREETINGS_FORMAT,
+					this.name != null ? this.name : "nobody");
 		}
 
 		public String getName() {
-			return name;
+			return this.name;
 		}
 
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
 
 }

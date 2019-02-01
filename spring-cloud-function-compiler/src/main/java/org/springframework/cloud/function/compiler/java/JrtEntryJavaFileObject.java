@@ -1,12 +1,12 @@
 /*
- * Copyright 2018 the original author or authors.
- * 
+ * Copyright 2012-2019 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,39 +31,44 @@ import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
 
 /**
- * A JavaFileObject that represents a class from the Java runtime as packaged in Java 9 and later.
- * 
+ * A JavaFileObject that represents a class from the Java runtime as packaged in Java 9
+ * and later.
+ *
  * @author Andy Clement
  */
 public class JrtEntryJavaFileObject implements JavaFileObject {
 
 	private String pathToClassString;
+
 	private Path path;
 
 	/**
-	 * @param path entry in the Java runtime filesystem, for example '/modules/java.base/java/lang/Object.class'
+	 * @param path entry in the Java runtime filesystem, for example
+	 * '/modules/java.base/java/lang/Object.class'
 	 */
 	public JrtEntryJavaFileObject(Path path) {
-		this.pathToClassString = path.subpath(2, path.getNameCount()).toString(); // e.g. java/lang/Object.class
+		this.pathToClassString = path.subpath(2, path.getNameCount()).toString(); // e.g.
+																					// java/lang/Object.class
 		this.path = path;
 	}
 
 	@Override
 	public URI toUri() {
-		return path.toUri();
+		return this.path.toUri();
 	}
 
 	/**
-	 * @return the path of the file relative to the base directory, for example: a/b/c/D.class
+	 * @return the path of the file relative to the base directory, for example:
+	 * a/b/c/D.class
 	 */
 	@Override
 	public String getName() {
-		return pathToClassString;
+		return this.pathToClassString;
 	}
 
 	@Override
 	public InputStream openInputStream() throws IOException {
-		byte[] bytes = Files.readAllBytes(path);
+		byte[] bytes = Files.readAllBytes(this.path);
 		return new ByteArrayInputStream(bytes);
 	}
 
@@ -75,13 +80,15 @@ public class JrtEntryJavaFileObject implements JavaFileObject {
 	@Override
 	public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
 		// It is bytecode
-		throw new UnsupportedOperationException("openReader() not supported on class file: " + getName());
+		throw new UnsupportedOperationException(
+				"openReader() not supported on class file: " + getName());
 	}
 
 	@Override
 	public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
 		// It is bytecode
-		throw new UnsupportedOperationException("getCharContent() not supported on class file: " + getName());
+		throw new UnsupportedOperationException(
+				"getCharContent() not supported on class file: " + getName());
 	}
 
 	@Override
@@ -92,9 +99,12 @@ public class JrtEntryJavaFileObject implements JavaFileObject {
 	@Override
 	public long getLastModified() {
 		try {
-			return Files.getLastModifiedTime(path).toMillis();
-		} catch (IOException ioe) {
-			throw new RuntimeException("Unable to determine last modified time of "+pathToClassString, ioe);
+			return Files.getLastModifiedTime(this.path).toMillis();
+		}
+		catch (IOException ioe) {
+			throw new RuntimeException(
+					"Unable to determine last modified time of " + this.pathToClassString,
+					ioe);
 		}
 	}
 
@@ -132,18 +142,18 @@ public class JrtEntryJavaFileObject implements JavaFileObject {
 	public int hashCode() {
 		return getName().hashCode();
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof JrtEntryJavaFileObject)) {
 			return false;
 		}
-		JrtEntryJavaFileObject that = (JrtEntryJavaFileObject)obj;
+		JrtEntryJavaFileObject that = (JrtEntryJavaFileObject) obj;
 		return (getName().equals(that.getName()));
 	}
 
 	public String getPathToClassString() {
-		return pathToClassString;
+		return this.pathToClassString;
 	}
-	
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,8 @@ import reactor.core.publisher.Mono;
  * Wrapper for a {@link Consumer} implementation that converts a non-reactive consumer
  * into a reactive function.
  *
- * @author Dave Syer
- *
  * @param <T> input type of target consumer
+ * @author Dave Syer
  */
 public class FluxConsumer<T>
 		implements Function<Flux<T>, Mono<Void>>, FluxWrapper<Consumer<T>> {
@@ -46,6 +45,7 @@ public class FluxConsumer<T>
 
 	@Override
 	public Mono<Void> apply(Flux<T> input) {
-		return input.doOnNext(consumer).then();
+		return input.doOnNext(this.consumer).then();
 	}
+
 }

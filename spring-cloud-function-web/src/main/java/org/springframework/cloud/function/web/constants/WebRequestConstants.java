@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,33 @@ package org.springframework.cloud.function.web.constants;
  */
 public abstract class WebRequestConstants {
 
+	/**
+	 * Function attribute name.
+	 */
 	public static final String FUNCTION = WebRequestConstants.class.getName()
 			+ ".function";
+
+	/**
+	 * Consumer attribute name.
+	 */
 	public static final String CONSUMER = WebRequestConstants.class.getName()
 			+ ".consumer";
+
+	/**
+	 * Supplier attribute name.
+	 */
 	public static final String SUPPLIER = WebRequestConstants.class.getName()
 			+ ".supplier";
+
+	/**
+	 * Argument attribute name.
+	 */
 	public static final String ARGUMENT = WebRequestConstants.class.getName()
 			+ ".argument";
-	public static final String HANDLER = WebRequestConstants.class.getName()
-			+ ".handler";
+
+	/**
+	 * Handler attribute name.
+	 */
+	public static final String HANDLER = WebRequestConstants.class.getName() + ".handler";
 
 }

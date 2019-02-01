@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example;
 
 import java.util.HashMap;
@@ -20,23 +21,24 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import reactor.core.publisher.Flux;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.MultiValueMap;
 
-import reactor.core.publisher.Flux;
-
+// @checkstyle:off
 @SpringBootApplication
 public class SampleApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SampleApplication.class, args);
+	}
 
 	@Bean
 	public Function<Foo, Bar> uppercase() {
 		return value -> new Bar(value.uppercase());
-	}
-
-	public static void main(String[] args) {
-		SpringApplication.run(SampleApplication.class, args);
 	}
 
 	@Bean
@@ -55,6 +57,7 @@ public class SampleApplication {
 	}
 
 }
+// @checkstyle:on
 
 class Foo {
 
@@ -63,25 +66,26 @@ class Foo {
 	Foo() {
 	}
 
-	public String lowercase() {
-		return value.toLowerCase();
-	}
-
-	public Foo(String value) {
+	Foo(String value) {
 		this.value = value;
 	}
 
+	public String lowercase() {
+		return this.value.toLowerCase();
+	}
+
 	public String uppercase() {
-		return value.toUpperCase();
+		return this.value.toUpperCase();
 	}
 
 	public String getValue() {
-		return value;
+		return this.value;
 	}
 
 	public void setValue(String value) {
 		this.value = value;
 	}
+
 }
 
 class Bar {
@@ -91,12 +95,12 @@ class Bar {
 	Bar() {
 	}
 
-	public Bar(String value) {
+	Bar(String value) {
 		this.value = value;
 	}
 
 	public String getValue() {
-		return value;
+		return this.value;
 	}
 
 	public void setValue(String value) {

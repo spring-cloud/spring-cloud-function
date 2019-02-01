@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,21 +40,21 @@ public class SpringBootStreamHandlerTests {
 
 	@Test
 	public void functionBeanWithJacksonConfig() throws Exception {
-		handler = new SpringBootStreamHandler(FunctionConfigWithJackson.class);
-		handler.initialize();
+		this.handler = new SpringBootStreamHandler(FunctionConfigWithJackson.class);
+		this.handler.initialize();
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		handler.handleRequest(new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()),
-				output, null);
+		this.handler.handleRequest(
+				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
 		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test
 	public void functionBeanWithoutJacksonConfig() throws Exception {
-		handler = new SpringBootStreamHandler(FunctionConfigWithoutJackson.class);
-		handler.initialize();
+		this.handler = new SpringBootStreamHandler(FunctionConfigWithoutJackson.class);
+		this.handler.initialize();
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		handler.handleRequest(new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()),
-				output, null);
+		this.handler.handleRequest(
+				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
 		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
@@ -62,34 +62,41 @@ public class SpringBootStreamHandlerTests {
 	@Import({ ContextFunctionCatalogAutoConfiguration.class,
 			JacksonAutoConfiguration.class })
 	protected static class FunctionConfigWithJackson {
+
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
 		}
+
 	}
 
 	@Configuration
-	@Import({ ContextFunctionCatalogAutoConfiguration.class})
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
 	protected static class FunctionConfigWithoutJackson {
+
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
 		}
+
 	}
 
 	protected static class Foo {
+
 		private String value;
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 	protected static class Bar {
+
 		private String value;
 
 		public Bar() {
@@ -100,11 +107,13 @@ public class SpringBootStreamHandlerTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2012-2019-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.function.Supplier;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -34,9 +36,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { FunctionDeployerConfiguration.class })
@@ -53,10 +52,11 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testDouble() {
-			Function<Flux<Integer>, Flux<Integer>> function = catalog
+			Function<Flux<Integer>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -68,10 +68,11 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testDouble() {
-			Function<Flux<Integer>, Flux<Integer>> function = catalog
+			Function<Flux<Integer>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -84,10 +85,11 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testDouble() {
-			Function<Flux<Integer>, Flux<Integer>> function = catalog
+			Function<Flux<Integer>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -100,7 +102,7 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testDouble() {
-			Function<Flux<Integer>, Flux<Integer>> function = catalog
+			Function<Flux<Integer>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
 		}
@@ -117,10 +119,11 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testFrenchize() {
-			Function<Flux<Integer>, Flux<String>> function = catalog
+			Function<Flux<Integer>, Flux<String>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo("deux");
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -133,10 +136,11 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testDouble() {
-			Function<Flux<Integer>, Flux<Integer>> function = catalog
+			Function<Flux<Integer>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -147,10 +151,11 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testDouble() {
-			Function<Flux<Integer>, Flux<Integer>> function = catalog
+			Function<Flux<Integer>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo(4);
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -162,13 +167,13 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testSupplier() {
-			Supplier<Integer> function = catalog.lookup(Supplier.class, "function0");
+			Supplier<Integer> function = this.catalog.lookup(Supplier.class, "function0");
 			assertThat(function).isNull();
 		}
 
 		@Test
 		public void testFunction() {
-			Supplier<Flux<String>> function = catalog.lookup(Supplier.class,
+			Supplier<Flux<String>> function = this.catalog.lookup(Supplier.class,
 					"function0|function1");
 			assertThat(function.get().blockFirst()).isEqualTo("un");
 		}
@@ -184,17 +189,18 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testFunction() {
-			Function<Flux<Integer>, Flux<String>> function = catalog
+			Function<Flux<Integer>, Flux<String>> function = this.catalog
 					.lookup(Function.class, "function0|function1");
 			assertThat(function.apply(Flux.just(2)).blockFirst()).isEqualTo("quatre");
 		}
 
 		@Test
 		public void testThen() {
-			Function<Integer, String> function = catalog.lookup(Function.class,
+			Function<Integer, String> function = this.catalog.lookup(Function.class,
 					"function1");
 			assertThat(function).isNull();
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -209,10 +215,12 @@ public abstract class FunctionCreatorConfigurationTests {
 
 		@Test
 		public void testConsumer() {
-			Function<Flux<Integer>, Mono<Void>> function = catalog.lookup(Function.class,
-					"function0|function1");
+			Function<Flux<Integer>, Mono<Void>> function = this.catalog
+					.lookup(Function.class, "function0|function1");
 			function.apply(Flux.just(2)).block();
-			capture.expect(containsString("Seen deux"));
+			this.capture.expect(containsString("Seen deux"));
 		}
+
 	}
+
 }

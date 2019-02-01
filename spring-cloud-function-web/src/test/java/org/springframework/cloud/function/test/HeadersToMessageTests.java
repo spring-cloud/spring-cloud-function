@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.function.Function;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -29,10 +30,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import reactor.core.publisher.Mono;
-
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -47,7 +45,7 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
-		client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
+		this.client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
 				.expectStatus().isOk().expectHeader()
 				.valueEquals("x-content-type", "application/xml").expectHeader()
 				.valueEquals("foo", "bar").expectBody(String.class).isEqualTo("FOO");
@@ -56,11 +54,15 @@ public class HeadersToMessageTests {
 	@SpringBootConfiguration
 	protected static class TestConfiguration
 			implements Function<Message<String>, Message<String>> {
+
 		public Message<String> apply(Message<String> request) {
-			Message<String> message = MessageBuilder.withPayload(request.getPayload().toUpperCase())
+			Message<String> message = MessageBuilder
+					.withPayload(request.getPayload().toUpperCase())
 					.setHeader("X-Content-Type", "application/xml")
 					.setHeader("foo", "bar").build();
 			return message;
 		}
+
 	}
+
 }

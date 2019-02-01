@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.function.Function;
 
 import org.junit.After;
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -30,8 +31,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -50,8 +49,9 @@ public class AzureSpringFunctionInitializerTests {
 
 	@After
 	public void close() throws IOException {
-		if (handler != null)
-			handler.close();
+		if (this.handler != null) {
+			this.handler.close();
+		}
 	}
 
 	@Test
@@ -84,18 +84,22 @@ public class AzureSpringFunctionInitializerTests {
 	@SpringBootConfiguration
 	@EnableAutoConfiguration
 	protected static class BareConfig {
+
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
 		}
+
 	}
 
 	@SpringBootConfiguration
 	protected static class FunctionConfig implements Function<Foo, Bar> {
+
 		@Override
 		public Bar apply(Foo foo) {
 			return new Bar(foo.getValue().toUpperCase());
 		}
+
 	}
 
 	@SpringBootConfiguration
@@ -113,5 +117,7 @@ public class AzureSpringFunctionInitializerTests {
 							"uppercase")
 									.type(FunctionType.from(Foo.class).to(Bar.class)));
 		}
+
 	}
+
 }

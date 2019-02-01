@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,10 @@ import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.netty.DisposableServer;
+import reactor.netty.http.server.HttpServer;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
@@ -63,13 +67,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.netty.DisposableServer;
-import reactor.netty.http.server.HttpServer;
-
 /**
- *
  * @author Dave Syer
  * @since 2.0
  *
@@ -148,7 +146,7 @@ class FunctionEndpointInitializer
 
 		private GenericApplicationContext context;
 
-		public ServerListener(GenericApplicationContext context) {
+		ServerListener(GenericApplicationContext context) {
 			this.context = context;
 		}
 
@@ -212,7 +210,7 @@ class FunctionEndpointFactory {
 
 	private RequestProcessor processor;
 
-	public FunctionEndpointFactory(FunctionCatalog catalog, FunctionInspector inspector,
+	FunctionEndpointFactory(FunctionCatalog catalog, FunctionInspector inspector,
 			RequestProcessor processor, Environment environment) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
@@ -242,9 +240,9 @@ class FunctionEndpointFactory {
 	public <T> RouterFunction<?> functionEndpoints() {
 		return route(POST("/"), request -> {
 			Class<T> outputType = (Class<T>) this.inspector.getOutputType(this.function);
-			FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
+			FunctionWrapper wrapper = RequestProcessor.wrapper(this.function, null, null);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
-					.flatMap(content -> processor.post(wrapper, content, false));
+					.flatMap(content -> this.processor.post(wrapper, content, false));
 			return stream.flatMap(entity -> status(entity.getStatusCode())
 					.headers(headers -> headers.addAll(entity.getHeaders()))
 					.body(Mono.just((T) entity.getBody()), outputType));

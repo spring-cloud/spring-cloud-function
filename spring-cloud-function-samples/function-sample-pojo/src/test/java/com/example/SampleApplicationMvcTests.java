@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  */
 package com.example;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.net.URI;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -30,6 +29,8 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author Dave Syer
  */
@@ -38,13 +39,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class SampleApplicationMvcTests {
 
 	@Autowired
-    private TestRestTemplate rest;
+	private TestRestTemplate rest;
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = rest.exchange(RequestEntity.get(new URI("/words"))
-                .accept(MediaType.APPLICATION_JSON).build(), String.class);
-        assertThat(result.getBody()).isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/words"))
+				.accept(MediaType.APPLICATION_JSON).build(), String.class);
+		assertThat(result.getBody())
+				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 }

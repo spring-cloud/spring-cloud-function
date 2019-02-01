@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
@@ -35,8 +36,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
-
-import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -56,7 +55,7 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> form(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.post(wrapper, null, false);
+		return this.processor.post(wrapper, null, false);
 	}
 
 	@PostMapping(path = "/**")
@@ -64,7 +63,7 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> post(WebRequest request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.post(wrapper, body, false);
+		return this.processor.post(wrapper, body, false);
 	}
 
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -72,22 +71,23 @@ public class FunctionController {
 	public Mono<ResponseEntity<Publisher<?>>> postStream(WebRequest request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.post(wrapper, body, true).map(response -> ResponseEntity.ok()
-				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
+		return this.processor.post(wrapper, body, true)
+				.map(response -> ResponseEntity.ok().headers(response.getHeaders())
+						.body((Publisher<?>) response.getBody()));
 	}
 
 	@GetMapping(path = "/**")
 	@ResponseBody
 	public Mono<ResponseEntity<?>> get(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.get(wrapper);
+		return this.processor.get(wrapper);
 	}
 
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<Publisher<?>>> getStream(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return processor.stream(wrapper).map(response -> ResponseEntity.ok()
+		return this.processor.stream(wrapper).map(response -> ResponseEntity.ok()
 				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
@@ -116,4 +116,5 @@ public class FunctionController {
 		}
 		return wrapper;
 	}
+
 }

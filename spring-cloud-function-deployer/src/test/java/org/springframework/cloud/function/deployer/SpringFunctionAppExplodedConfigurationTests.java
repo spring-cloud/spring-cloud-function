@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.function.Supplier;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -33,9 +35,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = FunctionDeployerConfiguration.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -53,7 +52,8 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
 		public void test() throws Exception {
-			Supplier<Flux<String>> function = catalog.lookup(Supplier.class, "function0");
+			Supplier<Flux<String>> function = this.catalog.lookup(Supplier.class,
+					"function0");
 			assertThat(function.get().blockFirst()).isEqualTo("one");
 		}
 
@@ -61,11 +61,12 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.bean=myEmitter,myCounter" })
-	public static class CompositeTests extends SpringFunctionAppExplodedConfigurationTests {
+	public static class CompositeTests
+			extends SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
 		public void test() throws Exception {
-			Supplier<Flux<Integer>> function = catalog.lookup(Supplier.class,
+			Supplier<Flux<Integer>> function = this.catalog.lookup(Supplier.class,
 					"function0|function1");
 			assertThat(function.get().blockFirst()).isEqualTo(3);
 		}
@@ -74,11 +75,12 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.bean=myCounter" })
-	public static class ProcessorTests extends SpringFunctionAppExplodedConfigurationTests {
+	public static class ProcessorTests
+			extends SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
 		public void test() throws Exception {
-			Function<Flux<String>, Flux<Integer>> function = catalog
+			Function<Flux<String>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");
 			assertThat(function.apply(Flux.just("spam")).blockFirst()).isEqualTo(4);
 		}
@@ -95,10 +97,10 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 		@Test
 		public void test() throws Exception {
 			// Can't assert side effects.
-			Function<Flux<Integer>, Mono<Void>> function = catalog.lookup(Function.class,
-					"function0");
+			Function<Flux<Integer>, Mono<Void>> function = this.catalog
+					.lookup(Function.class, "function0");
 			function.apply(Flux.just(5)).block();
-			capture.expect(containsString(String.format("10%n")));
+			this.capture.expect(containsString(String.format("10%n")));
 		}
 
 	}

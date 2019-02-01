@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,19 @@ import reactor.core.publisher.Flux;
  * {@link Function} implementation that wraps a target Function so that the target's
  * simple input and output types will be wrapped as {@link Flux} instances.
  *
- * @author Mark Fisher
- *
  * @param <T> input type of target function
  * @param <R> output type of target function
+ * @author Mark Fisher
  */
-public class FluxFunction<T, R> implements Function<Flux<T>, Flux<R>>, FluxWrapper<Function<T, R>> {
+public class FluxFunction<T, R>
+		implements Function<Flux<T>, Flux<R>>, FluxWrapper<Function<T, R>> {
 
 	private final Function<T, R> function;
 
 	public FluxFunction(Function<T, R> function) {
 		this.function = function;
 	}
-	
+
 	@Override
 	public Function<T, R> getTarget() {
 		return this.function;
@@ -46,4 +46,5 @@ public class FluxFunction<T, R> implements Function<Flux<T>, Flux<R>>, FluxWrapp
 	public Flux<R> apply(Flux<T> input) {
 		return input.map(i -> this.function.apply(i));
 	}
+
 }

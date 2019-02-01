@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
@@ -34,26 +37,23 @@ import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 /**
+ * @param <T> target type
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
 public class FunctionRegistration<T> implements BeanNameAware {
 
-	private T target;
-
 	private final Set<String> names = new LinkedHashSet<>();
 
 	private final Map<String, String> properties = new LinkedHashMap<>();
+
+	private T target;
 
 	private FunctionType type;
 
 	/**
 	 * Creates instance of FunctionRegistration.
-	 *
 	 * @param target instance of {@link Supplier}, {@link Function} or {@link Consumer}
 	 * @param names additional set of names for this registration. Additional names can be
 	 * provided {@link #name(String)} or {@link #names(String...)} operations.
@@ -65,15 +65,11 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	}
 
 	public Map<String, String> getProperties() {
-		return properties;
+		return this.properties;
 	}
 
 	public Set<String> getNames() {
-		return names;
-	}
-
-	public FunctionType getType() {
-		return type;
+		return this.names;
 	}
 
 	/**
@@ -81,15 +77,19 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	 * want to add a name or set or names to the existing set of names use
 	 * {@link #names(Collection)} or {@link #name(String)} or {@link #names(String...)}
 	 * operations.
-	 * @param names
+	 * @param names - bean names
 	 */
 	public void setNames(Set<String> names) {
 		this.names.clear();
 		this.names.addAll(names);
 	}
 
+	public FunctionType getType() {
+		return this.type;
+	}
+
 	public T getTarget() {
-		return target;
+		return this.target;
 	}
 
 	public FunctionRegistration<T> properties(Map<String, String> properties) {
@@ -133,7 +133,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	}
 
 	public <S> FunctionRegistration<S> wrap() {
-		if (type == null || type.isWrapper()) {
+		if (this.type == null || this.type.isWrapper()) {
 			@SuppressWarnings("unchecked")
 			FunctionRegistration<S> value = (FunctionRegistration<S>) this;
 			return value;

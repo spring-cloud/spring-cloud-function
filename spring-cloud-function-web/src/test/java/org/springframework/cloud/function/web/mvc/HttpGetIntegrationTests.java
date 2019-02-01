@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -53,44 +54,46 @@ import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import reactor.core.publisher.Flux;
-
 /**
  * @author Dave Syer
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties="spring.main.web-application-type=servlet")
-@ContextConfiguration(classes= {RestApplication.class, ApplicationConfiguration.class})
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
+@ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class HttpGetIntegrationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;
+
 	@LocalServerPort
 	private int port;
+
 	@Autowired
 	private TestRestTemplate rest;
+
 	@Autowired
 	private ApplicationConfiguration test;
 
 	@Before
 	public void init() {
-		test.list.clear();
+		this.test.list.clear();
 	}
 
 	@Test
 	public void staticResource() {
-		assertThat(rest.getForObject("/test.html", String.class)).contains("<body>Test");
+		assertThat(this.rest.getForObject("/test.html", String.class))
+				.contains("<body>Test");
 	}
 
 	@Test
 	public void wordsSSE() throws Exception {
-		assertThat(rest.exchange(
+		assertThat(this.rest.exchange(
 				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
 				String.class).getBody()).isEqualTo(sse("foo", "bar"));
 	}
 
 	@Test
 	public void wordsJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/words"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -99,7 +102,7 @@ public class HttpGetIntegrationTests {
 	@Test
 	@Ignore("Fix error handling")
 	public void errorJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/bang"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("[\"foo\"]");
@@ -107,7 +110,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -115,7 +118,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void word() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/word")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("foo");
@@ -123,7 +126,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void foos() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody())
@@ -132,7 +135,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void getMore() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/get/more")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -140,7 +143,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void bareWords() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.get(new URI("/bareWords")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
@@ -148,7 +151,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void timeoutJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/timeout"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("[\"foo\"]");
@@ -156,7 +159,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void emptyJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/empty"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("[]");
@@ -164,22 +167,23 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void sentences() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class)
 				.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptAny() throws Exception {
-		assertThat(rest.exchange(
-				RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(),
-				String.class).getBody())
-						.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+		assertThat(
+				this.rest
+						.exchange(RequestEntity.get(new URI("/sentences"))
+								.accept(MediaType.ALL).build(), String.class)
+						.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptJson() throws Exception {
-		ResponseEntity<String> result = rest
+		ResponseEntity<String> result = this.rest
 				.exchange(
 						RequestEntity.get(new URI("/sentences"))
 								.accept(MediaType.APPLICATION_JSON).build(),
@@ -191,7 +195,7 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void sentencesAcceptSse() throws Exception {
-		ResponseEntity<String> result = rest.exchange(
+		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.get(new URI("/sentences")).accept(EVENT_STREAM).build(),
 				String.class);
 		assertThat(result.getBody())
@@ -202,28 +206,31 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void postMoreFoo() {
-		assertThat(rest.getForObject("/post/more/foo", String.class)).isEqualTo("(FOO)");
+		assertThat(this.rest.getForObject("/post/more/foo", String.class))
+				.isEqualTo("(FOO)");
 	}
 
 	@Test
 	public void uppercaseGet() {
-		assertThat(rest.getForObject("/uppercase/foo", String.class)).isEqualTo("(FOO)");
+		assertThat(this.rest.getForObject("/uppercase/foo", String.class))
+				.isEqualTo("(FOO)");
 	}
 
 	@Test
 	public void convertGet() {
-		assertThat(rest.getForObject("/wrap/123", String.class)).isEqualTo("..123..");
+		assertThat(this.rest.getForObject("/wrap/123", String.class))
+				.isEqualTo("..123..");
 	}
 
 	@Test
 	public void supplierFirst() {
-		assertThat(rest.getForObject("/not/a/function", String.class))
+		assertThat(this.rest.getForObject("/not/a/function", String.class))
 				.isEqualTo("[\"hello\"]");
 	}
 
 	@Test
 	public void convertGetJson() throws Exception {
-		assertThat(rest
+		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/entity/321"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
 				.getBody()).isEqualTo("{\"value\":321}");
@@ -329,6 +336,7 @@ public class HttpGetIntegrationTests {
 	}
 
 	public static class Foo {
+
 		private String value;
 
 		public Foo(String value) {
@@ -339,12 +347,13 @@ public class HttpGetIntegrationTests {
 		}
 
 		public String getValue() {
-			return value;
+			return this.value;
 		}
 
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 }

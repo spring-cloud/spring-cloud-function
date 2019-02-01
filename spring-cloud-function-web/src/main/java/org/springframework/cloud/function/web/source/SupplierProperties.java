@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class SupplierProperties {
 
 	private boolean autoStartup = true;
+
 	private boolean debug = true;
+
 	private String name;
+
 	private String templateUrl;
+
 	private boolean enabled;
+
+	private Map<String, String> headers = new LinkedHashMap<>();
+
 	public boolean isEnabled() {
 		return this.enabled;
 	}
@@ -40,8 +47,6 @@ public class SupplierProperties {
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
-
-	private Map<String, String> headers = new LinkedHashMap<>();
 
 	public boolean isAutoStartup() {
 		return this.autoStartup;
@@ -59,23 +64,24 @@ public class SupplierProperties {
 		this.debug = debug;
 	}
 
+	public String getName() {
+		return this.name;
+	}
+
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public String getName() {
-		return this.name;
+	public String getTemplateUrl() {
+		return this.templateUrl;
 	}
 
 	public void setTemplateUrl(String templateUrl) {
 		this.templateUrl = templateUrl;
 	}
 
-	public String getTemplateUrl() {
-		return this.templateUrl;
-	}
-	
 	public Map<String, String> getHeaders() {
 		return this.headers;
 	}
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ public class Frenchizer implements Function<Integer, String> {
 	@PostConstruct
 	public void init() {
 		this.numbers = new String[4];
-		numbers[0] = "un";
-		numbers[1] = "deux";
-		numbers[2] = "trois";
-		numbers[3] = "quatre";
+		this.numbers[0] = "un";
+		this.numbers[1] = "deux";
+		this.numbers[2] = "trois";
+		this.numbers[3] = "quatre";
 	}
 
 	@Override
@@ -40,4 +40,5 @@ public class Frenchizer implements Function<Integer, String> {
 		}
 		throw new RuntimeException();
 	}
+
 }

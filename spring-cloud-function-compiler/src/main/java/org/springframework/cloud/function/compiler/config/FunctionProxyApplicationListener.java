@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -73,11 +73,11 @@ public class FunctionProxyApplicationListener
 	private final Map<String, Object> imports = new HashMap<>();
 
 	public Map<String, Object> getCompile() {
-		return compile;
+		return this.compile;
 	}
 
 	public Map<String, Object> getImports() {
-		return imports;
+		return this.imports;
 	}
 
 	@Override
@@ -86,7 +86,7 @@ public class FunctionProxyApplicationListener
 		DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context
 				.getBeanFactory();
 		bind(context);
-		for (Map.Entry<String, Object> entry : compile.entrySet()) {
+		for (Map.Entry<String, Object> entry : this.compile.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
@@ -101,7 +101,7 @@ public class FunctionProxyApplicationListener
 			registerLambdaCompilingProxy(name, type, inputType, outputType, lambda,
 					beanFactory);
 		}
-		for (Map.Entry<String, Object> entry : imports.entrySet()) {
+		for (Map.Entry<String, Object> entry : this.imports.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
 			Map<String, String> properties = (Map<String, String>) entry.getValue();
@@ -132,7 +132,8 @@ public class FunctionProxyApplicationListener
 			ConfigurationPropertiesBindingPostProcessor post) {
 		StaticApplicationContext other = new StaticApplicationContext();
 		other.setEnvironment(context.getEnvironment());
-		other.registerSingleton(ConfigurationBeanFactoryMetadata.class.getName(), ConfigurationBeanFactoryMetadata.class);
+		other.registerSingleton(ConfigurationBeanFactoryMetadata.class.getName(),
+				ConfigurationBeanFactoryMetadata.class);
 		other.setParent(context);
 		post.setApplicationContext(other);
 	}
@@ -195,4 +196,5 @@ public class FunctionProxyApplicationListener
 		beanDefinition.setPropertyValues(props);
 		beanFactory.registerBeanDefinition(name, beanDefinition);
 	}
+
 }

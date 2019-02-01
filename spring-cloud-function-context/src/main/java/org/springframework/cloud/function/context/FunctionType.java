@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.context;
 
 import java.lang.reflect.ParameterizedType;
@@ -23,11 +24,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import reactor.core.publisher.Flux;
+
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.messaging.Message;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Dave Syer
@@ -35,6 +36,9 @@ import reactor.core.publisher.Flux;
  */
 public class FunctionType {
 
+	/**
+	 * Unclassified function types.
+	 */
 	public static FunctionType UNCLASSIFIED = new FunctionType(ResolvableType
 			.forClassWithGenerics(Function.class, Object.class, Object.class).getType());
 
@@ -59,34 +63,6 @@ public class FunctionType {
 		this.inputType = findType(ParamType.INPUT);
 		this.outputType = findType(ParamType.OUTPUT);
 		this.message = messageType();
-	}
-
-	public Type getType() {
-		return type;
-	}
-
-	public Class<?> getInputWrapper() {
-		return inputWrapper;
-	}
-
-	public Class<?> getOutputWrapper() {
-		return outputWrapper;
-	}
-
-	public Class<?> getInputType() {
-		return inputType;
-	}
-
-	public Class<?> getOutputType() {
-		return outputType;
-	}
-
-	public boolean isMessage() {
-		return message;
-	}
-
-	public boolean isWrapper() {
-		return isWrapper(getInputWrapper()) || isWrapper(getOutputWrapper());
 	}
 
 	public static boolean isWrapper(Type type) {
@@ -123,6 +99,91 @@ public class FunctionType {
 	public static FunctionType consumer(Class<?> input) {
 		return new FunctionType(
 				ResolvableType.forClassWithGenerics(Consumer.class, input).getType());
+	}
+
+	public static FunctionType compose(FunctionType input, FunctionType output) {
+		ResolvableType inputGeneric = input(input);
+		ResolvableType outputGeneric = output(output);
+		if (!isWrapper(outputGeneric.getType())) {
+			ResolvableType inputOutput = output(input);
+			if (isWrapper(inputOutput.getType())) {
+				outputGeneric = wrap(input,
+						extractClass(inputOutput.getType(), ParamType.OUTPUT_WRAPPER),
+						extractClass(outputGeneric.getType(), ParamType.OUTPUT));
+			}
+		}
+		return new FunctionType(ResolvableType
+				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
+				.getType());
+	}
+
+	private static ResolvableType wrap(FunctionType input, Class<?> wrapper,
+			Class<?> type) {
+		return input.isMessage() ? wrap(wrapper, message(type))
+				: ResolvableType.forClassWithGenerics(wrapper, type);
+	}
+
+	private static ResolvableType wrap(Class<?> wrapper, ResolvableType type) {
+		return ResolvableType.forClassWithGenerics(wrapper, type);
+	}
+
+	private static ResolvableType message(Class<?> type) {
+		return ResolvableType.forClassWithGenerics(Message.class, type);
+	}
+
+	private static ResolvableType input(FunctionType type) {
+		return type.input(type.getInputType());
+	}
+
+	private static ResolvableType output(FunctionType type) {
+		return type.output(type.getOutputType());
+	}
+
+	private static Class<?> extractClass(Type param, ParamType paramType) {
+		if (param instanceof ParameterizedType) {
+			ParameterizedType concrete = (ParameterizedType) param;
+			param = concrete.getRawType();
+		}
+		if (param == null) {
+			// Last ditch attempt to guess: Flux<String>
+			if (paramType.isWrapper()) {
+				param = Flux.class;
+			}
+			else {
+				param = String.class;
+			}
+		}
+		Class<?> result = param instanceof Class ? (Class<?>) param : null;
+		// TODO: cache result
+		return result;
+	}
+
+	public Type getType() {
+		return this.type;
+	}
+
+	public Class<?> getInputWrapper() {
+		return this.inputWrapper;
+	}
+
+	public Class<?> getOutputWrapper() {
+		return this.outputWrapper;
+	}
+
+	public Class<?> getInputType() {
+		return this.inputType;
+	}
+
+	public Class<?> getOutputType() {
+		return this.outputType;
+	}
+
+	public boolean isMessage() {
+		return this.message;
+	}
+
+	public boolean isWrapper() {
+		return isWrapper(getInputWrapper()) || isWrapper(getOutputWrapper());
 	}
 
 	public FunctionType to(Class<?> output) {
@@ -173,100 +234,74 @@ public class FunctionType {
 		return wrap(wrapper, wrapper);
 	}
 
-	public static FunctionType compose(FunctionType input, FunctionType output) {
-		ResolvableType inputGeneric = input(input);
-		ResolvableType outputGeneric = output(output);
-		if (!isWrapper(outputGeneric.getType())) {
-			ResolvableType inputOutput = output(input);
-			if (isWrapper(inputOutput.getType())) {
-				outputGeneric = wrap(input,
-						extractClass(inputOutput.getType(), ParamType.OUTPUT_WRAPPER),
-						extractClass(outputGeneric.getType(), ParamType.OUTPUT));
-			}
-		}
-		return new FunctionType(ResolvableType
-				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
-				.getType());
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result
-				+ ((inputType == null) ? 0 : inputType.toString().hashCode());
+				+ ((this.inputType == null) ? 0 : this.inputType.toString().hashCode());
+		result = prime * result + ((this.inputWrapper == null) ? 0
+				: this.inputWrapper.toString().hashCode());
+		result = prime * result + (this.message ? 1231 : 1237);
 		result = prime * result
-				+ ((inputWrapper == null) ? 0 : inputWrapper.toString().hashCode());
-		result = prime * result + (message ? 1231 : 1237);
-		result = prime * result
-				+ ((outputType == null) ? 0 : outputType.toString().hashCode());
-		result = prime * result
-				+ ((outputWrapper == null) ? 0 : outputWrapper.toString().hashCode());
+				+ ((this.outputType == null) ? 0 : this.outputType.toString().hashCode());
+		result = prime * result + ((this.outputWrapper == null) ? 0
+				: this.outputWrapper.toString().hashCode());
 		return result;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
 		FunctionType other = (FunctionType) obj;
-		if (inputType == null) {
-			if (other.inputType != null)
+		if (this.inputType == null) {
+			if (other.inputType != null) {
 				return false;
+			}
 		}
-		else if (!inputType.toString().equals(other.inputType.toString()))
+		else if (!this.inputType.toString().equals(other.inputType.toString())) {
 			return false;
-		if (inputWrapper == null) {
-			if (other.inputWrapper != null)
+		}
+		if (this.inputWrapper == null) {
+			if (other.inputWrapper != null) {
 				return false;
+			}
 		}
-		else if (!inputWrapper.toString().equals(other.inputWrapper.toString()))
+		else if (!this.inputWrapper.toString().equals(other.inputWrapper.toString())) {
 			return false;
-		if (message != other.message)
+		}
+		if (this.message != other.message) {
 			return false;
-		if (outputType == null) {
-			if (other.outputType != null)
+		}
+		if (this.outputType == null) {
+			if (other.outputType != null) {
 				return false;
+			}
 		}
-		else if (!outputType.toString().equals(other.outputType.toString()))
+		else if (!this.outputType.toString().equals(other.outputType.toString())) {
 			return false;
-		if (outputWrapper == null) {
-			if (other.outputWrapper != null)
+		}
+		if (this.outputWrapper == null) {
+			if (other.outputWrapper != null) {
 				return false;
+			}
 		}
-		else if (!outputWrapper.toString().equals(other.outputWrapper.toString()))
+		else if (!this.outputWrapper.toString().equals(other.outputWrapper.toString())) {
 			return false;
+		}
 		return true;
 	}
 
 	private ResolvableType wrapper(Class<?> wrapper, Class<?> type) {
 		return wrap(this, wrapper, type);
-	}
-
-	private static ResolvableType wrap(FunctionType input, Class<?> wrapper,
-			Class<?> type) {
-		return input.isMessage() ? wrap(wrapper, message(type))
-				: ResolvableType.forClassWithGenerics(wrapper, type);
-	}
-
-	private static ResolvableType wrap(Class<?> wrapper, ResolvableType type) {
-		return ResolvableType.forClassWithGenerics(wrapper, type);
-	}
-
-	private static ResolvableType message(Class<?> type) {
-		return ResolvableType.forClassWithGenerics(Message.class, type);
-	}
-
-	private static ResolvableType input(FunctionType type) {
-		return type.input(type.getInputType());
-	}
-
-	private static ResolvableType output(FunctionType type) {
-		return type.output(type.getOutputType());
 	}
 
 	private ResolvableType output(Class<?> type) {
@@ -329,25 +364,6 @@ public class FunctionType {
 			}
 		}
 		return Object.class;
-	}
-
-	private static Class<?> extractClass(Type param, ParamType paramType) {
-		if (param instanceof ParameterizedType) {
-			ParameterizedType concrete = (ParameterizedType) param;
-			param = concrete.getRawType();
-		}
-		if (param == null) {
-			// Last ditch attempt to guess: Flux<String>
-			if (paramType.isWrapper()) {
-				param = Flux.class;
-			}
-			else {
-				param = String.class;
-			}
-		}
-		Class<?> result = param instanceof Class ? (Class<?>) param : null;
-		// TODO: cache result
-		return result;
 	}
 
 	private Type extractType(Type type, ParamType paramType, int index) {
@@ -442,6 +458,7 @@ public class FunctionType {
 	}
 
 	enum ParamType {
+
 		INPUT, OUTPUT, INPUT_WRAPPER, OUTPUT_WRAPPER, INPUT_INNER_WRAPPER, OUTPUT_INNER_WRAPPER;
 
 		public boolean isOutput() {
@@ -460,6 +477,7 @@ public class FunctionType {
 		public boolean isInnerWrapper() {
 			return this == OUTPUT_INNER_WRAPPER || this == INPUT_INNER_WRAPPER;
 		}
+
 	}
 
 }

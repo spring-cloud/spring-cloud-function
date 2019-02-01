@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xmlns="http://maven.apache.org/POM/4.0.0"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>io.spring.sample</groupId>
@@ -14,7 +15,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.1.2.RELEASE</version>
-		<relativePath /> <!-- lookup parent from repository -->
+		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<properties>
@@ -24,7 +25,8 @@
 		<functionAppName>function-sample-azure</functionAppName>
 		<functionAppRegion>westus</functionAppRegion>
 		<functionResourceGroup>java-function-group</functionResourceGroup>
-		<stagingDirectory>${project.build.directory}/azure-functions/${functionAppName}</stagingDirectory>
+		<stagingDirectory>${project.build.directory}/azure-functions/${functionAppName}
+		</stagingDirectory>
 		<start-class>example.Config</start-class>
 		<wrapper.version>1.0.15.RELEASE</wrapper.version>
 	</properties>
@@ -92,11 +94,11 @@
 					<artifactId>azure-functions-maven-plugin</artifactId>
 					<version>1.0.0-beta-7</version>
 					<dependencies>
-						    <dependency>
-								<groupId>javax.xml.bind</groupId>
-								<artifactId>jaxb-api</artifactId>
-								<version>2.3.1</version>
-							</dependency>
+						<dependency>
+							<groupId>javax.xml.bind</groupId>
+							<artifactId>jaxb-api</artifactId>
+							<version>2.3.1</version>
+						</dependency>
 					</dependencies>
 				</plugin>
 			</plugins>
@@ -168,11 +170,13 @@
 						</goals>
 						<configuration>
 							<overwrite>true</overwrite>
-							<outputDirectory>${project.build.directory}/azure-functions/${functionAppName}
+							<outputDirectory>
+								${project.build.directory}/azure-functions/${functionAppName}
 							</outputDirectory>
 							<resources>
 								<resource>
-									<directory>${project.basedir}/src/main/azure</directory>
+									<directory>${project.basedir}/src/main/azure
+									</directory>
 									<includes>
 										<include>**</include>
 									</includes>

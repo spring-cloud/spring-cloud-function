@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
- *
  * @author Dave Syer
  * @author Oleg Zhurakousky
  *
@@ -66,12 +65,12 @@ public class SpringBootApiGatewayRequestHandler extends
 	}
 
 	private boolean functionAcceptsMessage() {
-		return inspector.isMessage(function());
+		return this.inspector.isMessage(function());
 	}
 
 	private Object deserializeBody(String json) {
 		try {
-			return mapper.readValue(json, getInputType());
+			return this.mapper.readValue(json, getInputType());
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot convert event", e);
@@ -91,13 +90,15 @@ public class SpringBootApiGatewayRequestHandler extends
 	protected APIGatewayProxyResponseEvent convertOutput(Object output) {
 		if (functionReturnsMessage(output)) {
 			Message<?> message = (Message<?>) output;
-			return new APIGatewayProxyResponseEvent().withStatusCode(
-					(Integer) message.getHeaders().getOrDefault("statuscode", HttpStatus.OK.value()))
+			return new APIGatewayProxyResponseEvent()
+					.withStatusCode((Integer) message.getHeaders()
+							.getOrDefault("statuscode", HttpStatus.OK.value()))
 					.withHeaders(toResponseHeaders(message.getHeaders()))
 					.withBody(serializeBody(message.getPayload()));
 		}
 		else {
-			return new APIGatewayProxyResponseEvent().withStatusCode(HttpStatus.OK.value())
+			return new APIGatewayProxyResponseEvent()
+					.withStatusCode(HttpStatus.OK.value())
 					.withBody(serializeBody(output));
 
 		}
@@ -116,7 +117,7 @@ public class SpringBootApiGatewayRequestHandler extends
 
 	private String serializeBody(Object body) {
 		try {
-			return mapper.writeValueAsString(body);
+			return this.mapper.writeValueAsString(body);
 		}
 		catch (JsonProcessingException e) {
 			throw new IllegalStateException("Cannot convert output", e);

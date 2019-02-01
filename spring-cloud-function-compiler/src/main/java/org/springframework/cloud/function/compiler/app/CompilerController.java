@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,20 +32,21 @@ public class CompilerController {
 
 	@PostMapping(path = "/supplier/{name}")
 	public void registerSupplier(@PathVariable String name, @RequestBody String lambda,
-			@RequestParam(defaultValue="Flux<String>") String type) {
+			@RequestParam(defaultValue = "Flux<String>") String type) {
 		this.registry.registerSupplier(name, lambda, type);
 	}
 
 	@PostMapping(path = "/function/{name}")
 	public void registerFunction(@PathVariable String name, @RequestBody String lambda,
-			@RequestParam(defaultValue="Flux<String>") String inputType,
-			@RequestParam(defaultValue="Flux<String>") String outputType) {
+			@RequestParam(defaultValue = "Flux<String>") String inputType,
+			@RequestParam(defaultValue = "Flux<String>") String outputType) {
 		this.registry.registerFunction(name, lambda, inputType, outputType);
 	}
 
 	@PostMapping(path = "/consumer/{name}")
 	public void registerConsumer(@PathVariable String name, @RequestBody String lambda,
-			@RequestParam(defaultValue="Flux<String>") String type) {
+			@RequestParam(defaultValue = "Flux<String>") String type) {
 		this.registry.registerConsumer(name, lambda, type);
 	}
+
 }

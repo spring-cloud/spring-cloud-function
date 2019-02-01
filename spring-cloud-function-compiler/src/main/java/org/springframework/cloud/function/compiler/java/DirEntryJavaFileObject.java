@@ -1,12 +1,12 @@
 /*
- * Copyright 2016 the original author or authors.
- * 
+ * Copyright 2012-2019 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,12 +31,13 @@ import javax.tools.JavaFileObject;
 
 /**
  * A JavaFileObject that represents a file in a directory.
- * 
+ *
  * @author Andy Clement
  */
 public class DirEntryJavaFileObject implements JavaFileObject {
 
 	private File file;
+
 	private File basedir;
 
 	public DirEntryJavaFileObject(File basedir, File file) {
@@ -46,22 +47,23 @@ public class DirEntryJavaFileObject implements JavaFileObject {
 
 	@Override
 	public URI toUri() {
-		return file.toURI();
+		return this.file.toURI();
 	}
 
 	/**
-	 * @return the path of the file relative to the base directory, for example: a/b/c/D.class
+	 * @return the path of the file relative to the base directory, for example:
+	 * a/b/c/D.class
 	 */
 	@Override
 	public String getName() {
-		String basedirPath = basedir.getPath();
-		String filePath = file.getPath();
-		return filePath.substring(basedirPath.length()+1);
+		String basedirPath = this.basedir.getPath();
+		String filePath = this.file.getPath();
+		return filePath.substring(basedirPath.length() + 1);
 	}
 
 	@Override
 	public InputStream openInputStream() throws IOException {
-		return new FileInputStream(file);
+		return new FileInputStream(this.file);
 	}
 
 	@Override
@@ -72,13 +74,15 @@ public class DirEntryJavaFileObject implements JavaFileObject {
 	@Override
 	public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
 		// It is bytecode
-		throw new UnsupportedOperationException("openReader() not supported on class file: " + getName());
+		throw new UnsupportedOperationException(
+				"openReader() not supported on class file: " + getName());
 	}
 
 	@Override
 	public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
 		// It is bytecode
-		throw new UnsupportedOperationException("getCharContent() not supported on class file: " + getName());
+		throw new UnsupportedOperationException(
+				"getCharContent() not supported on class file: " + getName());
 	}
 
 	@Override
@@ -88,7 +92,7 @@ public class DirEntryJavaFileObject implements JavaFileObject {
 
 	@Override
 	public long getLastModified() {
-		return file.lastModified();
+		return this.file.lastModified();
 	}
 
 	@Override
@@ -123,16 +127,17 @@ public class DirEntryJavaFileObject implements JavaFileObject {
 
 	@Override
 	public int hashCode() {
-		return file.getName().hashCode()*37+basedir.getName().hashCode();
+		return this.file.getName().hashCode() * 37 + this.basedir.getName().hashCode();
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof DirEntryJavaFileObject)) {
 			return false;
 		}
-		DirEntryJavaFileObject that = (DirEntryJavaFileObject)obj;
-		return (basedir.getName().equals(that.basedir.getName())) && (file.getName().equals(that.file.getName()));
+		DirEntryJavaFileObject that = (DirEntryJavaFileObject) obj;
+		return (this.basedir.getName().equals(that.basedir.getName()))
+				&& (this.file.getName().equals(that.file.getName()));
 	}
-	
+
 }

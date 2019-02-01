@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
-
-import reactor.core.publisher.Flux;
 
 /**
  * <p>
@@ -54,6 +53,7 @@ import reactor.core.publisher.Flux;
 public abstract class FunctionFactoryUtils {
 
 	private static final String FLUX_CLASS_NAME = Flux.class.getName();
+
 	private static final String PUBLISHER_CLASS_NAME = Publisher.class.getName();
 
 	private FunctionFactoryUtils() {
@@ -142,4 +142,5 @@ public abstract class FunctionFactoryUtils {
 				&& Stream.of(types).allMatch(type -> type.startsWith(FLUX_CLASS_NAME)
 						|| type.startsWith(PUBLISHER_CLASS_NAME));
 	}
+
 }

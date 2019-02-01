@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,15 +43,16 @@ public class DirEnumeration implements Enumeration<File> {
 	}
 
 	private void computeValue() {
-		if (filesToReturn == null) { // Indicates we haven't started yet
-			filesToReturn = new ArrayList<>();
-			directoriesToExplore = new ArrayList<>();
-			visitDirectory(basedir);
+		if (this.filesToReturn == null) { // Indicates we haven't started yet
+			this.filesToReturn = new ArrayList<>();
+			this.directoriesToExplore = new ArrayList<>();
+			visitDirectory(this.basedir);
 		}
-		if (filesToReturn.size() == 0) {
-			while (filesToReturn.size() == 0 && directoriesToExplore.size() != 0) {
-				File nextDir = directoriesToExplore.get(0);
-				directoriesToExplore.remove(0);
+		if (this.filesToReturn.size() == 0) {
+			while (this.filesToReturn.size() == 0
+					&& this.directoriesToExplore.size() != 0) {
+				File nextDir = this.directoriesToExplore.get(0);
+				this.directoriesToExplore.remove(0);
 				visitDirectory(nextDir);
 			}
 		}
@@ -60,50 +61,52 @@ public class DirEnumeration implements Enumeration<File> {
 	@Override
 	public boolean hasMoreElements() {
 		computeValue();
-		return filesToReturn.size() != 0;
+		return this.filesToReturn.size() != 0;
 	}
 
 	@Override
 	public File nextElement() {
 		computeValue();
-		if (filesToReturn.size()==0) {
+		if (this.filesToReturn.size() == 0) {
 			throw new NoSuchElementException();
 		}
-		File toReturn = filesToReturn.get(0);
-		filesToReturn.remove(0);
+		File toReturn = this.filesToReturn.get(0);
+		this.filesToReturn.remove(0);
 		return toReturn;
 	}
 
 	private void visitDirectory(File dir) {
 		File[] files = dir.listFiles();
 		if (files != null) {
-			for (File file: files) {
+			for (File file : files) {
 				if (file.isDirectory()) {
-					directoriesToExplore.add(file);
-				} else {
-					filesToReturn.add(file);
+					this.directoriesToExplore.add(file);
+				}
+				else {
+					this.filesToReturn.add(file);
 				}
 			}
 		}
 	}
 
 	public File getDirectory() {
-		return basedir;
+		return this.basedir;
 	}
 
 	/**
-	 * Return the relative path of this file to the base directory that the directory enumeration was
-	 * started for.
+	 * Return the relative path of this file to the base directory that the directory
+	 * enumeration was started for.
 	 * @param file a file discovered returned by this enumeration
 	 * @return the relative path of the file (for example: a/b/c/D.class)
 	 */
 	public String getName(File file) {
-		String basedirPath = basedir.getPath();
+		String basedirPath = this.basedir.getPath();
 		String filePath = file.getPath();
 		if (!filePath.startsWith(basedirPath)) {
-			throw new IllegalStateException("The file '"+filePath+"' is not nested below the base directory '"+basedirPath+"'");
+			throw new IllegalStateException("The file '" + filePath
+					+ "' is not nested below the base directory '" + basedirPath + "'");
 		}
-		return filePath.substring(basedirPath.length()+1);
+		return filePath.substring(basedirPath.length() + 1);
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,21 +49,24 @@ public class SourceAutoConfigurationIntegrationTests {
 	@Test
 	public void fails() throws Exception {
 		int count = 0;
-		while(forwarder.isRunning() && count++<100) {
+		while (this.forwarder.isRunning() && count++ < 100) {
 			Thread.sleep(20);
 		}
 		// It completed
-		assertThat(forwarder.isRunning()).isFalse();
+		assertThat(this.forwarder.isRunning()).isFalse();
 		// But failed
-		assertThat(forwarder.isOk()).isFalse();
+		assertThat(this.forwarder.isOk()).isFalse();
 	}
 
 	@EnableAutoConfiguration
 	@TestConfiguration
 	public static class ApplicationConfiguration {
+
 		@Bean
 		public Supplier<String> word() {
 			return () -> "foo";
 		}
+
 	}
+
 }

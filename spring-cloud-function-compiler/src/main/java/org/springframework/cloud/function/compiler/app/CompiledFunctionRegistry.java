@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import reactor.core.publisher.Flux;
+
 import org.springframework.cloud.function.compiler.AbstractFunctionCompiler;
 import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.ConsumerCompiler;
@@ -29,8 +31,6 @@ import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.SupplierCompiler;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
-
-import reactor.core.publisher.Flux;
 
 /**
  * @author Mark Fisher
@@ -78,29 +78,35 @@ public class CompiledFunctionRegistry {
 	}
 
 	public void registerSupplier(String name, String lambda, String type) {
-		this.doRegister(this.supplierCompiler, this.supplierDirectory, name, lambda, type);
+		this.doRegister(this.supplierCompiler, this.supplierDirectory, name, lambda,
+				type);
 	}
 
 	public void registerFunction(String name, String lambda, String... types) {
-		this.doRegister(this.functionCompiler, this.functionDirectory, name, lambda, types);
+		this.doRegister(this.functionCompiler, this.functionDirectory, name, lambda,
+				types);
 	}
 
 	public void registerConsumer(String name, String lambda, String type) {
-		this.doRegister(this.consumerCompiler, this.consumerDirectory, name, lambda, type);
+		this.doRegister(this.consumerCompiler, this.consumerDirectory, name, lambda,
+				type);
 	}
 
-	private void doRegister(AbstractFunctionCompiler<?> compiler, File directory, String name, String lambda, String... types) {
+	private void doRegister(AbstractFunctionCompiler<?> compiler, File directory,
+			String name, String lambda, String... types) {
 		CompiledFunctionFactory<?> factory = compiler.compile(name, lambda, types);
 		File file = new File(directory, fileName(name));
 		try {
 			FileCopyUtils.copy(factory.getGeneratedClassBytes(), file);
 		}
 		catch (IOException e) {
-			throw new IllegalArgumentException(String.format("failed to register '%s'", name), e);
+			throw new IllegalArgumentException(
+					String.format("failed to register '%s'", name), e);
 		}
 	}
 
 	private String fileName(String functionName) {
 		return String.format("%s.%s", functionName, "fun");
 	}
+
 }

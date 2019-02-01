@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,37 +42,9 @@ public class FunctionProperties {
 	private String[] bean = new String[0];
 
 	/**
-	 * Optional main class from which to build a Spring application context
+	 * Optional main class from which to build a Spring application context.
 	 */
 	private String main;
-
-	public String getName() {
-		return functionName(StringUtils.arrayToDelimitedString(bean, ","));
-	}
-
-	public String[] getBean() {
-		return bean;
-	}
-
-	public void setBean(String[] bean) {
-		this.bean = bean;
-	}
-
-	public String[] getLocation() {
-		return location;
-	}
-
-	public void setLocation(String[] location) {
-		this.location = location;
-	}
-
-	public String getMain() {
-		return main;
-	}
-
-	public void setMain(String main) {
-		this.main = main;
-	}
 
 	public static String functionName(String name) {
 		if (!name.contains(",")) {
@@ -89,11 +61,40 @@ public class FunctionProperties {
 		return "function" + value;
 	}
 
+	public String getName() {
+		return functionName(StringUtils.arrayToDelimitedString(this.bean, ","));
+	}
+
+	public String[] getBean() {
+		return this.bean;
+	}
+
+	public void setBean(String[] bean) {
+		this.bean = bean;
+	}
+
+	public String[] getLocation() {
+		return this.location;
+	}
+
+	public void setLocation(String[] location) {
+		this.location = location;
+	}
+
+	public String getMain() {
+		return this.main;
+	}
+
+	public void setMain(String main) {
+		this.main = main;
+	}
+
 	@PostConstruct
 	public void init() {
-		if (location.length == 0) {
+		if (this.location.length == 0) {
 			throw new IllegalStateException(
 					"No archive location provided, please configure function.location as a jar or directory.");
 		}
 	}
+
 }

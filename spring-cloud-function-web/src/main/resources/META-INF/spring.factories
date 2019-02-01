@@ -2,10 +2,8 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.cloud.function.web.flux.ReactorAutoConfiguration,\
 org.springframework.cloud.function.web.mvc.ReactorAutoConfiguration,\
 org.springframework.cloud.function.web.source.SupplierAutoConfiguration
-
 org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc=\
 org.springframework.cloud.function.web.flux.ReactorAutoConfiguration,\
 org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration
-
 org.springframework.context.ApplicationContextInitializer=\
 org.springframework.cloud.function.web.function.FunctionEndpointInitializer

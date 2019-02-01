@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import java.util.function.Function;
 import org.springframework.util.ClassUtils;
 
 /**
+ * @param <S> input type
+ * @param <T> output type
  * @author Dave Syer
- *
  */
 public class IsolatedFunction<S, T> implements Function<S, T>, Isolated {
 
 	private final Function<S, T> function;
+
 	private final ClassLoader classLoader;
 
 	public IsolatedFunction(Function<S, T> function) {

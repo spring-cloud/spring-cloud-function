@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import kotlin.Unit;
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -36,16 +39,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.MethodMetadata;
 
-import kotlin.Unit;
-import kotlin.jvm.functions.Function0;
-import kotlin.jvm.functions.Function1;
-
 /**
  * Configuration class which defines the required infrastructure to bootstrap Kotlin
  * lambdas as invocable functions within the context of the framework.
  *
  * @author Oleg Zhurakousky
- *
  * @since 2.0
  */
 @Configuration
@@ -58,43 +56,65 @@ class KotlinLambdaToFunctionAutoConfiguration {
 	 * Will transform all discovered Kotlin's Function1 and Function0 lambdas to java
 	 * Supplier, Function and Consumer, retaining the original Kotlin type
 	 * characteristics. In other words the resulting bean could be cast to both java and
-	 * kotlin types (i.e., java Function<I,O> vs. kotlin Function1<I,O>)
+	 * kotlin types (i.e., java Function&lt;I,O&gt; vs. kotlin Function1&lt;I,O&gt;)
+	 * @return the bean factory post processor
 	 */
 	@Bean
 	public BeanFactoryPostProcessor kotlinToFunctionTransformer() {
 		return new BeanFactoryPostProcessor() {
 
 			@Override
-			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+			public void postProcessBeanFactory(
+					ConfigurableListableBeanFactory beanFactory) throws BeansException {
 
 				String[] beanDefinitionNames = beanFactory.getBeanDefinitionNames();
 				for (String beanDefinitionName : beanDefinitionNames) {
-					BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanDefinitionName);
+					BeanDefinition beanDefinition = beanFactory
+							.getBeanDefinition(beanDefinitionName);
 					Object source = beanDefinition.getSource();
 					if (source instanceof MethodMetadata) {
-						String returnTypeName = ((MethodMetadata)source).getReturnTypeName();
+						String returnTypeName = ((MethodMetadata) source)
+								.getReturnTypeName();
 						if (returnTypeName.startsWith("kotlin.jvm.functions.Function")) {
-							FunctionType functionType = new FunctionType(FunctionContextUtils.findType(beanDefinitionName, beanFactory));
+							FunctionType functionType = new FunctionType(
+									FunctionContextUtils.findType(beanDefinitionName,
+											beanFactory));
 							if (returnTypeName.equals("kotlin.jvm.functions.Function1")) {
-								if (Unit.class.isAssignableFrom(functionType.getOutputType())) {
-									logger.debug("Transforming Kotlin lambda " + beanDefinitionName + " to java Consumer");
-									this.register(beanDefinitionName, beanDefinition, KotlinConsumer.class, (BeanDefinitionRegistry) beanFactory);
+								if (Unit.class
+										.isAssignableFrom(functionType.getOutputType())) {
+									KotlinLambdaToFunctionAutoConfiguration.this.logger
+											.debug("Transforming Kotlin lambda "
+													+ beanDefinitionName
+													+ " to java Consumer");
+									this.register(beanDefinitionName, beanDefinition,
+											KotlinConsumer.class,
+											(BeanDefinitionRegistry) beanFactory);
 								}
 								else {
-									logger.debug("Transforming Kotlin lambda " + beanDefinitionName + " to java Function");
-									this.register(beanDefinitionName, beanDefinition, KotlinFunction.class, (BeanDefinitionRegistry) beanFactory);
+									KotlinLambdaToFunctionAutoConfiguration.this.logger
+											.debug("Transforming Kotlin lambda "
+													+ beanDefinitionName
+													+ " to java Function");
+									this.register(beanDefinitionName, beanDefinition,
+											KotlinFunction.class,
+											(BeanDefinitionRegistry) beanFactory);
 								}
 							}
-							else  {
-								logger.debug("Transforming Kotlin lambda " + beanDefinitionName + " to java Supplier");
-								this.register(beanDefinitionName, beanDefinition, KotlinSupplier.class, (BeanDefinitionRegistry) beanFactory);
+							else {
+								KotlinLambdaToFunctionAutoConfiguration.this.logger.debug(
+										"Transforming Kotlin lambda " + beanDefinitionName
+												+ " to java Supplier");
+								this.register(beanDefinitionName, beanDefinition,
+										KotlinSupplier.class,
+										(BeanDefinitionRegistry) beanFactory);
 							}
 						}
 					}
 				}
 			}
 
-			private void register(String originalName, BeanDefinition originalDefinition,  Class<?> clazz, BeanDefinitionRegistry registry) {
+			private void register(String originalName, BeanDefinition originalDefinition,
+					Class<?> clazz, BeanDefinitionRegistry registry) {
 				RootBeanDefinition cbd = new RootBeanDefinition(clazz);
 				ConstructorArgumentValues ca = new ConstructorArgumentValues();
 				ca.addGenericArgumentValue(originalDefinition);
@@ -106,10 +126,11 @@ class KotlinLambdaToFunctionAutoConfiguration {
 	}
 
 	/**
-	 * Wrapper for Kotlin lambda to be represented as both Java Function<I,O> as well as
-	 * Kotlin's Function1<I,O>
+	 * Wrapper for Kotlin lambda to be represented as both Java Function&lt;I,O&gt; as
+	 * well as Kotlin's Function1&lt;I,O&gt;.
 	 */
-	private static class KotlinFunction<I, O> implements Function<I, O>, Function1<I, O> {
+	private static final class KotlinFunction<I, O>
+			implements Function<I, O>, Function1<I, O> {
 
 		private final Function1<I, O> kotlinLambda;
 
@@ -126,13 +147,15 @@ class KotlinLambdaToFunctionAutoConfiguration {
 		public O invoke(I i) {
 			return this.apply(i);
 		}
+
 	}
 
 	/**
-	 * Wrapper for Kotlin lambda to be represented as both Java Consumer<I> as well as
-	 * Kotlin's Function1<I,Unit>
+	 * Wrapper for Kotlin lambda to be represented as both Java Consumer&lt;I&gt; as well
+	 * as Kotlin's Function1&lt;I,Unit&gt;.
 	 */
-	private static class KotlinConsumer<I, U> implements Consumer<I>, Function1<I, U> {
+	private static final class KotlinConsumer<I, U>
+			implements Consumer<I>, Function1<I, U> {
 
 		private final Function1<I, U> kotlinLambda;
 
@@ -149,13 +172,14 @@ class KotlinLambdaToFunctionAutoConfiguration {
 		public void accept(I i) {
 			this.kotlinLambda.invoke(i);
 		}
+
 	}
 
 	/**
-	 * Wrapper for Kotlin lambda to be represented as both Java Supplier<O> as well as
-	 * Kotlin's Function0<O>
+	 * Wrapper for Kotlin lambda to be represented as both Java Supplier&lt;O&gt; as well
+	 * as Kotlin's Function0&lt;O&gt;.
 	 */
-	private static class KotlinSupplier<O> implements Supplier<O>, Function0<O> {
+	private static final class KotlinSupplier<O> implements Supplier<O>, Function0<O> {
 
 		private final Function0<O> kotlinLambda;
 
@@ -172,6 +196,7 @@ class KotlinLambdaToFunctionAutoConfiguration {
 		public O invoke() {
 			return this.kotlinLambda.invoke();
 		}
+
 	}
 
 }

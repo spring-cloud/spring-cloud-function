@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.context;
 
 import java.util.Collections;
@@ -40,11 +41,6 @@ public class FunctionalSpringApplication
 		extends org.springframework.boot.SpringApplication {
 
 	/**
-	 * Name of default property source.
-	 */
-	private static final String DEFAULT_PROPERTIES = "defaultProperties";
-
-	/**
 	 * Flag to say that context is functional beans.
 	 */
 	public static final String SPRING_FUNCTIONAL_ENABLED = "spring.functional.enabled";
@@ -53,6 +49,23 @@ public class FunctionalSpringApplication
 	 * Enumeration of web application types.
 	 */
 	public static final String SPRING_WEB_APPLICATION_TYPE = "spring.main.web-application-type";
+
+	/**
+	 * Name of default property source.
+	 */
+	private static final String DEFAULT_PROPERTIES = "defaultProperties";
+
+	public FunctionalSpringApplication(Class<?>... primarySources) {
+		super(primarySources);
+		setApplicationContextClass(GenericApplicationContext.class);
+		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler",
+				null)) {
+			setWebApplicationType(WebApplicationType.REACTIVE);
+		}
+		else {
+			setWebApplicationType(WebApplicationType.NONE);
+		}
+	}
 
 	public static void main(String[] args) throws Exception {
 		FunctionalSpringApplication.run(new Class<?>[0], args);
@@ -66,18 +79,6 @@ public class FunctionalSpringApplication
 	public static ConfigurableApplicationContext run(Class<?>[] primarySources,
 			String[] args) {
 		return new FunctionalSpringApplication(primarySources).run(args);
-	}
-
-	public FunctionalSpringApplication(Class<?>... primarySources) {
-		super(primarySources);
-		setApplicationContextClass(GenericApplicationContext.class);
-		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler",
-				null)) {
-			setWebApplicationType(WebApplicationType.REACTIVE);
-		}
-		else {
-			setWebApplicationType(WebApplicationType.NONE);
-		}
 	}
 
 	@Override
@@ -108,7 +109,7 @@ public class FunctionalSpringApplication
 							handler = BeanUtils.instantiateClass(type);
 						}
 						@SuppressWarnings("unchecked")
-						ApplicationContextInitializer<GenericApplicationContext> initializer = (ApplicationContextInitializer<GenericApplicationContext>) handler;
+						ApplicationContextInitializer initializer = (ApplicationContextInitializer) handler;
 						initializer.initialize(generic);
 						functional = true;
 					}
@@ -118,8 +119,9 @@ public class FunctionalSpringApplication
 						Class<?> functionType = type;
 						Object function = handler;
 						generic.registerBean("function", FunctionRegistration.class,
-								() -> new FunctionRegistration<>(handler(generic, function, functionType))
-										.type(FunctionType.of(functionType)));
+								() -> new FunctionRegistration<>(
+										handler(generic, function, functionType))
+												.type(FunctionType.of(functionType)));
 						functional = true;
 					}
 				}
@@ -130,7 +132,8 @@ public class FunctionalSpringApplication
 		}
 	}
 
-	private Object handler(GenericApplicationContext generic, Object handler, Class<?> type) {
+	private Object handler(GenericApplicationContext generic, Object handler,
+			Class<?> type) {
 		if (handler == null) {
 			handler = generic.getAutowireCapableBeanFactory().createBean(type);
 		}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,8 +35,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.reactive.result.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.server.ServerWebExchange;
-
-import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -57,7 +56,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	public FunctionHandlerMapping(FunctionCatalog catalog,
 			FunctionController controller) {
 		this.functions = catalog;
-		logger.info("FunctionCatalog: " + catalog);
+		this.logger.info("FunctionCatalog: " + catalog);
 		setOrder(super.getOrder() - 5);
 		this.controller = controller;
 	}
@@ -65,9 +64,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
-		detectHandlerMethods(controller);
-		while (prefix.endsWith("/")) {
-			prefix = prefix.substring(0, prefix.length() - 1);
+		detectHandlerMethods(this.controller);
+		while (this.prefix.endsWith("/")) {
+			this.prefix = this.prefix.substring(0, this.prefix.length() - 1);
 		}
 	}
 
@@ -78,23 +77,23 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public Mono<HandlerMethod> getHandlerInternal(ServerWebExchange request) {
 		String path = request.getRequest().getPath().pathWithinApplication().value();
-		if (StringUtils.hasText(prefix) && !path.startsWith(prefix)) {
+		if (StringUtils.hasText(this.prefix) && !path.startsWith(this.prefix)) {
 			return Mono.empty();
 		}
 		Mono<HandlerMethod> handler = super.getHandlerInternal(request);
 		if (path == null) {
 			return handler;
 		}
-		if (path.startsWith(prefix)) {
-			path = path.substring(prefix.length());
+		if (path.startsWith(this.prefix)) {
+			path = path.substring(this.prefix.length());
 		}
 		Object function = findFunctionForGet(request, path);
 		if (function == null) {
 			function = findFunctionForPost(request, path);
 		}
 		if (function != null) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Found function for POST: " + path);
+			if (this.logger.isDebugEnabled()) {
+				this.logger.debug("Found function for POST: " + path);
 			}
 			request.getAttributes().put(WebRequestConstants.HANDLER, function);
 		}
@@ -107,12 +106,12 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			return null;
 		}
 		path = path.startsWith("/") ? path.substring(1) : path;
-		Consumer<Publisher<?>> consumer = functions.lookup(Consumer.class, path);
+		Consumer<Publisher<?>> consumer = this.functions.lookup(Consumer.class, path);
 		if (consumer != null) {
 			request.getAttributes().put(WebRequestConstants.CONSUMER, consumer);
 			return consumer;
 		}
-		Function<Object, Object> function = functions.lookup(Function.class, path);
+		Function<Object, Object> function = this.functions.lookup(Function.class, path);
 		if (function != null) {
 			request.getAttributes().put(WebRequestConstants.FUNCTION, function);
 			return function;
@@ -127,7 +126,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		path = path.startsWith("/") ? path.substring(1) : path;
 
 		Object functionForGet = null;
-		Supplier<Publisher<?>> supplier = functions.lookup(Supplier.class, path);
+		Supplier<Publisher<?>> supplier = this.functions.lookup(Supplier.class, path);
 		if (supplier != null) {
 			request.getAttributes().put(WebRequestConstants.SUPPLIER, supplier);
 			functionForGet = supplier;
@@ -135,7 +134,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		else {
 			StringBuilder builder = new StringBuilder();
 			String name = path;
-			String[] splitPath =  path.split("/");
+			String[] splitPath = path.split("/");
 			Function<Object, Object> function = null;
 			for (int i = 0; i < splitPath.length || function != null; i++) {
 				String element = splitPath[i];
@@ -145,12 +144,11 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 				builder.append(element);
 				name = builder.toString();
 
-				function = functions.lookup(Function.class, name);
+				function = this.functions.lookup(Function.class, name);
 				if (function != null) {
 					request.getAttributes().put(WebRequestConstants.FUNCTION, function);
 					String value = path.length() > name.length()
-							? path.substring(name.length() + 1)
-								: null;
+							? path.substring(name.length() + 1) : null;
 					request.getAttributes().put(WebRequestConstants.ARGUMENT, value);
 					functionForGet = function;
 				}

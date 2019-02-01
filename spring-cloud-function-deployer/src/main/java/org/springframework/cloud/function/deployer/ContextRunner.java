@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,16 +32,30 @@ import org.springframework.util.ReflectionUtils;
 /**
  * Utility class for starting a Spring Boot application in a separate thread. Best used
  * from an isolated class loader, e.g. through {@link ApplicationRunner}.
- * 
+ *
  * @author Dave Syer
  */
 public class ContextRunner {
 
 	private ConfigurableApplicationContext context;
+
 	private Thread runThread;
+
 	private volatile boolean running = false;
+
 	private Throwable error;
+
 	private long timeout = 120000;
+
+	private static boolean isFunctional(StandardEnvironment environment) {
+		if (!ClassUtils.isPresent(
+				"org.springframework.cloud.function.context.FunctionalSpringApplication",
+				null)) {
+			return false;
+		}
+		return environment.resolvePlaceholders("${spring.functional.enabled:true}")
+				.equals("true");
+	}
 
 	public void run(final String source, final Map<String, Object> properties,
 			final String... args) {
@@ -59,21 +73,21 @@ public class ContextRunner {
 						environment.getPropertySources().addFirst(
 								new SimpleCommandLinePropertySource("args", args));
 					}
-					running = true;
+					ContextRunner.this.running = true;
 					Class<?> sourceClass = ClassUtils.resolveClassName(source, null);
 					SpringApplication builder = builder(sourceClass, environment);
-					context = builder.run(args);
+					ContextRunner.this.context = builder.run(args);
 				}
 				catch (Throwable ex) {
-					error = ex;
+					ContextRunner.this.error = ex;
 				}
 
 			}
 		});
 		this.runThread.start();
 		try {
-			this.runThread.join(timeout);
-			this.running = context != null && context.isRunning();
+			this.runThread.join(this.timeout);
+			this.running = this.context != null && this.context.isRunning();
 		}
 		catch (InterruptedException e) {
 			this.running = false;
@@ -114,7 +128,7 @@ public class ContextRunner {
 	}
 
 	public boolean isRunning() {
-		return running;
+		return this.running;
 	}
 
 	public Throwable getError() {
@@ -134,21 +148,12 @@ public class ContextRunner {
 		return application;
 	}
 
-	private static boolean isFunctional(StandardEnvironment environment) {
-		if (!ClassUtils.isPresent(
-				"org.springframework.cloud.function.context.FunctionalSpringApplication",
-				null)) {
-			return false;
-		}
-		return environment.resolvePlaceholders("${spring.functional.enabled:true}")
-				.equals("true");
-	}
-	
 	private static class FunctionalSpringApplicationCreator {
 
 		public static SpringApplication create(Class<?> type) {
 			return new FunctionalSpringApplication(type);
 		}
-		
+
 	}
+
 }

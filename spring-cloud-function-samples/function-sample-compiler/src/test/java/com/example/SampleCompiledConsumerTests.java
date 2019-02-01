@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class SampleCompiledConsumerTests {
 	@Test
 	public void print() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + port + "/test", "it works", String.class)).isNull();
+				"http://localhost:" + this.port + "/test", "it works", String.class)).isNull();
 		assertEquals("it works", Reference.instance);
 	}
 
@@ -55,5 +55,7 @@ public class SampleCompiledConsumerTests {
 		public static void set(Object o) {
 			instance = o;
 		}
+
 	}
+
 }

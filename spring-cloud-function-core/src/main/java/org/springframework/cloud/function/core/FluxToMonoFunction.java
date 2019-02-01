@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,15 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Marker wrapper for target Function&lt;Flux, Mono&gt;
+ * Marker wrapper for target Function&lt;Flux, Mono&gt;.
  *
+ * @param <I> type of {@link Flux} input of the target function
+ * @param <O> type of {@link Mono} output of the target function
  * @author Oleg Zhurakousky
  * @since 2.0
- *
- * @param <T> type of {@link Flux} input of the target function
- * @param <R> type of {@link Mono} output of the target function
  */
-public class FluxToMonoFunction<I,O> implements Function<Flux<I>, Mono<O>>, FluxWrapper<Function<Flux<I>, Mono<O>>> {
+public class FluxToMonoFunction<I, O>
+		implements Function<Flux<I>, Mono<O>>, FluxWrapper<Function<Flux<I>, Mono<O>>> {
 
 	private final Function<Flux<I>, Mono<O>> function;
 
@@ -43,11 +43,12 @@ public class FluxToMonoFunction<I,O> implements Function<Flux<I>, Mono<O>>, Flux
 
 	@Override
 	public Function<Flux<I>, Mono<O>> getTarget() {
-		return function;
+		return this.function;
 	}
 
 	@Override
 	public Mono<O> apply(Flux<I> input) {
-		return function.apply(input);
+		return this.function.apply(input);
 	}
+
 }

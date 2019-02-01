@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,12 +54,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 		// in a webapp we have to explicitly enable the export
 		"spring.cloud.function.web.supplier.enabled=true",
 		// manually so we know the webapp is listening when we start
-		"spring.cloud.function.web.supplier.autoStartup=false"})
+		"spring.cloud.function.web.supplier.autoStartup=false" })
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class WebAppIntegrationTests {
-	
+
 	private static Log logger = LogFactory.getLog(WebAppIntegrationTests.class);
-	
+
 	@Autowired
 	private SupplierExporter forwarder;
 
@@ -68,16 +68,18 @@ public class WebAppIntegrationTests {
 
 	@Test
 	public void posts() throws Exception {
-		forwarder.start();
-		app.latch.await(10, TimeUnit.SECONDS);
-		assertThat(app.values).hasSize(1);
+		this.forwarder.start();
+		this.app.latch.await(10, TimeUnit.SECONDS);
+		assertThat(this.app.values).hasSize(1);
 	}
 
 	@EnableAutoConfiguration
 	@TestConfiguration
 	@RestController
 	public static class ApplicationConfiguration {
+
 		private List<String> values = new ArrayList<>();
+
 		private CountDownLatch latch = new CountDownLatch(1);
 
 		@Bean
@@ -89,9 +91,11 @@ public class WebAppIntegrationTests {
 		@PostMapping("/values")
 		public String value(@RequestBody String body) {
 			logger.info("Body: " + body);
-			values.add(body);
-			latch.countDown();
+			this.values.add(body);
+			this.latch.countDown();
 			return "ok";
 		}
+
 	}
+
 }

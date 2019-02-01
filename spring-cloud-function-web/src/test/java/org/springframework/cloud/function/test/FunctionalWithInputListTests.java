@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
@@ -29,8 +30,6 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
-
-import reactor.core.publisher.Mono;
 
 /**
  * @author Dave Syer
@@ -46,18 +45,22 @@ public class FunctionalWithInputListTests {
 
 	@Test
 	public void words() throws Exception {
-		client.post().uri("/").body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
+		this.client.post().uri("/")
+				.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"),
+						String.class)
 				.exchange().expectStatus().isOk().expectBody(String.class)
 				.isEqualTo("{\"value\":\"FOOBAR\"}");
 	}
 
 	@SpringBootConfiguration
 	protected static class TestConfiguration implements Function<List<Foo>, Foo> {
+
 		@Override
 		public Foo apply(List<Foo> value) {
 			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase())
 					.collect(Collectors.joining()));
 		}
+
 	}
 
 	public static class Foo {
@@ -85,4 +88,5 @@ public class FunctionalWithInputListTests {
 		}
 
 	}
+
 }

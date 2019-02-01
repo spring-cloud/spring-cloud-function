@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,39 +44,42 @@ public class SpringFunctionFluxConfigurationTests {
 
 	@Before
 	public void run() {
-		if (bootstrap == null) {
-			bootstrap = new ApplicationBootstrap();
-			bootstrap.run(SpringFunctionFluxConfigurationTests.class,
+		if (this.bootstrap == null) {
+			this.bootstrap = new ApplicationBootstrap();
+			this.bootstrap.run(SpringFunctionFluxConfigurationTests.class,
 					"--function.location=file:target/it/flux/target/dependency",
 					"--function.bean=foos",
 					"--function.main=com.example.functions.FunctionApp");
-			catalog = bootstrap.getRunner().getBean(FunctionCatalog.class.getName());
-			inspector = bootstrap.getRunner().getBean(FunctionInspector.class.getName());
+			this.catalog = this.bootstrap.getRunner()
+					.getBean(FunctionCatalog.class.getName());
+			this.inspector = this.bootstrap.getRunner()
+					.getBean(FunctionInspector.class.getName());
 		}
 	}
 
 	@After
 	public void close() {
-		if (bootstrap != null) {
-			bootstrap.close();
+		if (this.bootstrap != null) {
+			this.bootstrap.close();
 		}
 	}
 
 	@Test
 	public void test() throws Exception {
 		@SuppressWarnings("unchecked")
-		Function<Object, Object> function = (Function<Object, Object>) bootstrap
+		Function<Object, Object> function = (Function<Object, Object>) this.bootstrap
 				.getRunner()
-				.evaluate("lookup(T(java.util.function.Function), 'function0')", catalog);
+				.evaluate("lookup(T(java.util.function.Function), 'function0')",
+						this.catalog);
 		assertThat(function).isNotNull();
-		Class<?> inputType = (Class<?>) bootstrap.getRunner()
-				.evaluate("getInputType(#function)", inspector, "function", function);
+		Class<?> inputType = (Class<?>) this.bootstrap.getRunner().evaluate(
+				"getInputType(#function)", this.inspector, "function", function);
 		assertThat(inputType.getName()).isEqualTo("com.example.functions.Foo");
 		Object foo = create(inputType);
-		Class<?> outputType = (Class<?>) bootstrap.getRunner()
-				.evaluate("getOutputType(#function)", inspector, "function", function);
+		Class<?> outputType = (Class<?>) this.bootstrap.getRunner().evaluate(
+				"getOutputType(#function)", this.inspector, "function", function);
 		assertThat(outputType.getName()).isEqualTo("com.example.functions.Foo");
-		String value = (String) bootstrap.getRunner().evaluate(
+		String value = (String) this.bootstrap.getRunner().evaluate(
 				"apply(T(reactor.core.publisher.Flux).just(#foo)).blockFirst().getValue()",
 				function, "foo", foo);
 		assertThat(value).isEqualTo("FOO");

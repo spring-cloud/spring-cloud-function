@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,15 @@
 
 package com.example;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.List;
-
-import org.junit.Test;
 
 import com.example.functions.CharCounter;
 import com.example.functions.Exclaimer;
 import com.example.functions.Greeter;
-
+import org.junit.Test;
 import reactor.core.publisher.Flux;
+
+import static org.junit.Assert.assertEquals;
 
 public class FunctionTests {
 
@@ -34,13 +32,13 @@ public class FunctionTests {
 
 	@Test
 	public void testUppercase() {
-		String output = functions.uppercase().apply("foobar");
+		String output = this.functions.uppercase().apply("foobar");
 		assertEquals("FOOBAR", output);
 	}
 
 	@Test
 	public void testLowercase() {
-		Flux<String> output = functions.lowercase().apply(Flux.just("FOO", "BAR"));
+		Flux<String> output = this.functions.lowercase().apply(Flux.just("FOO", "BAR"));
 		List<String> results = output.collectList().block();
 		assertEquals(2, results.size());
 		assertEquals("foo", results.get(0));
@@ -49,13 +47,13 @@ public class FunctionTests {
 
 	@Test
 	public void testHello() {
-		String output = functions.hello().get();
-		assertEquals("hello", output);	
+		String output = this.functions.hello().get();
+		assertEquals("hello", output);
 	}
 
 	@Test
 	public void testWords() {
-		Flux<String> output = functions.words().get();
+		Flux<String> output = this.functions.words().get();
 		List<String> results = output.collectList().block();
 		assertEquals(2, results.size());
 		assertEquals("foo", results.get(0));
@@ -81,4 +79,5 @@ public class FunctionTests {
 	public void testCharCounter() {
 		assertEquals((Integer) 21, new CharCounter().apply("this is 21 chars long"));
 	}
+
 }

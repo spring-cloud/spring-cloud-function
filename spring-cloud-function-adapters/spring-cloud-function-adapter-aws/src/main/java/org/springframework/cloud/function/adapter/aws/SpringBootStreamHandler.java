@@ -1,11 +1,11 @@
 /*
- * Copyright 2017-1018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,11 +26,10 @@ import java.util.List;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.reactivestreams.Publisher;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import reactor.core.publisher.Flux;
+
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * @author Dave Syer
@@ -39,7 +38,7 @@ import reactor.core.publisher.Flux;
 public class SpringBootStreamHandler extends SpringFunctionInitializer
 		implements RequestStreamHandler {
 
-	@Autowired(required=false)
+	@Autowired(required = false)
 	private ObjectMapper mapper;
 
 	public SpringBootStreamHandler() {
@@ -64,7 +63,7 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 		initialize();
 		Object value = convertStream(input);
 		Publisher<?> flux = apply(extract(value));
-		mapper.writeValue(output, result(value, flux));
+		this.mapper.writeValue(output, result(value, flux));
 	}
 
 	private Object result(Object input, Publisher<?> flux) {
@@ -72,7 +71,7 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 		for (Object value : Flux.from(flux).toIterable()) {
 			result.add(value);
 		}
-		if (isSingleValue(input) && result.size()==1) {
+		if (isSingleValue(input) && result.size() == 1) {
 			return result.get(0);
 		}
 		return result;
@@ -91,10 +90,11 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 
 	private Object convertStream(InputStream input) {
 		try {
-			return mapper.readValue(input, getInputType());
+			return this.mapper.readValue(input, getInputType());
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot convert event", e);
 		}
 	}
+
 }

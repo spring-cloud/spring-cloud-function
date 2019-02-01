@@ -1,11 +1,11 @@
 /*
- * Copyright 2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,9 +29,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
 /**
+ * @param <T> target type
  * @author Mark Fisher
  */
-public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNameAware, FunctionFactoryMetadata<T> {
+public class AbstractLambdaCompilingProxy<T>
+		implements InitializingBean, BeanNameAware, FunctionFactoryMetadata<T> {
 
 	private final Resource resource;
 
@@ -43,7 +45,8 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 
 	private String[] typeParameterizations;
 
-	public AbstractLambdaCompilingProxy(Resource resource, AbstractFunctionCompiler<T> compiler) {
+	public AbstractLambdaCompilingProxy(Resource resource,
+			AbstractFunctionCompiler<T> compiler) {
 		Assert.notNull(resource, "Resource must not be null");
 		Assert.notNull(compiler, "Compiler must not be null");
 		this.resource = resource;
@@ -61,8 +64,10 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		String lambda = FileCopyUtils.copyToString(new InputStreamReader(this.resource.getInputStream()));
-		this.factory = this.compiler.compile(this.beanName, lambda, this.typeParameterizations);
+		String lambda = FileCopyUtils
+				.copyToString(new InputStreamReader(this.resource.getInputStream()));
+		this.factory = this.compiler.compile(this.beanName, lambda,
+				this.typeParameterizations);
 	}
 
 	@Override
@@ -74,4 +79,5 @@ public class AbstractLambdaCompilingProxy<T> implements InitializingBean, BeanNa
 	public Method getFactoryMethod() {
 		return this.factory.getFactoryMethod();
 	}
+
 }

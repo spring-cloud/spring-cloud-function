@@ -38,9 +38,9 @@ ext {
 }
 
 dependencyManagement {
-     imports {
-          mavenBom "org.springframework.cloud:spring-cloud-function-dependencies:${springCloudFunctionVersion}"
-     }
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-function-dependencies:${springCloudFunctionVersion}"
+	}
 }
 
 dependencies {

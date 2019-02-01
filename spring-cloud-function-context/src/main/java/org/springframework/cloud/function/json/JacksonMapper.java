@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.json;
 
 import java.lang.reflect.Type;
@@ -36,7 +37,8 @@ public class JacksonMapper implements JsonMapper {
 	@Override
 	public <T> T toObject(String json, Type type) {
 		try {
-			return mapper.readValue(json, TypeFactory.defaultInstance().constructType(type));
+			return this.mapper.readValue(json,
+					TypeFactory.defaultInstance().constructType(type));
 		}
 		catch (Exception e) {
 			throw new IllegalArgumentException("Cannot convert JSON " + json, e);
@@ -46,10 +48,11 @@ public class JacksonMapper implements JsonMapper {
 	@Override
 	public String toString(Object value) {
 		try {
-			return mapper.writeValueAsString(value);
+			return this.mapper.writeValueAsString(value);
 		}
 		catch (JsonProcessingException e) {
 			throw new IllegalArgumentException("Cannot convert to JSON", e);
 		}
 	}
+
 }

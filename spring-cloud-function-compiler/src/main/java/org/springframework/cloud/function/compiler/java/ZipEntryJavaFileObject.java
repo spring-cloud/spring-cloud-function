@@ -1,12 +1,12 @@
 /*
- * Copyright 2016 the original author or authors.
- * 
+ * Copyright 2012-2019 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,10 +31,17 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
 
+/**
+ * A {@link JavaFileObject} that works on a ZIP entry.
+ *
+ * @author Mark Fisher
+ */
 public class ZipEntryJavaFileObject implements JavaFileObject {
 
 	private File containingFile;
+
 	private ZipFile zf;
+
 	private ZipEntry ze;
 
 	private URI uri;
@@ -47,26 +54,30 @@ public class ZipEntryJavaFileObject implements JavaFileObject {
 
 	@Override
 	public URI toUri() {
-		if (uri == null) {
+		if (this.uri == null) {
 			String uriString = null;
 			try {
-				uriString = "zip:" + containingFile.getAbsolutePath() + "!" + ze.getName();
-				uri = new URI(uriString);
-			} catch (URISyntaxException e) {
-				throw new IllegalStateException("Unexpected URISyntaxException for string '" + uriString + "'", e);
+				uriString = "zip:" + this.containingFile.getAbsolutePath() + "!"
+						+ this.ze.getName();
+				this.uri = new URI(uriString);
+			}
+			catch (URISyntaxException e) {
+				throw new IllegalStateException(
+						"Unexpected URISyntaxException for string '" + uriString + "'",
+						e);
 			}
 		}
-		return uri;
+		return this.uri;
 	}
 
 	@Override
 	public String getName() {
-		return ze.getName(); // a/b/C.class
+		return this.ze.getName(); // a/b/C.class
 	}
 
 	@Override
 	public InputStream openInputStream() throws IOException {
-		return zf.getInputStream(ze);
+		return this.zf.getInputStream(this.ze);
 	}
 
 	@Override
@@ -77,13 +88,15 @@ public class ZipEntryJavaFileObject implements JavaFileObject {
 	@Override
 	public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
 		// It is bytecode
-		throw new UnsupportedOperationException("openReader() not supported on class file: " + getName()); 
+		throw new UnsupportedOperationException(
+				"openReader() not supported on class file: " + getName());
 	}
 
 	@Override
 	public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
 		// It is bytecode
-		throw new UnsupportedOperationException("getCharContent() not supported on class file: " + getName());
+		throw new UnsupportedOperationException(
+				"getCharContent() not supported on class file: " + getName());
 	}
 
 	@Override
@@ -93,7 +106,7 @@ public class ZipEntryJavaFileObject implements JavaFileObject {
 
 	@Override
 	public long getLastModified() {
-		return ze.getTime();
+		return this.ze.getTime();
 	}
 
 	@Override
@@ -128,19 +141,19 @@ public class ZipEntryJavaFileObject implements JavaFileObject {
 
 	@Override
 	public int hashCode() {
-		int hc = containingFile.getName().hashCode();
-		hc = hc * 37 + ze.getName().hashCode();
+		int hc = this.containingFile.getName().hashCode();
+		hc = hc * 37 + this.ze.getName().hashCode();
 		return hc;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof ZipEntryJavaFileObject)) {
 			return false;
 		}
-		ZipEntryJavaFileObject that = (ZipEntryJavaFileObject)obj;
-		return  (containingFile.getName().equals(that.containingFile.getName())) &&
-				(ze.getName().equals(that.ze.getName()));
+		ZipEntryJavaFileObject that = (ZipEntryJavaFileObject) obj;
+		return (this.containingFile.getName().equals(that.containingFile.getName()))
+				&& (this.ze.getName().equals(that.ze.getName()));
 	}
 
 }

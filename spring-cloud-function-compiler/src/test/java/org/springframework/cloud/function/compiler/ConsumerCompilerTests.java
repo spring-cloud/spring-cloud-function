@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2017 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,14 +35,16 @@ public class ConsumerCompilerTests {
 		CompiledFunctionFactory<Consumer<String>> compiled = new ConsumerCompiler<String>(
 				String.class.getName()).compile("foos",
 						"flux -> flux.subscribe(System.out::println)", "Flux<String>");
-		assertThat(FunctionFactoryUtils.isFluxConsumer(compiled.getFactoryMethod())).isTrue();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(compiled.getFactoryMethod()))
+				.isTrue();
 	}
 
 	@Test
 	public void consumesString() {
 		CompiledFunctionFactory<Consumer<String>> compiled = new ConsumerCompiler<String>(
 				String.class.getName()).compile("foos", "System.out::println", "String");
-		assertThat(FunctionFactoryUtils.isFluxConsumer(compiled.getFactoryMethod())).isFalse();
+		assertThat(FunctionFactoryUtils.isFluxConsumer(compiled.getFactoryMethod()))
+				.isFalse();
 	}
 
 }
