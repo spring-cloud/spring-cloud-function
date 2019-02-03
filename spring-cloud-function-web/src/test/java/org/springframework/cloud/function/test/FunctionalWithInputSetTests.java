@@ -31,7 +31,7 @@ import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
@@ -52,9 +52,9 @@ public class FunctionalWithInputSetTests {
 						String.class)
 				.exchange().expectStatus().isOk().expectBody(String.class).returnResult()
 				.getResponseBody();
-		assertTrue(reply.contains("FOO"));
-		assertTrue(reply.contains("BAR"));
-		assertTrue(reply.contains("{\"value\":\""));
+		assertThat(reply.contains("FOO")).isTrue();
+		assertThat(reply.contains("BAR")).isTrue();
+		assertThat(reply.contains("{\"value\":\"")).isTrue();
 	}
 
 	@SpringBootConfiguration

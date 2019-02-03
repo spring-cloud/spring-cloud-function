@@ -188,7 +188,7 @@ class Foo {
 	Foo() {
 	}
 
-	public Foo(String value) {
+	Foo(String value) {
 		this.value = value;
 	}
 
@@ -217,7 +217,7 @@ class Bar {
 	Bar() {
 	}
 
-	public Bar(String value) {
+	Bar(String value) {
 		this.value = value;
 	}
 

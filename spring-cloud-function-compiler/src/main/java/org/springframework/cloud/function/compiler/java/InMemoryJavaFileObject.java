@@ -201,7 +201,7 @@ public final class InMemoryJavaFileObject implements JavaFileObject {
 				InMemoryJavaFileObject.this.lastModifiedTime = System.currentTimeMillis();
 				InMemoryJavaFileObject.this.content = new String(toCharArray())
 						.getBytes(); // Ignoring encoding...
-			};
+			}
 		};
 	}
 

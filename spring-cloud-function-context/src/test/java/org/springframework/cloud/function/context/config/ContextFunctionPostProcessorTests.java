@@ -40,7 +40,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.ClassUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author Dave Syer
@@ -132,7 +131,7 @@ public class ContextFunctionPostProcessorTests {
 				System.out::println, "consumer"));
 		Supplier<Mono<Void>> supplier = (Supplier<Mono<Void>>) this.processor
 				.lookupSupplier("supplier|consumer");
-		assertNull(supplier.get().block());
+		assertThat(supplier.get().block()).isNull();
 	}
 
 	@Test

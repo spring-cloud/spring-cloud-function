@@ -36,7 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 @RunWith(SpringRunner.class)
+// @checkstyle:off
 @FunctionalSpringBootTest(classes = Object.class, properties = "spring.main.sources=org.springframework.cloud.function.context.string.FunctionalStringSourceTests.TestConfiguration")
+// @checkstyle:on
 public class FunctionalStringSourceTests {
 
 	@Autowired

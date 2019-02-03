@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
@@ -39,8 +40,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky
@@ -62,11 +62,11 @@ public class HeadersToMessageTests {
 				.exchange(RequestEntity.post(new URI("/functions/employee"))
 						.contentType(MediaType.APPLICATION_JSON)
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
-		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
-		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
-		assertEquals("application/xml",
-				postForEntity.getHeaders().get("x-content-type").get(0));
-		assertEquals("bar", postForEntity.getHeaders().get("foo").get(0));
+		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
+		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
+		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
+				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 	}
 
 	@Test
@@ -76,10 +76,11 @@ public class HeadersToMessageTests {
 						.contentType(MediaType.APPLICATION_JSON)
 						.header("x-context-type", "rubbish")
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
-		assertEquals("{\"name\":\"Bob\",\"age\":25,\"foo\":\"bar\"}",
-				postForEntity.getBody());
-		assertTrue(postForEntity.getHeaders().containsKey("x-context-type"));
-		assertEquals("rubbish", postForEntity.getHeaders().get("x-context-type").get(0));
+		assertThat(postForEntity.getBody())
+				.isEqualTo("{\"name\":\"Bob\",\"age\":25,\"foo\":\"bar\"}");
+		assertThat(postForEntity.getHeaders().containsKey("x-context-type")).isTrue();
+		assertThat(postForEntity.getHeaders().get("x-context-type").get(0))
+				.isEqualTo("rubbish");
 	}
 
 	@EnableAutoConfiguration

@@ -46,14 +46,14 @@ public class SampleApplication {
 		return multiValueMap -> {
 			Map<String, Integer> result = new HashMap<>();
 			multiValueMap.forEach((s, strings) -> result.put(s,
-					strings.stream().mapToInt(Integer::parseInt).sum()));
+				strings.stream().mapToInt(Integer::parseInt).sum()));
 			return result;
 		};
 	}
 
 	@Bean
 	public Supplier<Flux<Foo>> words() {
-		return () -> Flux.fromArray(new Foo[] { new Foo("foo"), new Foo("bar") }).log();
+		return () -> Flux.fromArray(new Foo[] {new Foo("foo"), new Foo("bar")}).log();
 	}
 
 }

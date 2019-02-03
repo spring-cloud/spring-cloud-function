@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -60,22 +60,22 @@ public class SampleApplicationTests {
 	@Test
 	public void testUppercase() {
 		String output = this.uppercase.apply("foobar");
-		assertEquals("FOOBAR", output);
+		assertThat(output).isEqualTo("FOOBAR");
 	}
 
 	@Test
 	public void testLowercase() {
 		Flux<String> output = this.lowercase.apply(Flux.just("FOO", "BAR"));
 		List<String> results = output.collectList().block();
-		assertEquals(2, results.size());
-		assertEquals("foo", results.get(0));
-		assertEquals("bar", results.get(1));
+		assertThat(results.size()).isEqualTo(2);
+		assertThat(results.get(0)).isEqualTo("foo");
+		assertThat(results.get(1)).isEqualTo("bar");
 	}
 
 	@Test
 	public void testHello() {
 		String output = this.hello.get();
-		assertEquals("hello", output);
+		assertThat(output).isEqualTo("hello");
 	}
 
 	// the following are contributed via @FunctionScan:
@@ -84,15 +84,15 @@ public class SampleApplicationTests {
 	public void testWords() {
 		Flux<String> output = this.words.get();
 		List<String> results = output.collectList().block();
-		assertEquals(2, results.size());
-		assertEquals("foo", results.get(0));
-		assertEquals("bar", results.get(1));
+		assertThat(results.size()).isEqualTo(2);
+		assertThat(results.get(0)).isEqualTo("foo");
+		assertThat(results.get(1)).isEqualTo("bar");
 	}
 
 	@Test
 	public void testCompiledUppercase() {
 		String output = this.compiledUppercase.apply("foobar");
-		assertEquals("FOOBAR", output);
+		assertThat(output).isEqualTo("FOOBAR");
 	}
 
 	@Test
@@ -100,15 +100,15 @@ public class SampleApplicationTests {
 		Flux<String> input = Flux.just("FOO", "BAR");
 		Flux<String> output = this.compiledLowercase.apply(input);
 		List<String> results = output.collectList().block();
-		assertEquals(2, results.size());
-		assertEquals("foo", results.get(0));
-		assertEquals("bar", results.get(1));
+		assertThat(results.size()).isEqualTo(2);
+		assertThat(results.get(0)).isEqualTo("foo");
+		assertThat(results.get(1)).isEqualTo("bar");
 	}
 
 	@Test
 	public void testGreeter() {
 		String greeting = this.greeter.apply("World");
-		assertEquals("Hello World", greeting);
+		assertThat(greeting).isEqualTo("Hello World");
 	}
 
 	@Test
@@ -116,15 +116,15 @@ public class SampleApplicationTests {
 		Flux<String> input = Flux.just("foo", "bar");
 		Flux<String> output = this.exclaimer.apply(input);
 		List<String> results = output.collectList().block();
-		assertEquals(2, results.size());
-		assertEquals("foo!!!", results.get(0));
-		assertEquals("bar!!!", results.get(1));
+		assertThat(results.size()).isEqualTo(2);
+		assertThat(results.get(0)).isEqualTo("foo!!!");
+		assertThat(results.get(1)).isEqualTo("bar!!!");
 	}
 
 	@Test
 	public void testCharCounter() {
 		Integer length = this.charCounter.apply("the quick brown fox");
-		assertEquals(new Integer(19), length);
+		assertThat(length).isEqualTo(new Integer(19));
 	}
 
 }

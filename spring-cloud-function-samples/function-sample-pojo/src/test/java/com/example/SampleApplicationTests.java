@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example;
 
 import java.net.URI;
@@ -58,35 +59,37 @@ public class SampleApplicationTests {
 
 	@Test
 	public void words() {
-		assertThat(this.rest.getForObject("http://localhost:" + this.port + "/words", String.class))
-				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+		assertThat(this.rest
+			.getForObject("http://localhost:" + this.port + "/words", String.class))
+			.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void uppercase() {
 		assertThat(this.rest.postForObject("http://localhost:" + this.port + "/uppercase",
-				new HttpEntity<>("[{\"value\":\"foo\"}]", this.headers), String.class))
-						.isEqualTo("[{\"value\":\"FOO\"}]");
+			new HttpEntity<>("[{\"value\":\"foo\"}]", this.headers), String.class))
+			.isEqualTo("[{\"value\":\"FOO\"}]");
 	}
 
 	@Test
 	public void composite() {
-		assertThat(this.rest.getForObject("http://localhost:" + this.port + "/words,uppercase",
+		assertThat(this.rest
+			.getForObject("http://localhost:" + this.port + "/words,uppercase",
 				String.class)).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
 	public void single() {
 		assertThat(this.rest.postForObject("http://localhost:" + this.port + "/uppercase",
-				new HttpEntity<>("{\"value\":\"foo\"}", this.headers), String.class))
-						.isEqualTo("{\"value\":\"FOO\"}");
+			new HttpEntity<>("{\"value\":\"foo\"}", this.headers), String.class))
+			.isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test
 	public void lowercase() {
 		assertThat(this.rest.postForObject("http://localhost:" + this.port + "/lowercase",
-				new HttpEntity<>("[{\"value\":\"Foo\"}]", this.headers), String.class))
-						.isEqualTo("[{\"value\":\"foo\"}]");
+			new HttpEntity<>("[{\"value\":\"Foo\"}]", this.headers), String.class))
+			.isEqualTo("[{\"value\":\"foo\"}]");
 	}
 
 	@Test
@@ -98,10 +101,10 @@ public class SampleApplicationTests {
 		map.put("B", Arrays.asList("5", "6"));
 
 		assertThat(this.rest.exchange(
-				RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
-						.accept(MediaType.APPLICATION_JSON)
-						.contentType(MediaType.APPLICATION_FORM_URLENCODED).body(map),
-				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+			RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.APPLICATION_FORM_URLENCODED).body(map),
+			String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
 	}
 
 	@Test
@@ -114,10 +117,10 @@ public class SampleApplicationTests {
 		map.put("B", Arrays.asList("5", "6"));
 
 		assertThat(this.rest.exchange(
-				RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
-						.accept(MediaType.APPLICATION_JSON)
-						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
-				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+			RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
+				.accept(MediaType.APPLICATION_JSON)
+				.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
+			String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
 	}
 
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.mvc;
 
 import java.net.URI;
@@ -60,7 +61,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
+// @checkstyle:off
 @SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
+// @checkstyle:on
 @RunWith(SpringRunner.class)
 public class MvcRestApplicationTests {
 

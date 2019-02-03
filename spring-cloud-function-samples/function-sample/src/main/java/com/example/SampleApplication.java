@@ -53,25 +53,25 @@ public class SampleApplication {
 
 	@Bean
 	public Supplier<Flux<String>> words() {
-		return () -> Flux.fromArray(new String[] { "foo", "bar" });
+		return () -> Flux.fromArray(new String[] {"foo", "bar"});
 	}
 
 	@Bean
 	public Function<String, String> compiledUppercase(
-			FunctionCompiler<String, String> compiler) {
+		FunctionCompiler<String, String> compiler) {
 		String lambda = "s -> s.toUpperCase()";
 		LambdaCompilingFunction<String, String> function = new LambdaCompilingFunction<>(
-				new ByteArrayResource(lambda.getBytes()), compiler);
+			new ByteArrayResource(lambda.getBytes()), compiler);
 		function.setTypeParameterizations("String", "String");
 		return function;
 	}
 
 	@Bean
 	public Function<Flux<String>, Flux<String>> compiledLowercase(
-			FunctionCompiler<Flux<String>, Flux<String>> compiler) {
+		FunctionCompiler<Flux<String>, Flux<String>> compiler) {
 		String lambda = "f->f.map(o->o.toString().toLowerCase())";
 		return new LambdaCompilingFunction<>(new ByteArrayResource(lambda.getBytes()),
-				compiler);
+			compiler);
 	}
 
 	@Bean

@@ -26,16 +26,15 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Mark Fisher
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.cloud.function.compile.test.lambda=com.example.SampleCompiledConsumerTests.Reference::set",
-		"spring.cloud.function.compile.test.inputType=String",
-		"spring.cloud.function.compile.test.type=consumer" })
+	"spring.cloud.function.compile.test.lambda=com.example.SampleCompiledConsumerTests.Reference::set",
+	"spring.cloud.function.compile.test.inputType=String",
+	"spring.cloud.function.compile.test.type=consumer"})
 public class SampleCompiledConsumerTests {
 
 	@LocalServerPort
@@ -44,8 +43,9 @@ public class SampleCompiledConsumerTests {
 	@Test
 	public void print() {
 		assertThat(new TestRestTemplate().postForObject(
-				"http://localhost:" + this.port + "/test", "it works", String.class)).isNull();
-		assertEquals("it works", Reference.instance);
+			"http://localhost:" + this.port + "/test", "it works", String.class))
+			.isNull();
+		assertThat(Reference.instance).isEqualTo("it works");
 	}
 
 	public static class Reference {

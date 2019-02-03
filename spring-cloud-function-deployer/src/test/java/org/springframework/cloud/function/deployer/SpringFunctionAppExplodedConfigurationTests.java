@@ -39,7 +39,7 @@ import static org.hamcrest.Matchers.containsString;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = FunctionDeployerConfiguration.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @TestPropertySource(properties = {
-		"function.location=file:target/it/support/target/dependency", })
+		"function.location=file:target/it/support/target/dependency" })
 public abstract class SpringFunctionAppExplodedConfigurationTests {
 
 	@Autowired

@@ -24,10 +24,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.core.FluxFunction;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky
@@ -43,7 +40,7 @@ public class InMemoryFunctionCatalogTests {
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(registration);
 		FunctionRegistration<?> registration2 = catalog.getRegistration(function);
-		assertSame(registration, registration2);
+		assertThat(registration2).isSameAs(registration);
 	}
 
 	@Test
@@ -55,11 +52,11 @@ public class InMemoryFunctionCatalogTests {
 		catalog.register(registration);
 
 		Object lookedUpFunction = catalog.lookup("hello");
-		assertNull(lookedUpFunction);
+		assertThat(lookedUpFunction).isNull();
 
 		lookedUpFunction = catalog.lookup("foo");
-		assertNotNull(lookedUpFunction);
-		assertTrue(lookedUpFunction instanceof FluxFunction);
+		assertThat(lookedUpFunction).isNotNull();
+		assertThat(lookedUpFunction instanceof FluxFunction).isTrue();
 	}
 
 	private static class TestFunction implements Function<Integer, String> {

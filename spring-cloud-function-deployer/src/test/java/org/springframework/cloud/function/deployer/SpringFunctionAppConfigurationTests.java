@@ -39,7 +39,7 @@ import static org.hamcrest.Matchers.containsString;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = FunctionDeployerConfiguration.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @TestPropertySource(properties = {
-		"function.location=file:target/it/support/target/function-sample-1.0.0.M1-exec.jar", })
+		"function.location=file:target/it/support/target/function-sample-1.0.0.M1-exec.jar" })
 public abstract class SpringFunctionAppConfigurationTests {
 
 	@Autowired

@@ -74,10 +74,10 @@ class Foo {
 
 	private String value;
 
-	public Foo() {
+	Foo() {
 	}
 
-	public Foo(String value) {
+	Foo(String value) {
 		this.value = value;
 	}
 

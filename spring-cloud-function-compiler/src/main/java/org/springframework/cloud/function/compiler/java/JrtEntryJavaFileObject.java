@@ -48,7 +48,7 @@ public class JrtEntryJavaFileObject implements JavaFileObject {
 	 */
 	public JrtEntryJavaFileObject(Path path) {
 		this.pathToClassString = path.subpath(2, path.getNameCount()).toString(); // e.g.
-																					// java/lang/Object.class
+		// java/lang/Object.class
 		this.path = path;
 	}
 

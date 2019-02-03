@@ -24,7 +24,7 @@ import com.example.functions.Greeter;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class FunctionTests {
 
@@ -33,36 +33,36 @@ public class FunctionTests {
 	@Test
 	public void testUppercase() {
 		String output = this.functions.uppercase().apply("foobar");
-		assertEquals("FOOBAR", output);
+		assertThat(output).isEqualTo("FOOBAR");
 	}
 
 	@Test
 	public void testLowercase() {
 		Flux<String> output = this.functions.lowercase().apply(Flux.just("FOO", "BAR"));
 		List<String> results = output.collectList().block();
-		assertEquals(2, results.size());
-		assertEquals("foo", results.get(0));
-		assertEquals("bar", results.get(1));
+		assertThat(results.size()).isEqualTo(2);
+		assertThat(results.get(0)).isEqualTo("foo");
+		assertThat(results.get(1)).isEqualTo("bar");
 	}
 
 	@Test
 	public void testHello() {
 		String output = this.functions.hello().get();
-		assertEquals("hello", output);
+		assertThat(output).isEqualTo("hello");
 	}
 
 	@Test
 	public void testWords() {
 		Flux<String> output = this.functions.words().get();
 		List<String> results = output.collectList().block();
-		assertEquals(2, results.size());
-		assertEquals("foo", results.get(0));
-		assertEquals("bar", results.get(1));
+		assertThat(results.size()).isEqualTo(2);
+		assertThat(results.get(0)).isEqualTo("foo");
+		assertThat(results.get(1)).isEqualTo("bar");
 	}
 
 	@Test
 	public void testGreeter() {
-		assertEquals("Hello World", new Greeter().apply("World"));
+		assertThat(new Greeter().apply("World")).isEqualTo("Hello World");
 	}
 
 	@Test
@@ -70,14 +70,15 @@ public class FunctionTests {
 		Flux<String> input = Flux.just("foo", "bar");
 		Flux<String> output = new Exclaimer().apply(input);
 		List<String> results = output.collectList().block();
-		assertEquals(2, results.size());
-		assertEquals("foo!!!", results.get(0));
-		assertEquals("bar!!!", results.get(1));
+		assertThat(results.size()).isEqualTo(2);
+		assertThat(results.get(0)).isEqualTo("foo!!!");
+		assertThat(results.get(1)).isEqualTo("bar!!!");
 	}
 
 	@Test
 	public void testCharCounter() {
-		assertEquals((Integer) 21, new CharCounter().apply("this is 21 chars long"));
+		assertThat(new CharCounter().apply("this is 21 chars long"))
+			.isEqualTo((Integer) 21);
 	}
 
 }

@@ -43,7 +43,7 @@ public class CompilationMessage {
 		this.sourceCode = sourceCode;
 		this.startPosition = startPosition;
 		this.endPosition = endPosition;
-	};
+	}
 
 	/**
 	 * @return the type of message
@@ -84,7 +84,7 @@ public class CompilationMessage {
 		StringBuilder s = new StringBuilder();
 		s.append("==========\n");
 		if (this.sourceCode != null) { // Cannot include source context if no source
-										// available
+			// available
 			int[] lineStartEnd = getLineStartEnd(this.startPosition);
 			s.append(this.sourceCode.substring(lineStartEnd[0], lineStartEnd[1]))
 					.append("\n");

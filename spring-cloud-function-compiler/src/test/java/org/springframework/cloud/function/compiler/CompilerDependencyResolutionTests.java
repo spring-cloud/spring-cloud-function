@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.compiler;
 
 import java.io.File;
@@ -42,15 +43,13 @@ import org.springframework.cloud.function.compiler.java.RuntimeJavaCompiler;
 import org.springframework.cloud.function.core.FunctionFactoryUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests that verify dependency resolution. Dependencies can be resolved against simple
  * classpath entries or against classes under BOOT-INF/classes or in a nested jar under
  * under BOOT-INF/lib. Finding classes in those locations enables compilation against a
  * packaged boot jar.
- * 
+ *
  * @author Andy Clement
  */
 public class CompilerDependencyResolutionTests {
@@ -60,7 +59,7 @@ public class CompilerDependencyResolutionTests {
 		ClassDescriptor t1 = compile("Test1",
 				"package com.test;\npublic class Test1 { public static String doit() { return \"T1\";}}\n");
 		String result = (String) t1.clazz.getDeclaredMethod("doit").invoke(null);
-		assertEquals("T1", result);
+		assertThat(result).isEqualTo("T1");
 	}
 
 	@Test
@@ -140,12 +139,12 @@ public class CompilerDependencyResolutionTests {
 				"public class A {\n" + "  public static Object run() {\n"
 						+ "    return new TestX();\n" + "  }\n" + "}",
 				jar.toURI().toString());
-		assertTrue("Should be no problems: " + result.getCompilationMessages(),
-				result.getCompilationMessages().isEmpty());
+		assertThat(result.getCompilationMessages().isEmpty())
+				.as("Should be no problems: " + result.getCompilationMessages()).isTrue();
 		try (URLClassLoader cl = new TestClassLoader(tx, descriptorFromResult(result))) {
 			Class<?> class1 = cl.loadClass("A");
 			Object invoke = class1.getDeclaredMethod("run").invoke(null);
-			assertEquals(tx.name, invoke.getClass().getName());
+			assertThat(invoke.getClass().getName()).isEqualTo(tx.name);
 		}
 	}
 
@@ -162,12 +161,12 @@ public class CompilerDependencyResolutionTests {
 				"public class A {\n" + "  public static Object run() {\n"
 						+ "    return new TestX();\n" + "  }\n" + "}",
 				jar.toURI().toString());
-		assertTrue("Should be no problems: " + result.getCompilationMessages(),
-				result.getCompilationMessages().isEmpty());
+		assertThat(result.getCompilationMessages().isEmpty())
+				.as("Should be no problems: " + result.getCompilationMessages()).isTrue();
 		try (URLClassLoader cl = new TestClassLoader(t1, descriptorFromResult(result))) {
 			Class<?> class1 = cl.loadClass("A");
 			Object invoke = class1.getDeclaredMethod("run").invoke(null);
-			assertEquals(t1.name, invoke.getClass().getName());
+			assertThat(invoke.getClass().getName()).isEqualTo(t1.name);
 		}
 	}
 
@@ -185,12 +184,12 @@ public class CompilerDependencyResolutionTests {
 				"public class A {\n" + "  public static Object run() {\n"
 						+ "    return new TestX();\n" + "  }\n" + "}",
 				jar2.toURI().toString());
-		assertTrue("Should be no problems: " + result.getCompilationMessages(),
-				result.getCompilationMessages().isEmpty());
+		assertThat(result.getCompilationMessages().isEmpty())
+				.as("Should be no problems: " + result.getCompilationMessages()).isTrue();
 		try (URLClassLoader cl = new TestClassLoader(t1, descriptorFromResult(result))) {
 			Class<?> class1 = cl.loadClass("A");
 			Object invoke = class1.getDeclaredMethod("run").invoke(null);
-			assertEquals(t1.name, invoke.getClass().getName());
+			assertThat(invoke.getClass().getName()).isEqualTo(t1.name);
 		}
 	}
 
@@ -205,12 +204,12 @@ public class CompilerDependencyResolutionTests {
 						+ "  public static Object run() {\n" + "    return new Test1();\n"
 						+ "  }\n" + "}",
 				jar.toURI().toString());
-		assertTrue("Should be no problems: " + result.getCompilationMessages(),
-				result.getCompilationMessages().isEmpty());
+		assertThat(result.getCompilationMessages().isEmpty())
+				.as("Should be no problems: " + result.getCompilationMessages()).isTrue();
 		try (URLClassLoader cl = new TestClassLoader(t1, descriptorFromResult(result))) {
 			Class<?> class1 = cl.loadClass("A");
 			Object invoke = class1.getDeclaredMethod("run").invoke(null);
-			assertEquals(t1.name, invoke.getClass().getName());
+			assertThat(invoke.getClass().getName()).isEqualTo(t1.name);
 		}
 	}
 
@@ -226,12 +225,12 @@ public class CompilerDependencyResolutionTests {
 						+ "  public static Object run() {\n" + "    return new Test1();\n"
 						+ "  }\n" + "}",
 				jar.toURI().toString());
-		assertTrue("Should be no problems: " + result.getCompilationMessages(),
-				result.getCompilationMessages().isEmpty());
+		assertThat(result.getCompilationMessages().isEmpty())
+				.as("Should be no problems: " + result.getCompilationMessages()).isTrue();
 		try (URLClassLoader cl = new TestClassLoader(t1, descriptorFromResult(result))) {
 			Class<?> class1 = cl.loadClass("A");
 			Object invoke = class1.getDeclaredMethod("run").invoke(null);
-			assertEquals(t1.name, invoke.getClass().getName());
+			assertThat(invoke.getClass().getName()).isEqualTo(t1.name);
 		}
 	}
 
@@ -248,12 +247,12 @@ public class CompilerDependencyResolutionTests {
 						+ "  public static Object run() {\n" + "    return new Test1();\n"
 						+ "  }\n" + "}",
 				jar2.toURI().toString());
-		assertTrue("Should be no problems: " + result.getCompilationMessages(),
-				result.getCompilationMessages().isEmpty());
+		assertThat(result.getCompilationMessages().isEmpty())
+				.as("Should be no problems: " + result.getCompilationMessages()).isTrue();
 		try (URLClassLoader cl = new TestClassLoader(t1, descriptorFromResult(result))) {
 			Class<?> class1 = cl.loadClass("A");
 			Object invoke = class1.getDeclaredMethod("run").invoke(null);
-			assertEquals(t1.name, invoke.getClass().getName());
+			assertThat(invoke.getClass().getName()).isEqualTo(t1.name);
 		}
 	}
 
@@ -268,8 +267,8 @@ public class CompilerDependencyResolutionTests {
 	private ClassDescriptor compile(String className, String classSourceCode) {
 		CompilationResult compile = new RuntimeJavaCompiler().compile(className,
 				classSourceCode);
-		assertTrue("Should be empty: \n" + compile.getCompilationMessages(),
-				compile.getCompilationMessages().isEmpty());
+		assertThat(compile.getCompilationMessages().isEmpty())
+				.as("Should be empty: \n" + compile.getCompilationMessages()).isTrue();
 		Class<?> clazz = compile.getCompiledClasses().get(0);
 		return new ClassDescriptor(clazz.getName(),
 				compile.getClassBytes(clazz.getName()),
@@ -299,7 +298,7 @@ public class CompilerDependencyResolutionTests {
 			clazzes.add(prefix + classDescriptor.name.replace('.', '/') + ".class");
 		}
 		walkJar(jar, (entry) -> clazzes.remove(entry.getName()));
-		assertTrue("Should be empty: " + clazzes, clazzes.isEmpty());
+		assertThat(clazzes.isEmpty()).as("Should be empty: " + clazzes).isTrue();
 	}
 
 	private void walkJar(File jar, Consumer<JarEntry> fn) {
@@ -336,7 +335,7 @@ public class CompilerDependencyResolutionTests {
 
 		final Class<?> clazz;
 
-		public ClassDescriptor(String name, byte[] bytes, Class<?> clazz) {
+		ClassDescriptor(String name, byte[] bytes, Class<?> clazz) {
 			this.name = name;
 			this.bytes = bytes;
 			this.clazz = clazz;
@@ -344,7 +343,7 @@ public class CompilerDependencyResolutionTests {
 
 	}
 
-	static class JarBuilder {
+	static final class JarBuilder {
 
 		File jarFile;
 
@@ -446,7 +445,7 @@ public class CompilerDependencyResolutionTests {
 
 		ClassDescriptor[] descriptors;
 
-		public TestClassLoader(ClassDescriptor... descriptors) {
+		TestClassLoader(ClassDescriptor... descriptors) {
 			super(new URL[0], TestClassLoader.class.getClassLoader());
 			this.descriptors = descriptors;
 		}

@@ -207,8 +207,8 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 		URL[] urls = loader.getURLs();
 		if (urls.length > 1) { // heuristic that catches Maven surefire tests
 			if (!urls[0].toString().startsWith("jar:file:")) { // heuristic for
-																// Spring Boot fat
-																// jar
+				// Spring Boot fat
+				// jar
 				StringBuilder builder = new StringBuilder();
 				for (URL url : urls) {
 					if (builder.length() > 0) {
@@ -627,7 +627,7 @@ public class MemoryBasedJavaFileManager implements JavaFileManager {
 				if (file.getNameCount() > 3 && file.toString().endsWith(".class")) {
 					int fnc = file.getNameCount();
 					if (fnc > 3) { // There is a package name - e.g.
-									// /modules/java.base/java/lang/Object.class
+						// /modules/java.base/java/lang/Object.class
 						Path packagePath = file.subpath(2, fnc - 1); // e.g. java/lang
 						String packagePathString = packagePath.toString() + "/";
 						CompilationInfoCache.this.packageCache.put(packagePathString,

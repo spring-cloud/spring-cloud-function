@@ -25,7 +25,7 @@ public class Emitter implements Supplier<String> {
 
 	private int i = 0;
 
-	private String[] values = { "one", "two", "three", "four" };
+	private String[] values = {"one", "two", "three", "four"};
 
 	@Override
 	public String get() {

@@ -37,7 +37,7 @@ public class MapTests {
 	@Test
 	public void start() throws Exception {
 		SpringBootRequestHandler<Object, Object> handler = new SpringBootRequestHandler<>(
-				Config.class);
+			Config.class);
 		handler.handleRequest(new Foo("foo"), null);
 		handler.close();
 	}

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.flux;
 
 import java.net.URI;
@@ -62,7 +63,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 @RunWith(SpringRunner.class)
+// @checkstyle:off
 @SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=reactive")
+// @checkstyle:on
 public class FluxRestApplicationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");

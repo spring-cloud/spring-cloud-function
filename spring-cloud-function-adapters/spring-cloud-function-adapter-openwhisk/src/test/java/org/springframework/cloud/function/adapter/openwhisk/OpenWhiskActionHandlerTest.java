@@ -36,14 +36,13 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Kamesh Sampath
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest()
+@SpringBootTest
 @EnableAutoConfiguration
 @TestPropertySource(locations = "classpath:/application-test.properties")
 public class OpenWhiskActionHandlerTest {
@@ -65,9 +64,9 @@ public class OpenWhiskActionHandlerTest {
 		actionRequest.setActionName("test_action");
 		actionRequest.setValue(eventData);
 		Object result = this.actionHandler.run(actionRequest);
-		assertNotNull(result);
-		assertEquals("{\"result\":{\"name\":\"Spring\",\"message\":\"Hello, Spring\"}}",
-				result);
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(
+				"{\"result\":{\"name\":\"Spring\",\"message\":\"Hello, Spring\"}}");
 	}
 
 	@Test
@@ -78,8 +77,8 @@ public class OpenWhiskActionHandlerTest {
 		OpenWhiskActionRequest actionRequest = new OpenWhiskActionRequest();
 		actionRequest.setActionName("test_action");
 		Object result = this.actionHandler.run(actionRequest);
-		assertNotNull(result);
-		assertEquals("{\"result\":\"No input provided\"}", result);
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo("{\"result\":\"No input provided\"}");
 	}
 
 	@Configuration

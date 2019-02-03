@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example;
 
 import java.net.URI;
@@ -43,10 +44,11 @@ public class SampleApplicationMvcTests {
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/words"))
+		ResponseEntity<String> result = this.rest
+			.exchange(RequestEntity.get(new URI("/words"))
 				.accept(MediaType.APPLICATION_JSON).build(), String.class);
 		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+			.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 // @checkstyle:off
+
 /**
  * @author Mark Fisher
  * @author Dave Syer

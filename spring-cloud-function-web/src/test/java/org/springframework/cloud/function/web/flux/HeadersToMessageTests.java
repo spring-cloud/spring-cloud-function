@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.cloud.function.web.flux;
 
 import java.net.URI;
@@ -37,8 +38,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
@@ -62,20 +62,20 @@ public class HeadersToMessageTests {
 				.exchange(RequestEntity.post(new URI("/functions/employee"))
 						.contentType(MediaType.APPLICATION_JSON)
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
-		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
-		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
-		assertEquals("application/xml",
-				postForEntity.getHeaders().get("x-content-type").get(0));
-		assertEquals("bar", postForEntity.getHeaders().get("foo").get(0));
+		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
+		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
+		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
+				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 
 		// test simple type payload
 		postForEntity = this.rest.postForEntity(new URI("/functions/string"),
 				"{\"name\":\"Bob\",\"age\":25}", String.class);
-		assertEquals("{\"name\":\"Bob\",\"age\":25}", postForEntity.getBody());
-		assertTrue(postForEntity.getHeaders().containsKey("x-content-type"));
-		assertEquals("application/xml",
-				postForEntity.getHeaders().get("x-content-type").get(0));
-		assertEquals("bar", postForEntity.getHeaders().get("foo").get(0));
+		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
+		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
+		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
+				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 	}
 
 	@EnableAutoConfiguration

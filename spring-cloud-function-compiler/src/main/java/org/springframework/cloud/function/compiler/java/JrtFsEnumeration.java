@@ -127,8 +127,8 @@ public class JrtFsEnumeration implements Enumeration<JrtEntryJavaFileObject> {
 				throws IOException {
 			int fnc = file.getNameCount();
 			if (fnc >= 3 && file.toString().endsWith(".class")) { // There is a preceeding
-																	// module name - e.g.
-																	// /modules/java.base/java/lang/Object.class
+				// module name - e.g.
+				// /modules/java.base/java/lang/Object.class
 				// file.subpath(2, fnc); // e.g. java/lang/Object.class
 				JrtFsEnumeration.this.jfos.add(new JrtEntryJavaFileObject(file));
 			}

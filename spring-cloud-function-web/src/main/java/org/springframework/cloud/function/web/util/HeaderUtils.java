@@ -35,10 +35,6 @@ public final class HeaderUtils {
 
 	private static HttpHeaders REQUEST_ONLY = new HttpHeaders();
 
-	private HeaderUtils() {
-		throw new IllegalStateException("Can't instantiate a utility class");
-	}
-
 	static {
 		IGNORED.add(MessageHeaders.ID, "");
 		IGNORED.add(HttpHeaders.CONTENT_LENGTH, "0");
@@ -47,6 +43,10 @@ public final class HeaderUtils {
 		REQUEST_ONLY.add(HttpHeaders.CONTENT_LENGTH, "");
 		REQUEST_ONLY.add(HttpHeaders.CONTENT_TYPE, "");
 		REQUEST_ONLY.add(HttpHeaders.HOST, "");
+	}
+
+	private HeaderUtils() {
+		throw new IllegalStateException("Can't instantiate a utility class");
 	}
 
 	public static HttpHeaders fromMessage(MessageHeaders headers) {

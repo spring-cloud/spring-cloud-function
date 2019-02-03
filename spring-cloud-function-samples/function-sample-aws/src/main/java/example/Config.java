@@ -48,7 +48,8 @@ public class Config implements ApplicationContextInitializer<GenericApplicationC
 	@Bean
 	public Function<Foo, Bar> function() {
 		return value -> new Bar(
-				value.uppercase() + (this.props.getFoo() != null ? "-" + this.props.getFoo() : ""));
+			value.uppercase() + (this.props.getFoo() != null ? "-" + this.props
+				.getFoo() : ""));
 	}
 
 	@Override
@@ -57,8 +58,8 @@ public class Config implements ApplicationContextInitializer<GenericApplicationC
 		this.props = properties;
 		context.registerBean(Properties.class, () -> properties);
 		context.registerBean("function", FunctionRegistration.class,
-				() -> new FunctionRegistration<Function<Foo, Bar>>(function())
-						.type(FunctionType.from(Foo.class).to(Bar.class).getType()));
+			() -> new FunctionRegistration<Function<Foo, Bar>>(function())
+				.type(FunctionType.from(Foo.class).to(Bar.class).getType()));
 	}
 
 }

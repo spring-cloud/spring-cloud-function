@@ -37,7 +37,7 @@ public class MapTests {
 	@Test
 	public void start() throws Exception {
 		AzureSpringBootRequestHandler<Foo, Bar> handler = new AzureSpringBootRequestHandler<>(
-				Config.class);
+			Config.class);
 		Bar result = handler.handleRequest(new Foo("foo"), null);
 		handler.close();
 		assertThat(result.getValue()).isEqualTo("FOO");

@@ -87,7 +87,8 @@ public class ByteCodeLoadingFunctionTests {
 
 	@Test
 	public void compileFluxFunction() throws Exception {
-		CompiledFunctionFactory<Function<Flux<String>, Flux<String>>> compiled = new FunctionCompiler<Flux<String>, Flux<String>>(
+		CompiledFunctionFactory<Function<Flux<String>, Flux<String>>> compiled = null;
+		compiled = new FunctionCompiler<Flux<String>, Flux<String>>(
 				String.class.getName()).compile("foos",
 						"flux -> flux.map(v -> v.toUpperCase())", "Flux<String>",
 						"Flux<String>");

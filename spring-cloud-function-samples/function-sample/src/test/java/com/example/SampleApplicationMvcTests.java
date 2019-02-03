@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.example;
 
 import org.junit.Ignore;
@@ -40,7 +41,8 @@ public class SampleApplicationMvcTests {
 	@Test
 	@Ignore("FIXME")
 	public void words() throws Exception {
-		this.mockMvc.perform(get("/words")).andExpect(content().string("[\"foo\",\"bar\"]"));
+		this.mockMvc.perform(get("/words"))
+			.andExpect(content().string("[\"foo\",\"bar\"]"));
 	}
 
 }

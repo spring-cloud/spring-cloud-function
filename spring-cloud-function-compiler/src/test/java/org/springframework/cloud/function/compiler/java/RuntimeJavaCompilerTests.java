@@ -23,8 +23,7 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Andy Clement
@@ -37,7 +36,7 @@ public class RuntimeJavaCompilerTests {
 		RuntimeJavaCompiler rjc = new RuntimeJavaCompiler();
 		CompilationResult cr = rjc.compile("A", "public class A {}");
 		List<CompilationMessage> compilationMessages = cr.getCompilationMessages();
-		assertTrue(compilationMessages.isEmpty());
+		assertThat(compilationMessages.isEmpty()).isTrue();
 	}
 
 	@Test
@@ -52,18 +51,19 @@ public class RuntimeJavaCompilerTests {
 						+ "    String message = (String) exp.getValue();"
 						+ "    return message;\n" + "  }\n" + "}");
 		List<CompilationMessage> compilationMessages = cr.getCompilationMessages();
-		assertEquals(3, compilationMessages.size());
-		assertTrue(
-				compilationMessages.get(0).getMessage().contains("cannot find symbol"));
-		assertTrue(compilationMessages.get(0).getMessage()
-				.contains("class ExpressionParser"));
-		assertTrue(
-				compilationMessages.get(1).getMessage().contains("cannot find symbol"));
-		assertTrue(compilationMessages.get(1).getMessage()
-				.contains("class SpelExpressionParser"));
-		assertTrue(
-				compilationMessages.get(2).getMessage().contains("cannot find symbol"));
-		assertTrue(compilationMessages.get(2).getMessage().contains("class Expression"));
+		assertThat(compilationMessages.size()).isEqualTo(3);
+		assertThat(compilationMessages.get(0).getMessage().contains("cannot find symbol"))
+				.isTrue();
+		assertThat(compilationMessages.get(0).getMessage()
+				.contains("class ExpressionParser")).isTrue();
+		assertThat(compilationMessages.get(1).getMessage().contains("cannot find symbol"))
+				.isTrue();
+		assertThat(compilationMessages.get(1).getMessage()
+				.contains("class SpelExpressionParser")).isTrue();
+		assertThat(compilationMessages.get(2).getMessage().contains("cannot find symbol"))
+				.isTrue();
+		assertThat(compilationMessages.get(2).getMessage().contains("class Expression"))
+				.isTrue();
 	}
 
 	@Test
@@ -80,12 +80,12 @@ public class RuntimeJavaCompilerTests {
 						+ "    return message;\n" + "  }\n" + "}",
 				"maven://org.springframework:spring-expression:4.3.9.RELEASE");
 		List<CompilationMessage> compilationMessages = cr.getCompilationMessages();
-		assertTrue(compilationMessages.isEmpty());
+		assertThat(compilationMessages.isEmpty()).isTrue();
 		try (SimpleClassLoader cl = new SimpleClassLoader(
 				this.getClass().getClassLoader())) {
 			Class<?> clazz = cl.defineClass("A", cr.getClassBytes("A"));
 			Supplier<String> supplier = (Supplier<String>) clazz.newInstance();
-			assertEquals("Hello World", supplier.get());
+			assertThat(supplier.get()).isEqualTo("Hello World");
 		}
 	}
 
@@ -100,27 +100,27 @@ public class RuntimeJavaCompilerTests {
 		CompilationResult cr = rjc.compile("A", source,
 				"maven://joda-time:joda-time:2.9.9");
 		List<CompilationMessage> compilationMessages = cr.getCompilationMessages();
-		assertTrue(compilationMessages.isEmpty());
+		assertThat(compilationMessages.isEmpty()).isTrue();
 		List<File> resolvedAdditionalDependencies = cr
 				.getResolvedAdditionalDependencies();
 		try (SimpleClassLoader cl = new SimpleClassLoader(resolvedAdditionalDependencies,
 				this.getClass().getClassLoader())) {
 			Class<?> clazz = cl.defineClass("A", cr.getClassBytes("A"));
 			Supplier<String> supplier = (Supplier<String>) clazz.newInstance();
-			assertEquals("true", supplier.get());
+			assertThat(supplier.get()).isEqualTo("true");
 		}
 
 		cr = rjc.compile("A", source,
 				"maven://org.springframework:spring-expression:4.3.9.RELEASE",
 				"maven://joda-time:joda-time:2.9.9");
 		compilationMessages = cr.getCompilationMessages();
-		assertTrue(compilationMessages.isEmpty());
+		assertThat(compilationMessages.isEmpty()).isTrue();
 		resolvedAdditionalDependencies = cr.getResolvedAdditionalDependencies();
 		try (SimpleClassLoader cl = new SimpleClassLoader(resolvedAdditionalDependencies,
 				this.getClass().getClassLoader())) {
 			Class<?> clazz = cl.defineClass("A", cr.getClassBytes("A"));
 			Supplier<String> supplier = (Supplier<String>) clazz.newInstance();
-			assertEquals("true", supplier.get());
+			assertThat(supplier.get()).isEqualTo("true");
 		}
 	}
 
@@ -130,43 +130,45 @@ public class RuntimeJavaCompilerTests {
 		RuntimeJavaCompiler rjc = new RuntimeJavaCompiler();
 		CompilationResult cr = rjc.compile("A", "public class A {}",
 				"maven://org.springframework:spring-expression2:4.3.9.RELEASE"); // extra
-																					// '2'
-																					// in
-																					// there
+		// '2'
+		// in
+		// there
 		List<CompilationMessage> compilationMessages = cr.getCompilationMessages();
-		assertEquals(1, compilationMessages.size());
+		assertThat(compilationMessages.size()).isEqualTo(1);
 		// ERROR:org.eclipse.aether.resolution.ArtifactResolutionException: Could not find
 		// artifact org.springframework:spring-expression2:jar:4.3.9.RELEASE in
 		// spring-snapshots (https://repo.spring.io/libs-snapshot)
-		assertTrue(compilationMessages.get(0).getMessage().contains(
-				"Could not find artifact org.springframework:spring-expression2:jar:4.3.9.RELEASE"));
+		assertThat(compilationMessages.get(0).getMessage().contains(
+				"Could not find artifact org.springframework:spring-expression2:jar:4.3.9.RELEASE"))
+						.isTrue();
 
 		// Failure:
 		rjc = new RuntimeJavaCompiler();
 		cr = rjc.compile("A", "public class A {}",
 				"trouble://org.springframework:spring-expression:4.3.9.RELEASE"); // rogue
-																					// prefix
-																					// (should
-																					// be
-																					// "maven:")
+		// prefix
+		// (should
+		// be
+		// "maven:")
 		compilationMessages = cr.getCompilationMessages();
-		assertEquals(1, compilationMessages.size());
-		assertTrue(compilationMessages.get(0).toString(), compilationMessages.get(0)
-				.getMessage().contains("Unrecognized dependency: "));
+		assertThat(compilationMessages.size()).isEqualTo(1);
+		assertThat(compilationMessages.get(0).getMessage()
+				.contains("Unrecognized dependency: "))
+						.as(compilationMessages.get(0).toString()).isTrue();
 
 		// Success
 		rjc = new RuntimeJavaCompiler();
 		cr = rjc.compile("A", "public class A {}", "maven://joda-time:joda-time:2.9.9");
 		compilationMessages = cr.getCompilationMessages();
-		assertEquals(0, compilationMessages.size());
+		assertThat(compilationMessages.size()).isEqualTo(0);
 		List<File> resolvedAdditionalDependencies = cr
 				.getResolvedAdditionalDependencies();
-		assertEquals(1, resolvedAdditionalDependencies.size());
-		assertTrue(
-				"Expected this to end with 'joda-time-2.9.9.jar': "
-						+ resolvedAdditionalDependencies.get(0).toString(),
-				resolvedAdditionalDependencies.get(0).toString()
-						.endsWith("joda-time-2.9.9.jar"));
+		assertThat(resolvedAdditionalDependencies.size()).isEqualTo(1);
+		assertThat(resolvedAdditionalDependencies.get(0).toString()
+				.endsWith("joda-time-2.9.9.jar"))
+						.as("Expected this to end with 'joda-time-2.9.9.jar': "
+								+ resolvedAdditionalDependencies.get(0).toString())
+						.isTrue();
 	}
 
 }

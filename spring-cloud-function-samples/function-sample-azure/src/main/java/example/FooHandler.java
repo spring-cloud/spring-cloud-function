@@ -31,9 +31,9 @@ public class FooHandler extends AzureSpringBootRequestHandler<Foo, Bar> {
 
 	@FunctionName("uppercase")
 	public Bar execute(
-			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
-					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) Foo foo,
-			ExecutionContext context) {
+		@HttpTrigger(name = "req", methods = {HttpMethod.GET,
+			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) Foo foo,
+		ExecutionContext context) {
 		return handleRequest(foo, context);
 	}
 
