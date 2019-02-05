@@ -115,7 +115,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		public FunctionRegistration<?> getRegistration(Object function) {
-			return this.processor.getRegistration(function);
+			return function == null ? null : this.processor.getRegistration(function);
 		}
 
 		@Override
@@ -123,6 +123,27 @@ public class ContextFunctionCatalogAutoConfiguration {
 			Assert.notEmpty(registration.getNames(),
 					"'registration' must contain at least one name before it is registered in catalog.");
 			this.processor.register(registration);
+		}
+
+		@Override
+		public Set<String> getNames(Class<?> type) {
+			if (Supplier.class.isAssignableFrom(type)) {
+				return this.processor.suppliers.keySet();
+			}
+			if (Consumer.class.isAssignableFrom(type)) {
+				return this.processor.consumers.keySet();
+			}
+			if (Function.class.isAssignableFrom(type)) {
+				return this.processor.functions.keySet();
+			}
+			return Collections.emptySet();
+		}
+
+		@Override
+		public int size() {
+			return this.processor.suppliers.size()
+					+ this.processor.functions.size()
+					+ this.processor.consumers.size();
 		}
 
 		@Override
@@ -150,55 +171,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return function;
 		}
 
-		@Override
-		public Set<String> getNames(Class<?> type) {
-			if (Supplier.class.isAssignableFrom(type)) {
-				return this.processor.getSuppliers();
-			}
-			if (Consumer.class.isAssignableFrom(type)) {
-				return this.processor.getConsumers();
-			}
-			if (Function.class.isAssignableFrom(type)) {
-				return this.processor.getFunctions();
-			}
-			return Collections.emptySet();
-		}
-
-		@Override
-		public int size() {
-			return this.processor.getSuppliers().size()
-					+ this.processor.getFunctions().size()
-					+ this.processor.getConsumers().size();
-		}
-
-	}
-
-	@Configuration
-	@ConditionalOnClass(Gson.class)
-	@ConditionalOnBean(Gson.class)
-	@Conditional(PreferGsonOrMissingJacksonCondition.class)
-	protected static class GsonConfiguration {
-
-		@Bean
-		public GsonMapper jsonMapper(Gson gson) {
-			return new GsonMapper(gson);
-		}
-
-	}
-
-	@Configuration
-	@ConditionalOnClass(ObjectMapper.class)
-	@ConditionalOnBean(ObjectMapper.class)
-	// @checkstyle:off
-	@ConditionalOnProperty(name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, havingValue = "jackson", matchIfMissing = true)
-	// @checkstyle:on
-	protected static class JacksonConfiguration {
-
-		@Bean
-		public JacksonMapper jsonMapper(ObjectMapper mapper) {
-			return new JacksonMapper(mapper);
-		}
-
 	}
 
 	@Component
@@ -207,21 +179,19 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private Log logger = LogFactory.getLog(ContextFunctionRegistry.class);
 
+		private ApplicationEventPublisher applicationEventPublisher;
+
+		private ConfigurableListableBeanFactory beanFactory;
+
 		private Map<String, Object> suppliers = new ConcurrentHashMap<>();
 
 		private Map<String, Object> functions = new ConcurrentHashMap<>();
 
 		private Map<String, Object> consumers = new ConcurrentHashMap<>();
 
-		private ApplicationEventPublisher applicationEventPublisher;
-
-		private ConfigurableListableBeanFactory beanFactory;
-
 		private Map<Object, String> names = new ConcurrentHashMap<>();
 
 		private Map<String, FunctionType> types = new ConcurrentHashMap<>();
-
-		private Map<String, Object> allFunctions = new ConcurrentHashMap<>();
 
 		/**
 		 * Will collect all suppliers, functions, consumers and function registration as
@@ -273,48 +243,34 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		FunctionRegistration<?> getRegistration(Object function) {
-			if (function == null || !this.names.containsKey(function)) {
-				return null;
+			if (names.containsKey(function)) {
+				return new FunctionRegistration<>(function, this.names.get(function))
+						.type(findType(function).getType());
 			}
-			return new FunctionRegistration<>(function, this.names.get(function))
-					.type(findType(function).getType());
+			return null;
 		}
 
 		Supplier<?> lookupSupplier(String name) {
-			Object function = compose(name);
-			if (function instanceof Supplier) {
-				return (Supplier<?>) function;
-			}
-			else {
-				logger.warn("The resulting composition is is of type "
-						+ types.get(normalizeName(name))
-						+ " and can not be cast to Supplier");
-			}
-			return null;
+			return (Supplier<?>) lookup(name, this.suppliers, Supplier.class);
 		}
 
 		Function<?, ?> lookupFunction(String name) {
-			Object function = compose(name);
-			if (function instanceof Function) {
-				return (Function<?, ?>) function;
-			}
-			else {
-				logger.warn("The resulting composition is is of type "
-						+ types.get(normalizeName(name))
-						+ " and can not be cast to Function");
-			}
-			return null;
+			return (Function<?, ?>) lookup(name, this.functions, Function.class);
 		}
 
 		Consumer<?> lookupConsumer(String name) {
-			Object function = compose(name);
-			if (function instanceof Consumer) {
-				return (Consumer<?>) function;
+			return (Consumer<?>) lookup(name, this.consumers, Consumer.class);
+		}
+
+		@SuppressWarnings("unchecked")
+		private Object lookup(String name, @SuppressWarnings("rawtypes") Map lookup, Class<?> typeOfFunction) {
+			Object function = compose(name, lookup);
+			if (function  != null && typeOfFunction.isAssignableFrom(function.getClass())) {
+				return function;
 			}
 			else {
 				logger.warn("The resulting composition is is of type "
-						+ types.get(normalizeName(name))
-						+ " and can not be cast to Consumer");
+						+ types.get(normalizeName(name)));
 			}
 			return null;
 		}
@@ -337,39 +293,22 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return name.replaceAll(",", "|").trim();
 		}
 
-		private Set<String> getSuppliers() {
-			return this.suppliers.keySet();
-		}
-
-		private Set<String> getFunctions() {
-			return this.functions.keySet();
-		}
-
-		private Set<String> getConsumers() {
-			return this.consumers.keySet();
-		}
-
-		private Object compose(String name) {
+		private Object compose(String name, Map<String, Object> lookup) {
 			name = normalizeName(name);
 			Object composedFunction = null;
-			if (allFunctions.containsKey(name)) {
-				composedFunction = allFunctions.get(name);
+			if (lookup.containsKey(name)) {
+				composedFunction = lookup.get(name);
 			}
 			else {
-				/*
-				 * Need to revisit since "" implies a single function or supplier or... By
-				 * using combined map we may have a single function but multiple consumers
-				 * scenario
-				 */
-				if (name.equals("") && allFunctions.size() == 1) {
-					composedFunction = allFunctions.values().iterator().next();
+				if (name.equals("") && lookup.size() == 1) {
+					composedFunction = lookup.values().iterator().next();
 				}
 				else {
 					String[] stages = StringUtils.delimitedListToStringArray(name, "|");
 					if (Stream.of(stages)
-							.allMatch(funcName -> allFunctions.containsKey(funcName))) {
+							.allMatch(funcName -> contains(funcName))) {
 						List<Object> composableFunctions = Stream.of(stages)
-								.map(funcName -> allFunctions.get(funcName))
+								.map(funcName -> find(funcName))
 								.collect(Collectors.toList());
 						composedFunction = composableFunctions.stream()
 								.reduce((a, z) -> composeFunctions(a, z))
@@ -382,12 +321,27 @@ public class ContextFunctionCatalogAutoConfiguration {
 									.get(stages[stages.length - 1]);
 							this.types.put(name, FunctionType.compose(input, output));
 							this.names.put(composedFunction, name);
-							allFunctions.put(name, composedFunction);
+							lookup.put(name, composedFunction);
 						}
 					}
 				}
 			}
 			return composedFunction;
+		}
+
+		private boolean contains(String name) {
+			return suppliers.containsKey(name) || functions.containsKey(name) || consumers.containsKey(name);
+		}
+
+		private Object find(String name) {
+			Object result = suppliers.get(name);
+			if (result == null) {
+				result = functions.get(name);
+			}
+			if (result == null) {
+				result = consumers.get(name);
+			}
+			return result;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -471,21 +425,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 				type = Supplier.class;
 				for (String name : registration.getNames()) {
 					this.suppliers.put(name, registration.getTarget());
-					this.allFunctions.put(name, registration.getTarget());
 				}
 			}
 			else if (target instanceof Consumer) {
 				type = Consumer.class;
 				for (String name : registration.getNames()) {
 					this.consumers.put(name, registration.getTarget());
-					this.allFunctions.put(name, registration.getTarget());
 				}
 			}
 			else if (target instanceof Function) {
 				type = Function.class;
 				for (String name : registration.getNames()) {
 					this.functions.put(name, registration.getTarget());
-					this.allFunctions.put(name, registration.getTarget());
 				}
 			}
 			else {
@@ -539,21 +490,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 			Object target = registration.getTarget();
 			boolean isolated = getClass().getClassLoader() != target.getClass()
 					.getClassLoader();
-			if (target instanceof Supplier<?>) {
-				if (isolated) {
+			if (isolated) {
+				if (target instanceof Supplier<?> && isolated) {
 					target = new IsolatedSupplier((Supplier<?>) target);
 				}
-			}
-			else if (target instanceof Function<?, ?>) {
-				if (isolated) {
+				else if (target instanceof Function<?, ?>) {
 					target = new IsolatedFunction((Function<?, ?>) target);
 				}
-			}
-			else if (target instanceof Consumer<?>) {
-				if (isolated) {
+				else if (target instanceof Consumer<?>) {
 					target = new IsolatedConsumer((Consumer<?>) target);
 				}
 			}
+
 			registration.target(target);
 			return registration;
 		}
@@ -667,5 +615,34 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 	}
+
+	@Configuration
+	@ConditionalOnClass(Gson.class)
+	@ConditionalOnBean(Gson.class)
+	@Conditional(PreferGsonOrMissingJacksonCondition.class)
+	protected static class GsonConfiguration {
+
+		@Bean
+		public GsonMapper jsonMapper(Gson gson) {
+			return new GsonMapper(gson);
+		}
+
+	}
+
+	@Configuration
+	@ConditionalOnClass(ObjectMapper.class)
+	@ConditionalOnBean(ObjectMapper.class)
+	// @checkstyle:off
+	@ConditionalOnProperty(name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, havingValue = "jackson", matchIfMissing = true)
+	// @checkstyle:on
+	protected static class JacksonConfiguration {
+
+		@Bean
+		public JacksonMapper jsonMapper(ObjectMapper mapper) {
+			return new JacksonMapper(mapper);
+		}
+
+	}
+
 
 }
