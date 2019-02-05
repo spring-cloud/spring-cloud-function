@@ -17,6 +17,9 @@
 package org.springframework.cloud.function.context;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.StringUtils;
@@ -26,10 +29,13 @@ import org.springframework.util.StringUtils;
  * @since 2.0.1
  *
  */
-public abstract class AbstractFunctionRegistry implements FunctionRegistry {
+public abstract class AbstractFunctionRegistry
+		implements FunctionRegistry, FunctionInspector, ApplicationEventPublisherAware {
 
 	@Autowired
 	private Environment environment = new StandardEnvironment();
+
+	protected ApplicationEventPublisher applicationEventPublisher;
 
 	public <T> T lookup(Class<?> type, String name) {
 		String functionDefinitionName = !StringUtils.hasText(name)
@@ -40,5 +46,11 @@ public abstract class AbstractFunctionRegistry implements FunctionRegistry {
 	}
 
 	protected abstract <T> T doLookup(Class<?> type, String name);
+
+	@Override
+	public void setApplicationEventPublisher(
+			ApplicationEventPublisher applicationEventPublisher) {
+		this.applicationEventPublisher = applicationEventPublisher;
+	}
 
 }

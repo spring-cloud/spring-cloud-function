@@ -32,6 +32,7 @@ import org.springframework.messaging.Message;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  *
  */
 public class FunctionType {
@@ -115,47 +116,6 @@ public class FunctionType {
 		return new FunctionType(ResolvableType
 				.forClassWithGenerics(Function.class, inputGeneric, outputGeneric)
 				.getType());
-	}
-
-	private static ResolvableType wrap(FunctionType input, Class<?> wrapper,
-			Class<?> type) {
-		return input.isMessage() ? wrap(wrapper, message(type))
-				: ResolvableType.forClassWithGenerics(wrapper, type);
-	}
-
-	private static ResolvableType wrap(Class<?> wrapper, ResolvableType type) {
-		return ResolvableType.forClassWithGenerics(wrapper, type);
-	}
-
-	private static ResolvableType message(Class<?> type) {
-		return ResolvableType.forClassWithGenerics(Message.class, type);
-	}
-
-	private static ResolvableType input(FunctionType type) {
-		return type.input(type.getInputType());
-	}
-
-	private static ResolvableType output(FunctionType type) {
-		return type.output(type.getOutputType());
-	}
-
-	private static Class<?> extractClass(Type param, ParamType paramType) {
-		if (param instanceof ParameterizedType) {
-			ParameterizedType concrete = (ParameterizedType) param;
-			param = concrete.getRawType();
-		}
-		if (param == null) {
-			// Last ditch attempt to guess: Flux<String>
-			if (paramType.isWrapper()) {
-				param = Flux.class;
-			}
-			else {
-				param = String.class;
-			}
-		}
-		Class<?> result = param instanceof Class ? (Class<?>) param : null;
-		// TODO: cache result
-		return result;
 	}
 
 	public Type getType() {
@@ -250,6 +210,18 @@ public class FunctionType {
 		return result;
 	}
 
+	public String toString() {
+		if (this.inputType == Void.class) {
+			return this.type.toString() + ", which is effectively a Supplier<"
+					+ this.outputType + ">";
+		}
+		else if (this.outputType == Void.class) {
+			return this.type.toString() + ", which is effectively a Consumer<"
+					+ this.inputType + ">";
+		}
+		return this.type.toString();
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
@@ -298,6 +270,47 @@ public class FunctionType {
 			return false;
 		}
 		return true;
+	}
+
+	private static ResolvableType wrap(FunctionType input, Class<?> wrapper,
+			Class<?> type) {
+		return input.isMessage() ? wrap(wrapper, message(type))
+				: ResolvableType.forClassWithGenerics(wrapper, type);
+	}
+
+	private static ResolvableType wrap(Class<?> wrapper, ResolvableType type) {
+		return ResolvableType.forClassWithGenerics(wrapper, type);
+	}
+
+	private static ResolvableType message(Class<?> type) {
+		return ResolvableType.forClassWithGenerics(Message.class, type);
+	}
+
+	private static ResolvableType input(FunctionType type) {
+		return type.input(type.getInputType());
+	}
+
+	private static ResolvableType output(FunctionType type) {
+		return type.output(type.getOutputType());
+	}
+
+	private static Class<?> extractClass(Type param, ParamType paramType) {
+		if (param instanceof ParameterizedType) {
+			ParameterizedType concrete = (ParameterizedType) param;
+			param = concrete.getRawType();
+		}
+		if (param == null) {
+			// Last ditch attempt to guess: Flux<String>
+			if (paramType.isWrapper()) {
+				param = Flux.class;
+			}
+			else {
+				param = String.class;
+			}
+		}
+		Class<?> result = param instanceof Class ? (Class<?>) param : null;
+		// TODO: cache result
+		return result;
 	}
 
 	private ResolvableType wrapper(Class<?> wrapper, Class<?> type) {

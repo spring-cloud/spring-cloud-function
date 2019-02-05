@@ -30,8 +30,6 @@ import javax.annotation.PreDestroy;
 
 import org.springframework.cloud.function.context.AbstractFunctionRegistry;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.util.Assert;
 
 /**
@@ -39,14 +37,11 @@ import org.springframework.util.Assert;
  * @author Mark Fisher
  * @author Oleg Zhurakousky
  */
-public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
-		implements FunctionInspector, ApplicationEventPublisherAware {
+public class InMemoryFunctionCatalog extends AbstractFunctionRegistry {
 
 	private final Map<Class<?>, Map<String, Object>> functions;
 
 	private final Map<Object, FunctionRegistration<?>> registrations;
-
-	private ApplicationEventPublisher publisher;
 
 	public InMemoryFunctionCatalog() {
 		this(Collections.emptySet());
@@ -98,14 +93,9 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 		this.publishEvent(event);
 	}
 
-	@Override
-	public void setApplicationEventPublisher(ApplicationEventPublisher publisher) {
-		this.publisher = publisher;
-	}
-
 	@PostConstruct
 	public void init() {
-		if (this.publisher != null && !this.functions.isEmpty()) {
+		if (this.applicationEventPublisher != null && !this.functions.isEmpty()) {
 			this.functions.keySet()
 					.forEach(type -> this.publishEvent(new FunctionRegistrationEvent(this,
 							type, this.functions.get(type).keySet())));
@@ -114,7 +104,7 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 
 	@PreDestroy
 	public void close() {
-		if (this.publisher != null && !this.functions.isEmpty()) {
+		if (this.applicationEventPublisher != null && !this.functions.isEmpty()) {
 			this.functions.keySet().forEach(
 					type -> this.publishEvent(new FunctionUnregistrationEvent(this, type,
 							this.functions.get(type).keySet())));
@@ -154,8 +144,8 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry
 	}
 
 	private void publishEvent(Object event) {
-		if (this.publisher != null) {
-			this.publisher.publishEvent(event);
+		if (this.applicationEventPublisher != null) {
+			this.applicationEventPublisher.publishEvent(event);
 		}
 	}
 

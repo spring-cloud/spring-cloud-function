@@ -22,22 +22,29 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.PreDestroy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -93,28 +100,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
-	@Autowired(required = false)
-	private Map<String, Supplier<?>> suppliers = Collections.emptyMap();
-
-	@Autowired(required = false)
-	private Map<String, Function<?, ?>> functions = Collections.emptyMap();
-
-	@Autowired(required = false)
-	private Map<String, Consumer<?>> consumers = Collections.emptyMap();
-
-	@Autowired(required = false)
-	private Map<String, FunctionRegistration<?>> registrations = Collections.emptyMap();
-
 	@Bean
 	public FunctionRegistry functionCatalog(ContextFunctionRegistry processor) {
-		processor.merge(this.registrations, this.consumers, this.suppliers,
-				this.functions);
 		return new BeanFactoryFunctionCatalog(processor);
-	}
-
-	@Bean
-	public FunctionInspector functionInspector(ContextFunctionRegistry processor) {
-		return new BeanFactoryFunctionInspector(processor);
 	}
 
 	protected static class BeanFactoryFunctionCatalog extends AbstractFunctionRegistry {
@@ -123,6 +111,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		public BeanFactoryFunctionCatalog(ContextFunctionRegistry processor) {
 			this.processor = processor;
+		}
+
+		@Override
+		public FunctionRegistration<?> getRegistration(Object function) {
+			return this.processor.getRegistration(function);
 		}
 
 		@Override
@@ -145,14 +138,14 @@ public class ContextFunctionCatalogAutoConfiguration {
 					function = (T) this.processor.lookupSupplier(name);
 				}
 			}
+			else if (Function.class.isAssignableFrom(type)) {
+				function = (T) this.processor.lookupFunction(name);
+			}
 			else if (Supplier.class.isAssignableFrom(type)) {
 				function = (T) this.processor.lookupSupplier(name);
 			}
 			else if (Consumer.class.isAssignableFrom(type)) {
 				function = (T) this.processor.lookupConsumer(name);
-			}
-			else if (Function.class.isAssignableFrom(type)) {
-				function = (T) this.processor.lookupFunction(name);
 			}
 			return function;
 		}
@@ -209,7 +202,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 
 	@Component
-	protected static class ContextFunctionRegistry {
+	protected static class ContextFunctionRegistry
+			implements SmartInitializingSingleton, BeanFactoryAware {
+
+		private Log logger = LogFactory.getLog(ContextFunctionRegistry.class);
 
 		private Map<String, Object> suppliers = new ConcurrentHashMap<>();
 
@@ -217,21 +213,66 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private Map<String, Object> consumers = new ConcurrentHashMap<>();
 
-		@Autowired(required = false)
-		private ApplicationEventPublisher publisher;
+		private ApplicationEventPublisher applicationEventPublisher;
 
-		@Autowired
-		private ConfigurableListableBeanFactory registry;
+		private ConfigurableListableBeanFactory beanFactory;
 
 		private Map<Object, String> names = new ConcurrentHashMap<>();
 
 		private Map<String, FunctionType> types = new ConcurrentHashMap<>();
 
-		public Set<String> getSuppliers() {
-			return this.suppliers.keySet();
+		private Map<String, Object> allFunctions = new ConcurrentHashMap<>();
+
+		/**
+		 * Will collect all suppliers, functions, consumers and function registration as
+		 * late as possible in the lifecycle.
+		 */
+		@Override
+		@SuppressWarnings("rawtypes")
+		public void afterSingletonsInstantiated() {
+			Map<String, Supplier> supplierBeans = beanFactory
+					.getBeansOfType(Supplier.class);
+			Map<String, Function> functionBeans = beanFactory
+					.getBeansOfType(Function.class);
+			Map<String, Consumer> consumerBeans = beanFactory
+					.getBeansOfType(Consumer.class);
+			Map<String, FunctionRegistration> functionRegistrationBeans = beanFactory
+					.getBeansOfType(FunctionRegistration.class);
+			this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans,
+					functionBeans);
 		}
 
-		public FunctionRegistration<?> getRegistration(Object function) {
+		@Override
+		public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+			this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
+		}
+
+		public <T> void register(FunctionRegistration<T> function) {
+			wrap(function, function.getNames().iterator().next());
+		}
+
+		@PreDestroy
+		public void close() {
+			if (this.applicationEventPublisher != null) {
+				if (!this.functions.isEmpty()) {
+					this.applicationEventPublisher
+							.publishEvent(new FunctionUnregistrationEvent(this,
+									Function.class, this.functions.keySet()));
+				}
+				if (!this.consumers.isEmpty()) {
+					this.applicationEventPublisher
+							.publishEvent(new FunctionUnregistrationEvent(this,
+									Consumer.class, this.consumers.keySet()));
+				}
+				if (!this.suppliers.isEmpty()) {
+					this.applicationEventPublisher
+							.publishEvent(new FunctionUnregistrationEvent(this,
+									Supplier.class, this.suppliers.keySet()));
+				}
+			}
+		}
+
+		FunctionRegistration<?> getRegistration(Object function) {
 			if (function == null || !this.names.containsKey(function)) {
 				return null;
 			}
@@ -239,94 +280,118 @@ public class ContextFunctionCatalogAutoConfiguration {
 					.type(findType(function).getType());
 		}
 
-		public Set<String> getConsumers() {
-			return this.consumers.keySet();
+		Supplier<?> lookupSupplier(String name) {
+			Object function = compose(name);
+			if (function instanceof Supplier) {
+				return (Supplier<?>) function;
+			}
+			else {
+				logger.warn("The resulting composition is is of type "
+						+ types.get(normalizeName(name))
+						+ " and can not be cast to Supplier");
+			}
+			return null;
 		}
 
-		public Set<String> getFunctions() {
+		Function<?, ?> lookupFunction(String name) {
+			Object function = compose(name);
+			if (function instanceof Function) {
+				return (Function<?, ?>) function;
+			}
+			else {
+				logger.warn("The resulting composition is is of type "
+						+ types.get(normalizeName(name))
+						+ " and can not be cast to Function");
+			}
+			return null;
+		}
+
+		Consumer<?> lookupConsumer(String name) {
+			Object function = compose(name);
+			if (function instanceof Consumer) {
+				return (Consumer<?>) function;
+			}
+			else {
+				logger.warn("The resulting composition is is of type "
+						+ types.get(normalizeName(name))
+						+ " and can not be cast to Consumer");
+			}
+			return null;
+		}
+
+		// @checkstyle:off
+		/**
+		 * @deprecated Was never intended for public use.
+		 */
+		@Deprecated
+		@SuppressWarnings("rawtypes")
+		Set<FunctionRegistration<?>> merge(Map<String, FunctionRegistration> initial,
+				Map<String, Consumer> consumers, Map<String, Supplier> suppliers,
+				Map<String, Function> functions) {
+			this.doMerge(initial, consumers, suppliers, functions);
+			return null;
+		}
+		// @checkstyle:on
+
+		private String normalizeName(String name) {
+			return name.replaceAll(",", "|").trim();
+		}
+
+		private Set<String> getSuppliers() {
+			return this.suppliers.keySet();
+		}
+
+		private Set<String> getFunctions() {
 			return this.functions.keySet();
 		}
 
-		public Supplier<?> lookupSupplier(String name) {
-			Object composed = compose(name, this.suppliers, false);
-			if (composed instanceof Supplier) {
-				return (Supplier<?>) composed;
-			}
-			return null;
+		private Set<String> getConsumers() {
+			return this.consumers.keySet();
 		}
 
-		public Consumer<?> lookupConsumer(String name) {
-			Object composed = compose(name, this.consumers, true);
-			if (composed instanceof Consumer) {
-				return (Consumer<?>) composed;
+		private Object compose(String name) {
+			name = normalizeName(name);
+			Object composedFunction = null;
+			if (allFunctions.containsKey(name)) {
+				composedFunction = allFunctions.get(name);
 			}
-			return null;
-		}
-
-		public Function<?, ?> lookupFunction(String name) {
-			Object composed = compose(name, this.functions, true);
-			if (composed instanceof Function) {
-				return (Function<?, ?>) composed;
-			}
-			return null;
-		}
-
-		private Object compose(String name, Map<String, Object> lookup,
-				boolean hasInput) {
-			name = name.replaceAll(",", "|");
-			if (lookup.containsKey(name)) {
-				return lookup.get(name);
-			}
-			String[] stages = StringUtils.delimitedListToStringArray(name, "|");
-			Map<String, Object> source = !hasInput || stages.length <= 1 ? lookup
-					: this.functions;
-			if (stages.length == 0 && source.size() == 1) {
-				stages = new String[] { source.keySet().iterator().next() };
-			}
-			Object function = stages.length > 0 ? lookup(stages[0], source) : null;
-			if (function == null) {
-				return null;
-			}
-			Object other = null;
-			for (int i = 1; i < stages.length - 1; i++) {
-				other = lookup(stages[i], this.functions);
-				if (other == null) {
-					return null;
+			else {
+				/*
+				 * Need to revisit since "" implies a single function or supplier or... By
+				 * using combined map we may have a single function but multiple consumers
+				 * scenario
+				 */
+				if (name.equals("") && allFunctions.size() == 1) {
+					composedFunction = allFunctions.values().iterator().next();
 				}
-				function = compose(function, other);
-			}
-			if (stages.length > 1) {
-				other = lookup(stages[stages.length - 1],
-						hasInput ? lookup : this.functions);
-				if (other == null) {
-					return null;
-				}
-				function = compose(function, other);
-			}
-			final Object value = function;
-			lookup.computeIfAbsent(name, key -> value);
-			if (!this.types.containsKey(name)) {
-				if (this.types.containsKey(stages[0])
-						&& this.types.containsKey(stages[stages.length - 1])) {
-					FunctionType input = this.types.get(stages[0]);
-					FunctionType output = this.types.get(stages[stages.length - 1]);
-					this.types.put(name, FunctionType.compose(input, output));
+				else {
+					String[] stages = StringUtils.delimitedListToStringArray(name, "|");
+					if (Stream.of(stages)
+							.allMatch(funcName -> allFunctions.containsKey(funcName))) {
+						List<Object> composableFunctions = Stream.of(stages)
+								.map(funcName -> allFunctions.get(funcName))
+								.collect(Collectors.toList());
+						composedFunction = composableFunctions.stream()
+								.reduce((a, z) -> composeFunctions(a, z))
+								.orElseGet(() -> null);
+						if (composedFunction != null && !this.types.containsKey(name)
+								&& this.types.containsKey(stages[0])
+								&& this.types.containsKey(stages[stages.length - 1])) {
+							FunctionType input = this.types.get(stages[0]);
+							FunctionType output = this.types
+									.get(stages[stages.length - 1]);
+							this.types.put(name, FunctionType.compose(input, output));
+							this.names.put(composedFunction, name);
+							allFunctions.put(name, composedFunction);
+						}
+					}
 				}
 			}
-			this.names.put(function, name);
-			return function;
-		}
-
-		private Object lookup(String name, Map<String, Object> lookup) {
-			Object result = lookup.get(name);
-			if (result != null) {
-				findType(result);
-			}
-			return result;
+			return composedFunction;
 		}
 
 		@SuppressWarnings("unchecked")
-		private Object compose(Object a, Object b) {
+		private Object composeFunctions(Object a, Object b) {
 			if (a instanceof Supplier && b instanceof Function) {
 				Supplier<Flux<Object>> supplier = (Supplier<Flux<Object>>) a;
 				if (b instanceof FluxConsumer) {
@@ -380,66 +445,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 		}
 
-		public <T> void register(FunctionRegistration<T> function) {
-			wrap(function, function.getNames().iterator().next());
-		}
-
-		@PreDestroy
-		public void close() {
-			if (this.publisher != null) {
-				if (!this.functions.isEmpty()) {
-					this.publisher.publishEvent(new FunctionUnregistrationEvent(this,
-							Function.class, this.functions.keySet()));
-				}
-				if (!this.consumers.isEmpty()) {
-					this.publisher.publishEvent(new FunctionUnregistrationEvent(this,
-							Consumer.class, this.consumers.keySet()));
-				}
-				if (!this.suppliers.isEmpty()) {
-					this.publisher.publishEvent(new FunctionUnregistrationEvent(this,
-							Supplier.class, this.suppliers.keySet()));
-				}
-			}
-		}
-
-		public Set<FunctionRegistration<?>> merge(
-				Map<String, FunctionRegistration<?>> initial,
-				Map<String, Consumer<?>> consumers, Map<String, Supplier<?>> suppliers,
-				Map<String, Function<?, ?>> functions) {
-			Set<FunctionRegistration<?>> registrations = new HashSet<>();
-			Map<Object, String> targets = new HashMap<>();
-			// Replace the initial registrations with new ones that have the right names
-			for (String key : initial.keySet()) {
-				FunctionRegistration<?> registration = initial.get(key);
-				if (registration.getNames().isEmpty()) {
-					registration.names(getAliases(key));
-				}
-				registrations.add(registration);
-				targets.put(registration.getTarget(), key);
-			}
-
-			Stream.concat(consumers.entrySet().stream(), Stream
-					.concat(suppliers.entrySet().stream(), functions.entrySet().stream()))
-					.forEach(entry -> {
-						if (!targets.containsKey(entry.getValue())) {
-							FunctionRegistration<Object> target = new FunctionRegistration<Object>(
-									entry.getValue(),
-									getAliases(entry.getKey()).toArray(new String[] {}));
-							targets.put(target.getTarget(), entry.getKey());
-							registrations.add(target);
-						}
-					});
-			// Wrap the functions so they handle reactive inputs and outputs
-			registrations.forEach(registration -> wrap(registration,
-					targets.get(registration.getTarget())));
-			return registrations;
-		}
-
 		private Collection<String> getAliases(String key) {
 			Collection<String> names = new LinkedHashSet<>();
 			String value = getQualifier(key);
-			if (value.equals(key) && this.registry != null) {
-				names.addAll(Arrays.asList(this.registry.getAliases(key)));
+			if (value.equals(key) && this.beanFactory != null) {
+				names.addAll(Arrays.asList(this.beanFactory.getAliases(key)));
 			}
 			names.add(value);
 			return names;
@@ -461,27 +471,29 @@ public class ContextFunctionCatalogAutoConfiguration {
 				type = Supplier.class;
 				for (String name : registration.getNames()) {
 					this.suppliers.put(name, registration.getTarget());
+					this.allFunctions.put(name, registration.getTarget());
 				}
 			}
 			else if (target instanceof Consumer) {
 				type = Consumer.class;
 				for (String name : registration.getNames()) {
 					this.consumers.put(name, registration.getTarget());
+					this.allFunctions.put(name, registration.getTarget());
 				}
 			}
 			else if (target instanceof Function) {
 				type = Function.class;
 				for (String name : registration.getNames()) {
 					this.functions.put(name, registration.getTarget());
+					this.allFunctions.put(name, registration.getTarget());
 				}
 			}
 			else {
 				return;
 			}
-			// this.names.remove(target);
 			this.names.put(registration.getTarget(), key);
-			if (this.publisher != null) {
-				this.publisher.publishEvent(new FunctionRegistrationEvent(
+			if (this.applicationEventPublisher != null) {
+				this.applicationEventPublisher.publishEvent(new FunctionRegistrationEvent(
 						registration.getTarget(), type, registration.getNames()));
 			}
 		}
@@ -547,8 +559,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private String getQualifier(String key) {
-			if (this.registry != null && this.registry.containsBeanDefinition(key)) {
-				BeanDefinition beanDefinition = this.registry.getBeanDefinition(key);
+			if (this.beanFactory != null
+					&& this.beanFactory.containsBeanDefinition(key)) {
+				BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
 				Object source = beanDefinition.getSource();
 				if (source instanceof StandardMethodMetadata) {
 					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
@@ -568,8 +581,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 				return this.types.get(name);
 			}
 			FunctionType param;
-			if (name == null || this.registry == null
-					|| !this.registry.containsBeanDefinition(name)) {
+			if (name == null || this.beanFactory == null
+					|| !this.beanFactory.containsBeanDefinition(name)) {
 				if (function != null) {
 					param = new FunctionType(function.getClass());
 				}
@@ -579,10 +592,43 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			else {
 				param = new FunctionType(
-						FunctionContextUtils.findType(name, this.registry));
+						FunctionContextUtils.findType(name, this.beanFactory));
 			}
 			this.types.computeIfAbsent(name, str -> param);
 			return param;
+		}
+
+		@SuppressWarnings("rawtypes")
+		private void doMerge(Map<String, FunctionRegistration> functionRegistrationBeans,
+				Map<String, Consumer> consumerBeans, Map<String, Supplier> supplierBeans,
+				Map<String, Function> functionBeans) {
+
+			Set<FunctionRegistration<?>> registrations = new HashSet<>();
+			Map<Object, String> targets = new HashMap<>();
+			// Replace the initial registrations with new ones that have the right names
+			for (String key : functionRegistrationBeans.keySet()) {
+				FunctionRegistration<?> registration = functionRegistrationBeans.get(key);
+				if (registration.getNames().isEmpty()) {
+					registration.names(getAliases(key));
+				}
+				registrations.add(registration);
+				targets.put(registration.getTarget(), key);
+			}
+
+			Stream.concat(consumerBeans.entrySet().stream(), Stream.concat(
+					supplierBeans.entrySet().stream(), functionBeans.entrySet().stream()))
+					.forEach(entry -> {
+						if (!targets.containsKey(entry.getValue())) {
+							FunctionRegistration<Object> target = new FunctionRegistration<Object>(
+									entry.getValue(),
+									getAliases(entry.getKey()).toArray(new String[] {}));
+							targets.put(target.getTarget(), entry.getKey());
+							registrations.add(target);
+						}
+					});
+			// Wrap the functions so they handle reactive inputs and outputs
+			registrations.forEach(registration -> wrap(registration,
+					targets.get(registration.getTarget())));
 		}
 
 	}
