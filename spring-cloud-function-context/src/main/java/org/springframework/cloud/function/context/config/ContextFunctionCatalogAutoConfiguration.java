@@ -141,8 +141,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		public int size() {
-			return this.processor.suppliers.size()
-					+ this.processor.functions.size()
+			return this.processor.suppliers.size() + this.processor.functions.size()
 					+ this.processor.consumers.size();
 		}
 
@@ -263,9 +262,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		@SuppressWarnings("unchecked")
-		private Object lookup(String name, @SuppressWarnings("rawtypes") Map lookup, Class<?> typeOfFunction) {
+		private Object lookup(String name, @SuppressWarnings("rawtypes") Map lookup,
+				Class<?> typeOfFunction) {
 			Object function = compose(name, lookup);
-			if (function  != null && typeOfFunction.isAssignableFrom(function.getClass())) {
+			if (function != null
+					&& typeOfFunction.isAssignableFrom(function.getClass())) {
 				return function;
 			}
 			else {
@@ -305,8 +306,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 				else {
 					String[] stages = StringUtils.delimitedListToStringArray(name, "|");
-					if (Stream.of(stages)
-							.allMatch(funcName -> contains(funcName))) {
+					if (Stream.of(stages).allMatch(funcName -> contains(funcName))) {
 						List<Object> composableFunctions = Stream.of(stages)
 								.map(funcName -> find(funcName))
 								.collect(Collectors.toList());
@@ -330,7 +330,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean contains(String name) {
-			return suppliers.containsKey(name) || functions.containsKey(name) || consumers.containsKey(name);
+			return suppliers.containsKey(name) || functions.containsKey(name)
+					|| consumers.containsKey(name);
 		}
 
 		private Object find(String name) {
@@ -643,6 +644,5 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 	}
-
 
 }
