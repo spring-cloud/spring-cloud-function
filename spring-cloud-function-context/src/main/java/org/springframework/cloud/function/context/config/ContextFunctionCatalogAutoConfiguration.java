@@ -62,7 +62,6 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionRegistrationEvent;
 import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
 import org.springframework.cloud.function.core.FluxConsumer;
-import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.function.core.FluxToMonoFunction;
 import org.springframework.cloud.function.core.IsolatedConsumer;
@@ -420,7 +419,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				registration.type(findType(target).getType());
 			}
 			Class<?> type;
-			registration = transform(registration);
+			registration = isolated(registration).wrap();
 			target = registration.getTarget();
 			if (target instanceof Supplier) {
 				type = Supplier.class;
@@ -448,41 +447,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 				this.applicationEventPublisher.publishEvent(new FunctionRegistrationEvent(
 						registration.getTarget(), type, registration.getNames()));
 			}
-		}
-
-		private FunctionRegistration<?> transform(FunctionRegistration<?> registration) {
-			return fluxify(isolated(registration));
-		}
-
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		private FunctionRegistration<?> fluxify(FunctionRegistration<?> input) {
-			FunctionRegistration<Object> registration = (FunctionRegistration<Object>) input;
-			Object target = registration.getTarget();
-			FunctionType type = registration.getType();
-			boolean flux = hasFluxTypes(type);
-			if (!flux) {
-				if (target instanceof Supplier<?>) {
-					target = new FluxSupplier((Supplier<?>) target);
-				}
-				else if (target instanceof Function<?, ?>) {
-					target = new FluxFunction((Function<?, ?>) target);
-				}
-				else if (target instanceof Consumer<?>) {
-					target = new FluxConsumer((Consumer<?>) target);
-				}
-				registration.target(target);
-			}
-			if (Mono.class.isAssignableFrom(type.getOutputWrapper())) {
-				registration.target(new FluxToMonoFunction<>((Function) target));
-			}
-			else if (Mono.class.isAssignableFrom(type.getInputWrapper())) {
-				registration.target(new MonoToFluxFunction<>((Function) target));
-			}
-			return registration;
-		}
-
-		private boolean hasFluxTypes(FunctionType type) {
-			return type.isWrapper();
 		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
