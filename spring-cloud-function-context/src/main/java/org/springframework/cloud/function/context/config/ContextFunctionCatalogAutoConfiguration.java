@@ -216,10 +216,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 		}
 
-		public <T> void register(FunctionRegistration<T> function) {
-			wrap(function, function.getNames().iterator().next());
-		}
-
 		@PreDestroy
 		public void close() {
 			if (this.applicationEventPublisher != null) {
@@ -239,6 +235,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 									Supplier.class, this.suppliers.keySet()));
 				}
 			}
+		}
+
+		<T> void register(FunctionRegistration<T> function) {
+			wrap(function, function.getNames().iterator().next());
 		}
 
 		FunctionRegistration<?> getRegistration(Object function) {
@@ -261,6 +261,20 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return (Consumer<?>) lookup(name, this.consumers, Consumer.class);
 		}
 
+		// @checkstyle:off
+		/**
+		 * @deprecated Was never intended for public use.
+		 */
+		@Deprecated
+		@SuppressWarnings("rawtypes")
+		Set<FunctionRegistration<?>> merge(Map<String, FunctionRegistration> initial,
+				Map<String, Consumer> consumers, Map<String, Supplier> suppliers,
+				Map<String, Function> functions) {
+			this.doMerge(initial, consumers, suppliers, functions);
+			return null;
+		}
+		// @checkstyle:on
+
 		@SuppressWarnings("unchecked")
 		private Object lookup(String name, @SuppressWarnings("rawtypes") Map lookup,
 				Class<?> typeOfFunction) {
@@ -275,20 +289,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			return null;
 		}
-
-		// @checkstyle:off
-		/**
-		 * @deprecated Was never intended for public use.
-		 */
-		@Deprecated
-		@SuppressWarnings("rawtypes")
-		Set<FunctionRegistration<?>> merge(Map<String, FunctionRegistration> initial,
-				Map<String, Consumer> consumers, Map<String, Supplier> suppliers,
-				Map<String, Function> functions) {
-			this.doMerge(initial, consumers, suppliers, functions);
-			return null;
-		}
-		// @checkstyle:on
 
 		private String normalizeName(String name) {
 			return name.replaceAll(",", "|").trim();
