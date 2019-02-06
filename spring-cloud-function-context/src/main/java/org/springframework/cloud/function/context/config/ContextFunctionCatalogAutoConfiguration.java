@@ -283,7 +283,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				return function;
 			}
 			else {
-				logger.warn("The resulting composition is is of type "
+				logger.warn("The resulting composition is of type "
 						+ types.get(normalizeName(name)));
 			}
 			return null;
@@ -490,25 +490,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private FunctionType findType(Object function) {
 			String name = this.names.get(function);
+			FunctionType functionType;
 			if (this.types.containsKey(name)) {
-				return this.types.get(name);
-			}
-			FunctionType param;
-			if (name == null || this.beanFactory == null
-					|| !this.beanFactory.containsBeanDefinition(name)) {
-				if (function != null) {
-					param = new FunctionType(function.getClass());
-				}
-				else {
-					param = FunctionType.UNCLASSIFIED;
-				}
+				functionType = this.types.get(name);
 			}
 			else {
-				param = new FunctionType(
-						FunctionContextUtils.findType(name, this.beanFactory));
+				functionType = functionByNameExist(name)
+						? new FunctionType(function.getClass()) : new FunctionType(
+								FunctionContextUtils.findType(name, this.beanFactory));
+				this.types.computeIfAbsent(name, str -> functionType);
 			}
-			this.types.computeIfAbsent(name, str -> param);
-			return param;
+
+			return functionType;
+		}
+
+		private boolean functionByNameExist(String name) {
+			return name == null || this.beanFactory == null
+					|| !this.beanFactory.containsBeanDefinition(name);
 		}
 
 		@SuppressWarnings("rawtypes")
