@@ -40,7 +40,9 @@ import reactor.core.publisher.Mono;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
+import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxWrapper;
+import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.MethodParameter;
@@ -200,7 +202,14 @@ public class RequestProcessor {
 			flux = messages(wrapper, function == null ? consumer : function, flux);
 		}
 		Mono<ResponseEntity<?>> responseEntityMono = null;
-		if (function != null) {
+
+		if (function instanceof FluxedConsumer || function instanceof FluxConsumer) {
+			((Mono<?>) function.apply(flux)).subscribe();
+			logger.debug("Handled POST with consumer");
+			responseEntityMono = Mono
+					.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
+		}
+		else {
 			Flux<?> result = Flux.from(function.apply(flux));
 			logger.debug("Handled POST with function");
 			if (stream) {
@@ -210,12 +219,6 @@ public class RequestProcessor {
 				responseEntityMono = response(wrapper, function, result,
 						body == null ? null : !(body instanceof Collection), false);
 			}
-		}
-		else if (consumer != null) {
-			consumer.accept(flux);
-			logger.debug("Handled POST with consumer");
-			responseEntityMono = Mono
-					.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
 		}
 		return responseEntityMono;
 	}

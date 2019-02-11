@@ -35,6 +35,7 @@ import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.function.core.FluxToMonoFunction;
+import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.core.MonoToFluxFunction;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -162,6 +163,11 @@ public class FunctionRegistration<T> implements BeanNameAware {
 				}
 				else if (target instanceof Consumer) {
 					target = (S) new FluxConsumer((Consumer<?>) target);
+				}
+			}
+			else {
+				if (target instanceof Consumer) {
+					target = (S) new FluxedConsumer((Consumer<?>) target);
 				}
 			}
 

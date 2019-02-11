@@ -560,10 +560,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				"spring.cloud.function.compile.foos.lambda=f -> f.subscribe("
 						+ getClass().getName() + "::set)",
 				"spring.cloud.function.compile.foos.type=consumer");
-		assertThat((Consumer<?>) this.catalog.lookup(Consumer.class, "foos"))
-				.isInstanceOf(Consumer.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
+				.isInstanceOf(Function.class);
 		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Consumer.class, "foos")))
+				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
 						.isEqualTo(Flux.class);
 		@SuppressWarnings("unchecked")
 		Consumer<Flux<String>> consumer = (Consumer<Flux<String>>) this.context

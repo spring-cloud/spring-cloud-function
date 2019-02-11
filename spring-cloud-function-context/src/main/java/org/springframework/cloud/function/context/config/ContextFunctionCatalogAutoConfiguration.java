@@ -58,7 +58,6 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionRegistrationEvent;
 import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
 import org.springframework.cloud.function.core.FluxConsumer;
@@ -562,22 +561,22 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	}
 
-	protected class BeanFactoryFunctionInspector implements FunctionInspector {
-
-		private ContextFunctionRegistry processor;
-
-		public BeanFactoryFunctionInspector(ContextFunctionRegistry processor) {
-			this.processor = processor;
-		}
-
-		@Override
-		public FunctionRegistration<?> getRegistration(Object function) {
-			FunctionRegistration<?> registration = this.processor
-					.getRegistration(function);
-			return registration;
-		}
-
-	}
+	// protected class BeanFactoryFunctionInspector implements FunctionInspector {
+	//
+	// private ContextFunctionRegistry processor;
+	//
+	// public BeanFactoryFunctionInspector(ContextFunctionRegistry processor) {
+	// this.processor = processor;
+	// }
+	//
+	// @Override
+	// public FunctionRegistration<?> getRegistration(Object function) {
+	// FunctionRegistration<?> registration = this.processor
+	// .getRegistration(function);
+	// return registration;
+	// }
+	//
+	// }
 
 	@Configuration
 	@ConditionalOnClass(Gson.class)

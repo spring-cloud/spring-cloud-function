@@ -125,13 +125,22 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	public void addFoosFlux() throws Exception {
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
+				.post(new URI("/addFoosFlux")).contentType(MediaType.APPLICATION_JSON)
+				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(this.test.list).hasSize(2);
+		assertThat(result.getBody()).isEqualTo(null);
+	}
+
+	@Test
 	public void bareUpdates() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"one\",\"two\"]"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(this.test.list).hasSize(2);
-		assertThat(result.getBody()).isEqualTo("[]");
 	}
 
 	@Test
@@ -399,12 +408,6 @@ public class HttpPostIntegrationTests {
 			};
 		}
 
-		// @Bean
-		// public Function<byte[],?> byteArrayInputFunction() {
-		//// return value -> new Foo(value.getValue().trim().toUpperCase());
-		// throw new UnsupportedOperationException("boom?");
-		// }
-
 		@Bean
 		public Function<Flux<Integer>, Flux<String>> wrap() {
 			return flux -> flux.log().map(value -> ".." + value + "..");
@@ -437,13 +440,22 @@ public class HttpPostIntegrationTests {
 		}
 
 		@Bean
-		public Consumer<Flux<Foo>> addFoos() {
+		public Consumer<Flux<Foo>> addFoosFlux() {
 			return flux -> flux.subscribe(value -> this.list.add(value.getValue()));
 		}
 
 		@Bean
+		public Consumer<Foo> addFoos() {
+			return value -> {
+				this.list.add(value.getValue());
+			};
+		}
+
+		@Bean
 		public Consumer<String> bareUpdates() {
-			return value -> this.list.add(value);
+			return value -> {
+				this.list.add(value);
+			};
 		}
 
 		@Bean("not/a")

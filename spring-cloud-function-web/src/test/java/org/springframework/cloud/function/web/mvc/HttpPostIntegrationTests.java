@@ -128,9 +128,8 @@ public class HttpPostIntegrationTests {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"one\",\"two\"]"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(this.test.list).hasSize(2);
-		assertThat(result.getBody()).isEqualTo("[]");
 	}
 
 	@Test
