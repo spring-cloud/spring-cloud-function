@@ -36,6 +36,7 @@ import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.function.core.FluxToMonoFunction;
 import org.springframework.cloud.function.core.FluxedConsumer;
+import org.springframework.cloud.function.core.FluxedFunction;
 import org.springframework.cloud.function.core.MonoToFluxFunction;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -171,7 +172,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 				target = (S) new FluxedConsumer((Consumer<?>) target);
 			}
 			else if (target instanceof Function) {
-				// target = (S) new FluxedFunction((Function<?, ?>) target);
+				target = (S) new FluxedFunction((Function<?, ?>) target);
 			}
 
 			result = result.target(target).names(this.names)

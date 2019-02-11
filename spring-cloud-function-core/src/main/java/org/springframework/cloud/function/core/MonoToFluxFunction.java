@@ -30,25 +30,15 @@ import reactor.core.publisher.Mono;
  * @since 2.0
  */
 public class MonoToFluxFunction<I, O>
-		implements Function<Mono<I>, Flux<O>>, FluxWrapper<Function<Mono<I>, Flux<O>>> {
+		extends WrappedFunction<I, O, Mono<I>, Flux<O>, Function<Mono<I>, Flux<O>>> {
 
-	private final Function<Mono<I>, Flux<O>> function;
-
-	/**
-	 * @param function target function
-	 */
-	public MonoToFluxFunction(Function<Mono<I>, Flux<O>> function) {
-		this.function = function;
-	}
-
-	@Override
-	public Function<Mono<I>, Flux<O>> getTarget() {
-		return this.function;
+	public MonoToFluxFunction(Function<Mono<I>, Flux<O>> target) {
+		super(target);
 	}
 
 	@Override
 	public Flux<O> apply(Mono<I> input) {
-		return this.function.apply(input);
+		return this.getTarget().apply(input);
 	}
 
 }

@@ -22,7 +22,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Marker wrapper for target {@code Function<Flux<?>, Mono<?>>}.
+ * Wrapper to mark function {@code Function<Flux<?>, Mono<?>>}.
+ *
+ * While it may look similar to {@link FluxedConsumer}
+ * the fundamental difference is that this class represents a function that
+ * returns {@link Mono} of type {@code <O>}, while {@link FluxedConsumer} is
+ * a consumer that has been decorated as {@code Function<Flux<?>, Mono<Void>>}.
  *
  * @param <I> type of {@link Flux} input of the target function
  * @param <O> type of {@link Mono} output of the target function
@@ -30,25 +35,15 @@ import reactor.core.publisher.Mono;
  * @since 2.0
  */
 public class FluxToMonoFunction<I, O>
-		implements Function<Flux<I>, Mono<O>>, FluxWrapper<Function<Flux<I>, Mono<O>>> {
+		extends WrappedFunction<I, O, Flux<I>, Mono<O>, Function<Flux<I>, Mono<O>>> {
 
-	private final Function<Flux<I>, Mono<O>> function;
-
-	/**
-	 * @param function target function
-	 */
-	public FluxToMonoFunction(Function<Flux<I>, Mono<O>> function) {
-		this.function = function;
-	}
-
-	@Override
-	public Function<Flux<I>, Mono<O>> getTarget() {
-		return this.function;
+	public FluxToMonoFunction(Function<Flux<I>, Mono<O>> target) {
+		super(target);
 	}
 
 	@Override
 	public Mono<O> apply(Flux<I> input) {
-		return this.function.apply(input);
+		return this.getTarget().apply(input);
 	}
 
 }
