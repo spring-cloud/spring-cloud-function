@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2016-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,30 +153,27 @@ public class FunctionRegistration<T> implements BeanNameAware {
 			S target = (S) this.target;
 			result = new FunctionRegistration<S>(target);
 			result.type(this.type.getType());
-			boolean flux = type.isWrapper();
-			if (!flux) {
-				if (target instanceof Function) {
-					target = (S) new FluxFunction((Function<?, ?>) target);
-				}
-				else if (target instanceof Supplier) {
-					target = (S) new FluxSupplier((Supplier<?>) target);
-				}
-				else if (target instanceof Consumer) {
-					target = (S) new FluxConsumer((Consumer<?>) target);
-				}
-			}
-			else {
-				if (target instanceof Consumer) {
-					target = (S) new FluxedConsumer((Consumer<?>) target);
-				}
-			}
 
-			if (Mono.class.isAssignableFrom(type.getOutputWrapper())) {
+			if (!type.isWrapper()) {
+				target = target instanceof Supplier
+						? (S) new FluxSupplier((Supplier<?>) target)
+						: target instanceof Function
+								? (S) new FluxFunction((Function<?, ?>) target)
+								: (S) new FluxConsumer((Consumer<?>) target);
+			}
+			else if (Mono.class.isAssignableFrom(type.getOutputWrapper())) {
 				target = (S) new FluxToMonoFunction((Function) target);
 			}
 			else if (Mono.class.isAssignableFrom(type.getInputWrapper())) {
 				target = (S) new MonoToFluxFunction((Function) target);
 			}
+			else if (target instanceof Consumer) {
+				target = (S) new FluxedConsumer((Consumer<?>) target);
+			}
+			else if (target instanceof Function) {
+				// target = (S) new FluxedFunction((Function<?, ?>) target);
+			}
+
 			result = result.target(target).names(this.names)
 					.type(result.type.wrap(Flux.class)).properties(this.properties);
 		}

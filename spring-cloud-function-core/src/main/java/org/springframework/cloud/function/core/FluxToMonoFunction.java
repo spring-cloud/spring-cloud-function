@@ -22,7 +22,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Marker wrapper for target Function&lt;Flux, Mono&gt;.
+ * Marker wrapper for target {@code Function<Flux<?>, Mono<?>>}.
  *
  * @param <I> type of {@link Flux} input of the target function
  * @param <O> type of {@link Mono} output of the target function
