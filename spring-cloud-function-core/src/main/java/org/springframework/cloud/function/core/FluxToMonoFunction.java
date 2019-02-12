@@ -24,10 +24,10 @@ import reactor.core.publisher.Mono;
 /**
  * Wrapper to mark function {@code Function<Flux<?>, Mono<?>>}.
  *
- * While it may look similar to {@link FluxedConsumer}
- * the fundamental difference is that this class represents a function that
- * returns {@link Mono} of type {@code <O>}, while {@link FluxedConsumer} is
- * a consumer that has been decorated as {@code Function<Flux<?>, Mono<Void>>}.
+ * While it may look similar to {@link FluxedConsumer} the fundamental difference is that
+ * this class represents a function that returns {@link Mono} of type {@code <O>}, while
+ * {@link FluxedConsumer} is a consumer that has been decorated as
+ * {@code Function<Flux<?>, Mono<Void>>}.
  *
  * @param <I> type of {@link Flux} input of the target function
  * @param <O> type of {@link Mono} output of the target function

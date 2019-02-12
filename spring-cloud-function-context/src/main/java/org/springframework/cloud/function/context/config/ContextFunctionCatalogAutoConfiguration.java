@@ -36,15 +36,13 @@ import javax.annotation.PreDestroy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -172,9 +170,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Component
 	protected static class ContextFunctionRegistry
-			implements SmartInitializingSingleton, BeanFactoryAware {
-
-		private Log logger = LogFactory.getLog(ContextFunctionRegistry.class);
+			implements InitializingBean, BeanFactoryAware {
 
 		private ApplicationEventPublisher applicationEventPublisher;
 
@@ -196,7 +192,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		 */
 		@Override
 		@SuppressWarnings("rawtypes")
-		public void afterSingletonsInstantiated() {
+		public void afterPropertiesSet() throws Exception {
 			Map<String, Supplier> supplierBeans = beanFactory
 					.getBeansOfType(Supplier.class);
 			Map<String, Function> functionBeans = beanFactory
@@ -281,10 +277,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 					&& typeOfFunction.isAssignableFrom(function.getClass())) {
 				return function;
 			}
-			else {
-				logger.warn("The resulting composition is of type "
-						+ types.get(normalizeName(name)));
-			}
 			return null;
 		}
 
@@ -319,7 +311,15 @@ public class ContextFunctionCatalogAutoConfiguration {
 									.get(stages[stages.length - 1]);
 							this.types.put(name, FunctionType.compose(input, output));
 							this.names.put(composedFunction, name);
-							lookup.put(name, composedFunction);
+							if (composedFunction instanceof Function) {
+								this.functions.put(name, composedFunction);
+							}
+							else if (composedFunction instanceof Consumer) {
+								this.consumers.put(name, composedFunction);
+							}
+							else if (composedFunction instanceof Supplier) {
+								this.suppliers.put(name, composedFunction);
+							}
 						}
 					}
 				}
@@ -536,7 +536,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 							registrations.add(target);
 						}
 					});
-			// Wrap the functions so they handle reactive inputs and outputs
+
 			registrations.forEach(registration -> wrap(registration,
 					targets.get(registration.getTarget())));
 		}
@@ -560,23 +560,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 	}
-
-	// protected class BeanFactoryFunctionInspector implements FunctionInspector {
-	//
-	// private ContextFunctionRegistry processor;
-	//
-	// public BeanFactoryFunctionInspector(ContextFunctionRegistry processor) {
-	// this.processor = processor;
-	// }
-	//
-	// @Override
-	// public FunctionRegistration<?> getRegistration(Object function) {
-	// FunctionRegistration<?> registration = this.processor
-	// .getRegistration(function);
-	// return registration;
-	// }
-	//
-	// }
 
 	@Configuration
 	@ConditionalOnClass(Gson.class)
