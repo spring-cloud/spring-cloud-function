@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2018-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package org.springframework.cloud.function.web.source;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,12 +34,14 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.cloud.function.web.RestApplication;
-import org.springframework.cloud.function.web.source.WebAppIntegrationTests.ApplicationConfiguration;
+import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIntegrationTests.ApplicationConfiguration;
+import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIntegrationTests.RestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.SocketUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,22 +54,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
-		"spring.main.web-application-type=reactive",
-		"spring.cloud.function.web.export.sink.url=http://localhost:${server.port}/values",
-		// in a webapp we have to explicitly enable the export
-		"spring.cloud.function.web.export.enabled=true",
-		// manually so we know the webapp is listening when we start
-		"spring.cloud.function.web.export.autoStartup=false" })
-@ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
-public class WebAppIntegrationTests {
-
-	private static Log logger = LogFactory.getLog(WebAppIntegrationTests.class);
+		"spring.cloud.function.web.export.sink.url=http://localhost:${server.port}",
+		"spring.cloud.function.web.export.source.url=http://localhost:${server.port}",
+		"spring.cloud.function.web.export.sink.name=origin|uppercase",
+		"spring.cloud.function.web.export.debug=true",
+		"spring.cloud.function.web.export.enabled=true" })
+@ContextConfiguration(classes = { RestConfiguration.class,
+		ApplicationConfiguration.class })
+public class FunctionAutoConfigurationIntegrationTests {
 
 	@Autowired
 	private SupplierExporter forwarder;
 
 	@Autowired
-	private ApplicationConfiguration app;
+	private RestConfiguration app;
 
 	@BeforeClass
 	public static void init() {
@@ -80,33 +80,52 @@ public class WebAppIntegrationTests {
 	}
 
 	@Test
-	public void posts() throws Exception {
-		this.forwarder.start();
-		this.app.latch.await(10, TimeUnit.SECONDS);
-		assertThat(this.app.values).hasSize(1);
+	public void copiesMessages() throws Exception {
+		int count = 0;
+		while (this.forwarder.isRunning() && count++ < 100) {
+			Thread.sleep(20);
+		}
+		// It completed
+		assertThat(this.forwarder.isRunning()).isFalse();
+		assertThat(this.forwarder.isOk()).isTrue();
+		assertThat(this.app.inputs).contains("HELLO");
+		assertThat(this.app.inputs).contains("WORLD");
 	}
 
 	@EnableAutoConfiguration
 	@TestConfiguration
-	@RestController
 	public static class ApplicationConfiguration {
 
-		private List<String> values = new ArrayList<>();
-
-		private CountDownLatch latch = new CountDownLatch(1);
-
 		@Bean
-		public Supplier<String> word() {
-			return () -> "foo";
+		public Function<String, String> uppercase() {
+			return value -> value.toUpperCase();
 		}
 
-		// An endpoint to catch the values being exported
-		@PostMapping("/values")
-		public String value(@RequestBody String body) {
-			logger.info("Body: " + body);
-			this.values.add(body);
-			this.latch.countDown();
-			return "ok";
+	}
+
+	@TestConfiguration
+	@RestController
+	public static class RestConfiguration {
+
+		private static Log logger = LogFactory.getLog(RestConfiguration.class);
+
+		private List<String> inputs = new ArrayList<>();
+
+		private Iterator<String> outputs = Arrays.asList("hello", "world").iterator();
+
+		@GetMapping("/")
+		ResponseEntity<String> home() {
+			logger.info("HOME");
+			if (this.outputs.hasNext()) {
+				return ResponseEntity.ok(this.outputs.next());
+			}
+			return ResponseEntity.notFound().build();
+		}
+
+		@PostMapping("/")
+		void accept(@RequestBody String body) {
+			logger.info("ACCEPT");
+			this.inputs.add(body);
 		}
 
 	}

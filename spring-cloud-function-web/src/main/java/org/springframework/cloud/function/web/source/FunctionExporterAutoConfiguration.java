@@ -16,6 +16,11 @@
 
 package org.springframework.cloud.function.web.source;
 
+import java.util.function.Supplier;
+
+import reactor.core.publisher.Flux;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -23,7 +28,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnNotWebAppli
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.web.source.SupplierAutoConfiguration.SourceActiveCondition;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.web.source.FunctionExporterAutoConfiguration.SourceActiveCondition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -37,26 +44,48 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 @ConditionalOnClass(WebClient.class)
 @Conditional(SourceActiveCondition.class)
-@EnableConfigurationProperties(SupplierProperties.class)
-@ConditionalOnProperty(prefix = "spring.cloud.function.web.supplier", name = "enabled", matchIfMissing = true)
-class SupplierAutoConfiguration {
+@EnableConfigurationProperties(ExporterProperties.class)
+@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled", matchIfMissing = true)
+public class FunctionExporterAutoConfiguration {
 
-	@Bean
-	public SupplierExporter sourceForwarder(RequestBuilder requestBuilder,
-			DestinationResolver destinationResolver, FunctionCatalog catalog,
-			WebClient.Builder builder, SupplierProperties props) {
-		return new SupplierExporter(requestBuilder, destinationResolver, catalog,
-				builder.build(), props);
+	private ExporterProperties props;
+
+	@Autowired
+	FunctionExporterAutoConfiguration(ExporterProperties props) {
+		this.props = props;
 	}
 
 	@Bean
-	public RequestBuilder simpleRequestBuilder(SupplierProperties props,
-			Environment environment) {
-		SimpleRequestBuilder builder = new SimpleRequestBuilder(environment);
-		if (props.getTemplateUrl() != null) {
-			builder.setTemplateUrl(props.getTemplateUrl());
+	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.sink", name = "url")
+	public SupplierExporter sourceForwarder(RequestBuilder requestBuilder,
+			DestinationResolver destinationResolver, FunctionCatalog catalog,
+			WebClient.Builder builder) {
+		return new SupplierExporter(requestBuilder, destinationResolver, catalog,
+				builder.build(), this.props);
+	}
+
+	@Bean
+	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.source", name = "url")
+	public FunctionRegistration<Supplier<Flux<?>>> origin(WebClient.Builder builder) {
+		HttpSupplier supplier = new HttpSupplier(builder.build(), this.props);
+		FunctionRegistration<Supplier<Flux<?>>> registration = new FunctionRegistration<>(
+				supplier);
+		FunctionType type = FunctionType.supplier(this.props.getSource().getType())
+				.wrap(Flux.class);
+		if (this.props.getSource().isIncludeHeaders()) {
+			type = type.message();
 		}
-		builder.setHeaders(props.getHeaders());
+		registration = registration.type(type);
+		return registration;
+	}
+
+	@Bean
+	public RequestBuilder simpleRequestBuilder(Environment environment) {
+		SimpleRequestBuilder builder = new SimpleRequestBuilder(environment);
+		if (this.props.getSink().getUrl() != null) {
+			builder.setTemplateUrl(this.props.getSink().getUrl());
+		}
+		builder.setHeaders(this.props.getSink().getHeaders());
 		return builder;
 	}
 
@@ -77,7 +106,7 @@ class SupplierAutoConfiguration {
 
 		}
 
-		@ConditionalOnProperty(prefix = "spring.cloud.function.web.supplier", name = "enabled")
+		@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled")
 		static class Enabled {
 
 		}

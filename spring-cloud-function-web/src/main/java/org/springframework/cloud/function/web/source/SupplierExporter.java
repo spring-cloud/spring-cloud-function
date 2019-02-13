@@ -21,15 +21,16 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.messaging.Message;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -40,7 +41,9 @@ import org.springframework.web.reactive.function.client.WebClient;
  * @author Dave Syer
  *
  */
-class SupplierExporter implements SmartLifecycle {
+public class SupplierExporter implements SmartLifecycle {
+
+	private static Log logger = LogFactory.getLog(SupplierExporter.class);
 
 	private final FunctionCatalog catalog;
 
@@ -64,14 +67,14 @@ class SupplierExporter implements SmartLifecycle {
 
 	SupplierExporter(RequestBuilder requestBuilder,
 			DestinationResolver destinationResolver, FunctionCatalog catalog,
-			WebClient client, SupplierProperties props) {
+			WebClient client, ExporterProperties props) {
 		this.requestBuilder = requestBuilder;
 		this.destinationResolver = destinationResolver;
 		this.catalog = catalog;
 		this.client = client;
 		this.debug = props.isDebug();
 		this.autoStartup = props.isAutoStartup();
-		this.supplier = props.getName();
+		this.supplier = props.getSink().getName();
 	}
 
 	@Override
@@ -82,19 +85,24 @@ class SupplierExporter implements SmartLifecycle {
 
 		this.running = true;
 		this.ok = true;
+		logger.info("Starting");
 
 		Flux<Object> streams = Flux.empty();
 		Set<String> names = this.supplier == null ? this.catalog.getNames(Supplier.class)
 				: Collections.singleton(this.supplier);
 		for (String name : names) {
 			Supplier<Flux<Object>> supplier = this.catalog.lookup(Supplier.class, name);
+			if (supplier == null) {
+				logger.warn("No such Supplier: " + name);
+				continue;
+			}
 			streams = streams.mergeWith(forward(supplier, name));
 		}
 
 		this.subscription = streams.doOnError(error -> {
 			this.ok = false;
 			if (!this.debug) {
-				error.printStackTrace();
+				logger.info(error);
 			}
 		}).doOnTerminate(() -> this.running = false).doOnNext(value -> {
 			if (this.subscription != null && !this.running) {
@@ -104,17 +112,25 @@ class SupplierExporter implements SmartLifecycle {
 	}
 
 	private Flux<ClientResponse> forward(Supplier<Flux<Object>> supplier, String name) {
-		return supplier.get().publishOn(Schedulers.parallel()).flatMap(value -> {
+		return supplier.get().flatMap(value -> {
 			String destination = this.destinationResolver.destination(supplier, name,
 					value);
+			if (this.debug) {
+				logger.info("Posting to: " + destination);
+			}
 			return post(uri(destination), destination, value);
 		});
 	}
 
 	private Mono<ClientResponse> post(URI uri, String destination, Object value) {
+		Object body = value;
+		if (value instanceof Message) {
+			Message<?> message = (Message<?>) value;
+			body = message.getPayload();
+		}
 		Mono<ClientResponse> result = this.client.post().uri(uri)
-				.headers(headers -> headers(headers, destination, value))
-				.body(BodyInserters.fromObject(value)).exchange();
+				.headers(headers -> headers(headers, destination, value)).syncBody(body)
+				.exchange();
 		if (this.debug) {
 			result = result.log();
 		}
@@ -135,6 +151,7 @@ class SupplierExporter implements SmartLifecycle {
 
 	@Override
 	public void stop() {
+		logger.info("Stopping");
 		this.running = false;
 	}
 
