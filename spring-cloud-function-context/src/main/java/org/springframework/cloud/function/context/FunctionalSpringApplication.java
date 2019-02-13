@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.context;
 
+import static java.util.Arrays.stream;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
@@ -122,6 +125,13 @@ public class FunctionalSpringApplication
 								() -> new FunctionRegistration<>(
 										handler(generic, function, functionType))
 												.type(FunctionType.of(functionType)));
+						if (source.equals(functionType)) {
+							context.addBeanFactoryPostProcessor(beanFactory -> {
+								BeanDefinitionRegistry bdRegistry = (BeanDefinitionRegistry) beanFactory;
+								stream(beanFactory.getBeanNamesForType(functionType))
+										.forEach(bdRegistry::removeBeanDefinition);
+							});
+						}
 						functional = true;
 					}
 				}
