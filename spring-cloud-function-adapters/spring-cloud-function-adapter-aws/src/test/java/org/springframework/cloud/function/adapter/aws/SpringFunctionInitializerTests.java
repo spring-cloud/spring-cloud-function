@@ -18,6 +18,7 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.After;
@@ -102,6 +103,14 @@ public class SpringFunctionInitializerTests {
 		assertThat(result.toStream().collect(Collectors.toList())).isEmpty();
 	}
 
+	@Test
+	public void supplierCatalog() {
+		initializer = new SpringFunctionInitializer(SupplierConfig.class);
+		initializer.initialize();
+		Flux<?> result = Flux.from(initializer.apply(Flux.empty()));
+		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
+	}
+
 	@Configuration
 	protected static class FluxFunctionConfig {
 
@@ -159,6 +168,15 @@ public class SpringFunctionInitializerTests {
 			return foo -> new Bar();
 		}
 
+	}
+
+	@Configuration
+	@Import(ContextFunctionCatalogAutoConfiguration.class)
+	protected static class SupplierConfig {
+		@Bean
+		public Supplier<Bar> supplier() {
+			return () -> new Bar();
+		}
 	}
 
 	@Configuration
