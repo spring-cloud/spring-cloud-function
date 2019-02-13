@@ -216,6 +216,8 @@ public class SpringFunctionInitializer implements Closeable {
 		}
 	}
 
+	protected final boolean isConsumer() {
+		return (this.consumer != null || this.function instanceof FluxConsumer);
 	}
 
 	private SpringApplication springApplication() {
