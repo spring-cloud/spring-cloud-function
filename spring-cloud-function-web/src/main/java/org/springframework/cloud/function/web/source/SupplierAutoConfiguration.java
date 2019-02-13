@@ -16,6 +16,14 @@
 
 package org.springframework.cloud.function.web.source;
 
+import java.util.function.Supplier;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -24,10 +32,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.web.source.SupplierAutoConfiguration.SourceActiveCondition;
+import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
@@ -37,26 +49,73 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 @ConditionalOnClass(WebClient.class)
 @Conditional(SourceActiveCondition.class)
-@EnableConfigurationProperties(SupplierProperties.class)
-@ConditionalOnProperty(prefix = "spring.cloud.function.web.supplier", name = "enabled", matchIfMissing = true)
+@EnableConfigurationProperties(ExporterProperties.class)
+@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled", matchIfMissing = true)
 class SupplierAutoConfiguration {
 
-	@Bean
-	public SupplierExporter sourceForwarder(RequestBuilder requestBuilder,
-			DestinationResolver destinationResolver, FunctionCatalog catalog,
-			WebClient.Builder builder, SupplierProperties props) {
-		return new SupplierExporter(requestBuilder, destinationResolver, catalog,
-				builder.build(), props);
+	private static Log logger = LogFactory.getLog(SupplierAutoConfiguration.class);
+
+	private ExporterProperties props;
+
+	@Autowired
+	SupplierAutoConfiguration(ExporterProperties props) {
+		this.props = props;
 	}
 
 	@Bean
-	public RequestBuilder simpleRequestBuilder(SupplierProperties props,
-			Environment environment) {
-		SimpleRequestBuilder builder = new SimpleRequestBuilder(environment);
-		if (props.getTemplateUrl() != null) {
-			builder.setTemplateUrl(props.getTemplateUrl());
+	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.sink", name = "url")
+	public SupplierExporter sourceForwarder(RequestBuilder requestBuilder,
+			DestinationResolver destinationResolver, FunctionCatalog catalog,
+			WebClient.Builder builder) {
+		return new SupplierExporter(requestBuilder, destinationResolver, catalog,
+				builder.build(), this.props);
+	}
+
+	@Bean
+	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.source", name = "url")
+	public Supplier<Flux<?>> origin(WebClient.Builder builder) {
+		WebClient client = builder.baseUrl(this.props.getSource().getUrl()).build();
+		return () -> get(client);
+	}
+
+	private Flux<?> get(WebClient client) {
+		Flux<?> result = client.get().exchange().flatMap(this::transform).repeat();
+		if (this.props.isDebug()) {
+			result = result.log();
 		}
-		builder.setHeaders(props.getHeaders());
+		return result.onErrorResume(TerminateException.class, error -> Mono.empty());
+	}
+
+	private Mono<?> transform(ClientResponse response) {
+		HttpStatus status = response.statusCode();
+		if (!status.is2xxSuccessful()) {
+			if (this.props.isDebug()) {
+				logger.info("Terminated origin Supplier with status="
+						+ response.statusCode());
+			}
+			return Mono.error(TerminateException.INSTANCE);
+		}
+		return response.bodyToMono(this.props.getSource().getType())
+				.map(value -> message(response, value));
+	}
+
+	private Object message(ClientResponse response, Object payload) {
+		if (!this.props.getSource().isIncludeHeaders()) {
+			return payload;
+		}
+		return MessageBuilder.withPayload(payload)
+				.copyHeaders(HeaderUtils.fromHttp(
+						HeaderUtils.sanitize(response.headers().asHttpHeaders())))
+				.build();
+	}
+
+	@Bean
+	public RequestBuilder simpleRequestBuilder(Environment environment) {
+		SimpleRequestBuilder builder = new SimpleRequestBuilder(environment);
+		if (this.props.getSink().getUrl() != null) {
+			builder.setTemplateUrl(this.props.getSink().getUrl());
+		}
+		builder.setHeaders(this.props.getSink().getHeaders());
 		return builder;
 	}
 
@@ -64,6 +123,21 @@ class SupplierAutoConfiguration {
 	@ConditionalOnMissingBean
 	public DestinationResolver simpleDestinationResolver() {
 		return new SimpleDestinationResolver();
+	}
+
+	private static class TerminateException extends RuntimeException {
+
+		static final TerminateException INSTANCE = new TerminateException();
+
+		TerminateException() {
+			super("Planned termination");
+		}
+
+		@Override
+		public synchronized Throwable fillInStackTrace() {
+			return this;
+		}
+
 	}
 
 	static class SourceActiveCondition extends AnyNestedCondition {
@@ -77,7 +151,7 @@ class SupplierAutoConfiguration {
 
 		}
 
-		@ConditionalOnProperty(prefix = "spring.cloud.function.web.supplier", name = "enabled")
+		@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled")
 		static class Enabled {
 
 		}

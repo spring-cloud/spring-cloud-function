@@ -18,11 +18,15 @@ package org.springframework.cloud.function.web.source;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 /**
  * @author Dave Syer
@@ -42,13 +46,17 @@ class SimpleRequestBuilder implements RequestBuilder {
 
 	@Override
 	public HttpHeaders headers(String destination, Object value) {
-		// TODO: add message headers if any
-		HttpHeaders result = new HttpHeaders();
+		MessageHeaders incoming = new MessageHeaders(Collections.emptyMap());
+		if (value instanceof Message) {
+			Message<?> message = (Message<?>) value;
+			incoming = message.getHeaders();
+		}
+		HttpHeaders result = HeaderUtils.fromMessage(incoming);
 		for (String key : this.headers.keySet()) {
 			String header = this.headers.get(key);
 			header = header.replace("${destination}", destination);
 			header = this.environment.resolvePlaceholders(header);
-			result.add(key, header);
+			result.set(key, header);
 		}
 		return result;
 	}
@@ -56,8 +64,8 @@ class SimpleRequestBuilder implements RequestBuilder {
 	@Override
 	public URI uri(String destination) {
 		try {
-			return new URI(this.environment.resolvePlaceholders(
-					this.baseUrl.replace("${destination}", destination)));
+			return new URI(this.baseUrl.replace("${destination}", destination)
+					.replace("{{destination}}", destination));
 		}
 		catch (URISyntaxException e) {
 			throw new IllegalStateException("Cannot create URI", e);

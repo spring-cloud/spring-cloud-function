@@ -23,9 +23,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author Dave Syer
- *
+ * @deprecated in favour of {@link ExporterProperties}
  */
 @ConfigurationProperties("spring.cloud.function.web.supplier")
+@Deprecated
 public class SupplierProperties {
 
 	private boolean autoStartup = true;
