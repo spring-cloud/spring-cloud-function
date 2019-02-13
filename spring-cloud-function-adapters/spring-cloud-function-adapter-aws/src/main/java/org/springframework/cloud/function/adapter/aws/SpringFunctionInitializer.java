@@ -20,10 +20,12 @@ import java.io.Closeable;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.jar.Manifest;
 
 import org.apache.commons.logging.Log;
@@ -49,6 +51,10 @@ public class SpringFunctionInitializer implements Closeable {
 	private final Class<?> configurationClass;
 
 	private Function<Publisher<?>, Publisher<?>> function;
+
+	private Consumer<Publisher<?>> consumer;
+
+	private Supplier<Publisher<?>> supplier;
 
 	private AtomicBoolean initialized = new AtomicBoolean();
 
@@ -130,27 +136,83 @@ public class SpringFunctionInitializer implements Closeable {
 		SpringApplication builder = springApplication();
 		ConfigurableApplicationContext context = builder.run();
 		context.getAutowireCapableBeanFactory().autowireBean(this);
-		String name = context.getEnvironment().getProperty("function.name");
-		if (name == null) {
-			name = "function";
-		}
+		this.context = context;
 		if (this.catalog == null) {
-			if (context.containsBean(name)) {
-				this.function = context.getBean(name, Function.class);
-			}
+			initFunctionConsumerOrSupplierFromContext();
 		}
 		else {
-			Set<String> functionNames = this.catalog.getNames(Function.class);
-			if (functionNames.size() == 1) {
-				this.function = this.catalog.lookup(Function.class,
-						functionNames.iterator().next());
+			initFunctionConsumerOrSupplierFromCatalog();
+		}
+	}
+
+	private String resolveName(Class<?> type) {
+		String functionName = context.getEnvironment().getProperty("function.name");
+		if (functionName != null)
+			return functionName;
+		else if (type.isAssignableFrom(Function.class))
+			return "function";
+		else if (type.isAssignableFrom(Consumer.class))
+			return "consumer";
+		else if (type.isAssignableFrom(Supplier.class))
+			return "supplier";
+		throw new IllegalStateException("Unknown type " + type);
+	}
+
+	private void initFunctionConsumerOrSupplierFromContext() {
+		String name = resolveName(Function.class);
+		if (context.containsBean(name) && context.getBean(name) instanceof Function) {
+			this.function = context.getBean(name, Function.class);
+			return;
+		}
+
+		name = resolveName(Consumer.class);
+		if (context.containsBean(name) && context.getBean(name) instanceof Consumer) {
+			this.consumer = context.getBean(name, Consumer.class);
+			return;
+		}
+
+		name = resolveName(Supplier.class);
+		if (context.containsBean(name) && context.getBean(name) instanceof Supplier) {
+			this.supplier = context.getBean(name, Supplier.class);
+			return;
+		}
+	}
+
+	private void initFunctionConsumerOrSupplierFromCatalog() {
+		String name = resolveName(Function.class);
+		this.function = this.catalog.lookup(Function.class, name);
+		if (this.function != null)
+			return;
+
+		name = resolveName(Consumer.class);
+		this.consumer = this.catalog.lookup(Consumer.class, name);
+		if (this.consumer != null)
+			return;
+
+		name = resolveName(Supplier.class);
+		this.supplier = this.catalog.lookup(Supplier.class, name);
+		if (this.supplier != null)
+			return;
+
+		if (this.catalog.size() == 1) {
+			Iterator<String> names = this.catalog.getNames(Function.class).iterator();
+			if (names.hasNext()) {
+				this.function = this.catalog.lookup(Function.class, names.next());
+				return;
 			}
-			else {
-				this.function = this.catalog.lookup(Function.class, name);
+
+			names = this.catalog.getNames(Consumer.class).iterator();
+			if (names.hasNext()) {
+				this.consumer = this.catalog.lookup(Consumer.class, names.next());
+				return;
+			}
+
+			names = this.catalog.getNames(Supplier.class).iterator();
+			if (names.hasNext()) {
+				this.supplier = this.catalog.lookup(Supplier.class, names.next());
+				return;
 			}
 		}
-		this.context = context;
-
 	}
 
 	private SpringApplication springApplication() {
@@ -169,12 +231,34 @@ public class SpringFunctionInitializer implements Closeable {
 	}
 
 	protected Object function() {
-		return this.function;
+		if (this.function != null)
+			return this.function;
+		else if (this.consumer != null)
+			return this.consumer;
+		else if (this.supplier != null)
+			return this.supplier;
+		else
+			return null;
+	}
+
+	protected boolean acceptsInput() {
+		return !this.inspector.getInputType(function()).equals(Void.class);
+	}
+
+	protected boolean returnsOutput() {
+		return !this.inspector.getOutputType(function()).equals(Void.class);
 	}
 
 	protected Publisher<?> apply(Publisher<?> input) {
 		if (this.function != null) {
 			return Flux.from(this.function.apply(input));
+		}
+		if (this.consumer != null) {
+			this.consumer.accept(input);
+			return Flux.empty();
+		}
+		if (this.supplier != null) {
+			return this.supplier.get();
 		}
 		throw new IllegalStateException("No function defined");
 	}

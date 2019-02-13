@@ -19,6 +19,7 @@ package org.springframework.cloud.function.adapter.aws;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -124,4 +125,13 @@ public class SpringBootApiGatewayRequestHandler extends
 		}
 	}
 
+	@Override
+	public Object handleRequest(APIGatewayProxyRequestEvent event, Context context) {
+		Object response = super.handleRequest(event, context);
+		if (returnsOutput())
+			return response;
+		else
+			return new APIGatewayProxyResponseEvent()
+					.withStatusCode(HttpStatus.OK.value());
+	}
 }
