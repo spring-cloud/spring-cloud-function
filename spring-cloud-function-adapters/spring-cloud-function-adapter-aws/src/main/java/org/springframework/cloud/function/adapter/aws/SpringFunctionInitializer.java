@@ -38,7 +38,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
@@ -216,10 +215,6 @@ public class SpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	protected final boolean isConsumer() {
-		return (this.consumer != null || this.function instanceof FluxConsumer);
-	}
-
 	private SpringApplication springApplication() {
 		Class<?> sourceClass = this.configurationClass;
 		SpringApplication application = new org.springframework.cloud.function.context.FunctionalSpringApplication(
@@ -236,7 +231,22 @@ public class SpringFunctionInitializer implements Closeable {
 	}
 
 	protected Object function() {
-		return this.function;
+		if (this.function != null)
+			return this.function;
+		else if (this.consumer != null)
+			return this.consumer;
+		else if (this.supplier != null)
+			return this.supplier;
+		else
+			return null;
+	}
+
+	protected boolean acceptsInput() {
+		return !this.inspector.getInputType(function()).equals(Void.class);
+	}
+
+	protected boolean returnsOutput() {
+		return !this.inspector.getOutputType(function()).equals(Void.class);
 	}
 
 	protected Publisher<?> apply(Publisher<?> input) {

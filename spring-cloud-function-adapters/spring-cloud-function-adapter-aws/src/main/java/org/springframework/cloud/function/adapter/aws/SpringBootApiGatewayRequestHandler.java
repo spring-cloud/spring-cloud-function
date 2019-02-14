@@ -128,10 +128,10 @@ public class SpringBootApiGatewayRequestHandler extends
 	@Override
 	public Object handleRequest(APIGatewayProxyRequestEvent event, Context context) {
 		Object response = super.handleRequest(event, context);
-		if (isConsumer())
+		if (returnsOutput())
+			return response;
+		else
 			return new APIGatewayProxyResponseEvent()
 					.withStatusCode(HttpStatus.OK.value());
-		else
-			return response;
 	}
 }

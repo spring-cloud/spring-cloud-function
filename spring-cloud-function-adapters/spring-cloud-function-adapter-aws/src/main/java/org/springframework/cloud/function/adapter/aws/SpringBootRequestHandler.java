@@ -44,7 +44,7 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer
 	@Override
 	public Object handleRequest(E event, Context context) {
 		initialize();
-		Object input = convertEvent(event);
+		Object input = acceptsInput() ? convertEvent(event) : "";
 		Publisher<?> output = apply(extract(input));
 		return result(input, output);
 	}
