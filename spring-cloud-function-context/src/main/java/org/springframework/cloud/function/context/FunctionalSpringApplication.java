@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.springframework.cloud.function.context;
-
-import static java.util.Arrays.stream;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,11 +32,16 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ObjectUtils;
+
+import static java.util.Arrays.stream;
 
 /**
  * @author Dave Syer
- *
+ * @author Semyon Fishman
+ * @author Oleg Zhurakousky
  */
 public class FunctionalSpringApplication
 		extends org.springframework.boot.SpringApplication {
@@ -84,62 +87,72 @@ public class FunctionalSpringApplication
 		return new FunctionalSpringApplication(primarySources).run(args);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void postProcessApplicationContext(ConfigurableApplicationContext context) {
 		super.postProcessApplicationContext(context);
 		boolean functional = false;
-		if (context instanceof GenericApplicationContext) {
-			GenericApplicationContext generic = (GenericApplicationContext) context;
-			for (Object source : getAllSources()) {
-				Class<?> type = null;
-				Object handler = null;
-				if (source instanceof String) {
-					String name = (String) source;
-					if (ClassUtils.isPresent(name, null)) {
-						type = ClassUtils.resolveClassName(name, null);
-					}
+		Assert.isInstanceOf(GenericApplicationContext.class, context,
+				"ApplicationContext must be an instanceof GenericApplicationContext");
+		for (Object source : getAllSources()) {
+			Class<?> type = null;
+			Object handler = null;
+			if (source instanceof String) {
+				String name = (String) source;
+				if (ClassUtils.isPresent(name, null)) {
+					type = ClassUtils.resolveClassName(name, null);
 				}
-				else if (source instanceof Class<?>) {
-					type = (Class<?>) source;
+			}
+			else if (source instanceof Class<?>) {
+				type = (Class<?>) source;
+			}
+			else {
+				type = source.getClass();
+				handler = source;
+			}
+			if (ApplicationContextInitializer.class.isAssignableFrom(type)) {
+				if (handler == null) {
+					handler = BeanUtils.instantiateClass(type);
+				}
+
+				ApplicationContextInitializer<ConfigurableApplicationContext> initializer =
+						(ApplicationContextInitializer<ConfigurableApplicationContext>) handler;
+				initializer.initialize(context);
+				functional = true;
+			}
+			else if (Function.class.isAssignableFrom(type)
+					|| Consumer.class.isAssignableFrom(type)
+					|| Supplier.class.isAssignableFrom(type)) {
+				Class<?> functionType = type;
+				Object function = handler;
+				if (source.equals(functionType)) {
+					context.addBeanFactoryPostProcessor(beanFactory -> {
+						BeanDefinitionRegistry bdRegistry = (BeanDefinitionRegistry) beanFactory;
+						if (!ObjectUtils.isEmpty(context.getBeanNamesForType(functionType))) {
+							stream(context.getBeanNamesForType(functionType))
+							.forEach(beanName -> bdRegistry.registerAlias(beanName, "function"));
+						}
+						else {
+							this.register((GenericApplicationContext) context, function, functionType);
+						}
+					});
 				}
 				else {
-					type = source.getClass();
-					handler = source;
+					this.register((GenericApplicationContext) context, function, functionType);
 				}
-				if (type != null) {
-					if (ApplicationContextInitializer.class.isAssignableFrom(type)) {
-						if (handler == null) {
-							handler = BeanUtils.instantiateClass(type);
-						}
-						@SuppressWarnings("unchecked")
-						ApplicationContextInitializer initializer = (ApplicationContextInitializer) handler;
-						initializer.initialize(generic);
-						functional = true;
-					}
-					else if (Function.class.isAssignableFrom(type)
-							|| Consumer.class.isAssignableFrom(type)
-							|| Supplier.class.isAssignableFrom(type)) {
-						Class<?> functionType = type;
-						Object function = handler;
-						generic.registerBean("function", FunctionRegistration.class,
-								() -> new FunctionRegistration<>(
-										handler(generic, function, functionType))
-												.type(FunctionType.of(functionType)));
-						if (source.equals(functionType)) {
-							context.addBeanFactoryPostProcessor(beanFactory -> {
-								BeanDefinitionRegistry bdRegistry = (BeanDefinitionRegistry) beanFactory;
-								stream(beanFactory.getBeanNamesForType(functionType))
-										.forEach(bdRegistry::removeBeanDefinition);
-							});
-						}
-						functional = true;
-					}
-				}
-			}
-			if (functional) {
-				defaultProperties(generic);
+				functional = true;
 			}
 		}
+		if (functional) {
+			defaultProperties(context);
+		}
+	}
+
+	private void register(GenericApplicationContext context, Object function, Class<?> functionType) {
+		context.registerBean("function", FunctionRegistration.class,
+				() -> new FunctionRegistration<>(
+						handler(context, function, functionType))
+								.type(FunctionType.of(functionType)));
 	}
 
 	private Object handler(GenericApplicationContext generic, Object handler,
