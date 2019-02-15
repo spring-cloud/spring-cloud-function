@@ -35,7 +35,7 @@ import org.springframework.messaging.support.GenericMessage;
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
- *
+ * @author Semyon Fishman
  */
 public class SpringBootApiGatewayRequestHandler extends
 		SpringBootRequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -128,10 +128,12 @@ public class SpringBootApiGatewayRequestHandler extends
 	@Override
 	public Object handleRequest(APIGatewayProxyRequestEvent event, Context context) {
 		Object response = super.handleRequest(event, context);
-		if (returnsOutput())
+		if (returnsOutput()) {
 			return response;
-		else
+		}
+		else {
 			return new APIGatewayProxyResponseEvent()
 					.withStatusCode(HttpStatus.OK.value());
+		}
 	}
 }

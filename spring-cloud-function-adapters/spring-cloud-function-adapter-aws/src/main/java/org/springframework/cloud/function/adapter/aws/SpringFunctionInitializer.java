@@ -43,6 +43,7 @@ import org.springframework.util.ClassUtils;
 
 /**
  * @author Dave Syer
+ * @author Semyon Fishman
  */
 public class SpringFunctionInitializer implements Closeable {
 
@@ -127,7 +128,6 @@ public class SpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void initialize() {
 		if (!this.initialized.compareAndSet(false, true)) {
 			return;
@@ -147,17 +147,22 @@ public class SpringFunctionInitializer implements Closeable {
 
 	private String resolveName(Class<?> type) {
 		String functionName = context.getEnvironment().getProperty("function.name");
-		if (functionName != null)
+		if (functionName != null) {
 			return functionName;
-		else if (type.isAssignableFrom(Function.class))
+		}
+		else if (type.isAssignableFrom(Function.class)) {
 			return "function";
-		else if (type.isAssignableFrom(Consumer.class))
+		}
+		else if (type.isAssignableFrom(Consumer.class)) {
 			return "consumer";
-		else if (type.isAssignableFrom(Supplier.class))
+		}
+		else if (type.isAssignableFrom(Supplier.class)) {
 			return "supplier";
+		}
 		throw new IllegalStateException("Unknown type " + type);
 	}
 
+	@SuppressWarnings("unchecked")
 	private void initFunctionConsumerOrSupplierFromContext() {
 		String name = resolveName(Function.class);
 		if (context.containsBean(name) && context.getBean(name) instanceof Function) {
@@ -181,18 +186,21 @@ public class SpringFunctionInitializer implements Closeable {
 	private void initFunctionConsumerOrSupplierFromCatalog() {
 		String name = resolveName(Function.class);
 		this.function = this.catalog.lookup(Function.class, name);
-		if (this.function != null)
+		if (this.function != null) {
 			return;
+		}
 
 		name = resolveName(Consumer.class);
 		this.consumer = this.catalog.lookup(Consumer.class, name);
-		if (this.consumer != null)
+		if (this.consumer != null) {
 			return;
+		}
 
 		name = resolveName(Supplier.class);
 		this.supplier = this.catalog.lookup(Supplier.class, name);
-		if (this.supplier != null)
+		if (this.supplier != null) {
 			return;
+		}
 
 		if (this.catalog.size() == 1) {
 			Iterator<String> names = this.catalog.getNames(Function.class).iterator();
@@ -231,14 +239,16 @@ public class SpringFunctionInitializer implements Closeable {
 	}
 
 	protected Object function() {
-		if (this.function != null)
+		if (this.function != null) {
 			return this.function;
-		else if (this.consumer != null)
+		}
+		else if (this.consumer != null) {
 			return this.consumer;
-		else if (this.supplier != null)
+		}
+		else if (this.supplier != null) {
 			return this.supplier;
-		else
-			return null;
+		}
+		return null;
 	}
 
 	protected boolean acceptsInput() {
