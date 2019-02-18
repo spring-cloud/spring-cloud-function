@@ -66,15 +66,15 @@ public abstract class AbstractComposableFunctionRegistry
 	implements FunctionRegistry, FunctionInspector,
 	ApplicationEventPublisherAware, EnvironmentAware {
 
-	private Map<String, Object> suppliers = new ConcurrentHashMap<>();
+	private final Map<String, Object> suppliers = new ConcurrentHashMap<>();
 
-	private Map<String, Object> functions = new ConcurrentHashMap<>();
+	private final Map<String, Object> functions = new ConcurrentHashMap<>();
 
-	private Map<String, Object> consumers = new ConcurrentHashMap<>();
+	private final Map<String, Object> consumers = new ConcurrentHashMap<>();
 
-	private Map<Object, String> names = new ConcurrentHashMap<>();
+	private final Map<Object, String> names = new ConcurrentHashMap<>();
 
-	private Map<String, FunctionType> types = new ConcurrentHashMap<>();
+	private final Map<String, FunctionType> types = new ConcurrentHashMap<>();
 
 	private Environment environment = new StandardEnvironment();
 
@@ -133,15 +133,15 @@ public abstract class AbstractComposableFunctionRegistry
 	}
 
 	public boolean hasSuppliers() {
-		return !CollectionUtils.isEmpty(this.suppliers);
+		return !CollectionUtils.isEmpty(getSupplierNames());
 	}
 
 	public boolean hasFunctions() {
-		return !CollectionUtils.isEmpty(this.functions);
+		return !CollectionUtils.isEmpty(getFunctionNames());
 	}
 
 	public boolean hasConsumers() {
-		return !CollectionUtils.isEmpty(this.consumers);
+		return !CollectionUtils.isEmpty(getConsumerNames());
 	}
 
 	/**
@@ -149,7 +149,7 @@ public abstract class AbstractComposableFunctionRegistry
 	 * @return the count of all Suppliers, Function and Consumers currently registered.
 	 */
 	public int size() {
-		return this.suppliers.size() + this.functions.size() + this.consumers.size();
+		return getSupplierNames().size() + getFunctionNames().size() + getConsumerNames().size();
 	}
 
 	public FunctionType getFunctionType(String name) {
@@ -167,21 +167,6 @@ public abstract class AbstractComposableFunctionRegistry
 		return this.names.containsKey(function) ? this.names.get(function) : null;
 	}
 
-	public void addSupplier(String name, Object supplier) {
-		this.suppliers.put(name, supplier);
-		this.addName(supplier, name);
-	}
-
-	public void addFunction(String name, Object function) {
-		this.functions.put(name, function);
-		this.addName(function, name);
-	}
-
-	public void addConsumer(String name, Object consumer) {
-		this.consumers.put(name, consumer);
-		this.addName(consumer, name);
-	}
-
 	protected void wrap(FunctionRegistration<?> registration, String key) {
 		Object target = registration.getTarget();
 		this.addName(target, key);
@@ -189,7 +174,7 @@ public abstract class AbstractComposableFunctionRegistry
 			this.addType(key, registration.getType());
 		}
 		else {
-			FunctionType functionType = findType(target);
+			FunctionType functionType = findType(registration);
 			this.addType(key, functionType);
 			registration.type(functionType.getType());
 		}
@@ -199,19 +184,19 @@ public abstract class AbstractComposableFunctionRegistry
 		if (target instanceof Supplier) {
 			type = Supplier.class;
 			for (String name : registration.getNames()) {
-				this.addSupplier(name, registration.getTarget());
+				this.addSupplier(name, (Supplier<?>) registration.getTarget());
 			}
 		}
 		else if (target instanceof Consumer) {
 			type = Consumer.class;
 			for (String name : registration.getNames()) {
-				this.addConsumer(name, registration.getTarget());
+				this.addConsumer(name, (Consumer<?>) registration.getTarget());
 			}
 		}
 		else if (target instanceof Function) {
 			type = Function.class;
 			for (String name : registration.getNames()) {
-				this.addFunction(name, registration.getTarget());
+				this.addFunction(name, (Function<?, ?>) registration.getTarget());
 			}
 		}
 		else {
@@ -224,10 +209,26 @@ public abstract class AbstractComposableFunctionRegistry
 		}
 	}
 
-	protected FunctionType findType(Object function) {
-		throw new UnsupportedOperationException("There is no default "
-				+ "implementation of this operation. It must be overriden "
-				+ "by the implementation of FunctionRegistry.");
+	protected FunctionType findType(FunctionRegistration<?> functionRegistration) {
+		FunctionType functionType = functionRegistration.getType();
+		if (functionType != null) {
+			return functionType;
+		}
+		throw new IllegalStateException("Unless FunctionType is already available in FunctionRegistration, "
+				+ "this operation must be overriden "
+				+ "by the implementation of the FunctionRegistry.");
+	}
+
+	protected void addSupplier(String name, Supplier<?> supplier) {
+		this.suppliers.put(name, supplier);
+	}
+
+	protected void addFunction(String name, Function<?, ?> function) {
+		this.functions.put(name, function);
+	}
+
+	protected void addConsumer(String name, Consumer<?> consumer) {
+		this.consumers.put(name, consumer);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -302,16 +303,16 @@ public abstract class AbstractComposableFunctionRegistry
 							&& this.types.containsKey(stages[stages.length - 1])) {
 						FunctionType input = this.types.get(stages[0]);
 						FunctionType output = this.types.get(stages[stages.length - 1]);
-						this.types.put(name, FunctionType.compose(input, output));
-						this.names.put(composedFunction, name);
+						this.addType(name, FunctionType.compose(input, output));
+						this.addName(composedFunction, name);
 						if (composedFunction instanceof Function) {
-							this.functions.put(name, composedFunction);
+							this.addFunction(name, (Function<?, ?>) composedFunction);
 						}
 						else if (composedFunction instanceof Consumer) {
-							this.consumers.put(name, composedFunction);
+							this.addConsumer(name, (Consumer<?>) composedFunction);
 						}
 						else if (composedFunction instanceof Supplier) {
-							this.suppliers.put(name, composedFunction);
+							this.addSupplier(name, (Supplier<?>) composedFunction);
 						}
 					}
 				}
@@ -325,7 +326,8 @@ public abstract class AbstractComposableFunctionRegistry
 	}
 
 	private boolean contains(String name) {
-		return suppliers.containsKey(name) || functions.containsKey(name) || consumers.containsKey(name);
+		return getSupplierNames().contains(name)
+				|| getFunctionNames().contains(name) || getConsumerNames().contains(name);
 	}
 
 	private Object find(String name) {

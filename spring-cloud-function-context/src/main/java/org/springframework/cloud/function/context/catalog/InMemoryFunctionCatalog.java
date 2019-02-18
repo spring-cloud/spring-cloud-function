@@ -52,34 +52,44 @@ public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry 
 	}
 
 	@Override
-	public <T> void register(FunctionRegistration<T> registration) {
-		Assert.notEmpty(registration.getNames(),
+	public <T> void register(FunctionRegistration<T> functionRegistration) {
+		Assert.notEmpty(functionRegistration.getNames(),
 				"'registration' must contain at least one name before it is registered in catalog.");
+		// TODO should we just delegate to wrap(..)????
+		//wrap(functionRegistration, functionRegistration.getNames().iterator().next());
 		Class<?> type = Object.class;
-		if (registration.getTarget() instanceof Function) {
+		if (functionRegistration.getTarget() instanceof Function) {
 			type = Function.class;
 		}
-		else if (registration.getTarget() instanceof Supplier) {
+		else if (functionRegistration.getTarget() instanceof Supplier) {
 			type = Supplier.class;
 		}
-		else if (registration.getTarget() instanceof Consumer) {
+		else if (functionRegistration.getTarget() instanceof Consumer) {
 			type = Consumer.class;
 		}
 		FunctionRegistrationEvent event = new FunctionRegistrationEvent(this, type,
-				registration.getNames());
+				functionRegistration.getNames());
 
-		this.registrations.put(registration.getTarget(), registration);
-		FunctionRegistration<T> wrapped = registration.wrap();
-		if (wrapped != registration) {
-			registration = wrapped;
+		this.registrations.put(functionRegistration.getTarget(), functionRegistration);
+		FunctionRegistration<T> wrapped = functionRegistration.wrap();
+		if (wrapped != functionRegistration) {
+			functionRegistration = wrapped;
 			this.registrations.put(wrapped.getTarget(), wrapped);
 			if (type == Consumer.class) {
 				type = Function.class;
 			}
 		}
 
-		for (String name : registration.getNames()) {
-			this.addFunction(name, registration.getTarget());
+		for (String name : functionRegistration.getNames()) {
+			if (functionRegistration.getTarget() instanceof Function) {
+				this.addFunction(name, (Function<?, ?>) functionRegistration.getTarget());
+			}
+			else if (functionRegistration.getTarget() instanceof Consumer) {
+				this.addConsumer(name, (Consumer<?>) functionRegistration.getTarget());
+			}
+			else {
+				this.addSupplier(name, (Supplier<?>) functionRegistration.getTarget());
+			}
 		}
 		this.publishEvent(event);
 	}

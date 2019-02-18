@@ -96,12 +96,14 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private ConfigurableListableBeanFactory beanFactory;
 
+		//@SuppressWarnings("unchecked")
 		@Override
 		public FunctionRegistration<?> getRegistration(Object function) {
 			String functionName = this.lookupFunctionName(function);
 			if (StringUtils.hasText(functionName)) {
-				return new FunctionRegistration<>(function, functionName)
-						.type(findType(function).getType());
+				FunctionRegistration<?> registration = new FunctionRegistration<Object>(function, functionName);
+				FunctionType functionType = this.findType(registration);
+				return registration.type(functionType.getType());
 			}
 			return null;
 		}
@@ -158,13 +160,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		@Override
-		protected FunctionType findType(Object function) {
-			String name = this.lookupFunctionName(function);
+		protected FunctionType findType(FunctionRegistration<?> functionRegistration) {
+			if (functionRegistration.getType() != null) {
+				return functionRegistration.getType();
+			}
+			String name = this.lookupFunctionName(functionRegistration.getTarget());
 			FunctionType functionType = this.getFunctionType(name);
 
 			if (functionType == null) {
 				functionType = functionByNameExist(name)
-						? new FunctionType(function.getClass()) : new FunctionType(
+						? new FunctionType(functionRegistration.getTarget().getClass()) : new FunctionType(
 								FunctionContextUtils.findType(name, this.beanFactory));
 			}
 
@@ -194,68 +199,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			names.add(value);
 			return names;
 		}
-
-//		private void wrap(FunctionRegistration<?> registration, String key) {
-//			Object target = registration.getTarget();
-////			this.addName(target, key);
-//			if (registration.getType() != null) {
-//				this.addType(key, registration.getType());
-//			}
-//			else {
-//				registration.type(findType(target).getType());
-//			}
-//			Class<?> type;
-//			registration = isolated(registration).wrap();
-//			target = registration.getTarget();
-//			if (target instanceof Supplier) {
-//				type = Supplier.class;
-//				for (String name : registration.getNames()) {
-//					this.addSupplier(name, registration.getTarget());
-//				}
-//			}
-//			else if (target instanceof Consumer) {
-//				type = Consumer.class;
-//				for (String name : registration.getNames()) {
-//					this.addConsumer(name, registration.getTarget());
-//				}
-//			}
-//			else if (target instanceof Function) {
-//				type = Function.class;
-//				for (String name : registration.getNames()) {
-//					this.addFunction(name, registration.getTarget());
-//				}
-//			}
-//			else {
-//				return;
-//			}
-//			//this.addName(registration.getTarget(), key);
-//			if (this.applicationEventPublisher != null) {
-//				this.applicationEventPublisher.publishEvent(new FunctionRegistrationEvent(
-//						registration.getTarget(), type, registration.getNames()));
-//			}
-//		}
-
-//		@SuppressWarnings({ "rawtypes", "unchecked" })
-//		private FunctionRegistration<?> isolated(FunctionRegistration<?> input) {
-//			FunctionRegistration<Object> registration = (FunctionRegistration<Object>) input;
-//			Object target = registration.getTarget();
-//			boolean isolated = getClass().getClassLoader() != target.getClass()
-//					.getClassLoader();
-//			if (isolated) {
-//				if (target instanceof Supplier<?> && isolated) {
-//					target = new IsolatedSupplier((Supplier<?>) target);
-//				}
-//				else if (target instanceof Function<?, ?>) {
-//					target = new IsolatedFunction((Function<?, ?>) target);
-//				}
-//				else if (target instanceof Consumer<?>) {
-//					target = new IsolatedConsumer((Consumer<?>) target);
-//				}
-//			}
-//
-//			registration.target(target);
-//			return registration;
-//		}
 
 		private String getQualifier(String key) {
 			if (this.beanFactory != null
