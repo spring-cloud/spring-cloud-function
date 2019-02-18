@@ -23,12 +23,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
-import org.springframework.cloud.function.context.AbstractFunctionRegistry;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.util.Assert;
 
@@ -37,9 +32,7 @@ import org.springframework.util.Assert;
  * @author Mark Fisher
  * @author Oleg Zhurakousky
  */
-public class InMemoryFunctionCatalog extends AbstractFunctionRegistry {
-
-	private final Map<Class<?>, Map<String, Object>> functions;
+public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry {
 
 	private final Map<Object, FunctionRegistration<?>> registrations;
 
@@ -49,7 +42,6 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry {
 
 	public InMemoryFunctionCatalog(Set<FunctionRegistration<?>> registrations) {
 		Assert.notNull(registrations, "'registrations' must not be null");
-		this.functions = new HashMap<>();
 		this.registrations = new HashMap<>();
 		registrations.stream().forEach(reg -> register(reg));
 	}
@@ -85,62 +77,11 @@ public class InMemoryFunctionCatalog extends AbstractFunctionRegistry {
 				type = Function.class;
 			}
 		}
-		Map<String, Object> map = this.functions.computeIfAbsent(type,
-				key -> new HashMap<>());
+
 		for (String name : registration.getNames()) {
-			map.put(name, registration.getTarget());
+			this.addFunction(name, registration.getTarget());
 		}
 		this.publishEvent(event);
-	}
-
-	@PostConstruct
-	public void init() {
-		if (this.applicationEventPublisher != null && !this.functions.isEmpty()) {
-			this.functions.keySet()
-					.forEach(type -> this.publishEvent(new FunctionRegistrationEvent(this,
-							type, this.functions.get(type).keySet())));
-		}
-	}
-
-	@PreDestroy
-	public void close() {
-		if (this.applicationEventPublisher != null && !this.functions.isEmpty()) {
-			this.functions.keySet().forEach(
-					type -> this.publishEvent(new FunctionUnregistrationEvent(this, type,
-							this.functions.get(type).keySet())));
-		}
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public <T> T doLookup(Class<?> type, String name) {
-		T function = null;
-		if (type == null) {
-			function = (T) this.functions.values().stream()
-					.filter(map -> map.get(name) != null).map(map -> map.get(name))
-					.findFirst().orElse(null);
-		}
-		else {
-			function = (T) this.extractTypeMap(type).get(name);
-		}
-		return function;
-	}
-
-	@Override
-	public Set<String> getNames(Class<?> type) {
-		if (type == null) {
-			return this.functions.values().stream().flatMap(map -> map.keySet().stream())
-					.collect(Collectors.toSet());
-		}
-		Map<String, Object> map = this.extractTypeMap(type);
-		return map == null ? Collections.emptySet() : map.keySet();
-	}
-
-	private Map<String, Object> extractTypeMap(Class<?> type) {
-		return this.functions.keySet().stream()
-				.filter(key -> key != Object.class && key.isAssignableFrom(type))
-				.map(key -> this.functions.get(key)).findFirst()
-				.orElse(this.functions.get(Object.class));
 	}
 
 	private void publishEvent(Object event) {

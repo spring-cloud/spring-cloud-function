@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.function.Function;
 
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
@@ -57,6 +58,40 @@ public class InMemoryFunctionCatalogTests {
 		lookedUpFunction = catalog.lookup("foo");
 		assertThat(lookedUpFunction).isNotNull();
 		assertThat(lookedUpFunction instanceof FluxFunction).isTrue();
+	}
+
+	@Test
+	public void testFunctionComposition() {
+		FunctionRegistration<UpperCase> upperCaseRegistration = new FunctionRegistration<>(
+				new UpperCase(), "uppercase").type(FunctionType.of(UpperCase.class).getType());
+		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
+				new Reverse(), "reverse").type(FunctionType.of(Reverse.class).getType());
+		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
+		catalog.register(upperCaseRegistration);
+		catalog.register(reverseRegistration);
+
+		Function<Flux<String>, Flux<String>> lookedUpFunction = catalog.lookup("uppercase|reverse");
+
+		assertThat(lookedUpFunction).isNotNull();
+		assertThat(lookedUpFunction.apply(Flux.just("star")).blockFirst()).isEqualTo("RATS");
+	}
+
+	private static class UpperCase implements Function<String, String> {
+
+		@Override
+		public String apply(String t) {
+			return t.toUpperCase();
+		}
+
+	}
+
+	private static class Reverse implements Function<String, String> {
+
+		@Override
+		public String apply(String t) {
+			return new StringBuilder(t).reverse().toString();
+		}
+
 	}
 
 	private static class TestFunction implements Function<Integer, String> {

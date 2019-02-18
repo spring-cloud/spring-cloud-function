@@ -32,18 +32,15 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.BeanFactoryFunctionCatalog;
-import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Dave Syer
  *
  */
 public class BeanFactoryFunctionCatalogTests {
 
-	private BeanFactoryFunctionCatalog processor = new BeanFactoryFunctionCatalog(
-			new ContextFunctionRegistry());
+	private BeanFactoryFunctionCatalog processor = new BeanFactoryFunctionCatalog();
 
 	@Test
 	public void basicRegistrationFeatures() {

@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.ContextFunctionRegistry;
+import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.BeanFactoryFunctionCatalog;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.ClassUtils;
 
@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // for functions with the same name, uncomposable combinations)
 public class ContextFunctionPostProcessorTests {
 
-	private ContextFunctionRegistry processor = new ContextFunctionRegistry();
+	private BeanFactoryFunctionCatalog processor = new BeanFactoryFunctionCatalog();
 
 	private URLClassLoader classLoader;
 
@@ -70,10 +70,11 @@ public class ContextFunctionPostProcessorTests {
 		this.processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
-				.lookupFunction("foos");
+				.lookup(null, "foos"); //lookupFunction("foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void registrationThroughMerge() {
 		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos(),
@@ -82,17 +83,18 @@ public class ContextFunctionPostProcessorTests {
 				Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
-				.lookupFunction("foos");
+				.lookup(null, "foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void registrationThroughMergeFromNamedFunction() {
 		this.processor.merge(Collections.emptyMap(), Collections.emptyMap(),
 				Collections.emptyMap(), Collections.singletonMap("foos", new Foos()));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
-				.lookupFunction("foos");
+				.lookup(null, "foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
@@ -102,7 +104,7 @@ public class ContextFunctionPostProcessorTests {
 		this.processor.register(new FunctionRegistration<>(new Bars(), "bars"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
-				.lookupFunction("foos,bars");
+				.lookup(null, "foos,bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
 		assertThat(this.processor.getRegistration(foos).getNames())
 				.containsExactly("foos|bars");
@@ -116,7 +118,7 @@ public class ContextFunctionPostProcessorTests {
 				(x) -> x.toUpperCase(), "function"));
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) this.processor
-				.lookupSupplier("supplier|function");
+				.lookup(Supplier.class, "supplier|function");
 		assertThat(supplier.get().blockFirst()).isEqualTo("FOO");
 		assertThat(this.processor.getRegistration(supplier).getNames())
 				.containsExactly("supplier|function");
@@ -130,7 +132,7 @@ public class ContextFunctionPostProcessorTests {
 		this.processor.register(new FunctionRegistration<Consumer<String>>(
 				System.out::println, "consumer"));
 		Supplier<Mono<Void>> supplier = (Supplier<Mono<Void>>) this.processor
-				.lookupSupplier("supplier|consumer");
+				.lookup(Supplier.class, "supplier|consumer");
 		assertThat(supplier.get().block()).isNull();
 	}
 
@@ -140,7 +142,7 @@ public class ContextFunctionPostProcessorTests {
 		this.processor.register(new FunctionRegistration<>(new Bars(), "bars"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
-				.lookupFunction("foos|bars");
+				.lookup(null, "foos|bars");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("Hello 4");
 		assertThat(this.processor.getRegistration(foos).getNames())
 				.containsExactly("foos|bars");
@@ -152,7 +154,7 @@ public class ContextFunctionPostProcessorTests {
 		this.processor.register(new FunctionRegistration<>(new Foos(), "foos"));
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<String>> foos = (Supplier<Flux<String>>) this.processor
-				.lookupSupplier("ints|foos");
+				.lookup(Supplier.class, "ints|foos");
 		assertThat(foos.get().blockFirst()).isEqualTo("8");
 		assertThat(this.processor.getRegistration(foos).getNames())
 				.containsExactly("ints|foos");
@@ -167,7 +169,7 @@ public class ContextFunctionPostProcessorTests {
 		this.processor.register(new FunctionRegistration<>(create(Foos.class), "foos"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<Integer>, Flux<String>> foos = (Function<Flux<Integer>, Flux<String>>) this.processor
-				.lookupFunction("foos");
+				.lookup(null, "foos");
 		assertThat(foos.apply(Flux.just(2)).blockFirst()).isEqualTo("4");
 	}
 
@@ -179,7 +181,7 @@ public class ContextFunctionPostProcessorTests {
 				.register(new FunctionRegistration<>(create(Source.class), "source"));
 		@SuppressWarnings("unchecked")
 		Supplier<Flux<Integer>> source = (Supplier<Flux<Integer>>) this.processor
-				.lookupSupplier("source");
+				.lookup(Supplier.class, "source");
 		assertThat(source.get().blockFirst()).isEqualTo(4);
 	}
 
@@ -191,7 +193,7 @@ public class ContextFunctionPostProcessorTests {
 		this.processor.register(new FunctionRegistration<>(target, "sink"));
 		@SuppressWarnings("unchecked")
 		Function<Flux<String>, Mono<Void>> sink = (Function<Flux<String>, Mono<Void>>) this.processor
-				.lookupFunction("sink");
+				.lookup(null, "sink");
 		sink.apply(Flux.just("Hello")).subscribe();
 		@SuppressWarnings("unchecked")
 		List<String> values = (List<String>) ReflectionTestUtils.getField(target,
