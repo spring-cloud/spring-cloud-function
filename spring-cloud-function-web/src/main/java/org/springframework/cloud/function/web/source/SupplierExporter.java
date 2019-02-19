@@ -41,7 +41,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * @author Dave Syer
  *
  */
-class SupplierExporter implements SmartLifecycle {
+public class SupplierExporter implements SmartLifecycle {
 
 	private static Log logger = LogFactory.getLog(SupplierExporter.class);
 
