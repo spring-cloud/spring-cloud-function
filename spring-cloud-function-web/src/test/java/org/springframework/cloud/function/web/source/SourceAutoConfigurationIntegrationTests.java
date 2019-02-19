@@ -39,7 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = WebEnvironment.NONE, //
+		properties = "spring.cloud.function.web.supplier.templateUrl=http://localhost:9999/notthere")
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class SourceAutoConfigurationIntegrationTests {
 
@@ -49,8 +50,8 @@ public class SourceAutoConfigurationIntegrationTests {
 	@Test
 	public void fails() throws Exception {
 		int count = 0;
-		while (this.forwarder.isRunning() && count++ < 100) {
-			Thread.sleep(20);
+		while (this.forwarder.isRunning() && count++ < 1000) {
+			Thread.sleep(50);
 		}
 		// It completed
 		assertThat(this.forwarder.isRunning()).isFalse();
