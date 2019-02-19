@@ -89,24 +89,14 @@ public abstract class AbstractComposableFunctionRegistry
 		return this.doLookup(type, functionDefinitionName);
 	}
 
-	@Override
-	public void setApplicationEventPublisher(
-			ApplicationEventPublisher applicationEventPublisher) {
-		this.applicationEventPublisher = applicationEventPublisher;
-	}
-
-	@Override
-	public void setEnvironment(Environment environment) {
-		this.environment = environment;
-	}
-
+	@SuppressWarnings("serial")
 	@Override
 	public Set<String> getNames(Class<?> type) {
-		if (type == null) { //perhaps some synchronization
-			Set<String> names = new HashSet<>(suppliers.keySet());
-			names.addAll(functions.keySet());
-			names.addAll(consumers.keySet());
-			return names;
+		if (type == null) {
+			return new HashSet<String>(getSupplierNames()) {{
+				addAll(getConsumerNames());
+				addAll(getFunctionNames());
+			} };
 		}
 		if (Supplier.class.isAssignableFrom(type)) {
 			return this.getSupplierNames();
@@ -120,14 +110,26 @@ public abstract class AbstractComposableFunctionRegistry
 		return Collections.emptySet();
 	}
 
+	/**
+	 * Returns the names of available Suppliers.
+	 * @return immutable {@link Set} of available {@link Supplier} names.
+	 */
 	public Set<String> getSupplierNames() {
-		return this.suppliers.keySet();
+		return Collections.unmodifiableSet(this.suppliers.keySet());
 	}
 
+	/**
+	 * Returns the names of available Functions.
+	 * @return immutable {@link Set} of available {@link Function} names.
+	 */
 	public Set<String> getFunctionNames() {
 		return this.functions.keySet();
 	}
 
+	/**
+	 * Returns the names of available Consumers.
+	 * @return immutable {@link Set} of available {@link Consumer} names.
+	 */
 	public Set<String> getConsumerNames() {
 		return this.consumers.keySet();
 	}
@@ -165,6 +167,17 @@ public abstract class AbstractComposableFunctionRegistry
 	 */
 	public String lookupFunctionName(Object function) {
 		return this.names.containsKey(function) ? this.names.get(function) : null;
+	}
+
+	@Override
+	public void setApplicationEventPublisher(
+			ApplicationEventPublisher applicationEventPublisher) {
+		this.applicationEventPublisher = applicationEventPublisher;
+	}
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = environment;
 	}
 
 	protected void wrap(FunctionRegistration<?> registration, String key) {

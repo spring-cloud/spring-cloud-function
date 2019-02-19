@@ -96,7 +96,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private ConfigurableListableBeanFactory beanFactory;
 
-		//@SuppressWarnings("unchecked")
 		@Override
 		public FunctionRegistration<?> getRegistration(Object function) {
 			String functionName = this.lookupFunctionName(function);

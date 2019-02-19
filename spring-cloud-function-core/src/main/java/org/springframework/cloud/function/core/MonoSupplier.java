@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import reactor.core.publisher.Mono;
  *
  * @param <T> output type of target supplier
  * @author Mark Fisher
+ * @since 2.1
  */
 public class MonoSupplier<T> implements Supplier<Mono<T>>, FluxWrapper<Supplier<T>> {
 
@@ -41,7 +42,7 @@ public class MonoSupplier<T> implements Supplier<Mono<T>>, FluxWrapper<Supplier<
 	}
 
 	@Override
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("unchecked")
 	public Mono<T> get() {
 		Object result = this.supplier.get();
 		return Mono.just((T) result);
