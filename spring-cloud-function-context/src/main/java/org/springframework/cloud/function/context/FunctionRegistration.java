@@ -37,6 +37,7 @@ import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.function.core.FluxToMonoFunction;
 import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.core.FluxedFunction;
+import org.springframework.cloud.function.core.MonoSupplier;
 import org.springframework.cloud.function.core.MonoToFluxFunction;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -155,17 +156,19 @@ public class FunctionRegistration<T> implements BeanNameAware {
 			result = new FunctionRegistration<S>(target);
 			result.type(this.type.getType());
 
-			if (!type.isWrapper()) {
+			if (!this.type.isWrapper()) {
 				target = target instanceof Supplier
 						? (S) new FluxSupplier((Supplier<?>) target)
 						: target instanceof Function
 								? (S) new FluxFunction((Function<?, ?>) target)
 								: (S) new FluxConsumer((Consumer<?>) target);
 			}
-			else if (Mono.class.isAssignableFrom(type.getOutputWrapper())) {
-				target = (S) new FluxToMonoFunction((Function) target);
+			else if (Mono.class.isAssignableFrom(this.type.getOutputWrapper())) {
+				target = target instanceof Supplier
+						? (S) new MonoSupplier((Supplier<?>) target)
+						: (S) new FluxToMonoFunction((Function<?, ?>) target);
 			}
-			else if (Mono.class.isAssignableFrom(type.getInputWrapper())) {
+			else if (Mono.class.isAssignableFrom(this.type.getInputWrapper())) {
 				target = (S) new MonoToFluxFunction((Function) target);
 			}
 			else if (target instanceof Consumer) {
