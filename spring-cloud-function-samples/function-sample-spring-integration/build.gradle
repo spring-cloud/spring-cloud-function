@@ -27,7 +27,7 @@ repositories {
 
 
 ext {
-	springCloudFunctionVersion = '2.0.2.BUILD-SNAPSHOT'
+	springCloudFunctionVersion = '2.1.0.BUILD-SNAPSHOT'
 }
 
 dependencies {
