@@ -26,7 +26,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.source.SourceAutoConfigurationIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
@@ -41,9 +40,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringRunner.class)
 // @formatter:off
 @SpringBootTest(webEnvironment = WebEnvironment.NONE,
-	properties = "spring.cloud.function.web.export.sink.url=http://localhost:${server.port}")
+	properties = "spring.cloud.function.web.export.sink.url=http://nosuchhost")
 // @formatter:on
-@ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
+@ContextConfiguration(classes = { ApplicationConfiguration.class })
 public class SourceAutoConfigurationIntegrationTests {
 
 	@Autowired

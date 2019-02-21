@@ -53,11 +53,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
 		"spring.main.web-application-type=reactive",
-		"spring.cloud.function.web.supplier.templateUrl=http://localhost:${server.port}/values",
+		"spring.cloud.function.web.export.sink.url=http://localhost:${server.port}/values",
 		// in a webapp we have to explicitly enable the export
-		"spring.cloud.function.web.supplier.enabled=true",
+		"spring.cloud.function.web.export.enabled=true",
 		// manually so we know the webapp is listening when we start
-		"spring.cloud.function.web.supplier.autoStartup=false" })
+		"spring.cloud.function.web.export.autoStartup=false" })
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class WebAppIntegrationTests {
 
