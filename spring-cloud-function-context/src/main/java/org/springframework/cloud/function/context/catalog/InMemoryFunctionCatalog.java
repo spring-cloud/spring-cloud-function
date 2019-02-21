@@ -82,6 +82,7 @@ public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry 
 
 		for (String name : functionRegistration.getNames()) {
 			addType(name, functionRegistration.getType());
+			addName(functionRegistration.getTarget(), name);
 			if (functionRegistration.getTarget() instanceof Function) {
 				this.addFunction(name, (Function<?, ?>) functionRegistration.getTarget());
 			}

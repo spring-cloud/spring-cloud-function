@@ -281,7 +281,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		this.types.computeIfAbsent(name, str -> functionType);
 	}
 
-	private void addName(Object function, String name) {
+	protected void addName(Object function, String name) {
 		this.names.put(function, name);
 	}
 

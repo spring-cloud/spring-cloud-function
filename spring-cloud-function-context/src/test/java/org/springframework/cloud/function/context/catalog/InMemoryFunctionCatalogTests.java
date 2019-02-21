@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.catalog;
 
 import java.util.function.Function;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -59,6 +60,9 @@ public class InMemoryFunctionCatalogTests {
 
 		lookedUpFunction = catalog.lookup("foo");
 		assertThat(lookedUpFunction).isNotNull();
+		assertThat(catalog.lookupFunctionName(lookedUpFunction)).isEqualTo("foo");
+		assertThat(catalog.getFunctionType("foo").getOutputType())
+				.isEqualTo(String.class);
 		assertThat(lookedUpFunction instanceof FluxFunction).isTrue();
 	}
 
@@ -87,10 +91,34 @@ public class InMemoryFunctionCatalogTests {
 		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
 				new UpperCaseMessage(), "uppercase")
 						.type(FunctionType.of(UpperCaseMessage.class).getType());
-		// TODO: make this work with plain Reverse (not message)
 		FunctionRegistration<ReverseMessage> reverseRegistration = new FunctionRegistration<>(
 				new ReverseMessage(), "reverse")
 						.type(FunctionType.of(ReverseMessage.class).getType());
+		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
+		catalog.register(upperCaseRegistration);
+		catalog.register(reverseRegistration);
+
+		Function<Flux<Message<String>>, Flux<Message<String>>> lookedUpFunction = catalog
+				.lookup("uppercase|reverse");
+		assertThat(catalog.getFunctionType("uppercase|reverse").isMessage()).isTrue();
+		assertThat(catalog.lookupFunctionName(lookedUpFunction))
+				.isEqualTo("uppercase|reverse");
+
+		assertThat(lookedUpFunction).isNotNull();
+		assertThat(lookedUpFunction
+				.apply(Flux.just(MessageBuilder.withPayload("star").build())).blockFirst()
+				.getPayload()).isEqualTo("RATS");
+	}
+
+	@Test
+	@Ignore
+	public void testFunctionCompositionMixedMessages() {
+		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
+				new UpperCaseMessage(), "uppercase")
+						.type(FunctionType.of(UpperCaseMessage.class).getType());
+		// TODO: make this work with plain Reverse (not message)
+		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
+				new Reverse(), "reverse").type(FunctionType.of(Reverse.class).getType());
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
