@@ -50,10 +50,9 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * Base implementation of {@link FunctionRegistry} which supports
- * function composition during lookups. For example if this registry contains
- * function 'a' and 'b' you can compose them into a single function by
- * simply piping two names together during the
+ * Base implementation of {@link FunctionRegistry} which supports function composition
+ * during lookups. For example if this registry contains function 'a' and 'b' you can
+ * compose them into a single function by simply piping two names together during the
  * lookup {@code this.lookup(Function.class, "a|b")}.
  *
  * Comma ',' is also supported as composition delimiter (e.g., {@code "a,b"}).
@@ -62,9 +61,8 @@ import org.springframework.util.StringUtils;
  * @since 2.1
  *
  */
-public abstract class AbstractComposableFunctionRegistry
-	implements FunctionRegistry, FunctionInspector,
-	ApplicationEventPublisherAware, EnvironmentAware {
+public abstract class AbstractComposableFunctionRegistry implements FunctionRegistry,
+		FunctionInspector, ApplicationEventPublisherAware, EnvironmentAware {
 
 	private final Map<String, Object> suppliers = new ConcurrentHashMap<>();
 
@@ -93,10 +91,12 @@ public abstract class AbstractComposableFunctionRegistry
 	@Override
 	public Set<String> getNames(Class<?> type) {
 		if (type == null) {
-			return new HashSet<String>(getSupplierNames()) {{
-				addAll(getConsumerNames());
-				addAll(getFunctionNames());
-			} };
+			return new HashSet<String>(getSupplierNames()) {
+				{
+					addAll(getConsumerNames());
+					addAll(getFunctionNames());
+				}
+			};
 		}
 		if (Supplier.class.isAssignableFrom(type)) {
 			return this.getSupplierNames();
@@ -150,8 +150,10 @@ public abstract class AbstractComposableFunctionRegistry
 	 * The count of all Suppliers, Function and Consumers currently registered.
 	 * @return the count of all Suppliers, Function and Consumers currently registered.
 	 */
+	@Override
 	public int size() {
-		return getSupplierNames().size() + getFunctionNames().size() + getConsumerNames().size();
+		return getSupplierNames().size() + getFunctionNames().size()
+				+ getConsumerNames().size();
 	}
 
 	public FunctionType getFunctionType(String name) {
@@ -159,10 +161,9 @@ public abstract class AbstractComposableFunctionRegistry
 	}
 
 	/**
-	 * A reverse lookup where one can determine the actual name of
-	 * the function reference.
-	 * @param function should be an instance of {@link Supplier},
-	 * 			{@link Function} or {@link Consumer};
+	 * A reverse lookup where one can determine the actual name of the function reference.
+	 * @param function should be an instance of {@link Supplier}, {@link Function} or
+	 * {@link Consumer};
 	 * @return the name of the function or null.
 	 */
 	public String lookupFunctionName(Object function) {
@@ -227,9 +228,10 @@ public abstract class AbstractComposableFunctionRegistry
 		if (functionType != null) {
 			return functionType;
 		}
-		throw new IllegalStateException("Unless FunctionType is already available in FunctionRegistration, "
-				+ "this operation must be overriden "
-				+ "by the implementation of the FunctionRegistry.");
+		throw new IllegalStateException(
+				"Unless FunctionType is already available in FunctionRegistration, "
+						+ "this operation must be overriden "
+						+ "by the implementation of the FunctionRegistry.");
 	}
 
 	protected void addSupplier(String name, Supplier<?> supplier) {
@@ -275,7 +277,7 @@ public abstract class AbstractComposableFunctionRegistry
 		return registration;
 	}
 
-	private void addType(String name, FunctionType functionType) {
+	protected void addType(String name, FunctionType functionType) {
 		this.types.computeIfAbsent(name, str -> functionType);
 	}
 
@@ -308,11 +310,13 @@ public abstract class AbstractComposableFunctionRegistry
 			else {
 				String[] stages = StringUtils.delimitedListToStringArray(name, "|");
 				if (Stream.of(stages).allMatch(funcName -> contains(funcName))) {
-					List<Object> composableFunctions = Stream.of(stages).map(funcName -> find(funcName))
-							.collect(Collectors.toList());
-					composedFunction = composableFunctions.stream().reduce((a, z) -> composeFunctions(a, z))
+					List<Object> composableFunctions = Stream.of(stages)
+							.map(funcName -> find(funcName)).collect(Collectors.toList());
+					composedFunction = composableFunctions.stream()
+							.reduce((a, z) -> composeFunctions(a, z))
 							.orElseGet(() -> null);
-					if (composedFunction != null && !this.types.containsKey(name) && this.types.containsKey(stages[0])
+					if (composedFunction != null && !this.types.containsKey(name)
+							&& this.types.containsKey(stages[0])
 							&& this.types.containsKey(stages[stages.length - 1])) {
 						FunctionType input = this.types.get(stages[0]);
 						FunctionType output = this.types.get(stages[stages.length - 1]);
@@ -339,17 +343,17 @@ public abstract class AbstractComposableFunctionRegistry
 	}
 
 	private boolean contains(String name) {
-		return getSupplierNames().contains(name)
-				|| getFunctionNames().contains(name) || getConsumerNames().contains(name);
+		return getSupplierNames().contains(name) || getFunctionNames().contains(name)
+				|| getConsumerNames().contains(name);
 	}
 
 	private Object find(String name) {
-		Object result = suppliers.get(name);
+		Object result = this.suppliers.get(name);
 		if (result == null) {
-			result = functions.get(name);
+			result = this.functions.get(name);
 		}
 		if (result == null) {
-			result = consumers.get(name);
+			result = this.consumers.get(name);
 		}
 		return result;
 	}
@@ -361,8 +365,8 @@ public abstract class AbstractComposableFunctionRegistry
 			if (b instanceof FluxConsumer) {
 				if (supplier instanceof FluxSupplier) {
 					FluxConsumer<Object> fConsumer = ((FluxConsumer<Object>) b);
-					return (Supplier<Mono<Void>>) () -> Mono
-							.from(supplier.get().compose(v -> fConsumer.apply(supplier.get())));
+					return (Supplier<Mono<Void>>) () -> Mono.from(
+							supplier.get().compose(v -> fConsumer.apply(supplier.get())));
 				}
 				else {
 					throw new IllegalStateException(
@@ -383,13 +387,15 @@ public abstract class AbstractComposableFunctionRegistry
 					return function1.andThen(function2);
 				}
 				else {
-					throw new IllegalStateException("The provided function is finite (i.e., returns Mono<?>) "
-							+ "therefore it can *only* be composed with compatible function (i.e., Function<Mono, Flux>");
+					throw new IllegalStateException(
+							"The provided function is finite (i.e., returns Mono<?>) "
+									+ "therefore it can *only* be composed with compatible function (i.e., Function<Mono, Flux>");
 				}
 			}
 			else if (function2 instanceof FluxToMonoFunction) {
-				return new FluxToMonoFunction<Object, Object>(((Function<Flux<Object>, Flux<Object>>) a)
-						.andThen(((FluxToMonoFunction<Object, Object>) b).getTarget()));
+				return new FluxToMonoFunction<Object, Object>(
+						((Function<Flux<Object>, Flux<Object>>) a).andThen(
+								((FluxToMonoFunction<Object, Object>) b).getTarget()));
 			}
 			else {
 				return function1.andThen(function2);
@@ -401,8 +407,8 @@ public abstract class AbstractComposableFunctionRegistry
 			return (Consumer<Object>) v -> consumer.accept(function.apply(v));
 		}
 		else {
-			throw new IllegalArgumentException(
-					String.format("Could not compose %s and %s", a.getClass(), b.getClass()));
+			throw new IllegalArgumentException(String
+					.format("Could not compose %s and %s", a.getClass(), b.getClass()));
 		}
 	}
 
@@ -429,4 +435,5 @@ public abstract class AbstractComposableFunctionRegistry
 		}
 		return function;
 	}
+
 }

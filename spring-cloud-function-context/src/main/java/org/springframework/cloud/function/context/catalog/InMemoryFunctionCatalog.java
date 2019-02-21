@@ -56,7 +56,7 @@ public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry 
 		Assert.notEmpty(functionRegistration.getNames(),
 				"'registration' must contain at least one name before it is registered in catalog.");
 		// TODO should we just delegate to wrap(..)????
-		//wrap(functionRegistration, functionRegistration.getNames().iterator().next());
+		// wrap(functionRegistration, functionRegistration.getNames().iterator().next());
 		Class<?> type = Object.class;
 		if (functionRegistration.getTarget() instanceof Function) {
 			type = Function.class;
@@ -81,6 +81,7 @@ public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry 
 		}
 
 		for (String name : functionRegistration.getNames()) {
+			addType(name, functionRegistration.getType());
 			if (functionRegistration.getTarget() instanceof Function) {
 				this.addFunction(name, (Function<?, ?>) functionRegistration.getTarget());
 			}

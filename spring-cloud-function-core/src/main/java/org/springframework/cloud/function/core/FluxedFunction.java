@@ -24,8 +24,8 @@ import reactor.core.publisher.Flux;
  * {@link Function} implementation that wraps a target Function so that the target's
  * simple input and output types will be wrapped as {@link Flux} instances.
  *
- * @param <T> input type of target function
- * @param <R> output type of target function
+ * @param <I> input type of target function
+ * @param <O> output type of target function
  * @author Oleg Zhurakousky
  * @since 2.0.1
  */

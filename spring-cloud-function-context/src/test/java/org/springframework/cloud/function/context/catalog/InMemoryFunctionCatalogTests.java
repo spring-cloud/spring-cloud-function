@@ -24,6 +24,8 @@ import reactor.core.publisher.Flux;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.core.FluxFunction;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -63,17 +65,44 @@ public class InMemoryFunctionCatalogTests {
 	@Test
 	public void testFunctionComposition() {
 		FunctionRegistration<UpperCase> upperCaseRegistration = new FunctionRegistration<>(
-				new UpperCase(), "uppercase").type(FunctionType.of(UpperCase.class).getType());
+				new UpperCase(), "uppercase")
+						.type(FunctionType.of(UpperCase.class).getType());
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
 				new Reverse(), "reverse").type(FunctionType.of(Reverse.class).getType());
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
 
-		Function<Flux<String>, Flux<String>> lookedUpFunction = catalog.lookup("uppercase|reverse");
+		Function<Flux<String>, Flux<String>> lookedUpFunction = catalog
+				.lookup("uppercase|reverse");
+		assertThat(catalog.getFunctionType("uppercase|reverse").isMessage()).isFalse();
 
 		assertThat(lookedUpFunction).isNotNull();
-		assertThat(lookedUpFunction.apply(Flux.just("star")).blockFirst()).isEqualTo("RATS");
+		assertThat(lookedUpFunction.apply(Flux.just("star")).blockFirst())
+				.isEqualTo("RATS");
+	}
+
+	@Test
+	public void testFunctionCompositionWithMessages() {
+		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
+				new UpperCaseMessage(), "uppercase")
+						.type(FunctionType.of(UpperCaseMessage.class).getType());
+		// TODO: make this work with plain Reverse (not message)
+		FunctionRegistration<ReverseMessage> reverseRegistration = new FunctionRegistration<>(
+				new ReverseMessage(), "reverse")
+						.type(FunctionType.of(ReverseMessage.class).getType());
+		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
+		catalog.register(upperCaseRegistration);
+		catalog.register(reverseRegistration);
+
+		Function<Flux<Message<String>>, Flux<Message<String>>> lookedUpFunction = catalog
+				.lookup("uppercase|reverse");
+		assertThat(catalog.getFunctionType("uppercase|reverse").isMessage()).isTrue();
+
+		assertThat(lookedUpFunction).isNotNull();
+		assertThat(lookedUpFunction
+				.apply(Flux.just(MessageBuilder.withPayload("star").build())).blockFirst()
+				.getPayload()).isEqualTo("RATS");
 	}
 
 	private static class UpperCase implements Function<String, String> {
@@ -85,11 +114,34 @@ public class InMemoryFunctionCatalogTests {
 
 	}
 
+	private static class UpperCaseMessage
+			implements Function<Message<String>, Message<String>> {
+
+		@Override
+		public Message<String> apply(Message<String> t) {
+			return MessageBuilder.withPayload(t.getPayload().toUpperCase())
+					.copyHeaders(t.getHeaders()).build();
+		}
+
+	}
+
 	private static class Reverse implements Function<String, String> {
 
 		@Override
 		public String apply(String t) {
 			return new StringBuilder(t).reverse().toString();
+		}
+
+	}
+
+	private static class ReverseMessage
+			implements Function<Message<String>, Message<String>> {
+
+		@Override
+		public Message<String> apply(Message<String> t) {
+			return MessageBuilder
+					.withPayload(new StringBuilder(t.getPayload()).reverse().toString())
+					.copyHeaders(t.getHeaders()).build();
 		}
 
 	}

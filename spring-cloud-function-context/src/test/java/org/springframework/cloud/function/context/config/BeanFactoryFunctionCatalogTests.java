@@ -34,6 +34,7 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration.BeanFactoryFunctionCatalog;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author Dave Syer
  *
@@ -198,7 +199,7 @@ public class BeanFactoryFunctionCatalogTests {
 		Consumer<String> c = x -> ref.set(x.toUpperCase());
 		this.processor.register(new FunctionRegistration<>(c, "consumer"));
 		Supplier<Mono<Void>> f = this.processor.lookup("supplier|consumer");
-		((Mono<Void>) f.get()).block();
+		f.get().block();
 		assertThat(ref.get()).isEqualTo("HELLO");
 	}
 

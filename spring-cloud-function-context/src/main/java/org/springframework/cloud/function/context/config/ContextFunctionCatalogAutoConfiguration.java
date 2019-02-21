@@ -73,13 +73,9 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @ConditionalOnMissingBean(FunctionCatalog.class)
-@ComponentScan(
-		basePackages = "${spring.cloud.function.scan.packages:functions}",
-		includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE,
-		classes = {
-				Supplier.class,
-				Function.class,
-				Consumer.class }))
+@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}", //
+		includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
+				Supplier.class, Function.class, Consumer.class }))
 public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
@@ -89,8 +85,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return new BeanFactoryFunctionCatalog();
 	}
 
-	protected static class BeanFactoryFunctionCatalog extends AbstractComposableFunctionRegistry
-		implements InitializingBean, BeanFactoryAware {
+	protected static class BeanFactoryFunctionCatalog
+			extends AbstractComposableFunctionRegistry
+			implements InitializingBean, BeanFactoryAware {
 
 		private ApplicationEventPublisher applicationEventPublisher;
 
@@ -100,13 +97,15 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public FunctionRegistration<?> getRegistration(Object function) {
 			String functionName = this.lookupFunctionName(function);
 			if (StringUtils.hasText(functionName)) {
-				FunctionRegistration<?> registration = new FunctionRegistration<Object>(function, functionName);
+				FunctionRegistration<?> registration = new FunctionRegistration<Object>(
+						function, functionName);
 				FunctionType functionType = this.findType(registration);
 				return registration.type(functionType.getType());
 			}
 			return null;
 		}
 
+		@Override
 		public <T> void register(FunctionRegistration<T> functionRegistration) {
 			Assert.notEmpty(functionRegistration.getNames(),
 					"'registration' must contain at least one name before it is registered in catalog.");
@@ -120,13 +119,13 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@Override
 		@SuppressWarnings("rawtypes")
 		public void afterPropertiesSet() throws Exception {
-			Map<String, Supplier> supplierBeans = beanFactory
+			Map<String, Supplier> supplierBeans = this.beanFactory
 					.getBeansOfType(Supplier.class);
-			Map<String, Function> functionBeans = beanFactory
+			Map<String, Function> functionBeans = this.beanFactory
 					.getBeansOfType(Function.class);
-			Map<String, Consumer> consumerBeans = beanFactory
+			Map<String, Consumer> consumerBeans = this.beanFactory
 					.getBeansOfType(Consumer.class);
-			Map<String, FunctionRegistration> functionRegistrationBeans = beanFactory
+			Map<String, FunctionRegistration> functionRegistrationBeans = this.beanFactory
 					.getBeansOfType(FunctionRegistration.class);
 			this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans,
 					functionBeans);
@@ -168,7 +167,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 			if (functionType == null) {
 				functionType = functionByNameExist(name)
-						? new FunctionType(functionRegistration.getTarget().getClass()) : new FunctionType(
+						? new FunctionType(functionRegistration.getTarget().getClass())
+						: new FunctionType(
 								FunctionContextUtils.findType(name, this.beanFactory));
 			}
 
@@ -177,6 +177,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		// @checkstyle:off
 		/**
+		 * @param initial a registration
+		 * @param consumers consumers to register
+		 * @param suppliers suppliers to register
+		 * @param functions functions to register
+		 * @return a new registration
 		 * @deprecated Was never intended for public use.
 		 */
 		@Deprecated
@@ -253,6 +258,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			registrations.forEach(registration -> wrap(registration,
 					targets.get(registration.getTarget())));
 		}
+
 	}
 
 	private static class PreferGsonOrMissingJacksonCondition extends AnyNestedCondition {
@@ -289,10 +295,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Configuration
 	@ConditionalOnClass(ObjectMapper.class)
 	@ConditionalOnBean(ObjectMapper.class)
-	@ConditionalOnProperty(
-			name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY,
-			havingValue = "jackson",
-			matchIfMissing = true)
+	@ConditionalOnProperty(name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, //
+			havingValue = "jackson", matchIfMissing = true)
 	protected static class JacksonConfiguration {
 
 		@Bean
