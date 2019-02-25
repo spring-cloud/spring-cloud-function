@@ -18,7 +18,6 @@ package org.springframework.cloud.function.context.catalog;
 
 import java.util.function.Function;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -111,12 +110,10 @@ public class InMemoryFunctionCatalogTests {
 	}
 
 	@Test
-	@Ignore
 	public void testFunctionCompositionMixedMessages() {
 		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
 				new UpperCaseMessage(), "uppercase")
 						.type(FunctionType.of(UpperCaseMessage.class).getType());
-		// TODO: make this work with plain Reverse (not message)
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
 				new Reverse(), "reverse").type(FunctionType.of(Reverse.class).getType());
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
@@ -128,9 +125,11 @@ public class InMemoryFunctionCatalogTests {
 		assertThat(catalog.getFunctionType("uppercase|reverse").isMessage()).isTrue();
 
 		assertThat(lookedUpFunction).isNotNull();
-		assertThat(lookedUpFunction
-				.apply(Flux.just(MessageBuilder.withPayload("star").build())).blockFirst()
-				.getPayload()).isEqualTo("RATS");
+		Message<String> message = lookedUpFunction.apply(Flux
+				.just(MessageBuilder.withPayload("star").setHeader("foo", "bar").build()))
+				.blockFirst();
+		assertThat(message.getPayload()).isEqualTo("RATS");
+		assertThat(message.getHeaders().get("foo")).isEqualTo("bar");
 	}
 
 	private static class UpperCase implements Function<String, String> {

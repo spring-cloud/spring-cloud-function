@@ -362,6 +362,12 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		FunctionType bType = bReg.getType();
 		Object a = aReg.getTarget();
 		Object b = bReg.getTarget();
+		if (aType != null && bType != null) {
+			if (aType.isMessage() && !bType.isMessage()) {
+				bType = bType.message();
+				b = message(b);
+			}
+		}
 		Object composedFunction = null;
 		if (a instanceof Supplier && b instanceof Function) {
 			Supplier<Flux<Object>> supplier = (Supplier<Flux<Object>>) a;
@@ -418,6 +424,19 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 				+ bReg.getNames().iterator().next();
 		return new FunctionRegistration<>(composedFunction, name)
 				.type(FunctionType.compose(aType, bType));
+	}
+
+	private Object message(Object input) {
+		if (input instanceof Supplier) {
+			return new MessageSupplier((Supplier<?>) input);
+		}
+		if (input instanceof Consumer) {
+			return new MessageConsumer((Consumer<?>) input);
+		}
+		if (input instanceof Function) {
+			return new MessageFunction((Function<?, ?>) input);
+		}
+		return input;
 	}
 
 	@SuppressWarnings("unchecked")
