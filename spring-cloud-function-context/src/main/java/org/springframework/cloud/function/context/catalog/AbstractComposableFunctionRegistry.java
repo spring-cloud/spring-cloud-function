@@ -298,42 +298,49 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	}
 
 	private Object compose(String name, Map<String, Object> lookup) {
+
 		name = normalizeName(name);
 		Object composedFunction = null;
+
 		if (lookup.containsKey(name)) {
 			composedFunction = lookup.get(name);
 		}
+		else if (name.equals("") && lookup.size() == 1) {
+			composedFunction = lookup.values().iterator().next();
+		}
 		else {
-			if (name.equals("") && lookup.size() == 1) {
-				composedFunction = lookup.values().iterator().next();
-			}
-			else {
-				String[] stages = StringUtils.delimitedListToStringArray(name, "|");
-				if (Stream.of(stages).allMatch(funcName -> contains(funcName))) {
-					List<FunctionRegistration<?>> composableFunctions = Stream.of(stages)
-							.map(funcName -> find(funcName)).collect(Collectors.toList());
-					FunctionRegistration<?> composedRegistration = composableFunctions
-							.stream().reduce((a, z) -> composeFunctions(a, z))
-							.orElseGet(() -> null);
-					if (composedRegistration != null) {
-						composedFunction = composedRegistration.getTarget();
-						if (composedFunction != null && !this.types.containsKey(name)) {
-							this.addType(name, composedRegistration.getType());
-							this.addName(composedFunction, name);
-							if (composedFunction instanceof Function) {
-								this.addFunction(name, (Function<?, ?>) composedFunction);
-							}
-							else if (composedFunction instanceof Consumer) {
-								this.addConsumer(name, (Consumer<?>) composedFunction);
-							}
-							else if (composedFunction instanceof Supplier) {
-								this.addSupplier(name, (Supplier<?>) composedFunction);
-							}
-						}
+
+			String[] stages = StringUtils.delimitedListToStringArray(name, "|");
+			if (Stream.of(stages).allMatch(funcName -> contains(funcName))) {
+
+				List<FunctionRegistration<?>> composableFunctions = Stream.of(stages)
+						.map(funcName -> find(funcName)).collect(Collectors.toList());
+				FunctionRegistration<?> composedRegistration = composableFunctions
+						.stream().reduce((a, z) -> composeFunctions(a, z))
+						.orElseGet(() -> null);
+
+				if (composedRegistration != null
+						&& composedRegistration.getTarget() != null
+						&& !this.types.containsKey(name)) {
+
+					composedFunction = composedRegistration.getTarget();
+					this.addType(name, composedRegistration.getType());
+					this.addName(composedFunction, name);
+					if (composedFunction instanceof Function) {
+						this.addFunction(name, (Function<?, ?>) composedFunction);
+					}
+					else if (composedFunction instanceof Consumer) {
+						this.addConsumer(name, (Consumer<?>) composedFunction);
+					}
+					else if (composedFunction instanceof Supplier) {
+						this.addSupplier(name, (Supplier<?>) composedFunction);
+
 					}
 				}
+
 			}
 		}
+
 		return composedFunction;
 	}
 

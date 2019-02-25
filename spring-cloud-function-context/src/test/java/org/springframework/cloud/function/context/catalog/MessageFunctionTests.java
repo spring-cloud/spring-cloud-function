@@ -67,7 +67,8 @@ public class MessageFunctionTests {
 	@Test
 	public void fluxToMonoFunction() {
 		MessageFunction function = new MessageFunction(
-				new FluxToMonoFunction<>(flux -> flux.next().map(uppercase())));
+				new FluxToMonoFunction<String, String>(
+						flux -> flux.next().map(uppercase())));
 		Publisher<Message<?>> result = function.apply(Flux
 				.just(MessageBuilder.withPayload("foo").setHeader("foo", "bar").build()));
 		StepVerifier.create(result).assertNext(message -> {
@@ -79,7 +80,8 @@ public class MessageFunctionTests {
 	@Test
 	public void monoToFunction() {
 		MessageFunction function = new MessageFunction(
-				new MonoToFluxFunction<>(mono -> Flux.from(mono.map(uppercase()))));
+				new MonoToFluxFunction<String, String>(
+						mono -> Flux.from(mono.map(uppercase()))));
 		Publisher<Message<?>> result = function.apply(Flux
 				.just(MessageBuilder.withPayload("foo").setHeader("foo", "bar").build()));
 		StepVerifier.create(result).assertNext(message -> {
