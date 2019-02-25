@@ -16,12 +16,9 @@
 
 package org.springframework.cloud.function.web.source;
 
-import reactor.core.publisher.Flux;
-
 import org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
@@ -89,11 +86,8 @@ class FunctionExporterInitializer
 		if (context.getEnvironment()
 				.getProperty("spring.cloud.function.web.export.source.url") != null) {
 			context.registerBean("origin", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(context
-							.getBean(FunctionExporterAutoConfiguration.class)
-							.origin(context.getBean(WebClient.Builder.class)))
-									.type(functionType(
-											context.getBean(ExporterProperties.class))));
+					() -> context.getBean(FunctionExporterAutoConfiguration.class)
+							.origin(context.getBean(WebClient.Builder.class)));
 		}
 		if (context.getEnvironment()
 				.getProperty("spring.cloud.function.web.export.sink.url") != null) {
@@ -104,14 +98,6 @@ class FunctionExporterInitializer
 									context.getBean(FunctionCatalog.class),
 									context.getBean(WebClient.Builder.class)));
 		}
-	}
-
-	private FunctionType functionType(ExporterProperties props) {
-		FunctionType type = FunctionType.supplier(props.getSource().getType());
-		if (props.getSource().isIncludeHeaders()) {
-			type = type.message();
-		}
-		return type.wrap(Flux.class);
 	}
 
 }
