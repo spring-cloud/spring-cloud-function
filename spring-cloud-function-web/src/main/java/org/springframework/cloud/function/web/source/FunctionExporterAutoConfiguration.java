@@ -28,6 +28,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnNotWebAppli
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.web.source.FunctionExporterAutoConfiguration.SourceActiveCondition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -64,8 +66,17 @@ public class FunctionExporterAutoConfiguration {
 
 	@Bean
 	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.source", name = "url")
-	public Supplier<Flux<?>> origin(WebClient.Builder builder) {
-		return new HttpSupplier(builder.build(), this.props);
+	public FunctionRegistration<Supplier<Flux<?>>> origin(WebClient.Builder builder) {
+		HttpSupplier supplier = new HttpSupplier(builder.build(), this.props);
+		FunctionRegistration<Supplier<Flux<?>>> registration = new FunctionRegistration<>(
+				supplier);
+		FunctionType type = FunctionType.supplier(this.props.getSource().getType())
+				.wrap(Flux.class);
+		if (this.props.getSource().isIncludeHeaders()) {
+			type = type.message();
+		}
+		registration = registration.type(type);
+		return registration;
 	}
 
 	@Bean

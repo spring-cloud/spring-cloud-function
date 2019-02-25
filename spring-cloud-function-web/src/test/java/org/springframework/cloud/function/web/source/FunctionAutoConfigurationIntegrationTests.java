@@ -38,7 +38,6 @@ import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIn
 import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIntegrationTests.RestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.Message;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.SocketUtils;
@@ -98,8 +97,8 @@ public class FunctionAutoConfigurationIntegrationTests {
 	public static class ApplicationConfiguration {
 
 		@Bean
-		public Function<Message<String>, String> uppercase() {
-			return value -> value.getPayload().toUpperCase();
+		public Function<String, String> uppercase() {
+			return value -> value.toUpperCase();
 		}
 
 	}
