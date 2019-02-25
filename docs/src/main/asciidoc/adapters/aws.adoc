@@ -4,6 +4,36 @@ The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and c
 
 include::aws-intro.adoc[]
 
+== Functional Bean Definitions
+
+Your functions will start much quicker if you can use functional bean definitions instead of `@Bean`. To do this make your main class
+an `ApplicationContextInitalizer<GenericApplicationContext>` and use the `registerBean()` methods in `GenericApplicationContext` to
+create all the beans you need. You function need sto be registered as a bean of type `FunctionRegistration` so that the input and
+output types can be accessed by the framework. There is an example in github (the AWS sample is written in this style). It would
+look something like this:
+
+```java
+@SpringBootApplication
+public class FuncApplication implements ApplicationContextInitializer<GenericApplicationContext> {
+
+	public static void main(String[] args) throws Exception {
+		FunctionalSpringApplication.run(FuncApplication.class, args);
+	}
+
+	public Function<Foo, Bar> function() {
+		return value -> new Bar(value.uppercase()));
+	}
+
+	@Override
+	public void initialize(GenericApplicationContext context) {
+		context.registerBean("function", FunctionRegistration.class,
+			() -> new FunctionRegistration<Function<Foo, Bar>>(function())
+				.type(FunctionType.from(Foo.class).to(Bar.class).getType()));
+	}
+
+}
+```
+
 == Platfom Specific Features
 
 === HTTP and API Gateway
@@ -21,3 +51,16 @@ The supported AWS services and generic handler types are listed below:
 
 
 For example, to deploy behind an API Gateway, use `--handler org.springframework.cloud.function.adapter.aws.SpringBootApiGatewayRequestHandler` in your AWS command line (in via the UI) and define a `@Bean` of type `Function<Message<Foo>,Message<Bar>>` where `Foo` and `Bar` are POJO types (the data will be marshalled and unmarshalled by AWS using Jackson).
+
+== Custom Runtime
+
+An https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html[AWS Lambda custom runtime] can be created really easily using the HTTP export features in Spring Cloud Function Web. To make this work just add Spring Cloud Function AWS and Spring Cloud Function Web as dependencies in your project and set the following in your `application.properties`:
+
+```
+spring.cloud.function.web.export.enabled=true
+spring.cloud.function.web.export.source.url=http://${AWS_LAMBDA_RUNTIME_API:localhost}/2018-06-01/runtime/invocation/next
+spring.cloud.function.web.export.sink.url=http://${AWS_LAMBDA_RUNTIME_API:localhost}/2018-06-01/runtime/invocation/{{destination}}/response
+spring.cloud.function.web.export.sink.name=origin|uppercase
+```
+
+where "uppercase" is the name of your function ("origin" is the name of the `Supplier` that is provided by Spring Cloud Function Web). Then provide a `bootstrap` script in the root of your zip/jar that runs the Spring Boot application. The functional bean definition style works for custom runtimes too, and is faster than the `@Bean` style, so the example `FuncApplication` above would work. A custom runtime can start up much quicker even than a functional bean implementation of a Java lambda - it depends mostly on the number of classes you need to load at runtime. Spring doesn't do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance, and not doing any work in custom `@PostConstruct` initializers.
