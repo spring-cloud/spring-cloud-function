@@ -315,18 +315,20 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 					FunctionRegistration<?> composedRegistration = composableFunctions
 							.stream().reduce((a, z) -> composeFunctions(a, z))
 							.orElseGet(() -> null);
-					composedFunction = composedRegistration.getTarget();
-					if (composedFunction != null && !this.types.containsKey(name)) {
-						this.addType(name, composedRegistration.getType());
-						this.addName(composedFunction, name);
-						if (composedFunction instanceof Function) {
-							this.addFunction(name, (Function<?, ?>) composedFunction);
-						}
-						else if (composedFunction instanceof Consumer) {
-							this.addConsumer(name, (Consumer<?>) composedFunction);
-						}
-						else if (composedFunction instanceof Supplier) {
-							this.addSupplier(name, (Supplier<?>) composedFunction);
+					if (composedRegistration != null) {
+						composedFunction = composedRegistration.getTarget();
+						if (composedFunction != null && !this.types.containsKey(name)) {
+							this.addType(name, composedRegistration.getType());
+							this.addName(composedFunction, name);
+							if (composedFunction instanceof Function) {
+								this.addFunction(name, (Function<?, ?>) composedFunction);
+							}
+							else if (composedFunction instanceof Consumer) {
+								this.addConsumer(name, (Consumer<?>) composedFunction);
+							}
+							else if (composedFunction instanceof Supplier) {
+								this.addSupplier(name, (Supplier<?>) composedFunction);
+							}
 						}
 					}
 				}
