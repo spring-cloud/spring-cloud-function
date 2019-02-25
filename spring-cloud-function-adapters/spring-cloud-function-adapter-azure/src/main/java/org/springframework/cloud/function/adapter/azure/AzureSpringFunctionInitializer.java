@@ -19,6 +19,7 @@ package org.springframework.cloud.function.adapter.azure;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,12 +37,16 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
 /**
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
 public class AzureSpringFunctionInitializer implements Closeable {
 
@@ -125,7 +130,6 @@ public class AzureSpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void initialize(ExecutionContext ctxt) {
 
 		ConfigurableApplicationContext context = AzureSpringFunctionInitializer.context;
@@ -164,7 +168,7 @@ public class AzureSpringFunctionInitializer implements Closeable {
 					ctxt.getLogger()
 							.info("No catalog. Looking for Function bean name=" + name);
 				}
-				this.function = context.getBean(name, Function.class);
+				this.function = getAndInstrumentFromContext(context, name);
 			}
 		}
 		else {
@@ -177,6 +181,18 @@ public class AzureSpringFunctionInitializer implements Closeable {
 				this.function = this.catalog.lookup(Function.class, name);
 			}
 		}
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private <T> T getAndInstrumentFromContext(
+			ConfigurableApplicationContext applicationContext, String name) {
+		FunctionRegistration<?> functionRegistration = new FunctionRegistration(
+				applicationContext.getBean(name), name);
+
+		Type type = FunctionContextUtils.findType(name,
+				applicationContext.getBeanFactory());
+		FunctionType functionType = new FunctionType(type);
+		return (T) functionRegistration.type(functionType).wrap().getTarget();
 	}
 
 	private SpringApplication springApplication() {

@@ -61,6 +61,14 @@ public class SpringFunctionInitializerTests {
 	}
 
 	@Test
+	public void functionNonFluxBean() {
+		this.initializer = new SpringFunctionInitializer(NonFluxFunctionConfig.class);
+		this.initializer.initialize();
+		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
+		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
+	}
+
+	@Test
 	public void functionApp() {
 		this.initializer = new SpringFunctionInitializer(FluxFunctionApp.class);
 		this.initializer.initialize();
@@ -108,6 +116,16 @@ public class SpringFunctionInitializerTests {
 		@Bean
 		public Function<Flux<Foo>, Flux<Bar>> function() {
 			return flux -> flux.map(foo -> new Bar());
+		}
+
+	}
+
+	@Configuration
+	protected static class NonFluxFunctionConfig {
+
+		@Bean
+		public Function<Foo, Bar> function() {
+			return foo -> new Bar();
 		}
 
 	}

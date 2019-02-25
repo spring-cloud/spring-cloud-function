@@ -18,6 +18,7 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.io.Closeable;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
@@ -35,12 +36,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.util.ClassUtils;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  */
 public class SpringFunctionInitializer implements Closeable {
 
@@ -121,14 +126,13 @@ public class SpringFunctionInitializer implements Closeable {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void initialize() {
 		if (!this.initialized.compareAndSet(false, true)) {
 			return;
 		}
 		logger.info("Initializing: " + this.configurationClass);
 		SpringApplication builder = springApplication();
-		ConfigurableApplicationContext context = builder.run();
+		this.context = builder.run();
 		context.getAutowireCapableBeanFactory().autowireBean(this);
 		String name = context.getEnvironment().getProperty("function.name");
 		if (name == null) {
@@ -136,7 +140,7 @@ public class SpringFunctionInitializer implements Closeable {
 		}
 		if (this.catalog == null) {
 			if (context.containsBean(name)) {
-				this.function = context.getBean(name, Function.class);
+				this.function = getAndInstrumentFromContext(name);
 			}
 		}
 		else {
@@ -149,8 +153,16 @@ public class SpringFunctionInitializer implements Closeable {
 				this.function = this.catalog.lookup(Function.class, name);
 			}
 		}
-		this.context = context;
+	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private <T> T getAndInstrumentFromContext(String name) {
+		FunctionRegistration<?> functionRegistration = new FunctionRegistration(
+				context.getBean(name), name);
+
+		Type type = FunctionContextUtils.findType(name, this.context.getBeanFactory());
+		FunctionType functionType = new FunctionType(type);
+		return (T) functionRegistration.type(functionType).wrap().getTarget();
 	}
 
 	private SpringApplication springApplication() {

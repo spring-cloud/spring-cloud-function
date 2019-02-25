@@ -29,6 +29,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,6 +83,14 @@ public class AzureSpringFunctionInitializerTests {
 		assertThat(bar.getValue()).isEqualTo("BAR");
 	}
 
+	@Test
+	public void functionNonFluxBean() {
+		AzureSpringFunctionInitializer handler = handler(NonFluxFunctionConfig.class);
+		handler.initialize(new TestExecutionContext("function"));
+		Flux<?> result = Flux.from(handler.getFunction().apply(Flux.just(new Foo())));
+		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
+	}
+
 	@SpringBootConfiguration
 	@EnableAutoConfiguration
 	protected static class BareConfig {
@@ -117,6 +126,16 @@ public class AzureSpringFunctionInitializerTests {
 					() -> new FunctionRegistration<Function<Foo, Bar>>(function(),
 							"uppercase")
 									.type(FunctionType.from(Foo.class).to(Bar.class)));
+		}
+
+	}
+
+	@Configuration
+	protected static class NonFluxFunctionConfig {
+
+		@Bean
+		public Function<Foo, Bar> function() {
+			return foo -> new Bar();
 		}
 
 	}
