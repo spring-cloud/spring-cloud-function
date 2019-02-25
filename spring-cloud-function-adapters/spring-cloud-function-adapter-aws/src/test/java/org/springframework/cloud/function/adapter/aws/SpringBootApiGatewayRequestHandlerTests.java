@@ -34,6 +34,9 @@ import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ *
+ */
 public class SpringBootApiGatewayRequestHandlerTests {
 
 	private SpringBootApiGatewayRequestHandler handler;
@@ -41,8 +44,6 @@ public class SpringBootApiGatewayRequestHandlerTests {
 	@Test
 	public void functionBean() {
 		this.handler = new SpringBootApiGatewayRequestHandler(FunctionConfig.class);
-		this.handler.initialize();
-
 		APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
 		request.setBody("{\"value\":\"foo\"}");
 
@@ -58,8 +59,6 @@ public class SpringBootApiGatewayRequestHandlerTests {
 	public void functionMessageBean() {
 		this.handler = new SpringBootApiGatewayRequestHandler(
 				FunctionMessageConfig.class);
-		this.handler.initialize();
-
 		APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
 		request.setBody("{\"value\":\"foo\"}");
 

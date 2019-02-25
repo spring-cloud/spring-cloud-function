@@ -39,7 +39,6 @@ public class SpringBootRequestHandlerTests {
 	@Test
 	public void functionBean() throws Exception {
 		this.handler = new SpringBootRequestHandler<Foo, Bar>(FunctionConfig.class);
-		this.handler.initialize();
 		Object output = this.handler.handleRequest(new Foo("foo"), null);
 		assertThat(output).isInstanceOf(Bar.class);
 	}

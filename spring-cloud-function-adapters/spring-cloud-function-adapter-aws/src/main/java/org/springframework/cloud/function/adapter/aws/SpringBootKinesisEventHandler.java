@@ -26,7 +26,6 @@ import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -37,15 +36,13 @@ import static java.util.stream.Collectors.toList;
  * @param <O> response type
  * @author Mark Fisher
  * @author Halvdan Hoem Grelland
+ * @author Oleg Zhurakousky
  */
 public class SpringBootKinesisEventHandler<E, O>
 		extends SpringBootRequestHandler<KinesisEvent, O> {
 
 	@Autowired
 	private ObjectMapper mapper;
-
-	@Autowired
-	private FunctionInspector inspector;
 
 	public SpringBootKinesisEventHandler() {
 		super();
@@ -65,7 +62,7 @@ public class SpringBootKinesisEventHandler<E, O>
 	protected Object convertEvent(KinesisEvent event) {
 		List<E> payloads = deserializePayloads(event.getRecords());
 
-		if (functionAcceptsMessage()) {
+		if (getInspector().isMessage(function())) {
 			return wrapInMessages(payloads);
 		}
 		else {
@@ -92,9 +89,4 @@ public class SpringBootKinesisEventHandler<E, O>
 			throw new IllegalStateException("Cannot convert event", e);
 		}
 	}
-
-	private boolean functionAcceptsMessage() {
-		return this.inspector.isMessage(function());
-	}
-
 }

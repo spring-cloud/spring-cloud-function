@@ -50,20 +50,21 @@ public class SpringBootStreamHandler extends AbstractSpringFunctionAdapterInitia
 	}
 
 	@Override
-	protected void initialize(Context context) {
-		super.initialize(context);
-		if (this.mapper == null) {
-			this.mapper = new ObjectMapper();
-		}
-	}
-
-	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context)
 			throws IOException {
 		initialize(context);
 		Object value = convertStream(input);
 		Publisher<?> flux = apply(extract(value));
 		this.mapper.writeValue(output, result(value, flux));
+	}
+
+
+	@Override
+	protected void initialize(Context context) {
+		super.initialize(context);
+		if (this.mapper == null) {
+			this.mapper = new ObjectMapper();
+		}
 	}
 
 	private Flux<?> extract(Object input) {

@@ -65,6 +65,8 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 
 	private Supplier<Publisher<?>> supplier;
 
+	private FunctionRegistration<?> functionRegistration;
+
 	private AtomicBoolean initialized = new AtomicBoolean();
 
 	@Autowired(required = false)
@@ -118,6 +120,9 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 	protected Class<?> getInputType() {
 		if (this.inspector != null) {
 			return this.inspector.getInputType(function());
+		}
+		else if (functionRegistration != null) {
+			return functionRegistration.getType().getInputType();
 		}
 		return Object.class;
 	}
@@ -274,13 +279,15 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private <T> T getAndInstrumentFromContext(String name) {
-		FunctionRegistration<?> functionRegistration =
+		this.functionRegistration =
 				new FunctionRegistration(context.getBean(name), name);
 
 		Type type = FunctionContextUtils.
 				findType(name, (ConfigurableListableBeanFactory) this.context.getBeanFactory());
-		FunctionType functionType = new FunctionType(type);
-		return (T) functionRegistration.type(functionType).wrap().getTarget();
+
+		this.functionRegistration = functionRegistration.type(new FunctionType(type)).wrap();
+
+		return (T) functionRegistration.getTarget();
 	}
 
 	private void initFunctionConsumerOrSupplierFromContext(Object targetContext) {

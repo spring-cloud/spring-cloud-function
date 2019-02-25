@@ -111,7 +111,6 @@ public class SpringBootKinesisEventHandlerTests {
 	@Test
 	public void functionBeanHandlesKinesisEvent() throws Exception {
 		this.handler = new SpringBootKinesisEventHandler<>(FunctionConfig.class);
-		this.handler.initialize();
 
 		KinesisEvent event = asKinesisEvent(singletonList(new Foo("foo")));
 
@@ -123,7 +122,6 @@ public class SpringBootKinesisEventHandlerTests {
 	@Test
 	public void functionBeanHandlesAggregatedKinesisEvent() throws Exception {
 		this.handler = new SpringBootKinesisEventHandler<>(FunctionConfig.class);
-		this.handler.initialize();
 
 		List<Foo> events = asList(new Foo("foo"), new Foo("bar"), new Foo("baz"));
 		KinesisEvent aggregatedEvent = asAggregatedKinesisEvent(events);
@@ -137,7 +135,6 @@ public class SpringBootKinesisEventHandlerTests {
 	@Test
 	public void functionMessageBean() throws Exception {
 		this.handler = new SpringBootKinesisEventHandler<>(FunctionMessageConfig.class);
-		this.handler.initialize();
 
 		KinesisEvent event = asKinesisEvent(asList(new Foo("foo"), new Foo("bar")));
 

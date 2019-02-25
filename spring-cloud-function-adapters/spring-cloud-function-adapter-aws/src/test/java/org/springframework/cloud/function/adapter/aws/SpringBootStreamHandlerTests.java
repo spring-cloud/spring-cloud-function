@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.function.Function;
 
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
@@ -56,6 +57,46 @@ public class SpringBootStreamHandlerTests {
 		this.handler.handleRequest(
 				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
 		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Test
+	public void functionNonFluxBeanNoCatalog() throws Exception {
+		this.handler = new SpringBootStreamHandler(NoCatalogNonFluxFunctionConfig.class);
+		this.handler.initialize(null);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		this.handler.handleRequest(
+				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
+		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Test
+	public void functionFluxBeanNoCatalog() throws Exception {
+		this.handler = new SpringBootStreamHandler(NoCatalogFluxFunctionConfig.class);
+		this.handler.initialize(null);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		this.handler.handleRequest(
+				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
+		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Configuration
+	protected static class NoCatalogNonFluxFunctionConfig {
+
+		@Bean
+		public Function<Foo, Bar> function() {
+			return foo -> new Bar(foo.getValue().toUpperCase());
+		}
+
+	}
+
+	@Configuration
+	protected static class NoCatalogFluxFunctionConfig {
+
+		@Bean
+		public Function<Flux<Foo>, Flux<Bar>> function() {
+			return flux -> flux.map(foo -> new Bar(foo.getValue().toUpperCase()));
+		}
+
 	}
 
 	@Configuration

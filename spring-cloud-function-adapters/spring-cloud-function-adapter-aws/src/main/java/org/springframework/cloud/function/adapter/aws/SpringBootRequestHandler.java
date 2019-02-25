@@ -25,12 +25,15 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
+import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
+
 /**
  * @param <E> event type
  * @param <O> result types
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
-public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer
+public class SpringBootRequestHandler<E, O> extends AbstractSpringFunctionAdapterInitializer<Context>
 		implements RequestHandler<E, Object> {
 
 	public SpringBootRequestHandler(Class<?> configurationClass) {
@@ -43,21 +46,31 @@ public class SpringBootRequestHandler<E, O> extends SpringFunctionInitializer
 
 	@Override
 	public Object handleRequest(E event, Context context) {
-		initialize();
+		initialize(context);
 		Object input = acceptsInput() ? convertEvent(event) : "";
 		Publisher<?> output = apply(extract(input));
 		return result(input, output);
 	}
 
-	private Object result(Object input, Publisher<?> output) {
+	@SuppressWarnings("unchecked")
+	@Override
+	protected <T> T result(Object input, Publisher<?> output) {
 		List<O> result = new ArrayList<>();
 		for (Object value : Flux.from(output).toIterable()) {
 			result.add(convertOutput(value));
 		}
 		if (isSingleValue(input) && result.size() == 1) {
-			return result.get(0);
+			return (T) result.get(0);
 		}
-		return result;
+		return (T) result;
+	}
+
+	protected boolean acceptsInput() {
+		return !this.getInspector().getInputType(function()).equals(Void.class);
+	}
+
+	protected boolean returnsOutput() {
+		return !this.getInspector().getOutputType(function()).equals(Void.class);
 	}
 
 	private boolean isSingleValue(Object input) {

@@ -32,9 +32,10 @@ import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 public class AzureSpringBootRequestHandlerTests {
 
@@ -111,11 +112,28 @@ public class AzureSpringBootRequestHandlerTests {
 		assertThat(bar.getValue()).isEqualTo("BAR");
 	}
 
+	@Test
+	public void functionNonFluxBean() {
+		AzureSpringBootRequestHandler<Foo, Bar> handler = handler(NonFluxFunctionConfig.class);
+		Bar bar = handler.handleRequest(new Foo("bar"), new TestExecutionContext("function"));
+		assertThat(bar).isNotNull();
+	}
+
 	@After
 	public void close() throws IOException {
 		if (this.handler != null) {
 			this.handler.close();
 		}
+	}
+
+	@Configuration
+	protected static class NonFluxFunctionConfig {
+
+		@Bean
+		public Function<Foo, Bar> function() {
+			return foo -> new Bar();
+		}
+
 	}
 
 	@Configuration
