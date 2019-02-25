@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ package org.springframework.cloud.function.adapter.aws;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -30,12 +28,14 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
+
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-public class SpringBootStreamHandler extends SpringFunctionInitializer
+public class SpringBootStreamHandler extends AbstractSpringFunctionAdapterInitializer<Context>
 		implements RequestStreamHandler {
 
 	@Autowired(required = false)
@@ -50,8 +50,8 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 	}
 
 	@Override
-	protected void initialize() {
-		super.initialize();
+	protected void initialize(Context context) {
+		super.initialize(context);
 		if (this.mapper == null) {
 			this.mapper = new ObjectMapper();
 		}
@@ -60,25 +60,10 @@ public class SpringBootStreamHandler extends SpringFunctionInitializer
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context)
 			throws IOException {
-		initialize();
+		initialize(context);
 		Object value = convertStream(input);
 		Publisher<?> flux = apply(extract(value));
 		this.mapper.writeValue(output, result(value, flux));
-	}
-
-	private Object result(Object input, Publisher<?> flux) {
-		List<Object> result = new ArrayList<>();
-		for (Object value : Flux.from(flux).toIterable()) {
-			result.add(value);
-		}
-		if (isSingleValue(input) && result.size() == 1) {
-			return result.get(0);
-		}
-		return result;
-	}
-
-	private boolean isSingleValue(Object input) {
-		return !(input instanceof Collection);
 	}
 
 	private Flux<?> extract(Object input) {

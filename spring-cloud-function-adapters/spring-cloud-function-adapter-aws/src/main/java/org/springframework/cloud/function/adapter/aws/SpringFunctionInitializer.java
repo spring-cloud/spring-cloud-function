@@ -36,6 +36,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
+import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -44,7 +45,10 @@ import org.springframework.util.ClassUtils;
 /**
  * @author Dave Syer
  * @author Semyon Fishman
+ * @deprecated as of 2.1 in favor of {@link AbstractSpringFunctionAdapterInitializer}.
+ * It is no longer used by the framework and only exists for avoiding potential regressions.
  */
+@Deprecated
 public class SpringFunctionInitializer implements Closeable {
 
 	private static Log logger = LogFactory.getLog(SpringFunctionInitializer.class);

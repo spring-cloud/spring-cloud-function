@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -42,7 +43,10 @@ import org.springframework.util.ClassUtils;
 
 /**
  * @author Soby Chacko
+ * @deprecated as of 2.1 in favor of {@link AbstractSpringFunctionAdapterInitializer}.
+ * It is no longer used by the framework and only exists for avoiding potential regressions.
  */
+@Deprecated
 public class AzureSpringFunctionInitializer implements Closeable {
 
 	private volatile static ConfigurableApplicationContext context;

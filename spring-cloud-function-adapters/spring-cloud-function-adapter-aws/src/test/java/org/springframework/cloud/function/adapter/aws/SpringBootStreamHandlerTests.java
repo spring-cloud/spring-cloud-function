@@ -41,7 +41,7 @@ public class SpringBootStreamHandlerTests {
 	@Test
 	public void functionBeanWithJacksonConfig() throws Exception {
 		this.handler = new SpringBootStreamHandler(FunctionConfigWithJackson.class);
-		this.handler.initialize();
+		this.handler.initialize(null);
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		this.handler.handleRequest(
 				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
@@ -51,7 +51,7 @@ public class SpringBootStreamHandlerTests {
 	@Test
 	public void functionBeanWithoutJacksonConfig() throws Exception {
 		this.handler = new SpringBootStreamHandler(FunctionConfigWithoutJackson.class);
-		this.handler.initialize();
+		this.handler.initialize(null);
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		this.handler.handleRequest(
 				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);

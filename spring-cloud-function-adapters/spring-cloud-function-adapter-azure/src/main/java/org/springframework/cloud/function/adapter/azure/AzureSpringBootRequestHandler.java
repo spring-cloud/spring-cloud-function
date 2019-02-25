@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@
 package org.springframework.cloud.function.adapter.azure;
 
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 
 import com.microsoft.azure.functions.ExecutionContext;
@@ -27,12 +25,15 @@ import com.microsoft.azure.functions.OutputBinding;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
+import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
+
 /**
  * @param <I> input type
  * @param <O> result type
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
-public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInitializer {
+public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionAdapterInitializer<ExecutionContext> {
 
 	public AzureSpringBootRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
@@ -51,10 +52,9 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 			}
 			initialize(context);
 
-			Function<Publisher<?>, Publisher<?>> function = lookup(name);
-			Publisher<?> events = extract(function, convertEvent(input));
-			Publisher<?> output = function.apply(events);
-			return result(function, input, output);
+			Publisher<?> events = extract(convertEvent(input));
+			Publisher<?> output = apply(events);
+			return result(input, output);
 		}
 		catch (Throwable ex) {
 			if (context != null) {
@@ -75,6 +75,11 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		}
 	}
 
+	@Override
+	protected String doResolveName(Object targetContext) {
+		return ((ExecutionContext) targetContext).getFunctionName();
+	}
+
 	public void handleOutput(I input, OutputBinding<O> binding,
 			ExecutionContext context) {
 		O result = handleRequest(input, context);
@@ -85,8 +90,8 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		return input;
 	}
 
-	private Flux<?> extract(Function<?, ?> function, Object input) {
-		if (!isSingleInput(function, input)) {
+	protected Flux<?> extract(Object input) {
+		if (!isSingleInput(this.getFunction(), input)) {
 			if (input instanceof Collection) {
 				return Flux.fromIterable((Iterable<?>) input);
 			}
@@ -94,29 +99,31 @@ public class AzureSpringBootRequestHandler<I, O> extends AzureSpringFunctionInit
 		return Flux.just(input);
 	}
 
-	private O result(Function<?, ?> function, Object input, Publisher<?> output) {
-		List<Object> result = new ArrayList<>();
-		for (Object value : Flux.from(output).toIterable()) {
-			result.add(convertOutput(value));
-		}
-		if (isSingleInput(function, input) && result.size() == 1) {
-			@SuppressWarnings("unchecked")
-			O value = (O) result.get(0);
-			return value;
-		}
-		if (isSingleOutput(function, input) && result.size() == 1) {
-			@SuppressWarnings("unchecked")
-			O value = (O) result.get(0);
-			return value;
-		}
-		@SuppressWarnings("unchecked")
-		O value = (O) result;
-		return value;
-	}
-
 	@SuppressWarnings("unchecked")
 	protected O convertOutput(Object output) {
 		return (O) output;
+	}
+
+	protected boolean isSingleInput(Function<?, ?> function, Object input) {
+		if (!(input instanceof Collection)) {
+			return true;
+		}
+		if (getInspector() != null) {
+			return Collection.class
+					.isAssignableFrom(getInspector().getInputType(function));
+		}
+		return ((Collection<?>) input).size() <= 1;
+	}
+
+	protected boolean isSingleOutput(Function<?, ?> function, Object output) {
+		if (!(output instanceof Collection)) {
+			return true;
+		}
+		if (getInspector() != null) {
+			return Collection.class
+					.isAssignableFrom(getInspector().getOutputType(function));
+		}
+		return ((Collection<?>) output).size() <= 1;
 	}
 
 }

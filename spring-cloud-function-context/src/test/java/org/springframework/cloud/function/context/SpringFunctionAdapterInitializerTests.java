@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.aws;
+package org.springframework.cloud.function.context;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -26,8 +26,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -35,15 +33,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 
+
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author Dave Syer
+ *
+ * @author Oleg Zhurakousky
  *
  */
-public class SpringFunctionInitializerTests {
+public class SpringFunctionAdapterInitializerTests {
 
-	private SpringFunctionInitializer initializer;
+	private AbstractSpringFunctionAdapterInitializer<Object> initializer;
 
 	@After
 	public void after() {
@@ -55,24 +56,30 @@ public class SpringFunctionInitializerTests {
 
 	@Test
 	public void functionBean() {
-		this.initializer = new SpringFunctionInitializer(FluxFunctionConfig.class);
-		this.initializer.initialize();
+		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(FluxFunctionConfig.class) {
+
+		};
+		this.initializer.initialize(null);
 		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
 	@Test
 	public void functionApp() {
-		this.initializer = new SpringFunctionInitializer(FluxFunctionApp.class);
-		this.initializer.initialize();
+		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(FluxFunctionApp.class) {
+
+		};
+		this.initializer.initialize(null);
 		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
 	@Test
 	public void functionCatalog() {
-		this.initializer = new SpringFunctionInitializer(FunctionConfig.class);
-		this.initializer.initialize();
+		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(FunctionConfig.class) {
+
+		};
+		this.initializer.initialize(null);
 		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
@@ -80,33 +87,41 @@ public class SpringFunctionInitializerTests {
 	@Test
 	@Ignore // related to boot 2.1 no bean override change
 	public void functionRegistrar() {
-		this.initializer = new SpringFunctionInitializer(FunctionRegistrar.class);
-		this.initializer.initialize();
+		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(FunctionRegistrar.class) {
+
+		};
+		this.initializer.initialize(null);
 		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
 	@Test
 	public void namedFunctionCatalog() {
-		this.initializer = new SpringFunctionInitializer(NamedFunctionConfig.class);
+		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(NamedFunctionConfig.class) {
+
+		};
 		System.setProperty("function.name", "other");
-		this.initializer.initialize();
+		this.initializer.initialize(null);
 		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
 	@Test
 	public void consumerCatalog() {
-		this.initializer = new SpringFunctionInitializer(ConsumerConfig.class);
-		this.initializer.initialize();
+		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(ConsumerConfig.class) {
+
+		};
+		this.initializer.initialize(null);
 		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
 		assertThat(result.toStream().collect(Collectors.toList())).isEmpty();
 	}
 
 	@Test
 	public void supplierCatalog() {
-		initializer = new SpringFunctionInitializer(SupplierConfig.class);
-		initializer.initialize();
+		initializer = new AbstractSpringFunctionAdapterInitializer<Object>(SupplierConfig.class) {
+
+		};
+		initializer.initialize(null);
 		Flux<?> result = Flux.from(initializer.apply(Flux.empty()));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
@@ -198,5 +213,4 @@ public class SpringFunctionInitializerTests {
 	protected static class Bar {
 
 	}
-
 }

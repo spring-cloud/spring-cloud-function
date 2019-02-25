@@ -40,7 +40,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Oleg Zhurakousky
  * @since 2.0
  */
-abstract class FunctionContextUtils {
+public abstract class FunctionContextUtils {
 
 	public static Type findType(String name, ConfigurableListableBeanFactory registry) {
 		AbstractBeanDefinition definition = (AbstractBeanDefinition) registry
