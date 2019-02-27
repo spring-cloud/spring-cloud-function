@@ -92,9 +92,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 
 	protected Flux<?> extract(Object input) {
 		if (!isSingleInput(this.getFunction(), input)) {
-			if (input instanceof Collection) {
-				return Flux.fromIterable((Iterable<?>) input);
-			}
+			return Flux.fromIterable((Iterable<?>) input);
 		}
 		return Flux.just(input);
 	}
