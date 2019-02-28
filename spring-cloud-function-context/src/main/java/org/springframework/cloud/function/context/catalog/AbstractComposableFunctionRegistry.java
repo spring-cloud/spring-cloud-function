@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -25,8 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -167,7 +167,8 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 * @return the name of the function or null.
 	 */
 	public String lookupFunctionName(Object function) {
-		return this.names.containsKey(function) ? this.names.get(function) : null;
+		return function != null && this.names.containsKey(function)
+				? this.names.get(function) : null;
 	}
 
 	@Override
@@ -311,10 +312,9 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		else {
 
 			String[] stages = StringUtils.delimitedListToStringArray(name, "|");
-			if (Stream.of(stages).allMatch(funcName -> contains(funcName))) {
+			List<FunctionRegistration<?>> composableFunctions = find(stages);
+			if (!composableFunctions.isEmpty()) {
 
-				List<FunctionRegistration<?>> composableFunctions = Stream.of(stages)
-						.map(funcName -> find(funcName)).collect(Collectors.toList());
 				FunctionRegistration<?> composedRegistration = composableFunctions
 						.stream().reduce((a, z) -> composeFunctions(a, z))
 						.orElseGet(() -> null);
@@ -348,9 +348,57 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		return name.replaceAll(",", "|").trim();
 	}
 
-	private boolean contains(String name) {
-		return getSupplierNames().contains(name) || getFunctionNames().contains(name)
-				|| getConsumerNames().contains(name);
+	private List<FunctionRegistration<?>> find(String[] stages) {
+		if (stages.length == 0) {
+			return Collections.emptyList();
+		}
+		if (stages.length == 1) {
+			FunctionRegistration<?> found = find(stages[0]);
+			return found == null ? Collections.emptyList() : Arrays.asList(found);
+		}
+		List<FunctionRegistration<?>> list = new ArrayList<>();
+		for (int i = 0; i < stages.length; i++) {
+			String name = stages[i];
+			FunctionRegistration<?> registration = find(name);
+			if (registration != null) {
+				list.add(registration);
+			}
+			else {
+				if (i == 0) {
+					// Supplier or Function
+					if (this.suppliers.size() == 1) {
+						name = this.suppliers.keySet().iterator().next();
+					}
+					else if (this.functions.size() == 1) {
+						name = this.functions.keySet().iterator().next();
+					}
+				}
+				else if (i == stages.length - 1) {
+					// Consumer or Function
+					if (this.consumers.size() == 1) {
+						name = this.consumers.keySet().iterator().next();
+					}
+					else if (this.functions.size() == 1) {
+						name = this.functions.keySet().iterator().next();
+					}
+				}
+				else {
+					// Function
+					if (this.functions.size() == 1) {
+						name = this.functions.keySet().iterator().next();
+					}
+				}
+				registration = find(name);
+				if (registration != null) {
+					list.add(registration);
+				}
+				else {
+					// Can't find default stage so we can't compose anything
+					return Collections.emptyList();
+				}
+			}
+		}
+		return list;
 	}
 
 	private FunctionRegistration<?> find(String name) {

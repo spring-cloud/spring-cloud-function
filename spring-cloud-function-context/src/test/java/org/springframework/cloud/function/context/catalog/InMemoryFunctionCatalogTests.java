@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.catalog;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 import reactor.core.publisher.Flux;
@@ -39,7 +40,7 @@ public class InMemoryFunctionCatalogTests {
 	public void testFunctionRegistration() {
 		TestFunction function = new TestFunction();
 		FunctionRegistration<TestFunction> registration = new FunctionRegistration<>(
-				function, "foo").type(FunctionType.of(TestFunction.class).getType());
+				function, "foo").type(FunctionType.of(TestFunction.class));
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(registration);
 		FunctionRegistration<?> registration2 = catalog.getRegistration(function);
@@ -50,7 +51,7 @@ public class InMemoryFunctionCatalogTests {
 	public void testFunctionLookup() {
 		TestFunction function = new TestFunction();
 		FunctionRegistration<TestFunction> registration = new FunctionRegistration<>(
-				function, "foo").type(FunctionType.of(TestFunction.class).getType());
+				function, "foo").type(FunctionType.of(TestFunction.class));
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(registration);
 
@@ -68,10 +69,9 @@ public class InMemoryFunctionCatalogTests {
 	@Test
 	public void testFunctionComposition() {
 		FunctionRegistration<UpperCase> upperCaseRegistration = new FunctionRegistration<>(
-				new UpperCase(), "uppercase")
-						.type(FunctionType.of(UpperCase.class).getType());
+				new UpperCase(), "uppercase").type(FunctionType.of(UpperCase.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
-				new Reverse(), "reverse").type(FunctionType.of(Reverse.class).getType());
+				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
@@ -86,13 +86,48 @@ public class InMemoryFunctionCatalogTests {
 	}
 
 	@Test
+	public void testFunctionCompositionImplicit() {
+		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
+				new Words(), "words").type(FunctionType.of(Words.class));
+		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
+				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
+		catalog.register(wordsRegistration);
+		catalog.register(reverseRegistration);
+
+		// There's only one function, we should be able to leave that blank
+		Supplier<Flux<String>> lookedUpFunction = catalog.lookup("words|");
+		assertThat(catalog.getFunctionType("words|").isMessage()).isFalse();
+
+		assertThat(lookedUpFunction).isNotNull();
+		assertThat(lookedUpFunction.get().blockFirst()).isEqualTo("olleh");
+	}
+
+	@Test
+	public void testFunctionCompositionExplicit() {
+		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
+				new Words(), "words").type(FunctionType.of(Words.class));
+		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
+				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
+		catalog.register(wordsRegistration);
+		catalog.register(reverseRegistration);
+
+		Supplier<Flux<String>> lookedUpFunction = catalog.lookup("words|reverse");
+		assertThat(catalog.getFunctionType("words|reverse").isMessage()).isFalse();
+
+		assertThat(lookedUpFunction).isNotNull();
+		assertThat(lookedUpFunction.get().blockFirst()).isEqualTo("olleh");
+	}
+
+	@Test
 	public void testFunctionCompositionWithMessages() {
 		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
 				new UpperCaseMessage(), "uppercase")
-						.type(FunctionType.of(UpperCaseMessage.class).getType());
+						.type(FunctionType.of(UpperCaseMessage.class));
 		FunctionRegistration<ReverseMessage> reverseRegistration = new FunctionRegistration<>(
 				new ReverseMessage(), "reverse")
-						.type(FunctionType.of(ReverseMessage.class).getType());
+						.type(FunctionType.of(ReverseMessage.class));
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
@@ -113,9 +148,9 @@ public class InMemoryFunctionCatalogTests {
 	public void testFunctionCompositionMixedMessages() {
 		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
 				new UpperCaseMessage(), "uppercase")
-						.type(FunctionType.of(UpperCaseMessage.class).getType());
+						.type(FunctionType.of(UpperCaseMessage.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
-				new Reverse(), "reverse").type(FunctionType.of(Reverse.class).getType());
+				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
@@ -130,6 +165,15 @@ public class InMemoryFunctionCatalogTests {
 				.blockFirst();
 		assertThat(message.getPayload()).isEqualTo("RATS");
 		assertThat(message.getHeaders().get("foo")).isEqualTo("bar");
+	}
+
+	private static class Words implements Supplier<String> {
+
+		@Override
+		public String get() {
+			return "hello";
+		}
+
 	}
 
 	private static class UpperCase implements Function<String, String> {

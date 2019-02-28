@@ -95,7 +95,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		public FunctionRegistration<?> getRegistration(Object function) {
-			String functionName = this.lookupFunctionName(function);
+			String functionName = function == null ? null
+					: this.lookupFunctionName(function);
 			if (StringUtils.hasText(functionName)) {
 				FunctionRegistration<?> registration = new FunctionRegistration<Object>(
 						function, functionName);
