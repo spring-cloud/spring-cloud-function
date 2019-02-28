@@ -147,6 +147,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <S> FunctionRegistration<S> wrap() {
+		this.isFunctionSignatureSupported();
 		FunctionRegistration<S> result;
 		if (this.type == null) {
 			result = (FunctionRegistration<S>) this;
@@ -189,6 +190,14 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	public void setBeanName(String name) {
 		if (CollectionUtils.isEmpty(this.names)) {
 			this.name(name);
+		}
+	}
+
+	private void isFunctionSignatureSupported() {
+		if (type != null) {
+			Assert.isTrue(!(Mono.class.isAssignableFrom(this.type.getOutputWrapper())
+					&& Mono.class.isAssignableFrom(this.type.getInputWrapper())),
+					"Function<Mono, Mono> is not supported.");
 		}
 	}
 

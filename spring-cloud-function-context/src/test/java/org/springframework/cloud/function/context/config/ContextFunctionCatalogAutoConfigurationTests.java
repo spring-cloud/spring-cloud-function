@@ -35,6 +35,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -287,6 +288,11 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(this.inspector
 				.getOutputWrapper(this.catalog.lookup(Function.class, "function")))
 						.isAssignableFrom(Mono.class);
+	}
+
+	@Test(expected = BeanCreationException.class)
+	public void monoToMonoNonVoidFunction() {
+		create(MonoToMonoNonVoidConfiguration.class);
 	}
 
 	@Test
@@ -863,6 +869,17 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		public Function<Flux<String>, Mono<Map<String, Integer>>> function() {
 			return flux -> flux.collect(HashMap::new,
 					(map, word) -> map.merge(word, 1, Integer::sum));
+		}
+
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class MonoToMonoNonVoidConfiguration {
+
+		@Bean
+		public Function<Mono<String>, Mono<String>> function() {
+			return mono -> mono;
 		}
 
 	}
