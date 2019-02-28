@@ -53,13 +53,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = { RestConfiguration.class,
-		ApplicationConfiguration.class },
-	webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
-		"spring.cloud.function.web.export.sink.url=http://localhost:${server.port}",
-		"spring.cloud.function.web.export.source.url=http://localhost:${server.port}",
-		"spring.cloud.function.web.export.sink.name=origin|uppercase",
-		"spring.cloud.function.web.export.debug=true",
-		"spring.cloud.function.web.export.enabled=true" })
+		ApplicationConfiguration.class }, webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
+				"spring.cloud.function.web.export.sink.url=http://localhost:${server.port}",
+				"spring.cloud.function.web.export.source.url=http://localhost:${server.port}",
+				"spring.cloud.function.web.export.sink.name=origin|uppercase",
+				// "spring.cloud.function.web.export.debug=true",
+				"spring.cloud.function.web.export.enabled=true" })
 public class FunctionAutoConfigurationIntegrationTests {
 
 	@Autowired
