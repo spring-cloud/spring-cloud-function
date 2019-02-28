@@ -37,7 +37,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.source.WebAppIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.SocketUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,14 +50,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
+@SpringBootTest(classes = { RestApplication.class, ApplicationConfiguration.class },
+	webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
 		"spring.main.web-application-type=reactive",
 		"spring.cloud.function.web.export.sink.url=http://localhost:${server.port}/values",
 		// in a webapp we have to explicitly enable the export
 		"spring.cloud.function.web.export.enabled=true",
 		// manually so we know the webapp is listening when we start
 		"spring.cloud.function.web.export.autoStartup=false" })
-@ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class WebAppIntegrationTests {
 
 	private static Log logger = LogFactory.getLog(WebAppIntegrationTests.class);

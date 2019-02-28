@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.source;
 
+import java.net.ConnectException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
@@ -39,6 +40,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * endpoint.
  *
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  *
  */
 public class SupplierExporter implements SmartLifecycle {
@@ -82,9 +84,6 @@ public class SupplierExporter implements SmartLifecycle {
 		if (this.running) {
 			return;
 		}
-
-		this.running = true;
-		this.ok = true;
 		logger.info("Starting");
 
 		Flux<Object> streams = Flux.empty();
@@ -99,16 +98,62 @@ public class SupplierExporter implements SmartLifecycle {
 			streams = streams.mergeWith(forward(supplier, name));
 		}
 
-		this.subscription = streams.doOnError(error -> {
-			this.ok = false;
-			if (!this.debug) {
-				logger.info(error);
-			}
-		}).doOnTerminate(() -> this.running = false).doOnNext(value -> {
-			if (this.subscription != null && !this.running) {
-				this.subscription.dispose();
-			}
-		}).subscribe();
+		this.subscription = streams
+				.retry(error -> {
+					/*
+					 * The ConnectException may happen if a server is not yet available/reachable
+					 * The ClassCast is to handle delayed Mono issued by HttpSupplier.transform for non-2xx responses
+					 */
+					boolean retry = error instanceof ConnectException || error instanceof ClassCastException
+							&& this.running;
+					if (!retry) {
+						this.ok = false;
+						if (!this.debug) {
+							logger.info(error);
+						}
+						stop();
+					}
+					return retry;
+				})
+				.doOnComplete(() -> {
+					stop();
+				})
+				.subscribe();
+
+		this.ok = true;
+		this.running = true;
+	}
+
+	public boolean isOk() {
+		return this.ok;
+	}
+
+	@Override
+	public void stop() {
+		logger.info("Stopping");
+		this.running = false;
+		this.subscription.dispose();
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.running;
+	}
+
+	@Override
+	public int getPhase() {
+		return 0;
+	}
+
+	@Override
+	public boolean isAutoStartup() {
+		return this.autoStartup;
+	}
+
+	@Override
+	public void stop(Runnable callback) {
+		stop();
+		callback.run();
 	}
 
 	private Flux<ClientResponse> forward(Supplier<Flux<Object>> supplier, String name) {
@@ -144,36 +189,4 @@ public class SupplierExporter implements SmartLifecycle {
 	private URI uri(String destination) {
 		return this.requestBuilder.uri(destination);
 	}
-
-	public boolean isOk() {
-		return this.ok;
-	}
-
-	@Override
-	public void stop() {
-		logger.info("Stopping");
-		this.running = false;
-	}
-
-	@Override
-	public boolean isRunning() {
-		return this.running;
-	}
-
-	@Override
-	public int getPhase() {
-		return 0;
-	}
-
-	@Override
-	public boolean isAutoStartup() {
-		return this.autoStartup;
-	}
-
-	@Override
-	public void stop(Runnable callback) {
-		stop();
-		callback.run();
-	}
-
 }

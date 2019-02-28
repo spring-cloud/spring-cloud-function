@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.source;
 
+import java.time.Duration;
 import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
@@ -31,9 +32,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * A {@link Supplier} that pulls data from an HTTP endpoint. Repeatedly polls the endpoint
- * until a non-2xx response is received.
+ * until a non-2xx response is received, at which point it will repeatedly produced a
+ * Mono at 1 sec intervals until the next 2xx response.
  *
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  */
 public class HttpSupplier implements Supplier<Flux<?>> {
 
@@ -70,9 +73,9 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 		HttpStatus status = response.statusCode();
 		if (!status.is2xxSuccessful()) {
 			if (this.props.isDebug()) {
-				logger.info("Terminated supplier with status=" + response.statusCode());
+				logger.info("Delaying supplier based on status=" + response.statusCode());
 			}
-			return Mono.error(TerminateException.INSTANCE);
+			return Mono.delay(Duration.ofSeconds(1));
 		}
 		return response.bodyToMono(this.props.getSource().getType())
 				.map(value -> message(response, value));
@@ -88,10 +91,10 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 				.build();
 	}
 
+	@SuppressWarnings("serial")
 	private static class TerminateException extends RuntimeException {
 
-		static final TerminateException INSTANCE = new TerminateException();
-
+		@SuppressWarnings("unused")
 		TerminateException() {
 			super("Planned termination");
 		}
@@ -102,5 +105,4 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 		}
 
 	}
-
 }

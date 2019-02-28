@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package org.springframework.cloud.function.web.source;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -34,8 +32,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIntegrationTests.ApplicationConfiguration;
-import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIntegrationTests.RestConfiguration;
+import org.springframework.cloud.function.web.source.FunctionAutoConfigurationWithRetriesIntegrationTests.ApplicationConfiguration;
+import org.springframework.cloud.function.web.source.FunctionAutoConfigurationWithRetriesIntegrationTests.RestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -48,7 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * @author Dave Syer
+ * @author Oleg Zhurakousky
  *
  */
 @RunWith(SpringRunner.class)
@@ -60,7 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.function.web.export.sink.name=origin|uppercase",
 		"spring.cloud.function.web.export.debug=true",
 		"spring.cloud.function.web.export.enabled=true" })
-public class FunctionAutoConfigurationIntegrationTests {
+public class FunctionAutoConfigurationWithRetriesIntegrationTests {
 
 	@Autowired
 	private SupplierExporter forwarder;
@@ -81,13 +79,17 @@ public class FunctionAutoConfigurationIntegrationTests {
 	@Test
 	public void copiesMessages() throws Exception {
 		int count = 0;
-		while (this.forwarder.isRunning() && count++ < 10) {
-			Thread.sleep(20);
+		while (this.forwarder.isRunning() && count++ < 30) {
+			Thread.sleep(200);
 		}
 		// It completed
 		assertThat(this.forwarder.isOk()).isTrue();
-		assertThat(this.app.inputs).contains("HELLO");
-		assertThat(this.app.inputs).contains("WORLD");
+		assertThat(this.forwarder.isRunning()).isFalse();
+		assertThat(this.app.inputs.size()).isEqualTo(4);
+		assertThat(this.app.inputs).contains("2");
+		assertThat(this.app.inputs).contains("4");
+		assertThat(this.app.inputs).contains("6");
+		assertThat(this.app.inputs).contains("8");
 	}
 
 	@EnableAutoConfiguration
@@ -105,17 +107,23 @@ public class FunctionAutoConfigurationIntegrationTests {
 	@RestController
 	public static class RestConfiguration {
 
+		@Autowired
+		private SupplierExporter forwarder;
+
 		private static Log logger = LogFactory.getLog(RestConfiguration.class);
 
 		private List<String> inputs = new ArrayList<>();
 
-		private Iterator<String> outputs = Arrays.asList("hello", "world").iterator();
+		private int counter;
 
 		@GetMapping("/")
 		ResponseEntity<String> home() {
 			logger.info("HOME");
-			if (this.outputs.hasNext()) {
-				return ResponseEntity.ok(this.outputs.next());
+			if (++counter % 2 == 0 && counter < 10) {
+				return ResponseEntity.ok(String.valueOf(counter));
+			}
+			if (counter >= 10) {
+				forwarder.stop();
 			}
 			return ResponseEntity.notFound().build();
 		}
