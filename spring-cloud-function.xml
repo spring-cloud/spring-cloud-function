@@ -609,11 +609,8 @@ public class FuncApplication implements ApplicationContextInitializer&lt;Generic
 <section xml:id="_custom_runtime">
 <title>Custom Runtime</title>
 <simpara>An <link xl:href="https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html">AWS Lambda custom runtime</link> can be created really easily using the HTTP export features in Spring Cloud Function Web. To make this work just add Spring Cloud Function AWS and Spring Cloud Function Web as dependencies in your project and set the following in your <literal>application.properties</literal>:</simpara>
-<screen>spring.cloud.function.web.export.enabled=true
-spring.cloud.function.web.export.source.url=http://${AWS_LAMBDA_RUNTIME_API:localhost}/2018-06-01/runtime/invocation/next
-spring.cloud.function.web.export.sink.url=http://${AWS_LAMBDA_RUNTIME_API:localhost}/2018-06-01/runtime/invocation/{{destination}}/response
-spring.cloud.function.web.export.sink.name=origin|uppercase</screen>
-<simpara>where "uppercase" is the name of your function ("origin" is the name of the <literal>Supplier</literal> that is provided by Spring Cloud Function Web). Then provide a <literal>bootstrap</literal> script in the root of your zip/jar that runs the Spring Boot application. The functional bean definition style works for custom runtimes too, and is faster than the <literal>@Bean</literal> style, so the example <literal>FuncApplication</literal> above would work. A custom runtime can start up much quicker even than a functional bean implementation of a Java lambda - it depends mostly on the number of classes you need to load at runtime. Spring doesn&#8217;t do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance, and not doing any work in custom <literal>@PostConstruct</literal> initializers.</simpara>
+<screen>spring.cloud.function.web.export.enabled=true</screen>
+<simpara>Set the handler name in AWS to the name of your function. Then provide a <literal>bootstrap</literal> script in the root of your zip/jar that runs the Spring Boot application. The functional bean definition style works for custom runtimes too, and is faster than the <literal>@Bean</literal> style, so the example <literal>FuncApplication</literal> above would work. A custom runtime can start up much quicker even than a functional bean implementation of a Java lambda - it depends mostly on the number of classes you need to load at runtime. Spring doesn&#8217;t do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance, and not doing any work in custom <literal>@PostConstruct</literal> initializers.</simpara>
 </section>
 </section>
 <section xml:id="_azure_functions">
