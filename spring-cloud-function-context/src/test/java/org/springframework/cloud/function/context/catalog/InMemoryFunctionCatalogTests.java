@@ -104,6 +104,24 @@ public class InMemoryFunctionCatalogTests {
 	}
 
 	@Test
+	public void testFunctionCompletelyImplicitComposition() {
+		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
+				new Words(), "words").type(FunctionType.of(Words.class));
+		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
+				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
+		catalog.register(wordsRegistration);
+		catalog.register(reverseRegistration);
+
+		// There's only one function, we should be able to leave that blank
+		Supplier<Flux<String>> lookedUpFunction = catalog.lookup("|");
+		assertThat(catalog.getFunctionType("|").isMessage()).isFalse();
+
+		assertThat(lookedUpFunction).isNotNull();
+		assertThat(lookedUpFunction.get().blockFirst()).isEqualTo("olleh");
+	}
+
+	@Test
 	public void testFunctionCompositionExplicit() {
 		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
 				new Words(), "words").type(FunctionType.of(Words.class));
