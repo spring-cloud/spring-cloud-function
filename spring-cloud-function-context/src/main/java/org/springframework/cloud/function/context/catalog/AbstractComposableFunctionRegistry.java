@@ -59,6 +59,7 @@ import org.springframework.util.StringUtils;
  * Comma ',' is also supported as composition delimiter (e.g., {@code "a,b"}).
  *
  * @author Oleg Zhurakousky
+ * @author Dave Syer
  * @since 2.1
  *
  */
@@ -79,13 +80,14 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 
 	protected ApplicationEventPublisher applicationEventPublisher;
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T lookup(Class<?> type, String name) {
 		String functionDefinitionName = !StringUtils.hasText(name)
 				&& this.environment.containsProperty("spring.cloud.function.definition")
 						? this.environment.getProperty("spring.cloud.function.definition")
 						: name;
-		return this.doLookup(type, functionDefinitionName);
+		return (T) this.doLookup(type, functionDefinitionName);
 	}
 
 	@SuppressWarnings("serial")
@@ -247,13 +249,12 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		this.consumers.put(name, consumer);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Object doLookup(String name, Map lookup, Class<?> typeOfFunction) {
-		Object function = compose(name, lookup);
-		if (function != null && typeOfFunction.isAssignableFrom(function.getClass())) {
-			return function;
-		}
-		return null;
+	protected void addType(String name, FunctionType functionType) {
+		this.types.computeIfAbsent(name, str -> functionType);
+	}
+
+	protected void addName(Object function, String name) {
+		this.names.put(function, name);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -278,29 +279,9 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		return registration;
 	}
 
-	protected void addType(String name, FunctionType functionType) {
-		this.types.computeIfAbsent(name, str -> functionType);
-	}
-
-	protected void addName(Object function, String name) {
-		this.names.put(function, name);
-	}
-
-	private Supplier<?> lookupSupplier(String name) {
-		return (Supplier<?>) doLookup(name, this.suppliers, Supplier.class);
-	}
-
-	private Function<?, ?> lookupFunction(String name) {
-		return (Function<?, ?>) doLookup(name, this.functions, Function.class);
-	}
-
-	private Consumer<?> lookupConsumer(String name) {
-		return (Consumer<?>) doLookup(name, this.consumers, Consumer.class);
-	}
-
 	private Object compose(String name, Map<String, Object> lookup) {
 
-		name = normalizeName(name);
+		name = name.replaceAll(",", "|").trim();
 		Object composedFunction = null;
 
 		if (lookup.containsKey(name)) {
@@ -311,53 +292,39 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		}
 		else {
 			String[] stages = StringUtils.delimitedListToStringArray(name, "|");
-			if (Stream.of(stages).allMatch(funcName -> contains(funcName))) {
 
-				AtomicBoolean supplierPresent = new AtomicBoolean();
-				List<FunctionRegistration<?>> composableFunctions = Stream.of(stages)
-						.map(funcName -> find(funcName, supplierPresent.get()))
-						.filter(x -> x != null)
-						.peek(f -> supplierPresent.set(f.getTarget() instanceof Supplier))
-						.collect(Collectors.toList());
-				FunctionRegistration<?> composedRegistration = composableFunctions
-						.stream().reduce((a, z) -> composeFunctions(a, z))
-						.orElseGet(() -> null);
+			AtomicBoolean supplierPresent = new AtomicBoolean();
+			List<FunctionRegistration<?>> composableFunctions = Stream.of(stages)
+					.map(funcName -> find(funcName, supplierPresent.get()))
+					.filter(x -> x != null)
+					.peek(f -> supplierPresent.set(f.getTarget() instanceof Supplier))
+					.collect(Collectors.toList());
+			FunctionRegistration<?> composedRegistration = composableFunctions
+					.stream().reduce((a, z) -> composeFunctions(a, z))
+					.orElseGet(() -> null);
 
-				if (composedRegistration != null
-						&& composedRegistration.getTarget() != null
-						&& !this.types.containsKey(name)) {
+			if (composedRegistration != null
+					&& composedRegistration.getTarget() != null
+					&& !this.types.containsKey(name)) {
 
-					composedFunction = composedRegistration.getTarget();
-					this.addType(name, composedRegistration.getType());
-					this.addName(composedFunction, name);
-					if (composedFunction instanceof Function) {
-						this.addFunction(name, (Function<?, ?>) composedFunction);
-					}
-					else if (composedFunction instanceof Consumer) {
-						this.addConsumer(name, (Consumer<?>) composedFunction);
-					}
-					else if (composedFunction instanceof Supplier) {
-						this.addSupplier(name, (Supplier<?>) composedFunction);
-
-					}
+				composedFunction = composedRegistration.getTarget();
+				this.addType(name, composedRegistration.getType());
+				this.addName(composedFunction, name);
+				if (composedFunction instanceof Function) {
+					this.addFunction(name, (Function<?, ?>) composedFunction);
 				}
+				else if (composedFunction instanceof Consumer) {
+					this.addConsumer(name, (Consumer<?>) composedFunction);
+				}
+				else if (composedFunction instanceof Supplier) {
+					this.addSupplier(name, (Supplier<?>) composedFunction);
 
+				}
 			}
+
 		}
 
 		return composedFunction;
-	}
-
-	private String normalizeName(String name) {
-		return name.replaceAll(",", "|").trim();
-	}
-
-	private boolean contains(String name) {
-		if (!StringUtils.hasText(name)) {
-			return true;
-		}
-		return getSupplierNames().contains(name) || getFunctionNames().contains(name)
-				|| getConsumerNames().contains(name);
 	}
 
 	private FunctionRegistration<?> find(String name, boolean supplierFound) {
@@ -464,26 +431,34 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		return input;
 	}
 
-	@SuppressWarnings("unchecked")
-	private <T> T doLookup(Class<?> type, String name) {
-		T function = null;
+	private Object doLookup(Class<?> type, String name) {
+		Object function = null;
 		if (type == null) {
-			function = (T) this.lookupFunction(name);
+			function = this.compose(name, this.functions);
 			if (function == null) {
-				function = (T) this.lookupConsumer(name);
+				function = this.compose(name, this.consumers);
 			}
 			if (function == null) {
-				function = (T) this.lookupSupplier(name);
+				function = this.compose(name, this.suppliers);
 			}
 		}
 		else if (Function.class.isAssignableFrom(type)) {
-			function = (T) this.lookupFunction(name);
+			Object composed = this.compose(name, this.functions);
+			if (composed != null && Function.class.isAssignableFrom(composed.getClass())) {
+				function = composed;
+			}
 		}
 		else if (Supplier.class.isAssignableFrom(type)) {
-			function = (T) this.lookupSupplier(name);
+			Object composed = this.compose(name, this.suppliers);
+			if (composed != null && Supplier.class.isAssignableFrom(composed.getClass())) {
+				function = composed;
+			}
 		}
 		else if (Consumer.class.isAssignableFrom(type)) {
-			function = (T) this.lookupConsumer(name);
+			Object composed = this.compose(name, this.consumers);
+			if (composed != null && Consumer.class.isAssignableFrom(composed.getClass())) {
+				function = composed;
+			}
 		}
 		return function;
 	}
