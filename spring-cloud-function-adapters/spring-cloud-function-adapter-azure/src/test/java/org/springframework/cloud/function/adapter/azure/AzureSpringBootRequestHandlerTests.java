@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.microsoft.azure.functions.ExecutionContext;
 import org.junit.After;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
@@ -151,8 +152,11 @@ public class AzureSpringBootRequestHandlerTests {
 	protected static class AutoConfig {
 
 		@Bean
-		public Function<Foo, Bar> uppercase() {
-			return foo -> new Bar(foo.getValue().toUpperCase());
+		public Function<Foo, Bar> uppercase(ExecutionContext targetContext) {
+			return foo -> {
+				targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
+				return new Bar(foo.getValue().toUpperCase());
+			};
 		}
 
 	}

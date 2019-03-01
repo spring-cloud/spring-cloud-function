@@ -42,7 +42,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -56,6 +58,11 @@ import org.springframework.util.ClassUtils;
 public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Closeable {
 
 	private static Log logger = LogFactory.getLog(AbstractSpringFunctionAdapterInitializer.class);
+
+	/**
+	 * Name of the bean for registering the target execution context passed to `initialize(context)` operation.
+	 */
+	public static final String TARGET_EXECUTION_CTX_BEAN_NAME = "targetExecutionContext";
 
 	private final Class<?> configurationClass;
 
@@ -102,6 +109,8 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		}
 		logger.info("Initializing: " + this.configurationClass);
 		SpringApplication builder = springApplication();
+
+		this.registerTargetContext(targetContext, builder);
 		ConfigurableApplicationContext context = builder.run();
 		context.getAutowireCapableBeanFactory().autowireBean(this);
 		this.context = context;
@@ -110,6 +119,19 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		}
 		else {
 			initFunctionConsumerOrSupplierFromCatalog(targetContext);
+		}
+	}
+
+	private void registerTargetContext(C targetContext, SpringApplication builder) {
+		if (targetContext != null) {
+			builder.addInitializers(new ApplicationContextInitializer<ConfigurableApplicationContext>() {
+				@SuppressWarnings("unchecked")
+				@Override
+				public void initialize(ConfigurableApplicationContext applicationContext) {
+					((GenericApplicationContext) applicationContext).registerBean(TARGET_EXECUTION_CTX_BEAN_NAME,
+							(Class<C>) targetContext.getClass(), (Supplier<C>) () -> targetContext);
+				}
+			});
 		}
 	}
 
