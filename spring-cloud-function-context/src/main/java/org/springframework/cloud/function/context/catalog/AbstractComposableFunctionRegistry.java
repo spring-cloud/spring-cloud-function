@@ -118,7 +118,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 * @return immutable {@link Set} of available {@link Supplier} names.
 	 */
 	public Set<String> getSupplierNames() {
-		return Collections.unmodifiableSet(this.suppliers.keySet());
+		return this.suppliers.keySet();
 	}
 
 	/**
@@ -150,7 +150,9 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	}
 
 	/**
-	 * The count of all Suppliers, Function and Consumers currently registered.
+	 * The size of this catalog, which is the count of all Suppliers,
+	 * Function and Consumers currently registered.
+	 *
 	 * @return the count of all Suppliers, Function and Consumers currently registered.
 	 */
 	@Override
@@ -184,7 +186,14 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		this.environment = environment;
 	}
 
-	protected void wrap(FunctionRegistration<?> registration, String key) {
+	/**
+	 * Registers function wrapped by the provided FunctionRegistration with
+	 * this FunctionRegistry.
+	 *
+	 * @param registration instance of {@link FunctionRegistration}
+	 * @param key the name of the function
+	 */
+	protected void register(FunctionRegistration<?> registration, String key) {
 		Object target = registration.getTarget();
 		this.addName(target, key);
 		if (registration.getType() != null) {

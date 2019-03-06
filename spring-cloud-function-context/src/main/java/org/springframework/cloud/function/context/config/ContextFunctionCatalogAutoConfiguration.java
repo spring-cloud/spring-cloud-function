@@ -110,7 +110,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public <T> void register(FunctionRegistration<T> functionRegistration) {
 			Assert.notEmpty(functionRegistration.getNames(),
 					"'registration' must contain at least one name before it is registered in catalog.");
-			wrap(functionRegistration, functionRegistration.getNames().iterator().next());
+			register(functionRegistration, functionRegistration.getNames().iterator().next());
 		}
 
 		/**
@@ -256,7 +256,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 						}
 					});
 
-			registrations.forEach(registration -> wrap(registration,
+			registrations.forEach(registration -> register(registration,
 					targets.get(registration.getTarget())));
 		}
 
