@@ -2,6 +2,8 @@
 
 Mark Fisher, Dave Syer, Oleg Zhurakousky
 
+*{spring-cloud-function-version}*
+
 ---
 
 :github: https://github.com/spring-cloud/spring-cloud-function
@@ -267,14 +269,3 @@ https://projectriff.io[Riff] supports Java functions and its
 https://github.com/projectriff/java-function-invoker[Java Function
 Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
-=== AWS Lambda
-
-include::adapters/aws.adoc[leveloffset=+2]
-
-=== Azure Functions
-
-include::adapters/azure.adoc[leveloffset=+2]
-
-=== Apache Openwhisk
-
-include::adapters/openwhisk.adoc[leveloffset=+2]
