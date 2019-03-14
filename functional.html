@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<title>Comparing Functional with Traditional Bean Definitions</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
+}
+
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
+
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
+
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
+
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
+
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book toc2 toc-left">
+<div id="header">
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_comparing_functional_with_traditional_bean_definitions">Comparing Functional with Traditional Bean Definitions</a></li>
+<li><a href="#_testing_functional_applications">Testing Functional Applications</a></li>
+<li><a href="#_limitations_of_functional_bean_declaration">Limitations of Functional Bean Declaration</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Function supports a "functional" style of bean declarations for small apps where you need fast startup. The functional style of bean declaration was a feature of Spring Framework 5.0 with significant enhancements in 5.1.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_comparing_functional_with_traditional_bean_definitions"><a class="link" href="#_comparing_functional_with_traditional_bean_definitions">Comparing Functional with Traditional Bean Definitions</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Here&#8217;s a vanilla Spring Cloud Function application from with the
+familiar <code>@Configuration</code> and <code>@Bean</code> declaration style:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootApplication
+public class DemoApplication {
+
+  @Bean
+  public Function&lt;String, String&gt; uppercase() {
+    return value -&gt; value.toUpperCase();
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(DemoApplication.class, args);
+  }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including <code>spring-cloud-function-starter-web</code> on the classpath. Running the main method would expose an endpoint that you can use to ping that <code>uppercase</code> function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>$ curl localhost:8080 -d foo
+FOO</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The web adapter in <code>spring-cloud-function-starter-web</code> uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the <code>spring-cloud-starter-function-webflux</code> dependency instead. The functionality is the same, and the user application code can be used in both.</p>
+</div>
+<div class="paragraph">
+<p>Now for the functional beans: the user application code can be recast into "functional"
+form, like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootConfiguration
+public class DemoApplication implements ApplicationContextInitializer&lt;GenericApplicationContext&gt; {
+
+  public static void main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.class, args);
+  }
+
+  public Function&lt;String, String&gt; uppercase() {
+    return value -&gt; value.toUpperCase();
+  }
+
+  @Override
+  public void initialize(GenericApplicationContext context) {
+    context.registerBean("demo", FunctionRegistration.class,
+        () -&gt; new FunctionRegistration&lt;&gt;(uppercase())
+            .type(FunctionType.from(String.class).to(String.class)));
+  }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The main differences are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The main class is an <code>ApplicationContextInitializer</code>.</p>
+</li>
+<li>
+<p>The <code>@Bean</code> methods have been converted to calls to <code>context.registerBean()</code></p>
+</li>
+<li>
+<p>The <code>@SpringBootApplication</code> has been replaced with
+<code>@SpringBootConfiguration</code> to signify that we are not enabling Spring
+Boot autoconfiguration, and yet still marking the class as an "entry
+point".</p>
+</li>
+<li>
+<p>The <code>SpringApplication</code> from Spring Boot has been replaced with a
+<code>FunctionalSpringApplication</code> from Spring Cloud Function (it&#8217;s a
+subclass).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The business logic beans that you register in a Spring Cloud Function app are of type <code>FunctionRegistration</code>. This is a wrapper that contains both the function and information about the input and output types. In the <code>@Bean</code> form of the application that information can be derived reflectively, but in a functional bean registration some of it is lost unless we use a <code>FunctionRegistration</code>.</p>
+</div>
+<div class="paragraph">
+<p>An alternative to using an <code>ApplicationContextInitializer</code> and <code>FunctionRegistration</code> is to make the application itself implement <code>Function</code> (or <code>Consumer</code> or <code>Supplier</code>). Example (equivalent to the above):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootConfiguration
+public class DemoApplication implements Function&lt;String, String&gt; {
+
+  public static void main(String[] args) {
+    FunctionalSpringApplication.run(DemoApplication.class, args);
+  }
+
+  @Override
+  public String uppercase(String value) {
+    return value.toUpperCase();
+  }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It would also work if you add a separate, standalone class of type <code>Function</code> and register it with the <code>SpringApplication</code> using an alternative form of the <code>run()</code> method. The main thing is that the generic type information is available at runtime through the class declaration.</p>
+</div>
+<div class="paragraph">
+<p>The app runs in its own HTTP server if you add <code>spring-cloud-starter-function-webflux</code> (it won&#8217;t work with the MVC starter at the moment because the functional form of the embedded Servlet container hasn&#8217;t been implemented).  The app also runs just fine in AWS Lambda or Azure Functions, and the improvements in startup time are dramatic.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The "lite" web server has some limitations for the range of <code>Function</code> signatures - in particular it doesn&#8217;t (yet) support <code>Message</code> input and output, but POJOs and any kind of <code>Publisher</code> should be fine.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_functional_applications"><a class="link" href="#_testing_functional_applications">Testing Functional Applications</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users. For example, here is an integration test for the HTTP server wrapping the app above:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@RunWith(SpringRunner.class)
+@FunctionalSpringBootTest
+@AutoConfigureWebTestClient
+public class FunctionalTests {
+
+	@Autowired
+	private WebTestClient client;
+
+	@Test
+	public void words() throws Exception {
+		client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
+				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
+	}
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This test is almost identical to the one you would write for the <code>@Bean</code> version of the same app - the only difference is the <code>@FunctionalSpringBootTest</code> annotation, instead of the regular <code>@SpringBootTest</code>. All the other pieces, like the <code>@Autowired</code> <code>WebTestClient</code>, are standard Spring Boot features.</p>
+</div>
+<div class="paragraph">
+<p>Or you could write a test for a non-HTTP app using just the <code>FunctionCatalog</code>. For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@RunWith(SpringRunner.class)
+@FunctionalSpringBootTest
+public class FunctionalTests {
+
+	@Autowired
+	private FunctionCatalog catalog;
+
+	@Test
+	public void words() throws Exception {
+		Function&lt;Flux&lt;String&gt;, Flux&lt;String&gt;&gt; function = catalog.lookup(Function.class,
+				"function");
+		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
+	}
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>(The <code>FunctionCatalog</code> always returns functions from <code>Flux</code> to <code>Flux</code>, even if the user declares them with a simpler signature.)</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_limitations_of_functional_bean_declaration"><a class="link" href="#_limitations_of_functional_bean_declaration">Limitations of Functional Bean Declaration</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot, so we are able to adapt it to these functional bean definitions easily. If you step outside that limited scope, you can extend your Spring Cloud Function app by switching back to <code>@Bean</code> style configuration, or by using a hybrid approach. If you want to take advantage of Spring Boot autoconfiguration for integrations with external datastores, for example, you will need to use <code>@EnableAutoConfiguration</code>. Your functions can still be defined using the functional declarations if you want (i.e. the "hybrid" style), but in that case you will need to explicitly switch off the "full functional mode" using <code>spring.functional.enabled=false</code> so that Spring Boot can take back control.</p>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>

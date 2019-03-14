@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<title>Quick Start</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
+}
+
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
+
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
+
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
+
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
+
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book toc2 toc-left">
+<div id="header">
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_quick_start">Quick Start</a></li>
+<li><a href="#_examples">Examples</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_quick_start"><a class="link" href="#_quick_start">Quick Start</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Implement a POF (be sure to use the <code>functions</code> package):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>package functions;
+
+import java.util.function.Function;
+
+public class Uppercase implements Function&lt;String, String&gt; {
+
+	public String apply(String input) {
+		return input.toUpperCase();
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Install it into your local Maven repository:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>./mvnw clean install</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Create a <code>function.properties</code> file that provides its Maven coordinates. For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>dependencies.function: com.example:pof:0.0.1-SNAPSHOT</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Copy the openwhisk runner JAR to the working directory (same directory as the properties file):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>cp spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk/target/spring-cloud-function-adapter-openwhisk-2.0.0.BUILD-SNAPSHOT.jar runner.jar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Generate a m2 repo from the <code>--thin.dryrun</code> of the runner JAR with the above properties file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>java -jar -Dthin.root=m2 runner.jar --thin.name=function --thin.dryrun</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use the following Dockerfile:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>FROM openjdk:8-jdk-alpine
+VOLUME /tmp
+COPY m2 /m2
+ADD runner.jar .
+ADD function.properties .
+ENV JAVA_OPTS=""
+ENTRYPOINT [ "java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "runner.jar", "--thin.root=/m2", "--thin.name=function", "--function.name=uppercase"]
+EXPOSE 8080</code></pre>
+</div>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+you could use a Spring Cloud Function app, instead of just a jar with a POF in it, in which case you would have to change the way the app runs in the container so that it picks up the main class as a source file. For example, you could change the <code>ENTRYPOINT</code> above and add <code>--spring.main.sources=com.example.SampleApplication</code>.
+</td>
+</tr>
+</table>
+</div>
+</blockquote>
+</div>
+<div class="paragraph">
+<p>Build the Docker image:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>docker build -t [username/appname] .</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Push the Docker image:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>docker push [username/appname]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use the OpenWhisk CLI (e.g. after <code>vagrant ssh</code>) to create the action:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>wsk action create example --docker [username/appname]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Invoke the action:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>wsk action invoke example --result --param payload foo
+{
+    "result": "FOO"
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples"><a class="link" href="#_examples">Examples</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following examples are built based on the details and explanations above, on how to deploy Spring Cloud Functions on to <a href="https://openwhisk.apache.org/">OpenWhisk</a></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/redhat-developer-demos/ow-scf-fruiteason">Spring Cloud Function PoF Example</a>. This example shows how to use Spring Cloud Functions by defining simple Plain Old Function (POF)</p>
+</li>
+<li>
+<p><a href="https://github.com/redhat-developer-demos/ow-scf-greeter">Spring Cloud Function Application Example</a>. This example shows how to use Spring Cloud Functions with a complete Spring Boot Application that has functions defined by extending <code>java.util.function.Function</code> interfaces.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The base docker images used for above examples is available <a href="https://github.com/redhat-developer-demos/openwhisk-scf-docker">here</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>

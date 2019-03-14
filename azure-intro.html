@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<title>Accessing Azure ExecutionContext</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
+}
+
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
+
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
+
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
+
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
+
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book toc2 toc-left">
+<div id="header">
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel2">
+<li><a href="#_accessing_azure_executioncontext">Accessing Azure ExecutionContext</a></li>
+<li><a href="#_notes_on_jar_layout">Notes on JAR Layout</a></li>
+<li><a href="#_build">Build</a></li>
+<li><a href="#_running_the_sample">Running the sample</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This project provides an adapter layer for a Spring Cloud Function application onto Azure.
+You can write an app with a single <code>@Bean</code> of type <code>Function</code> and it will be deployable in Azure if you get the JAR file laid out right.</p>
+</div>
+<div class="paragraph">
+<p>There is an <code>AzureSpringBootRequestHandler</code> which you must extend, and provide the input and output types as annotated method parameters (enabling Azure to inspect the class and create JSON bindings). The base class has two useful methods (<code>handleRequest</code> and <code>handleOutput</code>) to which you can delegate the actual function call, so mostly the function will only ever have one line.</p>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class FooHandler extends AzureSpringBootRequestHandler&lt;Foo, Bar&gt; {
+	@FunctionName("uppercase")
+	public Bar execute(
+			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
+					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS)
+                    Foo foo,
+			ExecutionContext context) {
+		return handleRequest(foo, context);
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This Azure handler will delegate to a <code>Function&lt;Foo,Bar&gt;</code> bean (or a <code>Function&lt;Publisher&lt;Foo&gt;,Publisher&lt;Bar&gt;&gt;</code>). Some Azure triggers (e.g. <code>@CosmosDBTrigger</code>) result in a input type of <code>List</code> and in that case you can bind to <code>List</code> in the Azure handler, or <code>String</code> (the raw JSON). The <code>List</code> input delegates to a <code>Function</code> with input type <code>Map&lt;String,Object&gt;</code>, or <code>Publisher</code> or <code>List</code> of the same type. The output of the <code>Function</code> can be a <code>List</code> (one-for-one) or a single value (aggregation), and the output binding in the Azure declaration should match.</p>
+</div>
+<div class="paragraph">
+<p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code>. Or if you make the <code>@FunctionName</code> in the Azure handler method match the function name it should work that way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> so the default function names are the same as the bean names.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_accessing_azure_executioncontext"><a class="link" href="#_accessing_azure_executioncontext">Accessing Azure ExecutionContext</a></h3>
+<div class="paragraph">
+<p>Some time there is a need to access the target execution context provided by Azure runtime in the form of <code>com.microsoft.azure.functions.ExecutionContext</code>.
+For example one of such needs is logging, so it can appear in the Azure console.</p>
+</div>
+<div class="paragraph">
+<p>For that purpose Spring Cloud Function will register <code>ExecutionContext</code> as bean in the Application context, so it could be injected into your function.
+For example</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public Function&lt;Foo, Bar&gt; uppercase(ExecutionContext targetContext) {
+	return foo -&gt; {
+		targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
+		return new Bar(foo.getValue().toUpperCase());
+	};
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Normally type-based injection should suffice, however if need to you can also utilise the bean name under which it is registered which is <code>targetExecutionContext</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h3>
+<div class="paragraph">
+<p>You don&#8217;t need the Spring Cloud Function Web at runtime in Azure, so you can exclude this before you create the JAR you deploy to Azure, but it won&#8217;t be used if you include it so it doesn&#8217;t hurt to leave it in. A function application on Azure is an archive generated by the Maven plugin. The function lives in the JAR file generated by this project. The sample creates it as an executable jar, using the thin layout, so that Azure can find the handler classes. If you prefer you can just use a regular flat JAR file. The dependencies should <strong>not</strong> be included.</p>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_build"><a class="link" href="#_build">Build</a></h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre>./mvnw -U clean package</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_the_sample"><a class="link" href="#_running_the_sample">Running the sample</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can run the sample locally, just like the other Spring Cloud Function samples:</p>
+</div>
+<hr>
+<hr>
+<div class="paragraph">
+<p>and <code>curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'</code>.</p>
+</div>
+<div class="paragraph">
+<p>You will need the <code>az</code> CLI app (see <a href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven" class="bare">https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven</a> for more detail). To deploy the function on Azure runtime:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ az login
+$ mvn azure-functions:deploy</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On another terminal try this: <code>curl <a href="https://&lt;azure-function-url-from-the-log&gt;/api/uppercase" class="bare">https://&lt;azure-function-url-from-the-log&gt;/api/uppercase</a> -d '{"value": "hello foobar!"}'</code>. Please ensure that you use the right URL for the function above. Alternatively you can test the function in the Azure Dashboard UI (click on the function name, go to the right hand side and click "Test" and to the bottom right, "Run").</p>
+</div>
+<div class="paragraph">
+<p>The input type for the function in the Azure sample is a Foo with a single property called "value". So you need this to test it with something like below:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>{
+  "value": "foobar"
+}</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The Azure sample app is written in the "non-functional" style (using <code>@Bean</code>). The functional style (with just <code>Function</code> or <code>ApplicationContextInitializer</code>) is much faster on startup in Azure than the traditional <code>@Bean</code> style, so if you don&#8217;t need <code>@Beans</code> (or <code>@EnableAutoConfiguration</code>) it&#8217;s a good choice. Warm starts are not affected.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>

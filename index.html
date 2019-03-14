@@ -1,93 +1,171 @@
----
-# The name of your project
-title: Spring Cloud Function
-
-badges:
-
-  # Customize your project's badges. Delete any entries that do not apply.
-  custom:
-    - name: Source (GitHub)
-      url:  https://github.com/spring-cloud/spring-cloud-function
-      icon: github
-
-    - name: StackOverflow
-      url:  http://stackoverflow.com/questions/tagged/spring-cloud
-      icon: stackoverflow
-
----
-<!DOCTYPE HTML>
-<html lang="en-US">
-
-<!-- Specify the parent of this project (or delete if none) to influence the rendering of the breadcrumb -->
-{% capture parent_link %}
-[Spring Cloud]({{ site.projects_site_url }}/spring-cloud)
-{% endcapture %}
-
-
-{% capture billboard_description %}
-
-Spring Cloud Function is a project with the following high-level goals:
-
-* Promote the implementation of business logic via functions.
-* Decouple the development lifecycle of business logic from any specific runtime target so that the same code can run as a web endpoint, a stream processor, or a task.
-* Support a uniform programming model across serverless providers, as well as the ability to run standalone (locally or in a PaaS).
-* Enable Spring Boot features (auto-configuration, dependency injection, metrics) on serverless providers.
-
-It abstracts away all of the transport details and infrastructure, allowing the developer to keep all the familiar tools and processes, and focus firmly on business logic.
-
-{% endcapture %}
-
-{% capture main_content %}
-
-## Features
-
-Spring Cloud Function features:
-
-1. Wrappers for `@Beans` of type `Function`, `Consumer` and
-`Supplier`, exposing them to the outside world as either HTTP
-endpoints and/or message stream listeners/publishers with RabbitMQ, Kafka etc.
-
-2. Compiling strings which are Java function bodies into bytecode, and
-then turning them into `@Beans` that can be wrapped as above.
-
-3. Deploying a JAR file containing such an application context with an
-isolated classloader, so that you can pack them together in a single
-JVM.
-
-4. Adapters for [AWS Lambda](https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws), [Microsoft Azure](https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure), [Apache OpenWhisk](https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk) and possibly other "serverless" service providers.
-
-
-Here's a complete, executable, testable Spring Boot application (implementing a simple string manipulation):
-
-```java
-@SpringBootApplication
-public class Application {
-
-  @Bean
-  public Function<Flux<String>, Flux<String>> uppercase() {
-    return flux -> flux.map(value -> value.toUpperCase());
-  }
-
-  public static void main(String[] args) {
-    SpringApplication.run(Application.class, args);
-  }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<meta name="author" content="Mark Fisher, Dave Syer, Oleg Zhurakousky">
+<title>Spring Cloud Function Reference Documentation</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
 }
-```
-  
-{% endcapture %}
 
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
 
-{% capture related_resources %}
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
 
-### Sample Projects
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
 
-* [Vanilla](https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample)
-* [Plain Old Function](https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-pof)
-* [AWS Lambda](https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws)
-* [Microsoft Azure](https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-azure)
-* [Openwhisk](https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk)
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
 
-{% endcapture %}
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
 
-{% include project_page.html %}
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book">
+<div id="header">
+<h1>Spring Cloud Function Reference Documentation</h1>
+<div class="details">
+<span id="author" class="author">Mark Fisher, Dave Syer, Oleg Zhurakousky</span><br>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>2.1.0.BUILD-SNAPSHOT</strong></p>
+</div>
+<div class="paragraph">
+<p>The reference documentation consists of the following sections:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<a href="spring-cloud-function.html">Reference Guide</a> 
+</td>
+<td class="hdlist2">
+<p>Spring Cloud Function Reference</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="aws.html">AWS Adapter</a> 
+</td>
+<td class="hdlist2">
+<p>AWS Adapter Reference</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="azure.html">Azure Adapter</a> 
+</td>
+<td class="hdlist2">
+<p>Azure Adapter Reference</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="openwhisk.html">Apache OpenWhisk Adapter</a> 
+</td>
+<td class="hdlist2">
+<p>Apache OpenWhisk Adapter Reference</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Relevant Links:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<a href="https://projectreactor.io/">Reactor</a> 
+</td>
+<td class="hdlist2">
+<p>Project Reactor</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="https://projectriff.io/">riff</a> 
+</td>
+<td class="hdlist2">
+<p>Project riff</p>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
 </html>

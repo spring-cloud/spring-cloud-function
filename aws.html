@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<title>Introduction</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
+}
+
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
+
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
+
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
+
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
+
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book toc2 toc-left">
+<div id="header">
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_introduction">Introduction</a></li>
+<li><a href="#_notes_on_jar_layout">Notes on JAR Layout</a></li>
+<li><a href="#_upload">Upload</a></li>
+<li><a href="#_functional_bean_definitions">Functional Bean Definitions</a></li>
+<li><a href="#_platfom_specific_features">Platfom Specific Features</a>
+<ul class="sectlevel2">
+<li><a href="#_http_and_api_gateway">HTTP and API Gateway</a></li>
+</ul>
+</li>
+<li><a href="#_custom_runtime">Custom Runtime</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>2.1.0.BUILD-SNAPSHOT</strong></p>
+</div>
+<div class="paragraph">
+<p>The <a href="https://aws.amazon.com/">AWS</a> adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction"><a class="link" href="#_introduction">Introduction</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The adapter has a couple of generic request handlers that you can use. The most generic is <code>SpringBootStreamHandler</code>, which uses a Jackson <code>ObjectMapper</code> provided by Spring Boot to serialize and deserialize the objects in the function. There is also a <code>SpringBootRequestHandler</code> which you can extend, and provide the input and output types as type parameters (enabling AWS to inspect the class and do the JSON conversions itself).</p>
+</div>
+<div class="paragraph">
+<p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code> (e.g. as <code>FUNCTION_NAME</code> environment variable in AWS). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> (searching first for <code>Function</code> then <code>Consumer</code> and finally <code>Supplier</code>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You don&#8217;t need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might need to exclude those before you create the JAR you send to AWS. A Lambda application has to be shaded, but a Spring Boot standalone application does not, so you can run the same app using 2 separate jars (as per the sample). The sample app creates 2 jar files, one with an <code>aws</code> classifier for deploying in Lambda, and one executable (thin) jar that includes <code>spring-cloud-function-web</code> at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file manifest, using the <code>Start-Class</code> attribute (which will be added for you by the Spring Boot tooling if you use the starter parent). If there is no <code>Start-Class</code> in your manifest you can use an environment variable <code>MAIN_CLASS</code> when you deploy the function to AWS.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_upload"><a class="link" href="#_upload">Upload</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Build the sample under <code>spring-cloud-function-samples/function-sample-aws</code> and upload the <code>-aws</code> jar file to Lambda. The handler can be <code>example.Handler</code> or <code>org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler</code> (FQN of the class, <em>not</em> a method reference, although Lambda does accept method references).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>./mvnw -U clean package</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the AWS command line tools it looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>aws lambda create-function --function-name Uppercase --role arn:aws:iam::[USERID]:role/service-role/[ROLE] --zip-file fileb://function-sample-aws/target/function-sample-aws-2.0.0.BUILD-SNAPSHOT-aws.jar --handler org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler --description "Spring Cloud Function Adapter Example" --runtime java8 --region us-east-1 --timeout 30 --memory-size 1024 --publish</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The input type for the function in the AWS sample is a Foo with a single property called "value". So you would need this to test it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>{
+  "value": "test"
+}</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The AWS sample app is written in the "functional" style (as an <code>ApplicationContextInitializer</code>). This is much faster on startup in Lambda than the traditional <code>@Bean</code> style, so if you don&#8217;t need <code>@Beans</code> (or <code>@EnableAutoConfiguration</code>) it&#8217;s a good choice. Warm starts are not affected.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_functional_bean_definitions"><a class="link" href="#_functional_bean_definitions">Functional Bean Definitions</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Your functions will start much quicker if you can use functional bean definitions instead of <code>@Bean</code>. To do this make your main class
+an <code>ApplicationContextInitalizer&lt;GenericApplicationContext&gt;</code> and use the <code>registerBean()</code> methods in <code>GenericApplicationContext</code> to
+create all the beans you need. You function need sto be registered as a bean of type <code>FunctionRegistration</code> so that the input and
+output types can be accessed by the framework. There is an example in github (the AWS sample is written in this style). It would
+look something like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootApplication
+public class FuncApplication implements ApplicationContextInitializer&lt;GenericApplicationContext&gt; {
+
+	public static void main(String[] args) throws Exception {
+		FunctionalSpringApplication.run(FuncApplication.class, args);
+	}
+
+	public Function&lt;Foo, Bar&gt; function() {
+		return value -&gt; new Bar(value.uppercase()));
+	}
+
+	@Override
+	public void initialize(GenericApplicationContext context) {
+		context.registerBean("function", FunctionRegistration.class,
+			() -&gt; new FunctionRegistration&lt;Function&lt;Foo, Bar&gt;&gt;(function())
+				.type(FunctionType.from(Foo.class).to(Bar.class).getType()));
+	}
+
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_platfom_specific_features"><a class="link" href="#_platfom_specific_features">Platfom Specific Features</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_http_and_api_gateway"><a class="link" href="#_http_and_api_gateway">HTTP and API Gateway</a></h3>
+<div class="paragraph">
+<p>AWS has some platform-specific data types, including batching of messages, which is much more efficient than processing each one individually. To make use of these types you can write a function that depends on those types. Or you can rely on Spring to extract the data from the AWS types and convert it to a Spring <code>Message</code>. To do this you tell AWS that the function is of a specific generic handler type (depending on the AWS service) and provide a bean of type <code>Function&lt;Message&lt;S&gt;,Message&lt;T&gt;&gt;</code>, where <code>S</code> and <code>T</code> are your business data types. If there is more than one bean of type <code>Function</code> you may also need to configure the Spring Boot property <code>function.name</code> to be the name of the target bean (e.g. use <code>FUNCTION_NAME</code> as an environment variable).</p>
+</div>
+<div class="paragraph">
+<p>The supported AWS services and generic handler types are listed below:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Service</th>
+<th class="tableblock halign-left valign-top">AWS Types</th>
+<th class="tableblock halign-left valign-top">Generic Handler</th>
+<th class="tableblock halign-left valign-top"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API Gateway</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>APIGatewayProxyRequestEvent</code>, <code>APIGatewayProxyResponseEvent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.springframework.cloud.function.adapter.aws.SpringBootApiGatewayRequestHandler</code></p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kinesis</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">KinesisEvent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.cloud.function.adapter.aws.SpringBootKinesisEventHandler</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For example, to deploy behind an API Gateway, use <code>--handler org.springframework.cloud.function.adapter.aws.SpringBootApiGatewayRequestHandler</code> in your AWS command line (in via the UI) and define a <code>@Bean</code> of type <code>Function&lt;Message&lt;Foo&gt;,Message&lt;Bar&gt;&gt;</code> where <code>Foo</code> and <code>Bar</code> are POJO types (the data will be marshalled and unmarshalled by AWS using Jackson).</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_custom_runtime"><a class="link" href="#_custom_runtime">Custom Runtime</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>An <a href="https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html">AWS Lambda custom runtime</a> can be created really easily using the HTTP export features in Spring Cloud Function Web. To make this work just add Spring Cloud Function AWS and Spring Cloud Function Web as dependencies in your project and set the following in your <code>application.properties</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>spring.cloud.function.web.export.enabled=true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Set the handler name in AWS to the name of your function. Then provide a <code>bootstrap</code> script in the root of your zip/jar that runs the Spring Boot application. The functional bean definition style works for custom runtimes too, and is faster than the <code>@Bean</code> style, so the example <code>FuncApplication</code> above would work. A custom runtime can start up much quicker even than a functional bean implementation of a Java lambda - it depends mostly on the number of classes you need to load at runtime. Spring doesn&#8217;t do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance, and not doing any work in custom <code>@PostConstruct</code> initializers.</p>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>
