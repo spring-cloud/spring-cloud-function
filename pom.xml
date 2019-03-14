@@ -23,6 +23,11 @@
 		<spring-cloud-task.version>2.1.1.RELEASE</spring-cloud-task.version>
 		<wrapper.version>1.0.21.RELEASE</wrapper.version>
 		<docs.main>spring-cloud-function</docs.main>
+		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
+		<maven-checkstyle-plugin.failsOnViolation>true
+		</maven-checkstyle-plugin.failsOnViolation>
+		<maven-checkstyle-plugin.includeTestSourceDirectory>true
+		</maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
 
 	<dependencyManagement>
