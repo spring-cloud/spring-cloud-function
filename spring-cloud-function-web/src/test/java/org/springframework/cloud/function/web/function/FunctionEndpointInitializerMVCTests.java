@@ -32,7 +32,12 @@ import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+/**
+ *
+ * @author Oleg Zhurakousky
+ * @since 2.1
+ *
+ */
 public class FunctionEndpointInitializerMVCTests {
 
 	@Before
@@ -51,7 +56,8 @@ public class FunctionEndpointInitializerMVCTests {
 		SpringApplication.run(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = System.getProperty("server.port");
-		ResponseEntity<String> response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("STRESSED");
 		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/reverse"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
@@ -62,7 +68,8 @@ public class FunctionEndpointInitializerMVCTests {
 		SpringApplication.run(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = System.getProperty("server.port");
-		ResponseEntity<String> response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
@@ -84,20 +91,6 @@ public class FunctionEndpointInitializerMVCTests {
 		public Function<String, String> reverse() {
 			return s -> new StringBuilder(s).reverse().toString();
 		}
-
-//		@Override
-//		public void initialize(GenericApplicationContext applicationContext) {
-//			applicationContext.registerBean("uppercase", FunctionRegistration.class,
-//					() -> new FunctionRegistration<>(uppercase())
-//						.type(FunctionType.from(String.class).to(String.class)));
-//			applicationContext.registerBean("reverse", FunctionRegistration.class,
-//					() -> new FunctionRegistration<>(reverse())
-//						.type(FunctionType.from(String.class).to(String.class)));
-//			applicationContext.registerBean("lowercase", FunctionRegistration.class,
-//					() -> new FunctionRegistration<>(lowercase())
-//						.type(FunctionType.from(String.class).to(String.class)));
-//		}
-
 	}
 
 }

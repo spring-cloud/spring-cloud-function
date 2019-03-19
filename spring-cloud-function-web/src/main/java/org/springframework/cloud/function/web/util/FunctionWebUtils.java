@@ -34,7 +34,8 @@ public final class FunctionWebUtils {
 
 	}
 
-	public static Object findFunction(HttpMethod method, FunctionCatalog functionCatalog, Map<String, Object> attributes, String path) {
+	public static Object findFunction(HttpMethod method, FunctionCatalog functionCatalog,
+											Map<String, Object> attributes, String path) {
 		if (method.equals(HttpMethod.GET)) {
 			return findFunctionForGet(functionCatalog, attributes, path);
 		}
@@ -46,7 +47,8 @@ public final class FunctionWebUtils {
 		}
 	}
 
-	private static Object findFunctionForGet(FunctionCatalog functionCatalog, Map<String, Object> attributes, String path) {
+	private static Object findFunctionForGet(FunctionCatalog functionCatalog,
+											Map<String, Object> attributes, String path) {
 		path = path.startsWith("/") ? path.substring(1) : path;
 
 		Object functionForGet = null;
@@ -82,7 +84,8 @@ public final class FunctionWebUtils {
 		return functionForGet;
 	}
 
-	private static Object findFunctionForPost(FunctionCatalog functionCatalog, Map<String, Object> attributes, String path) {
+	private static Object findFunctionForPost(FunctionCatalog functionCatalog,
+											Map<String, Object> attributes, String path) {
 		path = path.startsWith("/") ? path.substring(1) : path;
 		Consumer<Publisher<?>> consumer = functionCatalog.lookup(Consumer.class, path);
 		if (consumer != null) {

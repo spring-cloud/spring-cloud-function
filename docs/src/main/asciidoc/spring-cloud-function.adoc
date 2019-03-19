@@ -4,6 +4,9 @@ Mark Fisher, Dave Syer, Oleg Zhurakousky
 
 *{spring-cloud-function-version}*
 
+[#index-link]
+{docs-url}spring-cloud-function/{docs-version}home.html
+
 ---
 
 :github: https://github.com/spring-cloud/spring-cloud-function

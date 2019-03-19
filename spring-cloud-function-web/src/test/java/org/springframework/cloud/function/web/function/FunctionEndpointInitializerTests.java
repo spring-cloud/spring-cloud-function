@@ -35,7 +35,12 @@ import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+/**
+*
+* @author Oleg Zhurakousky
+* @since 2.1
+*
+*/
 public class FunctionEndpointInitializerTests {
 
 	@Before
@@ -55,7 +60,8 @@ public class FunctionEndpointInitializerTests {
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = System.getProperty("server.port");
 		Thread.sleep(200);
-		ResponseEntity<String> response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("STRESSED");
 		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/reverse"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
@@ -67,7 +73,8 @@ public class FunctionEndpointInitializerTests {
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = System.getProperty("server.port");
 		Thread.sleep(200);
-		ResponseEntity<String> response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 

@@ -15,7 +15,7 @@
 	<properties>
 		<docs.main>index</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
-		<spring-doc-resources.version>0.1.0.RELEASE</spring-doc-resources.version>
+		<spring-doc-resources.version>0.1.1.RELEASE</spring-doc-resources.version>
 		<spring-asciidoctor-extensions.version>0.1.0.RELEASE
 		</spring-asciidoctor-extensions.version>
 		<asciidoctorj-pdf.version>1.5.0-alpha.16</asciidoctorj-pdf.version>
@@ -124,6 +124,8 @@
 							<sourceDirectory>${project.build.directory}/refdocs/</sourceDirectory>
 							<attributes>
 								<spring-cloud-function-version>${project.version}</spring-cloud-function-version>
+								<docs-url>http://cloud.spring.io/</docs-url>
+            					<docs-version></docs-version>
 							</attributes>
 						</configuration>
 						<executions>
