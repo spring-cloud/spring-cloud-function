@@ -50,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 public class ContextFunctionCatalogInitializerTests {
 
@@ -163,7 +163,7 @@ public class ContextFunctionCatalogInitializerTests {
 		assertThat(bean).isNotSameAs(function);
 		assertThat(this.inspector.getRegistration(function)).isNotNull();
 		assertThat(this.inspector.getRegistration(function).getType()).isEqualTo(
-				FunctionType.from(String.class).to(String.class).wrap(Flux.class));
+				FunctionType.from(String.class).to(String.class));
 	}
 
 	@Test

@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.InMemoryFunctionCatalog;
+import org.springframework.cloud.function.core.FluxFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,7 +39,7 @@ public class SingleEntryFunctionRegistryTests {
 		this.delegate.register(new FunctionRegistration<Foos>(new Foos(), "foo"));
 		SingleEntryFunctionRegistry registry = new SingleEntryFunctionRegistry(
 				this.delegate, "foo");
-		assertThat((Foos) registry.lookup("foo")).isInstanceOf(Function.class);
+		assertThat(((FluxFunction<?, ?>) registry.lookup("")).getTarget()).isInstanceOf(Foos.class);
 	}
 
 	@Test
@@ -46,7 +47,7 @@ public class SingleEntryFunctionRegistryTests {
 		this.delegate.register(new FunctionRegistration<Foos>(new Foos(), "foo"));
 		SingleEntryFunctionRegistry registry = new SingleEntryFunctionRegistry(
 				this.delegate, "foo");
-		assertThat((Foos) registry.lookup("bar")).isNull();
+		assertThat(((FluxFunction<?, ?>) registry.lookup("")).getTarget()).isInstanceOf(Foos.class);
 	}
 
 	@Test
@@ -54,7 +55,7 @@ public class SingleEntryFunctionRegistryTests {
 		this.delegate.register(new FunctionRegistration<Foos>(new Foos(), ""));
 		SingleEntryFunctionRegistry registry = new SingleEntryFunctionRegistry(
 				this.delegate, "");
-		assertThat((Foos) registry.lookup("")).isInstanceOf(Function.class);
+		assertThat(((FluxFunction<?, ?>) registry.lookup("")).getTarget()).isInstanceOf(Foos.class);
 	}
 
 	@Test
@@ -62,7 +63,7 @@ public class SingleEntryFunctionRegistryTests {
 		this.delegate.register(new FunctionRegistration<Foos>(new Foos(), "bar"));
 		SingleEntryFunctionRegistry registry = new SingleEntryFunctionRegistry(
 				this.delegate, "foo");
-		assertThat((Foos) registry.lookup("")).isInstanceOf(Function.class);
+		assertThat(((FluxFunction<?, ?>) registry.lookup("")).getTarget()).isInstanceOf(Foos.class);
 	}
 
 	class Foos implements Function<String, String> {

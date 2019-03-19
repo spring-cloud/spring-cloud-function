@@ -43,6 +43,7 @@ import org.springframework.cloud.function.web.BasicStringConverter;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.StringConverter;
+import org.springframework.cloud.function.web.util.FunctionWebUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
@@ -59,6 +60,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.web.reactive.function.server.HandlerStrategies;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
+import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.server.WebExceptionHandler;
 import org.springframework.web.server.adapter.HttpWebHandlerAdapter;
 import org.springframework.web.server.adapter.WebHttpHandlerBuilder;
@@ -69,70 +71,58 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  * @since 2.0
  *
  */
-class FunctionEndpointInitializer
-		implements ApplicationContextInitializer<GenericApplicationContext> {
+class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
 		if (ContextFunctionCatalogInitializer.enabled
-				&& context.getEnvironment().getProperty(
-						FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
-						WebApplicationType.class,
-						WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
-				&& context.getEnvironment().getProperty("spring.functional.enabled",
-						Boolean.class, false)
-				&& ClassUtils.isPresent(
-						"org.springframework.http.server.reactive.HttpHandler", null)) {
+				&& context.getEnvironment().getProperty(FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
+						WebApplicationType.class, WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
+				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)
+				&& ClassUtils.isPresent("org.springframework.http.server.reactive.HttpHandler", null)) {
 			registerEndpoint(context);
 			registerWebFluxAutoConfiguration(context);
 		}
 	}
 
 	private void registerWebFluxAutoConfiguration(GenericApplicationContext context) {
-		context.registerBean(DefaultErrorWebExceptionHandler.class,
-				() -> errorHandler(context));
-		context.registerBean(WebHttpHandlerBuilder.WEB_HANDLER_BEAN_NAME,
-				HttpWebHandlerAdapter.class, () -> httpHandler(context));
+		context.registerBean(DefaultErrorWebExceptionHandler.class, () -> errorHandler(context));
+		context.registerBean(WebHttpHandlerBuilder.WEB_HANDLER_BEAN_NAME, HttpWebHandlerAdapter.class,
+				() -> httpHandler(context));
 		context.addApplicationListener(new ServerListener(context));
 	}
 
 	private void registerEndpoint(GenericApplicationContext context) {
 		context.registerBean(StringConverter.class,
-				() -> new BasicStringConverter(context.getBean(FunctionInspector.class),
-						context.getBeanFactory()));
+				() -> new BasicStringConverter(context.getBean(FunctionInspector.class), context.getBeanFactory()));
 		context.registerBean(RequestProcessor.class,
 				() -> new RequestProcessor(context.getBean(FunctionInspector.class),
-						context.getBeanProvider(JsonMapper.class),
-						context.getBean(StringConverter.class),
+						context.getBeanProvider(JsonMapper.class), context.getBean(StringConverter.class),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),
-						context.getBean(FunctionInspector.class),
-						context.getBean(RequestProcessor.class),
+						context.getBean(FunctionInspector.class), context.getBean(RequestProcessor.class),
 						context.getEnvironment()));
 		context.registerBean(RouterFunction.class,
 				() -> context.getBean(FunctionEndpointFactory.class).functionEndpoints());
 	}
 
 	private HttpWebHandlerAdapter httpHandler(GenericApplicationContext context) {
-		return (HttpWebHandlerAdapter) RouterFunctions.toHttpHandler(
-				context.getBean(RouterFunction.class),
-				HandlerStrategies.empty()
-						.exceptionHandler(context.getBean(WebExceptionHandler.class))
+		return (HttpWebHandlerAdapter) RouterFunctions.toHttpHandler(context.getBean(RouterFunction.class),
+				HandlerStrategies.empty().exceptionHandler(context.getBean(WebExceptionHandler.class))
 						.codecs(config -> config.registerDefaults(true)).build());
 	}
 
-	private DefaultErrorWebExceptionHandler errorHandler(
-			GenericApplicationContext context) {
+	private DefaultErrorWebExceptionHandler errorHandler(GenericApplicationContext context) {
 		context.registerBean(ErrorAttributes.class, () -> new DefaultErrorAttributes());
 		context.registerBean(ErrorProperties.class, () -> new ErrorProperties());
 		context.registerBean(ResourceProperties.class, () -> new ResourceProperties());
 		DefaultErrorWebExceptionHandler handler = new DefaultErrorWebExceptionHandler(
-				context.getBean(ErrorAttributes.class),
-				context.getBean(ResourceProperties.class),
+				context.getBean(ErrorAttributes.class), context.getBean(ResourceProperties.class),
 				context.getBean(ErrorProperties.class), context);
 		ServerCodecConfigurer codecs = ServerCodecConfigurer.create();
 		handler.setMessageWriters(codecs.getWriters());
@@ -152,28 +142,22 @@ class FunctionEndpointInitializer
 
 		@Override
 		public void onApplicationEvent(ApplicationEvent event) {
-			ApplicationContext context = ((ContextRefreshedEvent) event)
-					.getApplicationContext();
+			ApplicationContext context = ((ContextRefreshedEvent) event).getApplicationContext();
 			if (context != this.context) {
 				return;
 			}
-			if (!ClassUtils.isPresent(
-					"org.springframework.http.server.reactive.HttpHandler", null)) {
+			if (!ClassUtils.isPresent("org.springframework.http.server.reactive.HttpHandler", null)) {
 				logger.info("No web server classes found so no server to start");
 				return;
 			}
-			Integer port = Integer.valueOf(context.getEnvironment()
-					.resolvePlaceholders("${server.port:${PORT:8080}}"));
-			String address = context.getEnvironment()
-					.resolvePlaceholders("${server.address:0.0.0.0}");
+			Integer port = Integer.valueOf(context.getEnvironment().resolvePlaceholders("${server.port:${PORT:8080}}"));
+			String address = context.getEnvironment().resolvePlaceholders("${server.address:0.0.0.0}");
 			if (port >= 0) {
 				HttpHandler handler = context.getBean(HttpHandler.class);
-				ReactorHttpHandlerAdapter adapter = new ReactorHttpHandlerAdapter(
-						handler);
-				HttpServer httpServer = HttpServer.create().host(address).port(port)
-						.handle(adapter);
-				Thread thread = new Thread(() -> httpServer
-						.bindUntilJavaShutdown(Duration.ofSeconds(60), this::callback),
+				ReactorHttpHandlerAdapter adapter = new ReactorHttpHandlerAdapter(handler);
+				HttpServer httpServer = HttpServer.create().host(address).port(port).handle(adapter);
+				Thread thread = new Thread(
+						() -> httpServer.bindUntilJavaShutdown(Duration.ofSeconds(60), this::callback),
 						"server-startup");
 				thread.setDaemon(false);
 				thread.start();
@@ -181,7 +165,7 @@ class FunctionEndpointInitializer
 		}
 
 		private void callback(DisposableServer server) {
-			logger.info("Server started");
+			logger.info("HTTP server started on port: " + server.port());
 			try {
 				double uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 				logger.info("JVM running for " + uptime + "ms");
@@ -204,48 +188,54 @@ class FunctionEndpointFactory {
 
 	private static Log logger = LogFactory.getLog(FunctionEndpointFactory.class);
 
-	private Function<Flux<?>, Flux<?>> function;
+	private final FunctionCatalog functionCatalog;
 
-	private FunctionInspector inspector;
+	private final String handler;
 
-	private RequestProcessor processor;
+	private final FunctionInspector inspector;
 
-	FunctionEndpointFactory(FunctionCatalog catalog, FunctionInspector inspector,
-			RequestProcessor processor, Environment environment) {
+	private final RequestProcessor processor;
+
+	FunctionEndpointFactory(FunctionCatalog functionCatalog, FunctionInspector inspector, RequestProcessor processor,
+			Environment environment) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
 			handler = null;
 		}
 		this.processor = processor;
 		this.inspector = inspector;
-		this.function = extract(catalog, handler);
+		this.functionCatalog = functionCatalog;
+		this.handler = handler;
 	}
 
-	private Function<Flux<?>, Flux<?>> extract(FunctionCatalog catalog, String handler) {
-		Set<String> names = catalog.getNames(Function.class);
-		if (!names.isEmpty()) {
-			logger.info("Found functions: " + names);
-			if (handler != null) {
-				logger.info("Configured function: " + handler);
-				Assert.isTrue(names.contains(handler),
-						"Cannot locate function: " + handler);
-				return catalog.lookup(Function.class, handler);
-			}
-			return catalog.lookup(Function.class, names.iterator().next());
+	@SuppressWarnings("unchecked")
+	private Function<Flux<?>, Flux<?>> extract(ServerRequest request) {
+		Function<Flux<?>, Flux<?>> function;
+		if (handler != null) {
+			logger.info("Configured function: " + handler);
+			Set<String> names = this.functionCatalog.getNames(Function.class);
+			Assert.isTrue(names.contains(handler), "Cannot locate function: " + handler);
+			function = this.functionCatalog.lookup(Function.class, handler);
 		}
-		throw new IllegalStateException("No function defined");
+		else {
+			function = (Function<Flux<?>, Flux<?>>) FunctionWebUtils.findFunction(request.method(), functionCatalog,
+					request.attributes(), request.path());
+		}
+		return function;
 	}
 
 	@SuppressWarnings({ "unchecked" })
 	public <T> RouterFunction<?> functionEndpoints() {
-		return route(POST("/"), request -> {
-			Class<T> outputType = (Class<T>) this.inspector.getOutputType(this.function);
-			FunctionWrapper wrapper = RequestProcessor.wrapper(this.function, null, null);
+		return route(POST("/**"), request -> {
+			Function<Flux<?>, Flux<?>> function = extract(request);
+			Class<T> outputType = (Class<T>) this.inspector.getOutputType(function);
+			FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
 					.flatMap(content -> this.processor.post(wrapper, content, false));
-			return stream.flatMap(entity -> status(entity.getStatusCode())
-					.headers(headers -> headers.addAll(entity.getHeaders()))
-					.body(Mono.just((T) entity.getBody()), outputType));
+			return stream.flatMap(entity -> {
+				return status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()))
+						.body(Mono.just((T) entity.getBody()), outputType);
+			});
 		});
 	}
 

@@ -44,7 +44,7 @@ public class InMemoryFunctionCatalogTests {
 		InMemoryFunctionCatalog catalog = new InMemoryFunctionCatalog();
 		catalog.register(registration);
 		FunctionRegistration<?> registration2 = catalog.getRegistration(function);
-		assertThat(registration2).isSameAs(registration);
+		assertThat(registration2.getType()).isEqualTo(registration.getType());
 	}
 
 	@Test

@@ -16,11 +16,7 @@
 
 package org.springframework.cloud.function.web.flux;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.InitializingBean;
@@ -29,8 +25,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
+import org.springframework.cloud.function.web.util.FunctionWebUtils;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.reactive.result.method.annotation.RequestMappingHandlerMapping;
@@ -38,7 +34,7 @@ import org.springframework.web.server.ServerWebExchange;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 @Configuration
 @ConditionalOnClass(RequestMappingHandlerMapping.class)
@@ -71,10 +67,6 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	}
 
 	@Override
-	protected void initHandlerMethods() {
-	}
-
-	@Override
 	public Mono<HandlerMethod> getHandlerInternal(ServerWebExchange request) {
 		String path = request.getRequest().getPath().pathWithinApplication().value();
 		if (StringUtils.hasText(this.prefix) && !path.startsWith(this.prefix)) {
@@ -87,10 +79,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		if (path.startsWith(this.prefix)) {
 			path = path.substring(this.prefix.length());
 		}
-		Object function = findFunctionForGet(request, path);
-		if (function == null) {
-			function = findFunctionForPost(request, path);
-		}
+		Object function = FunctionWebUtils
+				.findFunction(request.getRequest().getMethod(), this.functions, request.getAttributes(), path);
+
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {
 				this.logger.debug("Found function for POST: " + path);
@@ -101,61 +92,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		return handler.filter(method -> actual != null);
 	}
 
-	private Object findFunctionForPost(ServerWebExchange request, String path) {
-		if (!request.getRequest().getMethod().equals(HttpMethod.POST)) {
-			return null;
-		}
-		path = path.startsWith("/") ? path.substring(1) : path;
-		Consumer<Publisher<?>> consumer = this.functions.lookup(Consumer.class, path);
-		if (consumer != null) {
-			request.getAttributes().put(WebRequestConstants.CONSUMER, consumer);
-			return consumer;
-		}
-		Function<Object, Object> function = this.functions.lookup(Function.class, path);
-		if (function != null) {
-			request.getAttributes().put(WebRequestConstants.FUNCTION, function);
-			return function;
-		}
-		return null;
+	@Override
+	protected void initHandlerMethods() {
 	}
-
-	private Object findFunctionForGet(ServerWebExchange request, String path) {
-		if (!request.getRequest().getMethod().equals(HttpMethod.GET)) {
-			return null;
-		}
-		path = path.startsWith("/") ? path.substring(1) : path;
-
-		Object functionForGet = null;
-		Supplier<Publisher<?>> supplier = this.functions.lookup(Supplier.class, path);
-		if (supplier != null) {
-			request.getAttributes().put(WebRequestConstants.SUPPLIER, supplier);
-			functionForGet = supplier;
-		}
-		else {
-			StringBuilder builder = new StringBuilder();
-			String name = path;
-			String[] splitPath = path.split("/");
-			Function<Object, Object> function = null;
-			for (int i = 0; i < splitPath.length || function != null; i++) {
-				String element = splitPath[i];
-				if (builder.length() > 0) {
-					builder.append("/");
-				}
-				builder.append(element);
-				name = builder.toString();
-
-				function = this.functions.lookup(Function.class, name);
-				if (function != null) {
-					request.getAttributes().put(WebRequestConstants.FUNCTION, function);
-					String value = path.length() > name.length()
-							? path.substring(name.length() + 1) : null;
-					request.getAttributes().put(WebRequestConstants.ARGUMENT, value);
-					functionForGet = function;
-				}
-			}
-		}
-
-		return functionForGet;
-	}
-
 }

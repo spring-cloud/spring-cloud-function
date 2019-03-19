@@ -62,8 +62,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.type.StandardMethodMetadata;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -92,26 +90,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 		private ApplicationEventPublisher applicationEventPublisher;
 
 		private ConfigurableListableBeanFactory beanFactory;
-
-		@Override
-		public FunctionRegistration<?> getRegistration(Object function) {
-			String functionName = function == null ? null
-					: this.lookupFunctionName(function);
-			if (StringUtils.hasText(functionName)) {
-				FunctionRegistration<?> registration = new FunctionRegistration<Object>(
-						function, functionName);
-				FunctionType functionType = this.findType(registration);
-				return registration.type(functionType.getType());
-			}
-			return null;
-		}
-
-		@Override
-		public <T> void register(FunctionRegistration<T> functionRegistration) {
-			Assert.notEmpty(functionRegistration.getNames(),
-					"'registration' must contain at least one name before it is registered in catalog.");
-			register(functionRegistration, functionRegistration.getNames().iterator().next());
-		}
 
 		/**
 		 * Will collect all suppliers, functions, consumers and function registration as
@@ -160,13 +138,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@Override
 		protected FunctionType findType(FunctionRegistration<?> functionRegistration) {
-			if (functionRegistration.getType() != null) {
-				return functionRegistration.getType();
-			}
-			String name = this.lookupFunctionName(functionRegistration.getTarget());
-			FunctionType functionType = this.getFunctionType(name);
-
+			FunctionType functionType = super.findType(functionRegistration);
 			if (functionType == null) {
+				String name = this.lookupFunctionName(functionRegistration.getTarget());
 				functionType = functionByNameExist(name)
 						? new FunctionType(functionRegistration.getTarget().getClass())
 						: new FunctionType(

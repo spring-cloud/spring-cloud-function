@@ -47,6 +47,7 @@ import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -186,6 +187,28 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		this.environment = environment;
 	}
 
+	@Override
+	public FunctionRegistration<?> getRegistration(Object function) {
+		String functionName = function == null ? null
+				: this.lookupFunctionName(function);
+		if (StringUtils.hasText(functionName)) {
+			FunctionRegistration<?> registration = new FunctionRegistration<Object>(
+					function, functionName);
+			FunctionType functionType = this.findType(registration);
+			return registration.type(functionType.getType());
+		}
+		return null;
+	}
+
+	@Override
+	public <T> void register(FunctionRegistration<T> functionRegistration) {
+		Assert.notEmpty(functionRegistration.getNames(),
+				"'registration' must contain at least one name before it is registered in catalog.");
+		register(functionRegistration, functionRegistration.getNames().iterator().next());
+	}
+
+
+
 	/**
 	 * Registers function wrapped by the provided FunctionRegistration with
 	 * this FunctionRegistry.
@@ -236,15 +259,12 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	}
 
 	protected FunctionType findType(FunctionRegistration<?> functionRegistration) {
-		FunctionType functionType = functionRegistration.getType();
-		if (functionType != null) {
-			return functionType;
-		}
-		throw new IllegalStateException(
-				"Unless FunctionType is already available in FunctionRegistration, "
-						+ "this operation must be overriden "
-						+ "by the implementation of the FunctionRegistry.");
+		String name = this.lookupFunctionName(functionRegistration.getTarget());
+		return functionRegistration.getType() != null
+				?  functionRegistration.getType()
+						:  this.getFunctionType(name);
 	}
+
 
 	protected void addSupplier(String name, Supplier<?> supplier) {
 		this.suppliers.put(name, supplier);
@@ -327,8 +347,8 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 				}
 				else if (composedFunction instanceof Supplier) {
 					this.addSupplier(name, (Supplier<?>) composedFunction);
-
 				}
+//				this.register(composedRegistration);
 			}
 
 		}
