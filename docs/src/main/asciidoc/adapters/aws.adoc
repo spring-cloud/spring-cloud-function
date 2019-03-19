@@ -1,5 +1,9 @@
 *{spring-cloud-function-version}*
 
+[#index-link]
+{docs-url}spring-cloud-function/{docs-version}home.html
+
+
 The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.
 
 == Introduction
