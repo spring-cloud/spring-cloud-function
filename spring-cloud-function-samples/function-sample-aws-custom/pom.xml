@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-aws-custom</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>${spring-cloud-function.version}</version>
 	<name>lambda</name>
 	<description>Demo project for Spring Cloud Function with custom AWS Lambda runtime</description>
 
@@ -80,7 +80,7 @@
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-function-dependencies</artifactId>
-				<version>2.1.0.BUILD-SNAPSHOT</version>
+				<version>${spring-cloud-function.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
