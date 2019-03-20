@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringRunner.class)
 // @formatter:off
 @SpringBootTest(webEnvironment = WebEnvironment.NONE,
-	properties = "spring.cloud.function.web.export.sink.url=http://nosuchhost")
+	properties = "spring.cloud.function.web.export.sink.url=https://nosuchhost")
 // @formatter:on
 @ContextConfiguration(classes = { ApplicationConfiguration.class })
 public class SourceAutoConfigurationIntegrationTests {
