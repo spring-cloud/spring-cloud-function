@@ -124,8 +124,10 @@
 							<sourceDirectory>${project.build.directory}/refdocs/</sourceDirectory>
 							<attributes>
 								<spring-cloud-function-version>${project.version}</spring-cloud-function-version>
-								<docs-url>https://cloud.spring.io/</docs-url>
-            					<docs-version></docs-version>
+<!-- 								<docs-url>https://cloud.spring.io/</docs-url> -->
+<!--             					<docs-version></docs-version> -->
+            					<docs-url>https://cloud.spring.io/spring-cloud-static/</docs-url>
+            					<docs-version>2.1.0.M1</docs-version>
 							</attributes>
 						</configuration>
 						<executions>
