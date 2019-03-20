@@ -64,7 +64,6 @@ import org.springframework.messaging.Message;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
@@ -130,10 +129,10 @@ public class RequestProcessor {
 		Class<?> inputType = this.inspector.getInputType(function);
 		Type itemType = getItemType(function);
 
-		Object input = body;
+		Object input = body == null && inputType.isAssignableFrom(String.class) ? "" : body;
 
-		if (StringUtils.hasText(body)) {
-			if (this.shouldUseJsonConversion(body, wrapper.headers.getContentType())) {
+		if (input != null) {
+			if (this.shouldUseJsonConversion((String) input, wrapper.headers.getContentType())) {
 				Type jsonType = body.startsWith("[")
 						&& Collection.class.isAssignableFrom(inputType)
 						|| body.startsWith("{") ? inputType : Collection.class;
@@ -141,10 +140,10 @@ public class RequestProcessor {
 					jsonType = ResolvableType.forClassWithGenerics((Class<?>) jsonType,
 							(Class<?>) itemType).getType();
 				}
-				input = this.mapper.toObject(body, jsonType);
+				input = this.mapper.toObject((String) input, jsonType);
 			}
 			else {
-				input = this.converter.convert(function, body);
+				input = this.converter.convert(function, (String) input);
 			}
 		}
 
