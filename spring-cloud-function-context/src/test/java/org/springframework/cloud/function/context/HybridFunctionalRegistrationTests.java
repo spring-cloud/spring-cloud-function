@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Semyon Fishman
  *
  */
 public class HybridFunctionalRegistrationTests {
@@ -41,8 +42,10 @@ public class HybridFunctionalRegistrationTests {
 	public void testNoDoubleRegistrationInHybridMode() {
 		ConfigurableApplicationContext context = FunctionalSpringApplication
 				.run(UppercaseFunction.class, "--spring.functional.enabled=false");
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
 		assertThat(context.containsBean("function")).isTrue();
-		assertThat(context.getBeansOfType(UppercaseFunction.class).size()).isEqualTo(1);
+		assertThat(catalog.size()).isEqualTo(1);
 	}
 
 	@SpringBootConfiguration
@@ -54,13 +57,7 @@ public class HybridFunctionalRegistrationTests {
 
 		@Override
 		public String apply(String t) {
-			System.out.println("Receoved " + t);
-			return t;
-		}
-
-		@Bean
-		public Function<String, String> foo() {
-			return x -> x;
+			return t.toUpperCase();
 		}
 	}
 

@@ -125,20 +125,15 @@ public class FunctionalSpringApplication
 					|| Supplier.class.isAssignableFrom(type)) {
 				Class<?> functionType = type;
 				Object function = handler;
+				this.register((GenericApplicationContext) context, function, functionType);
 				if (source.equals(functionType)) {
 					context.addBeanFactoryPostProcessor(beanFactory -> {
 						BeanDefinitionRegistry bdRegistry = (BeanDefinitionRegistry) beanFactory;
 						if (!ObjectUtils.isEmpty(context.getBeanNamesForType(functionType))) {
 							stream(context.getBeanNamesForType(functionType))
-							.forEach(beanName -> bdRegistry.registerAlias(beanName, "function"));
-						}
-						else {
-							this.register((GenericApplicationContext) context, function, functionType);
+								.forEach(bdRegistry::removeBeanDefinition);
 						}
 					});
-				}
-				else {
-					this.register((GenericApplicationContext) context, function, functionType);
 				}
 				functional = true;
 			}
