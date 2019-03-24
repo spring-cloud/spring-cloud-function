@@ -53,6 +53,7 @@ import org.springframework.util.ClassUtils;
  * @param <C> the type of the target specific (native) context object.
  *
  * @author Oleg Zhurakousky
+ * @author Semyon Fishman
  * @since 2.1
  */
 public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Closeable {
@@ -114,11 +115,15 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		ConfigurableApplicationContext context = builder.run();
 		context.getAutowireCapableBeanFactory().autowireBean(this);
 		this.context = context;
+		String functionName = context.getEnvironment().getProperty("function.name");
+		if (functionName == null) {
+			functionName = "function";
+		}
 		if (this.catalog == null) {
-			initFunctionConsumerOrSupplierFromContext(targetContext);
+			initFunctionConsumerOrSupplierFromContext(targetContext, functionName);
 		}
 		else {
-			initFunctionConsumerOrSupplierFromCatalog(targetContext);
+			initFunctionConsumerOrSupplierFromCatalog(targetContext, functionName);
 		}
 	}
 
@@ -180,19 +185,6 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		throw new IllegalStateException("No function defined");
 	}
 
-	/**
-	 * Allows you to resolve function name for cases where it
-	 * could not be located under default name.
-	 *
-	 * Default implementation returns empty string.
-	 *
-	 * @param targetContext the target context instance
-	 * @return the name of the function
-	 */
-	protected String doResolveName(Object targetContext) {
-		return "";
-	}
-
 	protected <O> O result(Object input, Publisher<?> output) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : Flux.from(output).toIterable()) {
@@ -233,23 +225,6 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 					.isAssignableFrom(getInspector().getOutputType(function));
 		}
 		return ((Collection<?>) output).size() <= 1;
-	}
-
-	private String resolveName(Class<?> type, Object targetContext) {
-		String functionName = context.getEnvironment().getProperty("function.name");
-		if (functionName != null) {
-			return functionName;
-		}
-		else if (type.isAssignableFrom(Function.class)) {
-			return "function";
-		}
-		else if (type.isAssignableFrom(Consumer.class)) {
-			return "consumer";
-		}
-		else if (type.isAssignableFrom(Supplier.class)) {
-			return "supplier";
-		}
-		throw new IllegalStateException("Unknown type " + type);
 	}
 
 	private static Class<?> getStartClass() {
@@ -312,41 +287,35 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		return (T) functionRegistration.getTarget();
 	}
 
-	private void initFunctionConsumerOrSupplierFromContext(Object targetContext) {
-		String name = resolveName(Function.class, targetContext);
-		if (context.containsBean(name) && context.getBean(name) instanceof Function) {
-			this.function = getAndInstrumentFromContext(name);
+	private void initFunctionConsumerOrSupplierFromContext(Object targetContext, String functionName) {
+		if (context.containsBean(functionName) && context.getBean(functionName) instanceof Function) {
+			this.function = getAndInstrumentFromContext(functionName);
 			return;
 		}
 
-		name = resolveName(Consumer.class, targetContext);
-		if (context.containsBean(name) && context.getBean(name) instanceof Consumer) {
-			this.consumer = getAndInstrumentFromContext(name);
+		if (context.containsBean(functionName) && context.getBean(functionName) instanceof Consumer) {
+			this.consumer = getAndInstrumentFromContext(functionName);
 			return;
 		}
 
-		name = resolveName(Supplier.class, targetContext);
-		if (context.containsBean(name) && context.getBean(name) instanceof Supplier) {
-			this.supplier = getAndInstrumentFromContext(name);
+		if (context.containsBean(functionName) && context.getBean(functionName) instanceof Supplier) {
+			this.supplier = getAndInstrumentFromContext(functionName);
 			return;
 		}
 	}
 
-	private void initFunctionConsumerOrSupplierFromCatalog(Object targetContext) {
-		String name = resolveName(Function.class, targetContext);
-		this.function = this.catalog.lookup(Function.class, name);
+	private void initFunctionConsumerOrSupplierFromCatalog(Object targetContext, String functionName) {
+		this.function = this.catalog.lookup(Function.class, functionName);
 		if (this.function != null) {
 			return;
 		}
 
-		name = resolveName(Consumer.class, targetContext);
-		this.consumer = this.catalog.lookup(Consumer.class, name);
+		this.consumer = this.catalog.lookup(Consumer.class, functionName);
 		if (this.consumer != null) {
 			return;
 		}
 
-		name = resolveName(Supplier.class, targetContext);
-		this.supplier = this.catalog.lookup(Supplier.class, name);
+		this.supplier = this.catalog.lookup(Supplier.class, functionName);
 		if (this.supplier != null) {
 			return;
 		}
@@ -371,17 +340,16 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 			}
 		}
 		else {
-			name = this.doResolveName(targetContext);
-			this.function = this.catalog.lookup(Function.class, name);
+			this.function = this.catalog.lookup(Function.class, functionName);
 			if (this.function != null) {
 				return;
 			}
 
-			this.consumer = this.catalog.lookup(Consumer.class, name);
+			this.consumer = this.catalog.lookup(Consumer.class, functionName);
 			if (this.consumer != null) {
 				return;
 			}
-			this.supplier = this.catalog.lookup(Supplier.class, name);
+			this.supplier = this.catalog.lookup(Supplier.class, functionName);
 			if (this.supplier != null) {
 				return;
 			}
