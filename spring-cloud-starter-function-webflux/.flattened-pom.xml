@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="https://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.springframework.cloud</groupId>
   <artifactId>spring-cloud-starter-function-webflux</artifactId>
@@ -39,7 +39,7 @@ limitations under the License.</comments>
       <name>Dave Syer</name>
       <email>dsyer at pivotal.io</email>
       <organization>Pivotal Software, Inc.</organization>
-      <organizationUrl>http://www.spring.io</organizationUrl>
+      <organizationUrl>https://www.spring.io</organizationUrl>
       <roles>
         <role>lead</role>
       </roles>
@@ -49,7 +49,7 @@ limitations under the License.</comments>
       <name>Spencer Gibb</name>
       <email>sgibb at pivotal.io</email>
       <organization>Pivotal Software, Inc.</organization>
-      <organizationUrl>http://www.spring.io</organizationUrl>
+      <organizationUrl>https://www.spring.io</organizationUrl>
       <roles>
         <role>lead</role>
       </roles>
@@ -59,7 +59,7 @@ limitations under the License.</comments>
       <name>Marcin Grzejszczak</name>
       <email>mgrzejszczak at pivotal.io</email>
       <organization>Pivotal Software, Inc.</organization>
-      <organizationUrl>http://www.spring.io</organizationUrl>
+      <organizationUrl>https://www.spring.io</organizationUrl>
       <roles>
         <role>developer</role>
       </roles>
@@ -69,7 +69,7 @@ limitations under the License.</comments>
       <name>Ryan Baxter</name>
       <email>rbaxter at pivotal.io</email>
       <organization>Pivotal Software, Inc.</organization>
-      <organizationUrl>http://www.spring.io</organizationUrl>
+      <organizationUrl>https://www.spring.io</organizationUrl>
       <roles>
         <role>developer</role>
       </roles>
