@@ -10,5 +10,5 @@ Main-Class: org.springframework.boot.loader.JarLauncher
 Start-Class: org.springframework.cloud.function.test.FunctionApp
 Created-By: Apache Maven 3.5.0
 Build-Jdk: 1.8.0_131
-Implementation-URL: http://projects.spring.io/spring-boot/function-sam
+Implementation-URL: https://projects.spring.io/spring-boot/function-sam
  ple/
