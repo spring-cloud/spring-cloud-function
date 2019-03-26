@@ -31,7 +31,7 @@ public class Application {
 It's just a Spring Boot application, so it can be built, run and
 tested, locally and in a CI build, the same way as any other Spring
 Boot application. The `Function` is from `java.util` and `Flux` is a
-http://www.reactive-streams.org/[Reactive Streams] `Publisher` from
+https://www.reactive-streams.org/[Reactive Streams] `Publisher` from
 https://projectreactor.io/[Project Reactor]. The function can be
 accessed over HTTP or messaging.
 
