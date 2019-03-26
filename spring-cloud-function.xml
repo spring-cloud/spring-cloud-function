@@ -48,7 +48,7 @@ public class Application {
 <simpara>It&#8217;s just a Spring Boot application, so it can be built, run and
 tested, locally and in a CI build, the same way as any other Spring
 Boot application. The <literal>Function</literal> is from <literal>java.util</literal> and <literal>Flux</literal> is a
-<link xl:href="http://www.reactive-streams.org/">Reactive Streams</link> <literal>Publisher</literal> from
+<link xl:href="https://www.reactive-streams.org/">Reactive Streams</link> <literal>Publisher</literal> from
 <link xl:href="https://projectreactor.io/">Project Reactor</link>. The function can be
 accessed over HTTP or messaging.</simpara>
 <simpara>Spring Cloud Function has 4 main features:</simpara>
