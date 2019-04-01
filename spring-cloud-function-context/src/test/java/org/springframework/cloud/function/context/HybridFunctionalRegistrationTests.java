@@ -19,13 +19,13 @@ package org.springframework.cloud.function.context;
 import java.util.function.Function;
 
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,8 +41,24 @@ public class HybridFunctionalRegistrationTests {
 	public void testNoDoubleRegistrationInHybridMode() {
 		ConfigurableApplicationContext context = FunctionalSpringApplication
 				.run(UppercaseFunction.class, "--spring.functional.enabled=false");
+
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
 		assertThat(context.containsBean("function")).isTrue();
 		assertThat(context.getBeansOfType(UppercaseFunction.class).size()).isEqualTo(1);
+		assertThat((Object) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFunction")).isNotNull();
+	}
+
+	@Test
+	public void testNoDoubleRegistrationInHybridModeFluxedFunction() {
+		ConfigurableApplicationContext context = FunctionalSpringApplication
+				.run(UppercaseFluxFunction.class, "--spring.functional.enabled=false");
+
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		assertThat(context.containsBean("function")).isTrue();
+		assertThat(context.getBeansOfType(UppercaseFluxFunction.class).size()).isEqualTo(1);
+		assertThat((Object) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFluxFunction")).isNotNull();
 	}
 
 	@SpringBootConfiguration
@@ -54,14 +70,22 @@ public class HybridFunctionalRegistrationTests {
 
 		@Override
 		public String apply(String t) {
-			System.out.println("Receoved " + t);
-			return t;
-		}
-
-		@Bean
-		public Function<String, String> foo() {
-			return x -> x;
+			return t.toUpperCase();
 		}
 	}
 
+	@SpringBootConfiguration
+	@ImportAutoConfiguration({
+		ContextFunctionCatalogAutoConfiguration.class,
+		JacksonAutoConfiguration.class }
+	)
+	public static class UppercaseFluxFunction implements Function<Flux<String>, Flux<String>> {
+
+		@Override
+		public Flux<String> apply(Flux<String> flux) {
+			return flux.map(v -> v.toUpperCase());
+		}
+
+
+	}
 }
