@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.source;
 
+import org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment;
 import org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -23,6 +24,7 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogI
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.ClassUtils;
+import org.springframework.web.context.ConfigurableWebEnvironment;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -52,14 +54,18 @@ class FunctionExporterInitializer
 	}
 
 	private boolean isExporting(GenericApplicationContext context) {
-		if (context.getEnvironment().getProperty("spring.cloud.function.web.export",
-				Boolean.class, false)) {
-			return true;
+		Boolean enabled = context.getEnvironment()
+				.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
+		if (enabled != null) {
+			return enabled;
 		}
 		if (ClassUtils.isPresent("org.springframework.web.context.WebApplicationContext",
 				getClass().getClassLoader())) {
 			if (context instanceof WebApplicationContext
-					|| context instanceof ReactiveWebApplicationContext) {
+					|| context instanceof ReactiveWebApplicationContext
+					|| context.getEnvironment() instanceof ConfigurableWebEnvironment
+					|| context
+							.getEnvironment() instanceof ConfigurableReactiveWebEnvironment) {
 				return false;
 			}
 		}
