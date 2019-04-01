@@ -27,8 +27,8 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
-import org.springframework.boot.context.properties.ConfigurationBeanFactoryMetadata;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessorRegistrar;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -124,15 +124,10 @@ public class ContextFunctionCatalogInitializer
 				// But switch on other annotation processing
 				AnnotationConfigUtils.registerAnnotationConfigProcessors(this.context);
 			}
-			if (!this.context.getBeanFactory()
-					.containsBean(ConfigurationBeanFactoryMetadata.BEAN_NAME)) {
-				this.context.registerBean(ConfigurationBeanFactoryMetadata.BEAN_NAME,
-						ConfigurationBeanFactoryMetadata.class,
-						() -> new ConfigurationBeanFactoryMetadata());
-				this.context.registerBean(
-						ConfigurationPropertiesBindingPostProcessor.BEAN_NAME,
-						ConfigurationPropertiesBindingPostProcessor.class,
-						() -> new ConfigurationPropertiesBindingPostProcessor());
+			if (!this.context.getBeanFactory().containsBean(
+					ConfigurationPropertiesBindingPostProcessor.BEAN_NAME)) {
+				new ConfigurationPropertiesBindingPostProcessorRegistrar()
+						.registerBeanDefinitions(null, context);
 			}
 
 			if (ClassUtils.isPresent("com.google.gson.Gson", null)
