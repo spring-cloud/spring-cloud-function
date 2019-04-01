@@ -24,9 +24,9 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
-import org.springframework.boot.context.properties.ConfigurationBeanFactoryMetadata;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.cloud.function.compiler.ConsumerCompiler;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.compiler.SupplierCompiler;
@@ -38,7 +38,6 @@ import org.springframework.cloud.function.compiler.proxy.LambdaCompilingFunction
 import org.springframework.cloud.function.compiler.proxy.LambdaCompilingSupplier;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
@@ -85,7 +84,7 @@ public class FunctionProxyApplicationListener
 		ConfigurableApplicationContext context = event.getApplicationContext();
 		DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) context
 				.getBeanFactory();
-		bind(context);
+		bind(context, beanFactory);
 		for (Map.Entry<String, Object> entry : this.compile.entrySet()) {
 			String name = entry.getKey();
 			@SuppressWarnings("unchecked")
@@ -116,26 +115,10 @@ public class FunctionProxyApplicationListener
 		}
 	}
 
-	private void bind(ConfigurableApplicationContext context) {
-		ConfigurationPropertiesBindingPostProcessor post = new ConfigurationPropertiesBindingPostProcessor();
-		maybeSetBeanFactory(context, post);
-		try {
-			post.afterPropertiesSet();
-		}
-		catch (Exception e) {
-			throw new IllegalStateException("Cannot bind properties", e);
-		}
-		post.postProcessBeforeInitialization(this, getClass().getName());
-	}
-
-	private void maybeSetBeanFactory(ConfigurableApplicationContext context,
-			ConfigurationPropertiesBindingPostProcessor post) {
-		StaticApplicationContext other = new StaticApplicationContext();
-		other.setEnvironment(context.getEnvironment());
-		other.registerSingleton(ConfigurationBeanFactoryMetadata.class.getName(),
-				ConfigurationBeanFactoryMetadata.class);
-		other.setParent(context);
-		post.setApplicationContext(other);
+	private void bind(ConfigurableApplicationContext application,
+			DefaultListableBeanFactory context) {
+		Binder.get(application.getEnvironment()).bind("spring.cloud.function",
+				Bindable.ofInstance(this));
 	}
 
 	private void registerByteCodeLoadingProxy(String name, String type, Resource resource,
