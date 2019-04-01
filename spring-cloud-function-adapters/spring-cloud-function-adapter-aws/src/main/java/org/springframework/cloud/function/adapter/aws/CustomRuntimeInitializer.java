@@ -32,6 +32,11 @@ public class CustomRuntimeInitializer
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
+		Boolean enabled = context.getEnvironment()
+				.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
+		if (enabled != null) {
+			return;
+		}
 		if (ContextFunctionCatalogInitializer.enabled && context.getEnvironment()
 				.getProperty("spring.functional.enabled", Boolean.class, false)) {
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class,
