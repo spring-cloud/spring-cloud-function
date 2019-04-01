@@ -18,7 +18,9 @@ package org.springframework.cloud.function.adapter.aws;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.web.source.DestinationResolver;
 import org.springframework.cloud.function.web.source.FunctionExporterAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +31,8 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @AutoConfigureBefore(FunctionExporterAutoConfiguration.class)
+@ConditionalOnClass(DestinationResolver.class)
+@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled", matchIfMissing = true)
 public class CustomRuntimeAutoConfiguration {
 
 	@Bean
