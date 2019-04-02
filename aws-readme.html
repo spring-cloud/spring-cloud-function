@@ -111,7 +111,15 @@ $(addBlockSwitches);
 <h2 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You don&#8217;t need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might need to exclude those before you create the JAR you send to AWS. A Lambda application has to be shaded, but a Spring Boot standalone application does not, so you can run the same app using 2 separate jars (as per the sample). The sample app creates 2 jar files, one with an <code>aws</code> classifier for deploying in Lambda, and one executable (thin) jar that includes <code>spring-cloud-function-web</code> at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file manifest, using the <code>Start-Class</code> attribute (which will be added for you by the Spring Boot tooling if you use the starter parent). If there is no <code>Start-Class</code> in your manifest you can use an environment variable <code>MAIN_CLASS</code> when you deploy the function to AWS.</p>
+<p>You don&#8217;t need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might
+need to exclude those before you create the JAR you send to AWS. A Lambda application has to be
+shaded, but a Spring Boot standalone application does not, so you can run the same app using 2
+separate jars (as per the sample). The sample app creates 2 jar files, one with an <code>aws</code>
+classifier for deploying in Lambda, and one executable (thin) jar that includes <code>spring-cloud-function-web</code>
+at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file
+manifest, using the <code>Start-Class</code> attribute (which will be added for you by the Spring Boot
+tooling if you use the starter parent). If there is no <code>Start-Class</code> in your manifest you can
+use an environment variable or system property <code>MAIN_CLASS</code> when you deploy the function to AWS.</p>
 </div>
 </div>
 </div>
