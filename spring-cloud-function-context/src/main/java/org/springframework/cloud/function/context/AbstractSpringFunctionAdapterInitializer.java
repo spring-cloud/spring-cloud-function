@@ -45,6 +45,7 @@ import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -89,6 +90,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 	}
 
 	public AbstractSpringFunctionAdapterInitializer(Class<?> configurationClass) {
+		Assert.notNull(configurationClass, "'configurationClass' must not be null");
 		this.configurationClass = configurationClass;
 	}
 
@@ -254,23 +256,32 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 
 	private static Class<?> getStartClass() {
 		ClassLoader classLoader = AbstractSpringFunctionAdapterInitializer.class.getClassLoader();
+		Class<?> mainClass = null;
 		if (System.getenv("MAIN_CLASS") != null) {
-			return ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
+			mainClass = ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
 		}
-		try {
-			Class<?> result = getStartClass(
-					Collections.list(classLoader.getResources("META-INF/MANIFEST.MF")));
-			if (result == null) {
-				result = getStartClass(Collections
-						.list(classLoader.getResources("meta-inf/manifest.mf")));
+		if (System.getProperty("MAIN_CLASS") != null) {
+			mainClass = ClassUtils.resolveClassName(System.getProperty("MAIN_CLASS"), classLoader);
+		}
+		else {
+			try {
+				Class<?> result = getStartClass(
+						Collections.list(classLoader.getResources("META-INF/MANIFEST.MF")));
+				if (result == null) {
+					result = getStartClass(Collections
+							.list(classLoader.getResources("meta-inf/manifest.mf")));
+				}
+				Assert.notNull(result, "Failed to locate main class");
+				mainClass = result;
 			}
-			logger.info("Main class: " + result);
-			return result;
+			catch (Exception ex) {
+				throw new IllegalStateException("Failed to discover main class. An attempt was made to discover "
+						+ "main class as 'MAIN_CLASS' environment variable, system property as well as "
+						+ "entry in META-INF/MANIFEST.MF (in that order).", ex);
+			}
 		}
-		catch (Exception ex) {
-			logger.error("Failed to find main class", ex);
-			return null;
-		}
+		logger.info("Main class: " + mainClass);
+		return mainClass;
 	}
 
 	private static Class<?> getStartClass(List<URL> list) {

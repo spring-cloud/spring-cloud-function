@@ -54,6 +54,26 @@ public class SpringFunctionAdapterInitializerTests {
 		}
 	}
 
+	@Test(expected = IllegalArgumentException.class)
+	public void nullSource() {
+		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(null) {
+
+		};
+	}
+
+	@Test
+	public void sourceAsMainClassProperty() {
+		try {
+			System.setProperty("MAIN_CLASS", FluxFunctionConfig.class.getName());
+			this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>() {
+
+			};
+		}
+		finally {
+			System.clearProperty("MAIN_CLASS");
+		}
+	}
+
 	@Test
 	public void functionBean() {
 		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(FluxFunctionConfig.class) {

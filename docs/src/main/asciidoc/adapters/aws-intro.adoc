@@ -4,7 +4,15 @@ If your app has more than one `@Bean` of type `Function` etc. then you can choos
 
 == Notes on JAR Layout
 
-You don't need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might need to exclude those before you create the JAR you send to AWS. A Lambda application has to be shaded, but a Spring Boot standalone application does not, so you can run the same app using 2 separate jars (as per the sample). The sample app creates 2 jar files, one with an `aws` classifier for deploying in Lambda, and one executable (thin) jar that includes `spring-cloud-function-web` at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file manifest, using the `Start-Class` attribute (which will be added for you by the Spring Boot tooling if you use the starter parent). If there is no `Start-Class` in your manifest you can use an environment variable `MAIN_CLASS` when you deploy the function to AWS.
+You don't need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might
+need to exclude those before you create the JAR you send to AWS. A Lambda application has to be
+shaded, but a Spring Boot standalone application does not, so you can run the same app using 2
+separate jars (as per the sample). The sample app creates 2 jar files, one with an `aws`
+classifier for deploying in Lambda, and one executable (thin) jar that includes `spring-cloud-function-web`
+at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file
+manifest, using the `Start-Class` attribute (which will be added for you by the Spring Boot
+tooling if you use the starter parent). If there is no `Start-Class` in your manifest you can
+use an environment variable or system property `MAIN_CLASS` when you deploy the function to AWS.
 
 == Upload
 
