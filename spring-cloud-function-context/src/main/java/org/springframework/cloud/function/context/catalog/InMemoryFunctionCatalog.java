@@ -40,8 +40,8 @@ public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry 
 	}
 
 	@Override
-	protected FunctionType findType(FunctionRegistration<?> functionRegistration) {
-		FunctionType functionType = super.findType(functionRegistration);
+	protected FunctionType findType(FunctionRegistration<?> functionRegistration, String name) {
+		FunctionType functionType = super.findType(functionRegistration, name);
 		if (functionType == null) {
 			functionType = new FunctionType(functionRegistration.getTarget().getClass());
 		}

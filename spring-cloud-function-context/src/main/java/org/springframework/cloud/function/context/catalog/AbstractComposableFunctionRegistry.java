@@ -71,8 +71,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 
 	private final Map<String, Object> functions = new ConcurrentHashMap<>();
 
-	private final Map<String, Object> consumers = new ConcurrentHashMap<>();
-
 	private final Map<Object, String> names = new ConcurrentHashMap<>();
 
 	private final Map<String, FunctionType> types = new ConcurrentHashMap<>();
@@ -97,16 +95,12 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		if (type == null) {
 			return new HashSet<String>(getSupplierNames()) {
 				{
-					addAll(getConsumerNames());
 					addAll(getFunctionNames());
 				}
 			};
 		}
 		if (Supplier.class.isAssignableFrom(type)) {
 			return this.getSupplierNames();
-		}
-		if (Consumer.class.isAssignableFrom(type)) {
-			return this.getConsumerNames();
 		}
 		if (Function.class.isAssignableFrom(type)) {
 			return this.getFunctionNames();
@@ -130,24 +124,12 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		return this.functions.keySet();
 	}
 
-	/**
-	 * Returns the names of available Consumers.
-	 * @return immutable {@link Set} of available {@link Consumer} names.
-	 */
-	public Set<String> getConsumerNames() {
-		return this.consumers.keySet();
-	}
-
 	public boolean hasSuppliers() {
 		return !CollectionUtils.isEmpty(getSupplierNames());
 	}
 
 	public boolean hasFunctions() {
 		return !CollectionUtils.isEmpty(getFunctionNames());
-	}
-
-	public boolean hasConsumers() {
-		return !CollectionUtils.isEmpty(getConsumerNames());
 	}
 
 	/**
@@ -158,8 +140,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 */
 	@Override
 	public int size() {
-		return getSupplierNames().size() + getFunctionNames().size()
-				+ getConsumerNames().size();
+		return getSupplierNames().size() + getFunctionNames().size();
 	}
 
 	public FunctionType getFunctionType(String name) {
@@ -194,7 +175,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		if (StringUtils.hasText(functionName)) {
 			FunctionRegistration<?> registration = new FunctionRegistration<Object>(
 					function, functionName);
-			FunctionType functionType = this.findType(registration);
+			FunctionType functionType = this.findType(registration, functionName);
 			return registration.type(functionType.getType());
 		}
 		return null;
@@ -218,12 +199,14 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 */
 	protected void register(FunctionRegistration<?> registration, String key) {
 		Object target = registration.getTarget();
-		this.addName(target, key);
+		if (key.equals("uppercase")) {
+			System.out.println();
+		}
 		if (registration.getType() != null) {
 			this.addType(key, registration.getType());
 		}
 		else {
-			FunctionType functionType = findType(registration);
+			FunctionType functionType = findType(registration, key);
 			this.addType(key, functionType);
 			registration.type(functionType.getType());
 		}
@@ -234,12 +217,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 			type = Supplier.class;
 			for (String name : registration.getNames()) {
 				this.addSupplier(name, (Supplier<?>) registration.getTarget());
-			}
-		}
-		else if (target instanceof Consumer) {
-			type = Consumer.class;
-			for (String name : registration.getNames()) {
-				this.addConsumer(name, (Consumer<?>) registration.getTarget());
 			}
 		}
 		else if (target instanceof Function) {
@@ -258,8 +235,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		}
 	}
 
-	protected FunctionType findType(FunctionRegistration<?> functionRegistration) {
-		String name = this.lookupFunctionName(functionRegistration.getTarget());
+	protected FunctionType findType(FunctionRegistration<?> functionRegistration, String name) {
 		return functionRegistration.getType() != null
 				?  functionRegistration.getType()
 						:  this.getFunctionType(name);
@@ -272,10 +248,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 
 	protected void addFunction(String name, Function<?, ?> function) {
 		this.functions.put(name, function);
-	}
-
-	protected void addConsumer(String name, Consumer<?> consumer) {
-		this.consumers.put(name, consumer);
 	}
 
 	protected void addType(String name, FunctionType functionType) {
@@ -339,16 +311,12 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 				composedFunction = composedRegistration.getTarget();
 				this.addType(name, composedRegistration.getType());
 				this.addName(composedFunction, name);
-				if (composedFunction instanceof Function) {
+				if (composedFunction instanceof Function || composedFunction instanceof Consumer) {
 					this.addFunction(name, (Function<?, ?>) composedFunction);
-				}
-				else if (composedFunction instanceof Consumer) {
-					this.addConsumer(name, (Consumer<?>) composedFunction);
 				}
 				else if (composedFunction instanceof Supplier) {
 					this.addSupplier(name, (Supplier<?>) composedFunction);
 				}
-//				this.register(composedRegistration);
 			}
 
 		}
@@ -360,9 +328,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		Object result = this.suppliers.get(name);
 		if (result == null) {
 			result = this.functions.get(name);
-		}
-		if (result == null) {
-			result = this.consumers.get(name);
 		}
 		if (result == null && !StringUtils.hasText(name)) {
 			if (supplierFound && this.functions.size() == 1) {
@@ -465,9 +430,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		if (type == null) {
 			function = this.compose(name, this.functions);
 			if (function == null) {
-				function = this.compose(name, this.consumers);
-			}
-			if (function == null) {
 				function = this.compose(name, this.suppliers);
 			}
 		}
@@ -480,12 +442,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		else if (Supplier.class.isAssignableFrom(type)) {
 			Object composed = this.compose(name, this.suppliers);
 			if (composed != null && Supplier.class.isAssignableFrom(composed.getClass())) {
-				function = composed;
-			}
-		}
-		else if (Consumer.class.isAssignableFrom(type)) {
-			Object composed = this.compose(name, this.consumers);
-			if (composed != null && Consumer.class.isAssignableFrom(composed.getClass())) {
 				function = composed;
 			}
 		}

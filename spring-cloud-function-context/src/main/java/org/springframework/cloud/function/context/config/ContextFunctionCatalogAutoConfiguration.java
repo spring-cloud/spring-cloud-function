@@ -123,11 +123,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 							.publishEvent(new FunctionUnregistrationEvent(this,
 									Function.class, this.getFunctionNames()));
 				}
-				if (this.hasConsumers()) {
-					this.applicationEventPublisher
-							.publishEvent(new FunctionUnregistrationEvent(this,
-									Consumer.class, this.getConsumerNames()));
-				}
 				if (this.hasSuppliers()) {
 					this.applicationEventPublisher
 							.publishEvent(new FunctionUnregistrationEvent(this,
@@ -137,10 +132,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		@Override
-		protected FunctionType findType(FunctionRegistration<?> functionRegistration) {
-			FunctionType functionType = super.findType(functionRegistration);
+		protected FunctionType findType(FunctionRegistration<?> functionRegistration, String name) {
+			FunctionType functionType = super.findType(functionRegistration, name);
 			if (functionType == null) {
-				String name = this.lookupFunctionName(functionRegistration.getTarget());
 				functionType = functionByNameExist(name)
 						? new FunctionType(functionRegistration.getTarget().getClass())
 						: new FunctionType(

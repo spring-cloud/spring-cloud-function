@@ -41,7 +41,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FluxConsumer;
-import org.springframework.cloud.function.core.FluxWrapper;
 import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.util.HeaderUtils;
@@ -273,18 +272,12 @@ public class RequestProcessor {
 	}
 
 	private boolean isInputMultiple(Object handler) {
-		if (handler instanceof FluxWrapper) {
-			handler = ((FluxWrapper<?>) handler).getTarget();
-		}
 		Class<?> type = this.inspector.getInputType(handler);
 		Class<?> wrapper = this.inspector.getInputWrapper(handler);
 		return Collection.class.isAssignableFrom(type) || Flux.class.equals(wrapper);
 	}
 
 	private boolean isOutputSingle(Object handler) {
-		if (handler instanceof FluxWrapper) {
-			handler = ((FluxWrapper<?>) handler).getTarget();
-		}
 		Class<?> type = this.inspector.getOutputType(handler);
 		Class<?> wrapper = this.inspector.getOutputWrapper(handler);
 		if (Stream.class.isAssignableFrom(type)) {
@@ -297,7 +290,6 @@ public class RequestProcessor {
 	}
 
 	private Publisher<?> body(Object handler, ServerWebExchange exchange) {
-
 		ResolvableType elementType = ResolvableType
 				.forClass(this.inspector.getInputType(handler));
 		ResolvableType actualType = elementType;
@@ -388,22 +380,12 @@ public class RequestProcessor {
 		return Mono.from(function.apply(input));
 	}
 
-	private Object getTargetFunction(Object function) {
-		// we need to get the actual un-fluxed function so we can interrogate for types
-		Object target = this.inspector.getRegistration(function).getTarget();
-		if (target instanceof FluxWrapper) {
-			target = ((FluxWrapper<?>) target).getTarget();
-		}
-		return target;
-	}
-
 	private Type getItemType(Object function) {
 		Class<?> inputType = this.inspector.getInputType(function);
 		if (!Collection.class.isAssignableFrom(inputType)) {
 			return inputType;
 		}
-		Type type = this.inspector.getRegistration(this.getTargetFunction(function))
-				.getType().getType();
+		Type type = this.inspector.getRegistration(function).getType().getType();
 		if (type instanceof ParameterizedType) {
 			type = ((ParameterizedType) type).getActualTypeArguments()[0];
 		}

@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class InMemoryFunctionCatalogTests {
 
 	@Test
+	@Ignore // we no longer have a need to register the actual target function as it is contained within wrapper
 	public void testFunctionRegistration() {
 		TestFunction function = new TestFunction();
 		FunctionRegistration<TestFunction> registration = new FunctionRegistration<>(

@@ -453,8 +453,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
-		assertThat(this.inspector.getRegistration(bean)).isNotNull();
-		assertThat(this.inspector.getRegistration(bean).getType())
+		assertThat(this.inspector.getRegistration(function)).isNotNull();
+		assertThat(this.inspector.getRegistration(function).getType())
 				.isEqualTo(this.inspector.getRegistration(function).getType());
 	}
 
