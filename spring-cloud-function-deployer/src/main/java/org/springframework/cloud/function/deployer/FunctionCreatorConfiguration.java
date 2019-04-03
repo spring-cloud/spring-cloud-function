@@ -19,6 +19,7 @@ package org.springframework.cloud.function.deployer;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -574,6 +575,26 @@ class FunctionCreatorConfiguration {
 			}
 		}
 
+		private FunctionType createFunctionType(Object functionCatalog) {
+			FunctionType functionType = null;
+			try {
+				@SuppressWarnings("unchecked")
+				String name = ((Set<String>) this.runner.evaluate("getNames(#type)", functionCatalog, "type", null))
+						.stream().findFirst().orElse(null);
+				if (name != null) {
+					Object ft = this.runner.evaluate("getFunctionType(#name)", functionCatalog, "name", name);
+					Constructor<FunctionType> ftConstructor = FunctionType.class.getDeclaredConstructor(Object.class);
+					ftConstructor.setAccessible(true);
+					functionType = ftConstructor.newInstance(ft);
+				}
+			}
+			catch (Exception e) {
+				throw new IllegalStateException("Failed to extract and map FunctionType", e);
+
+			}
+			return functionType;
+		}
+
 		public void register(Object bean) {
 			if (bean == null) {
 				return;
@@ -583,27 +604,34 @@ class FunctionCreatorConfiguration {
 					FunctionProperties.functionName(this.counter.getAndIncrement()));
 			if (this.runner != null) {
 				if (this.runner.containsBean(FunctionInspector.class.getName())) {
-					Object inspector = this.runner
+					Object functionCatalog = this.runner
 							.getBean(FunctionInspector.class.getName());
-					Class<?> input = (Class<?>) this.runner.evaluate(
-							"getInputType(#function)", inspector, "function", bean);
-					FunctionType type = FunctionType.from(input);
-					Class<?> output = findType("getOutputType", inspector, bean);
-					type = type.to(output);
-					if (((Boolean) this.runner.evaluate("isMessage(#function)", inspector,
-							"function", bean))) {
-						type = type.message();
+
+					FunctionType type = this.createFunctionType(functionCatalog);
+					if (type == null) {
+						Class<?> input = (Class<?>) this.runner.evaluate(
+								"getInputType(#function)", functionCatalog, "function", bean);
+						type = FunctionType.from(input);
+						Class<?> output = findType("getOutputType", functionCatalog, bean);
+						type = type.to(output);
+						if (((Boolean) this.runner.evaluate("isMessage(#function)", functionCatalog,
+								"function", bean))) {
+							type = type.message();
+						}
+						Class<?> inputWrapper = findType("getInputWrapper", functionCatalog, bean);
+						if (FunctionType.isWrapper(inputWrapper)) {
+							type = type.wrap(inputWrapper);
+						}
+						Class<?> outputWrapper = findType("getOutputWrapper", functionCatalog,
+								bean);
+						if (FunctionType.isWrapper(outputWrapper)) {
+							type = type.wrap(outputWrapper);
+						}
 					}
-					Class<?> inputWrapper = findType("getInputWrapper", inspector, bean);
-					if (FunctionType.isWrapper(inputWrapper)) {
-						type = type.wrap(inputWrapper);
-					}
-					Class<?> outputWrapper = findType("getOutputWrapper", inspector,
-							bean);
-					if (FunctionType.isWrapper(outputWrapper)) {
-						type = type.wrap(outputWrapper);
-					}
-					registration.type(type.getType());
+					registration.type(this.createFunctionType(functionCatalog));
+
+
+					//registration.type(type.getType());
 				}
 			}
 			else {

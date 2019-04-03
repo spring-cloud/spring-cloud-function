@@ -67,8 +67,6 @@ import org.springframework.util.StringUtils;
 public abstract class AbstractComposableFunctionRegistry implements FunctionRegistry,
 		FunctionInspector, ApplicationEventPublisherAware, EnvironmentAware {
 
-	private final Map<String, Object> suppliers = new ConcurrentHashMap<>();
-
 	private final Map<String, Object> functions = new ConcurrentHashMap<>();
 
 	private final Map<Object, String> names = new ConcurrentHashMap<>();
@@ -113,7 +111,10 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 * @return immutable {@link Set} of available {@link Supplier} names.
 	 */
 	public Set<String> getSupplierNames() {
-		return this.suppliers.keySet();
+		return this.functions.entrySet().stream()
+				.filter(entry -> entry.getValue() instanceof Supplier)
+				.map(entry -> entry.getKey())
+				.collect(Collectors.toSet());
 	}
 
 	/**
@@ -121,7 +122,10 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 * @return immutable {@link Set} of available {@link Function} names.
 	 */
 	public Set<String> getFunctionNames() {
-		return this.functions.keySet();
+		return this.functions.entrySet().stream()
+				.filter(entry -> !(entry.getValue() instanceof Supplier))
+				.map(entry -> entry.getKey())
+				.collect(Collectors.toSet());
 	}
 
 	public boolean hasSuppliers() {
@@ -140,7 +144,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 */
 	@Override
 	public int size() {
-		return getSupplierNames().size() + getFunctionNames().size();
+		return this.functions.size();
 	}
 
 	public FunctionType getFunctionType(String name) {
@@ -243,7 +247,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 
 
 	protected void addSupplier(String name, Supplier<?> supplier) {
-		this.suppliers.put(name, supplier);
+		this.functions.put(name, supplier);
 	}
 
 	protected void addFunction(String name, Function<?, ?> function) {
@@ -325,16 +329,16 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	}
 
 	private FunctionRegistration<?> find(String name, boolean supplierFound) {
-		Object result = this.suppliers.get(name);
-		if (result == null) {
-			result = this.functions.get(name);
-		}
+		Object result = this.functions.get(name);
+//		if (result == null) {
+//			result = this.functions.get(name);
+//		}
 		if (result == null && !StringUtils.hasText(name)) {
-			if (supplierFound && this.functions.size() == 1) {
-				result = this.functions.values().iterator().next();
+			if (supplierFound && this.getFunctionNames().size() == 1) {
+				result = this.functions.get(this.getFunctionNames().iterator().next());
 			}
-			else if (!supplierFound && this.suppliers.size() == 1) {
-				result = this.suppliers.values().iterator().next();
+			else if (!supplierFound && this.getSupplierNames().size() == 1) {
+				result = this.functions.get(this.getSupplierNames().iterator().next());
 			}
 		}
 
@@ -426,24 +430,9 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	}
 
 	private Object doLookup(Class<?> type, String name) {
-		Object function = null;
-		if (type == null) {
-			function = this.compose(name, this.functions);
-			if (function == null) {
-				function = this.compose(name, this.suppliers);
-			}
-		}
-		else if (Function.class.isAssignableFrom(type)) {
-			Object composed = this.compose(name, this.functions);
-			if (composed != null && Function.class.isAssignableFrom(composed.getClass())) {
-				function = composed;
-			}
-		}
-		else if (Supplier.class.isAssignableFrom(type)) {
-			Object composed = this.compose(name, this.suppliers);
-			if (composed != null && Supplier.class.isAssignableFrom(composed.getClass())) {
-				function = composed;
-			}
+		Object function = this.compose(name, this.functions);
+		if (function != null && type != null && !type.isAssignableFrom(function.getClass())) {
+			function = null;
 		}
 		return function;
 	}

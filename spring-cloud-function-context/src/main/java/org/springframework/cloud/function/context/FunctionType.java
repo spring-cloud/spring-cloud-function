@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.messaging.Message;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Dave Syer
@@ -64,6 +66,37 @@ public class FunctionType {
 		this.inputType = findType(ParamType.INPUT);
 		this.outputType = findType(ParamType.OUTPUT);
 		this.message = messageType();
+	}
+
+	/*
+	 * Experimental for now. Used (reflectively) in FunctionCreatorConfiguration to effectively
+	 * map an existing FunctionType created by one class loader to another.
+	 */
+	@SuppressWarnings("unused") // it is used
+	private FunctionType(Object functionType) throws Exception {
+		Field field = ReflectionUtils.findField(functionType.getClass(), "type");
+		field.setAccessible(true);
+		this.type = (Type) field.get(functionType);
+
+		field = ReflectionUtils.findField(functionType.getClass(), "inputWrapper");
+		field.setAccessible(true);
+		this.inputWrapper = (Class<?>) field.get(functionType);
+
+		field = ReflectionUtils.findField(functionType.getClass(), "outputWrapper");
+		field.setAccessible(true);
+		this.outputWrapper = (Class<?>) field.get(functionType);
+
+		field = ReflectionUtils.findField(functionType.getClass(), "inputType");
+		field.setAccessible(true);
+		this.inputType = (Class<?>) field.get(functionType);
+
+		field = ReflectionUtils.findField(functionType.getClass(), "outputType");
+		field.setAccessible(true);
+		this.outputType = (Class<?>) field.get(functionType);
+
+		field = ReflectionUtils.findField(functionType.getClass(), "message");
+		field.setAccessible(true);
+		this.message = (boolean) field.get(functionType);
 	}
 
 	public static boolean isWrapper(Type type) {
