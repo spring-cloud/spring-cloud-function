@@ -19,7 +19,9 @@ package org.springframework.cloud.function.adapter.azure;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.microsoft.azure.functions.ExecutionContext;
@@ -120,6 +122,26 @@ public class AzureSpringBootRequestHandlerTests {
 		assertThat(bar).isNotNull();
 	}
 
+	@Test
+	public void supplierNonFluxBean() {
+		AzureSpringBootRequestHandler<Void, List<String>> handler = handler(NonFluxSupplierConfig.class);
+		List<String> result = handler.handleRequest(null, new TestExecutionContext("supplier"));
+
+		assertThat(result).isNotEmpty();
+		assertThat(result.toString()).isEqualTo("[foo1, foo2]");
+	}
+
+	private static String consumerResult;
+
+	@Test
+	public void consumerNonFluxBean() {
+		AzureSpringBootRequestHandler<String, Void> handler = handler(NonFluxConsumerConfig.class);
+		Object result = handler.handleRequest("foo1", new TestExecutionContext("consumer"));
+
+		assertThat(result).isNull();
+		assertThat(consumerResult).isEqualTo("foo1");
+	}
+
 	@After
 	public void close() throws IOException {
 		if (this.handler != null) {
@@ -133,6 +155,26 @@ public class AzureSpringBootRequestHandlerTests {
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar();
+		}
+
+	}
+
+	@Configuration
+	protected static class NonFluxSupplierConfig {
+
+		@Bean
+		public Supplier<List<String>> supplier() {
+			return () -> Arrays.asList("foo1", "foo2");
+		}
+
+	}
+
+	@Configuration
+	protected static class NonFluxConsumerConfig {
+
+		@Bean
+		public Consumer<String> consumer() {
+			return (v) -> consumerResult = v;
 		}
 
 	}

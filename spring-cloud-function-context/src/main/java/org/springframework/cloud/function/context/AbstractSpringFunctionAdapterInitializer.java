@@ -47,6 +47,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Base implementation for  adapter initializers and request handlers.
@@ -212,7 +213,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		}
 		@SuppressWarnings("unchecked")
 		O value = (O) result;
-		return value;
+		return CollectionUtils.isEmpty(result) ? null : value;
 	}
 
 	private boolean isSingleInput(Function<?, ?> function, Object input) {
@@ -332,7 +333,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 
 		name = resolveName(Consumer.class, targetContext);
 		if (context.containsBean(name) && context.getBean(name) instanceof Consumer) {
-			this.consumer = getAndInstrumentFromContext(name);
+			this.function = getAndInstrumentFromContext(name); // FluxConsumer or any other consumer wrapper is a Function
 			return;
 		}
 
