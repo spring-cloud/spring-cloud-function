@@ -125,7 +125,7 @@ public class AzureSpringBootRequestHandlerTests {
 	@Test
 	public void supplierNonFluxBean() {
 		AzureSpringBootRequestHandler<Void, List<String>> handler = handler(NonFluxSupplierConfig.class);
-		List<String> result = handler.handleRequest(null, new TestExecutionContext("supplier"));
+		List<String> result = handler.handleRequest(new TestExecutionContext("supplier"));
 
 		assertThat(result).isNotEmpty();
 		assertThat(result.toString()).isEqualTo("[foo1, foo2]");

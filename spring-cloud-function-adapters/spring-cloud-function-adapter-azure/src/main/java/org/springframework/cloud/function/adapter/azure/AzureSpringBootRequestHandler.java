@@ -44,6 +44,10 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		super();
 	}
 
+	public O handleRequest(ExecutionContext context) {
+		return this.handleRequest(null, context);
+	}
+
 	public O handleRequest(I input, ExecutionContext context) {
 		String name = null;
 		try {
