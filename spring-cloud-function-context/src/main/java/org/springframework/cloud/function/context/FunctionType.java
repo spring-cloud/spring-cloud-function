@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import reactor.core.publisher.Flux;
+
 
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.support.SpringFactoriesLoader;
@@ -47,17 +49,17 @@ public class FunctionType {
 
 	private static List<WrapperDetector> transformers;
 
-	final private Type type;
+	private Type type;
 
-	final private Class<?> inputType;
+	private Class<?> inputType;
 
-	final private Class<?> outputType;
+	private Class<?> outputType;
 
-	final private Class<?> inputWrapper;
+	private Class<?> inputWrapper;
 
-	final private Class<?> outputWrapper;
+	private Class<?> outputWrapper;
 
-	final private boolean message;
+	private boolean message;
 
 	public FunctionType(Type type) {
 		this.type = functionType(type);
@@ -74,29 +76,15 @@ public class FunctionType {
 	 */
 	@SuppressWarnings("unused") // it is used
 	private FunctionType(Object functionType) throws Exception {
-		Field field = ReflectionUtils.findField(functionType.getClass(), "type");
-		field.setAccessible(true);
-		this.type = (Type) field.get(functionType);
-
-		field = ReflectionUtils.findField(functionType.getClass(), "inputWrapper");
-		field.setAccessible(true);
-		this.inputWrapper = (Class<?>) field.get(functionType);
-
-		field = ReflectionUtils.findField(functionType.getClass(), "outputWrapper");
-		field.setAccessible(true);
-		this.outputWrapper = (Class<?>) field.get(functionType);
-
-		field = ReflectionUtils.findField(functionType.getClass(), "inputType");
-		field.setAccessible(true);
-		this.inputType = (Class<?>) field.get(functionType);
-
-		field = ReflectionUtils.findField(functionType.getClass(), "outputType");
-		field.setAccessible(true);
-		this.outputType = (Class<?>) field.get(functionType);
-
-		field = ReflectionUtils.findField(functionType.getClass(), "message");
-		field.setAccessible(true);
-		this.message = (boolean) field.get(functionType);
+		Field[] fields = functionType.getClass().getDeclaredFields();
+		for (Field field : fields) {
+			if (!Modifier.isStatic(field.getModifiers())) {
+				field.setAccessible(true);
+				Field thisField = ReflectionUtils.findField(this.getClass(), field.getName());
+				thisField.setAccessible(true);
+				thisField.set(this, field.get(functionType));
+			}
+		}
 	}
 
 	public static boolean isWrapper(Type type) {

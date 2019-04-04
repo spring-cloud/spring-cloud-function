@@ -629,9 +629,6 @@ class FunctionCreatorConfiguration {
 						}
 					}
 					registration.type(this.createFunctionType(functionCatalog));
-
-
-					//registration.type(type.getType());
 				}
 			}
 			else {

@@ -330,9 +330,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 
 	private FunctionRegistration<?> find(String name, boolean supplierFound) {
 		Object result = this.functions.get(name);
-//		if (result == null) {
-//			result = this.functions.get(name);
-//		}
 		if (result == null && !StringUtils.hasText(name)) {
 			if (supplierFound && this.getFunctionNames().size() == 1) {
 				result = this.functions.get(this.getFunctionNames().iterator().next());
