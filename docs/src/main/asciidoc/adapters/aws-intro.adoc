@@ -37,3 +37,26 @@ The input type for the function in the AWS sample is a Foo with a single propert
 ----
 
 NOTE: The AWS sample app is written in the "functional" style (as an `ApplicationContextInitializer`). This is much faster on startup in Lambda than the traditional `@Bean` style, so if you don't need `@Beans` (or `@EnableAutoConfiguration`) it's a good choice. Warm starts are not affected.
+
+
+== Type Conversion
+
+Spring Cloud Function will attempt to transparently handle type conversion between the raw
+input stream and types declared by your function.
+
+For example, if your function signature is as such `Function<Foo, Bar>` we will attempt to convert
+incoming stream event to an instance of `Foo`.
+
+In the event type is not known or can not be determined (e.g., `Function<?, ?>`) we will attempt to
+convert an incoming stream event to a generic `Map`.
+
+==== Raw Input
+
+There are times when you may want to have access to a raw input. In this case all you need is to declare your
+function signature to accept `InputStream`. For example, `Function<InputStream, ?>`. In this case
+we will not attempt any conversion and will pass the raw input directly to a function.
+
+
+
+
+
