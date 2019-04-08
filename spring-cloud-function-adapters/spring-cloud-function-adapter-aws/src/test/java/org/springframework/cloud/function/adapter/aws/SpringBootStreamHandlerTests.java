@@ -18,16 +18,21 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.Map;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -79,6 +84,26 @@ public class SpringBootStreamHandlerTests {
 		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
 	}
 
+	@Test
+	public void typelessFunctionConfig() throws Exception {
+		this.handler = new SpringBootStreamHandler(TypelessFunctionConfig.class);
+		this.handler.initialize(null);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		this.handler.handleRequest(
+				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
+		assertThat(output.toString()).isEqualTo("{\"value\":\"foo\"}");
+	}
+
+	@Test
+	public void inputStreamFunctionConfig() throws Exception {
+		this.handler = new SpringBootStreamHandler(InputStreamFunctionConfig.class);
+		this.handler.initialize(null);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		this.handler.handleRequest(
+				new ByteArrayInputStream("{\"value\":\"foo\"}".getBytes()), output, null);
+		assertThat(output.toString()).isEqualTo("{\"value\":\"FOO\"}");
+	}
+
 	@Configuration
 	protected static class NoCatalogNonFluxFunctionConfig {
 
@@ -118,6 +143,44 @@ public class SpringBootStreamHandlerTests {
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class,
+			JacksonAutoConfiguration.class })
+	protected static class TypelessFunctionConfig {
+
+		@Bean
+		public Function<?, ?> function() {
+			return value -> {
+				Assert.isTrue(value instanceof Map, "Expected value should be Map");
+				return value;
+			};
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class,
+			JacksonAutoConfiguration.class })
+	protected static class InputStreamFunctionConfig {
+
+		@Autowired
+		private ObjectMapper mapper;
+
+		@Bean
+		public Function<InputStream, ?> function() {
+			return value -> {
+				try {
+					Foo foo = this.mapper.readValue((InputStream) value, Foo.class);
+					return new Bar(foo.getValue().toUpperCase());
+				}
+				catch (Exception e) {
+					throw new IllegalStateException("Failed test", e);
+				}
+			};
 		}
 
 	}

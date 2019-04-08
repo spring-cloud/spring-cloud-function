@@ -30,7 +30,6 @@ import reactor.core.publisher.Flux;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 
-
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -50,14 +49,12 @@ public class SpringBootStreamHandler extends AbstractSpringFunctionAdapterInitia
 	}
 
 	@Override
-	public void handleRequest(InputStream input, OutputStream output, Context context)
-			throws IOException {
+	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 		initialize(context);
 		Object value = convertStream(input);
 		Publisher<?> flux = apply(extract(value));
 		this.mapper.writeValue(output, result(value, flux));
 	}
-
 
 	@Override
 	protected void initialize(Context context) {
@@ -74,13 +71,22 @@ public class SpringBootStreamHandler extends AbstractSpringFunctionAdapterInitia
 		return Flux.just(input);
 	}
 
+	/*
+	 * Will convert to POJOP or generic map unless user
+	 * explicitly requests InputStream (e.g., Function<InputStream, ?>).
+	 */
 	private Object convertStream(InputStream input) {
+		Object convertedResult = input;
 		try {
-			return this.mapper.readValue(input, getInputType());
+			Class<?> inputType = getInputType();
+			if (!InputStream.class.isAssignableFrom(inputType)) {
+				convertedResult = this.mapper.readValue(input, inputType);
+			}
 		}
 		catch (Exception e) {
-			throw new IllegalStateException("Cannot convert event", e);
+			throw new IllegalStateException("Cannot convert event stream", e);
 		}
+		return convertedResult;
 	}
 
 }
