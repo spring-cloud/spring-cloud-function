@@ -90,6 +90,11 @@ $(addBlockSwitches);
 <ul class="sectlevel1">
 <li><a href="#_notes_on_jar_layout">Notes on JAR Layout</a></li>
 <li><a href="#_upload">Upload</a></li>
+<li><a href="#_type_conversion">Type Conversion</a>
+<ul class="sectlevel3">
+<li><a href="#_raw_input">Raw Input</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -160,6 +165,31 @@ The AWS sample app is written in the "functional" style (as an <code>Application
 </td>
 </tr>
 </table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_conversion"><a class="link" href="#_type_conversion">Type Conversion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Function will attempt to transparently handle type conversion between the raw
+input stream and types declared by your function.</p>
+</div>
+<div class="paragraph">
+<p>For example, if your function signature is as such <code>Function&lt;Foo, Bar&gt;</code> we will attempt to convert
+incoming stream event to an instance of <code>Foo</code>.</p>
+</div>
+<div class="paragraph">
+<p>In the event type is not known or can not be determined (e.g., <code>Function&lt;?, ?&gt;</code>) we will attempt to
+convert an incoming stream event to a generic <code>Map</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_raw_input"><a class="link" href="#_raw_input">Raw Input</a></h4>
+<div class="paragraph">
+<p>There are times when you may want to have access to a raw input. In this case all you need is to declare your
+function signature to accept <code>InputStream</code>. For example, <code>Function&lt;InputStream, ?&gt;</code>. In this case
+we will not attempt any conversion and will pass the raw input directly to a function.</p>
+</div>
 </div>
 </div>
 </div>
