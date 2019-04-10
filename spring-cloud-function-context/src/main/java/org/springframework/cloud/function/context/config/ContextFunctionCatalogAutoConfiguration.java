@@ -36,7 +36,6 @@ import com.google.gson.Gson;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -45,6 +44,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -54,6 +54,7 @@ import org.springframework.cloud.function.context.catalog.FunctionUnregistration
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -68,6 +69,7 @@ import org.springframework.core.type.StandardMethodMetadata;
  * @author Mark Fisher
  * @author Oleg Zhurakousky
  * @author Artem Bilan
+ * @author Anshul Mehra
  */
 @Configuration
 @ConditionalOnMissingBean(FunctionCatalog.class)
@@ -85,7 +87,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	protected static class BeanFactoryFunctionCatalog
 			extends AbstractComposableFunctionRegistry
-			implements InitializingBean, BeanFactoryAware {
+			implements ApplicationListener<ApplicationReadyEvent>, BeanFactoryAware {
 
 		private ApplicationEventPublisher applicationEventPublisher;
 
@@ -96,18 +98,17 @@ public class ContextFunctionCatalogAutoConfiguration {
 		 * late as possible in the lifecycle.
 		 */
 		@Override
-		@SuppressWarnings("rawtypes")
-		public void afterPropertiesSet() throws Exception {
+		public void onApplicationEvent(ApplicationReadyEvent event) {
 			Map<String, Supplier> supplierBeans = this.beanFactory
-					.getBeansOfType(Supplier.class);
+				.getBeansOfType(Supplier.class);
 			Map<String, Function> functionBeans = this.beanFactory
-					.getBeansOfType(Function.class);
+				.getBeansOfType(Function.class);
 			Map<String, Consumer> consumerBeans = this.beanFactory
-					.getBeansOfType(Consumer.class);
+				.getBeansOfType(Consumer.class);
 			Map<String, FunctionRegistration> functionRegistrationBeans = this.beanFactory
-					.getBeansOfType(FunctionRegistration.class);
+				.getBeansOfType(FunctionRegistration.class);
 			this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans,
-					functionBeans);
+				functionBeans);
 		}
 
 		@Override
