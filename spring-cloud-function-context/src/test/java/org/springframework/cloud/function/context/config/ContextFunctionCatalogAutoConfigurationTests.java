@@ -35,7 +35,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -49,6 +48,7 @@ import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
 import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.inject.FooConfiguration;
 import org.springframework.cloud.function.scan.ScannedFunction;
@@ -58,11 +58,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DescriptiveResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StreamUtils;
@@ -73,6 +76,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  * @author Artem Bilan
  * @author Oleg Zhurakousky
+ * @author Anshul Mehra
  */
 public class ContextFunctionCatalogAutoConfigurationTests {
 
@@ -290,7 +294,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 						.isAssignableFrom(Mono.class);
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void monoToMonoNonVoidFunction() {
 		create(MonoToMonoNonVoidConfiguration.class);
 	}
@@ -589,6 +593,17 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(f.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO-bar");
 	}
 
+	@Test
+	public void functionCatalogDependentBeanFactoryPostProcessor() {
+		create(new Class[]{ComponentFunctionConfiguration.class, AppendFunction.class});
+		assertThat(this.context.getBean("appendFunction")).isInstanceOf(Function.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "appendFunction"))
+			.isInstanceOf(Function.class);
+		Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class,
+			"appendFunction");
+		assertThat(f.apply(Flux.just("World")).blockFirst()).isEqualTo("Hello World");
+	}
+
 	private void create(Class<?> type, String... props) {
 		create(new Class<?>[] { type }, props);
 	}
@@ -641,6 +656,35 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 			return value -> this.list.add(value);
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class ComponentFunctionConfiguration {
+		@Bean
+		public String value() {
+			return "Hello ";
+		}
+
+		@Bean
+		public BeanFactoryPostProcessor someBeanFactoryPostProcessor(Environment environment,
+			@Nullable FunctionRegistry functionCatalog, @Nullable FunctionInspector inspector) {
+			return beanFactory -> { };
+		}
+	}
+
+	@Component("appendFunction")
+	public static class AppendFunction implements Function<String, String> {
+		private String value;
+
+		public AppendFunction(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String apply(String s) {
+			return this.value + s;
+		}
 	}
 
 	@EnableAutoConfiguration
