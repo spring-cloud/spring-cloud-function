@@ -594,7 +594,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	public void autoConfiguredNonDefaultConstructorFunction() {
+	public void functionCatalogDependentBeanFactoryPostProcessor() {
 		create(new Class[]{ComponentFunctionConfiguration.class, AppendFunction.class});
 		assertThat(this.context.getBean("appendFunction")).isInstanceOf(Function.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "appendFunction"))
