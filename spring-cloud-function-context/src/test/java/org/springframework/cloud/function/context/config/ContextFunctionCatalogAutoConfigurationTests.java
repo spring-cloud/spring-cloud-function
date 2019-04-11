@@ -297,6 +297,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Test(expected = IllegalArgumentException.class)
 	public void monoToMonoNonVoidFunction() {
 		create(MonoToMonoNonVoidConfiguration.class);
+		this.catalog.lookup("anything-doesn't-matter");
 	}
 
 	@Test
