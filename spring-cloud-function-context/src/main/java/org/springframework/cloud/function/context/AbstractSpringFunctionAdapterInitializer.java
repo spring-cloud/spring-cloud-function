@@ -261,7 +261,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		if (System.getenv("MAIN_CLASS") != null) {
 			mainClass = ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
 		}
-		if (System.getProperty("MAIN_CLASS") != null) {
+		else if (System.getProperty("MAIN_CLASS") != null) {
 			mainClass = ClassUtils.resolveClassName(System.getProperty("MAIN_CLASS"), classLoader);
 		}
 		else {
