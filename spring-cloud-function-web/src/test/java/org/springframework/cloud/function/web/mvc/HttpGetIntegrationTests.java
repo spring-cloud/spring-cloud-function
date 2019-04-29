@@ -237,6 +237,14 @@ public class HttpGetIntegrationTests {
 				.getBody()).isEqualTo("{\"value\":321}");
 	}
 
+	@Test
+	public void compose() throws Exception {
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity
+				.get(new URI("/concat,reverse/foo")).accept(MediaType.TEXT_PLAIN).build(),
+				String.class);
+		assertThat(result.getBody()).isEqualTo("oofoof");
+	}
+
 	private String sse(String... values) {
 		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
 	}
@@ -250,6 +258,17 @@ public class HttpGetIntegrationTests {
 		public static void main(String[] args) throws Exception {
 			SpringApplication.run(HttpGetIntegrationTests.ApplicationConfiguration.class,
 					args);
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> concat() {
+			return flux -> flux.map(v -> v + v);
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> reverse() {
+			return flux -> flux.log()
+					.map(value -> new StringBuilder(value.trim()).reverse().toString());
 		}
 
 		@Bean({ "uppercase", "post/more" })

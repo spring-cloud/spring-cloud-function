@@ -62,7 +62,7 @@ public final class FunctionWebUtils {
 			String name = path;
 			String[] splitPath = path.split("/");
 			Function<Object, Object> function = null;
-			for (int i = 0; i < splitPath.length || function != null; i++) {
+			for (int i = 0; i < splitPath.length && functionForGet == null; i++) {
 				String element = splitPath[i];
 				if (builder.length() > 0) {
 					builder.append("/");
