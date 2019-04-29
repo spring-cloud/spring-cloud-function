@@ -1,0 +1,50 @@
+Spring Cloud Function is a project with the following high-level goals:
+
+* Promote the implementation of business logic via functions.
+* Decouple the development lifecycle of business logic from any specific runtime target so that the same code can run as a web endpoint, a stream processor, or a task.
+* Support a uniform programming model across serverless providers, as well as the ability to run standalone (locally or in a PaaS).
+* Enable Spring Boot features (auto-configuration, dependency injection, metrics) on serverless providers.
+
+It abstracts away all of the transport details and infrastructure, allowing the developer to keep all the familiar tools and processes, and focus firmly on business logic.
+
+## Features
+
+Spring Cloud Function features:
+
+1. Wrappers for `@Beans` of type `Function`, `Consumer` and
+`Supplier`, exposing them to the outside world as either HTTP
+endpoints and/or message stream listeners/publishers with RabbitMQ, Kafka etc.
+
+2. Compiling strings which are Java function bodies into bytecode, and
+then turning them into `@Beans` that can be wrapped as above.
+
+3. Deploying a JAR file containing such an application context with an
+isolated classloader, so that you can pack them together in a single
+JVM.
+
+4. Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Microsoft Azure], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers.
+
+Here's a complete, executable, testable Spring Boot application (implementing a simple string manipulation):
+
+```java
+@SpringBootApplication
+public class Application {
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
+
+  @Bean
+  public Function<Flux<String>, Flux<String>> uppercase() {
+    return flux -> flux.map(value -> value.toUpperCase());
+  }
+}
+```
+### Sample Projects
+
+* https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample[Vanilla]
+* https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-pof[Plain Old Function]
+* https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws[AWS Lambda]
+* https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-azure[Microsoft Azure]
+* https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Openwhisk]
+
+
