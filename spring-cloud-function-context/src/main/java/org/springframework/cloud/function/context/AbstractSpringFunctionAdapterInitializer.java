@@ -196,10 +196,15 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		return "";
 	}
 
+	//@SuppressWarnings("unchecked")
+	protected Object convertOutput(Object input, Object output) {
+		return output;
+	}
+
 	protected <O> O result(Object input, Publisher<?> output) {
 		List<Object> result = new ArrayList<>();
 		for (Object value : Flux.from(output).toIterable()) {
-			result.add(value);
+			result.add(this.convertOutput(input, value));
 		}
 		if (isSingleInput(getFunction(), input) && result.size() == 1) {
 			@SuppressWarnings("unchecked")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,31 @@
 
 package org.springframework.cloud.function.adapter.azure;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.reactivestreams.Publisher;
-import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHandler;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.GenericMessage;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.HttpResponseMessage.Builder;
 
-import reactor.core.publisher.Flux;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
 
 /**
+ * Implementation of HTTP Request Handler for Azure which supports
+ * HttpRequestMessage and HttpResponseMessage the types required by
+ * Azure Functions for HTTP-triggered functions.
+ *
  * @param <I> input type
  * @author Markus Gulden
+ *
+ * @since 2.1
  */
 public class AzureSpringBootHttpRequestHandler<I> extends
 		AzureSpringBootRequestHandler<HttpRequestMessage<I>, HttpResponseMessage> {
-
-	private HttpRequestMessage<I> input;
 
 	public AzureSpringBootHttpRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
@@ -99,33 +98,13 @@ public class AzureSpringBootHttpRequestHandler<I> extends
 		return new MessageHeaders(headers);
 	}
 
-	@Override
 	@SuppressWarnings("unchecked")
-	protected <O> O result(Object input, Publisher<?> output) {
-
-		List<Object> result = new ArrayList<>();
-		for (Object value : Flux.from(output).toIterable()) {
-			result.add(convertOutput(value));
-		}
-		if (isSingleInput(getFunction(), input) && result.size() == 1) {
-			HttpResponseMessage value = (HttpResponseMessage) result.get(0);
-			return (O) value;
-		}
-		if (isSingleOutput(getFunction(), output) && result.size() == 1) {
-			HttpResponseMessage value = (HttpResponseMessage) result.get(0);
-			return (O) value;
-		}
-
-		O value = (O) result;
-		return value;
-	}
-
 	@Override
-	protected HttpResponseMessage convertOutput(Object output) {
+	protected HttpResponseMessage convertOutput(Object input, Object output) {
+		HttpRequestMessage<I> requestMessage = (HttpRequestMessage<I>) input;
 		if (functionReturnsMessage(output)) {
-
 			Message<?> message = (Message<?>) output;
-			Builder builder = this.input
+			Builder builder = requestMessage
 					.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.OK)
 					.body(message.getPayload());
 			for (Map.Entry<String, Object> entry : message.getHeaders().entrySet()) {
@@ -134,8 +113,7 @@ public class AzureSpringBootHttpRequestHandler<I> extends
 			return builder.build();
 		}
 		else {
-
-			return this.input
+			return requestMessage
 					.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.OK)
 					.body(output).build();
 		}
@@ -144,20 +122,13 @@ public class AzureSpringBootHttpRequestHandler<I> extends
 	@Override
 	public HttpResponseMessage handleRequest(HttpRequestMessage<I> event,
 			ExecutionContext context) {
-		this.input = event;
-		Object response = super.handleRequest(event, context);
-		if (returnsOutput()) {
-			return (HttpResponseMessage) response;
-		}
-		else {
-			return this.input
+		HttpResponseMessage result = super.handleRequest(event, context);
+		if (result == null) {
+			result = event
 					.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.OK)
 					.build();
 		}
-	}
-
-	protected boolean returnsOutput() {
-		return !this.getInspector().getOutputType(function()).equals(Void.class);
+		return result;
 	}
 
 	protected boolean functionReturnsMessage(Object output) {

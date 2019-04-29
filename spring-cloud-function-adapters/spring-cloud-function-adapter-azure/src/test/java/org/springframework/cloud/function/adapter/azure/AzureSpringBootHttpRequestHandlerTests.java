@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.HttpResponseMessage.Builder;
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.HttpStatusType;
-
 import org.junit.After;
 import org.junit.Test;
+
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -262,7 +262,7 @@ public class AzureSpringBootHttpRequestHandlerTests {
 		private Map<String, String> headers = new HashMap<>();
 		private Object body;
 
-		public HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers,
+		HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers,
 				Object body) {
 			this.status = status;
 			this.headers = headers;

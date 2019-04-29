@@ -103,10 +103,10 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		return Flux.just(input);
 	}
 
-	@SuppressWarnings("unchecked")
-	protected O convertOutput(Object output) {
-		return (O) output;
-	}
+//	@SuppressWarnings("unchecked")
+//	protected O convertOutput(I input, Object output) {
+//		return (O) output;
+//	}
 
 	protected boolean isSingleInput(Function<?, ?> function, Object input) {
 		if (!(input instanceof Collection)) {
