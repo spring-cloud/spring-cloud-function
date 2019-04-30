@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.7.1">
+<title>Features</title>
+<link rel="stylesheet" href="css/spring.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+.hidden {
+	display: none;
+}
+
+.switch {
+	border-width: 1px 1px 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+	display: inline-block;
+}
+
+.switch--item {
+	padding: 10px;
+	background-color: #ffffff;
+	color: #7a2518;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.switch--item.selected {
+	background-color: #7a2519;
+	color: #ffffff;
+}
+</style>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script type="text/javascript">
+function addBlockSwitches() {
+	$('.primary').each(function() {
+		primary = $(this);
+		createSwitchItem(primary, createBlockSwitch(primary)).item.addClass("selected");
+		primary.children('.title').remove();
+	});
+	$('.secondary').each(function(idx, node) {
+		secondary = $(node);
+		primary = findPrimary(secondary);
+		switchItem = createSwitchItem(secondary, primary.children('.switch'));
+		switchItem.content.addClass('hidden');
+		findPrimary(secondary).append(switchItem.content);
+		secondary.remove();
+	});
+}
+
+function createBlockSwitch(primary) {
+	blockSwitch = $('<div class="switch"></div>');
+	primary.prepend(blockSwitch);
+	return blockSwitch;
+}
+
+function findPrimary(secondary) {
+	candidate = secondary.prev();
+	while (!candidate.is('.primary')) {
+		candidate = candidate.prev();
+	}
+	return candidate;
+}
+
+function createSwitchItem(block, blockSwitch) {
+	blockName = block.children('.title').text();
+	content = block.children('.content').first().append(block.next('.colist'));
+	item = $('<div class="switch--item">' + blockName + '</div>');
+	item.on('click', '', content, function(e) {
+		$(this).addClass('selected');
+		$(this).siblings().removeClass('selected');
+		e.data.siblings('.content').addClass('hidden');
+		e.data.removeClass('hidden');
+	});
+	blockSwitch.append(item);
+	return {'item': item, 'content': content};
+}
+
+$(addBlockSwitches);
+</script>
+</head>
+
+<body class="book toc2 toc-left">
+<div id="header">
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_features">Features</a>
+<ul class="sectlevel2">
+<li><a href="#_sample_projects">Sample Projects</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Function is a project with the following high-level goals:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Promote the implementation of business logic via functions.</p>
+</li>
+<li>
+<p>Decouple the development lifecycle of business logic from any specific runtime target so that the same code can run as a web endpoint, a stream processor, or a task.</p>
+</li>
+<li>
+<p>Support a uniform programming model across serverless providers, as well as the ability to run standalone (locally or in a PaaS).</p>
+</li>
+<li>
+<p>Enable Spring Boot features (auto-configuration, dependency injection, metrics) on serverless providers.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>It abstracts away all of the transport details and infrastructure, allowing the developer to keep all the familiar tools and processes, and focus firmly on business logic.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_features"><a class="link" href="#_features">Features</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Function features:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Wrappers for <code>@Beans</code> of type <code>Function</code>, <code>Consumer</code> and
+<code>Supplier</code>, exposing them to the outside world as either HTTP
+endpoints and/or message stream listeners/publishers with RabbitMQ, Kafka etc.</p>
+</li>
+<li>
+<p>Compiling strings which are Java function bodies into bytecode, and
+then turning them into <code>@Beans</code> that can be wrapped as above.</p>
+</li>
+<li>
+<p>Deploying a JAR file containing such an application context with an
+isolated classloader, so that you can pack them together in a single
+JVM.</p>
+</li>
+<li>
+<p>Adapters for <a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws">AWS Lambda</a>, <a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure">Microsoft Azure</a>, <a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk">Apache OpenWhisk</a> and possibly other "serverless" service providers.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s a complete, executable, testable Spring Boot application (implementing a simple string manipulation):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootApplication
+public class Application {
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
+
+  @Bean
+  public Function&lt;Flux&lt;String&gt;, Flux&lt;String&gt;&gt; uppercase() {
+    return flux -&gt; flux.map(value -&gt; value.toUpperCase());
+  }
+}</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_sample_projects"><a class="link" href="#_sample_projects">Sample Projects</a></h3>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample">Vanilla</a></p>
+</li>
+<li>
+<p><a href="https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-pof">Plain Old Function</a></p>
+</li>
+<li>
+<p><a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws">AWS Lambda</a></p>
+</li>
+<li>
+<p><a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-azure">Microsoft Azure</a></p>
+</li>
+<li>
+<p><a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk">Openwhisk</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
+<script type="text/javascript" src="js/toc.js"></script>
+<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<script src="js/highlight/highlight.min.js"></script>
+<script>hljs.initHighlighting()</script>
+</body>
+</html>
