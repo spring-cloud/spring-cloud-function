@@ -36,6 +36,7 @@ import com.google.gson.Gson;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -85,7 +86,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	protected static class BeanFactoryFunctionCatalog
 			extends AbstractComposableFunctionRegistry
-		implements BeanFactoryAware {
+		implements SmartInitializingSingleton, BeanFactoryAware {
 
 		private ApplicationEventPublisher applicationEventPublisher;
 
@@ -95,21 +96,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 		 * Will collect all suppliers, functions, consumers and function registration as
 		 * late as possible in the lifecycle.
 		 */
-		@SuppressWarnings("rawtypes")
 		@Override
-		protected void doInitialize() {
-			if (this.beanFactory != null) {
-				Map<String, Supplier> supplierBeans = this.beanFactory
-						.getBeansOfType(Supplier.class);
-					Map<String, Function> functionBeans = this.beanFactory
-						.getBeansOfType(Function.class);
-					Map<String, Consumer> consumerBeans = this.beanFactory
-						.getBeansOfType(Consumer.class);
-					Map<String, FunctionRegistration> functionRegistrationBeans = this.beanFactory
-						.getBeansOfType(FunctionRegistration.class);
-					this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans,
-						functionBeans);
-			}
+		public void afterSingletonsInstantiated() {
+			Map<String, Supplier> supplierBeans = this.beanFactory
+				.getBeansOfType(Supplier.class);
+			Map<String, Function> functionBeans = this.beanFactory
+				.getBeansOfType(Function.class);
+			Map<String, Consumer> consumerBeans = this.beanFactory
+				.getBeansOfType(Consumer.class);
+			Map<String, FunctionRegistration> functionRegistrationBeans = this.beanFactory
+				.getBeansOfType(FunctionRegistration.class);
+			this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans,
+				functionBeans);
 		}
 
 		@Override

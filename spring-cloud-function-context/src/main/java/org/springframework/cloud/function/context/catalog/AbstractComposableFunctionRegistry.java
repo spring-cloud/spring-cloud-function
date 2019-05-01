@@ -77,12 +77,9 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 
 	protected ApplicationEventPublisher applicationEventPublisher;
 
-	private AtomicBoolean initialized = new AtomicBoolean();
-
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T lookup(Class<?> type, String name) {
-		initializeIfNecessary();
 		String functionDefinitionName = !StringUtils.hasText(name)
 				&& this.environment.containsProperty("spring.cloud.function.definition")
 						? this.environment.getProperty("spring.cloud.function.definition")
@@ -93,7 +90,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	@SuppressWarnings("serial")
 	@Override
 	public Set<String> getNames(Class<?> type) {
-		initializeIfNecessary();
 		if (type == null) {
 			return new HashSet<String>(getSupplierNames()) {
 				{
@@ -115,7 +111,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 * @return immutable {@link Set} of available {@link Supplier} names.
 	 */
 	public Set<String> getSupplierNames() {
-		initializeIfNecessary();
 		return this.functions.entrySet().stream()
 				.filter(entry -> entry.getValue() instanceof Supplier)
 				.map(entry -> entry.getKey())
@@ -127,7 +122,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 * @return immutable {@link Set} of available {@link Function} names.
 	 */
 	public Set<String> getFunctionNames() {
-		initializeIfNecessary();
 		return this.functions.entrySet().stream()
 				.filter(entry -> !(entry.getValue() instanceof Supplier))
 				.map(entry -> entry.getKey())
@@ -135,12 +129,10 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	}
 
 	public boolean hasSuppliers() {
-		initializeIfNecessary();
 		return !CollectionUtils.isEmpty(getSupplierNames());
 	}
 
 	public boolean hasFunctions() {
-		initializeIfNecessary();
 		return !CollectionUtils.isEmpty(getFunctionNames());
 	}
 
@@ -152,12 +144,10 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 */
 	@Override
 	public int size() {
-		initializeIfNecessary();
 		return this.functions.size();
 	}
 
 	public FunctionType getFunctionType(String name) {
-		initializeIfNecessary();
 		return this.types.get(name);
 	}
 
@@ -168,7 +158,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 * @return the name of the function or null.
 	 */
 	public String lookupFunctionName(Object function) {
-		initializeIfNecessary();
 		return this.names.containsKey(function) ? this.names.get(function) : null;
 	}
 
@@ -185,7 +174,6 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 
 	@Override
 	public FunctionRegistration<?> getRegistration(Object function) {
-		initializeIfNecessary();
 		String functionName = function == null ? null
 				: this.lookupFunctionName(function);
 		if (StringUtils.hasText(functionName)) {
@@ -201,19 +189,10 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	public <T> void register(FunctionRegistration<T> functionRegistration) {
 		Assert.notEmpty(functionRegistration.getNames(),
 				"'registration' must contain at least one name before it is registered in catalog.");
-		initializeIfNecessary();
 		register(functionRegistration, functionRegistration.getNames().iterator().next());
 	}
 
-	private void initializeIfNecessary() {
-		if (initialized.compareAndSet(false, true)) {
-			doInitialize();
-		}
-	}
 
-	protected void doInitialize() {
-
-	}
 
 	/**
 	 * Registers function wrapped by the provided FunctionRegistration with
