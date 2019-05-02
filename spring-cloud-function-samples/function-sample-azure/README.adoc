@@ -4,9 +4,12 @@ You can run this sample locally, just like the other Spring Cloud Function sampl
 mvn spring-boot:run
 ----
 
-and `curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'`.
+and `curl -H "Content-Type: application/json" localhost:8080/uppercase -d '{"value": "hello foobar"}'`.
 
-To run locally on top of Azure Functions, and to deploy to your live Azure environment, you will need the Azure Functions Core Tools installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more details). 
+Given that our function takes POJO `Function<Foo, Bar> uppercase()` and it's input is JSON we need to
+provide the appropriate content-type (in this case `application/json`).
+
+To run locally on top of Azure Functions, and to deploy to your live Azure environment, you will need the Azure Functions Core Tools installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more details).
 
 Run Azure Function locally:
 
