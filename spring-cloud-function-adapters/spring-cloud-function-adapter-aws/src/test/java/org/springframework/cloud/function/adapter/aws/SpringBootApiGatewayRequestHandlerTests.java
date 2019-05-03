@@ -18,7 +18,9 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
@@ -42,7 +44,22 @@ public class SpringBootApiGatewayRequestHandlerTests {
 	private SpringBootApiGatewayRequestHandler handler;
 
 	@Test
+	public void supplierBean() {
+		System.setProperty("function.name", "supplier");
+		this.handler = new SpringBootApiGatewayRequestHandler(FunctionConfig.class);
+		APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
+
+		Object output = this.handler.handleRequest(request, null);
+		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
+		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
+				.isEqualTo(200);
+		assertThat(((APIGatewayProxyResponseEvent) output).getBody())
+				.isEqualTo("\"hello!\"");
+	}
+
+	@Test
 	public void functionBean() {
+		System.setProperty("function.name", "function");
 		this.handler = new SpringBootApiGatewayRequestHandler(FunctionConfig.class);
 		APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
 		request.setBody("{\"value\":\"foo\"}");
@@ -53,6 +70,19 @@ public class SpringBootApiGatewayRequestHandlerTests {
 				.isEqualTo(200);
 		assertThat(((APIGatewayProxyResponseEvent) output).getBody())
 				.isEqualTo("{\"value\":\"FOO\"}");
+	}
+
+	@Test
+	public void consumerBean() {
+		System.setProperty("function.name", "consumer");
+		this.handler = new SpringBootApiGatewayRequestHandler(FunctionConfig.class);
+		APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
+		request.setBody("\"strVal\":\"test for consumer\"");
+
+		Object output = this.handler.handleRequest(request, null);
+		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
+		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
+				.isEqualTo(200);
 	}
 
 	@Test
@@ -80,6 +110,16 @@ public class SpringBootApiGatewayRequestHandlerTests {
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar(foo.getValue().toUpperCase());
+		}
+
+		@Bean
+		public Consumer<String> consumer() {
+			return v -> System.out.println(v);
+		}
+
+		@Bean
+		public Supplier<String> supplier() {
+			return () -> "hello!";
 		}
 
 	}
