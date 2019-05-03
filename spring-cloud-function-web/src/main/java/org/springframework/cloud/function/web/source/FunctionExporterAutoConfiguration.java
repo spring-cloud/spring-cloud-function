@@ -45,7 +45,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 @ConditionalOnClass(WebClient.class)
 @Conditional(SourceActiveCondition.class)
 @EnableConfigurationProperties(ExporterProperties.class)
-@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled", matchIfMissing = true)
 public class FunctionExporterAutoConfiguration {
 
 	private ExporterProperties props;
@@ -106,7 +105,7 @@ public class FunctionExporterAutoConfiguration {
 
 		}
 
-		@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled")
+		@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled", matchIfMissing = true)
 		static class Enabled {
 
 		}
