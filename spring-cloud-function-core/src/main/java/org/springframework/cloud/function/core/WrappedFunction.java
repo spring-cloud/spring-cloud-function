@@ -35,7 +35,7 @@ import org.reactivestreams.Publisher;
  * @author Oleg Zhurakousky
  * @since 2.0.1
  */
-abstract class WrappedFunction<I, O, IP extends Publisher<I>, OP extends Publisher<O>, T>
+public abstract class WrappedFunction<I, O, IP extends Publisher<I>, OP extends Publisher<O>, T>
 		implements Function<IP, OP>, FluxWrapper<T> {
 
 	private final T target;

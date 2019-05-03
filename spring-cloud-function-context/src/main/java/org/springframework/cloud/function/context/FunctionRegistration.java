@@ -31,6 +31,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
 import org.springframework.cloud.function.core.FluxSupplier;
@@ -152,6 +153,13 @@ public class FunctionRegistration<T> implements BeanNameAware {
 		if (this.type == null) {
 			result = (FunctionRegistration<S>) this;
 		}
+		else if (this.target instanceof RoutingFunction) {
+			S target = (S) this.target;
+			result = new FunctionRegistration<S>(target);
+			result.type(this.type.getType());
+			result = result.target(target).names(this.names)
+					.type(result.type.wrap(Flux.class)).properties(this.properties);
+		}
 		else {
 			S target = (S) this.target;
 			result = new FunctionRegistration<S>(target);
@@ -178,7 +186,6 @@ public class FunctionRegistration<T> implements BeanNameAware {
 			else if (target instanceof Function) {
 				target = (S) new FluxedFunction((Function<?, ?>) target);
 			}
-
 			result = result.target(target).names(this.names)
 					.type(result.type.wrap(Flux.class)).properties(this.properties);
 		}

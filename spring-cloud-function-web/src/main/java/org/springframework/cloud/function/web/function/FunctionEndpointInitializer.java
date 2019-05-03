@@ -101,6 +101,7 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 				() -> new BasicStringConverter(context.getBean(FunctionInspector.class), context.getBeanFactory()));
 		context.registerBean(RequestProcessor.class,
 				() -> new RequestProcessor(context.getBean(FunctionInspector.class),
+						context.getBean(FunctionCatalog.class),
 						context.getBeanProvider(JsonMapper.class), context.getBean(StringConverter.class),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,

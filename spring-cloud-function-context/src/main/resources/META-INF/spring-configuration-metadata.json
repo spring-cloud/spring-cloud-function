@@ -13,6 +13,12 @@
 			"type": "java.lang.String",
 			"description": "Name (e.g., 'foo') or composition instruction (e.g., 'foo|bar') used to resolve default function especially for cases where there is more then once function available in catalog.",
 			"defaultValue": ""
+		},
+		{
+			"name": "spring.cloud.function.routing.enabled",
+			"type": "java.lang.Boolean",
+			"description": "Enables RoutingFunction which delegates incoming request to a function named via function.name header",
+			"defaultValue": false
 		}
 	]
 }

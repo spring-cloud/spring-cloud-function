@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -50,6 +51,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.AbstractComposableFunctionRegistry;
+import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
@@ -62,6 +64,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.type.StandardMethodMetadata;
+import org.springframework.messaging.converter.ByteArrayMessageConverter;
+import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.StringMessageConverter;
 
 /**
  * @author Dave Syer
@@ -84,6 +91,17 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return new BeanFactoryFunctionCatalog();
 	}
 
+	@Bean(RoutingFunction.FUNCTION_NAME)
+	@ConditionalOnProperty(name = "spring.cloud.function.routing.enabled", havingValue = "true")
+	RoutingFunction gateway(FunctionCatalog functionCatalog, FunctionInspector functionInspector) {
+		Collection<MessageConverter> messageConverters = new ArrayList<MessageConverter>();
+		messageConverters.add(new MappingJackson2MessageConverter());
+		messageConverters.add(new StringMessageConverter());
+		messageConverters.add(new ByteArrayMessageConverter());
+		CompositeMessageConverter messageConverter = new CompositeMessageConverter(messageConverters);
+		return new RoutingFunction(functionCatalog, functionInspector, messageConverter);
+	}
+
 	protected static class BeanFactoryFunctionCatalog
 			extends AbstractComposableFunctionRegistry
 		implements SmartInitializingSingleton, BeanFactoryAware {
@@ -96,6 +114,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		 * Will collect all suppliers, functions, consumers and function registration as
 		 * late as possible in the lifecycle.
 		 */
+		@SuppressWarnings("rawtypes")
 		@Override
 		public void afterSingletonsInstantiated() {
 			Map<String, Supplier> supplierBeans = this.beanFactory

@@ -33,11 +33,12 @@ import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * @author Dave Syer
+ * @since 2.1
  */
 public class MessageFunction
 		implements Function<Publisher<Message<?>>, Publisher<Message<?>>> {
 
-	private Function<?, ?> delegate;
+	private final Function<?, ?> delegate;
 
 	public MessageFunction(Function<?, ?> delegate) {
 		this.delegate = delegate;
@@ -91,5 +92,4 @@ public class MessageFunction
 				value -> MessageBuilder.withPayload(function.apply(value.getPayload()))
 						.copyHeaders(value.getHeaders()).build());
 	}
-
 }

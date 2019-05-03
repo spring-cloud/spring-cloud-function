@@ -23,7 +23,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -42,6 +41,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
@@ -196,7 +196,6 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		return "";
 	}
 
-	//@SuppressWarnings("unchecked")
 	protected Object convertOutput(Object input, Object output) {
 		return output;
 	}
@@ -368,22 +367,19 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 			return;
 		}
 
-		if (this.catalog.size() == 1) {
-			Iterator<String> names = this.catalog.getNames(Function.class).iterator();
-			if (names.hasNext()) {
-				this.function = this.catalog.lookup(Function.class, names.next());
+
+		if (this.catalog.size() >= 1 && this.catalog.size() <= 2) { // we may have RoutingFunction function
+			String functionName = this.catalog.getNames(Function.class).stream()
+					.filter(n -> !n.equals(RoutingFunction.FUNCTION_NAME))
+					.findFirst().orElseGet(() -> null);
+			if (functionName != null) {
+				this.function = this.catalog.lookup(Function.class, functionName);
 				return;
 			}
-
-			names = this.catalog.getNames(Consumer.class).iterator();
-			if (names.hasNext()) {
-				this.consumer = this.catalog.lookup(Consumer.class, names.next());
-				return;
-			}
-
-			names = this.catalog.getNames(Supplier.class).iterator();
-			if (names.hasNext()) {
-				this.supplier = this.catalog.lookup(Supplier.class, names.next());
+			functionName = this.catalog.getNames(Supplier.class).stream()
+					.findFirst().orElseGet(() -> null);
+			if (functionName != null) {
+				this.supplier = this.catalog.lookup(Supplier.class, functionName);
 				return;
 			}
 		}

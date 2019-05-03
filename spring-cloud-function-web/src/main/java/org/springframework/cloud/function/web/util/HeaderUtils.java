@@ -83,6 +83,9 @@ public final class HeaderUtils {
 			name = name.toLowerCase();
 			Object value = values == null ? null
 					: (values.size() == 1 ? values.iterator().next() : values);
+			if (name.toLowerCase().equals(HttpHeaders.CONTENT_TYPE.toLowerCase())) {
+				name = MessageHeaders.CONTENT_TYPE;
+			}
 			map.put(name, value);
 		}
 		return new MessageHeaders(map);

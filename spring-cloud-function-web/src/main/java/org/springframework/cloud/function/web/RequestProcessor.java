@@ -38,7 +38,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxedConsumer;
@@ -77,6 +79,8 @@ public class RequestProcessor {
 
 	private final FunctionInspector inspector;
 
+	private final FunctionCatalog functionCatalog;
+
 	private final StringConverter converter;
 
 	private final JsonMapper mapper;
@@ -84,10 +88,12 @@ public class RequestProcessor {
 	private final List<HttpMessageReader<?>> messageReaders;
 
 	public RequestProcessor(FunctionInspector inspector,
+			FunctionCatalog functionCatalog,
 			ObjectProvider<JsonMapper> mapper, StringConverter converter,
 			ObjectProvider<ServerCodecConfigurer> codecs) {
 		this.mapper = mapper.getIfAvailable();
 		this.inspector = inspector;
+		this.functionCatalog = functionCatalog;
 		this.converter = converter;
 		ServerCodecConfigurer source = codecs.getIfAvailable();
 		this.messageReaders = source == null ? null : source.getReaders();
@@ -97,23 +103,23 @@ public class RequestProcessor {
 			Function<? extends Publisher<?>, ? extends Publisher<?>> function,
 			Consumer<? extends Publisher<?>> consumer,
 			Supplier<? extends Publisher<?>> supplier) {
-		return new FunctionWrapper(function, consumer, supplier);
+		return new FunctionWrapper(function, supplier);
 	}
 
 	public static FunctionWrapper wrapper(
 			Function<? extends Publisher<?>, ? extends Publisher<?>> function) {
-		return new FunctionWrapper(function, null, null);
+		return new FunctionWrapper(function, null);
 	}
 
 	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
 		if (wrapper.function() != null) {
-			return response(wrapper, wrapper.function(),
-					value(wrapper.function(), wrapper.argument()), true, true);
+			return response(wrapper, wrapper.function(), value(wrapper), true, true);
 		}
 		else {
 			return response(wrapper, wrapper.supplier(), wrapper.supplier().get(), null,
 					true);
 		}
+
 	}
 
 	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper,
@@ -130,7 +136,8 @@ public class RequestProcessor {
 
 		Object input = body == null && inputType.isAssignableFrom(String.class) ? "" : body;
 
-		if (input != null) {
+		if ((isInputMultiple(this.getTargetIfRouting(wrapper, function))  || !(function instanceof RoutingFunction))
+				&& input != null) { // TODO rework. . . pretty ugly
 			if (this.shouldUseJsonConversion((String) input, wrapper.headers.getContentType())) {
 				Type jsonType = body.startsWith("[")
 						&& Collection.class.isAssignableFrom(inputType)
@@ -149,28 +156,53 @@ public class RequestProcessor {
 		return response(wrapper, input, stream);
 	}
 
+	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
+		Publisher<?> result = request.function() != null
+				? value(request)
+				: request.supplier().get();
+		return stream(request, result);
+	}
+
 	private boolean shouldUseJsonConversion(String body, MediaType contentType) {
 		return (body.startsWith("[") || body.startsWith("{"))
 				&& (contentType == null || (contentType != null
 						&& !"text".equalsIgnoreCase(contentType.getType())));
 	}
 
-	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
-		Publisher<?> result = request.function() != null
-				? value(request.function(), request.argument())
-				: request.supplier().get();
-		return stream(request, result);
-	}
-
 	private List<HttpMessageReader<?>> getMessageReaders() {
 		return this.messageReaders;
 	}
 
+	private Mono<ResponseEntity<?>> response(FunctionWrapper request, Object handler,
+			Publisher<?> result, Boolean single, boolean getter) {
+
+		BodyBuilder builder = ResponseEntity.ok();
+		if (this.inspector.isMessage(handler)) {
+			result = Flux.from(result)
+					.map(message -> MessageUtils.unpack(handler, message))
+					.doOnNext(value -> addHeaders(builder, value))
+					.map(message -> message.getPayload());
+		}
+		else {
+			builder.headers(HeaderUtils.sanitize(request.headers()));
+		}
+
+		if (isOutputSingle(handler)
+				&& (single != null && single || getter || isInputMultiple(handler))) {
+			result = Mono.from(result);
+		}
+
+		if (result instanceof Flux) {
+			result = Flux.from(result).collectList();
+		}
+		return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Mono<ResponseEntity<?>> response(FunctionWrapper wrapper, Object body,
 			boolean stream) {
 
-		Function<Publisher<?>, Publisher<?>> function = wrapper.function();
-		Consumer<Publisher<?>> consumer = wrapper.consumer();
+		Function function = wrapper.function();
 
 		Flux<?> flux;
 		if (body != null) {
@@ -197,7 +229,7 @@ public class RequestProcessor {
 		}
 
 		if (this.inspector.isMessage(function)) {
-			flux = messages(wrapper, function == null ? consumer : function, flux);
+			flux = messages(wrapper, function, flux);
 		}
 		Mono<ResponseEntity<?>> responseEntityMono = null;
 
@@ -208,17 +240,31 @@ public class RequestProcessor {
 					.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
 		}
 		else {
-			Flux<?> result = Flux.from(function.apply(flux));
+			Flux<?> result = Flux.from((Publisher) function.apply(flux));
 			logger.debug("Handled POST with function");
 			if (stream) {
 				responseEntityMono = stream(wrapper, result);
 			}
 			else {
-				responseEntityMono = response(wrapper, function, result,
+				responseEntityMono = response(wrapper, getTargetIfRouting(wrapper, function), result,
 						body == null ? null : !(body instanceof Collection), false);
 			}
 		}
 		return responseEntityMono;
+	}
+
+	/*
+	 * Called when building response and returns the actual
+	 * target function in case the current function is RoutingFunction.
+	 * This is necessary to determine the type of the output (e.g., Flux =
+	 * multiple or Mono = single etc). See isOutputSingle(..).
+	 */
+	private Object getTargetIfRouting(FunctionWrapper wrapper, Object function) {
+		if (function instanceof RoutingFunction) {
+			String name = wrapper.headers.get("function.name").iterator().next();
+			function = this.functionCatalog.lookup(name);
+		}
+		return function;
 	}
 
 	private Flux<?> messages(FunctionWrapper request, Object function, Flux<?> flux) {
@@ -246,30 +292,7 @@ public class RequestProcessor {
 		return Flux.from(output).then(Mono.fromSupplier(() -> builder.body(output)));
 	}
 
-	private Mono<ResponseEntity<?>> response(FunctionWrapper request, Object handler,
-			Publisher<?> result, Boolean single, boolean getter) {
 
-		BodyBuilder builder = ResponseEntity.ok();
-		if (this.inspector.isMessage(handler)) {
-			result = Flux.from(result)
-					.map(message -> MessageUtils.unpack(handler, message))
-					.doOnNext(value -> addHeaders(builder, value))
-					.map(message -> message.getPayload());
-		}
-		else {
-			builder.headers(HeaderUtils.sanitize(request.headers()));
-		}
-
-		if (isOutputSingle(handler)
-				&& (single != null && single || getter || isInputMultiple(handler))) {
-			result = Mono.from(result);
-		}
-
-		if (result instanceof Flux) {
-			result = Flux.from(result).collectList();
-		}
-		return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
-	}
 
 	private boolean isInputMultiple(Object handler) {
 		Class<?> type = this.inspector.getInputType(handler);
@@ -373,11 +396,13 @@ public class RequestProcessor {
 		return ReactiveAdapterRegistry.getSharedInstance();
 	}
 
-	private Publisher<?> value(Function<Publisher<?>, Publisher<?>> function,
-			Publisher<String> value) {
-		Flux<?> input = Flux.from(value)
-				.map(body -> this.converter.convert(function, body));
-		return Mono.from(function.apply(input));
+	private Publisher<?> value(FunctionWrapper wrapper) {
+		Flux<?> input = Flux.from(wrapper.argument)
+				.map(body -> this.converter.convert(wrapper.function, body));
+		if (this.inspector.isMessage(wrapper.function)) {
+			input = messages(wrapper, wrapper.function, input);
+		}
+		return Mono.from(wrapper.function.apply(input));
 	}
 
 	private Type getItemType(Object function) {
@@ -413,8 +438,6 @@ public class RequestProcessor {
 
 		private final Function<Publisher<?>, Publisher<?>> function;
 
-		private final Consumer<Publisher<?>> consumer;
-
 		private final Supplier<Publisher<?>> supplier;
 
 		private final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -426,24 +449,19 @@ public class RequestProcessor {
 		@SuppressWarnings("unchecked")
 		public FunctionWrapper(
 				Function<? extends Publisher<?>, ? extends Publisher<?>> function,
-				Consumer<? extends Publisher<?>> consumer,
 				Supplier<? extends Publisher<?>> supplier) {
 			this.function = (Function<Publisher<?>, Publisher<?>>) function;
-			this.consumer = (Consumer<Publisher<?>>) consumer;
 			this.supplier = (Supplier<Publisher<?>>) supplier;
 		}
 
 		public Object handler() {
-			return this.function != null ? this.function
-					: this.consumer != null ? this.consumer : this.supplier;
+			return this.function != null
+					? this.function
+					: this.supplier;
 		}
 
 		public Function<Publisher<?>, Publisher<?>> function() {
 			return this.function;
-		}
-
-		public Consumer<Publisher<?>> consumer() {
-			return this.consumer;
 		}
 
 		public Supplier<Publisher<?>> supplier() {

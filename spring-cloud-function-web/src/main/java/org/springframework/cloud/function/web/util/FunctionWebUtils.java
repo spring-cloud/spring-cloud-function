@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.web.util;
 
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -36,66 +35,45 @@ public final class FunctionWebUtils {
 
 	public static Object findFunction(HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path) {
-		if (method.equals(HttpMethod.GET)) {
-			return findFunctionForGet(functionCatalog, attributes, path);
-		}
-		else if (method.equals(HttpMethod.POST)) {
-			return findFunctionForPost(functionCatalog, attributes, path);
+		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST)) {
+			return doFindFunction(method, functionCatalog, attributes, path);
 		}
 		else {
 			throw new IllegalStateException("HTTP method '" + method + "' is not supported;");
 		}
 	}
 
-	private static Object findFunctionForGet(FunctionCatalog functionCatalog,
+	private static Object doFindFunction(HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path) {
 		path = path.startsWith("/") ? path.substring(1) : path;
-
-		Object functionForGet = null;
-		Supplier<Publisher<?>> supplier = functionCatalog.lookup(Supplier.class, path);
-		if (supplier != null) {
-			attributes.put(WebRequestConstants.SUPPLIER, supplier);
-			functionForGet = supplier;
-		}
-		else {
-			StringBuilder builder = new StringBuilder();
-			String name = path;
-			String[] splitPath = path.split("/");
-			Function<Object, Object> function = null;
-			for (int i = 0; i < splitPath.length && functionForGet == null; i++) {
-				String element = splitPath[i];
-				if (builder.length() > 0) {
-					builder.append("/");
-				}
-				builder.append(element);
-				name = builder.toString();
-
-				function = functionCatalog.lookup(Function.class, name);
-				if (function != null) {
-					attributes.put(WebRequestConstants.FUNCTION, function);
-					String value = path.length() > name.length()
-							? path.substring(name.length() + 1) : null;
-							attributes.put(WebRequestConstants.ARGUMENT, value);
-					functionForGet = function;
-				}
+		if (method.equals(HttpMethod.GET)) {
+			Supplier<Publisher<?>> supplier = functionCatalog.lookup(Supplier.class, path);
+			if (supplier != null) {
+				attributes.put(WebRequestConstants.SUPPLIER, supplier);
+				return supplier;
 			}
 		}
 
-		return functionForGet;
-	}
-
-	private static Object findFunctionForPost(FunctionCatalog functionCatalog,
-											Map<String, Object> attributes, String path) {
-		path = path.startsWith("/") ? path.substring(1) : path;
-		Consumer<Publisher<?>> consumer = functionCatalog.lookup(Consumer.class, path);
-		if (consumer != null) {
-			attributes.put(WebRequestConstants.CONSUMER, consumer);
-			return consumer;
-		}
-		Function<Object, Object> function = functionCatalog.lookup(Function.class, path);
-		if (function != null) {
-			attributes.put(WebRequestConstants.FUNCTION, function);
-			return function;
+		StringBuilder builder = new StringBuilder();
+		String name = path;
+		String value = null;
+		for (String element : path.split("/")) {
+			if (builder.length() > 0) {
+				builder.append("/");
+			}
+			builder.append(element);
+			name = builder.toString();
+			value = path.length() > name.length() ? path.substring(name.length() + 1)
+					: null;
+			Function<Object, Object> function = functionCatalog.lookup(Function.class,
+					name);
+			if (function != null) {
+				attributes.put(WebRequestConstants.FUNCTION, function);
+				if (value != null) {
+					attributes.put(WebRequestConstants.ARGUMENT, value);
+				}
+				return function;
+			}
 		}
 		return null;
 	}

@@ -70,6 +70,38 @@ of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.
 
+=== Function Routing
+
+Since version 2.2 Spring Cloud Function provides routing feature allowing
+you to invoke a single function which acts as a router to an actual function you wish to invoke
+This feature is very useful in certain FAAS environments where maintaining configurations
+for several functions could be cumbersome or exposing more then one function is not possible.
+
+You enable this feature via `spring.cloud.function.routing.enabled` property setting it
+to `true` (default is `false`).
+This enables `RoutingFunction` under the name `router` which is loaded in FunctionCatalog.
+
+This function has the following signature:
+
+[source, java]
+----
+public class RoutingFunction implements Function<Publisher<Message<?>>, Publisher<?>>, Consumer<Publisher<Message<?>>> {
+. . .
+}
+----
+
+This allows the above function to act as both `Function` and `Consumer`.
+As you can see it takes `Message<?>` as an input argument. This allows you to communicate
+the name of the actual function you want to invoke by providing `function.name` Message header.
+
+In specific execution environments/models the adapters are responsible to translate and communicate `function.name`
+via Message header. For example, when using _spring-cloud-function-web_ you can provide `function.name` as an HTTP
+header and the framework will propagate it as well as other HTTP headers as Message headers.
+
+Using Message also allows us to benefit from `MessageConverter`s to convert incoming request to the actual input type
+of the target function
+
+
 === Kotlin Lambda support
 
 We also provide support for Kotlin lambdas (since v2.0).
