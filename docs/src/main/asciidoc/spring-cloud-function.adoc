@@ -1,6 +1,6 @@
 = Spring Cloud Function
 
-Mark Fisher, Dave Syer, Oleg Zhurakousky
+Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra
 
 *{spring-cloud-function-version}*
 
