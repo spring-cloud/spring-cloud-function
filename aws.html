@@ -89,6 +89,13 @@ $(addBlockSwitches);
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_introduction">Introduction</a></li>
+<li><a href="#_notes_on_jar_layout">Notes on JAR Layout</a></li>
+<li><a href="#_upload">Upload</a></li>
+<li><a href="#_type_conversion">Type Conversion</a>
+<ul class="sectlevel3">
+<li><a href="#_raw_input">Raw Input</a></li>
+</ul>
+</li>
 <li><a href="#_functional_bean_definitions">Functional Bean Definitions</a></li>
 <li><a href="#_platform_specific_features">Platform Specific Features</a>
 <ul class="sectlevel2">
@@ -103,7 +110,7 @@ $(addBlockSwitches);
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>2.1.0.BUILD-SNAPSHOT</strong></p>
+<p><strong>2.1.1.BUILD-SNAPSHOT</strong></p>
 </div>
 <div id="index-link" class="paragraph">
 <p><a href="https://cloud.spring.io/spring-cloud-function/home.html" class="bare">https://cloud.spring.io/spring-cloud-function/home.html</a></p>
@@ -117,7 +124,128 @@ $(addBlockSwitches);
 <h2 id="_introduction"><a class="link" href="#_introduction">Introduction</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Unresolved directive in aws.adoc - include::aws-intro.adoc[]</p>
+<p>The adapter has a couple of generic request handlers that you can use. The most generic is <code>SpringBootStreamHandler</code>, which uses a Jackson <code>ObjectMapper</code> provided by Spring Boot to serialize and deserialize the objects in the function. There is also a <code>SpringBootRequestHandler</code> which you can extend, and provide the input and output types as type parameters (enabling AWS to inspect the class and do the JSON conversions itself).</p>
+</div>
+<div class="paragraph">
+<p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code> (e.g. as <code>FUNCTION_NAME</code> environment variable in AWS). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> (searching first for <code>Function</code> then <code>Consumer</code> and finally <code>Supplier</code>).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You don&#8217;t need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might
+need to exclude those before you create the JAR you send to AWS. A Lambda application has to be
+shaded, but a Spring Boot standalone application does not, so you can run the same app using 2
+separate jars (as per the sample). The sample app creates 2 jar files, one with an <code>aws</code>
+classifier for deploying in Lambda, and one executable (thin) jar that includes <code>spring-cloud-function-web</code>
+at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file
+manifest, using the <code>Start-Class</code> attribute (which will be added for you by the Spring Boot
+tooling if you use the starter parent). If there is no <code>Start-Class</code> in your manifest you can
+use an environment variable or system property <code>MAIN_CLASS</code> when you deploy the function to AWS.</p>
+</div>
+<div class="paragraph">
+<p>If you are not using the functional bean definitions but relying on Spring Boot&#8217;s auto-configuration,
+then additional transformers must be configured as part of the maven-shade-plugin execution.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+	&lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+	&lt;artifactId&gt;maven-shade-plugin&lt;/artifactId&gt;
+	&lt;dependencies&gt;
+		&lt;dependency&gt;
+			&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+			&lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+		&lt;/dependency&gt;
+	&lt;/dependencies&gt;
+	&lt;configuration&gt;
+		&lt;createDependencyReducedPom&gt;false&lt;/createDependencyReducedPom&gt;
+		&lt;shadedArtifactAttached&gt;true&lt;/shadedArtifactAttached&gt;
+		&lt;shadedClassifierName&gt;aws&lt;/shadedClassifierName&gt;
+		&lt;transformers&gt;
+			&lt;transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.handlers&lt;/resource&gt;
+			&lt;/transformer&gt;
+			&lt;transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.factories&lt;/resource&gt;
+			&lt;/transformer&gt;
+			&lt;transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.schemas&lt;/resource&gt;
+			&lt;/transformer&gt;
+		&lt;/transformers&gt;
+	&lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_upload"><a class="link" href="#_upload">Upload</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Build the sample under <code>spring-cloud-function-samples/function-sample-aws</code> and upload the <code>-aws</code> jar file to Lambda. The handler can be <code>example.Handler</code> or <code>org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler</code> (FQN of the class, <em>not</em> a method reference, although Lambda does accept method references).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>./mvnw -U clean package</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the AWS command line tools it looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>aws lambda create-function --function-name Uppercase --role arn:aws:iam::[USERID]:role/service-role/[ROLE] --zip-file fileb://function-sample-aws/target/function-sample-aws-2.0.0.BUILD-SNAPSHOT-aws.jar --handler org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler --description "Spring Cloud Function Adapter Example" --runtime java8 --region us-east-1 --timeout 30 --memory-size 1024 --publish</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The input type for the function in the AWS sample is a Foo with a single property called "value". So you would need this to test it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>{
+  "value": "test"
+}</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The AWS sample app is written in the "functional" style (as an <code>ApplicationContextInitializer</code>). This is much faster on startup in Lambda than the traditional <code>@Bean</code> style, so if you don&#8217;t need <code>@Beans</code> (or <code>@EnableAutoConfiguration</code>) it&#8217;s a good choice. Warm starts are not affected.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_type_conversion"><a class="link" href="#_type_conversion">Type Conversion</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Cloud Function will attempt to transparently handle type conversion between the raw
+input stream and types declared by your function.</p>
+</div>
+<div class="paragraph">
+<p>For example, if your function signature is as such <code>Function&lt;Foo, Bar&gt;</code> we will attempt to convert
+incoming stream event to an instance of <code>Foo</code>.</p>
+</div>
+<div class="paragraph">
+<p>In the event type is not known or can not be determined (e.g., <code>Function&lt;?, ?&gt;</code>) we will attempt to
+convert an incoming stream event to a generic <code>Map</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_raw_input"><a class="link" href="#_raw_input">Raw Input</a></h4>
+<div class="paragraph">
+<p>There are times when you may want to have access to a raw input. In this case all you need is to declare your
+function signature to accept <code>InputStream</code>. For example, <code>Function&lt;InputStream, ?&gt;</code>. In this case
+we will not attempt any conversion and will pass the raw input directly to a function.</p>
+</div>
 </div>
 </div>
 </div>
