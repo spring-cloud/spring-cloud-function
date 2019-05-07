@@ -8,7 +8,7 @@ The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and c
 
 == Introduction
 
-include::aws-intro.adoc[]
+include::adapters/aws-intro.adoc[]
 
 == Functional Bean Definitions
 

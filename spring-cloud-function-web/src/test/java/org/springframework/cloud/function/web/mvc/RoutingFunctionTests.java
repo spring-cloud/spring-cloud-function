@@ -131,7 +131,6 @@ public class RoutingFunctionTests {
 						.contentType(MediaType.APPLICATION_JSON)
 						.header("function.name", "fluxconsumer")
 						.body(new String[] {"a", "b", "c"}), String.class);
-		//assertThat(postForEntity.getBody()).isEqualTo("[\"A\",\"B\",\"C\"]");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
@@ -192,11 +191,8 @@ public class RoutingFunctionTests {
 
 		@Bean
 		public Consumer<Flux<String>> fluxconsumer() {
-//			return v -> v.map(value -> {
-//				return value.toUpperCase();
-//			});
 			return flux -> flux.doOnNext(s -> {
-				System.out.println(s + " jkljlkjlkj l");
+				System.out.println("Received: " + s);
 			}).subscribe();
 		}
 
