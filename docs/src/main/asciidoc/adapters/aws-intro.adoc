@@ -14,6 +14,39 @@ manifest, using the `Start-Class` attribute (which will be added for you by the 
 tooling if you use the starter parent). If there is no `Start-Class` in your manifest you can
 use an environment variable or system property `MAIN_CLASS` when you deploy the function to AWS.
 
+If you are not using the functional bean definitions but relying on Spring Boot's auto-configuration,
+then additional transformers must be configured as part of the maven-shade-plugin execution.
+
+[source, xml]
+----
+<plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-shade-plugin</artifactId>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-maven-plugin</artifactId>
+		</dependency>
+	</dependencies>
+	<configuration>
+		<createDependencyReducedPom>false</createDependencyReducedPom>
+		<shadedArtifactAttached>true</shadedArtifactAttached>
+		<shadedClassifierName>aws</shadedClassifierName>
+		<transformers>
+			<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+				<resource>META-INF/spring.handlers</resource>
+			</transformer>
+			<transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
+				<resource>META-INF/spring.factories</resource>
+			</transformer>
+			<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+				<resource>META-INF/spring.schemas</resource>
+			</transformer>
+		</transformers>
+	</configuration>
+</plugin>
+----
+
 == Upload
 
 Build the sample under `spring-cloud-function-samples/function-sample-aws` and upload the `-aws` jar file to Lambda. The handler can be `example.Handler` or `org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler` (FQN of the class, _not_ a method reference, although Lambda does accept method references).
