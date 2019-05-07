@@ -95,6 +95,7 @@ $(addBlockSwitches);
 <li><a href="#_function_catalog_and_flexible_function_signatures">Function Catalog and Flexible Function Signatures</a>
 <ul class="sectlevel2">
 <li><a href="#_java_8_function_support">Java 8 function support</a></li>
+<li><a href="#_function_routing">Function Routing</a></li>
 <li><a href="#_kotlin_lambda_support">Kotlin Lambda support</a></li>
 </ul>
 </li>
@@ -117,14 +118,14 @@ $(addBlockSwitches);
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Mark Fisher, Dave Syer, Oleg Zhurakousky</p>
+<p>Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra</p>
 </div>
 <div class="paragraph">
 <p><strong>2.1.0.BUILD-SNAPSHOT</strong></p>
 </div>
 <hr>
 <div id="index-link" class="paragraph">
-<p><a href="https://cloud.spring.io/spring-cloud-static/spring-cloud-function/2.1.0.RC1/home.html" class="bare">https://cloud.spring.io/spring-cloud-static/spring-cloud-function/2.1.0.RC1/home.html</a></p>
+<p><a href="https://cloud.spring.io/spring-cloud-function/home.html" class="bare">https://cloud.spring.io/spring-cloud-function/home.html</a></p>
 </div>
 </div>
 </div>
@@ -395,6 +396,44 @@ remember to subscribe to the input flux. If you declare a <code>Consumer</code>
 of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_function_routing"><a class="link" href="#_function_routing">Function Routing</a></h3>
+<div class="paragraph">
+<p>Since version 2.2 Spring Cloud Function provides routing feature allowing
+you to invoke a single function which acts as a router to an actual function you wish to invoke
+This feature is very useful in certain FAAS environments where maintaining configurations
+for several functions could be cumbersome or exposing more then one function is not possible.</p>
+</div>
+<div class="paragraph">
+<p>You enable this feature via <code>spring.cloud.function.routing.enabled</code> property setting it
+to <code>true</code> (default is <code>false</code>).
+This enables <code>RoutingFunction</code> under the name <code>router</code> which is loaded in FunctionCatalog.</p>
+</div>
+<div class="paragraph">
+<p>This function has the following signature:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class RoutingFunction implements Function&lt;Publisher&lt;Message&lt;?&gt;&gt;, Publisher&lt;?&gt;&gt;, Consumer&lt;Publisher&lt;Message&lt;?&gt;&gt;&gt; {
+. . .
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This allows the above function to act as both <code>Function</code> and <code>Consumer</code>.
+As you can see it takes <code>Message&lt;?&gt;</code> as an input argument. This allows you to communicate
+the name of the actual function you want to invoke by providing <code>function.name</code> Message header.</p>
+</div>
+<div class="paragraph">
+<p>In specific execution environments/models the adapters are responsible to translate and communicate <code>function.name</code>
+via Message header. For example, when using <em>spring-cloud-function-web</em> you can provide <code>function.name</code> as an HTTP
+header and the framework will propagate it as well as other HTTP headers as Message headers.</p>
+</div>
+<div class="paragraph">
+<p>Using Message also allows us to benefit from `MessageConverter`s to convert incoming request to the actual input type
+of the target function</p>
 </div>
 </div>
 <div class="sect2">

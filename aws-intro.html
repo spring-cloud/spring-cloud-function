@@ -123,6 +123,40 @@ manifest, using the <code>Start-Class</code> attribute (which will be added for 
 tooling if you use the starter parent). If there is no <code>Start-Class</code> in your manifest you can
 use an environment variable or system property <code>MAIN_CLASS</code> when you deploy the function to AWS.</p>
 </div>
+<div class="paragraph">
+<p>If you are not using the functional bean definitions but relying on Spring Boot&#8217;s auto-configuration,
+then additional transformers must be configured as part of the maven-shade-plugin execution.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+	&lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+	&lt;artifactId&gt;maven-shade-plugin&lt;/artifactId&gt;
+	&lt;dependencies&gt;
+		&lt;dependency&gt;
+			&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+			&lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+		&lt;/dependency&gt;
+	&lt;/dependencies&gt;
+	&lt;configuration&gt;
+		&lt;createDependencyReducedPom&gt;false&lt;/createDependencyReducedPom&gt;
+		&lt;shadedArtifactAttached&gt;true&lt;/shadedArtifactAttached&gt;
+		&lt;shadedClassifierName&gt;aws&lt;/shadedClassifierName&gt;
+		&lt;transformers&gt;
+			&lt;transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.handlers&lt;/resource&gt;
+			&lt;/transformer&gt;
+			&lt;transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.factories&lt;/resource&gt;
+			&lt;/transformer&gt;
+			&lt;transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.schemas&lt;/resource&gt;
+			&lt;/transformer&gt;
+		&lt;/transformers&gt;
+	&lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
