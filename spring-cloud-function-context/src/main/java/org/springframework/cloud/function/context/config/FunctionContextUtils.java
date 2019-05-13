@@ -67,16 +67,17 @@ public abstract class FunctionContextUtils {
 				param = type.getType();
 			}
 			else {
-				Class<?> beanClass = definition.getBeanClass();
+				Class<?> beanClass = definition.hasBeanClass() ? definition.getBeanClass() : null;
 				if (beanClass != null
 						&& !FunctionFactoryMetadata.class.isAssignableFrom(beanClass)) {
 					param = beanClass;
 				}
 				else {
-					// assume FunctionFactoryMetadata
-					FunctionFactoryMetadata<?> factory = (FunctionFactoryMetadata<?>) registry
-							.getBean(name);
-					param = factory.getFactoryMethod().getGenericReturnType();
+					Object bean = registry.getBean(name);
+					// could be FunctionFactoryMetadata. . . TODO investigate and fix
+					if (bean instanceof FunctionFactoryMetadata) {
+						param = ((FunctionFactoryMetadata<?>) bean).getFactoryMethod().getGenericReturnType();
+					}
 				}
 			}
 		}

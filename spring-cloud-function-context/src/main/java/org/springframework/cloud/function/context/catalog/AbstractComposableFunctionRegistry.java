@@ -204,14 +204,14 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 	 */
 	protected void register(FunctionRegistration<?> registration, String key) {
 		Object target = registration.getTarget();
-		if (key.equals("uppercase")) {
-			System.out.println();
-		}
 		if (registration.getType() != null) {
 			this.addType(key, registration.getType());
 		}
 		else {
 			FunctionType functionType = findType(registration, key);
+			if (functionType == null) {
+				return; // TODO fixme
+			}
 			this.addType(key, functionType);
 			registration.type(functionType.getType());
 		}

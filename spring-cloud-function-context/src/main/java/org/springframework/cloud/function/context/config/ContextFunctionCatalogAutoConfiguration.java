@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -156,11 +157,15 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (functionType == null) {
 				functionType = functionByNameExist(name)
 						? new FunctionType(functionRegistration.getTarget().getClass())
-						: new FunctionType(
-								FunctionContextUtils.findType(name, this.beanFactory));
+						: this.findType(name);
 			}
 
 			return functionType;
+		}
+
+		private FunctionType findType(String name) {
+			Type type = FunctionContextUtils.findType(name, this.beanFactory);
+			return type == null ? null : new FunctionType(type);
 		}
 
 		// @checkstyle:off
