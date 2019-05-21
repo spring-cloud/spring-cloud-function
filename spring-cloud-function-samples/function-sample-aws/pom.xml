@@ -5,7 +5,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-aws</artifactId>
-	<version>1.0.2.BUILD-SNAPSHOT</version>
+	<version>1.0.2.RELEASE</version>
 	<packaging>jar</packaging>
 
 	<name>function-sample-aws</name>
@@ -25,8 +25,8 @@
 		<wrapper.version>1.0.10.RELEASE</wrapper.version>
 		<aws-lambda-events.version>2.0.2</aws-lambda-events.version>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
-		<spring-cloud-function.version>1.0.2.BUILD-SNAPSHOT</spring-cloud-function.version>
-		<spring-cloud-stream-servlet.version>1.0.2.BUILD-SNAPSHOT</spring-cloud-stream-servlet.version>
+		<spring-cloud-function.version>1.0.2.RELEASE</spring-cloud-function.version>
+		<spring-cloud-stream-servlet.version>1.0.2.RELEASE</spring-cloud-stream-servlet.version>
 		<start-class>example.Config</start-class>
 	</properties>
 
