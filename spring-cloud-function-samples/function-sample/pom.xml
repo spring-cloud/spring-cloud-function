@@ -5,7 +5,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample</artifactId>
-	<version>1.0.2.RELEASE</version>
+	<version>1.0.3.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>function-sample</name>
 	<description>Spring Cloud Function Web Support</description>
@@ -19,7 +19,7 @@
 
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-cloud-function.version>1.0.2.RELEASE</spring-cloud-function.version>
+		<spring-cloud-function.version>1.0.3.BUILD-SNAPSHOT</spring-cloud-function.version>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
 		<wrapper.version>1.0.10.RELEASE</wrapper.version>
 	</properties>
