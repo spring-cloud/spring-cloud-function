@@ -24,7 +24,6 @@ import reactor.core.publisher.SignalType;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.function.core.WrappedFunction;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
@@ -88,10 +87,10 @@ public class RoutingFunction implements Function<Publisher<Message<?>>, Publishe
 	}
 
 	@SuppressWarnings("rawtypes")
-	private WrappedFunction getRouteToFunction(Message<?> message) {
+	private Function getRouteToFunction(Message<?> message) {
 		String routeToFunctionName = (String) message.getHeaders().get("function.name");
 		Assert.hasText(routeToFunctionName, "A 'function.name' was not provided as message header.");
-		WrappedFunction function = functionCatalog.lookup(routeToFunctionName);
+		Function function = functionCatalog.lookup(routeToFunctionName);
 		Assert.notNull(function, "Failed to locate function specified with 'function.name':"
 				+ message.getHeaders().get("function.name"));
 		return function;
