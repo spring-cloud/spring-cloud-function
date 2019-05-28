@@ -19,6 +19,7 @@ package org.springframework.cloud.function.deployer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,6 +68,7 @@ public abstract class FunctionCreatorConfigurationTests {
 			extends FunctionCreatorConfigurationTests {
 
 		@Test
+		@Ignore
 		public void testDouble() {
 			Function<Flux<Integer>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");

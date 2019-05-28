@@ -31,8 +31,7 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
-import org.springframework.core.type.StandardMethodMetadata;
-import org.springframework.core.type.classreading.MethodMetadataReadingVisitor;
+import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
@@ -45,19 +44,25 @@ public abstract class FunctionContextUtils {
 	public static Type findType(String name, ConfigurableListableBeanFactory registry) {
 		AbstractBeanDefinition definition = (AbstractBeanDefinition) registry
 				.getBeanDefinition(name);
+
 		Object source = definition.getSource();
+
 		Type param = null;
-		// Start by assuming output -> Function
-		if (source instanceof StandardMethodMetadata) {
-			// Standard @Bean metadata
-			param = ((StandardMethodMetadata) source).getIntrospectedMethod()
-					.getGenericReturnType();
+		if (source instanceof MethodMetadata) {
+//			System.out.println(((MethodMetadata)source).getDeclaringClassName());
+			param = findBeanType(definition, ((MethodMetadata) source).getDeclaringClassName(), ((MethodMetadata) source).getMethodName());
 		}
-		else if (source instanceof MethodMetadataReadingVisitor) {
-			// A component scan with @Beans
-			MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
-			param = findBeanType(definition, visitor);
-		}
+//		// Start by assuming output -> Function
+//		else if (source instanceof StandardMethodMetadata) {
+//			// Standard @Bean metadata
+//			param = ((StandardMethodMetadata) source).getIntrospectedMethod()
+//					.getGenericReturnType();
+//		}
+//		else if (source instanceof MethodMetadataReadingVisitor) {
+//			// A component scan with @Beans
+//			MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
+//			param = findBeanType(definition, visitor);
+//		}
 		else if (source instanceof Resource) {
 			param = registry.getType(name);
 		}
@@ -84,12 +89,21 @@ public abstract class FunctionContextUtils {
 		return param;
 	}
 
-	private static Type findBeanType(AbstractBeanDefinition definition,
-			MethodMetadataReadingVisitor visitor) {
-		Class<?> factory = ClassUtils.resolveClassName(visitor.getDeclaringClassName(),
-				null);
+//	private static Type findBeanType(AbstractBeanDefinition definition,
+//			MethodMetadataReadingVisitor visitor) {
+//		Class<?> factory = ClassUtils.resolveClassName(visitor.getDeclaringClassName(),
+//				null);
+//		Class<?>[] params = getParamTypes(factory, definition);
+//		Method method = ReflectionUtils.findMethod(factory, visitor.getMethodName(),
+//				params);
+//		Type type = method.getGenericReturnType();
+//		return type;
+//	}
+
+	private static Type findBeanType(AbstractBeanDefinition definition, String declaringClassName, String methodName) {
+		Class<?> factory = ClassUtils.resolveClassName(declaringClassName, null);
 		Class<?>[] params = getParamTypes(factory, definition);
-		Method method = ReflectionUtils.findMethod(factory, visitor.getMethodName(),
+		Method method = ReflectionUtils.findMethod(factory, methodName,
 				params);
 		Type type = method.getGenericReturnType();
 		return type;

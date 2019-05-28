@@ -12,12 +12,12 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-function-parent</artifactId>
-		<version>2.1.1.BUILD-SNAPSHOT</version>
+		<version>2.2.0.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<properties>
 		<wrapper.version>1.0.10.RELEASE</wrapper.version>
-		<spring.cloud.deployer.version>2.0.0.RELEASE</spring.cloud.deployer.version>
+		<spring.cloud.deployer.version>2.0.2.BUILD-SNAPSHOT</spring.cloud.deployer.version>
 	</properties>
 
 	<dependencies>
