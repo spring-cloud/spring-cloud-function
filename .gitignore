@@ -24,6 +24,7 @@ _site/
 *.iws
 .idea/
 .factorypath
+.checkstyle
 coverage-error.log
 .apt_generated
 credentials.yml

@@ -49,20 +49,8 @@ public abstract class FunctionContextUtils {
 
 		Type param = null;
 		if (source instanceof MethodMetadata) {
-//			System.out.println(((MethodMetadata)source).getDeclaringClassName());
 			param = findBeanType(definition, ((MethodMetadata) source).getDeclaringClassName(), ((MethodMetadata) source).getMethodName());
 		}
-//		// Start by assuming output -> Function
-//		else if (source instanceof StandardMethodMetadata) {
-//			// Standard @Bean metadata
-//			param = ((StandardMethodMetadata) source).getIntrospectedMethod()
-//					.getGenericReturnType();
-//		}
-//		else if (source instanceof MethodMetadataReadingVisitor) {
-//			// A component scan with @Beans
-//			MethodMetadataReadingVisitor visitor = (MethodMetadataReadingVisitor) source;
-//			param = findBeanType(definition, visitor);
-//		}
 		else if (source instanceof Resource) {
 			param = registry.getType(name);
 		}
