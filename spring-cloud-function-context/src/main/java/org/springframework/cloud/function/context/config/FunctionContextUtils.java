@@ -42,8 +42,19 @@ import org.springframework.util.ReflectionUtils;
 public abstract class FunctionContextUtils {
 
 	public static Type findType(String name, ConfigurableListableBeanFactory registry) {
-		AbstractBeanDefinition definition = (AbstractBeanDefinition) registry
-				.getBeanDefinition(name);
+		return findType(registry, name);
+	}
+
+	public static Type findType(ConfigurableListableBeanFactory registry, String... names) {
+		AbstractBeanDefinition definition = null;
+		String actualName = null;
+		for (String name : names) {
+			if (registry.containsBeanDefinition(name)) {
+				definition = (AbstractBeanDefinition) registry
+						.getBeanDefinition(name);
+				actualName = name;
+			}
+		}
 
 		Object source = definition.getSource();
 
@@ -52,7 +63,7 @@ public abstract class FunctionContextUtils {
 			param = findBeanType(definition, ((MethodMetadata) source).getDeclaringClassName(), ((MethodMetadata) source).getMethodName());
 		}
 		else if (source instanceof Resource) {
-			param = registry.getType(name);
+			param = registry.getType(actualName);
 		}
 		else {
 			ResolvableType type = (ResolvableType) getField(definition, "targetType");
@@ -66,7 +77,7 @@ public abstract class FunctionContextUtils {
 					param = beanClass;
 				}
 				else {
-					Object bean = registry.getBean(name);
+					Object bean = registry.getBean(actualName);
 					// could be FunctionFactoryMetadata. . . TODO investigate and fix
 					if (bean instanceof FunctionFactoryMetadata) {
 						param = ((FunctionFactoryMetadata<?>) bean).getFactoryMethod().getGenericReturnType();
@@ -76,17 +87,6 @@ public abstract class FunctionContextUtils {
 		}
 		return param;
 	}
-
-//	private static Type findBeanType(AbstractBeanDefinition definition,
-//			MethodMetadataReadingVisitor visitor) {
-//		Class<?> factory = ClassUtils.resolveClassName(visitor.getDeclaringClassName(),
-//				null);
-//		Class<?>[] params = getParamTypes(factory, definition);
-//		Method method = ReflectionUtils.findMethod(factory, visitor.getMethodName(),
-//				params);
-//		Type type = method.getGenericReturnType();
-//		return type;
-//	}
 
 	private static Type findBeanType(AbstractBeanDefinition definition, String declaringClassName, String methodName) {
 		Class<?> factory = ClassUtils.resolveClassName(declaringClassName, null);

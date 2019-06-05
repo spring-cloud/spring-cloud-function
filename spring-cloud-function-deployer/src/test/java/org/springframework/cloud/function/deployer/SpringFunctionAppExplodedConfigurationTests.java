@@ -19,6 +19,7 @@ package org.springframework.cloud.function.deployer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,6 +90,7 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 
 	@EnableAutoConfiguration
 	@TestPropertySource(properties = { "function.bean=myDoubler" })
+	@Ignore // @TestPropertySource is not taken into account nor it is visible
 	public static class SinkTests extends SpringFunctionAppExplodedConfigurationTests {
 
 		@Rule

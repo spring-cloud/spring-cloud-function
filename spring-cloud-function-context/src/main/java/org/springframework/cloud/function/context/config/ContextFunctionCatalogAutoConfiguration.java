@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -54,6 +55,7 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.AbstractComposableFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
+import org.springframework.cloud.function.context.catalog.LazyFunctionRegistry;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ApplicationEventPublisher;
@@ -64,12 +66,16 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.type.StandardMethodMetadata;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
+
 
 /**
  * @author Dave Syer
@@ -84,9 +90,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
-	@Bean
+//	@Bean
 	public FunctionRegistry functionCatalog() {
 		return new BeanFactoryFunctionCatalog();
+	}
+
+	@Bean
+	public FunctionRegistry functionCatalog(@Nullable ConversionService conversionService, @Nullable CompositeMessageConverter messageConverter,
+			Map<String, MessageConverter> additionalConverters) {
+		conversionService = conversionService == null ? new DefaultConversionService() : conversionService;
+		if (messageConverter == null) {
+			List<MessageConverter> messageConverters = new ArrayList<>();
+			messageConverters.addAll(additionalConverters.values());
+			messageConverters.add(new MappingJackson2MessageConverter());
+			messageConverters.add(new ByteArrayMessageConverter());
+			messageConverters.add(new StringMessageConverter());
+			messageConverter = new CompositeMessageConverter(messageConverters);
+		}
+		return new LazyFunctionRegistry(conversionService, messageConverter);
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)

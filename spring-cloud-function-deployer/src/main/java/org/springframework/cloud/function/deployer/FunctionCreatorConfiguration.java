@@ -130,9 +130,10 @@ class FunctionCreatorConfiguration {
 			if (this.properties.getName().contains("|")) {
 				// A composite function has to be explicitly registered before it is
 				// looked up because we are using the SingleEntryFunctionRegistry
-				this.registry.lookup(Consumer.class, this.properties.getName());
-				this.registry.lookup(Function.class, this.properties.getName());
-				this.registry.lookup(Supplier.class, this.properties.getName());
+//				Object o =  this.registry.lookup(Consumer.class, this.properties.getName());
+//				o = this.registry.lookup(Function.class, this.properties.getName());
+//				o = this.registry.lookup(Supplier.class, this.properties.getName());
+//				System.out.println();
 			}
 		}
 		catch (Exception e) {
@@ -635,6 +636,9 @@ class FunctionCreatorConfiguration {
 				registration.type(FunctionType.of(bean.getClass()).getType());
 			}
 			registration.target(bean);
+			if (registration.getType() == null) {
+				registration.type(FunctionType.of(bean.getClass()).getType());
+			}
 			FunctionCreatorConfiguration.this.registry.register(registration);
 		}
 

@@ -19,6 +19,7 @@ package org.springframework.cloud.function.deployer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,6 +94,7 @@ public abstract class SpringFunctionAppConfigurationTests {
 		public OutputCapture capture = new OutputCapture();
 
 		@Test
+		@Ignore
 		public void test() throws Exception {
 			// Can't assert side effects.
 			Function<Flux<Integer>, Mono<Void>> function = this.catalog

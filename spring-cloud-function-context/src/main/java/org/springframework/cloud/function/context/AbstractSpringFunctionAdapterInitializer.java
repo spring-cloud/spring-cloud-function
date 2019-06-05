@@ -34,6 +34,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -178,7 +179,11 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 			return Flux.empty();
 		}
 		if (this.supplier != null) {
-			return this.supplier.get();
+			Object result = this.supplier.get();
+			if (!(result instanceof Publisher)) {
+				result = Mono.just(result);
+			}
+			return (Publisher<?>) result;
 		}
 		throw new IllegalStateException("No function defined");
 	}

@@ -18,42 +18,62 @@ package org.springframework.cloud.function.context;
 
 import java.util.Set;
 
+import org.springframework.util.MimeType;
+
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
 public interface FunctionCatalog {
 
+
 	/**
-	 * Will look up the instance of the functional interface by name only.
-	 * @param <T> instance type
-	 * @param name the name of the functional interface. Must not be null;
+	 * Will look up the instance of the functional interface by name only and
+	 * acceptedOutputTypes.
+	 *
+	 * @param                     <T> instance type
+	 * @param functionDefinition  functionDefinition
+	 * @param acceptedOutputTypes acceptedOutputTypes
 	 * @return instance of the functional interface registered with this catalog
 	 */
-	default <T> T lookup(String name) {
-		return this.lookup(null, name);
+	default <T> T lookup(String functionDefinition, MimeType... acceptedOutputTypes) {
+		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
 	}
 
 	/**
-	 * Will look up the instance of the functional interface by name and type which can
-	 * only be Supplier, Consumer or Function. If type is not provided, the lookup will be
-	 * made based on name only.
-	 * @param <T> instance type
-	 * @param type the type of functional interface. Can be null
-	 * @param name the name of the functional interface. Must not be null;
+	 * Will look up the instance of the functional interface by name only.
+	 *
+	 * @param                    <T> instance type
+	 * @param functionDefinition the definition of the functional interface. Must
+	 *                           not be null;
 	 * @return instance of the functional interface registered with this catalog
 	 */
-	<T> T lookup(Class<?> type, String name);
+	default <T> T lookup(String functionDefinition) {
+		return this.lookup(null, functionDefinition);
+	}
+
+	/**
+	 * Will look up the instance of the functional interface by name and type which
+	 * can only be Supplier, Consumer or Function. If type is not provided, the
+	 * lookup will be made based on name only.
+	 *
+	 * @param                    <T> instance type
+	 * @param type               the type of functional interface. Can be null
+	 * @param functionDefinition the definition of the functional interface. Must
+	 *                           not be null;
+	 * @return instance of the functional interface registered with this catalog
+	 */
+	<T> T lookup(Class<?> type, String functionDefinition);
 
 	Set<String> getNames(Class<?> type);
 
 	/**
 	 * Return the count of functions registered in this catalog.
+	 *
 	 * @return the count of functions registered in this catalog
 	 */
 	default int size() {
-		throw new UnsupportedOperationException(
-				"This instance of FunctionCatalog does not support this operation");
+		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
 	}
 
 }

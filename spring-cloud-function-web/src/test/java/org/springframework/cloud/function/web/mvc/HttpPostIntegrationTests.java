@@ -84,6 +84,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@Ignore
 	public void qualifierFoos() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/foos")).contentType(MediaType.APPLICATION_JSON)

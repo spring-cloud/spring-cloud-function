@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import org.junit.After;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -45,6 +46,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SpringBootApiGatewayRequestHandlerTests {
 
 	private SpringBootApiGatewayRequestHandler handler;
+
+	@After
+	public void after() {
+		System.clearProperty("function.name");
+	}
 
 	@Test
 	public void supplierBean() {
@@ -143,6 +149,7 @@ public class SpringBootApiGatewayRequestHandlerTests {
 				.isEqualTo("GET");
 		assertThat(((APIGatewayProxyResponseEvent) output).getBody())
 				.isEqualTo("{\"value\":\"body\"}");
+
 	}
 
 	@Test
