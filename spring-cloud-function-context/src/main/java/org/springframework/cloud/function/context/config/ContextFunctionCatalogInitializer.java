@@ -16,12 +16,17 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -36,9 +41,12 @@ import org.springframework.cloud.function.context.catalog.InMemoryFunctionCatalo
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.AnnotationConfigUtils;
+import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -153,6 +161,26 @@ public class ContextFunctionCatalogInitializer
 						() -> new ContextFunctionCatalogAutoConfiguration.JacksonConfiguration()
 								.jsonMapper(this.context.getBean(ObjectMapper.class)));
 
+			}
+
+			String basePackage = this.context.getEnvironment()
+					.getProperty("spring.cloud.function.scan.packages", "functions");
+			if (new ClassPathResource(basePackage.replace(".", "/")).exists()) {
+				ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(
+						this.context, false, this.context.getEnvironment(), this.context);
+				scanner.addIncludeFilter(new AssignableTypeFilter(Function.class));
+				scanner.addIncludeFilter(new AssignableTypeFilter(Supplier.class));
+				scanner.addIncludeFilter(new AssignableTypeFilter(Consumer.class));
+				for (BeanDefinition bean : scanner.findCandidateComponents(basePackage)) {
+					String name = bean.getBeanClassName();
+					Class<?> type = ClassUtils.resolveClassName(name,
+							this.context.getClassLoader());
+					this.context.registerBeanDefinition(name, bean);
+					this.context.registerBean("registration_" + name,
+							FunctionRegistration.class,
+							() -> new FunctionRegistration<>(this.context.getBean(name),
+									name).type(type));
+				}
 			}
 
 			if (this.context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class,

@@ -40,6 +40,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.scan.TestFunction;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
@@ -162,8 +163,23 @@ public class ContextFunctionCatalogInitializerTests {
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
 		assertThat(this.inspector.getRegistration(function)).isNotNull();
-		assertThat(this.inspector.getRegistration(function).getType()).isEqualTo(
-				FunctionType.from(String.class).to(String.class));
+		assertThat(this.inspector.getRegistration(function).getType())
+				.isEqualTo(FunctionType.from(String.class).to(String.class));
+	}
+
+	@Test
+	public void scanFunction() {
+		create(EmptyConfiguration.class,
+				"spring.cloud.function.scan.packages=org.springframework.cloud.function.context.scan");
+		Object bean = this.context.getBean(TestFunction.class.getName());
+		assertThat(bean).isInstanceOf(Function.class);
+		Function<Flux<String>, Flux<String>> function = this.catalog
+				.lookup(Function.class, TestFunction.class.getName());
+		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
+		assertThat(bean).isNotSameAs(function);
+		assertThat(this.inspector.getRegistration(function)).isNotNull();
+		assertThat(this.inspector.getRegistration(function).getType())
+				.isEqualTo(FunctionType.from(String.class).to(String.class));
 	}
 
 	@Test
