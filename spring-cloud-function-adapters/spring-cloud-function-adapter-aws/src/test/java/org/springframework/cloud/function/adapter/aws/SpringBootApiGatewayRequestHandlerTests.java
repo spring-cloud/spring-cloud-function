@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-
 import org.junit.After;
 import org.junit.Test;
 
