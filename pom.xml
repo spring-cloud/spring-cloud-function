@@ -6,7 +6,7 @@
 
 	<artifactId>spring-cloud-function-parent</artifactId>
 	<name>Spring Cloud Function Parent</name>
-	<version>2.1.1.RELEASE</version>
+	<version>2.1.1.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>
