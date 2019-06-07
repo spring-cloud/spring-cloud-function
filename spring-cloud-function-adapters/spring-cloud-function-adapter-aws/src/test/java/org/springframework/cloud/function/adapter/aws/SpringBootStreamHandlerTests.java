@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.junit.Before;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -43,6 +45,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SpringBootStreamHandlerTests {
 
 	private SpringBootStreamHandler handler;
+
+	@Before
+	public void before() {
+		System.clearProperty("function.name");
+	}
 
 	@Test
 	public void functionBeanWithJacksonConfig() throws Exception {
