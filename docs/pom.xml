@@ -127,7 +127,7 @@
 								<!--<docs-url>https://cloud.spring.io/</docs-url>-->
             					<!--<docs-version></docs-version>-->
             					<docs-url>https://cloud.spring.io/spring-cloud-static/</docs-url>
-            					<docs-version>2.1.0.RC1/</docs-version> 
+            					<docs-version>3.0.0.M1/</docs-version>
 							</attributes>
 						</configuration>
 						<executions>
