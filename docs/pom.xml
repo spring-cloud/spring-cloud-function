@@ -13,7 +13,7 @@
 	<name>Spring Cloud Function Docs</name>
 	<description>Spring Cloud Function Docs</description>
 	<properties>
-		<docs.main>index</docs.main>
+		<docs.main>spring-cloud-function</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 		<spring-doc-resources.version>0.1.1.RELEASE</spring-doc-resources.version>
 		<spring-asciidoctor-extensions.version>0.1.0.RELEASE
