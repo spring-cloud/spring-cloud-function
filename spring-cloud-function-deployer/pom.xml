@@ -17,7 +17,7 @@
 
 	<properties>
 		<wrapper.version>1.0.10.RELEASE</wrapper.version>
-		<spring.cloud.deployer.version>2.0.2.BUILD-SNAPSHOT</spring.cloud.deployer.version>
+		<spring.cloud.deployer.version>2.0.1.RELEASE</spring.cloud.deployer.version>
 	</properties>
 
 	<dependencies>
