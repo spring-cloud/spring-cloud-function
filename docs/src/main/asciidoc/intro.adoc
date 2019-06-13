@@ -48,4 +48,4 @@ then turning them into `@Beans` that can be wrapped as above.
 isolated classloader, so that you can pack them together in a single
 JVM.
 
-4. Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers.
+4. Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure], https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers.
