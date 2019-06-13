@@ -4,9 +4,13 @@ Manual changes to this file will be lost when it is generated again.
 Edit the files in the src/main/asciidoc/ directory instead.
 ////
 
+:branch: 2.1.x
+
 image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={branch}[Build Status, link=https://travis-ci.org/spring-cloud/spring-cloud-function]
 
 == Introduction
+
+:branch: 2.1.x
 
 Spring Cloud Function is a project with the following high-level goals:
 

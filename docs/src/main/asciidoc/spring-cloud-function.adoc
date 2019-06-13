@@ -10,6 +10,7 @@ Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra
 :githubmaster: {github}/tree/master
 :docslink: {githubmaster}/docs/src/main/asciidoc
 :nofooter:
+:branch: 2.1.x
 
 [#index-link]
 {docs-url}spring-cloud-function/{docs-version}home.html

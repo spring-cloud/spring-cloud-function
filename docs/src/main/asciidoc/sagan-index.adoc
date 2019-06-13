@@ -1,3 +1,5 @@
+:branch: 2.1.x
+
 Spring Cloud Function is a project with the following high-level goals:
 
 * Promote the implementation of business logic via functions.
@@ -22,7 +24,7 @@ then turning them into `@Beans` that can be wrapped as above.
 isolated classloader, so that you can pack them together in a single
 JVM.
 
-4. Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Microsoft Azure], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers.
+4. Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Microsoft Azure], https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers.
 
 Here's a complete, executable, testable Spring Boot application (implementing a simple string manipulation):
 
@@ -41,10 +43,10 @@ public class Application {
 ```
 ### Sample Projects
 
-* https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample[Vanilla]
-* https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-pof[Plain Old Function]
-* https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws[AWS Lambda]
-* https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-azure[Microsoft Azure]
-* https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Openwhisk]
+* https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample[Vanilla]
+* https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-pof[Plain Old Function]
+* https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-samples/function-sample-aws[AWS Lambda]
+* https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-samples/function-sample-azure[Microsoft Azure]
+* https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Openwhisk]
 
 
