@@ -8,6 +8,7 @@ Mark Fisher, Dave Syer, Oleg Zhurakousky
 :githubmaster: {github}/tree/master
 :docslink: {githubmaster}/docs/src/main/asciidoc
 :nofooter:
+:branch: 2.0.x
 
 == Introduction
 
