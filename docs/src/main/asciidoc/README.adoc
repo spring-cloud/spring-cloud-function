@@ -1,4 +1,4 @@
-:branch: 2.1.x
+:branch: master
 
 image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={branch}[Build Status, link=https://travis-ci.org/spring-cloud/spring-cloud-function]
 

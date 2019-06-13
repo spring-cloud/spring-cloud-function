@@ -1,4 +1,4 @@
-:branch: 2.1.x
+:branch: master
 
 Spring Cloud Function is a project with the following high-level goals:
 
