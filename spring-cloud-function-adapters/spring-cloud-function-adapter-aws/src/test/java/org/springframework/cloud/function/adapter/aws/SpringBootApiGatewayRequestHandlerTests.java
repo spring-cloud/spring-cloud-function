@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.adapter.aws;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -37,7 +38,8 @@ import org.springframework.messaging.support.GenericMessage;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
+ * @author Dimitry Declercq
+ * @author Markus Gulden
  */
 public class SpringBootApiGatewayRequestHandlerTests {
 
@@ -102,6 +104,47 @@ public class SpringBootApiGatewayRequestHandlerTests {
 				.isEqualTo("{\"value\":\"FOO\"}");
 	}
 
+
+	@Test
+	public void functionMessageBeanWithRequestParameters() {
+		this.handler = new SpringBootApiGatewayRequestHandler(
+				FunctionMessageEchoReqParametersConfig.class);
+		APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
+		request.setPathParameters(Collections.singletonMap("path", "pathValue"));
+		request.setQueryStringParameters(Collections.singletonMap("query", "queryValue"));
+		request.setHeaders(Collections.singletonMap("test-header", "headerValue"));
+		request.setHttpMethod("GET");
+
+		Object output = this.handler.handleRequest(request, null);
+		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
+		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
+				.isEqualTo(200);
+		assertThat(((APIGatewayProxyResponseEvent) output).getHeaders().get("path"))
+				.isEqualTo("pathValue");
+		assertThat(((APIGatewayProxyResponseEvent) output).getHeaders().get("query"))
+				.isEqualTo("queryValue");
+		assertThat(
+				((APIGatewayProxyResponseEvent) output).getHeaders().get("test-header"))
+						.isEqualTo("headerValue");
+		assertThat(((APIGatewayProxyResponseEvent) output).getHeaders().get("httpMethod"))
+				.isEqualTo("GET");
+		assertThat(((APIGatewayProxyResponseEvent) output).getBody())
+				.isEqualTo("{\"value\":\"body\"}");
+	}
+
+	@Test
+	public void functionMessageBeanWithEmptyResponse() {
+		this.handler = new SpringBootApiGatewayRequestHandler(
+				FunctionMessageConsumerConfig.class);
+		APIGatewayProxyRequestEvent request = new APIGatewayProxyRequestEvent();
+
+		Object output = this.handler.handleRequest(request, null);
+		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
+		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
+				.isEqualTo(200);
+		assertThat(((APIGatewayProxyResponseEvent) output).getBody()).isNull();
+	}
+
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class,
 			JacksonAutoConfiguration.class })
@@ -135,6 +178,38 @@ public class SpringBootApiGatewayRequestHandlerTests {
 				Map<String, Object> headers = Collections.singletonMap("spring", "cloud");
 				return new GenericMessage<>(
 						new Bar(foo.getPayload().getValue().toUpperCase()), headers);
+			});
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class,
+			JacksonAutoConfiguration.class })
+	protected static class FunctionMessageEchoReqParametersConfig {
+
+		@Bean
+		public Function<Message<Foo>, Message<Bar>> function() {
+			return (message -> {
+				Map<String, Object> headers = new HashMap<>();
+				headers.put("path", message.getHeaders().get("path"));
+				headers.put("query", message.getHeaders().get("query"));
+				headers.put("test-header", message.getHeaders().get("test-header"));
+				headers.put("httpMethod", message.getHeaders().get("httpMethod"));
+				return new GenericMessage<>(new Bar("body"), headers);
+			});
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class,
+			JacksonAutoConfiguration.class })
+	protected static class FunctionMessageConsumerConfig {
+
+		@Bean
+		public Consumer<Message<Foo>> function() {
+			return (foo -> {
 			});
 		}
 

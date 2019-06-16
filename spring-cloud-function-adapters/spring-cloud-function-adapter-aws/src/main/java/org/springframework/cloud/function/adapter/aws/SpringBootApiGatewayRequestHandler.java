@@ -18,6 +18,7 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
@@ -36,6 +37,7 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  * @author Semyon Fishman
+ * @author Markus Gulden
  */
 public class SpringBootApiGatewayRequestHandler extends
 		SpringBootRequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
@@ -56,12 +58,22 @@ public class SpringBootApiGatewayRequestHandler extends
 
 	@Override
 	protected Object convertEvent(APIGatewayProxyRequestEvent event) {
-		Object body = deserializeBody(event.getBody());
-		if (functionAcceptsMessage()) {
-			return new GenericMessage<>(body, getHeaders(event));
+
+		if (event.getBody() != null) {
+			if (functionAcceptsMessage()) {
+				return new GenericMessage<>(deserializeBody(event.getBody()), getHeaders(event));
+			}
+			else {
+				return deserializeBody(event.getBody());
+			}
 		}
 		else {
-			return body;
+			if (functionAcceptsMessage()) {
+				return new GenericMessage<Optional<Void>>(Optional.empty(), getHeaders(event));
+			}
+			else {
+				return Optional.empty();
+			}
 		}
 	}
 
@@ -83,6 +95,13 @@ public class SpringBootApiGatewayRequestHandler extends
 		if (event.getHeaders() != null) {
 			headers.putAll(event.getHeaders());
 		}
+		if (event.getQueryStringParameters() != null) {
+			headers.putAll(event.getQueryStringParameters());
+		}
+		if (event.getPathParameters() != null) {
+			headers.putAll(event.getPathParameters());
+		}
+		headers.put("httpMethod", event.getHttpMethod());
 		headers.put("request", event);
 		return new MessageHeaders(headers);
 	}
