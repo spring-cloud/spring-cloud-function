@@ -309,10 +309,10 @@ Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
 include::./adapters/aws.adoc[leveloffset=+2]
 
-=== Azure
+=== Microsoft Azure
 
 include::./adapters/azure.adoc[leveloffset=+2]
 
-=== Openwhisk
+=== Apache OpenWhisk
 
 include::./adapters/openwhisk.adoc[leveloffset=+2]
