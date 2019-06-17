@@ -58,23 +58,10 @@ public class SpringBootApiGatewayRequestHandler extends
 
 	@Override
 	protected Object convertEvent(APIGatewayProxyRequestEvent event) {
-
-		if (event.getBody() != null) {
-			if (functionAcceptsMessage()) {
-				return new GenericMessage<>(deserializeBody(event.getBody()), getHeaders(event));
-			}
-			else {
-				return deserializeBody(event.getBody());
-			}
-		}
-		else {
-			if (functionAcceptsMessage()) {
-				return new GenericMessage<Optional<Void>>(Optional.empty(), getHeaders(event));
-			}
-			else {
-				return Optional.empty();
-			}
-		}
+		Object deserializedBody = event.getBody() != null ? deserializeBody(event.getBody()) : Optional.empty();
+		return functionAcceptsMessage()
+				? new GenericMessage<>(deserializedBody, getHeaders(event))
+						: deserializedBody;
 	}
 
 	private boolean functionAcceptsMessage() {
