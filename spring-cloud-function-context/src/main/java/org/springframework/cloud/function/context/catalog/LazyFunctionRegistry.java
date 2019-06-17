@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -45,6 +46,7 @@ import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 /**
  *
@@ -72,8 +74,14 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 
 	@SuppressWarnings("unchecked")
 	@Override
+	public <T> T lookup(String definition, OutputPostProcessor outputPostProcessor) {
+		return (T) this.compose(null, definition, false, outputPostProcessor);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
 	public <T> T lookup(Class<?> type, String definition) {
-		return (T) this.compose(type, definition);
+		return (T) this.compose(type, definition, false, new DefaultOutputPostProcessor());
 	}
 
 	@Override
@@ -148,11 +156,22 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 //		return key;
 //	}
 
+	private boolean notStandardFunction(Object function) {
+		return !(function instanceof Supplier || function instanceof Function || function instanceof Consumer);
+	}
+
+//	private Object toCannonical(Object function) {
+//		if (function instanceof BiFunction) {
+//			return new Function<Tuple2<T1, T2>>() {
+//			};
+//		}
+//	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Function<?,?> compose(Class<?> type, String definition) {
+	private Function<?,?> compose(Class<?> type, String definition, boolean raw, OutputPostProcessor outputPostProcessor) {
 		Function<?,?> resultFunction = null;
 		if (this.registrationsByName.containsKey(definition)) {
-			resultFunction = new FunctionInvocationWrapper(this.registrationsByName.get(definition), false);
+			resultFunction = new FunctionInvocationWrapper(this.registrationsByName.get(definition), false, outputPostProcessor);
 		}
 		else {
 			String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
@@ -168,6 +187,11 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 				composedNameBuilder.append(name);
 
 				Object function = this.applicationContext.getBean(name);
+
+//				if (notStandardFunction(function) && type != null && Function.class.isAssignableFrom(type)) {
+//
+//				}
+
 				FunctionType funcType = beanDefinitionExists(name) ? FunctionType.of(FunctionContextUtils.findType(name,
 						(ConfigurableListableBeanFactory) applicationContext.getBeanFactory())) : new FunctionType(function.getClass());
 
@@ -176,7 +200,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 				FunctionRegistration<Object> registration = new FunctionRegistration<>(function, name).type(funcType);
 				registrationsByFunction.putIfAbsent(function, registration);
 				registrationsByName.putIfAbsent(name, registration);
-				function = new FunctionInvocationWrapper(registration, false);
+				function = new FunctionInvocationWrapper(registration, false, outputPostProcessor);
 				if (resultFunction == null) {
 					resultFunction = (Function<?,?>) function;
 				}
@@ -197,7 +221,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 					registration = new FunctionRegistration<Object>(resultFunction, composedNameBuilder.toString()).type(funcType);
 					registrationsByFunction.putIfAbsent(resultFunction, registration);
 					registrationsByName.putIfAbsent(composedNameBuilder.toString(), registration);
-					resultFunction = new FunctionInvocationWrapper(registration, true);
+					resultFunction = new FunctionInvocationWrapper(registration, true, outputPostProcessor);
 				}
 				previousFunctionType = funcType;
 				prefix = "|";
@@ -228,10 +252,13 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 
 		private final FunctionTypeConversionHelper functionTypeConversionHelper;
 
-		FunctionInvocationWrapper(FunctionRegistration<?> functionRegistration, boolean composed) {
+		private final OutputPostProcessor outputPostProcessor;
+
+		FunctionInvocationWrapper(FunctionRegistration<?> functionRegistration, boolean composed, OutputPostProcessor outputPostProcessor) {
 			this.target = functionRegistration.getTarget();
 			this.functionRegistration = functionRegistration;
 			this.composed = composed;
+			this.outputPostProcessor = outputPostProcessor;
 			this.functionTypeConversionHelper = new FunctionTypeConversionHelper(this.functionRegistration,
 					conversionService, messageConverter);
 		}
@@ -249,10 +276,10 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 		@Override
 		public Object get() {
 			// wrap/unwrap to/from reactive
-			Object input = Flux.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper())
-					? Flux.empty()
-							: (Mono.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper())
-									? Mono.empty()
+			Object input = Mono.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper())
+					? Mono.empty()
+							: (Flux.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper())
+									? Flux.empty()
 											: null);
 
 			return this.doApply(input, false);
@@ -266,10 +293,10 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 
 			input = this.wrapInputToReactiveIfNecessary(input);
 
-			Object result = null;
+			Object result;
 			if (input instanceof Publisher) {
 				if (!this.composed) {
-					input = this.functionTypeConversionHelper.convertInput(input);
+					input = this.functionTypeConversionHelper.convertInputIfNecessary(input);
 				}
 				result = this.applyReactive((Publisher<Object>) input, consumer);
 			}
@@ -280,11 +307,13 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 				}
 				else {
 					if (!this.composed) {
-						input = this.functionTypeConversionHelper.convertInput(input);
+						input = this.functionTypeConversionHelper.convertInputIfNecessary(input);
 					}
 					result = this.applyImperative(input, consumer);
 				}
 			}
+
+			result = this.outputPostProcessor.postProcessOutput(result);
 
 			return this.wrapOutputToReactiveIfNecessary(result);
 		}
@@ -354,8 +383,9 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 						result = publisher instanceof Mono ? Mono.just(result) : Flux.just(result);
 					}
 					else {
-						result = publisher instanceof Flux ? Flux.from(publisher).map(value -> ((Function)this.target).apply(value))
-								:  Mono.from(publisher).map(value -> ((Function)this.target).apply(value));
+						result = publisher instanceof Mono
+								? Mono.from(publisher).map(value -> ((Function)this.target).apply(value))
+								:  Flux.from(publisher).map(value -> ((Function)this.target).apply(value));
 					}
 				}
 			}

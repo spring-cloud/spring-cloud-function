@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,6 +29,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
+import org.hamcrest.internal.ReflectiveTypeFinder;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -65,6 +67,17 @@ public class LazyFunctionRegistryTests {
 		List<String> result = asFlux.apply(Flux.just("uppercaseFlux", "uppercaseFlux2")).collectList().block();
 		assertThat(result.get(0)).isEqualTo("UPPERCASEFLUX");
 		assertThat(result.get(1)).isEqualTo("UPPERCASEFLUX2");
+	}
+
+
+	@Test
+	public void testSerializationDeserialization() {
+		FunctionCatalog catalog = this.configureCatalog();
+
+		//Function<byte[], byte[]> asIs = catalog.lookup("uppercase", new );
+
+		 //ParameterizedType
+//
 	}
 
 	/*
@@ -191,7 +204,15 @@ public class LazyFunctionRegistryTests {
 		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
 		System.out.println(result);
 	}
-
+	
+	
+	private class MyFunction {
+		public String apply(String a, Integer b, Foo c) {
+			
+		}
+	}
+	
+	
 	@Test
 	public void testMultiInputWithComposition() {
 		FunctionCatalog catalog = this.configureCatalog();

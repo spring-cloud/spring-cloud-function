@@ -17,12 +17,20 @@
 package org.springframework.cloud.function.context;
 
 import java.util.Set;
+import java.util.function.Function;
+
+import org.springframework.cloud.function.context.catalog.OutputPostProcessor;
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
 public interface FunctionCatalog {
+
+
+	default <T> T lookup(String name, OutputPostProcessor outputPostProcessor) {
+		throw new UnsupportedOperationException("This type of lookup is not supported by this instance of FunctionCatalog");
+	}
 
 	/**
 	 * Will look up the instance of the functional interface by name only.

@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.junit.Test;
@@ -66,6 +67,19 @@ public class LazyFunctionRegistryMultiInOutTests {
 
 		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
 		System.out.println(result);
+	}
+
+	@SuppressWarnings("unused")
+	@Test
+	public void testMultiInputBiFunction() {
+		FunctionCatalog catalog = this.configureCatalog();
+		BiFunction<Flux<String>, Flux<Integer>, Flux<String>> multiInputFunction =
+									catalog.lookup(BiFunction.class, "multiInputSingleOutputViaBiFunction");
+		Flux<String> stringStream = Flux.just("one", "two", "three");
+		Flux<Integer> intStream = Flux.just(1, 2, 3);
+
+//		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
+//		System.out.println(result);
 	}
 
 	/*
@@ -206,6 +220,21 @@ public class LazyFunctionRegistryMultiInOutTests {
 		result.getT2().subscribe(v -> System.out.println("=> 2: " + v));
 	}
 
+//	@Test
+//	public void testMultiToMultiByteArray() {
+//		FunctionCatalog catalog = this.configureCatalog();
+//		Function<Tuple3<Flux<String>, Flux<String>, Flux<Integer>>, Tuple2<Flux<Person>, Mono<Long>>> multiTuMulti =
+//									catalog.lookup("multiTuMulti");
+//
+//		Flux<String> firstFlux = Flux.just("Unlce", "Oncle");
+//		Flux<String> secondFlux = Flux.just("Sam", "Pierre");
+//		Flux<Integer> thirdFlux = Flux.just(1, 2);
+//
+//		Tuple2<Flux<Person>, Mono<Long>> result = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
+//		result.getT1().subscribe(v -> System.out.println("=> 1: " + v));
+//		result.getT2().subscribe(v -> System.out.println("=> 2: " + v));
+//	}
+
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -223,6 +252,15 @@ public class LazyFunctionRegistryMultiInOutTests {
 			return tuple -> {
 				Flux<String> stringStream = tuple.getT1();
 				Flux<Integer> intStream = tuple.getT2();
+				return Flux.zip(stringStream, intStream, (string, integer) -> string + "-" + integer);
+			};
+		}
+
+		@Bean
+		public BiFunction<Flux<String>, Flux<Integer>, Flux<String>> multiInputSingleOutputViaBiFunction() {
+			return (in1, in2) -> {
+				Flux<String> stringStream = in1;
+				Flux<Integer> intStream = in2;
 				return Flux.zip(stringStream, intStream, (string, integer) -> string + "-" + integer);
 			};
 		}

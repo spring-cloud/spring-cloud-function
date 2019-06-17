@@ -17,9 +17,11 @@
 package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -32,9 +34,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.annotation.PreDestroy;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -67,6 +66,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.core.convert.converter.ConditionalGenericConverter;
+import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.lang.Nullable;
@@ -75,6 +77,10 @@ import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
+import org.springframework.util.ClassUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 
 /**
  * @author Dave Syer
@@ -106,7 +112,33 @@ public class ContextFunctionCatalogAutoConfiguration {
 			messageConverters.add(new ByteArrayMessageConverter());
 			messageConverter = new CompositeMessageConverter(messageConverters);
 		}
+		if (conversionService != null) {
+			((ConfigurableConversionService)conversionService).addConverter(new MyConverter());
+		}
 		return new LazyFunctionRegistry(conversionService, messageConverter);
+	}
+
+	public static class MyConverter implements ConditionalGenericConverter {
+
+		@Override
+		public Set<ConvertiblePair> getConvertibleTypes() {
+			return Collections.singleton(new ConvertiblePair(byte[].class, String.class));
+		}
+
+		@Override
+		public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+			return new String(((byte[])source), StandardCharsets.UTF_8);
+		}
+
+		@Override
+		public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
+			if (ClassUtils.isAssignable(sourceType.getType(), byte[].class) && ClassUtils.isAssignable(targetType.getType(), String.class)) {
+				// maybe
+				return true;
+			}
+			return false;
+		}
+
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
