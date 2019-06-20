@@ -190,5 +190,22 @@
 			</dependencies>
 		</profile>
 	</profiles>
+	<repositories>
+			<repository>
+				<id>spring-milestones</id>
+				<name>Spring Milestones</name>
+				<url>https://repo.spring.io/libs-milestone-local</url>
+			</repository>
+			<repository>
+				<id>spring-releases</id>
+				<name>Spring Releases</name>
+				<url>https://repo.spring.io/release</url>
+			</repository>
+			<repository>
+				<id>spring-snapshots</id>
+				<name>Spring Snapshots</name>
+				<url>https://repo.spring.io/libs-snapshot-local/</url>
+			</repository>
+		</repositories>
 
 </project>
