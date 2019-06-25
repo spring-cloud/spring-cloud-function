@@ -231,7 +231,7 @@ public class LazyFunctionRegistryMultiInOutTests {
 	public void testMultiToMultiWithMessageByteArrayPayload() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Tuple3<Flux<Message<byte[]>>, Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>>> multiTuMulti =
-									catalog.lookupRaw("multiTuMulti", MimeTypeUtils.parseMimeType("foo/bar"), MimeTypeUtils.parseMimeType("bar/*"));
+									catalog.lookup("multiTuMulti", MimeTypeUtils.parseMimeType("application/json"), MimeTypeUtils.parseMimeType("application/json"));
 
 		Flux<Message<byte[]>> firstFlux = Flux.just(
 				MessageBuilder.withPayload("Unlce".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build(),
@@ -248,7 +248,6 @@ public class LazyFunctionRegistryMultiInOutTests {
 		Flux<Message<byte[]>> thirdFlux = Flux.just(
 				MessageBuilder.withPayload(one.array()).setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer").build(),
 				MessageBuilder.withPayload(two.array()).setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer").build());
-
 
 		Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>> result = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
 		result.getT1().subscribe(v -> System.out.println("=> 1: " + v));

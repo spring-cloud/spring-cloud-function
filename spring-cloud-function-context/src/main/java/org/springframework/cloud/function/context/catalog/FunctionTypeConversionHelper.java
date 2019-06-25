@@ -3,6 +3,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -11,10 +12,12 @@ import org.reactivestreams.Publisher;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.MimeType;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -90,34 +93,35 @@ class FunctionTypeConversionHelper {
 	}
 
 	@SuppressWarnings("rawtypes")
-	Object convertOutputIfNecessary(Object output) {
+	Object convertOutputIfNecessary(Object output, MimeType... acceptedOutputTypes) {
 		List<Object> convertedResults = new ArrayList<Object>();
 		if (output instanceof Tuple2) {
-			convertedResults.add(this.doConvert(((Tuple2)output).getT1(), byte[].class, true));
-			convertedResults.add(this.doConvert(((Tuple2)output).getT2(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple2)output).getT1(), acceptedOutputTypes[0]));
+			convertedResults.add(this.doConvert(((Tuple2)output).getT2(), acceptedOutputTypes[1]));
 		}
 		if (output instanceof Tuple3) {
-			convertedResults.add(this.doConvert(((Tuple3)output).getT3(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple3)output).getT3(), acceptedOutputTypes[2]));
 		}
 		if (output instanceof Tuple4) {
-			convertedResults.add(this.doConvert(((Tuple4)output).getT4(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple4)output).getT4(), acceptedOutputTypes[3]));
 		}
 		if (output instanceof Tuple5) {
-			convertedResults.add(this.doConvert(((Tuple5)output).getT5(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple5)output).getT5(), acceptedOutputTypes[4]));
 		}
 		if (output instanceof Tuple6) {
-			convertedResults.add(this.doConvert(((Tuple6)output).getT6(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple6)output).getT6(), acceptedOutputTypes[5]));
 		}
 		if (output instanceof Tuple7) {
-			convertedResults.add(this.doConvert(((Tuple7)output).getT7(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple7)output).getT7(), acceptedOutputTypes[6]));
 		}
 		if (output instanceof Tuple8) {
-			convertedResults.add(this.doConvert(((Tuple8)output).getT8(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple8)output).getT8(), acceptedOutputTypes[7]));
 		}
 
-		output = CollectionUtils.isEmpty(convertedResults)
-				? this.doConvert(output, byte[].class, true)
-						: Tuples.fromArray(convertedResults.toArray());
+		if (!CollectionUtils.isEmpty(convertedResults)) {
+			output = Tuples.fromArray(convertedResults.toArray());
+		}
+
 		return output;
 	}
 
@@ -167,30 +171,43 @@ class FunctionTypeConversionHelper {
 		return (Class<?>) targetType;
 	}
 
-	private Object doConvert(Object incoming, Type targetType) {
-		return this.doConvert(incoming, targetType, false);
-	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Object doConvert(Object incoming, Type targetType, boolean toMessage) {
+	private Object doConvert(Object incoming, Type targetType) {
 		Class<?> actualType = this.getRawType(targetType);
 		if (incoming instanceof Publisher) {
 			if (!actualType.isAssignableFrom(Void.class)) {
 				incoming = incoming instanceof Mono
-						? Mono.from((Publisher) incoming).map(value -> this.doConvertArgument(value, targetType, actualType, toMessage))
-								: Flux.from((Publisher) incoming).map(value -> this.doConvertArgument(value, targetType, actualType, toMessage));
+						? Mono.from((Publisher) incoming).map(value -> this.doConvertArgument(value, targetType, actualType))
+								: Flux.from((Publisher) incoming).map(value -> this.doConvertArgument(value, targetType, actualType));
 			}
 		}
 		else {
 			Assert.isTrue(!Publisher.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper()),
 					"Invoking reactive function as imperative is not allowed. Function name(s): "
 							+ this.functionRegistration.getNames());
-			incoming = this.doConvertArgument(incoming, targetType, actualType, toMessage);
+			incoming = this.doConvertArgument(incoming, targetType, actualType);
 		}
 		return incoming;
 	}
 
-	private Object doConvertArgument(Object incomingValue, Type targetType, Class<?> actualInputType, boolean toMessage) {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Object doConvert(Object incoming, MimeType mimeType) {
+		MessageHeaders headers = new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, mimeType));
+		if (incoming instanceof Publisher) {
+			incoming = incoming instanceof Mono
+					? Mono.from((Publisher) incoming).map(value -> this.messageConverter.toMessage(value, headers))
+							: Flux.from((Publisher) incoming).map(value -> this.messageConverter.toMessage(value, headers));
+		}
+		else {
+			Assert.isTrue(!Publisher.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper()),
+					"Invoking reactive function as imperative is not allowed. Function name(s): "
+							+ this.functionRegistration.getNames());
+			incoming = this.messageConverter.toMessage(incoming, headers);
+		}
+		return incoming;
+	}
+
+	private Object doConvertArgument(Object incomingValue, Type targetType, Class<?> actualInputType) {
 		if (!Void.class.isAssignableFrom(actualInputType)) {
 			if (incomingValue instanceof Message<?>) {
 				incomingValue = this.isMessage(targetType)
@@ -203,9 +220,6 @@ class FunctionTypeConversionHelper {
 							"Failed to convert value of type " + incomingValue.getClass() + " to " + targetType);
 					incomingValue = this.conversionService.convert(incomingValue, actualInputType);
 				}
-			}
-			if (toMessage) {
-				incomingValue = MessageBuilder.withPayload(incomingValue).build();
 			}
 		}
 		else {

@@ -29,8 +29,9 @@ public interface FunctionCatalog {
 
 
 
-	default <T> T lookupRaw(String name, MimeType... acceptedOutputTypes) {
-		return null;
+	default <T> T lookup(String name, MimeType... acceptedOutputTypes) {
+		throw new UnsupportedOperationException(
+				"This instance of FunctionCatalog does not support this operation");
 	}
 
 

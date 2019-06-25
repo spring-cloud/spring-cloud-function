@@ -42,6 +42,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.util.MimeType;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import reactor.core.publisher.Flux;
@@ -76,7 +78,12 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T lookup(Class<?> type, String definition) {
-		return (T) this.compose(type, definition, false);
+		return (T) this.compose(type, definition);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T lookup(String definition, MimeType... acceptedOutputTypes) {
+		return (T) this.compose(null, definition, acceptedOutputTypes);
 	}
 
 	@Override
@@ -163,10 +170,10 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 //	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Function<?,?> compose(Class<?> type, String definition, boolean raw) {
+	private Function<?,?> compose(Class<?> type, String definition, MimeType... acceptedOutputTypes) {
 		Function<?,?> resultFunction = null;
 		if (this.registrationsByName.containsKey(definition)) {
-			resultFunction = new FunctionInvocationWrapper(this.registrationsByName.get(definition), false);
+			resultFunction = new FunctionInvocationWrapper(this.registrationsByName.get(definition), false, acceptedOutputTypes);
 		}
 		else {
 			String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
@@ -195,7 +202,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 				FunctionRegistration<Object> registration = new FunctionRegistration<>(function, name).type(funcType);
 				registrationsByFunction.putIfAbsent(function, registration);
 				registrationsByName.putIfAbsent(name, registration);
-				function = new FunctionInvocationWrapper(registration, false);
+				function = new FunctionInvocationWrapper(registration, false, acceptedOutputTypes);
 				if (resultFunction == null) {
 					resultFunction = (Function<?,?>) function;
 				}
@@ -216,7 +223,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 					registration = new FunctionRegistration<Object>(resultFunction, composedNameBuilder.toString()).type(funcType);
 					registrationsByFunction.putIfAbsent(resultFunction, registration);
 					registrationsByName.putIfAbsent(composedNameBuilder.toString(), registration);
-					resultFunction = new FunctionInvocationWrapper(registration, true);
+					resultFunction = new FunctionInvocationWrapper(registration, true, acceptedOutputTypes);
 				}
 				previousFunctionType = funcType;
 				prefix = "|";
@@ -247,10 +254,13 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 
 		private final FunctionTypeConversionHelper functionTypeConversionHelper;
 
-		FunctionInvocationWrapper(FunctionRegistration<?> functionRegistration, boolean composed) {
+		private final MimeType[] acceptedOutputTypes;
+
+		FunctionInvocationWrapper(FunctionRegistration<?> functionRegistration, boolean composed, MimeType... acceptedOutputTypes) {
 			this.target = functionRegistration.getTarget();
 			this.functionRegistration = functionRegistration;
 			this.composed = composed;
+			this.acceptedOutputTypes = acceptedOutputTypes;
 			this.functionTypeConversionHelper = new FunctionTypeConversionHelper(this.functionRegistration,
 					conversionService, messageConverter);
 		}
@@ -306,8 +316,9 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 			}
 
 			// ====
-			//result = this.functionTypeConversionHelper.convertOutputIfNecessary(result);
-			//
+			if (!ObjectUtils.isEmpty(this.acceptedOutputTypes)) {
+				result = this.functionTypeConversionHelper.convertOutputIfNecessary(result, this.acceptedOutputTypes);
+			}
 
 			return this.wrapOutputToReactiveIfNecessary(result);
 		}
