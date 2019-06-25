@@ -72,16 +72,11 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 		this.messageConverter = messageConverter;
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T lookup(String definition, OutputPostProcessor outputPostProcessor) {
-		return (T) this.compose(null, definition, false, outputPostProcessor);
-	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T lookup(Class<?> type, String definition) {
-		return (T) this.compose(type, definition, false, new DefaultOutputPostProcessor());
+		return (T) this.compose(type, definition, false);
 	}
 
 	@Override
@@ -168,10 +163,10 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 //	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Function<?,?> compose(Class<?> type, String definition, boolean raw, OutputPostProcessor outputPostProcessor) {
+	private Function<?,?> compose(Class<?> type, String definition, boolean raw) {
 		Function<?,?> resultFunction = null;
 		if (this.registrationsByName.containsKey(definition)) {
-			resultFunction = new FunctionInvocationWrapper(this.registrationsByName.get(definition), false, outputPostProcessor);
+			resultFunction = new FunctionInvocationWrapper(this.registrationsByName.get(definition), false);
 		}
 		else {
 			String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
@@ -200,7 +195,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 				FunctionRegistration<Object> registration = new FunctionRegistration<>(function, name).type(funcType);
 				registrationsByFunction.putIfAbsent(function, registration);
 				registrationsByName.putIfAbsent(name, registration);
-				function = new FunctionInvocationWrapper(registration, false, outputPostProcessor);
+				function = new FunctionInvocationWrapper(registration, false);
 				if (resultFunction == null) {
 					resultFunction = (Function<?,?>) function;
 				}
@@ -221,7 +216,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 					registration = new FunctionRegistration<Object>(resultFunction, composedNameBuilder.toString()).type(funcType);
 					registrationsByFunction.putIfAbsent(resultFunction, registration);
 					registrationsByName.putIfAbsent(composedNameBuilder.toString(), registration);
-					resultFunction = new FunctionInvocationWrapper(registration, true, outputPostProcessor);
+					resultFunction = new FunctionInvocationWrapper(registration, true);
 				}
 				previousFunctionType = funcType;
 				prefix = "|";
@@ -252,13 +247,10 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 
 		private final FunctionTypeConversionHelper functionTypeConversionHelper;
 
-		private final OutputPostProcessor outputPostProcessor;
-
-		FunctionInvocationWrapper(FunctionRegistration<?> functionRegistration, boolean composed, OutputPostProcessor outputPostProcessor) {
+		FunctionInvocationWrapper(FunctionRegistration<?> functionRegistration, boolean composed) {
 			this.target = functionRegistration.getTarget();
 			this.functionRegistration = functionRegistration;
 			this.composed = composed;
-			this.outputPostProcessor = outputPostProcessor;
 			this.functionTypeConversionHelper = new FunctionTypeConversionHelper(this.functionRegistration,
 					conversionService, messageConverter);
 		}
@@ -313,7 +305,9 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 				}
 			}
 
-			result = this.outputPostProcessor.postProcessOutput(result);
+			// ====
+			//result = this.functionTypeConversionHelper.convertOutputIfNecessary(result);
+			//
 
 			return this.wrapOutputToReactiveIfNecessary(result);
 		}

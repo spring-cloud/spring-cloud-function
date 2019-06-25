@@ -204,15 +204,8 @@ public class LazyFunctionRegistryTests {
 		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
 		System.out.println(result);
 	}
-	
-	
-	private class MyFunction {
-		public String apply(String a, Integer b, Foo c) {
-			
-		}
-	}
-	
-	
+
+
 	@Test
 	public void testMultiInputWithComposition() {
 		FunctionCatalog catalog = this.configureCatalog();

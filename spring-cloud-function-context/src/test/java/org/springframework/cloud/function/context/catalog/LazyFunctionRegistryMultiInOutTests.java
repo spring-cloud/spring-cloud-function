@@ -16,12 +16,15 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -29,8 +32,11 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
 
@@ -71,6 +77,7 @@ public class LazyFunctionRegistryMultiInOutTests {
 
 	@SuppressWarnings("unused")
 	@Test
+	@Ignore
 	public void testMultiInputBiFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 		BiFunction<Flux<String>, Flux<Integer>, Flux<String>> multiInputFunction =
@@ -220,20 +227,35 @@ public class LazyFunctionRegistryMultiInOutTests {
 		result.getT2().subscribe(v -> System.out.println("=> 2: " + v));
 	}
 
-//	@Test
-//	public void testMultiToMultiByteArray() {
-//		FunctionCatalog catalog = this.configureCatalog();
-//		Function<Tuple3<Flux<String>, Flux<String>, Flux<Integer>>, Tuple2<Flux<Person>, Mono<Long>>> multiTuMulti =
-//									catalog.lookup("multiTuMulti");
-//
-//		Flux<String> firstFlux = Flux.just("Unlce", "Oncle");
-//		Flux<String> secondFlux = Flux.just("Sam", "Pierre");
-//		Flux<Integer> thirdFlux = Flux.just(1, 2);
-//
-//		Tuple2<Flux<Person>, Mono<Long>> result = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
-//		result.getT1().subscribe(v -> System.out.println("=> 1: " + v));
-//		result.getT2().subscribe(v -> System.out.println("=> 2: " + v));
-//	}
+	@Test
+	public void testMultiToMultiWithMessageByteArrayPayload() {
+		FunctionCatalog catalog = this.configureCatalog();
+		Function<Tuple3<Flux<Message<byte[]>>, Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>>> multiTuMulti =
+									catalog.lookupRaw("multiTuMulti", MimeTypeUtils.parseMimeType("foo/bar"), MimeTypeUtils.parseMimeType("bar/*"));
+
+		Flux<Message<byte[]>> firstFlux = Flux.just(
+				MessageBuilder.withPayload("Unlce".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build(),
+				MessageBuilder.withPayload("Onlce".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		Flux<Message<byte[]>> secondFlux = Flux.just(
+				MessageBuilder.withPayload("Sam".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build(),
+				MessageBuilder.withPayload("Pierre".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+
+		ByteBuffer one = ByteBuffer.allocate(4);
+		one.putInt(1);
+		ByteBuffer two = ByteBuffer.allocate(4);
+		two.putInt(2);
+
+		Flux<Message<byte[]>> thirdFlux = Flux.just(
+				MessageBuilder.withPayload(one.array()).setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer").build(),
+				MessageBuilder.withPayload(two.array()).setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer").build());
+
+
+		Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>> result = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
+		result.getT1().subscribe(v -> System.out.println("=> 1: " + v));
+		result.getT2().subscribe(v -> System.out.println("=> 2: " + v));
+
+		//Tuple2<Object, Object> d = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
+	}
 
 
 	@EnableAutoConfiguration
@@ -296,6 +318,29 @@ public class LazyFunctionRegistryMultiInOutTests {
 						.zipWith(idFlux)
 						.map(t -> new Person(t.getT1(), t.getT2()));
 				return Tuples.of(person, person.count());
+			};
+		}
+
+		@Bean
+		public MessageConverter byteArrayToIntegerMessageConverter()  {
+			return new AbstractMessageConverter(MimeTypeUtils.parseMimeType("octet-stream/integer")) {
+
+				@Override
+				protected boolean supports(Class<?> clazz) {
+					return Integer.class.isAssignableFrom(clazz);
+				}
+
+				protected Object convertFromInternal(
+						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+					ByteBuffer wrappedPayload = ByteBuffer.wrap((byte[])message.getPayload());
+					return wrappedPayload.getInt();
+				}
+
+				protected Object convertToInternal(
+						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+
+					return null;
+				}
 			};
 		}
 

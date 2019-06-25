@@ -79,6 +79,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.util.ClassUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
@@ -104,16 +105,20 @@ public class ContextFunctionCatalogAutoConfiguration {
 //	}
 
 	@Bean
-	public FunctionRegistry functionCatalog(@Nullable ConversionService conversionService, @Nullable CompositeMessageConverter messageConverter) {
+	public FunctionRegistry functionCatalog(@Nullable ConversionService conversionService, @Nullable CompositeMessageConverter messageConverter,
+			Map<String, MessageConverter> additionalConverters) {
 		conversionService = conversionService == null ? new DefaultConversionService() : conversionService;
 		if (messageConverter == null) {
 			List<MessageConverter> messageConverters = new ArrayList<>();
+			messageConverters.addAll(additionalConverters.values());
 			messageConverters.add(new MappingJackson2MessageConverter());
 			messageConverters.add(new ByteArrayMessageConverter());
+			messageConverters.add(new StringMessageConverter());
 			messageConverter = new CompositeMessageConverter(messageConverters);
 		}
 		if (conversionService != null) {
 			((ConfigurableConversionService)conversionService).addConverter(new MyConverter());
+			((ConfigurableConversionService)conversionService).addConverter(new ObjectToByteArrayConverter());
 		}
 		return new LazyFunctionRegistry(conversionService, messageConverter);
 	}
@@ -139,6 +144,64 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return false;
 		}
 
+	}
+
+	public static class ObjectToByteArrayConverter implements ConditionalGenericConverter {
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		@Override
+		public Set<ConvertiblePair> getConvertibleTypes() {
+			return Collections.singleton(new ConvertiblePair(Object.class, byte[].class));
+		}
+
+		@Override
+		public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+			try {
+				byte[] result =  mapper.writeValueAsBytes(source);
+				return result;
+			}
+			catch (Exception e) {
+				throw new IllegalStateException("Failwd to convert " + source + " to byte[]", e);
+			}
+		}
+
+		@Override
+		public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
+			if (ClassUtils.isAssignable(Object.class, sourceType.getType()) && ClassUtils.isAssignable(byte[].class, targetType.getType())) {
+				// maybe
+				return true;
+			}
+			return false;
+		}
+
+	}
+
+	public static class Person {
+		private String name;
+		private int id;
+		public Person() {
+
+		}
+		public Person(String name, int id) {
+			this.name = name;
+			this.id = id;
+		}
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public int getId() {
+			return id;
+		}
+		public void setId(int id) {
+			this.id = id;
+		}
+		public String toString() {
+			return "Person: " + name + "/" + id;
+		}
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)

@@ -89,6 +89,38 @@ class FunctionTypeConversionHelper {
 		return input;
 	}
 
+	@SuppressWarnings("rawtypes")
+	Object convertOutputIfNecessary(Object output) {
+		List<Object> convertedResults = new ArrayList<Object>();
+		if (output instanceof Tuple2) {
+			convertedResults.add(this.doConvert(((Tuple2)output).getT1(), byte[].class, true));
+			convertedResults.add(this.doConvert(((Tuple2)output).getT2(), byte[].class, true));
+		}
+		if (output instanceof Tuple3) {
+			convertedResults.add(this.doConvert(((Tuple3)output).getT3(), byte[].class, true));
+		}
+		if (output instanceof Tuple4) {
+			convertedResults.add(this.doConvert(((Tuple4)output).getT4(), byte[].class, true));
+		}
+		if (output instanceof Tuple5) {
+			convertedResults.add(this.doConvert(((Tuple5)output).getT5(), byte[].class, true));
+		}
+		if (output instanceof Tuple6) {
+			convertedResults.add(this.doConvert(((Tuple6)output).getT6(), byte[].class, true));
+		}
+		if (output instanceof Tuple7) {
+			convertedResults.add(this.doConvert(((Tuple7)output).getT7(), byte[].class, true));
+		}
+		if (output instanceof Tuple8) {
+			convertedResults.add(this.doConvert(((Tuple8)output).getT8(), byte[].class, true));
+		}
+
+		output = CollectionUtils.isEmpty(convertedResults)
+				? this.doConvert(output, byte[].class, true)
+						: Tuples.fromArray(convertedResults.toArray());
+		return output;
+	}
+
 	int getInputArgumentCount() {
 		Type[] types = ((ParameterizedType)this.functionArgumentTypes[0]).getActualTypeArguments();
 		return types.length;
@@ -135,27 +167,30 @@ class FunctionTypeConversionHelper {
 		return (Class<?>) targetType;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Object doConvert(Object input, Type targetType) {
+	private Object doConvert(Object incoming, Type targetType) {
+		return this.doConvert(incoming, targetType, false);
+	}
 
-		Class<?> actualInputType = this.getRawType(targetType);
-		if (input instanceof Publisher) {
-			if (!actualInputType.isAssignableFrom(Void.class)) {
-				input = input instanceof Mono
-						? Mono.from((Publisher) input).map(value -> this.convertInputArgument(value, targetType, actualInputType))
-								: Flux.from((Publisher) input).map(value -> this.convertInputArgument(value, targetType, actualInputType));
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Object doConvert(Object incoming, Type targetType, boolean toMessage) {
+		Class<?> actualType = this.getRawType(targetType);
+		if (incoming instanceof Publisher) {
+			if (!actualType.isAssignableFrom(Void.class)) {
+				incoming = incoming instanceof Mono
+						? Mono.from((Publisher) incoming).map(value -> this.doConvertArgument(value, targetType, actualType, toMessage))
+								: Flux.from((Publisher) incoming).map(value -> this.doConvertArgument(value, targetType, actualType, toMessage));
 			}
 		}
 		else {
 			Assert.isTrue(!Publisher.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper()),
 					"Invoking reactive function as imperative is not allowed. Function name(s): "
 							+ this.functionRegistration.getNames());
-			input = this.convertInputArgument(input, targetType, actualInputType);
+			incoming = this.doConvertArgument(incoming, targetType, actualType, toMessage);
 		}
-		return input;
+		return incoming;
 	}
 
-	private Object convertInputArgument(Object incomingValue, Type targetType, Class<?> actualInputType) {
+	private Object doConvertArgument(Object incomingValue, Type targetType, Class<?> actualInputType, boolean toMessage) {
 		if (!Void.class.isAssignableFrom(actualInputType)) {
 			if (incomingValue instanceof Message<?>) {
 				incomingValue = this.isMessage(targetType)
@@ -168,6 +203,9 @@ class FunctionTypeConversionHelper {
 							"Failed to convert value of type " + incomingValue.getClass() + " to " + targetType);
 					incomingValue = this.conversionService.convert(incomingValue, actualInputType);
 				}
+			}
+			if (toMessage) {
+				incomingValue = MessageBuilder.withPayload(incomingValue).build();
 			}
 		}
 		else {
