@@ -18,6 +18,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.ObjectUtils;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -94,6 +95,9 @@ class FunctionTypeConversionHelper {
 
 	@SuppressWarnings("rawtypes")
 	Object convertOutputIfNecessary(Object output, MimeType... acceptedOutputTypes) {
+		if (ObjectUtils.isEmpty(acceptedOutputTypes)) {
+			return output;
+		}
 		List<Object> convertedResults = new ArrayList<Object>();
 		if (output instanceof Tuple2) {
 			convertedResults.add(this.doConvert(((Tuple2)output).getT1(), acceptedOutputTypes[0]));
@@ -118,9 +122,7 @@ class FunctionTypeConversionHelper {
 			convertedResults.add(this.doConvert(((Tuple8)output).getT8(), acceptedOutputTypes[7]));
 		}
 
-		if (!CollectionUtils.isEmpty(convertedResults)) {
-			output = Tuples.fromArray(convertedResults.toArray());
-		}
+		output = Tuples.fromArray(convertedResults.toArray());
 
 		return output;
 	}

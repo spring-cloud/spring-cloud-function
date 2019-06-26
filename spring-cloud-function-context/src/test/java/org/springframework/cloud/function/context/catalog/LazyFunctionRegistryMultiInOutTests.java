@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.context.catalog;
 
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +38,8 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -250,10 +251,21 @@ public class LazyFunctionRegistryMultiInOutTests {
 				MessageBuilder.withPayload(two.array()).setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer").build());
 
 		Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>> result = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
-		result.getT1().subscribe(v -> System.out.println("=> 1: " + v));
-		result.getT2().subscribe(v -> System.out.println("=> 2: " + v));
-
-		//Tuple2<Object, Object> d = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
+		ObjectMapper mapper = new ObjectMapper();
+		result.getT1().subscribe(v -> {
+			try {
+				System.out.println("=> 1: " + mapper.readValue(v.getPayload(), Person.class));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+		result.getT2().subscribe(v -> {
+			try {
+				System.out.println("=> 2: " + mapper.readValue(v.getPayload(), Long.class));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
 	}
 
 

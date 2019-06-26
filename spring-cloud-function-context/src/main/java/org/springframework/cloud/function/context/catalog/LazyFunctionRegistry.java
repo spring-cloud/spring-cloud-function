@@ -315,10 +315,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 				}
 			}
 
-			// ====
-			if (!ObjectUtils.isEmpty(this.acceptedOutputTypes)) {
-				result = this.functionTypeConversionHelper.convertOutputIfNecessary(result, this.acceptedOutputTypes);
-			}
+			result = this.functionTypeConversionHelper.convertOutputIfNecessary(result, this.acceptedOutputTypes);
 
 			return this.wrapOutputToReactiveIfNecessary(result);
 		}

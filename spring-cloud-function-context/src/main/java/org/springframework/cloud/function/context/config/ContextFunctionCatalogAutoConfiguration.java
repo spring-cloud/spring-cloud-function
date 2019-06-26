@@ -17,11 +17,9 @@
 package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -66,9 +64,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.core.convert.converter.ConditionalGenericConverter;
-import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.lang.Nullable;
@@ -77,9 +72,7 @@ import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
-import org.springframework.util.ClassUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
@@ -116,92 +109,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			messageConverters.add(new StringMessageConverter());
 			messageConverter = new CompositeMessageConverter(messageConverters);
 		}
-		if (conversionService != null) {
-			((ConfigurableConversionService)conversionService).addConverter(new MyConverter());
-			((ConfigurableConversionService)conversionService).addConverter(new ObjectToByteArrayConverter());
-		}
 		return new LazyFunctionRegistry(conversionService, messageConverter);
-	}
-
-	public static class MyConverter implements ConditionalGenericConverter {
-
-		@Override
-		public Set<ConvertiblePair> getConvertibleTypes() {
-			return Collections.singleton(new ConvertiblePair(byte[].class, String.class));
-		}
-
-		@Override
-		public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
-			return new String(((byte[])source), StandardCharsets.UTF_8);
-		}
-
-		@Override
-		public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
-			if (ClassUtils.isAssignable(sourceType.getType(), byte[].class) && ClassUtils.isAssignable(targetType.getType(), String.class)) {
-				// maybe
-				return true;
-			}
-			return false;
-		}
-
-	}
-
-	public static class ObjectToByteArrayConverter implements ConditionalGenericConverter {
-
-		ObjectMapper mapper = new ObjectMapper();
-
-		@Override
-		public Set<ConvertiblePair> getConvertibleTypes() {
-			return Collections.singleton(new ConvertiblePair(Object.class, byte[].class));
-		}
-
-		@Override
-		public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
-			try {
-				byte[] result =  mapper.writeValueAsBytes(source);
-				return result;
-			}
-			catch (Exception e) {
-				throw new IllegalStateException("Failwd to convert " + source + " to byte[]", e);
-			}
-		}
-
-		@Override
-		public boolean matches(TypeDescriptor sourceType, TypeDescriptor targetType) {
-			if (ClassUtils.isAssignable(Object.class, sourceType.getType()) && ClassUtils.isAssignable(byte[].class, targetType.getType())) {
-				// maybe
-				return true;
-			}
-			return false;
-		}
-
-	}
-
-	public static class Person {
-		private String name;
-		private int id;
-		public Person() {
-
-		}
-		public Person(String name, int id) {
-			this.name = name;
-			this.id = id;
-		}
-		public String getName() {
-			return name;
-		}
-		public void setName(String name) {
-			this.name = name;
-		}
-		public int getId() {
-			return id;
-		}
-		public void setId(int id) {
-			this.id = id;
-		}
-		public String toString() {
-			return "Person: " + name + "/" + id;
-		}
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
