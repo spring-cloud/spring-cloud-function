@@ -42,6 +42,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -83,6 +84,7 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, MimeType... acceptedOutputTypes) {
+		Assert.notEmpty(acceptedOutputTypes, "'acceptedOutputTypes' must not be null or empty");
 		return (T) this.compose(null, definition, acceptedOutputTypes);
 	}
 
