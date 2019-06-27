@@ -92,10 +92,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
-//	@Bean
-//	public FunctionRegistry functionCatalog() {
-//		return new BeanFactoryFunctionCatalog();
-//	}
+	//@Bean
+	public FunctionRegistry functionCatalog() {
+		return new BeanFactoryFunctionCatalog();
+	}
 
 	@Bean
 	public FunctionRegistry functionCatalog(@Nullable ConversionService conversionService, @Nullable CompositeMessageConverter messageConverter,

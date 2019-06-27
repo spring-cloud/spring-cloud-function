@@ -118,6 +118,9 @@ public class LazyFunctionRegistry implements FunctionRegistry, FunctionInspector
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
 		this.registrationsByFunction.put(registration.getTarget(), (FunctionRegistration<Object>) registration);
+		for (String name : registration.getNames()) {
+			this.registrationsByName.put(name, (FunctionRegistration<Object>) registration);
+		}
 	}
 
 	@Override

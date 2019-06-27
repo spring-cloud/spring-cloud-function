@@ -56,7 +56,7 @@ class FunctionTypeConversionHelper {
 			this.functionArgumentTypes = ((ParameterizedType)this.functionRegistration.getType().getType()).getActualTypeArguments();
 		}
 		else {
-			this.functionArgumentTypes  = new Type[] {this.functionRegistration.getType().getType()};
+			this.functionArgumentTypes  = new Type[] {this.functionRegistration.getType().getInputType()};
 		}
 	}
 
