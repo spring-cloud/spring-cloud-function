@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,6 +68,18 @@ public class SpringBootApiGatewayRequestHandlerTests {
 		request.setBody("{\"value\":\"foo\"}");
 
 		Object output = this.handler.handleRequest(request, null);
+		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
+		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
+				.isEqualTo(200);
+		assertThat(((APIGatewayProxyResponseEvent) output).getBody())
+				.isEqualTo("{\"value\":\"FOO\"}");
+
+		APIGatewayProxyRequestEvent bodyEncryptedRequest = new APIGatewayProxyRequestEvent();
+		bodyEncryptedRequest.setBody(
+				Base64.getEncoder().encodeToString("{\"value\":\"foo\"}".getBytes()));
+		bodyEncryptedRequest.setIsBase64Encoded(true);
+
+		output = this.handler.handleRequest(bodyEncryptedRequest, null);
 		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
 		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
 				.isEqualTo(200);
