@@ -105,6 +105,9 @@ public class FunctionType {
 	}
 
 	public static FunctionType of(Type function) {
+		if (function instanceof Class) {
+			function = ((Class)function).getGenericInterfaces()[0];
+		}
 		return new FunctionType(function);
 	}
 

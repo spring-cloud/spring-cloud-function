@@ -78,7 +78,7 @@ public class LazyFunctionRegistryMultiInOutTests {
 
 	@SuppressWarnings("unused")
 	@Test
-	@Ignore
+//	@Ignore
 	public void testMultiInputBiFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 		BiFunction<Flux<String>, Flux<Integer>, Flux<String>> multiInputFunction =
