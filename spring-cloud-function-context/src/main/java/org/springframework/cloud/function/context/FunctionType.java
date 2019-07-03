@@ -32,6 +32,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.messaging.Message;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -105,7 +106,14 @@ public class FunctionType {
 	}
 
 	public static FunctionType of(Type function) {
-		return new FunctionType(function);
+		FunctionType ft = new FunctionType(function);
+		if (!ft.isWrapper() && !(ft.type instanceof ParameterizedType)) {
+			Type[] genericInterfaces = ((Class<?>) function).getGenericInterfaces();
+			if (!ObjectUtils.isEmpty(genericInterfaces)) {
+				ft.type = genericInterfaces[0];
+			}
+		}
+		return ft;
 	}
 
 	public static FunctionType from(Class<?> input) {
