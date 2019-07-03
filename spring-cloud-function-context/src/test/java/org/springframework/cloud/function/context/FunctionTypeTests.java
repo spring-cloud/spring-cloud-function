@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
@@ -25,6 +26,8 @@ import java.util.function.Supplier;
 
 import org.junit.Test;
 import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuple3;
 
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
@@ -37,6 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 public class FunctionTypeTests {
+
+	@Test
+	public void functionWithTuples() {
+		FunctionType functionType = FunctionType.of(MyFunction.class);
+		assertThat(functionType.getType()).isInstanceOf(ParameterizedType.class);
+	}
 
 	@Test
 	public void plainFunction() {
@@ -323,5 +332,15 @@ public class FunctionTypeTests {
 	private static class Bar {
 
 	}
+
+	private static class MyFunction
+		implements Function<Tuple2<Flux<String>, Flux<Integer>>, Tuple3<Flux<String>, Flux<Integer>, Flux<Object>>> {
+
+	@Override
+	public Tuple3<Flux<String>, Flux<Integer>, Flux<Object>> apply(Tuple2<Flux<String>, Flux<Integer>> t) {
+		return null;
+	}
+
+}
 
 }
