@@ -1,6 +1,6 @@
 == Quick Start
 
-include::adapters/openwhisk-quick-start.adoc[]
+include::openwhisk-quick-start.adoc[]
 
 == Examples
 

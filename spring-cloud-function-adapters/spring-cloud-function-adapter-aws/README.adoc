@@ -6,4 +6,210 @@ Edit the files in the src/main/asciidoc/ directory instead.
 
 This project provides an adapter layer for a Spring Cloud Function application onto AWS Lambda. You can write an app with a single `@Bean` of type `Function`, `Consumer` or `Supplier` and it will be deployable in AWS if you get the JAR file laid out right. The best way to make it work is to include `spring-cloud-function-context` as a dependency, but not the higher level adapters (e.g. `spring-cloud-function-stream`).
 
-Unresolved directive in aws-readme.adoc - include::adapters/aws-intro.adoc[]
+:branch: master
+
+The adapter has a couple of generic request handlers that you can use. The most generic is `SpringBootStreamHandler`, which uses a Jackson `ObjectMapper` provided by Spring Boot to serialize and deserialize the objects in the function. There is also a `SpringBootRequestHandler` which you can extend, and provide the input and output types as type parameters (enabling AWS to inspect the class and do the JSON conversions itself).
+
+If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name` (e.g. as `FUNCTION_NAME` environment variable in AWS). The functions are extracted from the Spring Cloud `FunctionCatalog` (searching first for `Function` then `Consumer` and finally `Supplier`).
+
+== Notes on JAR Layout
+
+You don't need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might
+need to exclude those before you create the JAR you send to AWS. A Lambda application has to be
+shaded, but a Spring Boot standalone application does not, so you can run the same app using 2
+separate jars (as per the sample). The sample app creates 2 jar files, one with an `aws`
+classifier for deploying in Lambda, and one [[thin-jar,thin jar]] executable (thin) jar that includes `spring-cloud-function-web`
+at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file
+manifest, using the `Start-Class` attribute (which will be added for you by the Spring Boot
+tooling if you use the starter parent). If there is no `Start-Class` in your manifest you can
+use an environment variable or system property `MAIN_CLASS` when you deploy the function to AWS.
+
+If you are not using the functional bean definitions but relying on Spring Boot's auto-configuration,
+then additional transformers must be configured as part of the maven-shade-plugin execution.
+
+[[shade-plugin-setup]]
+[source, xml]
+----
+<plugin>
+	<groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-shade-plugin</artifactId>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-maven-plugin</artifactId>
+		</dependency>
+	</dependencies>
+	<configuration>
+		<createDependencyReducedPom>false</createDependencyReducedPom>
+		<shadedArtifactAttached>true</shadedArtifactAttached>
+		<shadedClassifierName>aws</shadedClassifierName>
+		<transformers>
+			<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+				<resource>META-INF/spring.handlers</resource>
+			</transformer>
+			<transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
+				<resource>META-INF/spring.factories</resource>
+			</transformer>
+			<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+				<resource>META-INF/spring.schemas</resource>
+			</transformer>
+		</transformers>
+	</configuration>
+</plugin>
+----
+
+== Build file setup
+
+In order to run Spring Cloud Function applications on AWS Lambda, you can leverage Maven or Gradle
+ plugins offered by the cloud platform provider.
+
+
+=== Maven
+
+In order to use the adapter plugin for Maven, add the plugin dependency to your `pom.xml`
+file:
+
+[source,xml]
+----
+<dependencies>
+	<dependency>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-function-adapter-aws</artifactId>
+	</dependency>
+</dependencies>
+----
+
+As pointed out in the <<Notes on JAR Layout>>, you wil need a shaded jar in order to upload it
+to AWS Lambda. You can use the https://maven.apache.org/plugins/maven-shade-plugin/[Maven Shade Plugin] for that.
+The example of the <<shade-plugin-setup,setup>> can be found above.
+
+You can use theSpring Boot Maven Plugin to generate the <<thin-jar>>.
+[source,xml]
+----
+<plugin>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-maven-plugin</artifactId>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot.experimental</groupId>
+			<artifactId>spring-boot-thin-layout</artifactId>
+			<version>${wrapper.version}</version>
+		</dependency>
+	</dependencies>
+</plugin>
+----
+
+You can find the entire sample `pom.xml` file for deploying Spring Cloud Function
+applications to AWS Lambda with Maven https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/pom.xml[here].
+
+=== Gradle
+
+In order to use the adapter plugin for Gradle, add the dependency to your `build.gradle` file:
+
+[source,groovy]
+----
+
+dependencies {
+	compile("org.springframework.cloud:spring-cloud-function-adapter-aws:${version}")
+}
+----
+
+As pointed out in <<Notes on JAR Layout>>, you wil need a shaded jar in order to upload it
+to AWS Lambda. You can use the https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow/[Gradle Shadow Plugin] for that:
+
+[source,groovy]
+----
+buildscript {
+	dependencies {
+		classpath "com.github.jengelman.gradle.plugins:shadow:${shadowPluginVersion}"
+	}
+}
+apply plugin: 'com.github.johnrengelman.shadow'
+
+assemble.dependsOn = [shadowJar]
+
+import com.github.jengelman.gradle.plugins.shadow.transformers.*
+
+shadowJar {
+	classifier = 'aws'
+	dependencies {
+		exclude(
+			dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
+	}
+	// Required for Spring
+	mergeServiceFiles()
+	append 'META-INF/spring.handlers'
+	append 'META-INF/spring.schemas'
+	append 'META-INF/spring.tooling'
+	transform(PropertiesFileTransformer) {
+		paths = ['META-INF/spring.factories']
+		mergeStrategy = "append"
+	}
+}
+
+----
+
+You can use the Spring Boot Gradle Plugin and Spring Boot Thin Gradle Plugin to generate
+the <<thin-jar>>.
+
+[source,groovy]
+----
+buildscript {
+	dependencies {
+		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+apply plugin: 'org.springframework.boot'
+apply plugin: 'org.springframework.boot.experimental.thin-launcher'
+assemble.dependsOn = [thinJar]
+----
+
+You can find the entire sample `build.gradle` file for deploying Spring Cloud Function
+applications to AWS Lambda with Gradle https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/build.gradle[here].
+
+== Upload
+
+Build the sample under `spring-cloud-function-samples/function-sample-aws` and upload the `-aws` jar file to Lambda. The handler can be `example.Handler` or `org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler` (FQN of the class, _not_ a method reference, although Lambda does accept method references).
+
+----
+./mvnw -U clean package
+----
+
+Using the AWS command line tools it looks like this:
+
+----
+aws lambda create-function --function-name Uppercase --role arn:aws:iam::[USERID]:role/service-role/[ROLE] --zip-file fileb://function-sample-aws/target/function-sample-aws-2.0.0.BUILD-SNAPSHOT-aws.jar --handler org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler --description "Spring Cloud Function Adapter Example" --runtime java8 --region us-east-1 --timeout 30 --memory-size 1024 --publish
+----
+
+The input type for the function in the AWS sample is a Foo with a single property called "value". So you would need this to test it:
+
+----
+{
+  "value": "test"
+}
+----
+
+NOTE: The AWS sample app is written in the "functional" style (as an `ApplicationContextInitializer`). This is much faster on startup in Lambda than the traditional `@Bean` style, so if you don't need `@Beans` (or `@EnableAutoConfiguration`) it's a good choice. Warm starts are not affected.
+
+
+== Type Conversion
+
+Spring Cloud Function will attempt to transparently handle type conversion between the raw
+input stream and types declared by your function.
+
+For example, if your function signature is as such `Function<Foo, Bar>` we will attempt to convert
+incoming stream event to an instance of `Foo`.
+
+In the event type is not known or can not be determined (e.g., `Function<?, ?>`) we will attempt to
+convert an incoming stream event to a generic `Map`.
+
+==== Raw Input
+
+There are times when you may want to have access to a raw input. In this case all you need is to declare your
+function signature to accept `InputStream`. For example, `Function<InputStream, ?>`. In this case
+we will not attempt any conversion and will pass the raw input directly to a function.
+
+
+
+
