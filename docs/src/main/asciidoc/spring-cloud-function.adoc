@@ -305,3 +305,14 @@ https://projectriff.io[Riff] supports Java functions and its
 https://github.com/projectriff/java-function-invoker[Java Function
 Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
+=== AWS Lambda
+
+include::./adapters/aws.adoc[leveloffset=+2]
+
+=== Microsoft Azure
+
+include::./adapters/azure.adoc[leveloffset=+2]
+
+=== Apache OpenWhisk
+
+include::./adapters/openwhisk.adoc[leveloffset=+2]
