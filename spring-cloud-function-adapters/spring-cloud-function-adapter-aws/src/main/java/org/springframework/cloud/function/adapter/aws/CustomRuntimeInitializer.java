@@ -27,25 +27,21 @@ import org.springframework.core.annotation.Order;
  * @author Dave Syer
  */
 @Order(0)
-public class CustomRuntimeInitializer
-		implements ApplicationContextInitializer<GenericApplicationContext> {
+public class CustomRuntimeInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		Boolean enabled = context.getEnvironment()
-				.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
-		if (enabled != null) {
+		Boolean enabled = context.getEnvironment().getProperty("spring.cloud.function.web.export.enabled",
+				Boolean.class);
+		if (enabled == null || !enabled) {
 			return;
 		}
-		if (ContextFunctionCatalogInitializer.enabled && context.getEnvironment()
-				.getProperty("spring.functional.enabled", Boolean.class, false)) {
-			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class,
-					false, false).length == 0) {
-				context.registerBean(LambdaDestinationResolver.class,
-						() -> new LambdaDestinationResolver());
+		if (ContextFunctionCatalogInitializer.enabled
+				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
+			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
+				context.registerBean(LambdaDestinationResolver.class, () -> new LambdaDestinationResolver());
 			}
-			context.registerBean(CommandLineRunner.class,
-					() -> args -> CustomRuntimeAutoConfiguration.background());
+			context.registerBean(CommandLineRunner.class, () -> args -> CustomRuntimeAutoConfiguration.background());
 		}
 	}
 
