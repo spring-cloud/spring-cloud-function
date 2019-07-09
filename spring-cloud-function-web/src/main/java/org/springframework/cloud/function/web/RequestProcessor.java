@@ -233,7 +233,11 @@ public class RequestProcessor {
 		}
 		Mono<ResponseEntity<?>> responseEntityMono = null;
 
-		if (function instanceof FluxedConsumer || function instanceof FluxConsumer) {
+		if (function == null) {
+			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body("Function for provided path can not be found"));
+		}
+		else if (function instanceof FluxedConsumer || function instanceof FluxConsumer) {
 			((Mono<?>) function.apply(flux)).subscribe();
 			logger.debug("Handled POST with consumer");
 			responseEntityMono = Mono
