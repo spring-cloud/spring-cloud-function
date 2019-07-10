@@ -95,6 +95,7 @@ $(addBlockSwitches);
 <li><a href="#_function_catalog_and_flexible_function_signatures">Function Catalog and Flexible Function Signatures</a>
 <ul class="sectlevel2">
 <li><a href="#_java_8_function_support">Java 8 function support</a></li>
+<li><a href="#_function_component_scan">Function Component Scan</a></li>
 <li><a href="#_function_routing">Function Routing</a></li>
 <li><a href="#_kotlin_lambda_support">Kotlin Lambda support</a></li>
 </ul>
@@ -402,6 +403,19 @@ remember to subscribe to the input flux. If you declare a <code>Consumer</code>
 of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_function_component_scan"><a class="link" href="#_function_component_scan">Function Component Scan</a></h3>
+<div class="paragraph">
+<p>Spring Cloud Function will scan for implementations of <code>Function</code>,
+<code>Consumer</code> and <code>Supplier</code> in a package called <code>functions</code> if it
+exists. Using this feature you can write functions that have no
+dependencies on Spring - not even the <code>@Component</code> annotation is
+needed. If you want to use a different package, you can set
+<code>spring.cloud.function.scan.packages</code>. You can also use
+<code>spring.cloud.function.scan.enabled=false</code> to switch off the scan
+completely.</p>
 </div>
 </div>
 <div class="sect2">
