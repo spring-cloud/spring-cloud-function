@@ -41,7 +41,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  * @author Dave Syer
  *
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(WebClient.class)
 @Conditional(SourceActiveCondition.class)
 @EnableConfigurationProperties(ExporterProperties.class)
@@ -56,21 +56,17 @@ public class FunctionExporterAutoConfiguration {
 
 	@Bean
 	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.sink", name = "url")
-	public SupplierExporter sourceForwarder(RequestBuilder requestBuilder,
-			DestinationResolver destinationResolver, FunctionCatalog catalog,
-			WebClient.Builder builder) {
-		return new SupplierExporter(requestBuilder, destinationResolver, catalog,
-				builder.build(), this.props);
+	public SupplierExporter sourceForwarder(RequestBuilder requestBuilder, DestinationResolver destinationResolver,
+			FunctionCatalog catalog, WebClient.Builder builder) {
+		return new SupplierExporter(requestBuilder, destinationResolver, catalog, builder.build(), this.props);
 	}
 
 	@Bean
 	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.source", name = "url")
 	public FunctionRegistration<Supplier<Flux<?>>> origin(WebClient.Builder builder) {
 		HttpSupplier supplier = new HttpSupplier(builder.build(), this.props);
-		FunctionRegistration<Supplier<Flux<?>>> registration = new FunctionRegistration<>(
-				supplier);
-		FunctionType type = FunctionType.supplier(this.props.getSource().getType())
-				.wrap(Flux.class);
+		FunctionRegistration<Supplier<Flux<?>>> registration = new FunctionRegistration<>(supplier);
+		FunctionType type = FunctionType.supplier(this.props.getSource().getType()).wrap(Flux.class);
 		if (this.props.getSource().isIncludeHeaders()) {
 			type = type.message();
 		}

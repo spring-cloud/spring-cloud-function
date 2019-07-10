@@ -35,7 +35,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author Mark Fisher
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableTask
 @EnableConfigurationProperties(TaskConfigurationProperties.class)
 @ConditionalOnClass({ EnableTask.class })
@@ -46,10 +46,9 @@ public class TaskConfiguration {
 
 	@Bean
 	public CommandLineRunner commandLineRunner(FunctionCatalog registry) {
-		final Supplier<Publisher<Object>> supplier = registry.lookup(Supplier.class,
-				this.properties.getSupplier());
-		final Function<Publisher<Object>, Publisher<Object>> function = registry
-				.lookup(Function.class, this.properties.getFunction());
+		final Supplier<Publisher<Object>> supplier = registry.lookup(Supplier.class, this.properties.getSupplier());
+		final Function<Publisher<Object>, Publisher<Object>> function = registry.lookup(Function.class,
+				this.properties.getFunction());
 		final Consumer<Publisher<Object>> consumer = consumer(registry);
 		CommandLineRunner runner = new CommandLineRunner() {
 
@@ -62,13 +61,12 @@ public class TaskConfiguration {
 	}
 
 	private Consumer<Publisher<Object>> consumer(FunctionCatalog registry) {
-		Consumer<Publisher<Object>> consumer = registry.lookup(Consumer.class,
-				this.properties.getConsumer());
+		Consumer<Publisher<Object>> consumer = registry.lookup(Consumer.class, this.properties.getConsumer());
 		if (consumer != null) {
 			return consumer;
 		}
-		Function<Publisher<Object>, Publisher<Void>> function = registry
-				.lookup(Function.class, this.properties.getConsumer());
+		Function<Publisher<Object>, Publisher<Void>> function = registry.lookup(Function.class,
+				this.properties.getConsumer());
 		return flux -> Mono.from(function.apply(flux)).subscribe();
 	}
 

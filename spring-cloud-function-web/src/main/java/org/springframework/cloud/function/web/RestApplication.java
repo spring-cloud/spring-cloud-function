@@ -24,7 +24,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
  * @author Mark Fisher
  */
 // @checkstyle:off
-@SpringBootConfiguration
+@SpringBootConfiguration(proxyBeanMethods = false)
 @EnableAutoConfiguration
 public class RestApplication {
 

@@ -46,8 +46,11 @@ class FunctionExporterInitializer implements ApplicationContextInitializer<Gener
 	}
 
 	private void registerWebClient(GenericApplicationContext context) {
-		if (context.getBeanFactory().getBeanNamesForType(WebClient.Builder.class, false, false).length == 0) {
-			context.registerBean(WebClient.Builder.class, () -> WebClient.builder());
+		if (ClassUtils.isPresent("org.springframework.web.reactive.function.client.WebClient",
+				getClass().getClassLoader())) {
+			if (context.getBeanFactory().getBeanNamesForType(WebClient.Builder.class, false, false).length == 0) {
+				context.registerBean(WebClient.Builder.class, () -> WebClient.builder());
+			}
 		}
 	}
 
