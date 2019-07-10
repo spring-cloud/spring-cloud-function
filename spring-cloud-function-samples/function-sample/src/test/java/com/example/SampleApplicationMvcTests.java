@@ -16,33 +16,54 @@
 
 package com.example;
 
-import org.junit.Ignore;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import org.springframework.test.web.servlet.MvcResult;
 
 /**
  * @author Dave Syer
  */
 @RunWith(SpringRunner.class)
-@WebMvcTest
+@SpringBootTest
+@AutoConfigureMockMvc
 public class SampleApplicationMvcTests {
 
 	@Autowired
 	private MockMvc mockMvc;
 
 	@Test
-	@Ignore("FIXME")
 	public void words() throws Exception {
-		this.mockMvc.perform(get("/words"))
-			.andExpect(content().string("[\"foo\",\"bar\"]"));
+		MvcResult result = this.mockMvc.perform(get("/words")).andReturn();
+		mockMvc.perform(asyncDispatch(result)).andExpect(content().string("[\"foo\",\"bar\"]"));
+	}
+
+	@Test
+	public void uppercase() throws Exception {
+		MvcResult result = this.mockMvc.perform(post("/uppercase").contentType(MediaType.TEXT_PLAIN).content("foo")).andReturn();
+		mockMvc.perform(asyncDispatch(result)).andExpect(content().string("FOO"));
+	}
+
+	@Test
+	public void lowercase() throws Exception {
+		MvcResult result = this.mockMvc.perform(post("/lowercase").contentType(MediaType.TEXT_PLAIN).content("FOO")).andReturn();
+		mockMvc.perform(asyncDispatch(result)).andExpect(content().string("[\"foo\"]"));
+	}
+
+	@Test
+	public void lowercaseMulti() throws Exception {
+		MvcResult result = this.mockMvc.perform(post("/lowercase").contentType(MediaType.APPLICATION_JSON).content("[\"FOO\"]")).andReturn();
+		mockMvc.perform(asyncDispatch(result)).andExpect(content().string("[\"foo\"]"));
 	}
 
 }

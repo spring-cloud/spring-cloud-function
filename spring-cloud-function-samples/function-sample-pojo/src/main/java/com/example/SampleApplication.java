@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.util.MultiValueMap;
 
 // @checkstyle:off
-@SpringBootApplication
+@SpringBootApplication(proxyBeanMethods = false)
 public class SampleApplication {
 
 	public static void main(String[] args) {
