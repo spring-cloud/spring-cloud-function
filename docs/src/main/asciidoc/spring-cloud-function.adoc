@@ -70,6 +70,17 @@ of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.
 
+=== Function Component Scan
+
+Spring Cloud Function will scan for implementations of `Function`,
+`Consumer` and `Supplier` in a package called `functions` if it
+exists. Using this feature you can write functions that have no
+dependencies on Spring - not even the `@Component` annotation is
+needed. If you want to use a different package, you can set
+`spring.cloud.function.scan.packages`. You can also use
+`spring.cloud.function.scan.enabled=false` to switch off the scan
+completely.
+
 === Function Routing
 
 Since version 2.2 Spring Cloud Function provides routing feature allowing

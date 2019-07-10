@@ -78,11 +78,8 @@ import org.springframework.messaging.converter.StringMessageConverter;
  * @author Artem Bilan
  * @author Anshul Mehra
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(FunctionCatalog.class)
-@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}", //
-		includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
-				Supplier.class, Function.class, Consumer.class }))
 public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
@@ -103,9 +100,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return new RoutingFunction(functionCatalog, functionInspector, messageConverter);
 	}
 
-	protected static class BeanFactoryFunctionCatalog
-			extends AbstractComposableFunctionRegistry
-		implements SmartInitializingSingleton, BeanFactoryAware {
+	@Configuration(proxyBeanMethods = false)
+	@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}", //
+			includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE,
+					classes = { Supplier.class, Function.class, Consumer.class }))
+	@ConditionalOnProperty(prefix = "spring.cloud.function.scan", name = "enabled", havingValue = "true",
+			matchIfMissing = true)
+	protected static class PlainFunctionScanConfiguration {
+
+	}
+
+	protected static class BeanFactoryFunctionCatalog extends AbstractComposableFunctionRegistry
+			implements SmartInitializingSingleton, BeanFactoryAware {
 
 		private ApplicationEventPublisher applicationEventPublisher;
 
@@ -118,16 +124,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@SuppressWarnings("rawtypes")
 		@Override
 		public void afterSingletonsInstantiated() {
-			Map<String, Supplier> supplierBeans = this.beanFactory
-				.getBeansOfType(Supplier.class);
-			Map<String, Function> functionBeans = this.beanFactory
-				.getBeansOfType(Function.class);
-			Map<String, Consumer> consumerBeans = this.beanFactory
-				.getBeansOfType(Consumer.class);
+			Map<String, Supplier> supplierBeans = this.beanFactory.getBeansOfType(Supplier.class);
+			Map<String, Function> functionBeans = this.beanFactory.getBeansOfType(Function.class);
+			Map<String, Consumer> consumerBeans = this.beanFactory.getBeansOfType(Consumer.class);
 			Map<String, FunctionRegistration> functionRegistrationBeans = this.beanFactory
-				.getBeansOfType(FunctionRegistration.class);
-			this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans,
-				functionBeans);
+					.getBeansOfType(FunctionRegistration.class);
+			this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans, functionBeans);
 		}
 
 		@Override
@@ -139,14 +141,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public void close() {
 			if (this.applicationEventPublisher != null) {
 				if (this.hasFunctions()) {
-					this.applicationEventPublisher
-							.publishEvent(new FunctionUnregistrationEvent(this,
-									Function.class, this.getFunctionNames()));
+					this.applicationEventPublisher.publishEvent(
+							new FunctionUnregistrationEvent(this, Function.class, this.getFunctionNames()));
 				}
 				if (this.hasSuppliers()) {
-					this.applicationEventPublisher
-							.publishEvent(new FunctionUnregistrationEvent(this,
-									Supplier.class, this.getSupplierNames()));
+					this.applicationEventPublisher.publishEvent(
+							new FunctionUnregistrationEvent(this, Supplier.class, this.getSupplierNames()));
 				}
 			}
 		}
@@ -155,8 +155,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		protected FunctionType findType(FunctionRegistration<?> functionRegistration, String name) {
 			FunctionType functionType = super.findType(functionRegistration, name);
 			if (functionType == null) {
-				functionType = functionByNameExist(name)
-						? new FunctionType(functionRegistration.getTarget().getClass())
+				functionType = functionByNameExist(name) ? new FunctionType(functionRegistration.getTarget().getClass())
 						: this.findType(name);
 			}
 
@@ -179,9 +178,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		 */
 		@Deprecated
 		@SuppressWarnings("rawtypes")
-		Set<FunctionRegistration<?>> merge(Map<String, FunctionRegistration> initial,
-				Map<String, Consumer> consumers, Map<String, Supplier> suppliers,
-				Map<String, Function> functions) {
+		Set<FunctionRegistration<?>> merge(Map<String, FunctionRegistration> initial, Map<String, Consumer> consumers,
+				Map<String, Supplier> suppliers, Map<String, Function> functions) {
 			this.doMerge(initial, consumers, suppliers, functions);
 			return null;
 		}
@@ -198,14 +196,13 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private String getQualifier(String key) {
-			if (this.beanFactory != null
-					&& this.beanFactory.containsBeanDefinition(key)) {
+			if (this.beanFactory != null && this.beanFactory.containsBeanDefinition(key)) {
 				BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
 				Object source = beanDefinition.getSource();
 				if (source instanceof StandardMethodMetadata) {
 					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-					Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(
-							metadata.getIntrospectedMethod(), Qualifier.class);
+					Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(metadata.getIntrospectedMethod(),
+							Qualifier.class);
 					if (qualifier != null && qualifier.value().length() > 0) {
 						return qualifier.value();
 					}
@@ -215,8 +212,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private boolean functionByNameExist(String name) {
-			return name == null || this.beanFactory == null
-					|| !this.beanFactory.containsBeanDefinition(name);
+			return name == null || this.beanFactory == null || !this.beanFactory.containsBeanDefinition(name);
 		}
 
 		@SuppressWarnings("rawtypes")
@@ -236,21 +232,20 @@ public class ContextFunctionCatalogAutoConfiguration {
 				targets.put(registration.getTarget(), key);
 			}
 
-			Stream.concat(consumerBeans.entrySet().stream(), Stream.concat(
-					supplierBeans.entrySet().stream(), functionBeans.entrySet().stream()))
+			Stream.concat(consumerBeans.entrySet().stream(),
+					Stream.concat(supplierBeans.entrySet().stream(), functionBeans.entrySet().stream()))
 					.forEach(entry -> {
 						if (!targets.containsKey(entry.getValue())) {
-							FunctionRegistration<Object> target = new FunctionRegistration<Object>(
-									entry.getValue(),
+							FunctionRegistration<Object> target = new FunctionRegistration<Object>(entry.getValue(),
 									getAliases(entry.getKey()).toArray(new String[] {}));
 							targets.put(target.getTarget(), entry.getKey());
 							registrations.add(target);
 						}
 					});
 
-			registrations.forEach(registration -> register(registration,
-					targets.get(registration.getTarget())));
+			registrations.forEach(registration -> register(registration, targets.get(registration.getTarget())));
 		}
+
 	}
 
 	private static class PreferGsonOrMissingJacksonCondition extends AnyNestedCondition {
@@ -271,7 +266,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(Gson.class)
 	@ConditionalOnBean(Gson.class)
 	@Conditional(PreferGsonOrMissingJacksonCondition.class)
@@ -284,7 +279,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	}
 
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(ObjectMapper.class)
 	@ConditionalOnBean(ObjectMapper.class)
 	@ConditionalOnProperty(name = ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, //

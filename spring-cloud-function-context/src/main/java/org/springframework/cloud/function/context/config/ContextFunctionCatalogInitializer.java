@@ -55,8 +55,7 @@ import org.springframework.util.ClassUtils;
  * @author Dave Syer
  *
  */
-public class ContextFunctionCatalogInitializer
-		implements ApplicationContextInitializer<GenericApplicationContext> {
+public class ContextFunctionCatalogInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	/**
 	 * Property name for ignoring pre initilizer.
@@ -70,32 +69,27 @@ public class ContextFunctionCatalogInitializer
 
 	@Override
 	public void initialize(GenericApplicationContext applicationContext) {
-		if (enabled && applicationContext.getEnvironment()
-				.getProperty("spring.functional.enabled", Boolean.class, false)) {
-			ContextFunctionCatalogBeanRegistrar registrar = new ContextFunctionCatalogBeanRegistrar(
-					applicationContext);
+		if (enabled
+				&& applicationContext.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
+			ContextFunctionCatalogBeanRegistrar registrar = new ContextFunctionCatalogBeanRegistrar(applicationContext);
 			applicationContext.addBeanFactoryPostProcessor(registrar);
 		}
 	}
 
-	static class ContextFunctionCatalogBeanRegistrar
-			implements BeanDefinitionRegistryPostProcessor {
+	static class ContextFunctionCatalogBeanRegistrar implements BeanDefinitionRegistryPostProcessor {
 
 		private GenericApplicationContext context;
 
-		ContextFunctionCatalogBeanRegistrar(
-				GenericApplicationContext applicationContext) {
+		ContextFunctionCatalogBeanRegistrar(GenericApplicationContext applicationContext) {
 			this.context = applicationContext;
 		}
 
 		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
-				throws BeansException {
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 		}
 
 		@Override
-		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry)
-				throws BeansException {
+		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 			try {
 				register(registry, this.context.getDefaultListableBeanFactory());
 			}
@@ -110,52 +104,41 @@ public class ContextFunctionCatalogInitializer
 			}
 		}
 
-		protected void register(BeanDefinitionRegistry registry,
-				ConfigurableListableBeanFactory factory) throws Exception {
+		protected void register(BeanDefinitionRegistry registry, ConfigurableListableBeanFactory factory)
+				throws Exception {
 
 			performPreinitialization();
 
-			if (this.context.getBeanFactory().getBeanNamesForType(
-					PropertySourcesPlaceholderConfigurer.class, false,
+			if (this.context.getBeanFactory().getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class, false,
 					false).length == 0) {
 				this.context.registerBean(PropertySourcesPlaceholderConfigurer.class,
-						() -> PropertyPlaceholderAutoConfiguration
-								.propertySourcesPlaceholderConfigurer());
+						() -> PropertyPlaceholderAutoConfiguration.propertySourcesPlaceholderConfigurer());
 			}
 
-			if (!this.context.getBeanFactory().containsBean(
-					AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+			if (!this.context.getBeanFactory()
+					.containsBean(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 				// Switch off the ConfigurationClassPostProcessor
-				this.context.registerBean(
-						AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME,
+				this.context.registerBean(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME,
 						DummyProcessor.class, () -> new DummyProcessor());
 				// But switch on other annotation processing
 				AnnotationConfigUtils.registerAnnotationConfigProcessors(this.context);
 			}
-			if (!this.context.getBeanFactory().containsBean(
-					ConfigurationPropertiesBindingPostProcessor.BEAN_NAME)) {
-				new ConfigurationPropertiesBindingPostProcessorRegistrar()
-						.registerBeanDefinitions(null, context);
+			if (!this.context.getBeanFactory().containsBean(ConfigurationPropertiesBindingPostProcessor.BEAN_NAME)) {
+				new ConfigurationPropertiesBindingPostProcessorRegistrar().registerBeanDefinitions(null, this.context);
 			}
 
-			if (ClassUtils.isPresent("com.google.gson.Gson", null)
-					&& "gson".equals(this.context.getEnvironment().getProperty(
-							ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY,
-							"gson"))) {
-				if (this.context.getBeanFactory().getBeanNamesForType(Gson.class, false,
-						false).length == 0) {
+			if (ClassUtils.isPresent("com.google.gson.Gson", null) && "gson".equals(this.context.getEnvironment()
+					.getProperty(ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, "gson"))) {
+				if (this.context.getBeanFactory().getBeanNamesForType(Gson.class, false, false).length == 0) {
 					this.context.registerBean(Gson.class, () -> new Gson());
 				}
 				this.context.registerBean(JsonMapper.class,
 						() -> new ContextFunctionCatalogAutoConfiguration.GsonConfiguration()
 								.jsonMapper(this.context.getBean(Gson.class)));
 			}
-			else if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper",
-					null)) {
-				if (this.context.getBeanFactory().getBeanNamesForType(ObjectMapper.class,
-						false, false).length == 0) {
-					this.context.registerBean(ObjectMapper.class,
-							() -> new ObjectMapper());
+			else if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", null)) {
+				if (this.context.getBeanFactory().getBeanNamesForType(ObjectMapper.class, false, false).length == 0) {
+					this.context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
 				}
 				this.context.registerBean(JsonMapper.class,
 						() -> new ContextFunctionCatalogAutoConfiguration.JacksonConfiguration()
@@ -163,35 +146,29 @@ public class ContextFunctionCatalogInitializer
 
 			}
 
-			String basePackage = this.context.getEnvironment()
-					.getProperty("spring.cloud.function.scan.packages", "functions");
-			if (new ClassPathResource(basePackage.replace(".", "/")).exists()) {
-				ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(
-						this.context, false, this.context.getEnvironment(), this.context);
+			String basePackage = this.context.getEnvironment().getProperty("spring.cloud.function.scan.packages",
+					"functions");
+			if (this.context.getEnvironment().getProperty("spring.cloud.function.scan.enabled", Boolean.class, true)
+					&& new ClassPathResource(basePackage.replace(".", "/")).exists()) {
+				ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.context, false,
+						this.context.getEnvironment(), this.context);
 				scanner.addIncludeFilter(new AssignableTypeFilter(Function.class));
 				scanner.addIncludeFilter(new AssignableTypeFilter(Supplier.class));
 				scanner.addIncludeFilter(new AssignableTypeFilter(Consumer.class));
 				for (BeanDefinition bean : scanner.findCandidateComponents(basePackage)) {
 					String name = bean.getBeanClassName();
-					Class<?> type = ClassUtils.resolveClassName(name,
-							this.context.getClassLoader());
+					Class<?> type = ClassUtils.resolveClassName(name, this.context.getClassLoader());
 					this.context.registerBeanDefinition(name, bean);
-					this.context.registerBean("registration_" + name,
-							FunctionRegistration.class,
-							() -> new FunctionRegistration<>(this.context.getBean(name),
-									name).type(type));
+					this.context.registerBean("registration_" + name, FunctionRegistration.class,
+							() -> new FunctionRegistration<>(this.context.getBean(name), name).type(type));
 				}
 			}
 
-			if (this.context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class,
-					false, false).length == 0) {
-				this.context.registerBean(InMemoryFunctionCatalog.class,
-						() -> new InMemoryFunctionCatalog());
-				this.context
-						.registerBean(FunctionRegistrationPostProcessor.class,
-								() -> new FunctionRegistrationPostProcessor(this.context
-										.getAutowireCapableBeanFactory()
-										.getBeanProvider(FunctionRegistration.class)));
+			if (this.context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class, false, false).length == 0) {
+				this.context.registerBean(InMemoryFunctionCatalog.class, () -> new InMemoryFunctionCatalog());
+				this.context.registerBean(FunctionRegistrationPostProcessor.class,
+						() -> new FunctionRegistrationPostProcessor(this.context.getAutowireCapableBeanFactory()
+								.getBeanProvider(FunctionRegistration.class)));
 			}
 		}
 
@@ -234,8 +211,7 @@ public class ContextFunctionCatalogInitializer
 			}
 
 			@Override
-			public Object postProcessBeforeInitialization(Object bean, String beanName)
-					throws BeansException {
+			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
 				if (bean instanceof FunctionRegistry) {
 					FunctionRegistry catalog = (FunctionRegistry) bean;
 					for (FunctionRegistration<?> registration : this.functions) {
@@ -243,8 +219,7 @@ public class ContextFunctionCatalogInitializer
 								"FunctionRegistration must define at least one name. Was empty");
 						if (registration.getType() == null) {
 							throw new IllegalStateException(
-									"You need an explicit type for the function: "
-											+ registration.getNames());
+									"You need an explicit type for the function: " + registration.getNames());
 							// TODO: in principle Spring could know how to extract this
 							// from the supplier, but in practice there is no functional
 							// bean registration with parametric types.
