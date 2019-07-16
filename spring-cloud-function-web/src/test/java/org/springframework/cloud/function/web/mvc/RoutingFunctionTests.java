@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import reactor.core.publisher.Flux;
@@ -56,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.function.web.path=/functions",
 		"spring.cloud.function.routing.enabled=true"})
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
+@Ignore
 public class RoutingFunctionTests {
 
 	@Autowired

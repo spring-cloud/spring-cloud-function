@@ -220,6 +220,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@Ignore
 	public void typelessFunctionPassingArray() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/typelessFunctionExpectingText"))
