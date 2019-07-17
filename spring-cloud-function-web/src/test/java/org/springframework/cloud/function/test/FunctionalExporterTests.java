@@ -86,7 +86,7 @@ public class FunctionalExporterTests {
 	public void words() throws Exception {
 		int count = 0;
 		while (this.forwarder.isRunning() && count++ < 10) {
-			Thread.sleep(20);
+			Thread.sleep(50);
 		}
 		// It completed
 		assertThat(FunctionalExporterTests.app.inputs).contains("HELLO");
