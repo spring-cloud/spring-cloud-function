@@ -35,11 +35,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
@@ -58,11 +60,14 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
+ * Implementation of {@link FunctionRegistry} and {@link FunctionCatalog} which is aware of the
+ * underlying {@link BeanFactory} to access available functions. Functions that are registered via
+ * {@link #register(FunctionRegistration)} operation are stored/cached locally.
  *
  * @author Oleg Zhurakousky
- *
+ * @since 3.0
  */
-public class LazyFunctionRegistry
+public class BeanFactoryAwareFunctionRegistry
 		implements FunctionRegistry, FunctionInspector, ApplicationContextAware, SmartInitializingSingleton {
 
 	private static Log logger = LogFactory.getLog(AbstractSpringFunctionAdapterInitializer.class);
@@ -77,7 +82,7 @@ public class LazyFunctionRegistry
 
 	private final CompositeMessageConverter messageConverter;
 
-	public LazyFunctionRegistry(ConversionService conversionService,
+	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService,
 			@Nullable CompositeMessageConverter messageConverter) {
 		this.conversionService = conversionService;
 		this.messageConverter = messageConverter;

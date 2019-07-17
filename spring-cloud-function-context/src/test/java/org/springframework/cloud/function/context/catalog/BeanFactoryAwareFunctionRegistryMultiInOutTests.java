@@ -55,7 +55,7 @@ import org.springframework.util.MimeTypeUtils;
  * @author Oleg Zhurakousky
  *
  */
-public class LazyFunctionRegistryMultiInOutTests {
+public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 
 	private FunctionCatalog configureCatalog() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)

@@ -30,9 +30,6 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
-
-
-
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -48,7 +45,7 @@ import static org.junit.Assert.fail;
  * @author Oleg Zhurakousky
  *
  */
-public class LazyFunctionRegistryTests {
+public class BeanFactoryAwareFunctionRegistryTests {
 
 	private FunctionCatalog configureCatalog() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
@@ -68,17 +65,6 @@ public class LazyFunctionRegistryTests {
 		List<String> result = asFlux.apply(Flux.just("uppercaseFlux", "uppercaseFlux2")).collectList().block();
 		assertThat(result.get(0)).isEqualTo("UPPERCASEFLUX");
 		assertThat(result.get(1)).isEqualTo("UPPERCASEFLUX2");
-	}
-
-
-	@Test
-	public void testSerializationDeserialization() {
-		FunctionCatalog catalog = this.configureCatalog();
-
-		//Function<byte[], byte[]> asIs = catalog.lookup("uppercase", new );
-
-		 //ParameterizedType
-//
 	}
 
 	/*
@@ -167,13 +153,10 @@ public class LazyFunctionRegistryTests {
 	@Test
 	public void testCompositionSupplierAndFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
-//		Supplier<String> numberSupplier = catalog.lookup("numberword|uppercase");
-//		String result = numberSupplier.get();
-//		System.out.println(result);
 
 		Supplier<Flux<String>> numberSupplierFlux = catalog.lookup("numberword|uppercaseFlux");
 		String result = numberSupplierFlux.get().blockFirst();
-		System.out.println(result);
+		assertThat(result).isEqualTo("ONE");
 	}
 
 	/*
@@ -203,6 +186,7 @@ public class LazyFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Mono<Void>, Mono<Void>> monoToMono = catalog.lookup("monoVoidToMonoVoid");
 		Void block = monoToMono.apply(Mono.empty()).block();
+		assertThat(block).isNull();
 	}
 
 	// MULTI INPUT/OUTPUT
@@ -216,7 +200,10 @@ public class LazyFunctionRegistryTests {
 		Flux<Integer> intStream = Flux.just(1, 2, 3);
 
 		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
-		System.out.println(result);
+		assertThat(result.size()).isEqualTo(3);
+		assertThat(result.get(0)).isEqualTo("one-1");
+		assertThat(result.get(1)).isEqualTo("two-2");
+		assertThat(result.get(2)).isEqualTo("three-3");
 	}
 
 
@@ -229,7 +216,10 @@ public class LazyFunctionRegistryTests {
 		Flux<String> intStream = Flux.just("1", "2", "3");
 
 		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
-		System.out.println(result);
+		assertThat(result.size()).isEqualTo(3);
+		assertThat(result.get(0)).isEqualTo("ONE-1");
+		assertThat(result.get(1)).isEqualTo("TWO-2");
+		assertThat(result.get(2)).isEqualTo("THREE-3");
 	}
 
 
@@ -238,9 +228,10 @@ public class LazyFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Flux<Person>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction =
 									catalog.lookup("multiOutputAsTuple");
-		Flux<Person> personStream = Flux.just(new Person("Uncle Sam", 1), new Person("Uncle Pierre", 2));
+		Flux<Person> personStream = Flux.just(new Person("Uncle Sam", 1), new Person("Oncle Pierre", 2));
 
 		Tuple3<Flux<Person>, Flux<String>, Flux<Integer>> result = multiOutputFunction.apply(personStream);
+
 		result.getT1().subscribe(v -> System.out.println("=> 1: " + v));
 		result.getT2().subscribe(v -> System.out.println("=> 2: " + v));
 		result.getT3().subscribe(v -> System.out.println("=> 3: " + v));
@@ -417,22 +408,4 @@ public class LazyFunctionRegistryTests {
 			return "Person: " + name + "/" + id;
 		}
 	}
-
-//	System.out.println("==\n");
-//
-//	Consumer<String> consumer = catalog.lookup("consumer");
-//	consumer.accept("consumer");
-//	System.out.println("==\n");
-//
-//	Consumer<Flux<String>> fluxConsumer = catalog.lookup("consumer");
-//	fluxConsumer.accept(Flux.just("fluxConsumer"));
-//	System.out.println("==\n");
-//
-//	Function<String, Void> consumerAsFunction = catalog.lookup("consumer");
-//	System.out.println(consumerAsFunction.apply("consumerAsFunction"));
-//	System.out.println("==\n");
-//
-//	Function<Flux<String>, Mono<Void>> consumerAsFluxFunction = catalog.lookup("consumer");
-//	consumerAsFluxFunction.apply(Flux.just("consumerAsFluxFunction", "consumerAsFluxFunction2")).subscribe();
-//	System.out.println("==\n");
 }

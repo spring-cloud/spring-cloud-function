@@ -53,9 +53,9 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.AbstractComposableFunctionRegistry;
+import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
-import org.springframework.cloud.function.context.catalog.LazyFunctionRegistry;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ApplicationEventPublisher;
@@ -107,7 +107,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			messageConverters.add(new StringMessageConverter());
 			messageConverter = new CompositeMessageConverter(messageConverters);
 		}
-		return new LazyFunctionRegistry(conversionService, messageConverter);
+		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter);
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
