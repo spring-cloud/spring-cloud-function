@@ -516,25 +516,31 @@ public class BeanFactoryAwareFunctionRegistry
 			else {
 				// this needs revisiting as the type is not always Class (think really complex types)
 				Type rawType =  FunctionTypeUtils.unwrapActualTypeByIndex(type, 0);
-				if (!(rawType instanceof Class<?>) && rawType instanceof ParameterizedType) {
+				if (/*!(rawType instanceof Class<?>) && */rawType instanceof ParameterizedType) {
 					rawType = ((ParameterizedType) rawType).getRawType();
 				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
-					if (!(((Message<?>) value).getPayload() instanceof Optional)) {
+					if (messageNeedsConversion(rawType, (Message<?>) value)) {
 						convertedValue = messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, type);
 						if (FunctionTypeUtils.isMessage(type)) {
 							convertedValue = MessageBuilder.withPayload(convertedValue).copyHeaders(((Message<?>) value).getHeaders()).build();
 						}
 					}
-				}
-				else {
-					if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
-						convertedValue = conversionService.convert(value, (Class<?>) rawType);
+					else if (!FunctionTypeUtils.isMessage(type)) {
+						convertedValue = ((Message<?>) convertedValue).getPayload();
 					}
+				}
+				else if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
+					convertedValue = conversionService.convert(value, (Class<?>) rawType);
 				}
 			}
 			return convertedValue;
 		}
 
+		private boolean messageNeedsConversion(Type rawType, Message<?> message) {
+			return rawType instanceof Class<?>
+				&& !(message.getPayload() instanceof Optional)
+				&& !(message.getPayload().getClass().isAssignableFrom(((Class<?>) rawType)));
+		}
 	}
 }
