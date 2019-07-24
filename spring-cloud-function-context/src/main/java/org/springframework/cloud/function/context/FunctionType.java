@@ -69,6 +69,7 @@ public class FunctionType {
 		this.inputType = findType(ParamType.INPUT);
 		this.outputType = findType(ParamType.OUTPUT);
 		this.message = messageType();
+		resetType();
 	}
 
 	/*
@@ -406,6 +407,29 @@ public class FunctionType {
 			}
 		}
 		return Object.class;
+	}
+
+	private void resetType() {
+		if (!this.type.getTypeName().contains("EnhancerBySpringCGLIB")) {
+			return;
+		}
+		Type type = this.type;
+
+		boolean found = false;
+		while (!found && type instanceof Class && type != Object.class) {
+			Class<?> clz = (Class<?>) type;
+			for (Type iface : clz.getGenericInterfaces()) {
+				if (iface.getTypeName().startsWith("java.util.function")) {
+					type = iface;
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				type = clz.getSuperclass();
+			}
+		}
+		this.type = type;
 	}
 
 	private Type extractType(Type type, ParamType paramType, int index) {

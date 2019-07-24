@@ -18,7 +18,6 @@ package org.springframework.cloud.function.context;
 
 import java.util.Set;
 
-import org.springframework.util.MimeType;
 
 /**
  * @author Dave Syer
@@ -36,7 +35,7 @@ public interface FunctionCatalog {
 	 * @param acceptedOutputTypes acceptedOutputTypes
 	 * @return instance of the functional interface registered with this catalog
 	 */
-	default <T> T lookup(String functionDefinition, MimeType... acceptedOutputTypes) {
+	default <T> T lookup(String functionDefinition, String... acceptedOutputTypes) {
 		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
 	}
 

@@ -235,7 +235,7 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	public void testMultiToMultiWithMessageByteArrayPayload() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Tuple3<Flux<Message<byte[]>>, Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>>> multiTuMulti =
-									catalog.lookup("multiToMulti", MimeTypeUtils.parseMimeType("application/json"), MimeTypeUtils.parseMimeType("application/json"));
+									catalog.lookup("multiToMulti", "foo/bar,application/json", "application/json");
 
 		Flux<Message<byte[]>> firstFlux = Flux.just(
 				MessageBuilder.withPayload("Unlce".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build(),

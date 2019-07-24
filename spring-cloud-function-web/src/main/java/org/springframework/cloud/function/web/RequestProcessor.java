@@ -244,9 +244,8 @@ public class RequestProcessor {
 			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
 		}
 		else if (function instanceof FunctionInvocationWrapper) {
-			Object targetFunction = ((FunctionInvocationWrapper) function).getTarget();
 			Publisher<?> result = (Publisher<?>) function.apply(flux);
-			if (targetFunction instanceof Consumer) {
+			if (((FunctionInvocationWrapper) function).isConsumer()) {
 				if (result != null) {
 					((Mono) result).subscribe();
 				}
@@ -261,8 +260,7 @@ public class RequestProcessor {
 					responseEntityMono = stream(wrapper, result);
 				}
 				else {
-
-					responseEntityMono = response(wrapper, getTargetIfRouting(wrapper, ((FunctionInvocationWrapper) function).getTarget()), result,
+					responseEntityMono = response(wrapper, getTargetIfRouting(wrapper, function), result,
 							body == null ? null : !(body instanceof Collection), false);
 				}
 			}

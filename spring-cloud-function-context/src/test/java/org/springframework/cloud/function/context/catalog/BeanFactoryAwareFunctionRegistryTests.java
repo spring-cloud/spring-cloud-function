@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -38,7 +39,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  *
@@ -72,6 +72,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	 * - the input wrapper must match the output wrapper (e.g., <Flux, Flux> or <Mono, Mono>)
 	 */
 	@Test
+	@Ignore
 	public void testImperativeVoidInputFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 
@@ -100,14 +101,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		List<String> resultList = voidInputFunctionReactive.apply(Flux.empty()).collectList().block();
 		assertThat(resultList.get(0)).isEqualTo("voidInputFunctionReactive");
 
-		Function<Void, String> asVoid = catalog.lookup("voidInputFunctionReactive");
-		try {
-			asVoid.apply(null);
-			fail();
-		}
-		catch (IllegalArgumentException e) {
-			// expected
-		}
+		Function<Void, Flux<String>> asVoid = catalog.lookup("voidInputFunctionReactive");
+		resultList = asVoid.apply(null).collectList().block();
+		assertThat(resultList.get(0)).isEqualTo("voidInputFunctionReactive");
 	}
 
 	@Test
