@@ -123,6 +123,7 @@ public class BeanFactoryAwareFunctionRegistry
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
+	//TODO do we really need to do that given we no longer do the same for other gunctions?
 	public void afterSingletonsInstantiated() {
 		Map<String, FunctionRegistration> beansOfType = this.applicationContext
 				.getBeansOfType(FunctionRegistration.class);
@@ -190,7 +191,9 @@ public class BeanFactoryAwareFunctionRegistry
 		else {
 			if (StringUtils.isEmpty(definition)) {
 				String[] functionNames = this.applicationContext.getBeanNamesForType(Function.class);
-				Assert.notEmpty(functionNames, "Can't find any functions in BeanFactory");
+				if (ObjectUtils.isEmpty(functionNames)) {
+					return null;
+				}
 				Assert.isTrue(functionNames.length == 1, "Found more then one function in BeanFactory");
 				definition = functionNames[0];
 			}
@@ -349,12 +352,6 @@ public class BeanFactoryAwareFunctionRegistry
 			return target;
 		}
 
-//		public boolean isMultipleOutput() {
-//
-//			Type type = FunctionTypeUtils.getInputType(functionType, 0);
-//			return FunctionTypeUtils.isFlux(type);
-//		}
-
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		private Object invokeFunction(Object input) {
 			if (target instanceof FunctionInvocationWrapper || target instanceof Function) {
@@ -482,7 +479,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertOutputPublisherIfNecessary(Publisher<?> publisher, String... acceptedOutputMimeTypes) {
-			System.out.println("Converting output publisher");
+			logger.info("Applying type conversion on output Publisher");
 			Publisher<?> result = publisher instanceof Mono
 					? Mono.from(publisher).map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes))
 							: Flux.from(publisher).map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes));
@@ -490,7 +487,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertInputPublisherIfNecessary(Publisher<?> publisher, Type type) {
-			System.out.println("Converting publisher");
+			logger.info("Applying type conversion on input Publisher");
 			Publisher<?> result = publisher instanceof Mono
 					? Mono.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type))
 							: Flux.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type));
@@ -498,7 +495,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertInputValueIfNecessary(Object value, Type type) {
-			System.out.println("Converting value");
+			logger.info("Applying type conversion on actual value ");
 			Object convertedValue = value;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
 				int inputCount = FunctionTypeUtils.getInputCount(functionType);
@@ -516,12 +513,12 @@ public class BeanFactoryAwareFunctionRegistry
 			else {
 				// this needs revisiting as the type is not always Class (think really complex types)
 				Type rawType =  FunctionTypeUtils.unwrapActualTypeByIndex(type, 0);
-				if (/*!(rawType instanceof Class<?>) && */rawType instanceof ParameterizedType) {
+				if (rawType instanceof ParameterizedType) {
 					rawType = ((ParameterizedType) rawType).getRawType();
 				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
-						convertedValue = messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, type);
+						convertedValue = messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
 						if (FunctionTypeUtils.isMessage(type)) {
 							convertedValue = MessageBuilder.withPayload(convertedValue).copyHeaders(((Message<?>) value).getHeaders()).build();
 						}

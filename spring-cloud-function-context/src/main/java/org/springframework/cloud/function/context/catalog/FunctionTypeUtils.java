@@ -35,16 +35,20 @@ import org.springframework.util.ObjectUtils;
  * @author Oleg Zhurakousky
  * @since 3.0
  */
-final class FunctionTypeUtils {
+public final class FunctionTypeUtils {
 
 	private FunctionTypeUtils() {
 
 	}
 
-	/**
-	 * Will extract the relevant type (e.g., for type conversion purposes). Useful to extract
-	 * types wrapped in Publisher and/or Message.
-	 */
+	public static Type getFunctionType(Object function, FunctionInspector inspector) {
+		FunctionRegistration<?> registration = inspector.getRegistration(function);
+		if (registration != null) {
+			return registration.getType().getType();
+		}
+		return null;
+	}
+
 	public static Type unwrapActualTypeByIndex(Type type, int index) {
 		if (isMessage(type) || isPublisher(type)) {
 			if (isPublisher(type)) {
@@ -144,10 +148,9 @@ final class FunctionTypeUtils {
 
 
 	public static boolean isReactive(Type type) {
-		if (type instanceof ParameterizedType) {
-			return Publisher.class.isAssignableFrom(((Class<?>) ((ParameterizedType) type).getRawType()));
-		}
-		return false;
+		Class<?> rawType = type instanceof ParameterizedType
+				? (Class<?>) ((ParameterizedType) type).getRawType() : (type instanceof Class<?> ? (Class<?>) type : Object.class);
+		return Publisher.class.isAssignableFrom(rawType);
 	}
 
 	public static boolean isConsumer(Type type) {
