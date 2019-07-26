@@ -579,6 +579,10 @@ class FunctionCreatorConfiguration {
 		private FunctionType createFunctionType(Object functionCatalog) {
 			FunctionType functionType = null;
 			try {
+				System.out.println("========= ERIC");
+				System.out.println("RUNNER loaded from: " + this.runner.getClass().getProtectionDomain().getCodeSource().getLocation());
+				System.out.println("FunctionCatalog loaded from: " + functionCatalog.getClass().getProtectionDomain().getCodeSource().getLocation());
+				System.out.println("===============");
 				@SuppressWarnings("unchecked")
 				String name = ((Set<String>) this.runner.evaluate("getNames(#type)", functionCatalog, "type", null))
 						.stream().findFirst().orElse(null);
