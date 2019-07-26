@@ -433,7 +433,7 @@ public class BeanFactoryAwareFunctionRegistry
 				 * This is ONLY relevant for web, so consider exposing some property or may be
 				 * the fact that this is a rare case (Supplier) leave it temporarily as is.
 				 */
-				return Flux.just(result);
+//				return Flux.just(result);
 			}
 
 			return result;

@@ -112,12 +112,14 @@ public class RequestProcessor {
 		return new FunctionWrapper(function, null);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
 		if (wrapper.function() != null) {
 			return response(wrapper, wrapper.function(), value(wrapper), true, true);
 		}
 		else {
-			return response(wrapper, wrapper.supplier(), wrapper.supplier().get(), null,
+			Object result = wrapper.supplier().get();
+			return response(wrapper, wrapper.supplier(), result instanceof Publisher ? (Publisher) result : Flux.just(result), null,
 					true);
 		}
 

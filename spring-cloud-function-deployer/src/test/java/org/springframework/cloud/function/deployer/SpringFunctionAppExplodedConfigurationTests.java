@@ -53,9 +53,9 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
 		public void test() throws Exception {
-			Supplier<Flux<String>> function = this.catalog.lookup(Supplier.class,
+			Supplier<String> function = this.catalog.lookup(Supplier.class,
 					"function0");
-			assertThat(function.get().blockFirst()).isEqualTo("one");
+			assertThat(function.get()).isEqualTo("one");
 		}
 
 	}
@@ -67,9 +67,9 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
 		public void test() throws Exception {
-			Supplier<Flux<Integer>> function = this.catalog.lookup(Supplier.class,
+			Supplier<Integer> function = this.catalog.lookup(Supplier.class,
 					"function0|function1");
-			assertThat(function.get().blockFirst()).isEqualTo(3);
+			assertThat(function.get()).isEqualTo(3);
 		}
 
 	}
