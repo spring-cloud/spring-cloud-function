@@ -42,7 +42,6 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -82,7 +81,7 @@ import org.springframework.util.StringUtils;
  * @since 3.0
  */
 public class BeanFactoryAwareFunctionRegistry
-		implements FunctionRegistry, FunctionInspector, ApplicationContextAware, SmartInitializingSingleton {
+		implements FunctionRegistry, FunctionInspector, ApplicationContextAware {
 
 	private static Log logger = LogFactory.getLog(AbstractSpringFunctionAdapterInitializer.class);
 
@@ -119,20 +118,6 @@ public class BeanFactoryAwareFunctionRegistry
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
 		Assert.notEmpty(acceptedOutputTypes, "'acceptedOutputTypes' must not be null or empty");
 		return (T) this.compose(null, definition, acceptedOutputTypes);
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@Override
-	//TODO do we really need to do that given we no longer do the same for other gunctions?
-	public void afterSingletonsInstantiated() {
-		Map<String, FunctionRegistration> beansOfType = this.applicationContext
-				.getBeansOfType(FunctionRegistration.class);
-		for (FunctionRegistration fr : beansOfType.values()) {
-			this.registrationsByFunction.putIfAbsent(fr.getTarget(), fr);
-			for (Object name : fr.getNames()) {
-				this.registrationsByName.putIfAbsent((String) name, fr);
-			}
-		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -315,8 +300,6 @@ public class BeanFactoryAwareFunctionRegistry
 			this.functionDefinition = functionDefinition;
 		}
 
-
-
 		@Override
 		public void accept(Object input) {
 			this.doApply(input, true);
@@ -372,68 +355,51 @@ public class BeanFactoryAwareFunctionRegistry
 				logger.debug("Applying function: " + this.functionDefinition);
 			}
 
-			Object result = null;
+			Object result;
 			if (input instanceof Publisher) {
 				input = this.composed ? input :
-					this.convertInputPublisherIfNecessary((Publisher<?>) input, FunctionTypeUtils.getInputType(functionType, 0));
-				if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(functionType, 0))) {
+					this.convertInputPublisherIfNecessary((Publisher<?>) input, FunctionTypeUtils.getInputType(this.functionType, 0));
+				if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(this.functionType, 0))) {
 					result = this.invokeFunction(input);
-					if (result == null) {
-						result = Mono.empty();
-					}
+					result = result == null ? Mono.empty() : result;
 				}
 				else {
 					if (this.composed) {
 						return input instanceof Mono
-								? Mono.from((Publisher<?>) input).transform((Function) target)
-										: Flux.from((Publisher<?>) input).transform((Function) target);
+								? Mono.from((Publisher<?>) input).transform((Function) this.target)
+										: Flux.from((Publisher<?>) input).transform((Function) this.target);
 					}
 					else {
-						boolean isConsumer = FunctionTypeUtils.isConsumer(functionType);
-						Publisher res;
-						if (isConsumer) {
-							res = input instanceof Mono ? Mono.from((Publisher) input).doOnNext((Consumer) this.target).then()
+						if (FunctionTypeUtils.isConsumer(functionType)) {
+							result = input instanceof Mono ? Mono.from((Publisher) input).doOnNext((Consumer) this.target).then()
 									: Flux.from((Publisher) input).doOnNext((Consumer) this.target).then();
 						}
 						else {
-							res = input instanceof Mono
+							result = input instanceof Mono
 									? Mono.from((Publisher) input).map(value -> this.invokeFunction(value))
 											: Flux.from((Publisher) input).map(value -> this.invokeFunction(value));
 						}
-						return res;
 					}
 				}
 			}
 			else {
-				Type type = FunctionTypeUtils.getInputType(functionType, 0);
-				if (!composed && !FunctionTypeUtils.isMultipleInputArguments(functionType) && FunctionTypeUtils.isReactive(type)) {
+				Type type = FunctionTypeUtils.getInputType(this.functionType, 0);
+				if (!this.composed && !FunctionTypeUtils.isMultipleInputArguments(this.functionType) && FunctionTypeUtils.isReactive(type)) {
 					Publisher<?> publisher = FunctionTypeUtils.isFlux(type)
 							? input == null ? Flux.empty() : Flux.just(input)
 									: input == null ? Mono.empty() : Mono.just(input);
-					publisher = this.convertInputPublisherIfNecessary(publisher, FunctionTypeUtils.getInputType(functionType, 0));
-					result = this.invokeFunction(publisher);
+					result = this.invokeFunction(this.convertInputPublisherIfNecessary(publisher, FunctionTypeUtils.getInputType(this.functionType, 0)));
 				}
 				else {
 					result = this.invokeFunction(this.composed ? input
-							: this.convertInputValueIfNecessary(input, FunctionTypeUtils.getInputType(functionType, 0)));
+							: this.convertInputValueIfNecessary(input, FunctionTypeUtils.getInputType(this.functionType, 0)));
 				}
 			}
 
-			if (!ObjectUtils.isEmpty(acceptedOutputMimeTypes)) {
-				if (result instanceof Publisher) {
-					result = this.convertOutputPublisherIfNecessary((Publisher<?>) result, this.acceptedOutputMimeTypes);
-				}
-				else {
-					result = this.convertOutputValueIfNecessary(result, this.acceptedOutputMimeTypes);
-				}
-			}
-
-			if (!(result instanceof Publisher) && (!(target instanceof FunctionInvocationWrapper) && target instanceof Supplier)) {
-				/*
-				 * This is ONLY relevant for web, so consider exposing some property or may be
-				 * the fact that this is a rare case (Supplier) leave it temporarily as is.
-				 */
-//				return Flux.just(result);
+			if (!ObjectUtils.isEmpty(this.acceptedOutputMimeTypes)) {
+				result = result instanceof Publisher
+						? this.convertOutputPublisherIfNecessary((Publisher<?>) result, this.acceptedOutputMimeTypes)
+								: this.convertOutputValueIfNecessary(result, this.acceptedOutputMimeTypes);
 			}
 
 			return result;
@@ -443,18 +409,14 @@ public class BeanFactoryAwareFunctionRegistry
 			logger.info("Converting output value ");
 			Object convertedValue = null;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
-				int outputCount = FunctionTypeUtils.getOutputCount(functionType);
+				int outputCount = FunctionTypeUtils.getOutputCount(this.functionType);
 				Object[] convertedInputArray = new Object[outputCount];
 				for (int i = 0; i < outputCount; i++) {
 					Expression parsed = new SpelExpressionParser().parseExpression("getT" + (i + 1) + "()");
 					Object outputArgument = parsed.getValue(value);
-					if (outputArgument instanceof Publisher) {
-						outputArgument = this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i]);
-					}
-					else {
-						outputArgument = this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
-					}
-					convertedInputArray[i] = outputArgument;
+					convertedInputArray[i] = outputArgument instanceof Publisher
+							? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i])
+									: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
 				}
 				convertedValue = Tuples.fromArray(convertedInputArray);
 			}
@@ -472,7 +434,6 @@ public class BeanFactoryAwareFunctionRegistry
 						// ignore
 					}
 				}
-
 			}
 			return convertedValue;
 
