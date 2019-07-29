@@ -32,7 +32,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -44,7 +43,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -165,8 +163,33 @@ public class BeanFactoryAwareFunctionRegistry
 		return function;
 	}
 
+	private Type discoverFunctionType(Object function, String... names) {
+		boolean beanDefinitionExists = false;
+		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
+			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
+		}
+		return beanDefinitionExists
+				? FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType()
+						: new FunctionType(function.getClass()).getType();
+	}
+
+	private String discoverDefaultDefinitionIfNecessary(String definition) {
+		if (StringUtils.isEmpty(definition)) {
+			String[] functionNames = this.applicationContext.getBeanNamesForType(Function.class);
+			if (!ObjectUtils.isEmpty(functionNames)) {
+				Assert.isTrue(functionNames.length == 1, "Found more then one function in BeanFactory");
+				definition = functionNames[0];
+			}
+		}
+		return definition;
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Function<?, ?> compose(Class<?> type, String definition, String... acceptedOutputTypes) {
+		definition = discoverDefaultDefinitionIfNecessary(definition);
+		if (StringUtils.isEmpty(definition)) {
+			return null;
+		}
 		Function<?, ?> resultFunction = null;
 		if (this.registrationsByName.containsKey(definition)) {
 			Object targetFunction =  this.registrationsByName.get(definition).getTarget();
@@ -174,65 +197,55 @@ public class BeanFactoryAwareFunctionRegistry
 			resultFunction = new FunctionInvocationWrapper(targetFunction, functionType, definition, acceptedOutputTypes);
 		}
 		else {
-			if (StringUtils.isEmpty(definition)) {
-				String[] functionNames = this.applicationContext.getBeanNamesForType(Function.class);
-				if (ObjectUtils.isEmpty(functionNames)) {
-					return null;
-				}
-				Assert.isTrue(functionNames.length == 1, "Found more then one function in BeanFactory");
-				definition = functionNames[0];
-			}
 			String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
 			StringBuilder composedNameBuilder = new StringBuilder();
 			String prefix = "";
-			Type composedFunctionType = null;
+
+			Type originFunctionType = null;
 			for (String name : names) {
 				Object function = this.locateFunction(name);
 				if (function == null) {
 					return null;
 				}
-				if (composedFunctionType == null) {
-					composedFunctionType = beanDefinitionExists(name)
-							? FunctionType.of(FunctionContextUtils.findType(
-									(ConfigurableListableBeanFactory) applicationContext.getBeanFactory(), name)).getType()
-							: new FunctionType(function.getClass()).getType();
-				}
 				composedNameBuilder.append(prefix);
 				composedNameBuilder.append(name);
+
 				FunctionRegistration<Object> registration;
-				Type functionType = null;
+				Type currentFunctionType = null;
 				if (function instanceof FunctionRegistration) {
 					registration = (FunctionRegistration<Object>) function;
-					functionType = registration.getType().getType();
+					currentFunctionType = registration.getType().getType();
 					function = registration.getTarget();
 				}
 				else {
 					String[] aliasNames = this.getAliases(name).toArray(new String[] {});
-					functionType = beanDefinitionExists(aliasNames)
-							? FunctionType.of(FunctionContextUtils.findType(
-									(ConfigurableListableBeanFactory) applicationContext.getBeanFactory(), aliasNames)).getType()
-							: new FunctionType(function.getClass()).getType();
-					registration = new FunctionRegistration<>(function, name).type(functionType);
+					currentFunctionType = this.discoverFunctionType(function, aliasNames);
+					registration = new FunctionRegistration<>(function, name).type(currentFunctionType);
 				}
 
 				registrationsByFunction.putIfAbsent(function, registration);
 				registrationsByName.putIfAbsent(name, registration);
-				function = new FunctionInvocationWrapper(function, functionType, composedNameBuilder.toString(), acceptedOutputTypes);
+				function = new FunctionInvocationWrapper(function, currentFunctionType, name, acceptedOutputTypes);
+
+				if (originFunctionType == null) {
+					originFunctionType = currentFunctionType;
+				}
+
+				// composition
 				if (resultFunction == null) {
 					resultFunction = (Function<?, ?>) function;
 				}
 				else {
-					composedFunctionType = FunctionTypeUtils.compose(composedFunctionType, functionType);
+					originFunctionType = FunctionTypeUtils.compose(originFunctionType, currentFunctionType);
 					resultFunction = new FunctionInvocationWrapper(resultFunction.andThen((Function) function),
-							composedFunctionType, composedNameBuilder.toString(), acceptedOutputTypes);
-					registration = new FunctionRegistration<Object>(resultFunction, composedNameBuilder.toString())
-							.type(composedFunctionType);
-					registrationsByFunction.putIfAbsent(resultFunction, registration);
-					registrationsByName.putIfAbsent(composedNameBuilder.toString(), registration);
+							originFunctionType, composedNameBuilder.toString(), acceptedOutputTypes);
 				}
 				prefix = "|";
 			}
-
+			FunctionRegistration<Object> registration = new FunctionRegistration<Object>(resultFunction, definition)
+					.type(originFunctionType);
+			registrationsByFunction.putIfAbsent(resultFunction, registration);
+			registrationsByName.putIfAbsent(definition, registration);
 		}
 		return resultFunction;
 	}
@@ -263,15 +276,6 @@ public class BeanFactoryAwareFunctionRegistry
 		return key;
 	}
 
-	private boolean beanDefinitionExists(String... names) {
-		for (String name : names) {
-			if (this.applicationContext.getBeanFactory().containsBeanDefinition(name)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * Single wrapper for all Suppliers, Functions and Consumers managed by this
 	 * catalog.
@@ -285,7 +289,7 @@ public class BeanFactoryAwareFunctionRegistry
 
 		private final Type functionType;
 
-		private boolean composed;
+		private final boolean composed;
 
 		private final String[] acceptedOutputMimeTypes;
 
@@ -293,7 +297,6 @@ public class BeanFactoryAwareFunctionRegistry
 
 		FunctionInvocationWrapper(Object target, Type functionType, String functionDefinition, String... acceptedOutputMimeTypes) {
 			this.target = target;
-
 			this.composed = !target.getClass().getName().contains("EnhancerBySpringCGLIB") && target.getClass().getDeclaredFields().length > 1;
 			this.functionType = functionType;
 			this.acceptedOutputMimeTypes = acceptedOutputMimeTypes;
@@ -312,9 +315,9 @@ public class BeanFactoryAwareFunctionRegistry
 
 		@Override
 		public Object get() {
-			Object input = FunctionTypeUtils.isMono(functionType)
+			Object input = FunctionTypeUtils.isMono(this.functionType)
 					? Mono.empty()
-							: (FunctionTypeUtils.isMono(functionType) ? Flux.empty() : null);
+							: (FunctionTypeUtils.isMono(this.functionType) ? Flux.empty() : null);
 
 			return this.doApply(input, false);
 		}
@@ -337,7 +340,7 @@ public class BeanFactoryAwareFunctionRegistry
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		private Object invokeFunction(Object input) {
-			if (target instanceof FunctionInvocationWrapper || target instanceof Function) {
+			if (target instanceof Function) {
 				return ((Function) target).apply(input);
 			}
 			else if (target instanceof Supplier) {
@@ -371,8 +374,9 @@ public class BeanFactoryAwareFunctionRegistry
 					}
 					else {
 						if (FunctionTypeUtils.isConsumer(functionType)) {
-							result = input instanceof Mono ? Mono.from((Publisher) input).doOnNext((Consumer) this.target).then()
-									: Flux.from((Publisher) input).doOnNext((Consumer) this.target).then();
+							result = input instanceof Mono
+									? Mono.from((Publisher) input).doOnNext((Consumer) this.target).then()
+											: Flux.from((Publisher) input).doOnNext((Consumer) this.target).then();
 						}
 						else {
 							result = input instanceof Mono
@@ -422,18 +426,12 @@ public class BeanFactoryAwareFunctionRegistry
 			}
 			else {
 				List<MimeType> acceptedContentTypes = MimeTypeUtils.parseMimeTypes(acceptedOutputMimeTypes[0].toString());
-				for (MimeType acceptedContentType : acceptedContentTypes) {
-					try {
-						MessageHeaders headers = new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType));
-						convertedValue = messageConverter.toMessage(value, headers);
-						if (convertedValue != null) {
-							break;
-						}
-					}
-					catch (Exception e) {
-						// ignore
-					}
-				}
+
+				convertedValue = acceptedContentTypes.stream()
+						.map(acceptedContentType -> messageConverter
+								.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType))))
+						.filter(v -> v != null)
+						.findFirst().orElse(null);
 			}
 			return convertedValue;
 

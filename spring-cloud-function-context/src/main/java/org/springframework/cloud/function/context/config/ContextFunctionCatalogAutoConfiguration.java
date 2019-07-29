@@ -16,59 +16,36 @@
 
 package org.springframework.cloud.function.context.config;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import javax.annotation.PreDestroy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.FunctionType;
-import org.springframework.cloud.function.context.catalog.AbstractComposableFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.function.context.catalog.FunctionUnregistrationEvent;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
@@ -124,144 +101,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@ConditionalOnProperty(prefix = "spring.cloud.function.scan", name = "enabled", havingValue = "true",
 			matchIfMissing = true)
 	protected static class PlainFunctionScanConfiguration {
-
-	}
-
-	protected static class BeanFactoryFunctionCatalog extends AbstractComposableFunctionRegistry
-			implements SmartInitializingSingleton, BeanFactoryAware {
-
-		private ApplicationEventPublisher applicationEventPublisher;
-
-		private ConfigurableListableBeanFactory beanFactory;
-
-		/**
-		 * Will collect all suppliers, functions, consumers and function registration as
-		 * late as possible in the lifecycle.
-		 */
-		@SuppressWarnings("rawtypes")
-		@Override
-		public void afterSingletonsInstantiated() {
-			Map<String, Supplier> supplierBeans = this.beanFactory.getBeansOfType(Supplier.class);
-			Map<String, Function> functionBeans = this.beanFactory.getBeansOfType(Function.class);
-			Map<String, Consumer> consumerBeans = this.beanFactory.getBeansOfType(Consumer.class);
-			Map<String, FunctionRegistration> functionRegistrationBeans = this.beanFactory
-					.getBeansOfType(FunctionRegistration.class);
-			this.doMerge(functionRegistrationBeans, consumerBeans, supplierBeans, functionBeans);
-		}
-
-		@Override
-		public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-			this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
-		}
-
-		@PreDestroy
-		public void close() {
-			if (this.applicationEventPublisher != null) {
-				if (this.hasFunctions()) {
-					this.applicationEventPublisher.publishEvent(
-							new FunctionUnregistrationEvent(this, Function.class, this.getFunctionNames()));
-				}
-				if (this.hasSuppliers()) {
-					this.applicationEventPublisher.publishEvent(
-							new FunctionUnregistrationEvent(this, Supplier.class, this.getSupplierNames()));
-				}
-			}
-		}
-
-		@Override
-		protected FunctionType findType(FunctionRegistration<?> functionRegistration, String name) {
-			FunctionType functionType = super.findType(functionRegistration, name);
-			if (functionType == null) {
-				functionType = functionByNameExist(name) ? new FunctionType(functionRegistration.getTarget().getClass())
-						: this.findType(name);
-			}
-
-			return functionType;
-		}
-
-		private FunctionType findType(String name) {
-			Type type = FunctionContextUtils.findType(name, this.beanFactory);
-			return type == null ? null : new FunctionType(type);
-		}
-
-		// @checkstyle:off
-		/**
-		 * @param initial a registration
-		 * @param consumers consumers to register
-		 * @param suppliers suppliers to register
-		 * @param functions functions to register
-		 * @return a new registration
-		 * @deprecated Was never intended for public use.
-		 */
-		@Deprecated
-		@SuppressWarnings("rawtypes")
-		Set<FunctionRegistration<?>> merge(Map<String, FunctionRegistration> initial, Map<String, Consumer> consumers,
-				Map<String, Supplier> suppliers, Map<String, Function> functions) {
-			this.doMerge(initial, consumers, suppliers, functions);
-			return null;
-		}
-		// @checkstyle:on
-
-		private Collection<String> getAliases(String key) {
-			Collection<String> names = new LinkedHashSet<>();
-			String value = getQualifier(key);
-			if (value.equals(key) && this.beanFactory != null) {
-				names.addAll(Arrays.asList(this.beanFactory.getAliases(key)));
-			}
-			names.add(value);
-			return names;
-		}
-
-		private String getQualifier(String key) {
-			if (this.beanFactory != null && this.beanFactory.containsBeanDefinition(key)) {
-				BeanDefinition beanDefinition = this.beanFactory.getBeanDefinition(key);
-				Object source = beanDefinition.getSource();
-				if (source instanceof StandardMethodMetadata) {
-					StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-					Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(metadata.getIntrospectedMethod(),
-							Qualifier.class);
-					if (qualifier != null && qualifier.value().length() > 0) {
-						return qualifier.value();
-					}
-				}
-			}
-			return key;
-		}
-
-		private boolean functionByNameExist(String name) {
-			return name == null || this.beanFactory == null || !this.beanFactory.containsBeanDefinition(name);
-		}
-
-		@SuppressWarnings("rawtypes")
-		private void doMerge(Map<String, FunctionRegistration> functionRegistrationBeans,
-				Map<String, Consumer> consumerBeans, Map<String, Supplier> supplierBeans,
-				Map<String, Function> functionBeans) {
-
-			Set<FunctionRegistration<?>> registrations = new HashSet<>();
-			Map<Object, String> targets = new HashMap<>();
-			// Replace the initial registrations with new ones that have the right names
-			for (String key : functionRegistrationBeans.keySet()) {
-				FunctionRegistration<?> registration = functionRegistrationBeans.get(key);
-				if (registration.getNames().isEmpty()) {
-					registration.names(getAliases(key));
-				}
-				registrations.add(registration);
-				targets.put(registration.getTarget(), key);
-			}
-
-			Stream.concat(consumerBeans.entrySet().stream(),
-					Stream.concat(supplierBeans.entrySet().stream(), functionBeans.entrySet().stream()))
-					.forEach(entry -> {
-						if (!targets.containsKey(entry.getValue())) {
-							FunctionRegistration<Object> target = new FunctionRegistration<Object>(entry.getValue(),
-									getAliases(entry.getKey()).toArray(new String[] {}));
-							targets.put(target.getTarget(), entry.getKey());
-							registrations.add(target);
-						}
-					});
-
-			registrations.forEach(registration -> register(registration, targets.get(registration.getTarget())));
-		}
 
 	}
 

@@ -218,7 +218,9 @@ public final class FunctionTypeUtils {
 							: (ObjectUtils.isEmpty(resolvableComposedType.getGenerics())
 									? ResolvableType.forClass(Object.class) : resolvableComposedType.getGenerics()[1]);
 
-			originType = ResolvableType.forClassWithGenerics(Function.class, resolvableOriginType.getGenerics()[0], outType).getType();
+			originType = ResolvableType.forClassWithGenerics(Function.class,
+					ObjectUtils.isEmpty(resolvableOriginType.getGenerics()) ? resolvableOriginType : resolvableOriginType.getGenerics()[0],
+							outType).getType();
 		}
 		return originType;
 	}
