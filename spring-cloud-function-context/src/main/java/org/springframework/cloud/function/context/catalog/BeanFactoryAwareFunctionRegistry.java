@@ -43,7 +43,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -81,7 +80,7 @@ import org.springframework.util.StringUtils;
 public class BeanFactoryAwareFunctionRegistry
 		implements FunctionRegistry, FunctionInspector, ApplicationContextAware {
 
-	private static Log logger = LogFactory.getLog(AbstractSpringFunctionAdapterInitializer.class);
+	private static Log logger = LogFactory.getLog(BeanFactoryAwareFunctionRegistry.class);
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -230,9 +229,6 @@ public class BeanFactoryAwareFunctionRegistry
 					function = registration.getTarget();
 				}
 				else {
-					System.out.println("THIS: " + this.getClass().getClassLoader());
-					System.out.println("FUNC: " + function.getClass().getClassLoader());
-					System.out.println("FUNC: " + function.getClass().getProtectionDomain().getCodeSource().getLocation());
 					String[] aliasNames = this.getAliases(name).toArray(new String[] {});
 					currentFunctionType = this.discoverFunctionType(function, aliasNames);
 					registration = new FunctionRegistration<>(function, name).type(currentFunctionType);
@@ -355,16 +351,21 @@ public class BeanFactoryAwareFunctionRegistry
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		private Object invokeFunction(Object input) {
+			Object invocationResult = null;
 			if (target instanceof Function) {
-				return ((Function) target).apply(input);
+				invocationResult = ((Function) target).apply(input);
 			}
 			else if (target instanceof Supplier) {
-				return ((Supplier) target).get();
+				invocationResult = ((Supplier) target).get();
 			}
 			else {
 				((Consumer) target).accept(input);
-				return null;
 			}
+
+//			if (!(target instanceof Consumer) && logger.isDebugEnabled()) {
+				logger.info("Result of invocation of \"" + this.functionDefinition + "\" function is '" + invocationResult + "'");
+//			}
+			return invocationResult;
 		}
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -425,7 +426,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertOutputValueIfNecessary(Object value, String... acceptedOutputMimeTypes) {
-			logger.info("Converting output value ");
+			logger.info("Applying type conversion on output value");
 			Object convertedValue = null;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
 				int outputCount = FunctionTypeUtils.getOutputCount(this.functionType);
@@ -453,15 +454,15 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertOutputPublisherIfNecessary(Publisher<?> publisher, String... acceptedOutputMimeTypes) {
-			logger.info("Applying type conversion on output Publisher");
+			logger.info("Applying type conversion on output Publisher " + publisher);
 			Publisher<?> result = publisher instanceof Mono
-					? Mono.from(publisher).map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes))
+					? Mono.from(publisher) .map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes))
 							: Flux.from(publisher).map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes));
 			return result;
 		}
 
 		private Publisher<?> convertInputPublisherIfNecessary(Publisher<?> publisher, Type type) {
-			logger.info("Applying type conversion on input Publisher");
+			logger.info("Applying type conversion on input Publisher " + publisher);
 			Publisher<?> result = publisher instanceof Mono
 					? Mono.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type))
 							: Flux.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type));
@@ -469,7 +470,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertInputValueIfNecessary(Object value, Type type) {
-			logger.info("Applying type conversion on actual value ");
+			logger.info("Applying type conversion on input value ");
 			Object convertedValue = value;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
 				int inputCount = FunctionTypeUtils.getInputCount(functionType);
