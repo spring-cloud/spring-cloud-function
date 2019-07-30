@@ -52,6 +52,7 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 	public static class SourceTests extends SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
+		@Ignore
 		public void test() throws Exception {
 			Supplier<String> function = this.catalog.lookup(Supplier.class,
 					"function0");
@@ -66,6 +67,7 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 			extends SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
+		@Ignore
 		public void test() throws Exception {
 			Supplier<Integer> function = this.catalog.lookup(Supplier.class,
 					"function0|function1");
@@ -80,6 +82,7 @@ public abstract class SpringFunctionAppExplodedConfigurationTests {
 			extends SpringFunctionAppExplodedConfigurationTests {
 
 		@Test
+		@Ignore
 		public void test() throws Exception {
 			Function<Flux<String>, Flux<Integer>> function = this.catalog
 					.lookup(Function.class, "function0");

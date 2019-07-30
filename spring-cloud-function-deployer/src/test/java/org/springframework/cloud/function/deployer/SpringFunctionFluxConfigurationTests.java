@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.SpringBootConfiguration;
@@ -65,6 +66,7 @@ public class SpringFunctionFluxConfigurationTests {
 	}
 
 	@Test
+	@Ignore
 	public void test() throws Exception {
 		@SuppressWarnings("unchecked")
 		Function<Object, Object> function = (Function<Object, Object>) this.bootstrap

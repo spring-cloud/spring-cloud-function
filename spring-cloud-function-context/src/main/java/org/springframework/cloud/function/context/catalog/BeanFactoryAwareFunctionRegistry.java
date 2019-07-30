@@ -123,7 +123,14 @@ public class BeanFactoryAwareFunctionRegistry
 	public Set<String> getNames(Class<?> type) {
 		Set<String> registeredNames = registrationsByFunction.values().stream().flatMap(reg -> reg.getNames().stream())
 				.collect(Collectors.toSet());
-		registeredNames.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(type)));
+		if (type == null) {
+			registeredNames.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(Function.class)));
+			registeredNames.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(Supplier.class)));
+			registeredNames.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(Consumer.class)));
+		}
+		else {
+			registeredNames.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(type)));
+		}
 		return registeredNames;
 	}
 
@@ -152,6 +159,10 @@ public class BeanFactoryAwareFunctionRegistry
 		return this.registrationsByFunction.get(function);
 	}
 
+	public FunctionType getFunctionType(String name) {
+		return FunctionType.of(FunctionTypeUtils.getFunctionType(this.lookup(name), this));
+	}
+
 	private Object locateFunction(String name) {
 		Object function = null;
 		if (this.applicationContext.containsBean(name)) {
@@ -168,6 +179,7 @@ public class BeanFactoryAwareFunctionRegistry
 		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
 			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
 		}
+		//function.getClass().getG
 		return beanDefinitionExists
 				? FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType()
 						: new FunctionType(function.getClass()).getType();
@@ -218,6 +230,9 @@ public class BeanFactoryAwareFunctionRegistry
 					function = registration.getTarget();
 				}
 				else {
+					System.out.println("THIS: " + this.getClass().getClassLoader());
+					System.out.println("FUNC: " + function.getClass().getClassLoader());
+					System.out.println("FUNC: " + function.getClass().getProtectionDomain().getCodeSource().getLocation());
 					String[] aliasNames = this.getAliases(name).toArray(new String[] {});
 					currentFunctionType = this.discoverFunctionType(function, aliasNames);
 					registration = new FunctionRegistration<>(function, name).type(currentFunctionType);
