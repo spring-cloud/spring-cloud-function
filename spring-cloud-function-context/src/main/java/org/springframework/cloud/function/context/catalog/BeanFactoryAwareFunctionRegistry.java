@@ -178,7 +178,10 @@ public class BeanFactoryAwareFunctionRegistry
 		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
 			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
 		}
-		//function.getClass().getG
+		if (!beanDefinitionExists) {
+			logger.info("BeanDefinition for function name(s) `" + Arrays.asList(names) +
+					"` can not be located. FunctionType will be based on " + function.getClass());
+		}
 		return beanDefinitionExists
 				? FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType()
 						: new FunctionType(function.getClass()).getType();
@@ -352,19 +355,19 @@ public class BeanFactoryAwareFunctionRegistry
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		private Object invokeFunction(Object input) {
 			Object invocationResult = null;
-			if (target instanceof Function) {
+			if (this.target instanceof Function) {
 				invocationResult = ((Function) target).apply(input);
 			}
-			else if (target instanceof Supplier) {
+			else if (this.target instanceof Supplier) {
 				invocationResult = ((Supplier) target).get();
 			}
 			else {
-				((Consumer) target).accept(input);
+				((Consumer) this.target).accept(input);
 			}
 
-//			if (!(target instanceof Consumer) && logger.isDebugEnabled()) {
-				logger.info("Result of invocation of \"" + this.functionDefinition + "\" function is '" + invocationResult + "'");
-//			}
+			if (!(this.target instanceof Consumer) && logger.isDebugEnabled()) {
+				logger.debug("Result of invocation of \"" + this.functionDefinition + "\" function is '" + invocationResult + "'");
+			}
 			return invocationResult;
 		}
 
@@ -454,7 +457,10 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertOutputPublisherIfNecessary(Publisher<?> publisher, String... acceptedOutputMimeTypes) {
-			logger.info("Applying type conversion on output Publisher " + publisher);
+			if (logger.isInfoEnabled()) {
+				logger.info("Applying type conversion on output Publisher " + publisher);
+			}
+
 			Publisher<?> result = publisher instanceof Mono
 					? Mono.from(publisher) .map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes))
 							: Flux.from(publisher).map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes));
@@ -462,7 +468,10 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertInputPublisherIfNecessary(Publisher<?> publisher, Type type) {
-			logger.info("Applying type conversion on input Publisher " + publisher);
+			if (logger.isInfoEnabled()) {
+				logger.info("Applying type conversion on input Publisher " + publisher);
+			}
+
 			Publisher<?> result = publisher instanceof Mono
 					? Mono.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type))
 							: Flux.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type));
@@ -470,7 +479,11 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertInputValueIfNecessary(Object value, Type type) {
-			logger.info("Applying type conversion on input value ");
+			if (logger.isInfoEnabled()) {
+				logger.info("Applying type conversion on input value ");
+				logger.info("Function type: " + this.functionType);
+			}
+
 			Object convertedValue = value;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
 				int inputCount = FunctionTypeUtils.getInputCount(functionType);
@@ -488,12 +501,19 @@ public class BeanFactoryAwareFunctionRegistry
 			else {
 				// this needs revisiting as the type is not always Class (think really complex types)
 				Type rawType =  FunctionTypeUtils.unwrapActualTypeByIndex(type, 0);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Raw type of value: " + value + "is " + rawType);
+				}
+
 				if (rawType instanceof ParameterizedType) {
 					rawType = ((ParameterizedType) rawType).getRawType();
 				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
 						convertedValue = messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
+						if (logger.isDebugEnabled()) {
+							logger.debug("Converted from Message: " + convertedValue);
+						}
 						if (FunctionTypeUtils.isMessage(type)) {
 							convertedValue = MessageBuilder.withPayload(convertedValue).copyHeaders(((Message<?>) value).getHeaders()).build();
 						}
@@ -505,6 +525,9 @@ public class BeanFactoryAwareFunctionRegistry
 				else if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
 					convertedValue = conversionService.convert(value, (Class<?>) rawType);
 				}
+			}
+			if (logger.isDebugEnabled()) {
+				logger.debug("Converted input value " + convertedValue);
 			}
 			return convertedValue;
 		}
