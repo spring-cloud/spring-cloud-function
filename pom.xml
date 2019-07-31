@@ -20,7 +20,7 @@
 		<java.version>1.8</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<spring-cloud-task.version>2.1.1.RELEASE</spring-cloud-task.version>
+		<spring-cloud-task.version>2.1.2.RELEASE</spring-cloud-task.version>
 		<wrapper.version>1.0.21.RELEASE</wrapper.version>
 		<docs.main>spring-cloud-function</docs.main>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>

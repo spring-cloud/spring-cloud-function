@@ -17,7 +17,7 @@ Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra
 
 == Introduction
 
-include::intro.adoc[]
+include::_intro.adoc[]
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing-docs.adoc[]
 
@@ -70,6 +70,17 @@ remember to subscribe to the input flux. If you declare a `Consumer`
 of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.
+
+=== Function Component Scan
+
+Spring Cloud Function will scan for implementations of `Function`,
+`Consumer` and `Supplier` in a package called `functions` if it
+exists. Using this feature you can write functions that have no
+dependencies on Spring - not even the `@Component` annotation is
+needed. If you want to use a different package, you can set
+`spring.cloud.function.scan.packages`. You can also use
+`spring.cloud.function.scan.enabled=false` to switch off the scan
+completely.
 
 === Function Routing
 

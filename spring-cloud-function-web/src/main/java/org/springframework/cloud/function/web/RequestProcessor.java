@@ -39,6 +39,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -111,12 +112,14 @@ public class RequestProcessor {
 		return new FunctionWrapper(function, null);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
 		if (wrapper.function() != null) {
 			return response(wrapper, wrapper.function(), value(wrapper), true, true);
 		}
 		else {
-			return response(wrapper, wrapper.supplier(), wrapper.supplier().get(), null,
+			Object result = wrapper.supplier().get();
+			return response(wrapper, wrapper.supplier(), result instanceof Publisher ? (Publisher) result : Flux.just(result), null,
 					true);
 		}
 
@@ -233,11 +236,36 @@ public class RequestProcessor {
 		}
 		Mono<ResponseEntity<?>> responseEntityMono = null;
 
-		if (function instanceof FluxedConsumer || function instanceof FluxConsumer) {
+		if (function == null) {
+			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body("Function for provided path can not be found"));
+		}
+		else if (function instanceof FluxedConsumer || function instanceof FluxConsumer) {
 			((Mono<?>) function.apply(flux)).subscribe();
 			logger.debug("Handled POST with consumer");
-			responseEntityMono = Mono
-					.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
+			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
+		}
+		else if (function instanceof FunctionInvocationWrapper) {
+			Publisher<?> result = (Publisher<?>) function.apply(flux);
+			if (((FunctionInvocationWrapper) function).isConsumer()) {
+				if (result != null) {
+					((Mono) result).subscribe();
+				}
+				logger.debug("Handled POST with consumer");
+				responseEntityMono = Mono
+						.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
+			}
+			else {
+				result = Flux.from((Publisher) result);
+				logger.debug("Handled POST with function");
+				if (stream) {
+					responseEntityMono = stream(wrapper, result);
+				}
+				else {
+					responseEntityMono = response(wrapper, getTargetIfRouting(wrapper, function), result,
+							body == null ? null : !(body instanceof Collection), false);
+				}
+			}
 		}
 		else {
 			Flux<?> result = Flux.from((Publisher) function.apply(flux));

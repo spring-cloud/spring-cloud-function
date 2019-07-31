@@ -221,43 +221,43 @@
 								<goals>
 									<goal>run</goal>
 								</goals>
-								<configuration>
-									<target>
-										<java classname="org.jruby.Main" failonerror="yes">
-											<arg
-												value="${docs.resources.dir}/ruby/generate_readme.sh" />
-											<arg value="-o" />
-											<arg value="${main.basedir}/README.adoc" />
-										</java>
-										<java classname="org.jruby.Main" failonerror="yes">
-											<arg
-												value="${docs.resources.dir}/ruby/generate_readme.sh" />
-											<arg value="-o" />
-											<arg
-												value="${adapters.path}/spring-cloud-function-adapter-aws/README.adoc" />
-											<arg
-												value="${basedir}/src/main/asciidoc/adapters/aws-readme.adoc" />
-										</java>
-										<java classname="org.jruby.Main" failonerror="yes">
-											<arg
-												value="${docs.resources.dir}/ruby/generate_readme.sh" />
-											<arg value="-o" />
-											<arg
-												value="${adapters.path}/spring-cloud-function-adapter-azure/README.adoc" />
-											<arg
-												value="${basedir}/src/main/asciidoc/adapters/azure-readme.adoc" />
-										</java>
-										<java classname="org.jruby.Main" failonerror="yes">
-											<arg
-												value="${docs.resources.dir}/ruby/generate_readme.sh" />
-											<arg value="-o" />
-											<arg
-												value="${adapters.path}/spring-cloud-function-adapter-openwhisk/README.adoc" />
-											<arg
-												value="${basedir}/src/main/asciidoc/adapters/openwhisk-readme.adoc" />
-										</java>
-									</target>
-								</configuration>
+<!-- 								<configuration> -->
+<!-- 									<target> -->
+<!-- 										<java classname="org.jruby.Main" failonerror="yes"> -->
+<!-- 											<arg -->
+<!-- 												value="${docs.resources.dir}/ruby/generate_readme.sh" /> -->
+<!-- 											<arg value="-o" /> -->
+<!-- 											<arg value="${main.basedir}/README.adoc" /> -->
+<!-- 										</java> -->
+<!-- 										<java classname="org.jruby.Main" failonerror="yes"> -->
+<!-- 											<arg -->
+<!-- 												value="${docs.resources.dir}/ruby/generate_readme.sh" /> -->
+<!-- 											<arg value="-o" /> -->
+<!-- 											<arg -->
+<!-- 												value="${adapters.path}/spring-cloud-function-adapter-aws/README.adoc" /> -->
+<!-- 											<arg -->
+<!-- 												value="${basedir}/src/main/asciidoc/adapters/aws-readme.adoc" /> -->
+<!-- 										</java> -->
+<!-- 										<java classname="org.jruby.Main" failonerror="yes"> -->
+<!-- 											<arg -->
+<!-- 												value="${docs.resources.dir}/ruby/generate_readme.sh" /> -->
+<!-- 											<arg value="-o" /> -->
+<!-- 											<arg -->
+<!-- 												value="${adapters.path}/spring-cloud-function-adapter-azure/README.adoc" /> -->
+<!-- 											<arg -->
+<!-- 												value="${basedir}/src/main/asciidoc/adapters/azure-readme.adoc" /> -->
+<!-- 										</java> -->
+<!-- 										<java classname="org.jruby.Main" failonerror="yes"> -->
+<!-- 											<arg -->
+<!-- 												value="${docs.resources.dir}/ruby/generate_readme.sh" /> -->
+<!-- 											<arg value="-o" /> -->
+<!-- 											<arg -->
+<!-- 												value="${adapters.path}/spring-cloud-function-adapter-openwhisk/README.adoc" /> -->
+<!-- 											<arg -->
+<!-- 												value="${basedir}/src/main/asciidoc/adapters/openwhisk-readme.adoc" /> -->
+<!-- 										</java> -->
+<!-- 									</target> -->
+<!-- 								</configuration> -->
 							</execution>
 							<execution>
 								<id>assert-no-unresolved-links</id>

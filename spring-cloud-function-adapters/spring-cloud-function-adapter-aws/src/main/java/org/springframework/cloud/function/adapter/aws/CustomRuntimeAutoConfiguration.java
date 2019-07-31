@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @AutoConfigureBefore(FunctionExporterAutoConfiguration.class)
 @ConditionalOnClass(DestinationResolver.class)
-@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "spring.cloud.function.web.export", name = "enabled", matchIfMissing = false)
 public class CustomRuntimeAutoConfiguration {
 
 	@Bean

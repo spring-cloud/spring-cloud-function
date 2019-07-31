@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 
@@ -33,6 +34,7 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,6 +57,7 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 	}
 
 	@Test
+	@Ignore
 	public void kotlinLambdas() {
 		create(new Class[] { KotlinLambdasConfiguration.class,
 				SimpleConfiguration.class });

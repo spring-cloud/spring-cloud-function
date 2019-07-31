@@ -4,7 +4,7 @@ image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={bran
 
 == Introduction
 
-include::intro.adoc[]
+include::_intro.adoc[]
 
 == Getting Started
 

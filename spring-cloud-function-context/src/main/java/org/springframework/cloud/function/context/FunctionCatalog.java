@@ -17,6 +17,12 @@
 package org.springframework.cloud.function.context;
 
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import javax.activation.MimeType;
+
 
 /**
  * @author Dave Syer
@@ -24,36 +30,70 @@ import java.util.Set;
  */
 public interface FunctionCatalog {
 
+
 	/**
 	 * Will look up the instance of the functional interface by name only.
-	 * @param <T> instance type
-	 * @param name the name of the functional interface. Must not be null;
+	 * This lookup method assumes a very specific semantics which are: <i>function sub-type(s)
+	 * expected to be {@code Message<byte[]>}</i>. <br>
+	 * For example,
+	 * <br><br>
+	 * {@code Function<Message<byte[]>, Message<byte[]>>} or
+	 * <br>
+	 * {@code Function<Flux<Message<byte[]>>, Flux<Message<byte[]>>>} or
+	 * <br>
+	 * {@code Consumer<Flux<Message<Flux<Message<byte[]>>>} etc. . .
+	 * <br><br>
+	 * The {@code acceptedOutputMimeTypes} are the string representation of {@link MimeType} where each
+	 * mime-type in the provided array would correspond to the output with the same index
+	 * (for cases of functions with multiple outputs) and is used to convert such output back
+	 * to {@code Message<byte[]>}.
+	 * If you need to provide several accepted types per specific output you can simply delimit
+	 * them with comma (e.g., {@code application/json,text/plain...}).
+	 *
+	 * @param  <T> instance type which should be one of {@link Supplier}, {@link Function} or {@link Consumer}.
+	 * @param functionDefinition  the definition of a function (e.g., 'foo' or 'foo|bar')
+	 * @param acceptedOutputMimeTypes acceptedOutputMimeTypes array of string representation of {@link MimeType}s
+	 * 						used to convert function output back to {@code Message<byte[]>}.
 	 * @return instance of the functional interface registered with this catalog
 	 */
-	default <T> T lookup(String name) {
-		return this.lookup(null, name);
+	default <T> T lookup(String functionDefinition, String... acceptedOutputMimeTypes) {
+		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
 	}
 
 	/**
-	 * Will look up the instance of the functional interface by name and type which can
-	 * only be Supplier, Consumer or Function. If type is not provided, the lookup will be
-	 * made based on name only.
-	 * @param <T> instance type
-	 * @param type the type of functional interface. Can be null
-	 * @param name the name of the functional interface. Must not be null;
+	 * Will look up the instance of the functional interface by name only.
+	 *
+	 * @param                    <T> instance type
+	 * @param functionDefinition the definition of the functional interface. Must
+	 *                           not be null;
 	 * @return instance of the functional interface registered with this catalog
 	 */
-	<T> T lookup(Class<?> type, String name);
+	default <T> T lookup(String functionDefinition) {
+		return this.lookup(null, functionDefinition);
+	}
+
+	/**
+	 * Will look up the instance of the functional interface by name and type which
+	 * can only be Supplier, Consumer or Function. If type is not provided, the
+	 * lookup will be made based on name only.
+	 *
+	 * @param                    <T> instance type
+	 * @param type               the type of functional interface. Can be null
+	 * @param functionDefinition the definition of the functional interface. Must
+	 *                           not be null;
+	 * @return instance of the functional interface registered with this catalog
+	 */
+	<T> T lookup(Class<?> type, String functionDefinition);
 
 	Set<String> getNames(Class<?> type);
 
 	/**
 	 * Return the count of functions registered in this catalog.
+	 *
 	 * @return the count of functions registered in this catalog
 	 */
 	default int size() {
-		throw new UnsupportedOperationException(
-				"This instance of FunctionCatalog does not support this operation");
+		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
 	}
 
 }

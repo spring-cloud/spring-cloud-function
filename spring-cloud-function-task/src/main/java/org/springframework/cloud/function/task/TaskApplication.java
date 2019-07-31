@@ -23,7 +23,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author Mark Fisher
  */
 // @checkstyle:off
-@SpringBootApplication
+@SpringBootApplication(proxyBeanMethods = false)
 public class TaskApplication {
 
 	public static void main(String[] args) {

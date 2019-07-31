@@ -30,6 +30,7 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.SocketUtils;
 
@@ -52,6 +53,17 @@ public class FunctionEndpointInitializerTests {
 	@After
 	public void close() throws Exception {
 		System.clearProperty("server.port");
+	}
+
+	@Test
+	public void testNonExistingFunction() throws Exception {
+		FunctionalSpringApplication.run(ApplicationConfiguration.class);
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		String port = System.getProperty("server.port");
+		Thread.sleep(200);
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/foo"), "stressed", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
 	@Test

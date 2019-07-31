@@ -10,14 +10,14 @@
 	</parent>
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-aws-custom</artifactId>
-	<version>2.0.0.RELEASE</version>
+	<version>3.0.0.RELEASE</version>
 	<name>lambda</name>
 	<description>Demo project for Spring Cloud Function with custom AWS Lambda runtime</description>
 
 	<properties>
 		<java.version>1.8</java.version>
-		<wrapper.version>1.0.21.RELEASE</wrapper.version>
-		<spring-cloud-function.version>2.2.0.BUILD-SNAPSHOT</spring-cloud-function.version>
+		<wrapper.version>1.0.22.RELEASE</wrapper.version>
+		<spring-cloud-function.version>3.0.0.BUILD-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
@@ -120,11 +120,6 @@
 					</execution>
 				</executions>
 				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>com.sample.App</mainClass>
-						</manifest>
-					</archive>
 					<descriptors>
 						<descriptor>src/assembly/zip.xml</descriptor>
 					</descriptors>

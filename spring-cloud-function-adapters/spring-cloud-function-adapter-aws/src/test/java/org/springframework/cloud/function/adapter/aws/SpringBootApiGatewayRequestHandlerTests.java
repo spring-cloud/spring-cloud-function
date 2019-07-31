@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import org.junit.After;
 import org.junit.Test;
 
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -44,6 +46,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SpringBootApiGatewayRequestHandlerTests {
 
 	private SpringBootApiGatewayRequestHandler handler;
+
+	@After
+	public void after() {
+		System.clearProperty("function.name");
+	}
 
 	@Test
 	public void supplierBean() {
@@ -67,6 +74,18 @@ public class SpringBootApiGatewayRequestHandlerTests {
 		request.setBody("{\"value\":\"foo\"}");
 
 		Object output = this.handler.handleRequest(request, null);
+		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
+		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
+				.isEqualTo(200);
+		assertThat(((APIGatewayProxyResponseEvent) output).getBody())
+				.isEqualTo("{\"value\":\"FOO\"}");
+
+		APIGatewayProxyRequestEvent bodyEncryptedRequest = new APIGatewayProxyRequestEvent();
+		bodyEncryptedRequest.setBody(
+				Base64.getEncoder().encodeToString("{\"value\":\"foo\"}".getBytes()));
+		bodyEncryptedRequest.setIsBase64Encoded(true);
+
+		output = this.handler.handleRequest(bodyEncryptedRequest, null);
 		assertThat(output).isInstanceOf(APIGatewayProxyResponseEvent.class);
 		assertThat(((APIGatewayProxyResponseEvent) output).getStatusCode())
 				.isEqualTo(200);
@@ -130,6 +149,7 @@ public class SpringBootApiGatewayRequestHandlerTests {
 				.isEqualTo("GET");
 		assertThat(((APIGatewayProxyResponseEvent) output).getBody())
 				.isEqualTo("{\"value\":\"body\"}");
+
 	}
 
 	@Test

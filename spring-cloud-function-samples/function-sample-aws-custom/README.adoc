@@ -1,0 +1,47 @@
+This sample uses the custom runtime type on AWS lambda. You can run
+the app locally (in your IDE or using the `bootstrap` script), but it
+won't see any messages unless you have an HTTP server running on
+localhost (port 80) serving endpoints in the same place as AWS
+does. It's a useful check that the app is working.
+
+To run the app in AWS choose the "custom" runtime type, and upload the
+.zip file that gets built on the command line with `mvn package` (look
+in `target`).  The function is a simple uppercaser, so you can test it
+with any String as input, but the Lambda UI only allows valid JSON as
+test data, so you will have to escape the input with double quotes.
+
+Example output from a cold start:
+
+
+```
+Execution result: succeeded(logs)
+
+Details
+The area below shows the result returned by your custom runtime function execution. Learn more about returning results from your function.
+"HELLO"
+Summary
+Code SHA-256
+sIkZo8zXjswqUjc06sCkf9O9UymMF+X6v5is3IOVw0k=
+Request ID
+468c9e2d-3921-4620-b750-00ee119fedb3
+Init duration
+1578.85 ms
+Duration
+178.39 ms
+Billed duration
+1800 ms
+Resources configured
+1024 MB
+Max memory used
+145 MB
+Log output
+The section below shows the logging calls in your code. These correspond to a single row within the CloudWatch log group corresponding to this Lambda function. Click here to view the CloudWatch log group.
+START RequestId: 468c9e2d-3921-4620-b750-00ee119fedb3 Version: $LATEST
+[2019-07-08 14:40:59.111] - 11 INFO [reactor-http-nio-4] --- reactor.Flux.MonoRepeatPredicate.1: onNext(GenericMessage [payload="hello", headers={date=Mon, 08 Jul 2019 14:40:58 GMT, lambda-runtime-trace-id=Root=1-5d2355f9-a865a5293c8070e84f764595;Parent=287c30562def3f40;Sampled=0, lambda-runtime-aws-request-id=468c9e2d-3921-4620-b750-00ee119fedb3, id=9cb1ae53-b512-f119-06da-5d27ca130487, lambda-runtime-invoked-function-arn=arn:aws:lambda:eu-west-1:816194980775:function:func, lambda-runtime-deadline-ms=1562596918977, timestamp=1562596859110}])
+[2019-07-08 14:40:59.112] - 11 INFO [reactor-http-nio-4] --- com.example.LambdaApplication: Processing: "hello"
+[2019-07-08 14:40:59.112] - 11 INFO [reactor-http-nio-4] --- org.springframework.cloud.function.web.source.SupplierExporter: Posting to: 468c9e2d-3921-4620-b750-00ee119fedb3
+[2019-07-08 14:40:59.115] - 11 INFO [reactor-http-nio-4] --- reactor.Mono.Defer.2: onSubscribe(FluxSwitchIfEmpty.SwitchIfEmptySubscriber)
+[2019-07-08 14:40:59.116] - 11 INFO [reactor-http-nio-4] --- reactor.Mono.Defer.2: request(32)
+END RequestId: 468c9e2d-3921-4620-b750-00ee119fedb3
+REPORT RequestId: 468c9e2d-3921-4620-b750-00ee119fedb3	Init Duration: 1578.85 ms	Duration: 178.39 ms	Billed Duration: 1800 ms 	Memory Size: 1024 MB	Max Memory Used: 145 MB	
+```

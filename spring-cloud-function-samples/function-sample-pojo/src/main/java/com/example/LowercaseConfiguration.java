@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Dave Syer
  *
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 public class LowercaseConfiguration {
 
 	@Bean

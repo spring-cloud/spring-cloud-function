@@ -24,8 +24,9 @@ import org.springframework.cloud.function.context.WrapperDetector;
 
 /**
  * @author Dave Syer
- *
+ * @deprecated as of 3.0. Not used by the framework
  */
+@Deprecated
 public class FluxWrapperDetector implements WrapperDetector {
 
 	@Override

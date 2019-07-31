@@ -25,6 +25,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.codec.binary.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -58,7 +59,7 @@ public class SpringBootApiGatewayRequestHandler extends
 
 	@Override
 	protected Object convertEvent(APIGatewayProxyRequestEvent event) {
-		Object deserializedBody = event.getBody() != null ? deserializeBody(event.getBody()) : Optional.empty();
+		Object deserializedBody = event.getBody() != null ? deserializeBody(event) : Optional.empty();
 		return functionAcceptsMessage()
 				? new GenericMessage<>(deserializedBody, getHeaders(event))
 						: deserializedBody;
@@ -68,9 +69,12 @@ public class SpringBootApiGatewayRequestHandler extends
 		return this.inspector.isMessage(function());
 	}
 
-	private Object deserializeBody(String json) {
+	private Object deserializeBody(APIGatewayProxyRequestEvent event) {
 		try {
-			return this.mapper.readValue(json, getInputType());
+			return this.mapper.readValue(
+					(event.getIsBase64Encoded() != null && event.getIsBase64Encoded())
+							? new String(Base64.decodeBase64(event.getBody())) : event.getBody(),
+					getInputType());
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Cannot convert event", e);

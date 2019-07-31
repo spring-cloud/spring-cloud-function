@@ -16,19 +16,19 @@
 
 package com.example;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import reactor.core.publisher.Flux;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import reactor.core.publisher.Flux;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -124,7 +124,7 @@ public class SampleApplicationTests {
 	@Test
 	public void testCharCounter() {
 		Integer length = this.charCounter.apply("the quick brown fox");
-		assertThat(length).isEqualTo(new Integer(19));
+		assertThat(length).isEqualTo(19);
 	}
 
 }

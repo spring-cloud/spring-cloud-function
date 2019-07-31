@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -77,6 +78,7 @@ public class WebAppIntegrationTests {
 	}
 
 	@Test
+	@Ignore
 	public void posts() throws Exception {
 		this.forwarder.start();
 		this.app.latch.await(10, TimeUnit.SECONDS);
