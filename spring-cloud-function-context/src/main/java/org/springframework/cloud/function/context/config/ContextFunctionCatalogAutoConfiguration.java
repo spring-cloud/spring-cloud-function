@@ -46,12 +46,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
+import org.springframework.util.CollectionUtils;
 
 
 /**
@@ -68,18 +68,29 @@ public class ContextFunctionCatalogAutoConfiguration {
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
 	@Bean
-	public FunctionRegistry functionCatalog(@Nullable CompositeMessageConverter messageConverter,
-			Map<String, MessageConverter> additionalConverters) {
+	public FunctionRegistry functionCatalog(Map<String, MessageConverter> messageConverters) {
 		ConversionService conversionService = new DefaultConversionService();
-		if (messageConverter == null) {
-			List<MessageConverter> messageConverters = new ArrayList<>();
-			messageConverters.addAll(additionalConverters.values());
-			messageConverters.add(new MappingJackson2MessageConverter());
-			messageConverters.add(new ByteArrayMessageConverter());
-			messageConverters.add(new StringMessageConverter());
-			messageConverter = new CompositeMessageConverter(messageConverters);
-		}
+		CompositeMessageConverter messageConverter = null;
+		List<MessageConverter> mcList = new ArrayList<>();
+		boolean addDefaultConverters = true;
 
+		if (!CollectionUtils.isEmpty(messageConverters)) {
+			for (MessageConverter mc : messageConverters.values()) {
+				if (mc instanceof CompositeMessageConverter) {
+					mcList.addAll(((CompositeMessageConverter) mc).getConverters());
+					addDefaultConverters = false;
+				}
+				else {
+					mcList.add(mc);
+				}
+			}
+		}
+		if (addDefaultConverters) {
+			mcList.add(new MappingJackson2MessageConverter());
+			mcList.add(new ByteArrayMessageConverter());
+			mcList.add(new StringMessageConverter());
+		}
+		messageConverter = new CompositeMessageConverter(mcList);
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter);
 	}
 
