@@ -2,7 +2,7 @@ buildscript {
 	ext {
 		springBootVersion = '2.2.0.BUILD-SNAPSHOT'
 		wrapperVersion = '1.0.17.RELEASE'
-		shadowVersion = '2.0.1'
+		shadowVersion = '5.1.0'
 	}
 	repositories {
 		mavenLocal()
