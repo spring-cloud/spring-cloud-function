@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.function.Consumer;
@@ -39,6 +40,29 @@ public final class FunctionTypeUtils {
 
 	private FunctionTypeUtils() {
 
+	}
+
+	public static Type getFunctionTypeFromFunctionMethod(Method functionMethod) {
+		Assert.isTrue(
+				functionMethod.getName().equals("apply") ||
+				functionMethod.getName().equals("accept") ||
+				functionMethod.getName().equals("get"),
+				"Only Supplier, Function or Consumer supported at the moment. Was " + functionMethod.getDeclaringClass());
+
+		if (functionMethod.getName().equals("apply")) {
+			return ResolvableType.forClassWithGenerics(Function.class,
+					ResolvableType.forMethodParameter(functionMethod, 0),
+					ResolvableType.forMethodReturnType(functionMethod)).getType();
+
+		}
+		else if (functionMethod.getName().equals("accept")) {
+			return ResolvableType.forClassWithGenerics(Consumer.class,
+					ResolvableType.forMethodParameter(functionMethod, 0)).getType();
+		}
+		else {
+			return ResolvableType.forClassWithGenerics(Supplier.class,
+					ResolvableType.forMethodReturnType(functionMethod)).getType();
+		}
 	}
 
 	public static Type getFunctionType(Object function, FunctionInspector inspector) {

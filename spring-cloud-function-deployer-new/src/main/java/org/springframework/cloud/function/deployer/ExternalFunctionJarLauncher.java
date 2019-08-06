@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,12 +34,17 @@ import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.jar.JarFile;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.expression.spel.support.StandardTypeLocator;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.ReflectionUtils.MethodCallback;
+import org.springframework.util.ReflectionUtils.MethodFilter;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -80,6 +86,10 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 				registration.type(type);
 				functionRegistry.register(registration);
 			}
+			FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(deployerContext.getBean(FunctionProperties.class));
+			if (registration != null) {
+				functionRegistry.register(registration);
+			}
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Failed to deploy archive " + archive, e);
@@ -112,6 +122,36 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 				return super.findClass(name);
 			}
 		};
+	}
+
+	private FunctionRegistration<?> discovereAndLoadFunctionFromClassName(FunctionProperties functionProperties) throws Exception {
+		FunctionRegistration<?> functionRegistration = null;
+		AtomicReference<Type> typeRef = new AtomicReference<>();
+		if (StringUtils.hasText(functionProperties.getFunctionClass())) {
+			Class<?> functionClass = Thread.currentThread().getContextClassLoader().loadClass(functionProperties.getFunctionClass());
+
+			ReflectionUtils.doWithMethods(functionClass, new MethodCallback() {
+				@Override
+				public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
+					typeRef.set(FunctionTypeUtils.getFunctionTypeFromFunctionMethod(method));
+				}
+			}, new MethodFilter() {
+				@Override
+				public boolean matches(Method method) {
+					String name = method.getName();
+					return typeRef.get() == null && ("apply".equals(name) || "accept".equals(name) || "get".equals(name));
+				}
+			});
+
+			if (typeRef.get() != null) {
+				Object functionInstance = functionClass.newInstance();
+
+				functionRegistration = new FunctionRegistration<>(functionInstance,
+						StringUtils.uncapitalize(functionClass.getSimpleName()));
+				functionRegistration.type(typeRef.get());
+			}
+		}
+		return functionRegistration;
 	}
 
 	private void launch(ApplicationContext deployerContext, String[] args) throws Exception {

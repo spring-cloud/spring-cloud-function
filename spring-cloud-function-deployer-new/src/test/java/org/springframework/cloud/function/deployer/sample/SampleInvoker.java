@@ -31,27 +31,32 @@ import org.springframework.cloud.function.deployer.FunctionProperties;
  */
 public class SampleInvoker extends ApplicationContainer {
 
-
 	public static void main(String[] args) throws Exception {
-		SampleInvoker invoker = FunctionDeployerBootstrap.instance(
-				"--spring.cloud.function.location=/Users/olegz/Downloads/simple-function-app/target/simple-function-app-0.0.1-SNAPSHOT.jar",
+		SampleInvoker invokerByClass = FunctionDeployerBootstrap.instance(
+				"--spring.cloud.function.location=/Users/olegz/Downloads/simple-function-app/jars/simple-function-jar-0.0.1-SNAPSHOT.jar",
+				"--spring.cloud.function.function-class=oz.function.simplefunctionapp.UpperCaseFunction")
+		.run(SampleInvoker.class, args);
+
+		System.out.println(invokerByClass.uppercase("eric"));
+		System.out.println(invokerByClass.uppercase("oleg"));
+
+		SampleInvoker invokerByBean = FunctionDeployerBootstrap.instance(
+				"--spring.cloud.function.location=/Users/olegz/Downloads/simple-function-app/jars/simple-function-app-0.0.1-SNAPSHOT.jar",
 				"--spring.cloud.function.function-name=uppercase")
 		.run(SampleInvoker.class, args);
 
-		System.out.println(invoker.uppercase("eric"));
-		System.out.println(invoker.uppercase("oleg"));
+		System.out.println(invokerByBean.uppercase("eric"));
+		System.out.println(invokerByBean.uppercase("oleg"));
 	}
-
-	private Function<String, String> function;
 
 	public SampleInvoker(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
 			FunctionProperties functionProperties) {
 		super(functionCatalog, functionInspector, functionProperties);
-		this.function = this.getFunctionCatalog().lookup(functionProperties.getName());
 	}
 
 	public String uppercase(String value) {
-		return this.function.apply(value);
+		Function<String, String> functon = this.getFunction();
+		return functon.apply(value);
 	}
 
 }

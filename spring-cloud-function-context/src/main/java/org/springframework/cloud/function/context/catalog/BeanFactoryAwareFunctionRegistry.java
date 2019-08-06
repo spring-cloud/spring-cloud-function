@@ -194,6 +194,10 @@ public class BeanFactoryAwareFunctionRegistry
 				Assert.isTrue(functionNames.length == 1, "Found more then one function in BeanFactory");
 				definition = functionNames[0];
 			}
+			else {
+				Assert.isTrue(this.registrationsByName.size() == 1, "Found more then one function in local registry");
+				definition = this.registrationsByName.keySet().iterator().next();
+			}
 		}
 		return definition;
 	}

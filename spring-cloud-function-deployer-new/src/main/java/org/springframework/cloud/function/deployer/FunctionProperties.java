@@ -20,6 +20,7 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * Configuration properties for deciding how to locate the functional class to execute.
@@ -36,11 +37,21 @@ public class FunctionProperties {
 
 	private String functionName;
 
-	public void setFunctionName(String functionName) {
-		this.functionName = functionName;
+	private String functionClass;
+
+	public void setFunctionClass(String functionClass) {
+		this.functionClass = functionClass;
 	}
 
-	public String getName() {
+	public String getFunctionClass() {
+		return this.functionClass;
+	}
+
+	public void setFunctionName(String functionName) {
+		this.functionName = StringUtils.hasText(functionName) ? functionName : "";
+	}
+
+	public String getFunctionName() {
 		return this.functionName;
 	}
 

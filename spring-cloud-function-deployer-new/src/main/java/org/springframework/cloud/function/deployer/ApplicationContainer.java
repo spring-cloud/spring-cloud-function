@@ -32,11 +32,14 @@ public abstract class ApplicationContainer {
 
 	private final FunctionProperties functionProperties;
 
+	private final Object function;
+
 	public ApplicationContainer(FunctionCatalog functionCatalog,
 			FunctionInspector functionInspector, FunctionProperties functionProperties) {
 		this.functionCatalog = functionCatalog;
 		this.functionInspector = functionInspector;
 		this.functionProperties = functionProperties;
+		this.function = this.functionCatalog.lookup(this.functionProperties.getFunctionName());
 	}
 
 	protected FunctionCatalog getFunctionCatalog() {
@@ -49,5 +52,10 @@ public abstract class ApplicationContainer {
 
 	protected FunctionProperties getFunctionProperties() {
 		return this.functionProperties;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T getFunction() {
+		return (T) this.function;
 	}
 }
