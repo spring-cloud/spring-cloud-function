@@ -196,7 +196,7 @@ public class BeanFactoryAwareFunctionRegistry
 			}
 			else {
 				if (this.registrationsByName.size() > 0) {
-					Assert.isTrue(this.registrationsByName.size() == 1, "Found more then one function in local registry");
+					Assert.isTrue(this.registrationsByName.size() == 1, String.format("Expected to find one function in the local registry but found %d", this.registrationsByName.size()));
 					definition = this.registrationsByName.keySet().iterator().next();
 				}
 			}
