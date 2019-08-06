@@ -31,12 +31,19 @@ import org.springframework.util.StringUtils;
 public class FunctionProperties {
 
 	/**
-	 * Location(s) of jar archives containing the supplier/function/consumer class to run.
+	 * Location of jar archive containing the supplier/function/consumer class or bean to run.
 	 */
 	private String location;
 
+	/**
+	 * The name of the function to be looked up from the FunctionCatalog (e.g., bean name).
+	 */
 	private String functionName;
 
+	/**
+	 * The name of the function class tyo be instantiated and loaded into FunctionCatalog. The name of the
+	 * function will be decapitalized simple name of this class.
+	 */
 	private String functionClass;
 
 	public void setFunctionClass(String functionClass) {

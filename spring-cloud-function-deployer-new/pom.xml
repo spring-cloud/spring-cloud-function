@@ -32,10 +32,56 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+<!-- 			<plugin> -->
+<!-- 				<groupId>org.springframework.boot</groupId> -->
+<!-- 				<artifactId>spring-boot-maven-plugin</artifactId> -->
+<!-- 				<dependencies> -->
+<!-- 					<dependency> -->
+<!-- 						<groupId>org.springframework.boot.experimental</groupId> -->
+<!-- 						<artifactId>spring-boot-thin-layout</artifactId> -->
+<!-- 						<version>${wrapper.version}</version> -->
+<!-- 					</dependency> -->
+<!-- 				</dependencies> -->
+<!-- 			</plugin> -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-invoker-plugin</artifactId>
+				<version>3.0.1</version>
+				<configuration>
+					<localRepositoryPath>${project.build.directory}/local-repo
+					</localRepositoryPath>
+				</configuration>
+				<executions>
+					<execution>
+						<id>prepare-test</id>
+						<phase>test-compile</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<cloneProjectsTo>${project.build.directory}/it
+							</cloneProjectsTo>
+							<settingsFile>src/it/settings.xml</settingsFile>
+							<addTestClassPath>true</addTestClassPath>
+							<streamLogs>true</streamLogs>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 	<repositories>
 		<repository>
