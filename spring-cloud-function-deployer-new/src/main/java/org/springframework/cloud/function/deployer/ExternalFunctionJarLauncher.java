@@ -109,7 +109,7 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 		 * While LaunchedURLClassLoader is completely disconnected with the current
 		 * class loader, this will still allow it to see FunctionContextUtils
 		 */
-		return new ClassLoader(new LaunchedURLClassLoader(urls, null)) {
+		return new ClassLoader(new LaunchedURLClassLoader(urls, getClass().getClassLoader().getParent())) {
 			boolean functionContextUtilsLoaded;
 
 			@Override
