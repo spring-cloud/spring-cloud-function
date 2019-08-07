@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -27,6 +28,7 @@ import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.core.ResolvableType;
+import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
@@ -40,6 +42,23 @@ public final class FunctionTypeUtils {
 
 	private FunctionTypeUtils() {
 
+	}
+
+	/**
+	 * Will return 'true' if the provided type is a {@link Collection} type.
+	 * This also includes collections wrapped in {@link Message}. For example,
+	 * If provided type is {@code Message<List<Foo>>} this operation will return 'true'.
+	 *
+	 * @param type type to interrogate
+	 * @return 'true' if this type represents a {@link Collection}. Otherwise 'false'.
+	 */
+	public static boolean isTypeCollection(Type type) {
+		if (isMessage(type)) {
+			type = getImmediateGenericType(type, 0);
+		}
+		Type rawType = type instanceof ParameterizedType ? ((ParameterizedType) type).getRawType() : type;
+
+		return rawType instanceof Class<?> && Collection.class.isAssignableFrom((Class<?>) rawType);
 	}
 
 	public static Type getFunctionTypeFromFunctionMethod(Method functionMethod) {

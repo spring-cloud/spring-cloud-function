@@ -516,7 +516,9 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
-						convertedValue = messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
+						convertedValue = FunctionTypeUtils.isTypeCollection(type)
+								? messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, type)
+										:  messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
 						if (logger.isDebugEnabled()) {
 							logger.debug("Converted from Message: " + convertedValue);
 						}
