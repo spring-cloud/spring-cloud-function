@@ -154,23 +154,29 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 		return functionRegistration;
 	}
 
+	protected boolean isBootApplicationWithMain() throws Exception {
+		return StringUtils.hasText(this.archive.getManifest().getMainAttributes().getValue("Start-Class"));
+	}
+
 	private void launch(ApplicationContext deployerContext, String[] args) throws Exception {
 		JarFile.registerUrlProtocolHandler();
 		Thread.currentThread().setContextClassLoader(createClassLoader(getClassPathArchives()));
 		evalContext.setTypeLocator(new StandardTypeLocator(Thread.currentThread().getContextClassLoader()));
 
-		String mainClassName = getMainClass();
-		Class<?> mainClass = Thread.currentThread().getContextClassLoader().loadClass(mainClassName);
+		if (this.isBootApplicationWithMain()) {
+			String mainClassName = getMainClass();
+			Class<?> mainClass = Thread.currentThread().getContextClassLoader().loadClass(mainClassName);
 
-		Class<?> bootAppClass = Thread.currentThread().getContextClassLoader()
-				.loadClass(SpringApplication.class.getName());
-		Method runMethod = bootAppClass.getDeclaredMethod("run", Class.class, String[].class);
-		Object applicationContext = runMethod.invoke(null, mainClass, (Object) args);
-		if (logger.isInfoEnabled()) {
-			logger.info("Application context for archive '" + archive.getUrl() + "' is created.");
+			Class<?> bootAppClass = Thread.currentThread().getContextClassLoader()
+					.loadClass(SpringApplication.class.getName());
+			Method runMethod = bootAppClass.getDeclaredMethod("run", Class.class, String[].class);
+			Object applicationContext = runMethod.invoke(null, mainClass, (Object) args);
+			if (logger.isInfoEnabled()) {
+				logger.info("Application context for archive '" + archive.getUrl() + "' is created.");
+			}
+			evalContext.setVariable("context", applicationContext);
+			setBeanFactory(applicationContext);
 		}
-		evalContext.setVariable("context", applicationContext);
-		setBeanFactory(applicationContext);
 	}
 
 	private void setBeanFactory(Object applicationContext) throws Exception {
@@ -190,13 +196,15 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 	@SuppressWarnings("unchecked")
 	private Map<String, Object> discoverFunctions() throws Exception {
 		Map<String, Object> allFunctions = new HashMap<String, Object>();
-		Expression parsed = new SpelExpressionParser()
-				.parseExpression("#context.getBeansOfType(T(java.util.function.Function))");
-		allFunctions.putAll((Map<String, Object>) parsed.getValue(evalContext));
-		parsed = new SpelExpressionParser().parseExpression("#context.getBeansOfType(T(java.util.function.Supplier))");
-		allFunctions.putAll((Map<String, Object>) parsed.getValue(evalContext));
-		parsed = new SpelExpressionParser().parseExpression("#context.getBeansOfType(T(java.util.function.Consumer))");
-		allFunctions.putAll((Map<String, Object>) parsed.getValue(evalContext));
+		if (evalContext.lookupVariable("context") != null) { // no start0class uber jars
+			Expression parsed = new SpelExpressionParser()
+					.parseExpression("#context.getBeansOfType(T(java.util.function.Function))");
+			allFunctions.putAll((Map<String, Object>) parsed.getValue(evalContext));
+			parsed = new SpelExpressionParser().parseExpression("#context.getBeansOfType(T(java.util.function.Supplier))");
+			allFunctions.putAll((Map<String, Object>) parsed.getValue(evalContext));
+			parsed = new SpelExpressionParser().parseExpression("#context.getBeansOfType(T(java.util.function.Consumer))");
+			allFunctions.putAll((Map<String, Object>) parsed.getValue(evalContext));
+		}
 		return allFunctions;
 	}
 }

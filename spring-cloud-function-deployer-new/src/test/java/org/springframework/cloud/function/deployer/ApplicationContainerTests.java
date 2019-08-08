@@ -47,6 +47,18 @@ public class ApplicationContainerTests  {
 	}
 
 	@Test
+	public void testCustomApplicationContainerWithBootJarNoStartClass() throws Exception {
+		String[] args = new String[] {"--spring.cloud.function.location=target/it/bootjarnostart/target/bootjarnostart-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.function-class=function.example.UpperCaseFunction"};
+
+		JavaInvoker invokerByClass =
+				FunctionDeployerBootstrap.instance(args).run(JavaInvoker.class, args);
+
+		assertThat(invokerByClass.uppercaseSimple("bob")).isEqualTo("BOB");
+		assertThat(invokerByClass.uppercaseSimple("stacy")).isEqualTo("STACY");
+	}
+
+	@Test
 	public void testCustomApplicationContainerWithBootAppSimpleTypes() throws Exception {
 
 		String[] args = new String[] {"--spring.cloud.function.location=target/it/bootapp/target/bootapp-0.0.1.BUILD-SNAPSHOT-exec.jar",
