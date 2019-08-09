@@ -443,9 +443,17 @@ public class BeanFactoryAwareFunctionRegistry
 				for (int i = 0; i < outputCount; i++) {
 					Expression parsed = new SpelExpressionParser().parseExpression("getT" + (i + 1) + "()");
 					Object outputArgument = parsed.getValue(value);
-					convertedInputArray[i] = outputArgument instanceof Publisher
-							? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i])
-									: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
+					try {
+						convertedInputArray[i] = outputArgument instanceof Publisher
+								? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i])
+										: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
+					}
+					catch (ArrayIndexOutOfBoundsException e) {
+						throw new IllegalStateException("The number of 'acceptedOutputMimeTypes' for function '" + this.functionDefinition
+								+ "' is (" + acceptedOutputMimeTypes.length
+								+ "), which does not match the number of actual outputs of this function which is (" +  outputCount + ").", e);
+					}
+
 				}
 				convertedValue = Tuples.fromArray(convertedInputArray);
 			}

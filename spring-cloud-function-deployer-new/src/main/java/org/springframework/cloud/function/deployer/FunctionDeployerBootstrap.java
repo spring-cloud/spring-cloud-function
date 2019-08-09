@@ -27,6 +27,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -63,7 +64,7 @@ public class FunctionDeployerBootstrap implements ApplicationContextAware {
 		try {
 			Archive archive = new JarFileArchive(new File(functionProperties.getLocation()));
 			ExternalFunctionJarLauncher launcher = new ExternalFunctionJarLauncher(archive);
-			launcher.deploy(this.applicationContext, args);
+			launcher.deploy(this.applicationContext.getBean(FunctionRegistry.class), this.applicationContext.getBean(FunctionProperties.class), args);
 
 			Constructor<? extends ApplicationContainer> applicationContainerCtr = (Constructor<? extends ApplicationContainer>) configurationClass
 					.getDeclaredConstructor(FunctionCatalog.class, FunctionInspector.class, FunctionProperties.class);

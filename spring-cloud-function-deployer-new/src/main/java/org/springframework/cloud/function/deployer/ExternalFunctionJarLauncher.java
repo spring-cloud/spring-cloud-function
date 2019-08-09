@@ -35,7 +35,6 @@ import org.springframework.boot.loader.jar.JarFile;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.context.ApplicationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -60,22 +59,24 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 
 	private final Archive archive;
 
+	private final boolean applicationWithMain;
+
 	ExternalFunctionJarLauncher(Archive archive) {
 		super(archive);
 		this.archive = archive;
+		this.applicationWithMain = this.isBootApplicationWithMain();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected void deploy(ApplicationContext deployerContext, String[] args) {
+	protected void deploy(FunctionRegistry functionRegistry, FunctionProperties functionProperties, String[] args) {
 
 		ClassLoader currentLoader = Thread.currentThread().getContextClassLoader();
 		try {
-			this.launch(deployerContext, args);
+			this.doLaunch(args);
 			Map<String, Object> functions = this.discoverFunctions();
 			if (logger.isInfoEnabled()) {
 				logger.info("Discovered functions: " + functions);
 			}
-			FunctionRegistry functionRegistry = deployerContext.getBean(FunctionRegistry.class);
 			for (Entry<String, Object> entry : functions.entrySet()) {
 				FunctionRegistration registration = new FunctionRegistration(entry.getValue(), entry.getKey());
 				Type type = this.findType(entry.getKey());
@@ -86,7 +87,7 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 				registration.type(type);
 				functionRegistry.register(registration);
 			}
-			FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(deployerContext.getBean(FunctionProperties.class));
+			FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(functionProperties);
 			if (registration != null) {
 				functionRegistry.register(registration);
 			}
@@ -109,11 +110,27 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 		 * While LaunchedURLClassLoader is completely disconnected with the current
 		 * class loader, this will still allow it to see FunctionContextUtils
 		 */
-		return new ClassLoader(new LaunchedURLClassLoader(urls, getClass().getClassLoader().getParent())) {
+		return new LaunchedURLClassLoader(urls, getClass().getClassLoader().getParent()) {
 			boolean functionContextUtilsLoaded;
 
 			@Override
+			public Class<?> loadClass(String name) throws ClassNotFoundException {
+				if (!ExternalFunctionJarLauncher.this.applicationWithMain) {
+					try {
+						return getClass().getClassLoader().loadClass(name);
+					}
+					catch (Exception e) {
+						//ignore and proceed with context ClassLoader
+					}
+				}
+		        return super.loadClass(name, false);
+		    }
+
+			@Override
 			protected Class<?> findClass(final String name) throws ClassNotFoundException {
+				if (name.startsWith("reactor.")) {
+					System.out.println();
+				}
 				if (!functionContextUtilsLoaded && className.equals(name)) {
 					Class<?> fcuClass = defineClass(name, fcuBytes, 0, fcuBytes.length);
 					this.functionContextUtilsLoaded = true;
@@ -128,6 +145,7 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 		FunctionRegistration<?> functionRegistration = null;
 		AtomicReference<Type> typeRef = new AtomicReference<>();
 		if (StringUtils.hasText(functionProperties.getFunctionClass())) {
+			System.out.println("=====> " + Thread.currentThread().getContextClassLoader());
 			Class<?> functionClass = Thread.currentThread().getContextClassLoader().loadClass(functionProperties.getFunctionClass());
 
 			ReflectionUtils.doWithMethods(functionClass, new MethodCallback() {
@@ -139,7 +157,8 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 				@Override
 				public boolean matches(Method method) {
 					String name = method.getName();
-					return typeRef.get() == null && ("apply".equals(name) || "accept".equals(name) || "get".equals(name));
+					return typeRef.get() == null && !method.isBridge()
+							&& ("apply".equals(name) || "accept".equals(name) || "get".equals(name));
 				}
 			});
 
@@ -154,13 +173,20 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 		return functionRegistration;
 	}
 
-	protected boolean isBootApplicationWithMain() throws Exception {
-		return StringUtils.hasText(this.archive.getManifest().getMainAttributes().getValue("Start-Class"));
+	protected boolean isBootApplicationWithMain() {
+		try {
+			return StringUtils.hasText(this.archive.getManifest().getMainAttributes().getValue("Start-Class"));
+		}
+		catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+
 	}
 
-	private void launch(ApplicationContext deployerContext, String[] args) throws Exception {
+	private void doLaunch(String[] args) throws Exception {
 		JarFile.registerUrlProtocolHandler();
 		Thread.currentThread().setContextClassLoader(createClassLoader(getClassPathArchives()));
+		System.out.println("=====> " + Thread.currentThread().getContextClassLoader());
 		evalContext.setTypeLocator(new StandardTypeLocator(Thread.currentThread().getContextClassLoader()));
 
 		if (this.isBootApplicationWithMain()) {
