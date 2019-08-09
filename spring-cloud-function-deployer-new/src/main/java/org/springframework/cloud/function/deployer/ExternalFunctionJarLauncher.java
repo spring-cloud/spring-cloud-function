@@ -120,11 +120,11 @@ class ExternalFunctionJarLauncher extends JarLauncher {
 						return getClass().getClassLoader().loadClass(name);
 					}
 					catch (Exception e) {
-						//ignore and proceed with context ClassLoader
+						// ignore and proceed with context ClassLoader
 					}
 				}
-		        return super.loadClass(name, false);
-		    }
+				return super.loadClass(name, false);
+			}
 
 			@Override
 			protected Class<?> findClass(final String name) throws ClassNotFoundException {
