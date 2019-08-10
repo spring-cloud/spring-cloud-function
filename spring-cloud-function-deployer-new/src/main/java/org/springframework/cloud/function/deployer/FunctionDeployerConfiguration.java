@@ -19,13 +19,16 @@ package org.springframework.cloud.function.deployer;
 import java.io.File;
 import java.io.IOException;
 
-import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -37,24 +40,56 @@ import org.springframework.context.annotation.Bean;
  */
 @EnableAutoConfiguration
 @EnableConfigurationProperties(FunctionProperties.class)
-public class FunctionDeployerConfiguration {
+public final class FunctionDeployerConfiguration {
+
+	private static Log logger = LogFactory.getLog(FunctionDeployerConfiguration.class);
 
 	@Bean
-	public SmartInitializingSingleton functionDeployer(FunctionProperties functionProperties,
+	SmartLifecycle functionArchiveDeployer(FunctionProperties functionProperties,
 			FunctionRegistry functionRegistry, ApplicationArguments arguments) {
-		return new SmartInitializingSingleton() {
+
+		Archive archive = null;
+		try {
+			archive = new JarFileArchive(new File(functionProperties.getLocation()));
+		}
+		catch (IOException e) {
+			throw new IllegalStateException("Failed to create archive: " + functionProperties.getLocation(), e);
+		}
+		FunctionArchiveDeployer deployer = new FunctionArchiveDeployer(archive);
+
+		return new SmartLifecycle() {
+
+			private boolean running;
+
 			@Override
-			public void afterSingletonsInstantiated() {
-				Archive archive = null;
-				try {
-					archive = new JarFileArchive(new File(functionProperties.getLocation()));
+			public void stop() {
+				if (logger.isInfoEnabled()) {
+					logger.info("Undeploying archive: " + functionProperties.getLocation());
 				}
-				catch (IOException e) {
-					throw new IllegalStateException("Failed to create archive: " + functionProperties.getLocation(), e);
+				deployer.undeploy();
+				if (logger.isInfoEnabled()) {
+					logger.info("Successfully undeployed archive: " + functionProperties.getLocation());
 				}
-				ExternalFunctionJarLauncher launcher = new ExternalFunctionJarLauncher(archive);
-				launcher.deploy(functionRegistry, functionProperties, arguments.getSourceArgs());
+				this.running = false;
+			}
+
+			@Override
+			public void start() {
+				if (logger.isInfoEnabled()) {
+					logger.info("Deploying archive: " + functionProperties.getLocation());
+				}
+				deployer.deploy(functionRegistry, functionProperties, arguments.getSourceArgs());
+				this.running = true;
+				if (logger.isInfoEnabled()) {
+					logger.info("Successfully deployed archive: " + functionProperties.getLocation());
+				}
+			}
+
+			@Override
+			public boolean isRunning() {
+				return this.running;
 			}
 		};
 	}
+
 }

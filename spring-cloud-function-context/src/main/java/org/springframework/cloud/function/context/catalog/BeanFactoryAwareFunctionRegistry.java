@@ -435,7 +435,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertOutputValueIfNecessary(Object value, String... acceptedOutputMimeTypes) {
-			logger.info("Applying type conversion on output value");
+			logger.debug("Applying type conversion on output value");
 			Object convertedValue = null;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
 				int outputCount = FunctionTypeUtils.getOutputCount(this.functionType);
@@ -471,8 +471,8 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertOutputPublisherIfNecessary(Publisher<?> publisher, String... acceptedOutputMimeTypes) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Applying type conversion on output Publisher " + publisher);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Applying type conversion on output Publisher " + publisher);
 			}
 
 			Publisher<?> result = publisher instanceof Mono
@@ -482,8 +482,8 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertInputPublisherIfNecessary(Publisher<?> publisher, Type type) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Applying type conversion on input Publisher " + publisher);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Applying type conversion on input Publisher " + publisher);
 			}
 
 			Publisher<?> result = publisher instanceof Mono
@@ -493,9 +493,9 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertInputValueIfNecessary(Object value, Type type) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Applying type conversion on input value ");
-				logger.info("Function type: " + this.functionType);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Applying type conversion on input value " + value);
+				logger.debug("Function type: " + this.functionType);
 			}
 
 			Object convertedValue = value;
