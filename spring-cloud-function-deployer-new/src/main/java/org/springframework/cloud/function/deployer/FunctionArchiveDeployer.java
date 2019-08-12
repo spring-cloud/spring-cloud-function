@@ -65,19 +65,8 @@ class FunctionArchiveDeployer extends JarLauncher {
 		super(archive);
 	}
 
-	void undeploy() {
-		this.stopDeployedApplicationContext();
-		try {
-			this.archiveLoader.close();
-			logger.info("Closed archive class loader");
-		}
-		catch (IOException e) {
-			logger.error("Failed to closed archive class loader", e);
-		}
-	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected void deploy(FunctionRegistry functionRegistry, FunctionProperties functionProperties, String[] args) {
+	void deploy(FunctionRegistry functionRegistry, FunctionProperties functionProperties, String[] args) {
 		ClassLoader currentLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
@@ -118,6 +107,17 @@ class FunctionArchiveDeployer extends JarLauncher {
 		}
 	}
 
+	void undeploy() {
+		this.stopDeployedApplicationContext();
+		try {
+			this.archiveLoader.close();
+			logger.info("Closed archive class loader");
+		}
+		catch (IOException e) {
+			logger.error("Failed to closed archive class loader", e);
+		}
+	}
+
 	@Override
 	protected ClassLoader createClassLoader(URL[] urls) throws Exception {
 		String classAsPath = DeployerContextUtils.class.getName().replace('.', '/') + ".class";
@@ -132,7 +132,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 			@Override
 			public Class<?> loadClass(String name) throws ClassNotFoundException {
 				Class<?> clazz = null;
-				if (name.startsWith("org.reactivestreams") || name.startsWith("reactor.")) {
+				if (shouldLoadViaDeployerLoader(name)) {
 					clazz =  getClass().getClassLoader().loadClass(name);
 				}
 				else if (name.equals(DeployerContextUtils.class.getName())) {
@@ -157,7 +157,14 @@ class FunctionArchiveDeployer extends JarLauncher {
 		return this.archiveLoader;
 	}
 
-	protected boolean isBootApplicationWithMain() {
+	private boolean shouldLoadViaDeployerLoader(String name) {
+		return name.startsWith("org.reactivestreams")
+				|| name.startsWith("reactor.")
+				|| name.startsWith("java")
+				|| name.startsWith("com.sun");
+	}
+
+	private boolean isBootApplicationWithMain() {
 		try {
 			return StringUtils.hasText(this.getArchive().getManifest().getMainAttributes().getValue("Start-Class"));
 		}
@@ -187,9 +194,12 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 		if (typeRef.get() != null) {
 			Object functionInstance = functionClass.newInstance();
-
-			functionRegistration = new FunctionRegistration<>(functionInstance,
-					StringUtils.uncapitalize(functionClass.getSimpleName()));
+			String functionName = StringUtils.uncapitalize(functionClass.getSimpleName());
+			if (logger.isInfoEnabled()) {
+				logger.info("Registering function class '" + functionClass + "' of type '" + typeRef.get()
+					+ "' under name '" + functionName + "'.");
+			}
+			functionRegistration = new FunctionRegistration<>(functionInstance, functionName);
 			functionRegistration.type(typeRef.get());
 		}
 		return functionRegistration;

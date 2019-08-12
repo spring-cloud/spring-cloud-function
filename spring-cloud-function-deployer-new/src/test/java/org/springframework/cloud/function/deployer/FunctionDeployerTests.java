@@ -17,11 +17,14 @@
 package org.springframework.cloud.function.deployer;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import org.junit.Test;
 import reactor.core.publisher.Flux;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -123,6 +126,90 @@ public class FunctionDeployerTests {
 		Message<byte[]> result = function.apply(
 				MessageBuilder.withPayload("{\"name\":\"bob\",\"id\":1}".getBytes(StandardCharsets.UTF_8)).build());
 		assertThat(new String(result.getPayload(), StandardCharsets.UTF_8)).isEqualTo("{\"name\":\"BOB\",\"id\":1}");
+	}
+
+	/*
+	 * Target Function
+	 *
+	 * @Bean Function<Tuple2<Flux<String>, Flux<Integer>>, Tuple2<Flux<Double>, Flux<String>>>
+	 */
+	@Test
+	public void testBootAppWithMultipleInputOutput() {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/bootapp-multi/target/bootapp-multi-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.function-name=fn"
+		};
+		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		Function<Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>> function =
+				catalog.lookup("fn", "application/json", "application/json");
+
+		Message<byte[]> msg1 = MessageBuilder.withPayload("\"one\"".getBytes()).build();
+		Message<byte[]> msg2 = MessageBuilder.withPayload("\"two\"".getBytes()).build();
+		Flux<Message<byte[]>> inputOne = Flux.just(msg1, msg2);
+
+		Message<byte[]> msgInt1 = MessageBuilder.withPayload("\"1\"".getBytes()).build();
+		Message<byte[]> msgInt2 = MessageBuilder.withPayload("\"2\"".getBytes()).build();
+		Flux<Message<byte[]>> inputTwo = Flux.just(msgInt1, msgInt2);
+
+		Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>> result = function.apply(Tuples.of(inputOne, inputTwo));
+		List<String> result1 = new ArrayList<>();
+		List<String> result2 = new ArrayList<>();
+		result.getT1().subscribe(message -> {
+			result1.add(new String(message.getPayload()));
+		});
+		result.getT2().subscribe(message -> {
+			result2.add(new String(message.getPayload()));
+		});
+
+		assertThat(result1.get(0)).isEqualTo("1.5");
+		assertThat(result1.get(1)).isEqualTo("2.0");
+
+		assertThat(result2.get(0)).isEqualTo("\"one\"");
+		assertThat(result2.get(1)).isEqualTo("\"two\"");
+	}
+
+	/*
+	 * Target Function
+	 *
+	 * Function<Tuple2<Flux<String>, Flux<Integer>>, Tuple2<Flux<Double>, Flux<String>>>
+	 */
+	@Test
+	public void testBootJarWithMultipleInputOutput() {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/bootjar-multi/target/bootjar-multi-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.function-class=function.example.Repeater"
+		};
+		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		Function<Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>> function =
+				catalog.lookup("repeater", "application/json", "application/json");
+
+		Message<byte[]> msg1 = MessageBuilder.withPayload("\"one\"".getBytes()).build();
+		Message<byte[]> msg2 = MessageBuilder.withPayload("\"two\"".getBytes()).build();
+		Flux<Message<byte[]>> inputOne = Flux.just(msg1, msg2);
+
+		Message<byte[]> msgInt1 = MessageBuilder.withPayload("\"1\"".getBytes()).build();
+		Message<byte[]> msgInt2 = MessageBuilder.withPayload("\"2\"".getBytes()).build();
+		Flux<Message<byte[]>> inputTwo = Flux.just(msgInt1, msgInt2);
+
+		Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>> result = function.apply(Tuples.of(inputOne, inputTwo));
+		List<String> result1 = new ArrayList<>();
+		List<String> result2 = new ArrayList<>();
+		result.getT1().subscribe(message -> {
+			result1.add(new String(message.getPayload()));
+		});
+		result.getT2().subscribe(message -> {
+			result2.add(new String(message.getPayload()));
+		});
+
+		assertThat(result1.get(0)).isEqualTo("\"one\"");
+		assertThat(result1.get(1)).isEqualTo("\"two\"");
+
+		assertThat(result2.get(0)).isEqualTo("3");
+		assertThat(result2.get(1)).isEqualTo("2");
 	}
 
 }

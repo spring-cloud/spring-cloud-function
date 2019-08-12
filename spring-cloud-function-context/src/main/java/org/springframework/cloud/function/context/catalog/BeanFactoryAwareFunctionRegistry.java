@@ -206,6 +206,9 @@ public class BeanFactoryAwareFunctionRegistry
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Function<?, ?> compose(Class<?> type, String definition, String... acceptedOutputTypes) {
+		if (logger.isInfoEnabled()) {
+			logger.info("Looking up function '" + definition + "' with acceptedOutputTypes: " + Arrays.asList(acceptedOutputTypes));
+		}
 		definition = discoverDefaultDefinitionIfNecessary(definition);
 		if (StringUtils.isEmpty(definition)) {
 			return null;
@@ -225,6 +228,8 @@ public class BeanFactoryAwareFunctionRegistry
 			for (String name : names) {
 				Object function = this.locateFunction(name);
 				if (function == null) {
+					logger.warn("!!! Failed to discover function '" + definition + "' in function catalog. "
+							+ "Function available in catalog are: "  + this.getNames(null));
 					return null;
 				}
 				composedNameBuilder.append(prefix);
