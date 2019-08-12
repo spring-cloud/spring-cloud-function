@@ -66,6 +66,26 @@ public class FunctionDeployerTests {
 		assertThat(results.get(1)).isEqualTo("STACY");
 	}
 
+	@Test
+	public void testWithSimplestJar() throws Exception {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-0.0.1.BUILD-SNAPSHOT.jar",
+				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
+
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<String, String> function = catalog.lookup("upperCaseFunction");
+
+		assertThat(function.apply("bob")).isEqualTo("BOB");
+		assertThat(function.apply("stacy")).isEqualTo("STACY");
+
+		Function<Flux<String>, Flux<String>> functionAsFlux = catalog.lookup("upperCaseFunction");
+
+		List<String> results = functionAsFlux.apply(Flux.just("bob", "stacy")).collectList().block();
+		assertThat(results.get(0)).isEqualTo("BOB");
+		assertThat(results.get(1)).isEqualTo("STACY");
+	}
+
 	/*
 	 * Target function `class UpperCaseFunction implements Function<String, String>`
 	 * No Main/Start class present, no Spring configuration

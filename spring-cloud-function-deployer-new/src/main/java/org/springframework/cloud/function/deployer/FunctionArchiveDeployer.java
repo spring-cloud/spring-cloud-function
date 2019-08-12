@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
@@ -70,7 +71,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 		ClassLoader currentLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
-			Thread.currentThread().setContextClassLoader(createClassLoader(getClassPathArchives()));
+			Thread.currentThread().setContextClassLoader(createClassLoader(discoverClassPathAcrhives()));
 			evalContext.setTypeLocator(new StandardTypeLocator(Thread.currentThread().getContextClassLoader()));
 
 			if (this.isBootApplicationWithMain()) {
@@ -191,6 +192,14 @@ class FunctionArchiveDeployer extends JarLauncher {
 		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
+	}
+
+	private List<Archive> discoverClassPathAcrhives() throws Exception {
+		List<Archive> classPathArchives = getClassPathArchives();
+		if (CollectionUtils.isEmpty(classPathArchives)) {
+			classPathArchives.add(this.getArchive());
+		}
+		return classPathArchives;
 	}
 
 	private FunctionRegistration<?> discovereAndLoadFunctionFromClassName(String functionClassName) throws Exception {
