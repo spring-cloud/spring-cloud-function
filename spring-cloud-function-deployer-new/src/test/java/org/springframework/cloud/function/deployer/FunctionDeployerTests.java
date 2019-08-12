@@ -27,6 +27,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ApplicationContext;
 import org.springframework.messaging.Message;
@@ -51,7 +52,7 @@ public class FunctionDeployerTests {
 				"--spring.cloud.function.location=target/it/bootjar/target/bootjar-0.0.1.BUILD-SNAPSHOT-exec.jar",
 				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
 
-		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function<String, String> function = catalog.lookup("upperCaseFunction");
 
@@ -75,7 +76,32 @@ public class FunctionDeployerTests {
 				"--spring.cloud.function.location=target/it/bootjarnostart/target/bootjarnostart-0.0.1.BUILD-SNAPSHOT-exec.jar",
 				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
 
-		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<String, String> function = catalog.lookup("upperCaseFunction");
+
+		assertThat(function.apply("bob")).isEqualTo("BOB");
+		assertThat(function.apply("stacy")).isEqualTo("STACY");
+
+		Function<Flux<String>, Flux<String>> functionAsFlux = catalog.lookup("upperCaseFunction");
+
+		List<String> results = functionAsFlux.apply(Flux.just("bob", "stacy")).collectList().block();
+		assertThat(results.get(0)).isEqualTo("BOB");
+		assertThat(results.get(1)).isEqualTo("STACY");
+	}
+
+	/*
+	 * Target function `class UpperCaseFunction implements Function<String, String>`
+	 * No Main/Start class present, no Spring configuration
+	 *
+	 * Function class is discovered via 'Function-Class` manifest entry
+	 */
+	@Test
+	public void testNoMainAndNoStartClassAndNoSpringConfigurationDiscoverClassFromManifest() throws Exception {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/bootjarnostart/target/bootjarnostart-0.0.1.BUILD-SNAPSHOT-exec.jar" };
+
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function<String, String> function = catalog.lookup("upperCaseFunction");
 
@@ -99,13 +125,32 @@ public class FunctionDeployerTests {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/bootapp/target/bootapp-0.0.1.BUILD-SNAPSHOT-exec.jar",
 				"--spring.cloud.function.function-name=uppercase" };
-		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function<Message<byte[]>, Message<byte[]>> function = catalog.lookup("uppercase", "application/json");
 
 		Message<byte[]> result = function
 				.apply(MessageBuilder.withPayload("\"bob\"".getBytes(StandardCharsets.UTF_8)).build());
 		assertThat(new String(result.getPayload(), StandardCharsets.UTF_8)).isEqualTo("\"BOB\"");
+	}
+
+	/*
+	 * Same as above but:
+	 * Given that Java 11 does not include 'javax' packages, this test simply validates that
+	 * the delegation will be made to archive loader where it is available
+	 */
+	@Test
+	public void testWithMainAndStartClassAndSpringConfigurationJavax() throws Exception {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/bootapp-with-javax/target/bootapp-with-javax-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.function-name=uppercase" };
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<Message<byte[]>, Message<byte[]>> function = catalog.lookup("uppercase", "application/json");
+
+		Message<byte[]> result = function
+				.apply(MessageBuilder.withPayload("\"foo@bar.com\"".getBytes(StandardCharsets.UTF_8)).build());
+		assertThat(new String(result.getPayload(), StandardCharsets.UTF_8)).isEqualTo("\"FOO@BAR.COM\"");
 	}
 
 	/*
@@ -120,7 +165,7 @@ public class FunctionDeployerTests {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/bootapp-with-scf/target/bootapp-with-scf-0.0.1.BUILD-SNAPSHOT-exec.jar",
 				"--spring.cloud.function.function-name=uppercase" };
-		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function<Message<byte[]>, Message<byte[]>> function = catalog.lookup("uppercase", "application/json");
 
@@ -140,7 +185,7 @@ public class FunctionDeployerTests {
 				"--spring.cloud.function.location=target/it/bootapp/target/bootapp-0.0.1.BUILD-SNAPSHOT-exec.jar",
 				"--spring.cloud.function.function-name=uppercasePerson" };
 
-		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function<Message<byte[]>, Message<byte[]>> function = catalog.lookup("uppercasePerson", "application/json");
 
@@ -160,7 +205,7 @@ public class FunctionDeployerTests {
 				"--spring.cloud.function.location=target/it/bootapp-multi/target/bootapp-multi-0.0.1.BUILD-SNAPSHOT-exec.jar",
 				"--spring.cloud.function.function-name=fn"
 		};
-		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 
 		Function<Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>> function =
@@ -202,7 +247,7 @@ public class FunctionDeployerTests {
 				"--spring.cloud.function.location=target/it/bootjar-multi/target/bootjar-multi-0.0.1.BUILD-SNAPSHOT-exec.jar",
 				"--spring.cloud.function.function-class=function.example.Repeater"
 		};
-		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 
 		Function<Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>> function =
@@ -233,4 +278,7 @@ public class FunctionDeployerTests {
 		assertThat(result2.get(1)).isEqualTo("2");
 	}
 
+	@SpringBootApplication(proxyBeanMethods = false)
+	private static class DeployerApplication {
+	}
 }

@@ -92,8 +92,9 @@ class FunctionArchiveDeployer extends JarLauncher {
 				}
 			}
 
-			if (!StringUtils.isEmpty(functionProperties.getFunctionClass())) {
-				FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(functionProperties.getFunctionClass());
+			String functionClassName = discoverFunctionClassName(functionProperties);
+			if (!StringUtils.isEmpty(functionClassName)) {
+				FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(functionClassName);
 				if (registration != null) {
 					functionRegistry.register(registration);
 				}
@@ -125,20 +126,28 @@ class FunctionArchiveDeployer extends JarLauncher {
 				.copyToByteArray(DeployerContextUtils.class.getClassLoader().getResourceAsStream(classAsPath));
 		/*
 		 * While LaunchedURLClassLoader is completely disconnected with the current
-		 * class loader, this will ensure that classes in org.reactivestreams.* and reactor.*
-		 * are shared across two class loaders since they are effectively used as transport.
+		 * class loader, this will ensure that certain classes (e.g., org.reactivestreams.* see #shouldLoadViaDeployerLoader() )
+		 * are shared across two class loaders.
 		 */
 		this.archiveLoader = new LaunchedURLClassLoader(urls, null) {
 			@Override
 			public Class<?> loadClass(String name) throws ClassNotFoundException {
 				Class<?> clazz = null;
 				if (shouldLoadViaDeployerLoader(name)) {
-					clazz =  getClass().getClassLoader().loadClass(name);
+					try {
+						clazz = getClass().getClassLoader().loadClass(name);
+					}
+					catch (Exception e) {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Class '" + name + "' is not available in the current class loader. Loading it from the deployed archive.");
+						}
+						clazz = super.loadClass(name, false);
+					}
 				}
 				else if (name.equals(DeployerContextUtils.class.getName())) {
 					/*
 					 * This will ensure that `DeployerContextUtils` is available to
-					 * foreign class loader even in cases where foreign JAR does not
+					 * foreign class loader for cases where foreign JAR does not
 					 * have SCF dependencies.
 					 */
 					try {
@@ -162,6 +171,17 @@ class FunctionArchiveDeployer extends JarLauncher {
 				|| name.startsWith("reactor.")
 				|| name.startsWith("java")
 				|| name.startsWith("com.sun");
+	}
+
+	private String discoverFunctionClassName(FunctionProperties functionProperties) {
+		try {
+			return StringUtils.hasText(functionProperties.getFunctionClass())
+					? functionProperties.getFunctionClass()
+							: this.getArchive().getManifest().getMainAttributes().getValue("Function-Class");
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Failed to discover function class name", e);
+		}
 	}
 
 	private boolean isBootApplicationWithMain() {

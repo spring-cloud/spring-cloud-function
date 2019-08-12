@@ -23,13 +23,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  *
@@ -38,9 +38,9 @@ import org.springframework.context.annotation.Bean;
  * @since 3.0
  *
  */
-@EnableAutoConfiguration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionProperties.class)
-public final class FunctionDeployerConfiguration {
+public class FunctionDeployerConfiguration {
 
 	private static Log logger = LogFactory.getLog(FunctionDeployerConfiguration.class);
 
