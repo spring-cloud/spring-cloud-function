@@ -8,6 +8,7 @@
 <title>Quick Start</title>
 <link rel="stylesheet" href="css/spring.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 <style>
 .hidden {
 	display: none;
@@ -28,12 +29,18 @@
 	cursor: pointer;
 }
 
+.switch--item:not(:first-child) {
+	border-width: 0 0 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+}
+
 .switch--item.selected {
 	background-color: #7a2519;
 	color: #ffffff;
 }
 </style>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
 <script type="text/javascript">
 function addBlockSwitches() {
 	$('.primary').each(function() {
@@ -81,8 +88,8 @@ function createSwitchItem(block, blockSwitch) {
 
 $(addBlockSwitches);
 </script>
-</head>
 
+</head>
 <body class="book toc2 toc-left">
 <div id="header">
 <div id="toc" class="toc2">
@@ -97,9 +104,6 @@ $(addBlockSwitches);
 <div class="sectionbody">
 <div class="paragraph">
 <p><strong>3.0.0.BUILD-SNAPSHOT</strong></p>
-</div>
-<div id="index-link" class="paragraph">
-<p><a href="https://cloud.spring.io/spring-cloud-function/home.html" class="bare">https://cloud.spring.io/spring-cloud-function/home.html</a></p>
 </div>
 <div class="paragraph">
 <p>The <a href="https://openwhisk.apache.org/">OpenWhisk</a> adapter is in the form of an executable jar that can be used in a a docker image to be deployed to Openwhisk. The platform works in request-response mode, listening on port 8080 on a specific endpoint, so the adapter is a simple Spring MVC application.</p>

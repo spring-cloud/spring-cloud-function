@@ -8,6 +8,7 @@
 <title>Spring Cloud Function</title>
 <link rel="stylesheet" href="css/spring.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 <style>
 .hidden {
 	display: none;
@@ -28,12 +29,18 @@
 	cursor: pointer;
 }
 
+.switch--item:not(:first-child) {
+	border-width: 0 0 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+}
+
 .switch--item.selected {
 	background-color: #7a2519;
 	color: #ffffff;
 }
 </style>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
 <script type="text/javascript">
 function addBlockSwitches() {
 	$('.primary').each(function() {
@@ -81,8 +88,8 @@ function createSwitchItem(block, blockSwitch) {
 
 $(addBlockSwitches);
 </script>
-</head>
 
+</head>
 <body class="book toc2 toc-left">
 <div id="header">
 <h1>Spring Cloud Function</h1>
@@ -111,7 +118,12 @@ $(addBlockSwitches);
 </ul>
 </li>
 <li><a href="#_dynamic_compilation">Dynamic Compilation</a></li>
-<li><a href="#_serverless_platform_adapters">Serverless Platform Adapters</a></li>
+<li><a href="#_serverless_platform_adapters">Serverless Platform Adapters</a>
+<ul class="sectlevel2">
+<li><a href="#_aws_lambda">AWS Lambda</a></li>
+<li><a href="#_microsoft_azure">Microsoft Azure</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -125,9 +137,6 @@ $(addBlockSwitches);
 <p><strong>3.0.0.BUILD-SNAPSHOT</strong></p>
 </div>
 <hr>
-<div id="index-link" class="paragraph">
-<p><a href="https://cloud.spring.io/spring-cloud-function/home.html" class="bare">https://cloud.spring.io/spring-cloud-function/home.html</a></p>
-</div>
 </div>
 </div>
 <div class="sect1">
@@ -615,7 +624,39 @@ Please refer to <a href="https://docs.spring.io/spring-cloud-stream/docs/current
 <p>Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the <a href="https://projectriff.io">Riff</a> Java function invoker uses this library).</p>
 </div>
 <div class="paragraph">
-<p>The standard entry point of the API is the Spring configuration annotation <code>@EnableFunctionDeployer</code>. If that is used in a Spring Boot application the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a <code>function.location</code> which is a URL or resource location for the archive containing the functions. It can optionally use a <code>maven:</code> prefix to locate the artifact via a dependency lookup (see <code>FunctionProperties</code> for complete details). A Spring Boot application is bootstrapped from the jar file, using the <code>MANIFEST.MF</code> to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application&#8217;s <code>FunctionCatalog</code>. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).</p>
+<p>The standard entry point is to add <code>spring-cloud-function-deployer</code> to the classpath, the deployer kicks in and looks for some configuration to tell it where to find the function jar.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+	&lt;artifactId&gt;spring-cloud-function-deployer&lt;/artifactId&gt;
+	&lt;version&gt;${spring.cloud.function.version}&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>At a minimum the user has to provide a <code>spring.cloud.function.location</code> which is a URL or resource location for the archive containing the functions. It can optionally use a <code>maven:</code> prefix to locate the artifact via a dependency lookup (see <code>FunctionProperties</code> for complete details). A Spring Boot application is bootstrapped from the jar file, using the <code>MANIFEST.MF</code> to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application&#8217;s <code>FunctionCatalog</code>. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).</p>
+</div>
+<div class="paragraph">
+<p>Here is the example of deploying a JAR which contains an 'uppercase' function and invoking it .</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootApplication
+public class DeployFunctionDemo {
+
+	public static void main(String[] args) {
+		ApplicationContext context = SpringApplication.run(DeployFunctionDemo.class,
+				"--spring.cloud.function.location=..../target/uppercase-0.0.1-SNAPSHOT.jar",
+				"--spring.cloud.function.function-name=uppercase");
+
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function&lt;String, String&gt; function = catalog.lookup("uppercase");
+		System.out.println(function.apply("hello"));
+	}
+}</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -950,6 +991,445 @@ has its own Spring Cloud Function adapter. And
 <a href="https://projectriff.io">Riff</a> supports Java functions and its
 <a href="https://github.com/projectriff/java-function-invoker">Java Function
 Invoker</a> acts natively is an adapter for Spring Cloud Function jars.</p>
+</div>
+<div class="sect2">
+<h3 id="_aws_lambda"><a class="link" href="#_aws_lambda">AWS Lambda</a></h3>
+<div class="paragraph">
+<p>The <a href="https://aws.amazon.com/">AWS</a> adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.</p>
+</div>
+<div class="paragraph">
+<p>The adapter has a couple of generic request handlers that you can use. The most generic is <code>SpringBootStreamHandler</code>, which uses a Jackson <code>ObjectMapper</code> provided by Spring Boot to serialize and deserialize the objects in the function. There is also a <code>SpringBootRequestHandler</code> which you can extend, and provide the input and output types as type parameters (enabling AWS to inspect the class and do the JSON conversions itself).</p>
+</div>
+<div class="paragraph">
+<p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code> (e.g. as <code>FUNCTION_NAME</code> environment variable in AWS). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> (searching first for <code>Function</code> then <code>Consumer</code> and finally <code>Supplier</code>).</p>
+</div>
+<div class="sect3">
+<h4 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h4>
+<div class="paragraph">
+<p>You don&#8217;t need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might
+need to exclude those before you create the JAR you send to AWS. A Lambda application has to be
+shaded, but a Spring Boot standalone application does not, so you can run the same app using 2
+separate jars (as per the sample). The sample app creates 2 jar files, one with an <code>aws</code>
+classifier for deploying in Lambda, and one <a id="thin-jar"></a> executable (thin) jar that includes <code>spring-cloud-function-web</code>
+at runtime. Spring Cloud Function will try and locate a "main class" for you from the JAR file
+manifest, using the <code>Start-Class</code> attribute (which will be added for you by the Spring Boot
+tooling if you use the starter parent). If there is no <code>Start-Class</code> in your manifest you can
+use an environment variable or system property <code>MAIN_CLASS</code> when you deploy the function to AWS.</p>
+</div>
+<div class="paragraph">
+<p>If you are not using the functional bean definitions but relying on Spring Boot&#8217;s auto-configuration,
+then additional transformers must be configured as part of the maven-shade-plugin execution.</p>
+</div>
+<div id="shade-plugin-setup" class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+	&lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+	&lt;artifactId&gt;maven-shade-plugin&lt;/artifactId&gt;
+	&lt;dependencies&gt;
+		&lt;dependency&gt;
+			&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+			&lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+		&lt;/dependency&gt;
+	&lt;/dependencies&gt;
+	&lt;configuration&gt;
+		&lt;createDependencyReducedPom&gt;false&lt;/createDependencyReducedPom&gt;
+		&lt;shadedArtifactAttached&gt;true&lt;/shadedArtifactAttached&gt;
+		&lt;shadedClassifierName&gt;aws&lt;/shadedClassifierName&gt;
+		&lt;transformers&gt;
+			&lt;transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.handlers&lt;/resource&gt;
+			&lt;/transformer&gt;
+			&lt;transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.factories&lt;/resource&gt;
+			&lt;/transformer&gt;
+			&lt;transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"&gt;
+				&lt;resource&gt;META-INF/spring.schemas&lt;/resource&gt;
+			&lt;/transformer&gt;
+		&lt;/transformers&gt;
+	&lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_build_file_setup"><a class="link" href="#_build_file_setup">Build file setup</a></h4>
+<div class="paragraph">
+<p>In order to run Spring Cloud Function applications on AWS Lambda, you can leverage Maven or Gradle
+ plugins offered by the cloud platform provider.</p>
+</div>
+<div class="sect4">
+<h5 id="_maven"><a class="link" href="#_maven">Maven</a></h5>
+<div class="paragraph">
+<p>In order to use the adapter plugin for Maven, add the plugin dependency to your <code>pom.xml</code>
+file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencies&gt;
+	&lt;dependency&gt;
+		&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+		&lt;artifactId&gt;spring-cloud-function-adapter-aws&lt;/artifactId&gt;
+	&lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As pointed out in the <a href="#_notes_on_jar_layout">Notes on JAR Layout</a>, you wil need a shaded jar in order to upload it
+to AWS Lambda. You can use the <a href="https://maven.apache.org/plugins/maven-shade-plugin/">Maven Shade Plugin</a> for that.
+The example of the <a href="#shade-plugin-setup">setup</a> can be found above.</p>
+</div>
+<div class="paragraph">
+<p>You can use theSpring Boot Maven Plugin to generate the <a href="#thin-jar">thin jar</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+	&lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+	&lt;dependencies&gt;
+		&lt;dependency&gt;
+			&lt;groupId&gt;org.springframework.boot.experimental&lt;/groupId&gt;
+			&lt;artifactId&gt;spring-boot-thin-layout&lt;/artifactId&gt;
+			&lt;version&gt;${wrapper.version}&lt;/version&gt;
+		&lt;/dependency&gt;
+	&lt;/dependencies&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can find the entire sample <code>pom.xml</code> file for deploying Spring Cloud Function
+applications to AWS Lambda with Maven <a href="https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/pom.xml">here</a>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_gradle"><a class="link" href="#_gradle">Gradle</a></h5>
+<div class="paragraph">
+<p>In order to use the adapter plugin for Gradle, add the dependency to your <code>build.gradle</code> file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">dependencies {
+	compile("org.springframework.cloud:spring-cloud-function-adapter-aws:${version}")
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As pointed out in <a href="#_notes_on_jar_layout">Notes on JAR Layout</a>, you wil need a shaded jar in order to upload it
+to AWS Lambda. You can use the <a href="https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow/">Gradle Shadow Plugin</a> for that:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">buildscript {
+	dependencies {
+		classpath "com.github.jengelman.gradle.plugins:shadow:${shadowPluginVersion}"
+	}
+}
+apply plugin: 'com.github.johnrengelman.shadow'
+
+assemble.dependsOn = [shadowJar]
+
+import com.github.jengelman.gradle.plugins.shadow.transformers.*
+
+shadowJar {
+	classifier = 'aws'
+	dependencies {
+		exclude(
+			dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
+	}
+	// Required for Spring
+	mergeServiceFiles()
+	append 'META-INF/spring.handlers'
+	append 'META-INF/spring.schemas'
+	append 'META-INF/spring.tooling'
+	transform(PropertiesFileTransformer) {
+		paths = ['META-INF/spring.factories']
+		mergeStrategy = "append"
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can use the Spring Boot Gradle Plugin and Spring Boot Thin Gradle Plugin to generate
+the <a href="#thin-jar">thin jar</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">buildscript {
+	dependencies {
+		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+apply plugin: 'org.springframework.boot'
+apply plugin: 'org.springframework.boot.experimental.thin-launcher'
+assemble.dependsOn = [thinJar]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can find the entire sample <code>build.gradle</code> file for deploying Spring Cloud Function
+applications to AWS Lambda with Gradle <a href="https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/build.gradle">here</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_upload"><a class="link" href="#_upload">Upload</a></h4>
+<div class="paragraph">
+<p>Build the sample under <code>spring-cloud-function-samples/function-sample-aws</code> and upload the <code>-aws</code> jar file to Lambda. The handler can be <code>example.Handler</code> or <code>org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler</code> (FQN of the class, <em>not</em> a method reference, although Lambda does accept method references).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>./mvnw -U clean package</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Using the AWS command line tools it looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>aws lambda create-function --function-name Uppercase --role arn:aws:iam::[USERID]:role/service-role/[ROLE] --zip-file fileb://function-sample-aws/target/function-sample-aws-2.0.0.BUILD-SNAPSHOT-aws.jar --handler org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler --description "Spring Cloud Function Adapter Example" --runtime java8 --region us-east-1 --timeout 30 --memory-size 1024 --publish</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The input type for the function in the AWS sample is a Foo with a single property called "value". So you would need this to test it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>{
+  "value": "test"
+}</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The AWS sample app is written in the "functional" style (as an <code>ApplicationContextInitializer</code>). This is much faster on startup in Lambda than the traditional <code>@Bean</code> style, so if you don&#8217;t need <code>@Beans</code> (or <code>@EnableAutoConfiguration</code>) it&#8217;s a good choice. Warm starts are not affected.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_type_conversion"><a class="link" href="#_type_conversion">Type Conversion</a></h4>
+<div class="paragraph">
+<p>Spring Cloud Function will attempt to transparently handle type conversion between the raw
+input stream and types declared by your function.</p>
+</div>
+<div class="paragraph">
+<p>For example, if your function signature is as such <code>Function&lt;Foo, Bar&gt;</code> we will attempt to convert
+incoming stream event to an instance of <code>Foo</code>.</p>
+</div>
+<div class="paragraph">
+<p>In the event type is not known or can not be determined (e.g., <code>Function&lt;?, ?&gt;</code>) we will attempt to
+convert an incoming stream event to a generic <code>Map</code>.</p>
+</div>
+<div class="sect5">
+<h6 id="_raw_input"><a class="link" href="#_raw_input">Raw Input</a></h6>
+<div class="paragraph">
+<p>There are times when you may want to have access to a raw input. In this case all you need is to declare your
+function signature to accept <code>InputStream</code>. For example, <code>Function&lt;InputStream, ?&gt;</code>. In this case
+we will not attempt any conversion and will pass the raw input directly to a function.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_microsoft_azure"><a class="link" href="#_microsoft_azure">Microsoft Azure</a></h3>
+<div class="paragraph">
+<p>The <a href="https://azure.microsoft.com">Azure</a> adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but invasive programming model, involving annotations in user code that are specific to the platform. The easiest way to use it with Spring Cloud is to extend a base class and write a method in it with the <code>@FunctionName</code> annotation which delegates to a base class method.</p>
+</div>
+<div class="paragraph">
+<p>This project provides an adapter layer for a Spring Cloud Function application onto Azure.
+You can write an app with a single <code>@Bean</code> of type <code>Function</code> and it will be deployable in Azure if you get the JAR file laid out right.</p>
+</div>
+<div class="paragraph">
+<p>There is an <code>AzureSpringBootRequestHandler</code> which you must extend, and provide the input and output types as annotated method parameters (enabling Azure to inspect the class and create JSON bindings). The base class has two useful methods (<code>handleRequest</code> and <code>handleOutput</code>) to which you can delegate the actual function call, so mostly the function will only ever have one line.</p>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class FooHandler extends AzureSpringBootRequestHandler&lt;Foo, Bar&gt; {
+	@FunctionName("uppercase")
+	public Bar execute(
+			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
+					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS)
+                    Foo foo,
+			ExecutionContext context) {
+		return handleRequest(foo, context);
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This Azure handler will delegate to a <code>Function&lt;Foo,Bar&gt;</code> bean (or a <code>Function&lt;Publisher&lt;Foo&gt;,Publisher&lt;Bar&gt;&gt;</code>). Some Azure triggers (e.g. <code>@CosmosDBTrigger</code>) result in a input type of <code>List</code> and in that case you can bind to <code>List</code> in the Azure handler, or <code>String</code> (the raw JSON). The <code>List</code> input delegates to a <code>Function</code> with input type <code>Map&lt;String,Object&gt;</code>, or <code>Publisher</code> or <code>List</code> of the same type. The output of the <code>Function</code> can be a <code>List</code> (one-for-one) or a single value (aggregation), and the output binding in the Azure declaration should match.</p>
+</div>
+<div class="paragraph">
+<p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code>. Or if you make the <code>@FunctionName</code> in the Azure handler method match the function name it should work that way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> so the default function names are the same as the bean names.</p>
+</div>
+<div class="sect3">
+<h4 id="_accessing_azure_executioncontext"><a class="link" href="#_accessing_azure_executioncontext">Accessing Azure ExecutionContext</a></h4>
+<div class="paragraph">
+<p>Some time there is a need to access the target execution context provided by Azure runtime in the form of <code>com.microsoft.azure.functions.ExecutionContext</code>.
+For example one of such needs is logging, so it can appear in the Azure console.</p>
+</div>
+<div class="paragraph">
+<p>For that purpose Spring Cloud Function will register <code>ExecutionContext</code> as bean in the Application context, so it could be injected into your function.
+For example</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public Function&lt;Foo, Bar&gt; uppercase(ExecutionContext targetContext) {
+	return foo -&gt; {
+		targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
+		return new Bar(foo.getValue().toUpperCase());
+	};
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Normally type-based injection should suffice, however if need to you can also utilise the bean name under which it is registered which is <code>targetExecutionContext</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_notes_on_jar_layout_2"><a class="link" href="#_notes_on_jar_layout_2">Notes on JAR Layout</a></h4>
+<div class="paragraph">
+<p>You don&#8217;t need the Spring Cloud Function Web at runtime in Azure, so you can exclude this
+before you create the JAR you deploy to Azure, but it won&#8217;t be used if you include it, so
+it doesn&#8217;t hurt to leave it in. A function application on Azure is an archive generated by
+ the Maven plugin. The function lives in the JAR file generated by this project.
+ The sample creates it as an executable jar, using the thin layout, so that Azure can find
+ the handler classes. If you prefer you can just use a regular flat JAR file.
+ The dependencies should <strong>not</strong> be included.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_build_file_setup_2"><a class="link" href="#_build_file_setup_2">Build file setup</a></h4>
+<div class="paragraph">
+<p>In order to run Spring Cloud Function applications on Microsoft Azure, you can leverage the Maven
+plugin offered by the cloud platform provider.</p>
+</div>
+<div class="paragraph">
+<p>In order to use the adapter plugin for Maven, add the plugin dependency to your <code>pom.xml</code>
+file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependencies&gt;
+	&lt;dependency&gt;
+		&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;
+		&lt;artifactId&gt;spring-cloud-function-adapter-azure&lt;/artifactId&gt;
+	&lt;/dependency&gt;
+&lt;/dependencies&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then, configure the plugin. You will need to provide Azure-specific configuration for your
+application, specifying the <code>resourceGroup</code>, <code>appName</code> and other optional properties, and
+ add the <code>package</code> goal execution so that the <code>function.json</code> file required by Azure is
+  generated for you. Full plugin documentation can be found in the <a href="https://github.com/microsoft/azure-maven-plugins">plugin repository</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+	&lt;groupId&gt;com.microsoft.azure&lt;/groupId&gt;
+	&lt;artifactId&gt;azure-functions-maven-plugin&lt;/artifactId&gt;
+	&lt;configuration&gt;
+		&lt;resourceGroup&gt;${functionResourceGroup}&lt;/resourceGroup&gt;
+		&lt;appName&gt;${functionAppName}&lt;/appName&gt;
+	&lt;/configuration&gt;
+	&lt;executions&gt;
+		&lt;execution&gt;
+			&lt;id&gt;package-functions&lt;/id&gt;
+			&lt;goals&gt;
+				&lt;goal&gt;package&lt;/goal&gt;
+			&lt;/goals&gt;
+		&lt;/execution&gt;
+	&lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You will also have to ensure that the files to be scanned by the plugin can be found in the
+Azure functions staging directory (see the <a href="https://github.com/microsoft/azure-maven-plugins">plugin repository</a>
+ for more details on the staging directory and it&#8217;s default location).</p>
+</div>
+<div class="paragraph">
+<p>You can find the entire sample <code>pom.xml</code> file for deploying Spring Cloud Function
+applications to Microsoft Azure with Maven <a href="https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-azure/pom.xml">here</a>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+As of yet, only Maven plugin is available. Gradle plugin has not been created by
+the cloud platform provider.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_build"><a class="link" href="#_build">Build</a></h4>
+<div class="listingblock">
+<div class="content">
+<pre>./mvnw -U clean package</pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_running_the_sample"><a class="link" href="#_running_the_sample">Running the sample</a></h4>
+<div class="paragraph">
+<p>You can run the sample locally, just like the other Spring Cloud Function samples:</p>
+</div>
+<hr>
+<hr>
+<div class="paragraph">
+<p>and <code>curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'</code>.</p>
+</div>
+<div class="paragraph">
+<p>You will need the <code>az</code> CLI app (see <a href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven" class="bare">https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven</a> for more detail). To deploy the function on Azure runtime:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>$ az login
+$ mvn azure-functions:deploy</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>On another terminal try this: <code>curl <a href="https://&lt;azure-function-url-from-the-log&gt;/api/uppercase" class="bare">https://&lt;azure-function-url-from-the-log&gt;/api/uppercase</a> -d '{"value": "hello foobar!"}'</code>. Please ensure that you use the right URL for the function above. Alternatively you can test the function in the Azure Dashboard UI (click on the function name, go to the right hand side and click "Test" and to the bottom right, "Run").</p>
+</div>
+<div class="paragraph">
+<p>The input type for the function in the Azure sample is a Foo with a single property called "value". So you need this to test it with something like below:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>{
+  "value": "foobar"
+}</pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The Azure sample app is written in the "non-functional" style (using <code>@Bean</code>). The functional style (with just <code>Function</code> or <code>ApplicationContextInitializer</code>) is much faster on startup in Azure than the traditional <code>@Bean</code> style, so if you don&#8217;t need <code>@Beans</code> (or <code>@EnableAutoConfiguration</code>) it&#8217;s a good choice. Warm starts are not affected.
+</td>
+</tr>
+</table>
+</div>
+</div>
 </div>
 </div>
 </div>

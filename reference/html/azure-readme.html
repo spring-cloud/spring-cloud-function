@@ -5,9 +5,10 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.7.1">
-<title>Accessing Azure ExecutionContext</title>
+<title>Microsoft Azure</title>
 <link rel="stylesheet" href="css/spring.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 <style>
 .hidden {
 	display: none;
@@ -28,12 +29,18 @@
 	cursor: pointer;
 }
 
+.switch--item:not(:first-child) {
+	border-width: 0 0 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+}
+
 .switch--item.selected {
 	background-color: #7a2519;
 	color: #ffffff;
 }
 </style>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
 <script type="text/javascript">
 function addBlockSwitches() {
 	$('.primary').each(function() {
@@ -81,18 +88,14 @@ function createSwitchItem(block, blockSwitch) {
 
 $(addBlockSwitches);
 </script>
-</head>
 
+</head>
 <body class="book toc2 toc-left">
 <div id="header">
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel2">
-<li><a href="#_accessing_azure_executioncontext">Accessing Azure ExecutionContext</a></li>
-<li><a href="#_notes_on_jar_layout">Notes on JAR Layout</a></li>
-<li><a href="#_build_file_setup">Build file setup</a></li>
-<li><a href="#_build">Build</a></li>
-<li><a href="#_running_the_sample">Running the sample</a></li>
+<li><a href="#_microsoft_azure">Microsoft Azure</a></li>
 <li><a href="#_sample_function">Sample Function</a></li>
 </ul>
 </div>
@@ -103,6 +106,13 @@ $(addBlockSwitches);
 <div class="paragraph">
 <p>This project provides an adapter layer for a Spring Cloud Function application onto Azure.
 You can write an app with a single <code>@Bean</code> of type <code>Function</code> and it will be deployable in Azure if you get the JAR file laid out right.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_microsoft_azure"><a class="link" href="#_microsoft_azure">Microsoft Azure</a></h3>
+<div class="paragraph">
+<p>The <a href="https://azure.microsoft.com">Azure</a> adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but invasive programming model, involving annotations in user code that are specific to the platform. The easiest way to use it with Spring Cloud is to extend a base class and write a method in it with the <code>@FunctionName</code> annotation which delegates to a base class method.</p>
 </div>
 <div class="paragraph">
 <p>This project provides an adapter layer for a Spring Cloud Function application onto Azure.
@@ -134,10 +144,8 @@ You can write an app with a single <code>@Bean</code> of type <code>Function</co
 <div class="paragraph">
 <p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code>. Or if you make the <code>@FunctionName</code> in the Azure handler method match the function name it should work that way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> so the default function names are the same as the bean names.</p>
 </div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_accessing_azure_executioncontext"><a class="link" href="#_accessing_azure_executioncontext">Accessing Azure ExecutionContext</a></h3>
+<div class="sect3">
+<h4 id="_accessing_azure_executioncontext"><a class="link" href="#_accessing_azure_executioncontext">Accessing Azure ExecutionContext</a></h4>
 <div class="paragraph">
 <p>Some time there is a need to access the target execution context provided by Azure runtime in the form of <code>com.microsoft.azure.functions.ExecutionContext</code>.
 For example one of such needs is logging, so it can appear in the Azure console.</p>
@@ -161,8 +169,8 @@ public Function&lt;Foo, Bar&gt; uppercase(ExecutionContext targetContext) {
 <p>Normally type-based injection should suffice, however if need to you can also utilise the bean name under which it is registered which is <code>targetExecutionContext</code>.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h3>
+<div class="sect3">
+<h4 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h4>
 <div class="paragraph">
 <p>You don&#8217;t need the Spring Cloud Function Web at runtime in Azure, so you can exclude this
 before you create the JAR you deploy to Azure, but it won&#8217;t be used if you include it, so
@@ -173,9 +181,8 @@ it doesn&#8217;t hurt to leave it in. A function application on Azure is an arch
  The dependencies should <strong>not</strong> be included.</p>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_build_file_setup"><a class="link" href="#_build_file_setup">Build file setup</a></h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_build_file_setup"><a class="link" href="#_build_file_setup">Build file setup</a></h4>
 <div class="paragraph">
 <p>In order to run Spring Cloud Function applications on Microsoft Azure, you can leverage the Maven
 plugin offered by the cloud platform provider.</p>
@@ -227,7 +234,7 @@ Azure functions staging directory (see the <a href="https://github.com/microsoft
 </div>
 <div class="paragraph">
 <p>You can find the entire sample <code>pom.xml</code> file for deploying Spring Cloud Function
-applications to Microsoft Azure with Maven <a href="https://github.com/spring-cloud/spring-cloud-function/blob/2.1.x/spring-cloud-function-samples/function-sample-azure/pom.xml">here</a>.</p>
+applications to Microsoft Azure with Maven <a href="https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-azure/pom.xml">here</a>.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -243,20 +250,16 @@ the cloud platform provider.
 </table>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_build"><a class="link" href="#_build">Build</a></h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_build"><a class="link" href="#_build">Build</a></h4>
 <div class="listingblock">
 <div class="content">
 <pre>./mvnw -U clean package</pre>
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_running_the_sample"><a class="link" href="#_running_the_sample">Running the sample</a></h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_running_the_sample"><a class="link" href="#_running_the_sample">Running the sample</a></h4>
 <div class="paragraph">
 <p>You can run the sample locally, just like the other Spring Cloud Function samples:</p>
 </div>

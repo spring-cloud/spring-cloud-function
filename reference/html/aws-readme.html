@@ -5,9 +5,10 @@
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.7.1">
-<title>Notes on JAR Layout</title>
+<title>AWS Lambda</title>
 <link rel="stylesheet" href="css/spring.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 <style>
 .hidden {
 	display: none;
@@ -28,12 +29,18 @@
 	cursor: pointer;
 }
 
+.switch--item:not(:first-child) {
+	border-width: 0 0 0 1px;
+	border-style: solid;
+	border-color: #7a2518;
+}
+
 .switch--item.selected {
 	background-color: #7a2519;
 	color: #ffffff;
 }
 </style>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
 <script type="text/javascript">
 function addBlockSwitches() {
 	$('.primary').each(function() {
@@ -81,26 +88,14 @@ function createSwitchItem(block, blockSwitch) {
 
 $(addBlockSwitches);
 </script>
-</head>
 
+</head>
 <body class="book toc2 toc-left">
 <div id="header">
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
-<ul class="sectlevel1">
-<li><a href="#_notes_on_jar_layout">Notes on JAR Layout</a></li>
-<li><a href="#_build_file_setup">Build file setup</a>
 <ul class="sectlevel2">
-<li><a href="#_maven">Maven</a></li>
-<li><a href="#_gradle">Gradle</a></li>
-</ul>
-</li>
-<li><a href="#_upload">Upload</a></li>
-<li><a href="#_type_conversion">Type Conversion</a>
-<ul class="sectlevel3">
-<li><a href="#_raw_input">Raw Input</a></li>
-</ul>
-</li>
+<li><a href="#_aws_lambda">AWS Lambda</a></li>
 </ul>
 </div>
 </div>
@@ -110,17 +105,21 @@ $(addBlockSwitches);
 <div class="paragraph">
 <p>This project provides an adapter layer for a Spring Cloud Function application onto AWS Lambda. You can write an app with a single <code>@Bean</code> of type <code>Function</code>, <code>Consumer</code> or <code>Supplier</code> and it will be deployable in AWS if you get the JAR file laid out right. The best way to make it work is to include <code>spring-cloud-function-context</code> as a dependency, but not the higher level adapters (e.g. <code>spring-cloud-function-stream</code>).</p>
 </div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_aws_lambda"><a class="link" href="#_aws_lambda">AWS Lambda</a></h3>
+<div class="paragraph">
+<p>The <a href="https://aws.amazon.com/">AWS</a> adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.</p>
+</div>
 <div class="paragraph">
 <p>The adapter has a couple of generic request handlers that you can use. The most generic is <code>SpringBootStreamHandler</code>, which uses a Jackson <code>ObjectMapper</code> provided by Spring Boot to serialize and deserialize the objects in the function. There is also a <code>SpringBootRequestHandler</code> which you can extend, and provide the input and output types as type parameters (enabling AWS to inspect the class and do the JSON conversions itself).</p>
 </div>
 <div class="paragraph">
 <p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code> (e.g. as <code>FUNCTION_NAME</code> environment variable in AWS). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> (searching first for <code>Function</code> then <code>Consumer</code> and finally <code>Supplier</code>).</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h4>
 <div class="paragraph">
 <p>You don&#8217;t need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might
 need to exclude those before you create the JAR you send to AWS. A Lambda application has to be
@@ -167,16 +166,14 @@ then additional transformers must be configured as part of the maven-shade-plugi
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_build_file_setup"><a class="link" href="#_build_file_setup">Build file setup</a></h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_build_file_setup"><a class="link" href="#_build_file_setup">Build file setup</a></h4>
 <div class="paragraph">
 <p>In order to run Spring Cloud Function applications on AWS Lambda, you can leverage Maven or Gradle
  plugins offered by the cloud platform provider.</p>
 </div>
-<div class="sect2">
-<h3 id="_maven"><a class="link" href="#_maven">Maven</a></h3>
+<div class="sect4">
+<h5 id="_maven"><a class="link" href="#_maven">Maven</a></h5>
 <div class="paragraph">
 <p>In order to use the adapter plugin for Maven, add the plugin dependency to your <code>pom.xml</code>
 file:</p>
@@ -216,11 +213,11 @@ The example of the <a href="#shade-plugin-setup">setup</a> can be found above.</
 </div>
 <div class="paragraph">
 <p>You can find the entire sample <code>pom.xml</code> file for deploying Spring Cloud Function
-applications to AWS Lambda with Maven <a href="https://github.com/spring-cloud/spring-cloud-function/blob/2.1.x/spring-cloud-function-samples/function-sample-aws/pom.xml">here</a>.</p>
+applications to AWS Lambda with Maven <a href="https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/pom.xml">here</a>.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_gradle"><a class="link" href="#_gradle">Gradle</a></h3>
+<div class="sect4">
+<h5 id="_gradle"><a class="link" href="#_gradle">Gradle</a></h5>
 <div class="paragraph">
 <p>In order to use the adapter plugin for Gradle, add the dependency to your <code>build.gradle</code> file:</p>
 </div>
@@ -285,14 +282,12 @@ assemble.dependsOn = [thinJar]</code></pre>
 </div>
 <div class="paragraph">
 <p>You can find the entire sample <code>build.gradle</code> file for deploying Spring Cloud Function
-applications to AWS Lambda with Gradle <a href="https://github.com/spring-cloud/spring-cloud-function/blob/2.1.x/spring-cloud-function-samples/function-sample-aws/build.gradle">here</a>.</p>
+applications to AWS Lambda with Gradle <a href="https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/build.gradle">here</a>.</p>
 </div>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_upload"><a class="link" href="#_upload">Upload</a></h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_upload"><a class="link" href="#_upload">Upload</a></h4>
 <div class="paragraph">
 <p>Build the sample under <code>spring-cloud-function-samples/function-sample-aws</code> and upload the <code>-aws</code> jar file to Lambda. The handler can be <code>example.Handler</code> or <code>org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler</code> (FQN of the class, <em>not</em> a method reference, although Lambda does accept method references).</p>
 </div>
@@ -332,10 +327,8 @@ The AWS sample app is written in the "functional" style (as an <code>Application
 </table>
 </div>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_type_conversion"><a class="link" href="#_type_conversion">Type Conversion</a></h2>
-<div class="sectionbody">
+<div class="sect3">
+<h4 id="_type_conversion"><a class="link" href="#_type_conversion">Type Conversion</a></h4>
 <div class="paragraph">
 <p>Spring Cloud Function will attempt to transparently handle type conversion between the raw
 input stream and types declared by your function.</p>
@@ -348,8 +341,8 @@ incoming stream event to an instance of <code>Foo</code>.</p>
 <p>In the event type is not known or can not be determined (e.g., <code>Function&lt;?, ?&gt;</code>) we will attempt to
 convert an incoming stream event to a generic <code>Map</code>.</p>
 </div>
-<div class="sect3">
-<h4 id="_raw_input"><a class="link" href="#_raw_input">Raw Input</a></h4>
+<div class="sect5">
+<h6 id="_raw_input"><a class="link" href="#_raw_input">Raw Input</a></h6>
 <div class="paragraph">
 <p>There are times when you may want to have access to a raw input. In this case all you need is to declare your
 function signature to accept <code>InputStream</code>. For example, <code>Function&lt;InputStream, ?&gt;</code>. In this case
