@@ -1,4 +1,7 @@
-:branch: 2.1.x
+=== Microsoft Azure
+
+The https://azure.microsoft.com[Azure] adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but invasive programming model, involving annotations in user code that are specific to the platform. The easiest way to use it with Spring Cloud is to extend a base class and write a method in it with the `@FunctionName` annotation which delegates to a base class method.
+
 
 This project provides an adapter layer for a Spring Cloud Function application onto Azure.
 You can write an app with a single `@Bean` of type `Function` and it will be deployable in Azure if you get the JAR file laid out right.
@@ -24,7 +27,7 @@ This Azure handler will delegate to a `Function<Foo,Bar>` bean (or a `Function<P
 
 If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name`. Or if you make the `@FunctionName` in the Azure handler method match the function name it should work that way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud `FunctionCatalog` so the default function names are the same as the bean names.
 
-=== Accessing Azure ExecutionContext
+==== Accessing Azure ExecutionContext
 
 Some time there is a need to access the target execution context provided by Azure runtime in the form of `com.microsoft.azure.functions.ExecutionContext`.
 For example one of such needs is logging, so it can appear in the Azure console.
@@ -43,7 +46,7 @@ public Function<Foo, Bar> uppercase(ExecutionContext targetContext) {
 Normally type-based injection should suffice, however if need to you can also utilise the bean name under which it is registered which is `targetExecutionContext`.
 
 
-=== Notes on JAR Layout
+==== Notes on JAR Layout
 
 You don't need the Spring Cloud Function Web at runtime in Azure, so you can exclude this
 before you create the JAR you deploy to Azure, but it won't be used if you include it, so
@@ -53,7 +56,7 @@ it doesn't hurt to leave it in. A function application on Azure is an archive ge
  the handler classes. If you prefer you can just use a regular flat JAR file.
  The dependencies should *not* be included.
 
-== Build file setup
+==== Build file setup
 
 In order to run Spring Cloud Function applications on Microsoft Azure, you can leverage the Maven
 plugin offered by the cloud platform provider.
@@ -106,13 +109,13 @@ applications to Microsoft Azure with Maven https://github.com/spring-cloud/sprin
 NOTE: As of yet, only Maven plugin is available. Gradle plugin has not been created by
 the cloud platform provider.
 
-== Build
+==== Build
 
 ----
 ./mvnw -U clean package
 ----
 
-== Running the sample
+==== Running the sample
 
 You can run the sample locally, just like the other Spring Cloud Function samples:
 

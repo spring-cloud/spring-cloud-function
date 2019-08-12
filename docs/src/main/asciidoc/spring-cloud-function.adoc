@@ -11,9 +11,6 @@ Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra
 :docslink: {githubmaster}/docs/src/main/asciidoc
 :nofooter:
 
-[#index-link]
-{docs-url}spring-cloud-function/{docs-version}home.html
-
 == Introduction
 
 include::_intro.adoc[]
@@ -201,9 +198,20 @@ Please refer to https://docs.spring.io/spring-cloud-stream/docs/current/referenc
 
 Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the https://projectriff.io[Riff] Java function invoker uses this library).
 
-The standard entry point is to add `spring-cloud-function-deployer` to the classpath, the deployer kicks in and looks for some configuration to tell it where to find the function jar. At a minimum the user has to provide a `spring.cloud.function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).
+The standard entry point is to add `spring-cloud-function-deployer` to the classpath, the deployer kicks in and looks for some configuration to tell it where to find the function jar.
 
-Here is the example of deploying a JAR which contains an 'uppercase' function and invoking it . 
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-function-deployer</artifactId>
+	<version>${spring.cloud.function.version}</version>
+</dependency>
+```
+
+
+At a minimum the user has to provide a `spring.cloud.function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).
+
+Here is the example of deploying a JAR which contains an 'uppercase' function and invoking it .
 
 ```java
 @SpringBootApplication
@@ -332,4 +340,7 @@ has its own Spring Cloud Function adapter. And
 https://projectriff.io[Riff] supports Java functions and its
 https://github.com/projectriff/java-function-invoker[Java Function
 Invoker] acts natively is an adapter for Spring Cloud Function jars.
+
+include::adapters/aws-intro.adoc[]
+include::adapters/azure-intro.adoc[]
 
