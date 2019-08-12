@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,51 +16,80 @@
 
 package org.springframework.cloud.function.deployer;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
+import java.io.IOException;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.deployer.resource.maven.MavenProperties;
-import org.springframework.cloud.deployer.resource.maven.MavenResource;
-import org.springframework.cloud.deployer.resource.maven.MavenResourceLoader;
-import org.springframework.cloud.deployer.resource.support.DelegatingResourceLoader;
+import org.springframework.boot.loader.archive.Archive;
+import org.springframework.boot.loader.archive.JarFileArchive;
+import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.io.ResourceLoader;
 
 /**
- * @author Dave Syer
+ *
+ * @author Oleg Zhurakousky
+ *
+ * @since 3.0
  *
  */
-@Configuration
-@ConditionalOnProperty(prefix = "function.deployer", name = "enabled", matchIfMissing = true)
-@EnableConfigurationProperties
-@Import(FunctionCreatorConfiguration.class)
+@Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(FunctionProperties.class)
 public class FunctionDeployerConfiguration {
 
-	@Bean
-	@ConfigurationProperties("maven")
-	public MavenProperties mavenProperties() {
-		return new MavenProperties();
-	}
+	private static Log logger = LogFactory.getLog(FunctionDeployerConfiguration.class);
 
 	@Bean
-	@ConfigurationProperties("function")
-	public FunctionProperties functionProperties() {
-		return new FunctionProperties();
-	}
+	SmartLifecycle functionArchiveDeployer(FunctionProperties functionProperties,
+			FunctionRegistry functionRegistry, ApplicationArguments arguments) {
 
-	@Bean
-	@ConditionalOnMissingBean(DelegatingResourceLoader.class)
-	public DelegatingResourceLoader delegatingResourceLoader(
-			MavenProperties mavenProperties) {
-		Map<String, ResourceLoader> loaders = new HashMap<>();
-		loaders.put(MavenResource.URI_SCHEME, new MavenResourceLoader(mavenProperties));
-		return new DelegatingResourceLoader(loaders);
+		Archive archive = null;
+		try {
+			archive = new JarFileArchive(new File(functionProperties.getLocation()));
+		}
+		catch (IOException e) {
+			throw new IllegalStateException("Failed to create archive: " + functionProperties.getLocation(), e);
+		}
+		FunctionArchiveDeployer deployer = new FunctionArchiveDeployer(archive);
+
+		return new SmartLifecycle() {
+
+			private boolean running;
+
+			@Override
+			public void stop() {
+				if (logger.isInfoEnabled()) {
+					logger.info("Undeploying archive: " + functionProperties.getLocation());
+				}
+				deployer.undeploy();
+				if (logger.isInfoEnabled()) {
+					logger.info("Successfully undeployed archive: " + functionProperties.getLocation());
+				}
+				this.running = false;
+			}
+
+			@Override
+			public void start() {
+				if (logger.isInfoEnabled()) {
+					logger.info("Deploying archive: " + functionProperties.getLocation());
+				}
+				deployer.deploy(functionRegistry, functionProperties, arguments.getSourceArgs());
+				this.running = true;
+				if (logger.isInfoEnabled()) {
+					logger.info("Successfully deployed archive: " + functionProperties.getLocation());
+				}
+			}
+
+			@Override
+			public boolean isRunning() {
+				return this.running;
+			}
+		};
 	}
 
 }
