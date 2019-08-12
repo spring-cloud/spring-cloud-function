@@ -111,6 +111,27 @@ public class FunctionDeployerTests {
 	/*
 	 * Target function:
 	 *
+	 * @Bean public Function<String, String> uppercase()
+	 *
+	 * this contains SCF on classpath
+	 */
+	@Test
+	public void testWithMainAndStartClassAndSpringConfigurationAndSCFOnClasspath() throws Exception {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/bootapp-with-scf/target/bootapp-with-scf-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.function-name=uppercase" };
+		ApplicationContext context = SpringApplication.run(FunctionDeployerConfiguration.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<Message<byte[]>, Message<byte[]>> function = catalog.lookup("uppercase", "application/json");
+
+		Message<byte[]> result = function
+				.apply(MessageBuilder.withPayload("\"bob\"".getBytes(StandardCharsets.UTF_8)).build());
+		assertThat(new String(result.getPayload(), StandardCharsets.UTF_8)).isEqualTo("\"BOB\"");
+	}
+
+	/*
+	 * Target function:
+	 *
 	 * @Bean public Function<Person, Person> uppercasePerson()
 	 */
 	@Test
