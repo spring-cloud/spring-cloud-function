@@ -89,6 +89,11 @@ public class FunctionDeployerConfiguration {
 			public boolean isRunning() {
 				return this.running;
 			}
+
+			@Override
+			public int getPhase() {
+				return Integer.MAX_VALUE - 1000;
+			}
 		};
 	}
 
