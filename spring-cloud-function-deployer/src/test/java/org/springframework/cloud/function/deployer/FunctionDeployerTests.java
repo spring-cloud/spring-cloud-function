@@ -49,7 +49,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testWithMainAndStartClassNoSpringConfiguration() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootjar/target/bootjar-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootjar/target/bootjar-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
@@ -69,7 +69,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testWithSimplestJar() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-0.0.1.BUILD-SNAPSHOT.jar",
+				"--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar",
 				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
@@ -93,7 +93,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testNoMainAndNoStartClassAndNoSpringConfiguration() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootjarnostart/target/bootjarnostart-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootjarnostart/target/bootjarnostart-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
@@ -119,7 +119,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testNoMainAndNoStartClassAndNoSpringConfigurationDiscoverClassFromManifest() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootjarnostart/target/bootjarnostart-0.0.1.BUILD-SNAPSHOT-exec.jar" };
+				"--spring.cloud.function.location=target/it/bootjarnostart/target/bootjarnostart-1.0.0.RELEASE-exec.jar" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -143,7 +143,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testWithMainAndStartClassAndSpringConfiguration() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootapp/target/bootapp-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-name=uppercase" };
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -162,7 +162,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testWithMainAndStartClassAndSpringConfigurationJavax() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootapp-with-javax/target/bootapp-with-javax-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootapp-with-javax/target/bootapp-with-javax-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-name=uppercase" };
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -183,7 +183,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testWithMainAndStartClassAndSpringConfigurationAndSCFOnClasspath() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootapp-with-scf/target/bootapp-with-scf-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootapp-with-scf/target/bootapp-with-scf-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-name=uppercase" };
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -202,7 +202,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testWithMainAndStartClassAndSpringConfigurationAndTypeConversion() throws Exception {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootapp/target/bootapp-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-name=uppercasePerson" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
@@ -222,7 +222,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testBootAppWithMultipleInputOutput() {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootapp-multi/target/bootapp-multi-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootapp-multi/target/bootapp-multi-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-name=fn"
 		};
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
@@ -264,7 +264,7 @@ public class FunctionDeployerTests {
 	@Test
 	public void testBootJarWithMultipleInputOutput() {
 		String[] args = new String[] {
-				"--spring.cloud.function.location=target/it/bootjar-multi/target/bootjar-multi-0.0.1.BUILD-SNAPSHOT-exec.jar",
+				"--spring.cloud.function.location=target/it/bootjar-multi/target/bootjar-multi-1.0.0.RELEASE-exec.jar",
 				"--spring.cloud.function.function-class=function.example.Repeater"
 		};
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);

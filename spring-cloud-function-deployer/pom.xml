@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>spring-cloud-function-deployer</artifactId>
 		<packaging>jar</packaging>
-		<name>spring-cloud-function-deployer-new</name>
-		<description>Spring Cloud Function Web Support</description>
+		<name>spring-cloud-function-deployer</name>
+		<description>Spring Cloud Function Deployer</description>
 
 		<parent>
 			<groupId>org.springframework.cloud</groupId>
@@ -44,17 +44,6 @@
 
 	<build>
 		<plugins>
-<!-- 			<plugin> -->
-<!-- 				<groupId>org.springframework.boot</groupId> -->
-<!-- 				<artifactId>spring-boot-maven-plugin</artifactId> -->
-<!-- 				<dependencies> -->
-<!-- 					<dependency> -->
-<!-- 						<groupId>org.springframework.boot.experimental</groupId> -->
-<!-- 						<artifactId>spring-boot-thin-layout</artifactId> -->
-<!-- 						<version>${wrapper.version}</version> -->
-<!-- 					</dependency> -->
-<!-- 				</dependencies> -->
-<!-- 			</plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-invoker-plugin</artifactId>
