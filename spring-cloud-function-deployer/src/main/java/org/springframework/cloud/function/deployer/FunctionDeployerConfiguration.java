@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2019-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  *
+ * Configuration class which creates an instance of {@link SmartLifecycle}
+ * which deploys and un-deploys packages archives via it's {@link SmartLifecycle#start()}
+ * and {@link SmartLifecycle#stop()} operations.
+ * <br>
  * @author Oleg Zhurakousky
  *
  * @since 3.0
@@ -97,4 +104,19 @@ public class FunctionDeployerConfiguration {
 		};
 	}
 
+	/**
+	 * Instance of {@link EnvironmentPostProcessor} which ensures that legacy
+	 * Function property names are still honored.
+	 */
+	static class LegacyPropertyEnvironmentPostProcessor implements EnvironmentPostProcessor {
+		@Override
+		public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+			if (environment.containsProperty("function.name")) {
+				System.setProperty(FunctionProperties.PREFIX + ".function-name", environment.getProperty("function.name"));
+			}
+			if (environment.containsProperty("function.location")) {
+				System.setProperty(FunctionProperties.PREFIX + ".location", environment.getProperty("function.location"));
+			}
+		}
+	}
 }

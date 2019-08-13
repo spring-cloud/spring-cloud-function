@@ -26,9 +26,15 @@ import org.springframework.util.StringUtils;
  * Configuration properties for deciding how to locate the functional class to execute.
  *
  * @author Eric Bottard
+ * @author Oleg Zhurakousky
  */
 @ConfigurationProperties("spring.cloud.function")
 public class FunctionProperties {
+
+	/**
+	 * The name prefix for properties defined by this properties class.
+	 */
+	public final static String PREFIX = "spring.cloud.function";
 
 	/**
 	 * Location of jar archive containing the supplier/function/consumer class or bean to run.

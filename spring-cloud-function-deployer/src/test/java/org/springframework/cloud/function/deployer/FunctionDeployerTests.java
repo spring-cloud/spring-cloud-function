@@ -154,6 +154,20 @@ public class FunctionDeployerTests {
 		assertThat(new String(result.getPayload(), StandardCharsets.UTF_8)).isEqualTo("\"BOB\"");
 	}
 
+	@Test
+	public void testWithLegacyProperties() throws Exception {
+		String[] args = new String[] {
+				"--function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
+				"--function.name=uppercase" };
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<Message<byte[]>, Message<byte[]>> function = catalog.lookup("uppercase", "application/json");
+
+		Message<byte[]> result = function
+				.apply(MessageBuilder.withPayload("\"bob\"".getBytes(StandardCharsets.UTF_8)).build());
+		assertThat(new String(result.getPayload(), StandardCharsets.UTF_8)).isEqualTo("\"BOB\"");
+	}
+
 	/*
 	 * Same as above but:
 	 * Given that Java 11 does not include 'javax' packages, this test simply validates that
