@@ -6,7 +6,7 @@
 
 	<groupId>function.example</groupId>
 	<artifactId>simplestjar</artifactId>
-	<version>0.0.1.BUILD-SNAPSHOT</version>
+	<version>1.0.0.RELEASE</version>
 	<packaging>jar</packaging>
 
 	<name>simplestjar</name>
