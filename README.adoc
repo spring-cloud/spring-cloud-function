@@ -19,6 +19,16 @@ It abstracts away all of the transport details and
 infrastructure, allowing the developer to keep all the familiar tools
 and processes, and focus firmly on business logic.
 
+*Features*
+
+In the nutshell Spring Cloud Function provides the following features:
+
+* _Choice of programming styles - reactive, imperative or hybrid._
+* _Function composition and adaptation (e.g., composing imperative functions with reactive)._
+* _Support for reactive function with multiple inputs and outputs allowing merging, joining and other complex streaming operation to be handled by functions._
+* _Transparent type conversion of inputs and outputs._
+* _Packaging functions for deployments, specific to the target platform (e.g., Project Riff, AWS Lambda and more)_
+
 Here's a complete, executable, testable Spring Boot application
 (implementing a simple string manipulation):
 
