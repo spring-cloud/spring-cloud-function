@@ -18,11 +18,15 @@ package org.springframework.cloud.function.deployer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -55,6 +59,8 @@ public class FunctionDeployerConfiguration {
 	SmartLifecycle functionArchiveDeployer(FunctionProperties functionProperties,
 			FunctionRegistry functionRegistry, ApplicationArguments arguments) {
 
+		ApplicationArguments updatedArguments = this.updateArguments(arguments);
+
 		Archive archive = null;
 		try {
 			archive = new JarFileArchive(new File(functionProperties.getLocation()));
@@ -85,7 +91,7 @@ public class FunctionDeployerConfiguration {
 				if (logger.isInfoEnabled()) {
 					logger.info("Deploying archive: " + functionProperties.getLocation());
 				}
-				deployer.deploy(functionRegistry, functionProperties, arguments.getSourceArgs());
+				deployer.deploy(functionRegistry, functionProperties, updatedArguments.getSourceArgs());
 				this.running = true;
 				if (logger.isInfoEnabled()) {
 					logger.info("Successfully deployed archive: " + functionProperties.getLocation());
@@ -102,7 +108,26 @@ public class FunctionDeployerConfiguration {
 				return Integer.MAX_VALUE - 1000;
 			}
 		};
+
 	}
+
+	/*
+	 * We need to update actual arguments to ensure that when we may be passing to the deployed archive has the right properties.
+	 * For the current application FunctionProperties already set as a result of EnvironmentPostProcessor
+	 */
+	private ApplicationArguments updateArguments(ApplicationArguments arguments) {
+		List<String> originalArguments =  new ArrayList<String>(Arrays.asList(arguments.getSourceArgs()));
+
+		if (arguments.containsOption("function.name")) {
+			originalArguments.add(FunctionProperties.PREFIX + ".function-name=" + arguments.getOptionValues("function.name").get(0));
+		}
+		if (arguments.containsOption("function.location")) {
+			originalArguments.add(FunctionProperties.PREFIX + ".location=" + arguments.getOptionValues("function.location").get(0));
+		}
+		ApplicationArguments updatedArguments = new DefaultApplicationArguments(originalArguments.toArray(new String[] {}));
+		return updatedArguments;
+	}
+
 
 	/**
 	 * Instance of {@link EnvironmentPostProcessor} which ensures that legacy
