@@ -19,16 +19,6 @@ It abstracts away all of the transport details and
 infrastructure, allowing the developer to keep all the familiar tools
 and processes, and focus firmly on business logic.
 
-*Features*
-
-In the nutshell Spring Cloud Function provides the following features:
-
-* _Choice of programming styles - reactive, imperative or hybrid._
-* _Function composition and adaptation (e.g., composing imperative functions with reactive)._
-* _Support for reactive function with multiple inputs and outputs allowing merging, joining and other complex streaming operation to be handled by functions._
-* _Transparent type conversion of inputs and outputs._
-* _Packaging functions for deployments, specific to the target platform (e.g., Project Riff, AWS Lambda and more)_
-
 Here's a complete, executable, testable Spring Boot application
 (implementing a simple string manipulation):
 
@@ -55,20 +45,19 @@ https://www.reactive-streams.org/[Reactive Streams] `Publisher` from
 https://projectreactor.io/[Project Reactor]. The function can be
 accessed over HTTP or messaging.
 
-Spring Cloud Function has 4 main features:
+*Features*
 
-1. Wrappers for `@Beans` of type `Function`, `Consumer` and
-`Supplier`, exposing them to the outside world as either HTTP
-endpoints and/or message stream listeners/publishers with RabbitMQ, Kafka etc.
+In the nutshell Spring Cloud Function provides the following features:
 
-2. Compiling strings which are Java function bodies into bytecode, and
-then turning them into `@Beans` that can be wrapped as above.
-
-3. Deploying a JAR file containing such an application context with an
-isolated classloader, so that you can pack them together in a single
-JVM.
-
-4. Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers.
+* _Choice of programming styles - reactive, imperative or hybrid._
+* _Function composition and adaptation (e.g., composing imperative functions with reactive)._
+* _Support for reactive function with multiple inputs and outputs allowing merging, joining and other complex streaming operation to be handled by functions._
+* _Transparent type conversion of inputs and outputs._
+* _Packaging functions for deployments, specific to the target platform (e.g., Project Riff, AWS Lambda and more)_
+* _ Adapters to expose function to the outside world as HTTP endpoints etc.
+* _ Deploying a JAR file containing such an application context with an isolated classloader, so that you can pack them together in a single JVM.
+* _Compiling strings which are Java function bodies into bytecode, and then turning them into `@Beans` that can be wrapped as above.
+* _Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers._
 
 == Getting Started
 
