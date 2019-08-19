@@ -187,6 +187,9 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 	private boolean isBootApplicationWithMain() {
 		try {
+			if (this.getArchive().getManifest() == null) {
+				return false;
+			}
 			return StringUtils.hasText(this.getArchive().getManifest().getMainAttributes().getValue("Start-Class"));
 		}
 		catch (Exception e) {

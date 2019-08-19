@@ -46,6 +46,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * and {@link SmartLifecycle#stop()} operations.
  * <br>
  * @author Oleg Zhurakousky
+ * @author Eric Bottard
  *
  * @since 3.0
  *
