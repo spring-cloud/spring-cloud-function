@@ -45,9 +45,12 @@ https://www.reactive-streams.org/[Reactive Streams] `Publisher` from
 https://projectreactor.io/[Project Reactor]. The function can be
 accessed over HTTP or messaging.
 
-*Features*
+Spring Cloud Function has 4 main features:
 
 In the nutshell Spring Cloud Function provides the following features:
+1. Wrappers for `@Beans` of type `Function`, `Consumer` and
+`Supplier`, exposing them to the outside world as either HTTP
+endpoints and/or message stream listeners/publishers with RabbitMQ, Kafka etc.
 
 * _Choice of programming styles - reactive, imperative or hybrid._
 * _Function composition and adaptation (e.g., composing imperative functions with reactive)._

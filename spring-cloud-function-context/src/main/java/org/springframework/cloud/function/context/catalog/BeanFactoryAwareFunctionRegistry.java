@@ -430,6 +430,7 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 			}
 
+			// Outputs will be converted only if we're told how (via  acceptedOutputMimeTypes), otherwise output returned as is.
 			if (!ObjectUtils.isEmpty(this.acceptedOutputMimeTypes)) {
 				result = result instanceof Publisher
 						? this.convertOutputPublisherIfNecessary((Publisher<?>) result, this.acceptedOutputMimeTypes)
@@ -462,7 +463,7 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 				convertedValue = Tuples.fromArray(convertedInputArray);
 			}
-			else {
+			else if (value != null) {
 				List<MimeType> acceptedContentTypes = MimeTypeUtils.parseMimeTypes(acceptedOutputMimeTypes[0].toString());
 
 				convertedValue = acceptedContentTypes.stream()

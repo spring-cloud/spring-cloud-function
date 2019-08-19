@@ -40,6 +40,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,6 +77,28 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		List<Message<byte[]>> messageResult = messageFlux.apply(Flux.just(message1, message2)).collectList().block();
 		assertThat(messageResult.get(0).getPayload()).isEqualTo("\"UPPERCASEFLUX\"".getBytes(StandardCharsets.UTF_8));
 		assertThat(messageResult.get(1).getPayload()).isEqualTo("\"UPPERCASEFLUX2\"".getBytes(StandardCharsets.UTF_8));
+	}
+
+	@Test
+	public void testConsumerFunction() { // function that returns Void, effectively a Consumer
+		FunctionCatalog catalog = this.configureCatalog();
+
+		Function<String, Void> consumerFunction = catalog.lookup("consumerFunction");
+		assertThat(consumerFunction.apply("hello")).isNull();
+
+		Function<Message<byte[]>, Void> consumerFunctionAsMessageA = catalog.lookup("consumerFunction");
+		assertThat(consumerFunctionAsMessageA.apply(new GenericMessage<byte[]>("\"hello\"".getBytes()))).isNull();
+
+		Function<Message<byte[]>, Void> consumerFunctionAsMessageB = catalog.lookup("consumerFunction", "application/json");
+		assertThat(consumerFunctionAsMessageB.apply(new GenericMessage<byte[]>("\"hello\"".getBytes()))).isNull();
+	}
+
+	@Test
+	public void testMessageToPojoConversion() {
+		FunctionCatalog catalog = this.configureCatalog();
+		Function<Message<String>, Person> uppercasePerson = catalog.lookup("uppercasePerson");
+		Person person =  uppercasePerson.apply(MessageBuilder.withPayload("{\"name\":\"bill\",\"id\":2}").build());
+		assertThat(person.getName()).isEqualTo("BILL");
 	}
 
 	/*
@@ -250,6 +273,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	protected static class SampleFunctionConfiguration {
 
 		@Bean
+		public Function<Person, Person> uppercasePerson() {
+			return person -> {
+				return new Person(person.getName().toUpperCase(), person.getId());
+			};
+		}
+
+		@Bean
 		public Supplier<String> numberword() {
 			return () -> "one";
 		}
@@ -265,6 +295,14 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<String, Void> consumerFunction() {
+			return v -> {
+				System.out.println("Value: " + v);
+				return null;
+			};
 		}
 
 		@Bean
@@ -392,10 +430,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 	}
 
-	private static class Person {
+	public static class Person {
 		private String name;
 		private int id;
-		Person(String name, int id) {
+		public Person() {
+
+		}
+		public Person(String name, int id) {
 			this.name = name;
 			this.id = id;
 		}
