@@ -27,6 +27,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.loader.archive.Archive;
+import org.springframework.boot.loader.archive.ExplodedArchive;
 import org.springframework.boot.loader.archive.JarFileArchive;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.context.SmartLifecycle;
@@ -57,7 +58,16 @@ public class FunctionDeployerConfiguration {
 
 		Archive archive = null;
 		try {
-			archive = new JarFileArchive(new File(functionProperties.getLocation()));
+			File file = new File(functionProperties.getLocation());
+			if (!file.exists()) {
+				throw new IllegalStateException("Failed to create archive: " + functionProperties.getLocation() + " does not exist");
+			}
+			else if (file.isDirectory()) {
+				archive = new ExplodedArchive(file);
+			}
+			else {
+				archive = new JarFileArchive(file);
+			}
 		}
 		catch (IOException e) {
 			throw new IllegalStateException("Failed to create archive: " + functionProperties.getLocation(), e);
