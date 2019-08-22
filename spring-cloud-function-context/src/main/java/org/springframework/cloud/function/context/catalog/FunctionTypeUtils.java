@@ -19,18 +19,25 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.reactivestreams.Publisher;
+import reactor.util.function.Tuple2;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Set of utility operations to interrogate function definitions.
@@ -59,6 +66,43 @@ public final class FunctionTypeUtils {
 		Type rawType = type instanceof ParameterizedType ? ((ParameterizedType) type).getRawType() : type;
 
 		return rawType instanceof Class<?> && Collection.class.isAssignableFrom((Class<?>) rawType);
+	}
+
+	/**
+	 * Will attempt to discover functional methods on the class. It's applicable for POJOs as well as
+	 * functional classes in `java.util.function` package. For the later the names of the methods are
+	 * well known (`apply`, `accept` and `get`). For the former it will attempt to discover a single method
+	 * following semantics described in (see {@link FunctionalInterface})
+	 *
+	 * @param pojoFunctionClass the class to introspect
+	 * @return functional method
+	 */
+	public static Method discoverFunctionalMethod(Class<?> pojoFunctionClass) {
+
+		if (Supplier.class.isAssignableFrom(pojoFunctionClass)) {
+			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> m.getName().equals("get")).findFirst().get();
+		}
+		else if (Consumer.class.isAssignableFrom(pojoFunctionClass) || BiConsumer.class.isAssignableFrom(pojoFunctionClass)) {
+			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> m.getName().equals("accept")).findFirst().get();
+		}
+		else if (Function.class.isAssignableFrom(pojoFunctionClass) || BiFunction.class.isAssignableFrom(pojoFunctionClass)) {
+			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> m.getName().equals("apply")).findFirst().get();
+		}
+
+		List<Method> methods = new ArrayList<>();
+		ReflectionUtils.doWithMethods(pojoFunctionClass, method -> {
+			if (method.getDeclaringClass() == pojoFunctionClass) {
+				methods.add(method);
+			}
+
+		}, method ->
+			!method.getDeclaringClass().isAssignableFrom(Object.class)
+			&& !method.isSynthetic() && !method.isBridge() && !method.isVarArgs());
+
+		Assert.isTrue(methods.size() == 1, "Discovered " + methods.size() + " methods that would qualify as 'functional' - "
+				+ methods + ".\n Class '" + pojoFunctionClass + "' is not a FunctionalInterface.");
+
+		return methods.get(0);
 	}
 
 	public static Type getFunctionTypeFromFunctionMethod(Method functionMethod) {
@@ -231,10 +275,6 @@ public final class FunctionTypeUtils {
 		return argument != null && argument.getClass().getName().startsWith("reactor.util.function.Tuple");
 	}
 
-	private static boolean isMulti(Type type) {
-		return type.getTypeName().startsWith("reactor.util.function.Tuple");
-	}
-
 	public static boolean isSupplier(Type type) {
 		return type.getTypeName().startsWith("java.util.function.Supplier");
 	}
@@ -266,6 +306,48 @@ public final class FunctionTypeUtils {
 							outType).getType();
 		}
 		return originType;
+	}
+
+	static Type fromFunctionMethod(Method functionalMethod) {
+		Type[] parameterTypes = functionalMethod.getGenericParameterTypes();
+
+		Type functionType = null;
+		switch (parameterTypes.length) {
+		case 0:
+			functionType =  ResolvableType.forClassWithGenerics(Supplier.class,
+					ResolvableType.forMethodReturnType(functionalMethod)).getType();
+			break;
+		case 1:
+			if (Void.class.isAssignableFrom(functionalMethod.getReturnType())) {
+				functionType =  ResolvableType.forClassWithGenerics(Consumer.class,
+						ResolvableType.forMethodParameter(functionalMethod, 0)).getType();
+			}
+			else {
+				functionType =  ResolvableType.forClassWithGenerics(Function.class,
+						ResolvableType.forMethodParameter(functionalMethod, 0),
+						ResolvableType.forMethodReturnType(functionalMethod)).getType();
+			}
+			break;
+		case 2:
+			ResolvableType canonicalParametersWrapper = fromTwoArityFunction(functionalMethod);
+			functionType =  ResolvableType.forClassWithGenerics(Function.class,
+					canonicalParametersWrapper,
+					ResolvableType.forMethodReturnType(functionalMethod)).getType();
+			break;
+		default:
+			throw new UnsupportedOperationException("Functional method: " + functionalMethod + " is not supported");
+		}
+		return functionType;
+	}
+
+	private static ResolvableType fromTwoArityFunction(Method functionalMethod) {
+		return  ResolvableType.forClassWithGenerics(Tuple2.class,
+				ResolvableType.forMethodParameter(functionalMethod, 0),
+				ResolvableType.forMethodParameter(functionalMethod, 1));
+	}
+
+	private static boolean isMulti(Type type) {
+		return type.getTypeName().startsWith("reactor.util.function.Tuple");
 	}
 
 	private static void assertSupportedTypes(Type type) {

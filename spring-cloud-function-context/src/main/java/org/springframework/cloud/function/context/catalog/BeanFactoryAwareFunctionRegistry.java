@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -32,6 +33,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -39,6 +42,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
+import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -98,10 +103,9 @@ public class BeanFactoryAwareFunctionRegistry
 		this.messageConverter = messageConverter;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T lookup(Class<?> type, String definition) {
-		return (T) this.compose(type, definition);
+		return this.lookup(definition, new String[] {});
 	}
 
 	@Override
@@ -113,8 +117,8 @@ public class BeanFactoryAwareFunctionRegistry
 
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
-		Assert.notEmpty(acceptedOutputTypes, "'acceptedOutputTypes' must not be null or empty");
-		return (T) this.compose(null, definition, acceptedOutputTypes);
+		Object function = this.proxyInvokerIfNecessary((FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes));
+		return (T) function;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -232,6 +236,7 @@ public class BeanFactoryAwareFunctionRegistry
 							+ "Function available in catalog are: "  + this.getNames(null));
 					return null;
 				}
+
 				composedNameBuilder.append(prefix);
 				composedNameBuilder.append(name);
 
@@ -239,12 +244,17 @@ public class BeanFactoryAwareFunctionRegistry
 				Type currentFunctionType = null;
 				if (function instanceof FunctionRegistration) {
 					registration = (FunctionRegistration<Object>) function;
-					currentFunctionType = registration.getType().getType();
+					currentFunctionType = currentFunctionType == null ? registration.getType().getType() : currentFunctionType;
 					function = registration.getTarget();
 				}
 				else {
+					if (isFunctionPojo(function)) {
+						Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(function.getClass());
+						currentFunctionType = FunctionTypeUtils.fromFunctionMethod(functionalMethod);
+						function = this.proxyTarget(function, functionalMethod);
+					}
 					String[] aliasNames = this.getAliases(name).toArray(new String[] {});
-					currentFunctionType = this.discoverFunctionType(function, aliasNames);
+					currentFunctionType = currentFunctionType == null ? this.discoverFunctionType(function, aliasNames) : currentFunctionType;
 					registration = new FunctionRegistration<>(function, name).type(currentFunctionType);
 				}
 
@@ -273,6 +283,73 @@ public class BeanFactoryAwareFunctionRegistry
 			registrationsByName.putIfAbsent(definition, registration);
 		}
 		return resultFunction;
+	}
+
+	private boolean isFunctionPojo(Object function) {
+		return !function.getClass().isSynthetic()
+				&& !(function instanceof Supplier) && !(function instanceof Function) && !(function instanceof Consumer)
+				&& !function.getClass().getPackage().getName().startsWith("org.springframework.cloud.function.compiler");
+	}
+
+	/*
+	 * == OUTER PROXY ===
+	 * For cases where function is POJO we need to be able to look it up as Function
+	 * as well as the type of actual pojo (e.g., MyFunction f1 = catalog.lookup("myFunction");)
+	 * To do this we wrap the target into CglibProxy (for cases when function is a POJO ) with the
+	 * actual target class (e.g., MyFunction). Meanwhile the invocation will be delegated to
+	 * the FunctionInvocationWrapper which will trigger the INNER PROXY. This effectively ensures that
+	 * conversion, composition and/or fluxification would happen (code inside of FunctionInvocationWrapper)
+	 * while the inner proxy invocation will delegate the invocation with already converted arguments
+	 * to the actual target class (e.g., MyFunction).
+	 */
+	private Object proxyInvokerIfNecessary(FunctionInvocationWrapper functionInvoker) {
+		if (functionInvoker != null && AopUtils.isCglibProxy(functionInvoker.getTarget())) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Proxying POJO function: " + functionInvoker.functionDefinition + ". . ." + functionInvoker.target.getClass());
+			}
+			ProxyFactory pf = new ProxyFactory(functionInvoker.getTarget());
+			pf.setProxyTargetClass(true);
+			pf.setInterfaces(Function.class, Supplier.class, Consumer.class);
+			pf.addAdvice(new MethodInterceptor() {
+				@Override
+				public Object invoke(MethodInvocation invocation) throws Throwable {
+					// this will trigger the INNER PROXY
+					if (ObjectUtils.isEmpty(invocation.getArguments())) {
+						Object o =  functionInvoker.get();
+						return o;
+					}
+					else {
+						// this is where we probably would need to gather all arguments into tuples
+						return functionInvoker.apply(invocation.getArguments()[0]);
+					}
+
+				}
+			});
+			return pf.getProxy();
+		}
+		return functionInvoker;
+	}
+
+	/*
+	 * == INNER PROXY ===
+	 * When dealing with POJO functions we still want to be able to treat them as any other
+	 * function for purposes of composition, type conversion and fluxification.
+	 * So this proxy will ensure that the target class can be represented as Function while delegating
+	 * any call to apply to the actual target method.
+	 * Since this proxy is part of the FunctionInvocationWrapper composition and copnversion will be applied
+	 * as tyo any other function.
+	 */
+	private Object proxyTarget(Object targetFunction, Method actualMethodToCall) {
+		ProxyFactory pf = new ProxyFactory(targetFunction);
+		pf.setProxyTargetClass(true);
+		pf.setInterfaces(Function.class);
+		pf.addAdvice(new MethodInterceptor() {
+			@Override
+			public Object invoke(MethodInvocation invocation) throws Throwable {
+				return actualMethodToCall.invoke(invocation.getThis(), invocation.getArguments());
+			}
+		});
+		return pf.getProxy();
 	}
 
 	private Collection<String> getAliases(String key) {

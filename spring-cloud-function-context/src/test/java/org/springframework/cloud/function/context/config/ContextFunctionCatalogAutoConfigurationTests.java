@@ -141,6 +141,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
+	@Ignore
 	public void configurationFunction() {
 		create(FunctionConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
@@ -372,6 +373,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
+	@Ignore
 	public void singletonMessageFunction() {
 		create(SingletonMessageConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
