@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -193,10 +194,18 @@ public class BeanFactoryAwareFunctionRegistry
 
 	private String discoverDefaultDefinitionIfNecessary(String definition) {
 		if (StringUtils.isEmpty(definition)) {
-			String[] functionNames = this.applicationContext.getBeanNamesForType(Function.class);
-			if (!ObjectUtils.isEmpty(functionNames)) {
-				Assert.isTrue(functionNames.length == 1, "Found more then one function in BeanFactory");
-				definition = functionNames[0];
+			String[] functionNames  = this.applicationContext.getBeanNamesForType(Function.class);
+			String[] consumerNames  = this.applicationContext.getBeanNamesForType(Consumer.class);
+			String[] supplierNames  = this.applicationContext.getBeanNamesForType(Supplier.class);
+			/*
+			 * we may need to add BiFunction and BuConsumer at some point
+			 */
+			List<String> names = Stream
+					.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames))).collect(Collectors.toList());
+
+			if (!ObjectUtils.isEmpty(names)) {
+				Assert.isTrue(names.size() == 1, "Found more then one function in BeanFactory: " + names);
+				definition = names.get(0);
 			}
 			else {
 				if (this.registrationsByName.size() > 0) {
