@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,85 +16,69 @@
 
 package org.springframework.cloud.function.deployer;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.annotation.PostConstruct;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
  * Configuration properties for deciding how to locate the functional class to execute.
  *
  * @author Eric Bottard
+ * @author Oleg Zhurakousky
  */
+@ConfigurationProperties("spring.cloud.function")
 public class FunctionProperties {
 
 	/**
-	 * Location(s) of jar archives containing the supplier/function/consumer class to run.
+	 * The name prefix for properties defined by this properties class.
 	 */
-	private String[] location = new String[0];
+	public final static String PREFIX = "spring.cloud.function";
 
 	/**
-	 * The bean name or fully qualified class name of the supplier/function/consumer to
-	 * run.
+	 * Location of jar archive containing the supplier/function/consumer class or bean to run.
 	 */
-	private String[] bean = new String[0];
+	private String location;
 
 	/**
-	 * Optional main class from which to build a Spring application context.
+	 * The name of the function to be looked up from the FunctionCatalog (e.g., bean name).
 	 */
-	private String main;
+	private String functionName;
 
-	public static String functionName(String name) {
-		if (!name.contains(",")) {
-			return "function0";
-		}
-		List<String> names = new ArrayList<>();
-		for (int i = 0; i <= StringUtils.countOccurrencesOf(name, ","); i++) {
-			names.add("function" + i);
-		}
-		return StringUtils.collectionToDelimitedString(names, "|");
+	/**
+	 * The name of the function class tyo be instantiated and loaded into FunctionCatalog. The name of the
+	 * function will be decapitalized simple name of this class.
+	 */
+	private String functionClass;
+
+	public void setFunctionClass(String functionClass) {
+		this.functionClass = functionClass;
 	}
 
-	public static String functionName(int value) {
-		return "function" + value;
+	public String getFunctionClass() {
+		return this.functionClass;
 	}
 
-	public String getName() {
-		return functionName(StringUtils.arrayToDelimitedString(this.bean, ","));
+	public void setFunctionName(String functionName) {
+		this.functionName = StringUtils.hasText(functionName) ? functionName : "";
 	}
 
-	public String[] getBean() {
-		return this.bean;
+	public String getFunctionName() {
+		return this.functionName;
 	}
 
-	public void setBean(String[] bean) {
-		this.bean = bean;
-	}
-
-	public String[] getLocation() {
+	public String getLocation() {
 		return this.location;
 	}
 
-	public void setLocation(String[] location) {
+	public void setLocation(String location) {
 		this.location = location;
-	}
-
-	public String getMain() {
-		return this.main;
-	}
-
-	public void setMain(String main) {
-		this.main = main;
 	}
 
 	@PostConstruct
 	public void init() {
-		if (this.location.length == 0) {
-			throw new IllegalStateException(
-					"No archive location provided, please configure function.location as a jar or directory.");
-		}
+		Assert.notNull(this.location, "No archive location provided, please configure spring.cloud.function.location as a jar or directory.");
 	}
 
 }

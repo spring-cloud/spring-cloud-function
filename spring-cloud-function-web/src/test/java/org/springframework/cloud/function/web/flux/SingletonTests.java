@@ -95,7 +95,7 @@ public class SingletonTests {
 
 	}
 
-	static class MySupplier implements Supplier<Flux<String>> {
+	public static class MySupplier implements Supplier<Flux<String>> {
 
 		@Override
 		public Flux<String> get() {

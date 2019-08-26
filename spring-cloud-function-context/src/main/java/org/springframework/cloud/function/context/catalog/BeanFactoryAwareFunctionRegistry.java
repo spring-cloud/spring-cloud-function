@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -31,7 +32,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -39,6 +43,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
+import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -98,10 +104,9 @@ public class BeanFactoryAwareFunctionRegistry
 		this.messageConverter = messageConverter;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T lookup(Class<?> type, String definition) {
-		return (T) this.compose(type, definition);
+		return this.lookup(definition, new String[] {});
 	}
 
 	@Override
@@ -113,8 +118,8 @@ public class BeanFactoryAwareFunctionRegistry
 
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
-		Assert.notEmpty(acceptedOutputTypes, "'acceptedOutputTypes' must not be null or empty");
-		return (T) this.compose(null, definition, acceptedOutputTypes);
+		Object function = this.proxyInvokerIfNecessary((FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes));
+		return (T) function;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -189,10 +194,24 @@ public class BeanFactoryAwareFunctionRegistry
 
 	private String discoverDefaultDefinitionIfNecessary(String definition) {
 		if (StringUtils.isEmpty(definition)) {
-			String[] functionNames = this.applicationContext.getBeanNamesForType(Function.class);
-			if (!ObjectUtils.isEmpty(functionNames)) {
-				Assert.isTrue(functionNames.length == 1, "Found more then one function in BeanFactory");
-				definition = functionNames[0];
+			String[] functionNames  = this.applicationContext.getBeanNamesForType(Function.class);
+			String[] consumerNames  = this.applicationContext.getBeanNamesForType(Consumer.class);
+			String[] supplierNames  = this.applicationContext.getBeanNamesForType(Supplier.class);
+			/*
+			 * we may need to add BiFunction and BuConsumer at some point
+			 */
+			List<String> names = Stream
+					.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames))).collect(Collectors.toList());
+
+			if (!ObjectUtils.isEmpty(names)) {
+				Assert.isTrue(names.size() == 1, "Found more then one function in BeanFactory: " + names);
+				definition = names.get(0);
+			}
+			else {
+				if (this.registrationsByName.size() > 0) {
+					Assert.isTrue(this.registrationsByName.size() == 1, "Found more then one function in local registry");
+					definition = this.registrationsByName.keySet().iterator().next();
+				}
 			}
 		}
 		return definition;
@@ -200,6 +219,9 @@ public class BeanFactoryAwareFunctionRegistry
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Function<?, ?> compose(Class<?> type, String definition, String... acceptedOutputTypes) {
+		if (logger.isInfoEnabled()) {
+			logger.info("Looking up function '" + definition + "' with acceptedOutputTypes: " + Arrays.asList(acceptedOutputTypes));
+		}
 		definition = discoverDefaultDefinitionIfNecessary(definition);
 		if (StringUtils.isEmpty(definition)) {
 			return null;
@@ -219,8 +241,11 @@ public class BeanFactoryAwareFunctionRegistry
 			for (String name : names) {
 				Object function = this.locateFunction(name);
 				if (function == null) {
+					logger.warn("!!! Failed to discover function '" + definition + "' in function catalog. "
+							+ "Function available in catalog are: "  + this.getNames(null));
 					return null;
 				}
+
 				composedNameBuilder.append(prefix);
 				composedNameBuilder.append(name);
 
@@ -228,12 +253,17 @@ public class BeanFactoryAwareFunctionRegistry
 				Type currentFunctionType = null;
 				if (function instanceof FunctionRegistration) {
 					registration = (FunctionRegistration<Object>) function;
-					currentFunctionType = registration.getType().getType();
+					currentFunctionType = currentFunctionType == null ? registration.getType().getType() : currentFunctionType;
 					function = registration.getTarget();
 				}
 				else {
+					if (isFunctionPojo(function)) {
+						Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(function.getClass());
+						currentFunctionType = FunctionTypeUtils.fromFunctionMethod(functionalMethod);
+						function = this.proxyTarget(function, functionalMethod);
+					}
 					String[] aliasNames = this.getAliases(name).toArray(new String[] {});
-					currentFunctionType = this.discoverFunctionType(function, aliasNames);
+					currentFunctionType = currentFunctionType == null ? this.discoverFunctionType(function, aliasNames) : currentFunctionType;
 					registration = new FunctionRegistration<>(function, name).type(currentFunctionType);
 				}
 
@@ -262,6 +292,73 @@ public class BeanFactoryAwareFunctionRegistry
 			registrationsByName.putIfAbsent(definition, registration);
 		}
 		return resultFunction;
+	}
+
+	private boolean isFunctionPojo(Object function) {
+		return !function.getClass().isSynthetic()
+				&& !(function instanceof Supplier) && !(function instanceof Function) && !(function instanceof Consumer)
+				&& !function.getClass().getPackage().getName().startsWith("org.springframework.cloud.function.compiler");
+	}
+
+	/*
+	 * == OUTER PROXY ===
+	 * For cases where function is POJO we need to be able to look it up as Function
+	 * as well as the type of actual pojo (e.g., MyFunction f1 = catalog.lookup("myFunction");)
+	 * To do this we wrap the target into CglibProxy (for cases when function is a POJO ) with the
+	 * actual target class (e.g., MyFunction). Meanwhile the invocation will be delegated to
+	 * the FunctionInvocationWrapper which will trigger the INNER PROXY. This effectively ensures that
+	 * conversion, composition and/or fluxification would happen (code inside of FunctionInvocationWrapper)
+	 * while the inner proxy invocation will delegate the invocation with already converted arguments
+	 * to the actual target class (e.g., MyFunction).
+	 */
+	private Object proxyInvokerIfNecessary(FunctionInvocationWrapper functionInvoker) {
+		if (functionInvoker != null && AopUtils.isCglibProxy(functionInvoker.getTarget())) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Proxying POJO function: " + functionInvoker.functionDefinition + ". . ." + functionInvoker.target.getClass());
+			}
+			ProxyFactory pf = new ProxyFactory(functionInvoker.getTarget());
+			pf.setProxyTargetClass(true);
+			pf.setInterfaces(Function.class, Supplier.class, Consumer.class);
+			pf.addAdvice(new MethodInterceptor() {
+				@Override
+				public Object invoke(MethodInvocation invocation) throws Throwable {
+					// this will trigger the INNER PROXY
+					if (ObjectUtils.isEmpty(invocation.getArguments())) {
+						Object o =  functionInvoker.get();
+						return o;
+					}
+					else {
+						// this is where we probably would need to gather all arguments into tuples
+						return functionInvoker.apply(invocation.getArguments()[0]);
+					}
+
+				}
+			});
+			return pf.getProxy();
+		}
+		return functionInvoker;
+	}
+
+	/*
+	 * == INNER PROXY ===
+	 * When dealing with POJO functions we still want to be able to treat them as any other
+	 * function for purposes of composition, type conversion and fluxification.
+	 * So this proxy will ensure that the target class can be represented as Function while delegating
+	 * any call to apply to the actual target method.
+	 * Since this proxy is part of the FunctionInvocationWrapper composition and copnversion will be applied
+	 * as tyo any other function.
+	 */
+	private Object proxyTarget(Object targetFunction, Method actualMethodToCall) {
+		ProxyFactory pf = new ProxyFactory(targetFunction);
+		pf.setProxyTargetClass(true);
+		pf.setInterfaces(Function.class);
+		pf.addAdvice(new MethodInterceptor() {
+			@Override
+			public Object invoke(MethodInvocation invocation) throws Throwable {
+				return actualMethodToCall.invoke(invocation.getThis(), invocation.getArguments());
+			}
+		});
+		return pf.getProxy();
 	}
 
 	private Collection<String> getAliases(String key) {
@@ -419,6 +516,7 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 			}
 
+			// Outputs will be converted only if we're told how (via  acceptedOutputMimeTypes), otherwise output returned as is.
 			if (!ObjectUtils.isEmpty(this.acceptedOutputMimeTypes)) {
 				result = result instanceof Publisher
 						? this.convertOutputPublisherIfNecessary((Publisher<?>) result, this.acceptedOutputMimeTypes)
@@ -429,7 +527,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertOutputValueIfNecessary(Object value, String... acceptedOutputMimeTypes) {
-			logger.info("Applying type conversion on output value");
+			logger.debug("Applying type conversion on output value");
 			Object convertedValue = null;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
 				int outputCount = FunctionTypeUtils.getOutputCount(this.functionType);
@@ -437,13 +535,21 @@ public class BeanFactoryAwareFunctionRegistry
 				for (int i = 0; i < outputCount; i++) {
 					Expression parsed = new SpelExpressionParser().parseExpression("getT" + (i + 1) + "()");
 					Object outputArgument = parsed.getValue(value);
-					convertedInputArray[i] = outputArgument instanceof Publisher
-							? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i])
-									: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
+					try {
+						convertedInputArray[i] = outputArgument instanceof Publisher
+								? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i])
+										: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
+					}
+					catch (ArrayIndexOutOfBoundsException e) {
+						throw new IllegalStateException("The number of 'acceptedOutputMimeTypes' for function '" + this.functionDefinition
+								+ "' is (" + acceptedOutputMimeTypes.length
+								+ "), which does not match the number of actual outputs of this function which is (" +  outputCount + ").", e);
+					}
+
 				}
 				convertedValue = Tuples.fromArray(convertedInputArray);
 			}
-			else {
+			else if (value != null) {
 				List<MimeType> acceptedContentTypes = MimeTypeUtils.parseMimeTypes(acceptedOutputMimeTypes[0].toString());
 
 				convertedValue = acceptedContentTypes.stream()
@@ -457,8 +563,8 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertOutputPublisherIfNecessary(Publisher<?> publisher, String... acceptedOutputMimeTypes) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Applying type conversion on output Publisher " + publisher);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Applying type conversion on output Publisher " + publisher);
 			}
 
 			Publisher<?> result = publisher instanceof Mono
@@ -468,8 +574,8 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Publisher<?> convertInputPublisherIfNecessary(Publisher<?> publisher, Type type) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Applying type conversion on input Publisher " + publisher);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Applying type conversion on input Publisher " + publisher);
 			}
 
 			Publisher<?> result = publisher instanceof Mono
@@ -479,9 +585,9 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private Object convertInputValueIfNecessary(Object value, Type type) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Applying type conversion on input value ");
-				logger.info("Function type: " + this.functionType);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Applying type conversion on input value " + value);
+				logger.debug("Function type: " + this.functionType);
 			}
 
 			Object convertedValue = value;
@@ -510,7 +616,9 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
-						convertedValue = messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
+						convertedValue = FunctionTypeUtils.isTypeCollection(type)
+								? messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, type)
+										:  messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
 						if (logger.isDebugEnabled()) {
 							logger.debug("Converted from Message: " + convertedValue);
 						}

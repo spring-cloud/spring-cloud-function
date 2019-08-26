@@ -29,11 +29,14 @@ import org.springframework.context.annotation.Import;
  * containing a function definition.
  * @author Dave Syer
  *
+ * @deprecated since 3.0. No longer required. Deployer will kick in simply by including
+ * spring-cloud-function-deployer dependency
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Import(FunctionDeployerConfiguration.class)
+@Deprecated
 public @interface EnableFunctionDeployer {
 
 }
