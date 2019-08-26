@@ -4,7 +4,9 @@ Manual changes to this file will be lost when it is generated again.
 Edit the files in the src/main/asciidoc/ directory instead.
 ////
 
-image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch=master[Build Status, link=https://travis-ci.org/spring-cloud/spring-cloud-function]
+:branch: master
+
+image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={branch}[Build Status, link=https://travis-ci.org/spring-cloud/spring-cloud-function]
 
 == Introduction
 

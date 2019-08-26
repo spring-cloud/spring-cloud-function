@@ -10,6 +10,7 @@ Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra
 :githubmaster: {github}/tree/master
 :docslink: {githubmaster}/docs/src/main/asciidoc
 :nofooter:
+:branch: master
 
 == Introduction
 
@@ -330,11 +331,11 @@ MESSAGE-9
 As well as being able to run as a standalone process, a Spring Cloud
 Function application can be adapted to run one of the existing
 serverless platforms. In the project there are adapters for
-https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS
+https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS
 Lambda],
-https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure],
+https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure],
 and
-https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache
+https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache
 OpenWhisk]. The https://github.com/fnproject/fn[Oracle Fn platform]
 has its own Spring Cloud Function adapter. And
 https://projectriff.io[Riff] supports Java functions and its
