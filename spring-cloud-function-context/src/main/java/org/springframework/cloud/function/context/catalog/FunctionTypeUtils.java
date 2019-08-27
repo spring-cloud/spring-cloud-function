@@ -240,8 +240,21 @@ public final class FunctionTypeUtils {
 		return Publisher.class.isAssignableFrom(rawType);
 	}
 
+	public static boolean isSupplier(Type type) {
+		return isOfType(type, Supplier.class);
+	}
+
+	public static boolean isFunction(Type type) {
+		return isOfType(type, Function.class);
+	}
+
 	public static boolean isConsumer(Type type) {
-		return type.getTypeName().startsWith("java.util.function.Consumer");
+		return isOfType(type, Consumer.class);
+	}
+
+	public static boolean isOfType(Type type, Class<?> cls) {
+		Class<?> c = type instanceof ParameterizedType ? (Class<?>) ((ParameterizedType) type).getRawType() : (Class<?>) type;
+		return cls.isAssignableFrom(c);
 	}
 
 	public static boolean isMono(Type type) {
@@ -273,14 +286,6 @@ public final class FunctionTypeUtils {
 
 	public static boolean isMultipleArgumentsHolder(Object argument) {
 		return argument != null && argument.getClass().getName().startsWith("reactor.util.function.Tuple");
-	}
-
-	public static boolean isSupplier(Type type) {
-		return type.getTypeName().startsWith("java.util.function.Supplier");
-	}
-
-	public static boolean isFunction(Type type) {
-		return type.getTypeName().startsWith("java.util.function.Function");
 	}
 
 	public static Type compose(Type originType, Type composedType) {
