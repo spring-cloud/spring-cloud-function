@@ -414,6 +414,53 @@ transmit headers from any adapter that supports key-value metadata
 </tr>
 </tbody>
 </table>
+<div class="sect3">
+<h4 id="_supplier"><a class="link" href="#_supplier">Supplier</a></h4>
+<div class="paragraph">
+<p>As you can see from the table above Supplier can be <em>reactive</em> - <code>Supplier&lt;Flux&lt;T&gt;&gt;</code>
+or <em>imperative</em> - <code>Supplier&lt;T&gt;</code>. From the invocation standpoint this should make no difference
+to the implementor of such Supplier. However, when used within frameworks
+(e.g., <a href="https://spring.io/projects/spring-cloud-stream">Spring Cloud Stream</a>), Suppliers, especially reactive,
+often used to represent the source of the stream, therefore they are invoked once to get the stream (e.g., Flux)
+to which consumers can subscribe to. In other words such suppliers represent an equivalent of an <em>infinite stream</em>.
+However, the same reactive suppliers can also represent <em>finite</em> stream(s) (e.g., result set on the polled JDBC data).
+In those cases such reactive suppliers must be hooked up to some polling mechanism of the underlying framework.</p>
+</div>
+<div class="paragraph">
+<p>To assist with that Spring Cloud Function provides a marker annotation
+<code>org.springframework.cloud.function.context.PollableSupplier</code> to signal that such supplier produces a
+finite stream and may need to be polled again. That said, it is important to understand that Spring Cloud Function itself
+provides no behavior for this annotation.</p>
+</div>
+<div class="paragraph">
+<p>In addition <code>PollableSupplier</code> annotation exposes a <em>splittable</em> attribute to signal that produced stream
+needs to be split (see <a href="https://www.enterpriseintegrationpatterns.com/patterns/messaging/Sequencer.html">Splitter EIP</a>)</p>
+</div>
+<div class="paragraph">
+<p>Here is the example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@PollableSupplier(splittable = true)
+public Supplier&lt;Flux&lt;String&gt;&gt; someSupplier() {
+	return () -&gt; {
+		String v1 = String.valueOf(System.nanoTime());
+		String v2 = String.valueOf(System.nanoTime());
+		String v3 = String.valueOf(System.nanoTime());
+		return Flux.just(v1, v2, v3);
+	};
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_function"><a class="link" href="#_function">Function</a></h4>
+<div class="paragraph">
+<p>TBD</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_consumer"><a class="link" href="#_consumer">Consumer</a></h4>
 <div class="paragraph">
 <p>Consumer is a little bit special because it has a <code>void</code> return type,
 which implies blocking, at least potentially. Most likely you will not
@@ -422,6 +469,7 @@ remember to subscribe to the input flux. If you declare a <code>Consumer</code>
 of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
