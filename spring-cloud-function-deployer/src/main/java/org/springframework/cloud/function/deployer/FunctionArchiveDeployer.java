@@ -130,20 +130,13 @@ class FunctionArchiveDeployer extends JarLauncher {
 		 * class loader, this will ensure that certain classes (e.g., org.reactivestreams.* see #shouldLoadViaDeployerLoader() )
 		 * are shared across two class loaders.
 		 */
-		this.archiveLoader = new LaunchedURLClassLoader(urls, null) {
+		final ClassLoader deployerClassLoader = getClass().getClassLoader();
+		this.archiveLoader = new LaunchedURLClassLoader(urls, deployerClassLoader.getParent()) {
 			@Override
 			public Class<?> loadClass(String name) throws ClassNotFoundException {
 				Class<?> clazz = null;
 				if (shouldLoadViaDeployerLoader(name)) {
-					try {
-						clazz = getClass().getClassLoader().loadClass(name);
-					}
-					catch (Exception e) {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Class '" + name + "' is not available in the current class loader. Loading it from the deployed archive.");
-						}
-						clazz = super.loadClass(name, false);
-					}
+					clazz = deployerClassLoader.loadClass(name);
 				}
 				else if (name.equals(DeployerContextUtils.class.getName())) {
 					/*
@@ -169,9 +162,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 	private boolean shouldLoadViaDeployerLoader(String name) {
 		return name.startsWith("org.reactivestreams")
-				|| name.startsWith("reactor.")
-				|| name.startsWith("java")
-				|| name.startsWith("com.sun");
+				|| name.startsWith("reactor.");
 	}
 
 	private String discoverFunctionClassName(FunctionProperties functionProperties) {
