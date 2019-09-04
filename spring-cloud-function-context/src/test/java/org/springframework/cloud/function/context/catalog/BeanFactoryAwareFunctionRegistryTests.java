@@ -54,7 +54,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	private FunctionCatalog configureCatalog() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG");
+				.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
