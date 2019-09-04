@@ -19,22 +19,19 @@ package org.springframework.cloud.function.deployer;
 import javax.annotation.PostConstruct;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 
 /**
  * Configuration properties for deciding how to locate the functional class to execute.
  *
  * @author Eric Bottard
  * @author Oleg Zhurakousky
+ *
+ * @see FunctionProperties
  */
-@ConfigurationProperties("spring.cloud.function")
-public class FunctionProperties {
-
-	/**
-	 * The name prefix for properties defined by this properties class.
-	 */
-	public final static String PREFIX = "spring.cloud.function";
+@ConfigurationProperties(prefix = FunctionProperties.PREFIX)
+public class FunctionDeployerProperties {
 
 	/**
 	 * Location of jar archive containing the supplier/function/consumer class or bean to run.
@@ -42,12 +39,7 @@ public class FunctionProperties {
 	private String location;
 
 	/**
-	 * The name of the function to be looked up from the FunctionCatalog (e.g., bean name).
-	 */
-	private String functionName;
-
-	/**
-	 * The name of the function class tyo be instantiated and loaded into FunctionCatalog. The name of the
+	 * The name of the function class to be instantiated and loaded into FunctionCatalog. The name of the
 	 * function will be decapitalized simple name of this class.
 	 */
 	private String functionClass;
@@ -58,14 +50,6 @@ public class FunctionProperties {
 
 	public String getFunctionClass() {
 		return this.functionClass;
-	}
-
-	public void setFunctionName(String functionName) {
-		this.functionName = StringUtils.hasText(functionName) ? functionName : "";
-	}
-
-	public String getFunctionName() {
-		return this.functionName;
 	}
 
 	public String getLocation() {

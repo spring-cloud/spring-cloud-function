@@ -31,6 +31,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.mvc.RoutingFunctionTests.TestConfiguration;
@@ -42,6 +43,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -57,18 +59,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.function.web.path=/functions",
 		"spring.cloud.function.routing.enabled=true"})
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
-@Ignore
 public class RoutingFunctionTests {
 
 	@Autowired
 	private TestRestTemplate rest;
 
+	@Autowired
+	private FunctionProperties functionProperties;
+
+
 	@Test
+	@DirtiesContext
 	public void testFunctionMessage() throws Exception {
+
 		HttpEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 						.contentType(MediaType.APPLICATION_JSON)
-						.header("function.name", "employee")
+						.header("spring.cloud.function.definition", "employee")
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
 		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
@@ -78,55 +85,58 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void testFunctionPrimitive() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 						.contentType(MediaType.TEXT_PLAIN)
-						.header("function.name", "echo")
+						.header("spring.cloud.function.definition", "echo")
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
 	@Test
+	@DirtiesContext
 	public void testFluxFunctionPrimitive() throws Exception {
+		this.functionProperties.setDefinition("fluxuppercase");
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 						.contentType(MediaType.TEXT_PLAIN)
-						.header("function.name", "fluxuppercase")
-						.body("hello"), String.class);
-		assertThat(postForEntity.getBody()).isEqualTo("[\"HELLO\"]");
+						.body("[\"hello\", \"bye\"]"), String.class);
+		assertThat(postForEntity.getBody()).isEqualTo("[\"HELLO\", \"BYE\"]");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		postForEntity = this.rest
 		.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 				.contentType(MediaType.TEXT_PLAIN)
-				.header("function.name", "fluxuppercase")
 				.body("hello1"), String.class);
-		assertThat(postForEntity.getBody()).isEqualTo("[\"HELLO1\"]");
+		assertThat(postForEntity.getBody()).isEqualTo("HELLO1");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		postForEntity = this.rest
 		.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 				.contentType(MediaType.TEXT_PLAIN)
-				.header("function.name", "fluxuppercase")
 				.body("hello2"), String.class);
-		assertThat(postForEntity.getBody()).isEqualTo("[\"HELLO2\"]");
+		assertThat(postForEntity.getBody()).isEqualTo("HELLO2");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
 	@Test
+	@DirtiesContext
 	public void testFluxFunctionPrimitiveArray() throws Exception {
+		this.functionProperties.setDefinition("fluxuppercase");
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 						.contentType(MediaType.APPLICATION_JSON)
-						.header("function.name", "fluxuppercase")
 						.body(new String[] {"a", "b", "c"}), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("[\"A\",\"B\",\"C\"]");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
 	@Test
+	@DirtiesContext
+	@Ignore
 	public void testFluxConsumer() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
@@ -134,10 +144,13 @@ public class RoutingFunctionTests {
 						.header("function.name", "fluxconsumer")
 						.body(new String[] {"a", "b", "c"}), String.class);
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+
 	}
 
 
 	@Test
+	@DirtiesContext
+	@Ignore
 	public void testFunctionPojo() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
@@ -149,11 +162,13 @@ public class RoutingFunctionTests {
 	}
 
 	@Test
+	@DirtiesContext
+	@Ignore
 	public void testConsumerMessage() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 						.contentType(MediaType.TEXT_PLAIN)
-						.header("function.name", "messageConsumer")
+						.header("spring.cloud.function.definition", "messageConsumer")
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
@@ -237,8 +252,6 @@ public class RoutingFunctionTests {
 		public void setValue(String value) {
 			this.value = value;
 		}
-
-
 	}
 
 }

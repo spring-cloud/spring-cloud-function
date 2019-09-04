@@ -54,6 +54,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -213,9 +214,13 @@ public class BeanFactoryAwareFunctionRegistry
 
 	private String discoverDefaultDefinitionIfNecessary(String definition) {
 		if (StringUtils.isEmpty(definition)) {
-			String[] functionNames  = Stream.of(this.applicationContext.getBeanNamesForType(Function.class)).filter(n -> !n.startsWith("_")).toArray(String[]::new);
-			String[] consumerNames  = Stream.of(this.applicationContext.getBeanNamesForType(Consumer.class)).filter(n -> !n.startsWith("_")).toArray(String[]::new);
-			String[] supplierNames  = Stream.of(this.applicationContext.getBeanNamesForType(Supplier.class)).filter(n -> !n.startsWith("_")).toArray(String[]::new);
+			// the underscores are for Kotlin function registrations (see KotlinLambdaToFunctionAutoConfiguration)
+			String[] functionNames  = Stream.of(this.applicationContext.getBeanNamesForType(Function.class))
+					.filter(n -> !n.startsWith("_") && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
+			String[] consumerNames  = Stream.of(this.applicationContext.getBeanNamesForType(Consumer.class))
+					.filter(n -> !n.startsWith("_") && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
+			String[] supplierNames  = Stream.of(this.applicationContext.getBeanNamesForType(Supplier.class))
+					.filter(n -> !n.startsWith("_") && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
 			/*
 			 * we may need to add BiFunction and BiConsumer at some point
 			 */
@@ -454,15 +459,11 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		public boolean isConsumer() {
-			return this.target instanceof Consumer;
-		}
-
-		public boolean isFunction() {
-			return this.target instanceof Function;
+			return FunctionTypeUtils.isConsumer(this.functionType);
 		}
 
 		public boolean isSupplier() {
-			return this.target instanceof Supplier;
+			return FunctionTypeUtils.isSupplier(this.functionType);
 		}
 
 		public Object getTarget() {
@@ -528,6 +529,11 @@ public class BeanFactoryAwareFunctionRegistry
 					Publisher<?> publisher = FunctionTypeUtils.isFlux(type)
 							? input == null ? Flux.empty() : Flux.just(input)
 									: input == null ? Mono.empty() : Mono.just(input);
+					if (logger.isDebugEnabled()) {
+						logger.debug("Invoking reactive function '" + this.functionType + "' with non-reactive input "
+								+ "should at least assume reactive output (e.g., Function<String, Flux<String>> f3 = catalog.lookup(\"echoFlux\");), "
+								+ "otherwise invocation will result in ClassCastException.");
+					}
 					result = this.invokeFunction(this.convertInputPublisherIfNecessary(publisher, FunctionTypeUtils.getInputType(this.functionType, 0)));
 				}
 				else {

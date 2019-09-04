@@ -33,11 +33,16 @@ import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.ExplodedArchive;
 import org.springframework.boot.loader.archive.JarFileArchive;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertiesPropertySource;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -52,13 +57,13 @@ import org.springframework.core.env.ConfigurableEnvironment;
  *
  */
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(FunctionProperties.class)
+@EnableConfigurationProperties(FunctionDeployerProperties.class)
 public class FunctionDeployerConfiguration {
 
 	private static Log logger = LogFactory.getLog(FunctionDeployerConfiguration.class);
 
 	@Bean
-	SmartLifecycle functionArchiveDeployer(FunctionProperties functionProperties,
+	SmartLifecycle functionArchiveDeployer(FunctionDeployerProperties functionProperties,
 			FunctionRegistry functionRegistry, ApplicationArguments arguments) {
 
 		ApplicationArguments updatedArguments = this.updateArguments(arguments);
@@ -123,14 +128,14 @@ public class FunctionDeployerConfiguration {
 	}
 
 	/*
-	 * We need to update actual arguments to ensure that when we may be passing to the deployed archive has the right properties.
-	 * For the current application FunctionProperties already set as a result of EnvironmentPostProcessor
+	 * We need to update the actual arguments with non-legacy properties before passing these arguments to the deployable archive.
+	 * For the current application FunctionProperties already updated and set as a result of EnvironmentPostProcessor
 	 */
 	private ApplicationArguments updateArguments(ApplicationArguments arguments) {
 		List<String> originalArguments =  new ArrayList<String>(Arrays.asList(arguments.getSourceArgs()));
 
 		if (arguments.containsOption("function.name")) {
-			originalArguments.add(FunctionProperties.PREFIX + ".function-name=" + arguments.getOptionValues("function.name").get(0));
+			originalArguments.add(FunctionProperties.PREFIX + ".definition=" + arguments.getOptionValues("function.name").get(0));
 		}
 		if (arguments.containsOption("function.location")) {
 			originalArguments.add(FunctionProperties.PREFIX + ".location=" + arguments.getOptionValues("function.location").get(0));
@@ -147,11 +152,16 @@ public class FunctionDeployerConfiguration {
 	static class LegacyPropertyEnvironmentPostProcessor implements EnvironmentPostProcessor {
 		@Override
 		public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-			if (environment.containsProperty("function.name")) {
-				System.setProperty(FunctionProperties.PREFIX + ".function-name", environment.getProperty("function.name"));
-			}
-			if (environment.containsProperty("function.location")) {
-				System.setProperty(FunctionProperties.PREFIX + ".location", environment.getProperty("function.location"));
+		String functionName = environment.containsProperty("function.name") ? environment.getProperty("function.name") : null;
+			String functionLocation = environment.containsProperty("function.location") ? environment.getProperty("function.location") : null;
+			if (StringUtils.hasText(functionName) || StringUtils.hasText(functionLocation)) {
+				MutablePropertySources propertySources = environment.getPropertySources();
+				propertySources.forEach(ps -> {
+					if (ps instanceof PropertiesPropertySource) {
+						((MapPropertySource) ps).getSource().put(FunctionProperties.PREFIX + ".definition", functionName);
+						((MapPropertySource) ps).getSource().put(FunctionProperties.PREFIX + ".location", functionLocation);
+					}
+				});
 			}
 		}
 	}

@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.context.config;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -32,7 +31,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -63,6 +64,7 @@ import org.springframework.util.CollectionUtils;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(FunctionCatalog.class)
+@EnableConfigurationProperties(FunctionProperties.class)
 public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
@@ -95,14 +97,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
-	@ConditionalOnProperty(name = "spring.cloud.function.routing.enabled", havingValue = "true")
-	RoutingFunction gateway(FunctionCatalog functionCatalog, FunctionInspector functionInspector) {
-		Collection<MessageConverter> messageConverters = new ArrayList<MessageConverter>();
-		messageConverters.add(new MappingJackson2MessageConverter());
-		messageConverters.add(new StringMessageConverter());
-		messageConverters.add(new ByteArrayMessageConverter());
-		CompositeMessageConverter messageConverter = new CompositeMessageConverter(messageConverters);
-		return new RoutingFunction(functionCatalog, functionInspector, messageConverter);
+	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionInspector functionInspector, FunctionProperties functionProperties) {
+		return new RoutingFunction(functionCatalog, functionInspector, functionProperties);
 	}
 
 	@Configuration(proxyBeanMethods = false)

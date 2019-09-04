@@ -67,7 +67,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	void deploy(FunctionRegistry functionRegistry, FunctionProperties functionProperties, String[] args) {
+	void deploy(FunctionRegistry functionRegistry, FunctionDeployerProperties functionProperties, String[] args) {
 		ClassLoader currentLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
@@ -165,7 +165,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 				|| name.startsWith("reactor.");
 	}
 
-	private String discoverFunctionClassName(FunctionProperties functionProperties) {
+	private String discoverFunctionClassName(FunctionDeployerProperties functionProperties) {
 		try {
 			return StringUtils.hasText(functionProperties.getFunctionClass())
 					? functionProperties.getFunctionClass()
