@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xmlns="http://maven.apache.org/POM/4.0.0"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>spring-cloud-function-adapter-aws</artifactId>
@@ -20,8 +20,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<aws-lambda-events.version>2.0.2</aws-lambda-events.version>
-		<aws-java-sdk.version>1.11.163</aws-java-sdk.version>
+		<aws-lambda-events.version>2.2.6</aws-lambda-events.version>
+		<aws-java-sdk.version>1.11.557</aws-java-sdk.version>
 		<aws-kinesis-deaggregator.version>1.0.3</aws-kinesis-deaggregator.version>
 		<aws-kinesis-aggregator.version>1.0.3</aws-kinesis-aggregator.version>
 	</properties>
@@ -37,12 +37,14 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<!-- Spring Boot autoconfiguration needs this to be able to create a Jackson ObjectMapper -->
+			<!-- Spring Boot autoconfiguration needs this to be able to create a Jackson
+				ObjectMapper -->
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 		</dependency>
 		<dependency>
-			<!-- aws sdk depends on this transitively anyway, so this is here just as a reminder that we need it -->
+			<!-- aws sdk depends on this transitively anyway, so this is here just
+				as a reminder that we need it -->
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
@@ -54,6 +56,12 @@
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-log4j</artifactId>
 			<version>1.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-lambda-java-core</artifactId>
+			<version>1.2.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
