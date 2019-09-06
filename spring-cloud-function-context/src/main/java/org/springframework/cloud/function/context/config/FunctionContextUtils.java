@@ -88,16 +88,7 @@ public abstract class FunctionContextUtils {
 		return param;
 	}
 
-	private static Type findBeanType(AbstractBeanDefinition definition, String declaringClassName, String methodName) {
-		Class<?> factory = ClassUtils.resolveClassName(declaringClassName, null);
-		Class<?>[] params = getParamTypes(factory, definition);
-		Method method = ReflectionUtils.findMethod(factory, methodName,
-				params);
-		Type type = method.getGenericReturnType();
-		return type;
-	}
-
-	private static Class<?>[] getParamTypes(Class<?> factory,
+	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
 			AbstractBeanDefinition definition) {
 		if (definition instanceof RootBeanDefinition) {
 			RootBeanDefinition root = (RootBeanDefinition) definition;
@@ -113,6 +104,15 @@ public abstract class FunctionContextUtils {
 			params.add(ClassUtils.resolveClassName(holder.getType(), null));
 		}
 		return params.toArray(new Class<?>[0]);
+	}
+
+	private static Type findBeanType(AbstractBeanDefinition definition, String declaringClassName, String methodName) {
+		Class<?> factory = ClassUtils.resolveClassName(declaringClassName, null);
+		Class<?>[] params = getParamTypesFromBeanDefinitionFactory(factory, definition);
+		Method method = ReflectionUtils.findMethod(factory, methodName,
+				params);
+		Type type = method.getGenericReturnType();
+		return type;
 	}
 
 	private static Method[] getCandidateMethods(final Class<?> factoryClass,
