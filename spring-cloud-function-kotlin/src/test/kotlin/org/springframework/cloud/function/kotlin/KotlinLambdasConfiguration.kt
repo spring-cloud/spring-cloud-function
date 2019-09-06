@@ -19,6 +19,7 @@ package org.springframework.cloud.function.kotlin
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.util.function.Function
 
 /**
  * @author Oleg Zhurakousky
@@ -40,5 +41,10 @@ open class KotlinLambdasConfiguration {
 	@Bean
 	open fun kotlinSupplier(): () -> String {
 		return { "Hello" }
+	}
+
+	@Bean
+	open fun javaFunction(): Function<String, String> {
+		return Function { x -> x }
 	}
 }

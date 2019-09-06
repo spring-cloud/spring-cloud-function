@@ -16,16 +16,13 @@
 
 package org.springframework.cloud.function.kotlin;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
-import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -57,12 +54,10 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 	}
 
 	@Test
-	@Ignore
 	public void kotlinLambdas() {
 		create(new Class[] { KotlinLambdasConfiguration.class,
 				SimpleConfiguration.class });
 
-		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function.class);
 		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "kotlinFunction"))
 				.isInstanceOf(Function.class);
@@ -73,7 +68,6 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 				.getOutputType(this.catalog.lookup(Function.class, "kotlinFunction")))
 						.isAssignableFrom(String.class);
 
-		assertThat(this.context.getBean("kotlinConsumer")).isInstanceOf(Consumer.class);
 		assertThat(this.context.getBean("kotlinConsumer")).isInstanceOf(Function1.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "kotlinConsumer"))
 				.isInstanceOf(Function.class);
@@ -81,21 +75,24 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 				.getInputType(this.catalog.lookup(Function.class, "kotlinConsumer")))
 						.isAssignableFrom(String.class);
 
-		assertThat(this.context.getBean("kotlinSupplier")).isInstanceOf(Supplier.class);
 		assertThat(this.context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
-		Supplier<Flux<String>> supplier = this.catalog.lookup(Supplier.class,
-				"kotlinSupplier");
-		assertThat(supplier.get().blockFirst()).isEqualTo("Hello");
+		Supplier<String> supplier = this.catalog.lookup(Supplier.class, "kotlinSupplier");
+		assertThat(supplier.get()).isEqualTo("Hello");
 		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "kotlinSupplier"))
 				.isInstanceOf(Supplier.class);
 		assertThat(this.inspector
 				.getOutputType(this.catalog.lookup(Supplier.class, "kotlinSupplier")))
 						.isAssignableFrom(String.class);
 
-		Function<Flux<String>, Flux<String>> function = this.catalog
+		Function<String, String> function = this.catalog
 				.lookup(Function.class, "kotlinFunction|function2");
-		assertThat(function.apply(Flux.just("Hello")).blockFirst())
+		assertThat(function.apply("Hello"))
 				.isEqualTo("HELLOfunction2");
+
+		Function<String, String> javaFunction = this.catalog
+				.lookup(Function.class, "javaFunction");
+		assertThat(javaFunction.apply("Hello"))
+				.isEqualTo("Hello");
 	}
 
 	private void create(Class<?>[] types, String... props) {

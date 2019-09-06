@@ -175,8 +175,27 @@ public class BeanFactoryAwareFunctionRegistry
 		if (function == null) {
 			function = this.registrationsByName.get(name);
 		}
+
+		if (function != null && this.isKotlin(function.getClass())) {
+			function = this.applicationContext.getBean("_" + name, FunctionRegistration.class);
+		}
 		return function;
 	}
+
+	private boolean isKotlin(Class<?> functionClass) {
+		if (functionClass != null) {
+			if ("kotlin.jvm.internal.Lambda".equals(functionClass.getName())) {
+				return true;
+			}
+			else {
+				return this.isKotlin(functionClass.getSuperclass());
+			}
+		}
+		else {
+			return false;
+		}
+	}
+
 
 	private Type discoverFunctionType(Object function, String... names) {
 		boolean beanDefinitionExists = false;
@@ -194,11 +213,11 @@ public class BeanFactoryAwareFunctionRegistry
 
 	private String discoverDefaultDefinitionIfNecessary(String definition) {
 		if (StringUtils.isEmpty(definition)) {
-			String[] functionNames  = this.applicationContext.getBeanNamesForType(Function.class);
-			String[] consumerNames  = this.applicationContext.getBeanNamesForType(Consumer.class);
-			String[] supplierNames  = this.applicationContext.getBeanNamesForType(Supplier.class);
+			String[] functionNames  = Stream.of(this.applicationContext.getBeanNamesForType(Function.class)).filter(n -> !n.startsWith("_")).toArray(String[]::new);
+			String[] consumerNames  = Stream.of(this.applicationContext.getBeanNamesForType(Consumer.class)).filter(n -> !n.startsWith("_")).toArray(String[]::new);
+			String[] supplierNames  = Stream.of(this.applicationContext.getBeanNamesForType(Supplier.class)).filter(n -> !n.startsWith("_")).toArray(String[]::new);
 			/*
-			 * we may need to add BiFunction and BuConsumer at some point
+			 * we may need to add BiFunction and BiConsumer at some point
 			 */
 			List<String> names = Stream
 					.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames))).collect(Collectors.toList());
@@ -251,6 +270,7 @@ public class BeanFactoryAwareFunctionRegistry
 
 				FunctionRegistration<Object> registration;
 				Type currentFunctionType = null;
+
 				if (function instanceof FunctionRegistration) {
 					registration = (FunctionRegistration<Object>) function;
 					currentFunctionType = currentFunctionType == null ? registration.getType().getType() : currentFunctionType;
