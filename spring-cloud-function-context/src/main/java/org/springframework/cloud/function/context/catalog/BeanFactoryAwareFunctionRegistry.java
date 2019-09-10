@@ -177,24 +177,17 @@ public class BeanFactoryAwareFunctionRegistry
 			function = this.registrationsByName.get(name);
 		}
 
-		if (function != null && this.isKotlin(function.getClass())) {
-			function = this.applicationContext.getBean("_" + name, FunctionRegistration.class);
+		if (function != null && this.notFunction(function.getClass())
+				&& this.applicationContext.containsBean(name + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) { // e.g., Kotlin lambdas
+			function = this.applicationContext.getBean(name + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
 		}
 		return function;
 	}
 
-	private boolean isKotlin(Class<?> functionClass) {
-		if (functionClass != null) {
-			if ("kotlin.jvm.internal.Lambda".equals(functionClass.getName())) {
-				return true;
-			}
-			else {
-				return this.isKotlin(functionClass.getSuperclass());
-			}
-		}
-		else {
-			return false;
-		}
+	private boolean notFunction(Class<?> functionClass) {
+		return !Function.class.isAssignableFrom(functionClass)
+				&& !Supplier.class.isAssignableFrom(functionClass)
+				&& !Consumer.class.isAssignableFrom(functionClass);
 	}
 
 
@@ -204,8 +197,8 @@ public class BeanFactoryAwareFunctionRegistry
 			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
 		}
 		if (!beanDefinitionExists) {
-			logger.info("BeanDefinition for function name(s) `" + Arrays.asList(names) +
-					"` can not be located. FunctionType will be based on " + function.getClass());
+			logger.info("BeanDefinition for function name(s) '" + Arrays.asList(names) +
+					"' can not be located. FunctionType will be based on " + function.getClass());
 		}
 		return beanDefinitionExists
 				? FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType()
@@ -216,11 +209,11 @@ public class BeanFactoryAwareFunctionRegistry
 		if (StringUtils.isEmpty(definition)) {
 			// the underscores are for Kotlin function registrations (see KotlinLambdaToFunctionAutoConfiguration)
 			String[] functionNames  = Stream.of(this.applicationContext.getBeanNamesForType(Function.class))
-					.filter(n -> !n.startsWith("_") && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
+					.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
 			String[] consumerNames  = Stream.of(this.applicationContext.getBeanNamesForType(Consumer.class))
-					.filter(n -> !n.startsWith("_") && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
+					.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
 			String[] supplierNames  = Stream.of(this.applicationContext.getBeanNamesForType(Supplier.class))
-					.filter(n -> !n.startsWith("_") && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
+					.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
 			/*
 			 * we may need to add BiFunction and BiConsumer at some point
 			 */

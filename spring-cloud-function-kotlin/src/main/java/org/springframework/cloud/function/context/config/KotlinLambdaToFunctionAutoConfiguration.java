@@ -57,7 +57,7 @@ import org.springframework.util.ObjectUtils;
  * @since 2.0
  */
 @Configuration
-@ConditionalOnClass(name = "kotlin.jvm.functions.Function1")
+@ConditionalOnClass(name = "kotlin.jvm.functions.Function0")
 class KotlinLambdaToFunctionAutoConfiguration {
 
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -88,7 +88,7 @@ class KotlinLambdaToFunctionAutoConfiguration {
 						ConstructorArgumentValues ca = new ConstructorArgumentValues();
 						ca.addGenericArgumentValue(beanDefinition);
 						cbd.setConstructorArgumentValues(ca);
-						((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("_" + beanDefinitionName, cbd);
+						((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(beanDefinitionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, cbd);
 					}
 				}
 			}
@@ -164,7 +164,10 @@ class KotlinLambdaToFunctionAutoConfiguration {
 
 		@Override
 		public FunctionRegistration getObject() throws Exception {
-			Type functionType = FunctionContextUtils.findType(this.name.substring(1), this.beanFactory);
+			String name = this.name.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX)
+					? this.name.replace(FunctionRegistration.REGISTRATION_NAME_SUFFIX, "")
+							: this.name;
+			Type functionType = FunctionContextUtils.findType(name, this.beanFactory);
 			FunctionRegistration<?> registration = new FunctionRegistration<>(this, name);
 			Type[] types = ((ParameterizedType) functionType).getActualTypeArguments();
 

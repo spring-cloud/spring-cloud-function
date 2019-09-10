@@ -50,6 +50,16 @@ import org.springframework.util.CollectionUtils;
  */
 public class FunctionRegistration<T> implements BeanNameAware {
 
+	/**
+	 * Suffix used to add to the name of FunctionRegistration bean that
+	 * corresponds to the an actual function bean. It is often used when
+	 * the actual function bean may not be a java Function (e.g., Kotlin)
+	 * and certain custom wrapping is required.
+	 * <br>
+	 * NOTE: This is not intended as oublis API
+	 */
+	public static String REGISTRATION_NAME_SUFFIX = "_registration";
+
 	private final Set<String> names = new LinkedHashSet<>();
 
 	private final Map<String, String> properties = new LinkedHashMap<>();
