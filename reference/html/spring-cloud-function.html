@@ -494,33 +494,77 @@ This feature is very useful in certain FAAS environments where maintaining confi
 for several functions could be cumbersome or exposing more then one function is not possible.</p>
 </div>
 <div class="paragraph">
-<p>You enable this feature via <code>spring.cloud.function.routing.enabled</code> property setting it
-to <code>true</code> (default is <code>false</code>).
-This enables <code>RoutingFunction</code> under the name <code>router</code> which is loaded in FunctionCatalog.</p>
+<p>The <code>RoutingFunction</code> is registered in <em>FunctionCatalog</em>  under the name <code>functionRouter</code>. For simplicity
+and consistency you can also refer to <code>RoutingFunction.FUNCTION_NAME</code> constant.</p>
 </div>
 <div class="paragraph">
 <p>This function has the following signature:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class RoutingFunction implements Function&lt;Publisher&lt;Message&lt;?&gt;&gt;, Publisher&lt;?&gt;&gt;, Consumer&lt;Publisher&lt;Message&lt;?&gt;&gt;&gt; {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class RoutingFunction implements Function&lt;Object, Object&gt; {
 . . .
 }</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>This allows the above function to act as both <code>Function</code> and <code>Consumer</code>.
-As you can see it takes <code>Message&lt;?&gt;</code> as an input argument. This allows you to communicate
-the name of the actual function you want to invoke by providing <code>function.name</code> Message header.</p>
+<p>The routing instructions could be communicated in several ways;</p>
 </div>
 <div class="paragraph">
-<p>In specific execution environments/models the adapters are responsible to translate and communicate <code>function.name</code>
-via Message header. For example, when using <em>spring-cloud-function-web</em> you can provide <code>function.name</code> as an HTTP
+<p><strong>Message Headers</strong></p>
+</div>
+<div class="paragraph">
+<p>If the input argument is of type <code>Message&lt;?&gt;</code>, you can communicate routing instruction by setting one of
+<code>spring.cloud.function.definition</code> or <code>spring.cloud.function.routing-expression</code> Message headers.
+For more static cases you can use <code>spring.cloud.function.definition</code> header which allows you to provide
+the name of a single function (e.g., <code>&#8230;&#8203;definition=foo</code>) or a composition instruction (e.g., <code>&#8230;&#8203;definition=foo|bar|baz</code>).
+For more dynamic cases you can use <code>spring.cloud.function.routing-expression</code> header which allows
+you to use Spring Expression Language (SpEL) and provide SpEL expression that should resolve
+into definition of a function (as described above).</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+SpEL evaluation context&#8217;s root object is the
+actual input argument, so in he case of <code>Message&lt;?&gt;</code> you can construct expression that has access
+to both <code>payload</code> and <code>headers</code> (e.g., <code>spring.cloud.function.routing-expression=headers.function_name</code>).
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In specific execution environments/models the adapters are responsible to translate and communicate
+<code>spring.cloud.function.definition</code> and/or <code>spring.cloud.function.routing-expression</code> via Message header.
+For example, when using <em>spring-cloud-function-web</em> you can provide <code>spring.cloud.function.definition</code> as an HTTP
 header and the framework will propagate it as well as other HTTP headers as Message headers.</p>
 </div>
 <div class="paragraph">
-<p>Using Message also allows us to benefit from `MessageConverter`s to convert incoming request to the actual input type
-of the target function</p>
+<p><strong>Application Properties</strong></p>
+</div>
+<div class="paragraph">
+<p>Routing instruction can also be communicated via <code>spring.cloud.function.definition</code>
+or <code>spring.cloud.function.routing-expression</code> as application properties. The rules described in the
+previous section apply here as well. The only difference is you provide these instructions as
+application properties (e.g., <code>--spring.cloud.function.definition=foo</code>).</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+When dealing with reactive inputs (e.g., Publisher), routing instructions must only be provided via Function properties. This is
+due to the nature of the reactive functions which are invoked only once to pass a Publisher and the rest
+is handled by the reactor, hence we can not access and/or rely on the routing instructions communicated via individual
+values (e.g., Message).
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
