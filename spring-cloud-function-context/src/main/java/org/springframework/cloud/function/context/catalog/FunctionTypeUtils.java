@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -78,7 +79,6 @@ public final class FunctionTypeUtils {
 	 * @return functional method
 	 */
 	public static Method discoverFunctionalMethod(Class<?> pojoFunctionClass) {
-
 		if (Supplier.class.isAssignableFrom(pojoFunctionClass)) {
 			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> m.getName().equals("get")).findFirst().get();
 		}
@@ -182,7 +182,7 @@ public final class FunctionTypeUtils {
 			inputType = ((ParameterizedType) functionType).getActualTypeArguments()[0];
 			inputType = isMulti(inputType)
 					? ((ParameterizedType) inputType).getActualTypeArguments()[index]
-							: ((ParameterizedType) functionType).getActualTypeArguments()[index];
+							: inputType;
 		}
 
 		return inputType;
@@ -190,15 +190,15 @@ public final class FunctionTypeUtils {
 
 	public static Type getOutputType(Type functionType, int index) {
 		assertSupportedTypes(functionType);
-		Type inputType = isConsumer(functionType) ? null :  Object.class;
+		Type outputType = isConsumer(functionType) ? null :  Object.class;
 		if ((isFunction(functionType) || isSupplier(functionType)) && functionType instanceof ParameterizedType) {
-			inputType = ((ParameterizedType) functionType).getActualTypeArguments()[isFunction(functionType) ? 1 : 0];
-			inputType = isMulti(inputType)
-					? ((ParameterizedType) inputType).getActualTypeArguments()[index]
-							: ((ParameterizedType) functionType).getActualTypeArguments()[index];
+			outputType = ((ParameterizedType) functionType).getActualTypeArguments()[isFunction(functionType) ? 1 : 0];
+			outputType = isMulti(outputType)
+					? ((ParameterizedType) outputType).getActualTypeArguments()[index]
+							: outputType;
 		}
 
-		return inputType;
+		return outputType;
 	}
 
 	public static Type getImmediateGenericType(Type type, int index) {
@@ -232,8 +232,31 @@ public final class FunctionTypeUtils {
 		return type.getTypeName().startsWith("org.springframework.messaging.Message");
 	}
 
+	/**
+	 * Determines if input argument to a Function is an array.
+	 * @param functionType the function type
+	 * @return true if input type is an array, otherwise false
+	 */
+	public static boolean isInputArray(Type functionType) {
+		Type inputType = FunctionTypeUtils.getInputType(functionType, 0);
+		return inputType instanceof GenericArrayType || inputType instanceof Class && ((Class<?>) inputType).isArray();
+	}
 
+	/**
+	 * Determines if input argument to a Function is an array.
+	 * @param functionType the function type
+	 * @return true if input type is an array, otherwise false
+	 */
+	public static boolean isOutputArray(Type functionType) {
+		Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
+		return outputType instanceof GenericArrayType || outputType instanceof Class && ((Class<?>) outputType).isArray();
+	}
 
+	/**
+	 * Evaluates if provided type is an assignable to {@link Publisher}.
+	 * @param type type to evaluate
+	 * @return true is provided type is an assignable to {@link Publisher}
+	 */
 	public static boolean isReactive(Type type) {
 		Class<?> rawType = type instanceof ParameterizedType
 				? (Class<?>) ((ParameterizedType) type).getRawType() : (type instanceof Class<?> ? (Class<?>) type : Object.class);

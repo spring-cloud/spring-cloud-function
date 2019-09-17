@@ -379,9 +379,6 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 
 				return new Flux[] { repeated, sum };
 			};
-
-
-
 		}
 	}
 

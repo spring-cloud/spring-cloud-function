@@ -451,6 +451,10 @@ public class BeanFactoryAwareFunctionRegistry
 			return this.doApply(input, false);
 		}
 
+		public Type getFunctionType() {
+			return this.functionType;
+		}
+
 		public boolean isConsumer() {
 			return FunctionTypeUtils.isConsumer(this.functionType);
 		}
