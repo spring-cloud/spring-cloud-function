@@ -33,7 +33,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
-import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessorRegistrar;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -123,10 +122,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 				// But switch on other annotation processing
 				AnnotationConfigUtils.registerAnnotationConfigProcessors(this.context);
 			}
-			if (!this.context.getBeanFactory().containsBean(ConfigurationPropertiesBindingPostProcessor.BEAN_NAME)) {
-				new ConfigurationPropertiesBindingPostProcessorRegistrar().registerBeanDefinitions(null, this.context);
-			}
-
+			ConfigurationPropertiesBindingPostProcessor.register(registry);
 			if (ClassUtils.isPresent("com.google.gson.Gson", null) && "gson".equals(this.context.getEnvironment()
 					.getProperty(ContextFunctionCatalogAutoConfiguration.PREFERRED_MAPPER_PROPERTY, "gson"))) {
 				if (this.context.getBeanFactory().getBeanNamesForType(Gson.class, false, false).length == 0) {
