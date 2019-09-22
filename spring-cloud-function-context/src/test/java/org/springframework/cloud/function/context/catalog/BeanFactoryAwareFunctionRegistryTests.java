@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.catalog;
 
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class BeanFactoryAwareFunctionRegistryTests {
 
 	private FunctionCatalog configureCatalog() {
-		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+		return this.configureCatalog(SampleFunctionConfiguration.class);
+	}
+
+	private FunctionCatalog configureCatalog(Class<?>... configClass) {
+		ApplicationContext context = new SpringApplicationBuilder(configClass)
 				.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -268,6 +273,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		result.getT3().subscribe(v -> System.out.println("=> 3: " + v));
 	}
 
+	@Test
+	public void SCF_GH_409ConfigurationTests() {
+		FunctionCatalog catalog = this.configureCatalog(SCF_GH_409ConfigurationAsSupplier.class);
+		assertThat((Object) catalog.lookup("")).isNull();
+
+		catalog = this.configureCatalog(SCF_GH_409ConfigurationAsFunction.class);
+		assertThat((Object) catalog.lookup("")).isNull();
+	}
+
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -428,6 +442,46 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		// Perhaps it should not be allowed. Recommend Function<Flux, Mono<Void>>
 		public Consumer<Flux<String>> reactiveConsumer() {
 			return null;
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SCF_GH_409ConfigurationAsSupplier {
+
+		@Bean
+		public Serializable blah() {
+			return new Foo();
+		}
+
+		private static class Foo implements Supplier<Object>, Serializable {
+
+			@Override
+			public Object get() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SCF_GH_409ConfigurationAsFunction {
+
+		@Bean
+		public Serializable blah() {
+			return new Foo();
+		}
+
+		private static class Foo implements Function<Object, Object>, Serializable {
+
+			@Override
+			public Object apply(Object t) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+
+
 		}
 	}
 

@@ -164,10 +164,6 @@ public class BeanFactoryAwareFunctionRegistry
 		return this.registrationsByFunction.get(function);
 	}
 
-	public FunctionType getFunctionType(String name) {
-		return FunctionType.of(FunctionTypeUtils.getFunctionType(this.lookup(name), this));
-	}
-
 	private Object locateFunction(String name) {
 		Object function = null;
 		if (this.applicationContext.containsBean(name)) {
@@ -214,6 +210,7 @@ public class BeanFactoryAwareFunctionRegistry
 					.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
 			String[] supplierNames  = Stream.of(this.applicationContext.getBeanNamesForType(Supplier.class))
 					.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
+
 			/*
 			 * we may need to add BiFunction and BiConsumer at some point
 			 */
@@ -221,13 +218,23 @@ public class BeanFactoryAwareFunctionRegistry
 					.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames))).collect(Collectors.toList());
 
 			if (!ObjectUtils.isEmpty(names)) {
-				Assert.isTrue(names.size() == 1, "Found more then one function in BeanFactory: " + names);
+				Assert.isTrue(names.size() == 1, "Found more then one function in BeanFactory: " + names
+						+ ". Consider providing 'spring.cloud.function.definition' property.");
 				definition = names.get(0);
 			}
 			else {
 				if (this.registrationsByName.size() > 0) {
 					Assert.isTrue(this.registrationsByName.size() == 1, "Found more then one function in local registry");
 					definition = this.registrationsByName.keySet().iterator().next();
+				}
+			}
+
+			if (StringUtils.hasText(definition)) {
+				Type functionType = discoverFunctionType(this.applicationContext.getBean(definition), definition);
+				if (!FunctionTypeUtils.isSupplier(functionType) && !FunctionTypeUtils.isFunction(functionType) && !FunctionTypeUtils.isConsumer(functionType)) {
+					logger.info("Discovered functional instance of bean '" + definition + "' as a default function, however its "
+							+ "function argument types can not be determined. Discarding.");
+					definition = null;
 				}
 			}
 		}
@@ -576,8 +583,11 @@ public class BeanFactoryAwareFunctionRegistry
 				List<MimeType> acceptedContentTypes = MimeTypeUtils.parseMimeTypes(acceptedOutputMimeTypes[0].toString());
 
 				convertedValue = acceptedContentTypes.stream()
-						.map(acceptedContentType -> messageConverter
-								.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType))))
+						.map(acceptedContentType -> {
+							Object v = value instanceof Message ? ((Message<?>) value).getPayload() : value;
+							return messageConverter
+								.toMessage(v, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
+							})
 						.filter(v -> v != null)
 						.findFirst().orElse(null);
 			}

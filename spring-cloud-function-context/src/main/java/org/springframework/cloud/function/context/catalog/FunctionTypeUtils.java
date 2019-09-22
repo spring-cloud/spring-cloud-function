@@ -128,14 +128,6 @@ public final class FunctionTypeUtils {
 		}
 	}
 
-	public static Type getFunctionType(Object function, FunctionInspector inspector) {
-		FunctionRegistration<?> registration = inspector.getRegistration(function);
-		if (registration != null) {
-			return registration.getType().getType();
-		}
-		return null;
-	}
-
 	public static Type unwrapActualTypeByIndex(Type type, int index) {
 		if (isMessage(type) || isPublisher(type)) {
 			if (isPublisher(type)) {
