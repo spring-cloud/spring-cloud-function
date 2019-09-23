@@ -33,6 +33,11 @@ public class FunctionProperties {
 	public final static String PREFIX = "spring.cloud.function";
 
 	/**
+	 * Name of he header to be used to instruct function catalog to skip type conversion.
+	 */
+	public final static String SKIP_CONVERSION_HEADER = "skip-type-conversion";
+
+	/**
 	 * Definition of the function to be used. This could be function name (e.g., 'myFunction')
 	 * or function composition definition (e.g., 'myFunction|yourFunction')
 	 */

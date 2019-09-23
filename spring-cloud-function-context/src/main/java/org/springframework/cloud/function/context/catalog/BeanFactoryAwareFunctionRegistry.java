@@ -50,6 +50,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
@@ -156,8 +157,8 @@ public class BeanFactoryAwareFunctionRegistry
 	@Override
 	public FunctionRegistration<?> getRegistration(Object function) {
 		FunctionRegistration<?> registration = this.registrationsByFunction.get(function);
-		// need to do this due to the deployer not wrapping the actual target into FunctionInvocationWrapper
-		// hence the lookup would need to be made by the actual target
+//		// need to do this due to the deployer not wrapping the actual target into FunctionInvocationWrapper
+//		// hence the lookup would need to be made by the actual target
 		if (registration == null && function instanceof FunctionInvocationWrapper) {
 			function = ((FunctionInvocationWrapper) function).target;
 		}
@@ -165,12 +166,9 @@ public class BeanFactoryAwareFunctionRegistry
 	}
 
 	private Object locateFunction(String name) {
-		Object function = null;
-		if (this.applicationContext.containsBean(name)) {
+		Object function = this.registrationsByName.get(name);
+		if (function == null && this.applicationContext.containsBean(name)) {
 			function = this.applicationContext.getBean(name);
-		}
-		if (function == null) {
-			function = this.registrationsByName.get(name);
 		}
 
 		if (function != null && this.notFunction(function.getClass())
@@ -185,7 +183,6 @@ public class BeanFactoryAwareFunctionRegistry
 				&& !Supplier.class.isAssignableFrom(functionClass)
 				&& !Consumer.class.isAssignableFrom(functionClass);
 	}
-
 
 	private Type discoverFunctionType(Object function, String... names) {
 		boolean beanDefinitionExists = false;
@@ -674,6 +671,10 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private boolean messageNeedsConversion(Type rawType, Message<?> message) {
+			String skipConversion = message.getHeaders().get(FunctionProperties.SKIP_CONVERSION_HEADER, String.class);
+			if (StringUtils.hasText(skipConversion) && Boolean.valueOf(skipConversion))  {
+				return false;
+			}
 			return rawType instanceof Class<?>
 				&& !(message.getPayload() instanceof Optional)
 				&& !(message.getPayload().getClass().isAssignableFrom(((Class<?>) rawType)));
