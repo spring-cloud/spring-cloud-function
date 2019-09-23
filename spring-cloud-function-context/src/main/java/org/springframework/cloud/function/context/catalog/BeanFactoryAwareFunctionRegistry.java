@@ -671,8 +671,10 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		private boolean messageNeedsConversion(Type rawType, Message<?> message) {
-			String skipConversion = message.getHeaders().get(FunctionProperties.SKIP_CONVERSION_HEADER, String.class);
-			if (StringUtils.hasText(skipConversion) && Boolean.valueOf(skipConversion))  {
+			Boolean skipConversion = message.getHeaders().containsKey(FunctionProperties.SKIP_CONVERSION_HEADER)
+					? message.getHeaders().get(FunctionProperties.SKIP_CONVERSION_HEADER, Boolean.class)
+							: false;
+			if (skipConversion)  {
 				return false;
 			}
 			return rawType instanceof Class<?>
