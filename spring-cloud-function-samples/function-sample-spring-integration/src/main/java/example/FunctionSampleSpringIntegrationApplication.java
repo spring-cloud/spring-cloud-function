@@ -26,21 +26,21 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.messaging.Message;
 
-//@SpringBootApplication
+@SpringBootApplication
 public class FunctionSampleSpringIntegrationApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(FunctionSampleSpringIntegrationApplication.class, args);
 	}
 
-	//@Bean
+	@Bean
 	public IntegrationFlow uppercaseFlow() {
 		return IntegrationFlows.from(MessageFunction.class, "uppercase")
 				.<String, String>transform(String::toUpperCase)
 				.logAndReply(LoggingHandler.Level.WARN);
 	}
 
-	public interface MessageFunction extends Function<Message<String>, Message<String>> {
+	public interface MessageFunction<T> extends Function<Message<String>, Message<String>> {
 
 	}
 

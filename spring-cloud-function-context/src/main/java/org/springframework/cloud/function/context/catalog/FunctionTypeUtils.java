@@ -105,7 +105,34 @@ public final class FunctionTypeUtils {
 		return methods.get(0);
 	}
 
-	public static Type getFunctionTypeFromFunctionMethod(Method functionMethod) {
+	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
+		Assert.isTrue(isFunctional(functionalClass), "Type must be one of Supplier, Function or Consumer");
+		Type[] generics = functionalClass.getGenericInterfaces();
+		if (ObjectUtils.isEmpty(generics)) {
+			return functionalClass;
+		}
+		else  {
+			for (Type generic : generics) {
+				if (generic instanceof ParameterizedType) {
+					Class<?> rawClsss = (Class<?>) ((ParameterizedType) generic).getRawType();
+					if (rawClsss.isAssignableFrom(Function.class)
+							|| rawClsss.isAssignableFrom(Consumer.class)
+							|| rawClsss.isAssignableFrom(Supplier.class)) {
+						return generic;
+					}
+					else {
+						return discoverFunctionTypeFromClass(rawClsss);
+					}
+				}
+				else {
+					return discoverFunctionTypeFromClass((Class<?>) generic);
+				}
+			}
+		}
+		return null;
+	}
+
+	public static Type discoverFunctionTypeFromFunctionMethod(Method functionMethod) {
 		Assert.isTrue(
 				functionMethod.getName().equals("apply") ||
 				functionMethod.getName().equals("accept") ||

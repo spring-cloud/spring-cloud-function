@@ -186,6 +186,9 @@ public class BeanFactoryAwareFunctionRegistry
 
 	private Type discoverFunctionType(Object function, String... names) {
 		boolean beanDefinitionExists = false;
+		if (AopUtils.isJdkDynamicProxy(function)) {
+			return FunctionTypeUtils.discoverFunctionTypeFromClass(function.getClass());
+		}
 		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
 			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
 		}
@@ -430,7 +433,9 @@ public class BeanFactoryAwareFunctionRegistry
 
 		FunctionInvocationWrapper(Object target, Type functionType, String functionDefinition, String... acceptedOutputMimeTypes) {
 			this.target = target;
-			this.composed = !target.getClass().getName().contains("EnhancerBySpringCGLIB") && target.getClass().getDeclaredFields().length > 1;
+			this.composed = !target.getClass().getName().contains("$$EnhancerBySpringCGLIB")
+					&& !AopUtils.isAopProxy(target) && !AopUtils.isJdkDynamicProxy(target)
+					&& target.getClass().getDeclaredFields().length > 1;
 			this.functionType = functionType;
 			this.acceptedOutputMimeTypes = acceptedOutputMimeTypes;
 			this.functionDefinition = functionDefinition;

@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.catalog;
 
 
 import java.lang.reflect.Type;
+import java.sql.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -29,6 +30,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
+
+import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.messaging.Message;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -88,6 +92,26 @@ public class FunctionTypeUtilsTests {
 		assertThat(outputCount).isEqualTo(1);
 		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("multiOutputSupplier"));
 		assertThat(outputCount).isEqualTo(2);
+	}
+
+	@Test
+	public void testFunctionTypeByClassDiscovery() {
+		FunctionType type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(Function.class));
+		assertThat(type.getInputType()).isAssignableFrom(Object.class);
+
+		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MessageFunction.class));
+		assertThat(type.getInputType()).isAssignableFrom(String.class);
+		assertThat(type.getOutputType()).isAssignableFrom(String.class);
+
+		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageFunction.class));
+		assertThat(type.getInputType()).isAssignableFrom(String.class);
+		assertThat(type.getOutputType()).isAssignableFrom(String.class);
+
+		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MessageConsumer.class));
+		assertThat(type.getInputType()).isAssignableFrom(String.class);
+
+		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageConsumer.class));
+		assertThat(type.getInputType()).isAssignableFrom(String.class);
 	}
 
 //	@Test
@@ -162,5 +186,23 @@ public class FunctionTypeUtilsTests {
 
 	private Type getReturnType(String methodName) throws Exception {
 		return FunctionTypeUtilsTests.class.getDeclaredMethod(methodName).getGenericReturnType();
+	}
+
+	//============
+
+	private interface MessageFunction<T> extends Function<Message<String>, Message<String>> {
+
+	}
+
+	private interface MyMessageFunction extends MessageFunction<Date> {
+
+	}
+
+	private interface MessageConsumer<T> extends Consumer<Message<String>> {
+
+	}
+
+	private interface MyMessageConsumer extends MessageConsumer<Date> {
+
 	}
 }
