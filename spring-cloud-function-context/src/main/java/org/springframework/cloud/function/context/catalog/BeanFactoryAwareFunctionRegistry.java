@@ -47,6 +47,7 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -188,6 +189,10 @@ public class BeanFactoryAwareFunctionRegistry
 		boolean beanDefinitionExists = false;
 		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
 			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
+			if (this.applicationContext.containsBean("&" + names[i])) {
+				Class<?> objectType = this.applicationContext.getBean("&" + names[i], FactoryBean.class).getObjectType();
+				return FunctionTypeUtils.discoverFunctionTypeFromClass(objectType);
+			}
 		}
 		if (!beanDefinitionExists) {
 			logger.info("BeanDefinition for function name(s) '" + Arrays.asList(names) +
@@ -430,7 +435,9 @@ public class BeanFactoryAwareFunctionRegistry
 
 		FunctionInvocationWrapper(Object target, Type functionType, String functionDefinition, String... acceptedOutputMimeTypes) {
 			this.target = target;
-			this.composed = !target.getClass().getName().contains("EnhancerBySpringCGLIB") && target.getClass().getDeclaredFields().length > 1;
+			this.composed = !target.getClass().getName().contains("$$EnhancerBySpringCGLIB")
+					&& !AopUtils.isAopProxy(target) && !AopUtils.isJdkDynamicProxy(target)
+					&& target.getClass().getDeclaredFields().length > 1;
 			this.functionType = functionType;
 			this.acceptedOutputMimeTypes = acceptedOutputMimeTypes;
 			this.functionDefinition = functionDefinition;

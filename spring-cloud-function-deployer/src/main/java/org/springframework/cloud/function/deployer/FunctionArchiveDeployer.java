@@ -204,7 +204,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 		ReflectionUtils.doWithMethods(functionClass, new MethodCallback() {
 			@Override
 			public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-				typeRef.set(FunctionTypeUtils.getFunctionTypeFromFunctionMethod(method));
+				typeRef.set(FunctionTypeUtils.discoverFunctionTypeFromFunctionMethod(method));
 			}
 		}, new MethodFilter() {
 			@Override
