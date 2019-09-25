@@ -40,8 +40,7 @@ public class FunctionSampleSpringIntegrationApplication {
 				.logAndReply(LoggingHandler.Level.WARN);
 	}
 
-	public interface MessageFunction<T> extends Function<Message<String>, Message<String>> {
+	public interface MessageFunction extends Function<Message<String>, Message<String>> {
 
 	}
-
 }
