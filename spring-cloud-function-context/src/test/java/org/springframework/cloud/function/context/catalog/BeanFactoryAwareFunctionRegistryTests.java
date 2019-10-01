@@ -282,6 +282,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat((Object) catalog.lookup("")).isNull();
 	}
 
+	@Test
+	public void pojoFunctionAsJson() {
+		FunctionCatalog catalog = this.configureCatalog();
+		Function<String, Person> uppercasePerson = catalog.lookup("uppercasePerson");
+
+		Person person = uppercasePerson.apply("{\"name\":\"bill\",\"id\":2}");
+		assertThat(person.getName()).isEqualTo("BILL");
+
+	}
+
 
 	@EnableAutoConfiguration
 	@Configuration

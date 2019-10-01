@@ -69,6 +69,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -668,7 +669,14 @@ public class BeanFactoryAwareFunctionRegistry
 					}
 				}
 				else if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
-					convertedValue = conversionService.convert(value, (Class<?>) rawType);
+					try {
+						convertedValue = conversionService.convert(value, (Class<?>) rawType);
+					}
+					catch (Exception e) {
+						if (value instanceof String || value instanceof byte[]) {
+							convertedValue = messageConverter.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
+						}
+					}
 				}
 			}
 			if (logger.isDebugEnabled()) {
