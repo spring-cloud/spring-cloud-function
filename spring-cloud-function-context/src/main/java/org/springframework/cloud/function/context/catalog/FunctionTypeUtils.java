@@ -34,6 +34,7 @@ import org.reactivestreams.Publisher;
 import reactor.util.function.Tuple2;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -103,6 +104,15 @@ public final class FunctionTypeUtils {
 				+ methods + ".\n Class '" + pojoFunctionClass + "' is not a FunctionalInterface.");
 
 		return methods.get(0);
+	}
+
+	public static Type discoverFunctionTypeFromFunctionalObject(Object functionalObject) {
+		if (functionalObject instanceof FunctionInvocationWrapper) {
+			return ((FunctionInvocationWrapper) functionalObject).getFunctionType();
+		}
+		else {
+			return discoverFunctionTypeFromClass(functionalObject.getClass());
+		}
 	}
 
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {

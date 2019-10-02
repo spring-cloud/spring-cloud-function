@@ -332,6 +332,44 @@ public class FunctionDeployerTests {
 		assertThat(result2.get(1)).isEqualTo("2");
 	}
 
+	// same as previous test, but lookup is empty
+	@Test
+	public void testBootJarWithMultipleInputOutputEmptyLookup() {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/bootjar-multi/target/bootjar-multi-1.0.0.RELEASE-exec.jar",
+				"--spring.cloud.function.function-class=function.example.Repeater"
+		};
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		Function<Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>>> function =
+				catalog.lookup("", "application/json", "application/json");
+
+		Message<byte[]> msg1 = MessageBuilder.withPayload("\"one\"".getBytes()).build();
+		Message<byte[]> msg2 = MessageBuilder.withPayload("\"two\"".getBytes()).build();
+		Flux<Message<byte[]>> inputOne = Flux.just(msg1, msg2);
+
+		Message<byte[]> msgInt1 = MessageBuilder.withPayload("\"1\"".getBytes()).build();
+		Message<byte[]> msgInt2 = MessageBuilder.withPayload("\"2\"".getBytes()).build();
+		Flux<Message<byte[]>> inputTwo = Flux.just(msgInt1, msgInt2);
+
+		Tuple2<Flux<Message<byte[]>>, Flux<Message<byte[]>>> result = function.apply(Tuples.of(inputOne, inputTwo));
+		List<String> result1 = new ArrayList<>();
+		List<String> result2 = new ArrayList<>();
+		result.getT1().subscribe(message -> {
+			result1.add(new String(message.getPayload()));
+		});
+		result.getT2().subscribe(message -> {
+			result2.add(new String(message.getPayload()));
+		});
+
+		assertThat(result1.get(0)).isEqualTo("\"one\"");
+		assertThat(result1.get(1)).isEqualTo("\"two\"");
+
+		assertThat(result2.get(0)).isEqualTo("3");
+		assertThat(result2.get(1)).isEqualTo("2");
+	}
+
 	@SpringBootApplication(proxyBeanMethods = false)
 	private static class DeployerApplication {
 	}
