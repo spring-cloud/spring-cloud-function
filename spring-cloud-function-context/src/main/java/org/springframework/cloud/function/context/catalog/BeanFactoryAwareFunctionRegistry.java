@@ -219,21 +219,23 @@ public class BeanFactoryAwareFunctionRegistry
 			 */
 			List<String> names = Stream
 					.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames))).collect(Collectors.toList());
-
+			Object fnObject = null;
 			if (!ObjectUtils.isEmpty(names)) {
 				Assert.isTrue(names.size() == 1, "Found more then one function in BeanFactory: " + names
 						+ ". Consider providing 'spring.cloud.function.definition' property.");
 				definition = names.get(0);
+				fnObject = this.applicationContext.getBean(definition);
 			}
 			else {
 				if (this.registrationsByName.size() > 0) {
 					Assert.isTrue(this.registrationsByName.size() == 1, "Found more then one function in local registry");
 					definition = this.registrationsByName.keySet().iterator().next();
+					fnObject = this.registrationsByName.values().iterator().next().getTarget();
 				}
 			}
 
 			if (StringUtils.hasText(definition)) {
-				Type functionType = discoverFunctionType(this.applicationContext.getBean(definition), definition);
+				Type functionType = discoverFunctionType(fnObject, definition);
 				if (!FunctionTypeUtils.isSupplier(functionType) && !FunctionTypeUtils.isFunction(functionType) && !FunctionTypeUtils.isConsumer(functionType)) {
 					logger.info("Discovered functional instance of bean '" + definition + "' as a default function, however its "
 							+ "function argument types can not be determined. Discarding.");
