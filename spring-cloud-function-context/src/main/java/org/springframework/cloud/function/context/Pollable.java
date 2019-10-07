@@ -50,7 +50,7 @@ import org.springframework.context.annotation.Bean;
 @Retention(RetentionPolicy.RUNTIME)
 @Bean
 @Documented
-public @interface PollableSupplier {
+public @interface Pollable {
 
 	/**
 	 * Signals to the post processors of this annotation that the result produced by the
