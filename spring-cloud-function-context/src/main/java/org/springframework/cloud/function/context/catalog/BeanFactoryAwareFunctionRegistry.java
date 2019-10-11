@@ -221,8 +221,14 @@ public class BeanFactoryAwareFunctionRegistry
 					.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames))).collect(Collectors.toList());
 
 			if (!ObjectUtils.isEmpty(names)) {
-				Assert.isTrue(names.size() == 1, "Found more then one function in BeanFactory: " + names
-						+ ". Consider providing 'spring.cloud.function.definition' property.");
+				if (names.size() > 1) {
+					logger.info("Found more then one function beans in BeanFactory: " + names
+						+ ". If you did not intend to use functions, ignore this message. However, if you did "
+						+ "intend to use functions in the context of spring-cloud-function, consider "
+						+ "providing 'spring.cloud.function.definition' property pointing to a function bean(s) "
+						+ "you intend to use. For example, 'spring.cloud.function.definition=myFunction'");
+					return null;
+				}
 				definition = names.get(0);
 			}
 			else {
