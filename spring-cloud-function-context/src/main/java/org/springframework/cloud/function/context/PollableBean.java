@@ -27,19 +27,18 @@ import org.springframework.context.annotation.Bean;
 
 /**
  *
- * A marker annotation to signal to the consumers of the
- * annotated {@link Supplier} method that regardless of its type signature
- * (reactive or imperative), such supplier needs to be polled
- * periodically. This has special significance to the reactive suppliers (e.g., {@code Supplier<Flux<?>}),
- * since in most cases they are treated as producers of an infinite stream
- * that is managed independently once produced. However if such suppliers produce a stream hat is finite
- * they may need to be called again.
- *
+ * A marker and qualifier annotation to signal that
+ * annotated functional factory method is a bean (e.g., Supplier, Function or Consumer)
+ * that also needs to be polled periodically.
  * <br>
- * NOTE: Given that polling behavior is specific to the users (consumers) of the annotated supplier,
- * spring-cloud-function provides no default post processing behavior which means that annotating a
- * factory method with this annotation will not have any effect without some application/framework
- * specific post processing.
+ * This has special significance to the reactive suppliers (e.g., {@code Supplier<Flux<?>>}),
+ * since by default they are treated as producers of an infinite stream.
+ * However if such suppliers produce a finite stream they may need to be triggered again.
+ * <br>
+ * <br>
+ * NOTE: The spring-cloud-function framework provides no default post processing behavior for this annotation. This
+ * means that annotating a factory method with this annotation will not have any effect without some application/framework
+ * specific post processing (see spring-cloud-stream as an example).
  *
  *
  * @author Oleg Zhurakousky
@@ -50,7 +49,7 @@ import org.springframework.context.annotation.Bean;
 @Retention(RetentionPolicy.RUNTIME)
 @Bean
 @Documented
-public @interface Pollable {
+public @interface PollableBean {
 
 	/**
 	 * Signals to the post processors of this annotation that the result produced by the
