@@ -55,6 +55,9 @@ public abstract class FunctionContextUtils {
 				actualName = name;
 			}
 		}
+		if (definition == null) {
+			return null;
+		}
 
 		Object source = definition.getSource();
 

@@ -278,6 +278,13 @@ public class BeanFactoryAwareFunctionRegistry
 							+ "Function available in catalog are: "  + this.getNames(null));
 					return null;
 				}
+				else {
+					Type functionType = FunctionContextUtils.findType(applicationContext.getBeanFactory(), name);
+					if (functionType != null && functionType.toString().contains("org.apache.kafka.streams.")) {
+						logger.debug("Kafka Streams function '" + definition + "' is not supported by spring-cloud-function.");
+						return null;
+					}
+				}
 
 				composedNameBuilder.append(prefix);
 				composedNameBuilder.append(name);
