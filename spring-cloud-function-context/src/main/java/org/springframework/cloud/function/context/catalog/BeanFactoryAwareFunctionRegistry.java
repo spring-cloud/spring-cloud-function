@@ -602,10 +602,28 @@ public class BeanFactoryAwareFunctionRegistry
 
 				convertedValue = acceptedContentTypes.stream()
 						.map(acceptedContentType -> {
-							Object v = value instanceof Message ? ((Message<?>) value).getPayload() : value;
-							return messageConverter
-								.toMessage(v, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
-							})
+
+							Message<?> resultMessage = null;
+							if (value instanceof Message) {
+								Message<?> message = (Message<?>) value;
+								if (message.getPayload() instanceof byte[]) {
+									resultMessage = message;
+								}
+								else {
+									resultMessage = messageConverter.toMessage(message.getPayload(), message.getHeaders());
+								}
+							}
+							else {
+								if (value instanceof byte[]) {
+									resultMessage = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
+								}
+								else {
+									resultMessage = messageConverter
+											.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
+								}
+							}
+							return resultMessage;
+						})
 						.filter(v -> v != null)
 						.findFirst().orElse(null);
 			}
