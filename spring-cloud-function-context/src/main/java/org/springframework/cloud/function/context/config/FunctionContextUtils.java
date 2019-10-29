@@ -28,7 +28,9 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.core.FunctionFactoryMetadata;
+import org.springframework.context.annotation.ScannedGenericBeanDefinition;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.MethodMetadata;
@@ -57,6 +59,15 @@ public abstract class FunctionContextUtils {
 		}
 		if (definition == null) {
 			return null;
+		}
+		else if (definition instanceof ScannedGenericBeanDefinition) {
+			try {
+				return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
+			}
+			catch (Exception e) {
+				// ignore since name may not be actually resolved to a class in some cases
+				// java.lang.IllegalStateException: Bean class name [functions.Greeter] has not been resolved into an actual Class
+			}
 		}
 
 		Object source = definition.getSource();

@@ -81,13 +81,16 @@ public final class FunctionTypeUtils {
 	 */
 	public static Method discoverFunctionalMethod(Class<?> pojoFunctionClass) {
 		if (Supplier.class.isAssignableFrom(pojoFunctionClass)) {
-			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> m.getName().equals("get")).findFirst().get();
+			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
+					&& m.getName().equals("get")).findFirst().get();
 		}
 		else if (Consumer.class.isAssignableFrom(pojoFunctionClass) || BiConsumer.class.isAssignableFrom(pojoFunctionClass)) {
-			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> m.getName().equals("accept")).findFirst().get();
+			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
+					&& m.getName().equals("accept")).findFirst().get();
 		}
 		else if (Function.class.isAssignableFrom(pojoFunctionClass) || BiFunction.class.isAssignableFrom(pojoFunctionClass)) {
-			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> m.getName().equals("apply")).findFirst().get();
+			return Stream.of(ReflectionUtils.getDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
+					&& m.getName().equals("apply")).findFirst().get();
 		}
 
 		List<Method> methods = new ArrayList<>();

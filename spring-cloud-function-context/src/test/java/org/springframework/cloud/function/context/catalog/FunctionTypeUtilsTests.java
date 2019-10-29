@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.catalog;
 
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Date;
 import java.util.List;
@@ -43,6 +44,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SuppressWarnings("unused")
 public class FunctionTypeUtilsTests {
+
+	@Test
+	public void testFunctionTypeFrom() throws Exception {
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(SimpleConsumer.class);
+		assertThat(type).isInstanceOf(ParameterizedType.class);
+		Type wrapperType = ((ParameterizedType) type).getActualTypeArguments()[0];
+		assertThat(wrapperType).isInstanceOf(ParameterizedType.class);
+		assertThat(wrapperType.getTypeName()).contains("Flux");
+
+		Type innerWrapperType = ((ParameterizedType) wrapperType).getActualTypeArguments()[0];
+		assertThat(innerWrapperType).isInstanceOf(ParameterizedType.class);
+		assertThat(innerWrapperType.getTypeName()).contains("Message");
+
+		Type targetType = ((ParameterizedType) innerWrapperType).getActualTypeArguments()[0];
+		assertThat(targetType).isEqualTo(String.class);
+		System.out.println();
+	}
 
 	@Test
 	public void testInputCount() throws Exception {
@@ -204,5 +222,11 @@ public class FunctionTypeUtilsTests {
 
 	private interface MyMessageConsumer extends MessageConsumer<Date> {
 
+	}
+
+	public static class SimpleConsumer implements Consumer<Flux<Message<String>>> {
+		@Override
+		public void accept(Flux<Message<String>> messageFlux) {
+		}
 	}
 }
