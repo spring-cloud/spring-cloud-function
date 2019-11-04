@@ -103,6 +103,7 @@ $(addBlockSwitches);
 <ul class="sectlevel2">
 <li><a href="#_java_8_function_support">Java 8 function support</a></li>
 <li><a href="#_function_component_scan">Function Component Scan</a></li>
+<li><a href="#_function_composition">Function Composition</a></li>
 <li><a href="#_function_routing">Function Routing</a></li>
 <li><a href="#_kotlin_lambda_support">Kotlin Lambda support</a></li>
 </ul>
@@ -483,6 +484,47 @@ needed. If you want to use a different package, you can set
 <code>spring.cloud.function.scan.packages</code>. You can also use
 <code>spring.cloud.function.scan.enabled=false</code> to switch off the scan
 completely.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_function_composition"><a class="link" href="#_function_composition">Function Composition</a></h3>
+<div class="paragraph">
+<p>Function Composition is a feature that allows one to compose several functions into one.
+The core support is based on function composition feature available with <a href="https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html#andThen-java.util.function.Function-">Function.andThen(..)</a>
+support available since Java 8. However on top of it, we provide few additional features.</p>
+</div>
+<div class="sect3">
+<h4 id="_declarative_function_composition"><a class="link" href="#_declarative_function_composition">Declarative Function Composition</a></h4>
+<div class="paragraph">
+<p>This feature allows you to provide composition instruction in a declarative way using <code>|</code> (pipe) or <code>,</code> (comma) delimiter
+when providing <code>spring.cloud.function.definition</code> property.</p>
+</div>
+<div class="paragraph">
+<p>For example</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>--spring.cloud.function.definition=uppercase|reverse</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we effectively provided a definition of a single function which itself is a composition of
+function <code>uppercase</code> and function <code>reverse</code>. In fact that is one of the reasons why the property name is <em>definition</em> and not <em>name</em>,
+since the definition of a function can be a composition of several named functions.
+And as mentioned you can use <code>,</code> instead of pipe (such as <code>&#8230;&#8203;definition=uppercase,reverse</code>).</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_composing_non_functions"><a class="link" href="#_composing_non_functions">Composing non-Functions</a></h4>
+<div class="paragraph">
+<p>Spring Cloud Function also supports composing Supplier with <code>Consumer</code> or <code>Function</code> as well as <code>Function</code> with <code>Consumer</code>.
+What&#8217;s important here is to understand the end product of such definitions.
+Composing Supplier with Function still results in Supplier while composing Supplier with Consumer will effectively render Runnable.
+Following the same logic composing Function with Consumer will result in Consumer.</p>
+</div>
+<div class="paragraph">
+<p>And of course you can&#8217;t compose uncomposable such as Consumer and Function, Consumer and Supplier etc.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
