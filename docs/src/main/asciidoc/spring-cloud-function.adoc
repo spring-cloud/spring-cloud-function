@@ -116,6 +116,35 @@ needed. If you want to use a different package, you can set
 `spring.cloud.function.scan.enabled=false` to switch off the scan
 completely.
 
+=== Function Composition
+
+Function Composition is a feature that allows one to compose several functions into one.
+The core support is based on function composition feature available with https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html#andThen-java.util.function.Function-[Function.andThen(..)]
+support available since Java 8. However on top of it, we provide few additional features.
+
+==== Declarative Function Composition
+
+This feature allows you to provide composition instruction in a declarative way using `|` (pipe) or `,` (comma) delimiter
+when providing `spring.cloud.function.definition` property.
+
+For example
+----
+--spring.cloud.function.definition=uppercase|reverse
+----
+Here we effectively provided a definition of a single function which itself is a composition of
+function `uppercase` and function `reverse`. In fact that is one of the reasons why the property name is _definition_ and not _name_,
+since the definition of a function can be a composition of several named functions.
+And as mentioned you can use `,` instead of pipe (such as `...definition=uppercase,reverse`).
+
+==== Composing non-Functions
+Spring Cloud Function also supports composing Supplier with `Consumer` or `Function` as well as `Function` with `Consumer`.
+What's important here is to understand the end product of such definitions.
+Composing Supplier with Function still results in Supplier while composing Supplier with Consumer will effectively render Runnable.
+Following the same logic composing Function with Consumer will result in Consumer.
+
+And of course you can't compose uncomposable such as Consumer and Function, Consumer and Supplier etc.
+
+
 === Function Routing
 
 Since version 2.2 Spring Cloud Function provides routing feature allowing
