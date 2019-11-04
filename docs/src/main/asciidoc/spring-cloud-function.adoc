@@ -94,7 +94,10 @@ public Supplier<Flux<String>> someSupplier() {
 ----
 
 ==== Function
-TBD
+Function can also be written in imperative or reactive way, yet unlike Supplier and Consumer there are
+no special considerations for the implementor other then understanding that when used within frameworks
+such as https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream] and others, reactive function is
+invoked only once to pass a reference to the stream (Flux or Mono) and imperative is invoked once per event.
 
 ==== Consumer
 Consumer is a little bit special because it has a `void` return type,
