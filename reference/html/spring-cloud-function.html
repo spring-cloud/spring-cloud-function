@@ -457,7 +457,10 @@ public Supplier&lt;Flux&lt;String&gt;&gt; someSupplier() {
 <div class="sect3">
 <h4 id="_function"><a class="link" href="#_function">Function</a></h4>
 <div class="paragraph">
-<p>TBD</p>
+<p>Function can also be written in imperative or reactive way, yet unlike Supplier and Consumer there are
+no special considerations for the implementor other then understanding that when used within frameworks
+such as <a href="https://spring.io/projects/spring-cloud-stream">Spring Cloud Stream</a> and others, reactive function is
+invoked only once to pass a reference to the stream (Flux or Mono) and imperative is invoked once per event.</p>
 </div>
 </div>
 <div class="sect3">
