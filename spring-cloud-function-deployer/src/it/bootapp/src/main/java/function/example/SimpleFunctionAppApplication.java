@@ -5,6 +5,10 @@ import java.util.function.Function;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 
 @SpringBootApplication
 public class SimpleFunctionAppApplication {
@@ -27,6 +31,24 @@ public class SimpleFunctionAppApplication {
 			p.setId(person.getId());
 			p.setName(person.getName().toUpperCase());
 			return p;
+		};
+	}
+
+	@Bean
+	public MessageConverter customConverter() {
+		return new MessageConverter() {
+
+			@Override
+			public Message<?> toMessage(Object payload, MessageHeaders headers) {
+				System.out.println("==== In Custom Message Converer: toMessage");
+				return null;
+			}
+
+			@Override
+			public Object fromMessage(Message<?> message, Class<?> targetClass) {
+				System.out.println("==== In Custom Message Converer: fromMessage");
+				return null;
+			}
 		};
 	}
 
