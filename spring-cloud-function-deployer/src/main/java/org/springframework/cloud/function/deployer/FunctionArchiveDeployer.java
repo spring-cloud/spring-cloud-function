@@ -91,7 +91,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 					CompositeMessageConverter compositMessageConverter = (CompositeMessageConverter) mcField.get(functionRegistry);
 					List<MessageConverter> converters = compositMessageConverter.getConverters();
 					for (MessageConverter messageConverter : messageConverters.values()) {
-						converters.add(messageConverter);
+						converters.add(0, messageConverter);
 					}
 				}
 				//=====
