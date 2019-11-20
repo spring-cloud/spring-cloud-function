@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.deployer;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
@@ -27,12 +26,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.LaunchedURLClassLoader;
@@ -45,8 +41,6 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.expression.spel.support.StandardTypeLocator;
-import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.ReflectionUtils.MethodCallback;
@@ -82,19 +76,6 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 			if (this.isBootApplicationWithMain()) {
 				this.launchFunctionArchive(args);
-
-				//=====
-				Map<String, MessageConverter> messageConverters = this.discoverMessageConverters(currentLoader);
-				if (!CollectionUtils.isEmpty(messageConverters)) {
-					Field mcField = functionRegistry.getClass().getDeclaredField("messageConverter");
-					mcField.setAccessible(true);
-					CompositeMessageConverter compositMessageConverter = (CompositeMessageConverter) mcField.get(functionRegistry);
-					List<MessageConverter> converters = compositMessageConverter.getConverters();
-					for (MessageConverter messageConverter : messageConverters.values()) {
-						converters.add(messageConverter);
-					}
-				}
-				//=====
 
 				Map<String, Object> functions = this.discoverBeanFunctions();
 				if (logger.isInfoEnabled() && !CollectionUtils.isEmpty(functions)) {
@@ -181,8 +162,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 	private boolean shouldLoadViaDeployerLoader(String name) {
 		return name.startsWith("org.reactivestreams")
-				|| name.startsWith("reactor.")
-				|| name.startsWith("org.springframework.messaging");
+				|| name.startsWith("reactor.");
 	}
 
 	private String discoverFunctionClassName(FunctionDeployerProperties functionProperties) {
@@ -299,39 +279,5 @@ class FunctionArchiveDeployer extends JarLauncher {
 			allFunctions.putAll((Map<String, Object>) parsed.getValue(this.evalContext));
 		}
 		return allFunctions;
-	}
-
-	@SuppressWarnings("unchecked")
-	private Map<String, MessageConverter> discoverMessageConverters(ClassLoader currentLoader) {
-		ClassLoader threadLoader = Thread.currentThread().getContextClassLoader();
-		Map<String, MessageConverter> exportedMessageConverters = new HashMap<>();
-		try {
-			if (evalContext.lookupVariable("context") != null) { // no start-class uber jars
-				Expression parsed = new SpelExpressionParser()
-						.parseExpression("#context.getBeansOfType(T(org.springframework.messaging.converter.MessageConverter))");
-				Thread.currentThread().setContextClassLoader(currentLoader);
-				Map<String, Object> targetMessageConverters = (Map<String, Object>) parsed.getValue(this.evalContext);
-
-				for (Entry<String, Object> messageConverterEntry : targetMessageConverters.entrySet()) {
-
-					ProxyFactory pf = new ProxyFactory(messageConverterEntry.getValue());
-					pf.setInterfaces(MessageConverter.class);
-					pf.addAdvice(new MethodInterceptor() {
-						@Override
-						public Object invoke(MethodInvocation invocation) throws Throwable {
-							System.out.println("=====> Invoking proxy");
-							return invocation.proceed();
-						}
-					});
-					MessageConverter converter = (MessageConverter) pf.getProxy();
-					exportedMessageConverters.put(messageConverterEntry.getKey(), converter);
-				}
-			}
-		}
-		finally {
-			Thread.currentThread().setContextClassLoader(threadLoader);
-		}
-
-		return exportedMessageConverters;
 	}
 }
