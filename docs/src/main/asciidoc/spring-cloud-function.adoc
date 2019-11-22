@@ -22,46 +22,36 @@ include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/maste
 
 include::getting-started.adoc[]
 
-== Function Catalog and Flexible Function Signatures
+== Programming model
+
+
+=== Function Catalog and Flexible Function Signatures
 
 One of the main features of Spring Cloud Function is to adapt and support a range of type signatures for user-defined functions,
 while providing a consistent execution model.
-That's why all user defined functions are transformed into a canonical representation by `FunctionCatalog`, using primitives
-defined by the https://projectreactor.io/[Project Reactor] (i.e., `Flux<T>` and `Mono<T>`).
-Users can supply a bean of type `Function<String,String>`, for instance, and the `FunctionCatalog` will wrap it into a
-`Function<Flux<String>,Flux<String>>`.
-
-Using Reactor based primitives not only helps with the canonical representation of user defined functions, but it also
-facilitates a more robust and flexible(reactive) execution model.
+That's why all user defined functions are transformed into a canonical representation by `FunctionCatalog`.
 
 While users don't normally have to care about the `FunctionCatalog` at all, it is useful to know what
 kind of functions are supported in user code.
 
+It is also important to understand that Spring Cloud Function provides first class support for reactive API
+provided by https://projectreactor.io/[Project Reactor] allowing reactive primitives such as `Mono` and `Flux`
+to be used as types in user defined functions providing greater flexibility when choosing programming model for
+your function implementation.
+Reactive programming model also enables functional support for features that would be otherwise difficult to impossible to implement
+using imperative programming style. For more on this please read <<Function Arity>> section.
+
 === Java 8 function support
 
-Generally speaking users can expect that if they write a function for
-a plain old Java type (or primitive wrapper), then the function
-catalog will wrap it to a `Flux` of the same type. If the user writes
-a function using `Message` (from spring-messaging) it will receive and
-transmit headers from any adapter that supports key-value metadata
-(e.g. HTTP headers). Here are the details.
+Spring Cloud Function embraces and builds on top of the 3 core functional interfaces defined by Java
+and available to us since Java 8.
 
-|===
-| User Function | Catalog Registration |
-
-| `Function<S,T>` | `Function<Flux<S>, Flux<T>>` |
-| `Function<Message<S>,Message<T>>` | `Function<Flux<Message<S>>, Flux<Message<T>>>` |
-| `Function<Flux<S>, Flux<T>>` | `Function<Flux<S>, Flux<T>>` (pass through) |
-| `Supplier<T>` | `Supplier<Flux<T>>` |
-| `Supplier<Flux<T>>` | `Supplier<Flux<T>>` |
-| `Consumer<T>` | `Function<Flux<T>, Mono<Void>>` |
-| `Consumer<Message<T>>` | `Function<Flux<Message<T>>, Mono<Void>>` |
-| `Consumer<Flux<T>>` | `Consumer<Flux<T>>` |
-
-|===
+- Supplier<O>
+- Function<I, O>
+- Consumer<I>
 
 ==== Supplier
-As you can see from the table above Supplier can be _reactive_ - `Supplier<Flux<T>>`
+Supplier can be _reactive_ - `Supplier<Flux<T>>`
 or _imperative_ - `Supplier<T>`. From the invocation standpoint this should make no difference
 to the implementor of such Supplier. However, when used within frameworks
 (e.g., https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream]), Suppliers, especially reactive,
@@ -107,17 +97,6 @@ remember to subscribe to the input flux. If you declare a `Consumer`
 of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.
-
-=== Function Component Scan
-
-Spring Cloud Function will scan for implementations of `Function`,
-`Consumer` and `Supplier` in a package called `functions` if it
-exists. Using this feature you can write functions that have no
-dependencies on Spring - not even the `@Component` annotation is
-needed. If you want to use a different package, you can set
-`spring.cloud.function.scan.packages`. You can also use
-`spring.cloud.function.scan.enabled=false` to switch off the scan
-completely.
 
 === Function Composition
 
@@ -199,6 +178,41 @@ due to the nature of the reactive functions which are invoked only once to pass 
 is handled by the reactor, hence we can not access and/or rely on the routing instructions communicated via individual
 values (e.g., Message).
 
+=== Function Arity
+
+There are times when a stream of data needs to be categorized and organized. For example,
+consider a classic big-data use case of dealing with unorganized data containing, let’s say,
+‘orders’ and ‘invoices’, and you want each to go into a separate data store.
+This is where function arity (functions with multiple inputs and outputs) support
+comes to play.
+
+Let’s look at an example of such a function (full implementation details are available
+https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream/src/test/java/org/springframework/cloud/stream/function/MultipleInputOutputFunctionTests.java#L342[here]),
+
+[source, java]
+----
+@Bean
+public Function<Flux<Integer>, Tuple2<Flux<String>, Flux<String>>> organise() {
+	return flux -> ...;
+}
+----
+
+Given that Project Reactor is a core dependency of SCF, we are using its Tuple library.
+Tuples give us a unique advantage by communicating to us both _cardinality_ and _type_ information.
+Both are extremely important in the context of SCSt. Cardinality lets us know
+how many input and output bindings need to be created and bound to the corresponding
+inputs and outputs of a function. Awareness of the type information ensures proper type
+conversion.
+
+Also, this is where the ‘index’ part of the naming convention for binding
+names comes into play, since, in this function, the two output binding
+names are `organise-out-0` and `organise-out-1`.
+
+IMPORTANT: IMPORTANT: At the moment, function arity is *only* supported for reactive functions
+(`Function<TupleN<Flux<?>...>, TupleN<Flux<?>...>>`) centered on Complex event processing
+where evaluation and computation on confluence of events typically requires view into a
+stream of events rather than single event.
+
 === Kotlin Lambda support
 
 We also provide support for Kotlin lambdas (since v2.0).
@@ -229,6 +243,17 @@ same rules for signature transformation outlined in "Java 8 function support" se
 
 To enable Kotlin support all you need is to add `spring-cloud-function-kotlin` module to your classpath which contains the appropriate
 autoconfiguration and supporting classes.
+
+=== Function Component Scan
+
+Spring Cloud Function will scan for implementations of `Function`,
+`Consumer` and `Supplier` in a package called `functions` if it
+exists. Using this feature you can write functions that have no
+dependencies on Spring - not even the `@Component` annotation is
+needed. If you want to use a different package, you can set
+`spring.cloud.function.scan.packages`. You can also use
+`spring.cloud.function.scan.enabled=false` to switch off the scan
+completely.
 
 == Standalone Web Applications
 
@@ -309,7 +334,7 @@ public class DeployFunctionDemo {
 	public static void main(String[] args) {
 		ApplicationContext context = SpringApplication.run(DeployFunctionDemo.class,
 				"--spring.cloud.function.location=..../target/uppercase-0.0.1-SNAPSHOT.jar",
-				"--spring.cloud.function.function-name=uppercase");
+				"--spring.cloud.function.definition=uppercase");
 
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function<String, String> function = catalog.lookup("uppercase");

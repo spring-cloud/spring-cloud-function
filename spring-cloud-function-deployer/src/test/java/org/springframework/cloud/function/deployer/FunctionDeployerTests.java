@@ -164,7 +164,7 @@ public class FunctionDeployerTests {
 	public void testWithMainAndStartClassAndSpringConfiguration() throws Exception {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
-				"--spring.cloud.function.function-name=uppercase" };
+				"--spring.cloud.function.definition=uppercase" };
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function<Message<byte[]>, Message<byte[]>> function = catalog.lookup("uppercase", "application/json");
