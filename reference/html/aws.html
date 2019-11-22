@@ -114,7 +114,7 @@ $(addBlockSwitches);
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>3.0.0.BUILD-SNAPSHOT</strong></p>
+<p><strong>3.0.1.BUILD-SNAPSHOT</strong></p>
 </div>
 <div class="paragraph">
 <p>The <a href="https://aws.amazon.com/">AWS</a> adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.</p>
@@ -376,7 +376,7 @@ we will not attempt any conversion and will pass the raw input directly to a fun
 <div class="paragraph">
 <p>Your functions will start much quicker if you can use functional bean definitions instead of <code>@Bean</code>. To do this make your main class
 an <code>ApplicationContextInitializer&lt;GenericApplicationContext&gt;</code> and use the <code>registerBean()</code> methods in <code>GenericApplicationContext</code> to
-create all the beans you need. You function need sto be registered as a bean of type <code>FunctionRegistration</code> so that the input and
+create all the beans you need. You function need to be registered as a bean of type <code>FunctionRegistration</code> so that the input and
 output types can be accessed by the framework. There is an example in github (the AWS sample is written in this style). It would
 look something like this:</p>
 </div>

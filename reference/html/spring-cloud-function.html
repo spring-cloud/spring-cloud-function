@@ -98,14 +98,15 @@ $(addBlockSwitches);
 <ul class="sectlevel1">
 <li><a href="#_introduction">Introduction</a></li>
 <li><a href="#_getting_started">Getting Started</a></li>
-<li><a href="#_building_and_running_a_function">Building and Running a Function</a></li>
-<li><a href="#_function_catalog_and_flexible_function_signatures">Function Catalog and Flexible Function Signatures</a>
+<li><a href="#_programming_model">Programming model</a>
 <ul class="sectlevel2">
+<li><a href="#_function_catalog_and_flexible_function_signatures">Function Catalog and Flexible Function Signatures</a></li>
 <li><a href="#_java_8_function_support">Java 8 function support</a></li>
-<li><a href="#_function_component_scan">Function Component Scan</a></li>
 <li><a href="#_function_composition">Function Composition</a></li>
 <li><a href="#_function_routing">Function Routing</a></li>
+<li><a href="#_function_arity">Function Arity</a></li>
 <li><a href="#_kotlin_lambda_support">Kotlin Lambda support</a></li>
+<li><a href="#_function_component_scan">Function Component Scan</a></li>
 </ul>
 </li>
 <li><a href="#_standalone_web_applications">Standalone Web Applications</a></li>
@@ -135,7 +136,7 @@ $(addBlockSwitches);
 <p>Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra</p>
 </div>
 <div class="paragraph">
-<p><strong>3.0.0.BUILD-SNAPSHOT</strong></p>
+<p><strong>3.0.1.BUILD-SNAPSHOT</strong></p>
 </div>
 <hr>
 </div>
@@ -299,126 +300,51 @@ string like that.)</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_building_and_running_a_function"><a class="link" href="#_building_and_running_a_function">Building and Running a Function</a></h2>
+<h2 id="_programming_model"><a class="link" href="#_programming_model">Programming model</a></h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>The sample <code>@SpringBootApplication</code> above has a function that can be
-decorated at runtime by Spring Cloud Function to be an HTTP endpoint,
-or a Stream processor, for instance with RabbitMQ, Apache Kafka or
-JMS.</p>
-</div>
-<div class="paragraph">
-<p>The <code>@Beans</code> can be <code>Function</code>, <code>Consumer</code> or <code>Supplier</code> (all from
-<code>java.util</code>), and their parametric types can be String or POJO.</p>
-</div>
-<div class="paragraph">
-<p>Functions can also be of <code>Flux&lt;String&gt;</code> or <code>Flux&lt;Pojo&gt;</code> and Spring
-Cloud Function takes care of converting the data to and from the
-desired types, as long as it comes in as plain text or (in the case of
-the POJO) JSON. There is also support for <code>Message&lt;Pojo&gt;</code> where the
-message headers are copied from the incoming event, depending on the
-adapter. The web adapter also supports conversion from form-encoded
-data to a <code>Map</code>, and if you are using the function with Spring Cloud
-Stream then all the conversion and coercion features for message
-payloads will be applicable as well.</p>
-</div>
-<div class="paragraph">
-<p>Functions can be grouped together in a single application, or deployed
-one-per-jar. It&#8217;s up to the developer to choose. An app with multiple
-functions can be deployed multiple times in different "personalities",
-exposing different functions over different physical transports.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_function_catalog_and_flexible_function_signatures"><a class="link" href="#_function_catalog_and_flexible_function_signatures">Function Catalog and Flexible Function Signatures</a></h2>
-<div class="sectionbody">
+<div class="sect2">
+<h3 id="_function_catalog_and_flexible_function_signatures"><a class="link" href="#_function_catalog_and_flexible_function_signatures">Function Catalog and Flexible Function Signatures</a></h3>
 <div class="paragraph">
 <p>One of the main features of Spring Cloud Function is to adapt and support a range of type signatures for user-defined functions,
 while providing a consistent execution model.
-That&#8217;s why all user defined functions are transformed into a canonical representation by <code>FunctionCatalog</code>, using primitives
-defined by the <a href="https://projectreactor.io/">Project Reactor</a> (i.e., <code>Flux&lt;T&gt;</code> and <code>Mono&lt;T&gt;</code>).
-Users can supply a bean of type <code>Function&lt;String,String&gt;</code>, for instance, and the <code>FunctionCatalog</code> will wrap it into a
-<code>Function&lt;Flux&lt;String&gt;,Flux&lt;String&gt;&gt;</code>.</p>
-</div>
-<div class="paragraph">
-<p>Using Reactor based primitives not only helps with the canonical representation of user defined functions, but it also
-facilitates a more robust and flexible(reactive) execution model.</p>
+That&#8217;s why all user defined functions are transformed into a canonical representation by <code>FunctionCatalog</code>.</p>
 </div>
 <div class="paragraph">
 <p>While users don&#8217;t normally have to care about the <code>FunctionCatalog</code> at all, it is useful to know what
 kind of functions are supported in user code.</p>
 </div>
+<div class="paragraph">
+<p>It is also important to understand that Spring Cloud Function provides first class support for reactive API
+provided by <a href="https://projectreactor.io/">Project Reactor</a> allowing reactive primitives such as <code>Mono</code> and <code>Flux</code>
+to be used as types in user defined functions providing greater flexibility when choosing programming model for
+your function implementation.
+Reactive programming model also enables functional support for features that would be otherwise difficult to impossible to implement
+using imperative programming style. For more on this please read <a href="#_function_arity">Function Arity</a> section.</p>
+</div>
+</div>
 <div class="sect2">
 <h3 id="_java_8_function_support"><a class="link" href="#_java_8_function_support">Java 8 function support</a></h3>
 <div class="paragraph">
-<p>Generally speaking users can expect that if they write a function for
-a plain old Java type (or primitive wrapper), then the function
-catalog will wrap it to a <code>Flux</code> of the same type. If the user writes
-a function using <code>Message</code> (from spring-messaging) it will receive and
-transmit headers from any adapter that supports key-value metadata
-(e.g. HTTP headers). Here are the details.</p>
+<p>Spring Cloud Function embraces and builds on top of the 3 core functional interfaces defined by Java
+and available to us since Java 8.</p>
 </div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">User Function</th>
-<th class="tableblock halign-left valign-top">Catalog Registration</th>
-<th class="tableblock halign-left valign-top"></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;S,T&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;Flux&lt;S&gt;, Flux&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;Message&lt;S&gt;,Message&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;Flux&lt;Message&lt;S&gt;&gt;, Flux&lt;Message&lt;T&gt;&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;Flux&lt;S&gt;, Flux&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;Flux&lt;S&gt;, Flux&lt;T&gt;&gt;</code> (pass through)</p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Supplier&lt;T&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Supplier&lt;Flux&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Supplier&lt;Flux&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Supplier&lt;Flux&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Consumer&lt;T&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;Flux&lt;T&gt;, Mono&lt;Void&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Consumer&lt;Message&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Function&lt;Flux&lt;Message&lt;T&gt;&gt;, Mono&lt;Void&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Consumer&lt;Flux&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Consumer&lt;Flux&lt;T&gt;&gt;</code></p></td>
-<td class="tableblock halign-left valign-top"></td>
-</tr>
-</tbody>
-</table>
+<div class="ulist">
+<ul>
+<li>
+<p>Supplier&lt;O&gt;</p>
+</li>
+<li>
+<p>Function&lt;I, O&gt;</p>
+</li>
+<li>
+<p>Consumer&lt;I&gt;</p>
+</li>
+</ul>
+</div>
 <div class="sect3">
 <h4 id="_supplier"><a class="link" href="#_supplier">Supplier</a></h4>
 <div class="paragraph">
-<p>As you can see from the table above Supplier can be <em>reactive</em> - <code>Supplier&lt;Flux&lt;T&gt;&gt;</code>
+<p>Supplier can be <em>reactive</em> - <code>Supplier&lt;Flux&lt;T&gt;&gt;</code>
 or <em>imperative</em> - <code>Supplier&lt;T&gt;</code>. From the invocation standpoint this should make no difference
 to the implementor of such Supplier. However, when used within frameworks
 (e.g., <a href="https://spring.io/projects/spring-cloud-stream">Spring Cloud Stream</a>), Suppliers, especially reactive,
@@ -474,19 +400,6 @@ of a non publisher type (which is normal), it will be converted to a
 function that returns a publisher, so that it can be subscribed to in
 a controlled way.</p>
 </div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_function_component_scan"><a class="link" href="#_function_component_scan">Function Component Scan</a></h3>
-<div class="paragraph">
-<p>Spring Cloud Function will scan for implementations of <code>Function</code>,
-<code>Consumer</code> and <code>Supplier</code> in a package called <code>functions</code> if it
-exists. Using this feature you can write functions that have no
-dependencies on Spring - not even the <code>@Component</code> annotation is
-needed. If you want to use a different package, you can set
-<code>spring.cloud.function.scan.packages</code>. You can also use
-<code>spring.cloud.function.scan.enabled=false</code> to switch off the scan
-completely.</p>
 </div>
 </div>
 <div class="sect2">
@@ -613,6 +526,56 @@ values (e.g., Message).
 </div>
 </div>
 <div class="sect2">
+<h3 id="_function_arity"><a class="link" href="#_function_arity">Function Arity</a></h3>
+<div class="paragraph">
+<p>There are times when a stream of data needs to be categorized and organized. For example,
+consider a classic big-data use case of dealing with unorganized data containing, let’s say,
+‘orders’ and ‘invoices’, and you want each to go into a separate data store.
+This is where function arity (functions with multiple inputs and outputs) support
+comes to play.</p>
+</div>
+<div class="paragraph">
+<p>Let’s look at an example of such a function (full implementation details are available
+<a href="https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream/src/test/java/org/springframework/cloud/stream/function/MultipleInputOutputFunctionTests.java#L342">here</a>),</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Bean
+public Function&lt;Flux&lt;Integer&gt;, Tuple2&lt;Flux&lt;String&gt;, Flux&lt;String&gt;&gt;&gt; organise() {
+	return flux -&gt; ...;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Given that Project Reactor is a core dependency of SCF, we are using its Tuple library.
+Tuples give us a unique advantage by communicating to us both <em>cardinality</em> and <em>type</em> information.
+Both are extremely important in the context of SCSt. Cardinality lets us know
+how many input and output bindings need to be created and bound to the corresponding
+inputs and outputs of a function. Awareness of the type information ensures proper type
+conversion.</p>
+</div>
+<div class="paragraph">
+<p>Also, this is where the ‘index’ part of the naming convention for binding
+names comes into play, since, in this function, the two output binding
+names are <code>organise-out-0</code> and <code>organise-out-1</code>.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+IMPORTANT: At the moment, function arity is <strong>only</strong> supported for reactive functions
+(<code>Function&lt;TupleN&lt;Flux&lt;?&gt;&#8230;&#8203;&gt;, TupleN&lt;Flux&lt;?&gt;&#8230;&#8203;&gt;&gt;</code>) centered on Complex event processing
+where evaluation and computation on confluence of events typically requires view into a
+stream of events rather than single event.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_kotlin_lambda_support"><a class="link" href="#_kotlin_lambda_support">Kotlin Lambda support</a></h3>
 <div class="paragraph">
 <p>We also provide support for Kotlin lambdas (since v2.0).
@@ -645,6 +608,19 @@ same rules for signature transformation outlined in "Java 8 function support" se
 <div class="paragraph">
 <p>To enable Kotlin support all you need is to add <code>spring-cloud-function-kotlin</code> module to your classpath which contains the appropriate
 autoconfiguration and supporting classes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_function_component_scan"><a class="link" href="#_function_component_scan">Function Component Scan</a></h3>
+<div class="paragraph">
+<p>Spring Cloud Function will scan for implementations of <code>Function</code>,
+<code>Consumer</code> and <code>Supplier</code> in a package called <code>functions</code> if it
+exists. Using this feature you can write functions that have no
+dependencies on Spring - not even the <code>@Component</code> annotation is
+needed. If you want to use a different package, you can set
+<code>spring.cloud.function.scan.packages</code>. You can also use
+<code>spring.cloud.function.scan.enabled=false</code> to switch off the scan
+completely.</p>
 </div>
 </div>
 </div>
@@ -802,7 +778,7 @@ public class DeployFunctionDemo {
 	public static void main(String[] args) {
 		ApplicationContext context = SpringApplication.run(DeployFunctionDemo.class,
 				"--spring.cloud.function.location=..../target/uppercase-0.0.1-SNAPSHOT.jar",
-				"--spring.cloud.function.function-name=uppercase");
+				"--spring.cloud.function.definition=uppercase");
 
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		Function&lt;String, String&gt; function = catalog.lookup("uppercase");

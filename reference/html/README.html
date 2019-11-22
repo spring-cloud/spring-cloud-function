@@ -97,7 +97,6 @@ $(addBlockSwitches);
 <ul class="sectlevel1">
 <li><a href="#_introduction">Introduction</a></li>
 <li><a href="#_getting_started">Getting Started</a></li>
-<li><a href="#_building_and_running_a_function">Building and Running a Function</a></li>
 <li><a href="#_building">Building</a>
 <ul class="sectlevel2">
 <li><a href="#_basic_compile_and_test">Basic Compile and Test</a></li>
@@ -270,38 +269,6 @@ HELLOWORLD</pre>
 <div class="paragraph">
 <p>(You can use <code><sup>Q</sup>J</code> in a terminal to insert a new line in a literal
 string like that.)</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_building_and_running_a_function"><a class="link" href="#_building_and_running_a_function">Building and Running a Function</a></h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The sample <code>@SpringBootApplication</code> above has a function that can be
-decorated at runtime by Spring Cloud Function to be an HTTP endpoint,
-or a Stream processor, for instance with RabbitMQ, Apache Kafka or
-JMS.</p>
-</div>
-<div class="paragraph">
-<p>The <code>@Beans</code> can be <code>Function</code>, <code>Consumer</code> or <code>Supplier</code> (all from
-<code>java.util</code>), and their parametric types can be String or POJO.</p>
-</div>
-<div class="paragraph">
-<p>Functions can also be of <code>Flux&lt;String&gt;</code> or <code>Flux&lt;Pojo&gt;</code> and Spring
-Cloud Function takes care of converting the data to and from the
-desired types, as long as it comes in as plain text or (in the case of
-the POJO) JSON. There is also support for <code>Message&lt;Pojo&gt;</code> where the
-message headers are copied from the incoming event, depending on the
-adapter. The web adapter also supports conversion from form-encoded
-data to a <code>Map</code>, and if you are using the function with Spring Cloud
-Stream then all the conversion and coercion features for message
-payloads will be applicable as well.</p>
-</div>
-<div class="paragraph">
-<p>Functions can be grouped together in a single application, or deployed
-one-per-jar. It&#8217;s up to the developer to choose. An app with multiple
-functions can be deployed multiple times in different "personalities",
-exposing different functions over different physical transports.</p>
 </div>
 </div>
 </div>
