@@ -59,5 +59,5 @@ public @interface PollableBean {
 	 * @return true if the resulting stream produced by the
 	 * annotated {@link Supplier} has to be split.
 	 */
-	boolean splittable() default false;
+	boolean splittable() default true;
 }
