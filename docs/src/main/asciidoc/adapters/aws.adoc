@@ -11,7 +11,7 @@ include::adapters/aws-intro.adoc[]
 
 Your functions will start much quicker if you can use functional bean definitions instead of `@Bean`. To do this make your main class
 an `ApplicationContextInitializer<GenericApplicationContext>` and use the `registerBean()` methods in `GenericApplicationContext` to
-create all the beans you need. You function need sto be registered as a bean of type `FunctionRegistration` so that the input and
+create all the beans you need. You function need to be registered as a bean of type `FunctionRegistration` so that the input and
 output types can be accessed by the framework. There is an example in github (the AWS sample is written in this style). It would
 look something like this:
 
