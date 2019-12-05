@@ -100,31 +100,6 @@ HELLOWORLD
 (You can use `^Q^J` in a terminal to insert a new line in a literal
 string like that.)
 
-== Building and Running a Function
-
-The sample `@SpringBootApplication` above has a function that can be
-decorated at runtime by Spring Cloud Function to be an HTTP endpoint,
-or a Stream processor, for instance with RabbitMQ, Apache Kafka or
-JMS.
-
-The `@Beans` can be `Function`, `Consumer` or `Supplier` (all from
-`java.util`), and their parametric types can be String or POJO.
-
-Functions can also be of `Flux<String>` or `Flux<Pojo>` and Spring
-Cloud Function takes care of converting the data to and from the
-desired types, as long as it comes in as plain text or (in the case of
-the POJO) JSON. There is also support for `Message<Pojo>` where the
-message headers are copied from the incoming event, depending on the
-adapter. The web adapter also supports conversion from form-encoded
-data to a `Map`, and if you are using the function with Spring Cloud
-Stream then all the conversion and coercion features for message
-payloads will be applicable as well.
-
-Functions can be grouped together in a single application, or deployed
-one-per-jar. It's up to the developer to choose. An app with multiple
-functions can be deployed multiple times in different "personalities",
-exposing different functions over different physical transports.
-
 == Building
 
 :jdkversion: 1.7

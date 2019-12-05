@@ -26,7 +26,6 @@
 		<wrapper.version>1.0.17.RELEASE</wrapper.version>
 		<aws-lambda-events.version>2.0.2</aws-lambda-events.version>
 		<spring-cloud-function.version>3.0.1.BUILD-SNAPSHOT</spring-cloud-function.version>
-		<start-class>example.Config</start-class>
 	</properties>
 
 	<dependencies>
@@ -34,16 +33,18 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-aws</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-function-webflux</artifactId>
-			<scope>provided</scope>
-		</dependency>
+
+
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.springframework.cloud</groupId> -->
+<!-- 			<artifactId>spring-cloud-starter-function-webflux</artifactId> -->
+<!--  			<scope>provided</scope> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-events</artifactId>
 			<version>${aws-lambda-events.version}</version>
-			<scope>provided</scope>
+<!-- 			<scope>provided</scope> -->
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>

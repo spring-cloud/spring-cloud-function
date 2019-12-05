@@ -47,9 +47,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.util.CollectionUtils;
@@ -70,7 +70,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
 	@Bean
-	public FunctionRegistry functionCatalog(Map<String, MessageConverter> messageConverters) {
+	public FunctionRegistry functionCatalog(Map<String, MessageConverter> messageConverters, @Nullable ObjectMapper objectMapper) {
 		ConversionService conversionService = new DefaultConversionService();
 		CompositeMessageConverter messageConverter = null;
 		List<MessageConverter> mcList = new ArrayList<>();
@@ -88,7 +88,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 		}
 		if (addDefaultConverters) {
-			mcList.add(new MappingJackson2MessageConverter());
+			if (objectMapper == null) {
+				objectMapper = new ObjectMapper();
+			}
+			mcList.add(new ApplicationJsonMessageMarshallingConverter(objectMapper));
 			mcList.add(new ByteArrayMessageConverter());
 			mcList.add(new StringMessageConverter());
 		}
