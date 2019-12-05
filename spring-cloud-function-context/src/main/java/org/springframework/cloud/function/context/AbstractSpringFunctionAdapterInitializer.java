@@ -100,6 +100,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		if (!configurationClass.equals(contextStartClass)) {
 			context = null;
 		}
+		contextStartClass = configurationClass;
 	}
 
 	public AbstractSpringFunctionAdapterInitializer() {
