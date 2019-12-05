@@ -56,11 +56,16 @@ import org.springframework.util.CollectionUtils;
  * @param <C> the type of the target specific (native) context object.
  *
  * @author Oleg Zhurakousky
+ * @author Arno De Witte
  * @since 2.1
  */
 public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Closeable {
 
 	private static Log logger = LogFactory.getLog(AbstractSpringFunctionAdapterInitializer.class);
+
+	private volatile static ConfigurableApplicationContext context;
+
+	private volatile static Class contextStartClass;
 
 	/**
 	 * Name of the bean for registering the target execution context passed to `initialize(context)` operation.
@@ -85,8 +90,6 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 	@Autowired(required = false)
 	private FunctionCatalog catalog;
 
-	private ConfigurableApplicationContext context;
-
 	public ConfigurableApplicationContext getContext() {
 		return context;
 	}
@@ -94,6 +97,9 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 	public AbstractSpringFunctionAdapterInitializer(Class<?> configurationClass) {
 		Assert.notNull(configurationClass, "'configurationClass' must not be null");
 		this.configurationClass = configurationClass;
+		if (!configurationClass.equals(contextStartClass)) {
+			context = null;
+		}
 	}
 
 	public AbstractSpringFunctionAdapterInitializer() {
@@ -112,10 +118,26 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 			return;
 		}
 		logger.info("Initializing: " + this.configurationClass);
-		SpringApplication builder = springApplication();
 
-		this.registerTargetContext(targetContext, builder);
-		ConfigurableApplicationContext context = builder.run();
+		ConfigurableApplicationContext context = AbstractSpringFunctionAdapterInitializer.context;
+
+		if (context == null || !context.isActive()) {
+			synchronized (AbstractSpringFunctionAdapterInitializer.class) {
+				if (context == null || !context.isActive()) {
+					ClassUtils.overrideThreadContextClassLoader(
+						AbstractSpringFunctionAdapterInitializer.class.getClassLoader());
+					SpringApplication builder = springApplication();
+					this.registerTargetContextHolder(builder);
+					context = builder.run();
+					AbstractSpringFunctionAdapterInitializer.context = context;
+				}
+			}
+		}
+
+		TargetContextHolder<C> targetContextHolder =
+			context.getBean(TARGET_EXECUTION_CTX_BEAN_NAME, TargetContextHolder.class);
+		targetContextHolder.setTargetContext(targetContext);
+
 		context.getAutowireCapableBeanFactory().autowireBean(this);
 		this.context = context;
 		if (this.catalog == null) {
@@ -126,17 +148,16 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		}
 	}
 
-	private void registerTargetContext(C targetContext, SpringApplication builder) {
-		if (targetContext != null) {
-			builder.addInitializers(new ApplicationContextInitializer<ConfigurableApplicationContext>() {
-				@SuppressWarnings("unchecked")
-				@Override
-				public void initialize(ConfigurableApplicationContext applicationContext) {
-					((GenericApplicationContext) applicationContext).registerBean(TARGET_EXECUTION_CTX_BEAN_NAME,
-							(Class<C>) targetContext.getClass(), (Supplier<C>) () -> targetContext);
-				}
-			});
-		}
+	private void registerTargetContextHolder(SpringApplication builder) {
+		builder.addInitializers(new ApplicationContextInitializer<ConfigurableApplicationContext>() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public void initialize(ConfigurableApplicationContext applicationContext) {
+				((GenericApplicationContext) applicationContext).registerBean(
+					TARGET_EXECUTION_CTX_BEAN_NAME, TargetContextHolder.class,
+					TargetContextHolder::new);
+			}
+		});
 	}
 
 	protected FunctionInspector getInspector() {

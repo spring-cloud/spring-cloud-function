@@ -30,6 +30,7 @@ import org.junit.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.function.context.TargetContextHolder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -194,9 +195,9 @@ public class AzureSpringBootRequestHandlerTests {
 	protected static class AutoConfig {
 
 		@Bean
-		public Function<Foo, Bar> uppercase(ExecutionContext targetContext) {
+		public Function<Foo, Bar> uppercase(TargetContextHolder<ExecutionContext> targetContextHolder) {
 			return foo -> {
-				targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
+				targetContextHolder.getTargetContext().getLogger().info("Invoking 'uppercase' on " + foo.getValue());
 				return new Bar(foo.getValue().toUpperCase());
 			};
 		}
