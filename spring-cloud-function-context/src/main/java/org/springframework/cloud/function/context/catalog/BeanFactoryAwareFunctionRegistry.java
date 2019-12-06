@@ -449,11 +449,7 @@ public class BeanFactoryAwareFunctionRegistry
 
 		FunctionInvocationWrapper(Object target, Type functionType, String functionDefinition, String... acceptedOutputMimeTypes) {
 			this.target = target;
-			this.composed = target instanceof RoutingFunction ||
-					(!target.getClass().getName().contains("$$EnhancerBySpringCGLIB")
-					&& !AopUtils.isAopProxy(target) && !AopUtils.isJdkDynamicProxy(target)
-					&& target.getClass().getDeclaredFields().length > 1
-					&& target.getClass().isSynthetic());
+			this.composed = functionDefinition.contains("|") || target instanceof RoutingFunction;
 			this.functionType = functionType;
 			this.acceptedOutputMimeTypes = acceptedOutputMimeTypes;
 			this.functionDefinition = functionDefinition;

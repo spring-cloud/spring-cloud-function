@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.catalog;
 
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import reactor.util.function.Tuples;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,6 +45,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.stereotype.Component;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -289,9 +293,18 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		Person person = uppercasePerson.apply("{\"name\":\"bill\",\"id\":2}");
 		assertThat(person.getName()).isEqualTo("BILL");
-
 	}
 
+	@Test
+	public void SCF_GH_429ConfigurationTests() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(MyFunction.class);
+		FunctionInvocationWrapper function = catalog.lookup("beanFactoryAwareFunctionRegistryTests.MyFunction");
+		assertThat(function).isNotNull();
+		Field f = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
+		f.setAccessible(true);
+		boolean composed = (boolean) f.get(function);
+		assertThat(composed).isFalse();
+	}
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -520,5 +533,17 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public String toString() {
 			return "Person: " + name + "/" + id;
 		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@Component
+	public static class MyFunction implements Function<String, String> {
+
+		@Override
+		public String apply(String t) {
+			return t;
+		}
+
 	}
 }
