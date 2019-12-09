@@ -21,14 +21,14 @@ public class DemoApplication {
 }
 ```
 
-You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including `spring-cloud-function-starter-web` on the classpath. Running the main method would expose an endpoint that you can use to ping that `uppercase` function:
+You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including `spring-cloud-starter-function-web` on the classpath. Running the main method would expose an endpoint that you can use to ping that `uppercase` function:
 
 ```
 $ curl localhost:8080 -d foo
 FOO
 ```
 
-The web adapter in `spring-cloud-function-starter-web` uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the `spring-cloud-starter-function-webflux` dependency instead. The functionality is the same, and the user application code can be used in both.
+The web adapter in `spring-cloud-starter-function-web` uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the `spring-cloud-starter-function-webflux` dependency instead. The functionality is the same, and the user application code can be used in both.
 
 Now for the functional beans: the user application code can be recast into "functional"
 form, like this:
