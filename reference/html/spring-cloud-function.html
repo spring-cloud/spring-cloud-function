@@ -819,7 +819,7 @@ public class DemoApplication {
 </div>
 </div>
 <div class="paragraph">
-<p>You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including <code>spring-cloud-function-starter-web</code> on the classpath. Running the main method would expose an endpoint that you can use to ping that <code>uppercase</code> function:</p>
+<p>You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including <code>spring-cloud-starter-function-web</code> on the classpath. Running the main method would expose an endpoint that you can use to ping that <code>uppercase</code> function:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -828,7 +828,7 @@ FOO</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The web adapter in <code>spring-cloud-function-starter-web</code> uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the <code>spring-cloud-starter-function-webflux</code> dependency instead. The functionality is the same, and the user application code can be used in both.</p>
+<p>The web adapter in <code>spring-cloud-starter-function-web</code> uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the <code>spring-cloud-starter-function-webflux</code> dependency instead. The functionality is the same, and the user application code can be used in both.</p>
 </div>
 <div class="paragraph">
 <p>Now for the functional beans: the user application code can be recast into "functional"
