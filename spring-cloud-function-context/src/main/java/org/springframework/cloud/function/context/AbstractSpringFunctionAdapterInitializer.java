@@ -17,18 +17,14 @@
 package org.springframework.cloud.function.context;
 
 import java.io.Closeable;
-import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.jar.Manifest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,11 +39,11 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -97,7 +93,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 	}
 
 	public AbstractSpringFunctionAdapterInitializer() {
-		this(getStartClass());
+		this(FunctionClassUtils.getStartClass());
 	}
 
 	@Override
@@ -263,62 +259,6 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		}
 		throw new IllegalStateException("Unknown type " + type);
 	}
-
-	private static Class<?> getStartClass() {
-		ClassLoader classLoader = AbstractSpringFunctionAdapterInitializer.class.getClassLoader();
-		Class<?> mainClass = null;
-		if (System.getenv("MAIN_CLASS") != null) {
-			mainClass = ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
-		}
-		else if (System.getProperty("MAIN_CLASS") != null) {
-			mainClass = ClassUtils.resolveClassName(System.getProperty("MAIN_CLASS"), classLoader);
-		}
-		else {
-			try {
-				Class<?> result = getStartClass(
-						Collections.list(classLoader.getResources("META-INF/MANIFEST.MF")));
-				if (result == null) {
-					result = getStartClass(Collections
-							.list(classLoader.getResources("meta-inf/manifest.mf")));
-				}
-				Assert.notNull(result, "Failed to locate main class");
-				mainClass = result;
-			}
-			catch (Exception ex) {
-				throw new IllegalStateException("Failed to discover main class. An attempt was made to discover "
-						+ "main class as 'MAIN_CLASS' environment variable, system property as well as "
-						+ "entry in META-INF/MANIFEST.MF (in that order).", ex);
-			}
-		}
-		logger.info("Main class: " + mainClass);
-		return mainClass;
-	}
-
-	private static Class<?> getStartClass(List<URL> list) {
-		logger.info("Searching manifests: " + list);
-		for (URL url : list) {
-			try {
-				logger.info("Searching manifest: " + url);
-				InputStream inputStream = url.openStream();
-				try {
-					Manifest manifest = new Manifest(inputStream);
-					String startClass = manifest.getMainAttributes()
-							.getValue("Start-Class");
-					if (startClass != null) {
-						return ClassUtils.forName(startClass,
-								AbstractSpringFunctionAdapterInitializer.class.getClassLoader());
-					}
-				}
-				finally {
-					inputStream.close();
-				}
-			}
-			catch (Exception ex) {
-			}
-		}
-		return null;
-	}
-
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private <T> T getAndInstrumentFromContext(String name) {
