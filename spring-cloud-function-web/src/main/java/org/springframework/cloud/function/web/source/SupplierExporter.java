@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -90,7 +91,7 @@ public class SupplierExporter implements SmartLifecycle {
 		Set<String> names = this.supplier == null ? this.catalog.getNames(Supplier.class)
 				: Collections.singleton(this.supplier);
 		for (String name : names) {
-			Supplier<Flux<Object>> supplier = this.catalog.lookup(Supplier.class, name);
+			Supplier<Publisher<Object>> supplier = this.catalog.lookup(Supplier.class, name);
 			if (supplier == null) {
 				logger.warn("No such Supplier: " + name);
 				continue;
@@ -156,8 +157,8 @@ public class SupplierExporter implements SmartLifecycle {
 		callback.run();
 	}
 
-	private Flux<ClientResponse> forward(Supplier<Flux<Object>> supplier, String name) {
-		return supplier.get().flatMap(value -> {
+	private Flux<ClientResponse> forward(Supplier<Publisher<Object>> supplier, String name) {
+		return Flux.from(supplier.get()).flatMap(value -> {
 			String destination = this.destinationResolver.destination(supplier, name,
 					value);
 			if (this.debug) {
