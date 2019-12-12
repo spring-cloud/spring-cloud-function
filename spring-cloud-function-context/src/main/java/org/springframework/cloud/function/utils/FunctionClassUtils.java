@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.utils;
 
 import java.io.InputStream;
-import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
@@ -27,8 +26,10 @@ import java.util.jar.Manifest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * General utility class which aggregates various class-level utility functions
@@ -93,15 +94,20 @@ public final class FunctionClassUtils {
 			try {
 				logger.info("Searching manifest: " + url);
 
-				Manifest manifest;
 				InputStream inputStream = null;
 				try {
-					if ("jar".equals(url.getProtocol())) {
-						JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
-						manifest = jarConnection.getManifest();
+					Manifest manifest = new Manifest(url.openStream());
+					String startClassName = manifest.getMainAttributes().getValue("Start-Class");
+					if (!StringUtils.hasText(startClassName)) {
+						startClassName = manifest.getMainAttributes().getValue("Main-Class");
 					}
-					else {
-						manifest = new Manifest(url.openStream());
+
+					if (StringUtils.hasText(startClassName)) {
+						Class<?> startClass = ClassUtils.forName(startClassName, FunctionClassUtils.class.getClassLoader());
+						if (startClass.getDeclaredAnnotation(SpringBootApplication.class) != null) {
+							logger.info("Loaded Start Class: " + startClass);
+							return startClass;
+						}
 					}
 				}
 				finally {
@@ -109,12 +115,6 @@ public final class FunctionClassUtils {
 						inputStream.close();
 					}
 				}
-
-				String startClass = manifest.getMainAttributes().getValue("Start-Class");
-				if (startClass != null) {
-					return ClassUtils.forName(startClass, FunctionClassUtils.class.getClassLoader());
-				}
-
 			}
 			catch (Exception ex) {
 				logger.debug("Failed to determine Start-Class in manifest file of " + url, ex);

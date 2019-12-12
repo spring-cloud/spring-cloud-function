@@ -15,12 +15,10 @@ Example:
 ```java
 public class FooHandler extends AzureSpringBootRequestHandler<Foo, Bar> {
 	@FunctionName("uppercase")
-	public Bar execute(
-			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
-					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS)
-                    Foo foo,
-			ExecutionContext context) {
-		return handleRequest(foo, context);
+	public Bar execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
+			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<Foo>> request,
+		ExecutionContext context) {
+		return handleRequest(request.getBody().get(), context);
 	}
 }
 ```
@@ -125,7 +123,7 @@ You can run the sample locally, just like the other Spring Cloud Function sample
 ./mvnw spring-boot:run
 ---
 
-and `curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'`.
+and `curl -H "Content-Type: text/plain" localhost:8080/api/uppercase -d '{"value": "hello foobar"}'`.
 
 You will need the `az` CLI app (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more detail). To deploy the function on Azure runtime:
 
