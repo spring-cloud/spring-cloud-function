@@ -119,12 +119,10 @@ You can write an app with a single <code>@Bean</code> of type <code>Function</co
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class FooHandler extends AzureSpringBootRequestHandler&lt;Foo, Bar&gt; {
 	@FunctionName("uppercase")
-	public Bar execute(
-			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
-					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS)
-                    Foo foo,
-			ExecutionContext context) {
-		return handleRequest(foo, context);
+	public Bar execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
+			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage&lt;Optional&lt;Foo&gt;&gt; request,
+		ExecutionContext context) {
+		return handleRequest(request.getBody().get(), context);
 	}
 }</code></pre>
 </div>
@@ -257,7 +255,7 @@ the cloud platform provider.
 <hr>
 <hr>
 <div class="paragraph">
-<p>and <code>curl -H "Content-Type: text/plain" localhost:8080/function -d '{"value": "hello foobar"}'</code>.</p>
+<p>and <code>curl -H "Content-Type: text/plain" localhost:8080/api/uppercase -d '{"value": "hello foobar"}'</code>.</p>
 </div>
 <div class="paragraph">
 <p>You will need the <code>az</code> CLI app (see <a href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven" class="bare">https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven</a> for more detail). To deploy the function on Azure runtime:</p>
