@@ -36,6 +36,10 @@ import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterI
  */
 public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionAdapterInitializer<ExecutionContext> {
 
+	private static boolean initialized;
+
+	private static AzureSpringBootRequestHandler thisInitializer;
+
 	public AzureSpringBootRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
 	}
@@ -48,6 +52,12 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		return this.handleRequest(null, context);
 	}
 
+	@Override
+	public void close() {
+		initialized = false;
+		super.close();
+	}
+
 	public O handleRequest(I input, ExecutionContext context) {
 		String name = null;
 		try {
@@ -55,11 +65,16 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 				name = context.getFunctionName();
 				context.getLogger().info("Handler processing a request for: " + name);
 			}
-			initialize(context);
+			if (!initialized) {
+				initialize(context);
+				initialized = true;
+				thisInitializer = this;
+			}
+
 
 			Publisher<?> events = input == null ? Mono.empty() : extract(convertEvent(input));
 
-			Publisher<?> output = apply(events);
+			Publisher<?> output = thisInitializer.apply(events);
 			return result(input, output);
 		}
 		catch (Throwable ex) {
