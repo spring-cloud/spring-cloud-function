@@ -64,15 +64,14 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 	private ObjectMapper mapper;
 
-	private boolean started;
-
 	private Function<Message<byte[]>, Message<byte[]>> function;
+
+	public FunctionInvoker() {
+		this.start();
+	}
 
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-		if (!this.started) {
-			this.start();
-		}
 
 		Message<byte[]> requestMessage = this.generateMessage(input, context);
 
@@ -115,7 +114,6 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (logger.isInfoEnabled()) {
 			logger.info("Located function: '" + functionName + "'");
 		}
-		this.started = true;
 	}
 
 	private void configureObjectMapper() {
