@@ -113,10 +113,89 @@ $(addBlockSwitches);
 <p>The <a href="https://aws.amazon.com/">AWS</a> adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.</p>
 </div>
 <div class="paragraph">
-<p>The adapter has a couple of generic request handlers that you can use. The most generic is <code>SpringBootStreamHandler</code>, which uses a Jackson <code>ObjectMapper</code> provided by Spring Boot to serialize and deserialize the objects in the function. There is also a <code>SpringBootRequestHandler</code> which you can extend, and provide the input and output types as type parameters (enabling AWS to inspect the class and do the JSON conversions itself).</p>
+<p>The details of how to get stared with AWS Lambda is out of scope of this document, so the expectation is that user has some familiarity with
+AWS and AWS Lambda and wants to learn what additional value spring provides.</p>
+</div>
+<div class="sect3">
+<h4 id="_getting_started"><a class="link" href="#_getting_started">Getting Started</a></h4>
+<div class="paragraph">
+<p>One of the goals of Spring Cloud Function framework is to provide necessary infrastructure elements to enable a <em>simple function application</em>
+to interact in a certain way in a particular environment.
+A simple function application (in context or Spring) is an application that contains beans of type Supplier, Function or Consumer.
+So, with AWS it means that a simple function bean should somehow be recognised and executed in AWS Lambda environment.</p>
 </div>
 <div class="paragraph">
-<p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code> (e.g. as <code>FUNCTION_NAME</code> environment variable in AWS). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code> (searching first for <code>Function</code> then <code>Consumer</code> and finally <code>Supplier</code>).</p>
+<p>Let’s look at the example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@SpringBootApplication
+public class FunctionConfiguration {
+
+	public static void main(String[] args) {
+		SpringApplication.run(FunctionConfiguration.class, args);
+	}
+
+	@Bean
+	public Function&lt;String, String&gt; uppercase() {
+		return value -&gt; value.toUpperCase();
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It shows a complete Spring Boot application with a function bean defined in it. What’s interesting is that on the surface this is just
+another boot app, but in the context of AWS Adapter it is also a perfectly valid AWS Lambda application. No other code or configuration
+is required. All you need to do is package it and deploy it, so let’s look how we can do that.</p>
+</div>
+<div class="paragraph">
+<p>To make things simpler we’ve provided a sample project ready to be built and deployed and you can access it
+<a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws">here</a>.</p>
+</div>
+<div class="paragraph">
+<p>You simply execute <code>./mvnw clean package</code> to generate JAR file. All the necessary maven plugins have already been setup to generate
+appropriate AWS deployable JAR file. (You can read more details about JAR layout in <a href="#_notes_on_jar_layout">Notes on JAR Layout</a>).</p>
+</div>
+<div class="paragraph">
+<p>Then you have to upload the JAR file (via AWS dashboard or AWS CLI) to AWS.</p>
+</div>
+<div class="paragraph">
+<p>When ask about <em>handler</em> you specify <code>org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest</code> which is a generic request handler.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="https://raw.githubusercontent.com/spring-cloud/spring-cloud-function/master/docs/src/main/asciidoc/images/AWS-deploy.png" alt="AWS deploy" width="800">
+</div>
+</div>
+<div class="paragraph">
+<p>That is all. Save and execute the function with some sample data which for this function is expected to be a
+String which function will uppercase and return back.</p>
+</div>
+<div class="paragraph">
+<p>While <code>org.springframework.cloud.function.adapter.aws.FunctionInvoker</code> is a general purpose AWS&#8217;s <code>RequestHandler</code> implementation aimed at completely
+isolating you from the specifics of AWS Lambda API, for some cases you may want to specify which specific AWS&#8217;s <code>RequestHandler</code> you want
+to use. The next section will explain you how you can accomplish just that.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_aws_request_handlers"><a class="link" href="#_aws_request_handlers">AWS Request Handlers</a></h4>
+<div class="paragraph">
+<p>The adapter has a couple of generic request handlers that you can use. The most generic is (and the one we used in the Getting Started section)
+is <code>org.springframework.cloud.function.adapter.aws.FunctionInvoke</code> which is the implementation of AWS&#8217;s <code>RequestStreamHandler</code>.
+User doesn&#8217;t need to do anything other then specify it as 'handler' on AWS dashborad when deplioyimng function.
+It will handle most of the case including Kinesis, streaming etc. .</p>
+</div>
+<div class="paragraph">
+<p>The most generic is
+<code>SpringBootStreamHandler</code>, which uses a Jackson <code>ObjectMapper</code> provided by Spring Boot to serialize and deserialize the objects
+in the function. There is also a <code>SpringBootRequestHandler</code> which you can extend, and provide the input and output types as type
+parameters (enabling AWS to inspect the class and do the JSON conversions itself).</p>
+</div>
+<div class="paragraph">
+<p>If your app has more than one <code>@Bean</code> of type <code>Function</code> etc. then you can choose the one to use by configuring <code>function.name</code>
+(e.g. as <code>FUNCTION_NAME</code> environment variable in AWS). The functions are extracted from the Spring Cloud <code>FunctionCatalog</code>
+(searching first for <code>Function</code> then <code>Consumer</code> and finally <code>Supplier</code>).</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_notes_on_jar_layout"><a class="link" href="#_notes_on_jar_layout">Notes on JAR Layout</a></h4>
