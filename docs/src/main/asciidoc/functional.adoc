@@ -21,15 +21,6 @@ public class DemoApplication {
 }
 ```
 
-You can run the above in a serverless platform, like AWS Lambda or Azure Functions, or you can run it in its own HTTP server just by including `spring-cloud-starter-function-web` on the classpath. Running the main method would expose an endpoint that you can use to ping that `uppercase` function:
-
-```
-$ curl localhost:8080 -d foo
-FOO
-```
-
-The web adapter in `spring-cloud-starter-function-web` uses Spring MVC, so you needed a Servlet container. You can also use Webflux where the default server is netty (even though you can still use Servlet containers if you want to) - just include the `spring-cloud-starter-function-webflux` dependency instead. The functionality is the same, and the user application code can be used in both.
-
 Now for the functional beans: the user application code can be recast into "functional"
 form, like this:
 
@@ -70,9 +61,13 @@ point".
 `FunctionalSpringApplication` from Spring Cloud Function (it's a
 subclass).
 
-The business logic beans that you register in a Spring Cloud Function app are of type `FunctionRegistration`. This is a wrapper that contains both the function and information about the input and output types. In the `@Bean` form of the application that information can be derived reflectively, but in a functional bean registration some of it is lost unless we use a `FunctionRegistration`.
+The business logic beans that you register in a Spring Cloud Function app are of type `FunctionRegistration`.
+This is a wrapper that contains both the function and information about the input and output types. In the `@Bean`
+form of the application that information can be derived reflectively, but in a functional bean registration some of
+it is lost unless we use a `FunctionRegistration`.
 
-An alternative to using an `ApplicationContextInitializer` and `FunctionRegistration` is to make the application itself implement `Function` (or `Consumer` or `Supplier`). Example (equivalent to the above):
+An alternative to using an `ApplicationContextInitializer` and `FunctionRegistration` is to make the application
+itself implement `Function` (or `Consumer` or `Supplier`). Example (equivalent to the above):
 
 ```java
 @SpringBootConfiguration
@@ -90,11 +85,33 @@ public class DemoApplication implements Function<String, String> {
 }
 ```
 
-It would also work if you add a separate, standalone class of type `Function` and register it with the `SpringApplication` using an alternative form of the `run()` method. The main thing is that the generic type information is available at runtime through the class declaration.
+It would also work if you add a separate, standalone class of type `Function` and register it with
+the `SpringApplication` using an alternative form of the `run()` method. The main thing is that the generic
+type information is available at runtime through the class declaration.
 
-The app runs in its own HTTP server if you add `spring-cloud-starter-function-webflux` (it won't work with the MVC starter at the moment because the functional form of the embedded Servlet container hasn't been implemented).  The app also runs just fine in AWS Lambda or Azure Functions, and the improvements in startup time are dramatic.
+Suppose you have
+[source, java]
+----
+@Component
+public class CustomFunction implements Function<Flux<Foo>, Flux<Bar>> {
+	@Override
+	public Flux<Bar> apply(Flux<Foo> flux) {
+		return flux.map(foo -> new Bar("This is a Bar object from Foo value: " + foo.getValue()));
+	}
 
-NOTE: The "lite" web server has some limitations for the range of `Function` signatures - in particular it doesn't (yet) support `Message` input and output, but POJOs and any kind of `Publisher` should be fine.
+}
+----
+
+You register it as such:
+
+[source, java]
+----
+@Override
+public void initialize(GenericApplicationContext context) {
+		context.registerBean("function", FunctionRegistration.class,
+				() -> new FunctionRegistration<>(new CustomFunction()).type(CustomFunction.class));
+}
+----
 
 == Limitations of Functional Bean Declaration
 
