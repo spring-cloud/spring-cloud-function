@@ -289,7 +289,7 @@ Composite functions can be addressed using pipes or commas to separate function 
 
 For cases where there is more then a single function in catalog and you want to map a specific function to the root
 path (e.g., "/"), or you want to compose several functions and then map to the root path you can do so by providing
-`spring.cloud.function.definition` property which essentially used by spring-=cloud-function-web module to provide
+`spring.cloud.function.definition` property which essentially used by spring-cloud-function-web module to provide
 default mapping for cases where there is some type of a conflict (e.g., more then one function available etc).
 
 For example,
@@ -303,10 +303,87 @@ Functions and consumers that are declared with input and output in `Message<?>` 
 
 When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accpt headers for the best results).
 
+And then you can test it as any other web application. Let's look at the example
+
+Suppose this is your application:
+
+[source, java]
+----
+@SpringBootApplication
+public class SampleFunctionApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SampleFunctionApplication.class, args);
+    }
+
+    @Bean
+    public Function<String, String> uppercase() {
+        return v -> v.toUpperCase();
+    }
+}
+----
+and test:
+
+[source, java]
+----
+@SpringBootTest(classes = SampleFunctionApplication.class,
+            webEnvironment = WebEnvironment.RANDOM_PORT)
+public class WebFunctionTests {
+
+    @Autowired
+    private TestRestTemplate rest;
+
+    @Test
+    public void test() throws Exception {
+        ResponseEntity<String> result = this.rest.exchange(
+            RequestEntity.post(new URI("/uppercase")).body("hello"), String.class);
+        System.out.println(result.getBody());
+    }
+}
+----
+
+And to help with correct dependencies here is the excerpt from POM
+
+[source, xml]
+----
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.2.2.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    . . . .
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-function-web</artifactId>
+        <version>3.0.1.BUILD-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+        <exclusions>
+            <exclusion>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+----
+
 == Standalone Streaming Applications
 
 To send or receive messages from a broker (such as RabbitMQ or Kafka) you can leverage `spring-cloud-stream` project and it's integration with Spring Cloud Function.
-Please refer to https://docs.spring.io/spring-cloud-stream/docs/current/reference/htmlsingle/#_spring_cloud_function[Spring Cloud Function] section of the Spring Cloud Stream reference manual for more details and examples.
+Please refer to https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring_cloud_function[Spring Cloud Function] section of the Spring Cloud Stream reference manual for more details and examples.
 
 == Deploying a Packaged Function
 
