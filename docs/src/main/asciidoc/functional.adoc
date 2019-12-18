@@ -96,33 +96,124 @@ The app runs in its own HTTP server if you add `spring-cloud-starter-function-we
 
 NOTE: The "lite" web server has some limitations for the range of `Function` signatures - in particular it doesn't (yet) support `Message` input and output, but POJOs and any kind of `Publisher` should be fine.
 
-== Testing Functional Applications
+== Limitations of Functional Bean Declaration
 
-Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users. For example, here is an integration test for the HTTP server wrapping the app above:
+Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot,
+so we are able to adapt it to these functional bean definitions easily. If you step outside that limited scope,
+you can extend your Spring Cloud Function app by switching back to `@Bean` style configuration, or by using a hybrid
+approach. If you want to take advantage of Spring Boot autoconfiguration for integrations with external datastores,
+for example, you will need to use `@EnableAutoConfiguration`. Your functions can still be defined using the functional
+declarations if you want (i.e. the "hybrid" style), but in that case you will need to explicitly switch off the "full
+functional mode" using `spring.functional.enabled=false` so that Spring Boot can take back control.
 
-```java
-@RunWith(SpringRunner.class)
-@FunctionalSpringBootTest
-@AutoConfigureWebTestClient
-public class FunctionalTests {
 
-	@Autowired
-	private WebTestClient client;
+= Testing Functional Applications
 
-	@Test
-	public void words() throws Exception {
-		client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
-				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
-	}
+Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users.
 
+Suppose this is your application:
+
+[source, java]
+----
+@SpringBootApplication
+public class SampleFunctionApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SampleFunctionApplication.class, args);
+    }
+
+    @Bean
+    public Function<String, String> uppercase() {
+        return v -> v.toUpperCase();
+    }
 }
-```
+----
 
-This test is almost identical to the one you would write for the `@Bean` version of the same app - the only difference is the `@FunctionalSpringBootTest` annotation, instead of the regular `@SpringBootTest`. All the other pieces, like the `@Autowired` `WebTestClient`, are standard Spring Boot features.
+Here is an integration test for the HTTP server wrapping this application:
+
+[source, java]
+----
+@SpringBootTest(classes = SampleFunctionApplication.class,
+            webEnvironment = WebEnvironment.RANDOM_PORT)
+public class WebFunctionTests {
+
+    @Autowired
+    private TestRestTemplate rest;
+
+    @Test
+    public void test() throws Exception {
+        ResponseEntity<String> result = this.rest.exchange(
+            RequestEntity.post(new URI("/uppercase")).body("hello"), String.class);
+        System.out.println(result.getBody());
+    }
+}
+----
+
+or when function bean definition style is used:
+
+[source, java]
+----
+@FunctionalSpringBootTest
+public class WebFunctionTests {
+
+    @Autowired
+    private TestRestTemplate rest;
+
+    @Test
+    public void test() throws Exception {
+        ResponseEntity<String> result = this.rest.exchange(
+            RequestEntity.post(new URI("/uppercase")).body("hello"), String.class);
+        System.out.println(result.getBody());
+    }
+}
+----
+
+This test is almost identical to the one you would write for the `@Bean` version of the same app - the only difference
+is the `@FunctionalSpringBootTest` annotation, instead of the regular `@SpringBootTest`. All the other pieces,
+like the `@Autowired` `TestRestTemplate`, are standard Spring Boot features.
+
+And to help with correct dependencies here is the excerpt from POM
+
+[source, xml]
+----
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.2.2.RELEASE</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    . . . .
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-function-web</artifactId>
+        <version>3.0.1.BUILD-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+        <exclusions>
+            <exclusion>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+            </exclusion>
+        </exclusions>
+    </dependency>
+----
 
 Or you could write a test for a non-HTTP app using just the `FunctionCatalog`. For example:
 
-```java
+[source, java]
+----
 @RunWith(SpringRunner.class)
 @FunctionalSpringBootTest
 public class FunctionalTests {
@@ -132,16 +223,10 @@ public class FunctionalTests {
 
 	@Test
 	public void words() throws Exception {
-		Function<Flux<String>, Flux<String>> function = catalog.lookup(Function.class,
-				"function");
-		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
+		Function<String, String> function = catalog.lookup(Function.class,
+				"uppercase");
+		assertThat(function.apply("hello")).isEqualTo("HELLO");
 	}
 
 }
-```
-
-(The `FunctionCatalog` always returns functions from `Flux` to `Flux`, even if the user declares them with a simpler signature.)
-
-== Limitations of Functional Bean Declaration
-
-Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot, so we are able to adapt it to these functional bean definitions easily. If you step outside that limited scope, you can extend your Spring Cloud Function app by switching back to `@Bean` style configuration, or by using a hybrid approach. If you want to take advantage of Spring Boot autoconfiguration for integrations with external datastores, for example, you will need to use `@EnableAutoConfiguration`. Your functions can still be defined using the functional declarations if you want (i.e. the "hybrid" style), but in that case you will need to explicitly switch off the "full functional mode" using `spring.functional.enabled=false` so that Spring Boot can take back control.
+----
