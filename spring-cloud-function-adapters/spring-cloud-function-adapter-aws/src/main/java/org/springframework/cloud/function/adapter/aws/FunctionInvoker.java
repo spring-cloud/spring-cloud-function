@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +43,7 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
@@ -78,12 +78,21 @@ public class FunctionInvoker implements RequestStreamHandler {
 		Message<byte[]> responseMessage = this.function.apply(requestMessage);
 
 		byte[] responseBytes = responseMessage.getPayload();
-		if (requestMessage.getHeaders().containsKey("httpMethod")) {
+		Map<String, Object> requestPayloadMap = this.getRequestPayloadAsMap(requestMessage);
+		if (requestPayloadMap != null && requestPayloadMap.containsKey("httpMethod")) {
 			Map<String, Object> response = new HashMap<String, Object>();
 			response.put("isBase64Encoded", false);
-			response.put("statusCode", 200);
+
+			int statusCode = responseMessage.getHeaders().containsKey("statusCode")
+					? (int) responseMessage.getHeaders().get("statusCode")
+					: 200;
+
+			HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+
+			response.put("statusCode", statusCode);
+			response.put("statusDescription", httpStatus.toString());
 			response.put("body", new String(responseMessage.getPayload(), StandardCharsets.UTF_8));
-			response.put("headers", Collections.singletonMap("foo", "bar"));
+			response.put("headers", responseMessage.getHeaders());
 
 			responseBytes = mapper.writeValueAsBytes(response);
 		}
@@ -137,5 +146,16 @@ public class FunctionInvoker implements RequestStreamHandler {
 		Message<byte[]> message = MessageBuilder.withPayload(payload).setHeader("aws-context", context).build();
 
 		return message;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> getRequestPayloadAsMap(Message<byte[]> message) {
+		try {
+			return this.mapper.readValue(message.getPayload(), Map.class);
+		}
+		catch (Exception e) {
+			// ignore
+		}
+		return null;
 	}
 }
