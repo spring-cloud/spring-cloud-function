@@ -120,6 +120,7 @@ public class BeanFactoryAwareFunctionRegistry
 				this.applicationContext.getBeanNamesForType(Consumer.class).length;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
 		Object function = this.proxyInvokerIfNecessary((FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes));
@@ -625,7 +626,7 @@ public class BeanFactoryAwareFunctionRegistry
 						.filter(v -> v != null)
 						.findFirst().orElse(null);
 			}
-			return convertedValue;
+			return convertedValue != null ? convertedValue : value;
 
 		}
 
