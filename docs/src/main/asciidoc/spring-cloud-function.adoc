@@ -346,6 +346,91 @@ public class DeployFunctionDemo {
 }
 ```
 
+=== Supported Packaging Scenarios 
+
+Currently Spring Cloud Function supports several packaging scenarios to give you the most flexibility when it comes to deploying functions.
+
+==== Simple JAR
+
+This packaging option implies no dependency on anything related to Spring.
+For example; Consider that such JAR contains the following class:
+```java
+package function.example;
+. . .
+public class UpperCaseFunction implements Function<String, String> {
+	@Override
+	public String apply(String value) {
+		return value.toUpperCase();
+	}
+}
+```
+All you need to do is specify `location` and `function-class` properties when deploying such package:
+
+```
+--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
+--spring.cloud.function.function-class=function.example.UpperCaseFunction
+```
+For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/simplestjar[here].
+You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L70[FunctionDeployerTests].
+
+==== Spring Boot JAR
+
+This packaging option implies there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR 
+runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
+For example; Consider that such JAR contains the following class (which could have some additional Spring dependencies providing Spring/Spring Boot is on the classpath):
+```java
+package function.example;
+. . .
+public class UpperCaseFunction implements Function<String, String> {
+	@Override
+	public String apply(String value) {
+		return value.toUpperCase();
+	}
+}
+```
+As before all you need to do is specify `location` and `function-class` properties when deploying such package:
+
+```
+--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
+--spring.cloud.function.function-class=function.example.UpperCaseFunction
+```
+For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootjar[here].
+You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L50[FunctionDeployerTests].
+
+==== Spring Boot Application
+
+This packaging option implies your JAR is complete stand alone Spring Boot application with functions as managed Spring beans.
+As before there is an obvious assumption that there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR 
+runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
+For example; Consider that such JAR contains the following class:
+```java
+package function.example;
+. . .
+@SpringBootApplication
+public class SimpleFunctionAppApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SimpleFunctionAppApplication.class, args);
+	}
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return value -> value.toUpperCase();
+	}
+}
+```
+Given that we're effectively dealing with another Spring Application context and that functions are spring managed beans,
+in addition to the `location` property we also specify `definition` property instead of `function-class`.
+
+```
+"--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
+"--spring.cloud.function.definition=uppercase" };
+```
+For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootapp[here].
+You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L164[FunctionDeployerTests].
+
+NOTE: This particular deployment option may or may not have Spring Cloud Function on it's classpath. From the deployer perspective this doesn't matter. 
+
 == Functional Bean Definitions
 
 include::functional.adoc[leveloffset=+1]

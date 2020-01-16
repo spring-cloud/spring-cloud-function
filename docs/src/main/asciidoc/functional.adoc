@@ -78,7 +78,7 @@ public class DemoApplication implements Function<String, String> {
   }
 
   @Override
-  public String uppercase(String value) {
+  public String apply(String value) {
     return value.toUpperCase();
   }
 
