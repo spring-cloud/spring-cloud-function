@@ -111,7 +111,11 @@ $(addBlockSwitches);
 </li>
 <li><a href="#_standalone_web_applications">Standalone Web Applications</a></li>
 <li><a href="#_standalone_streaming_applications">Standalone Streaming Applications</a></li>
-<li><a href="#_deploying_a_packaged_function">Deploying a Packaged Function</a></li>
+<li><a href="#_deploying_a_packaged_function">Deploying a Packaged Function</a>
+<ul class="sectlevel2">
+<li><a href="#_supported_packaging_scenarios">Supported Packaging Scenarios</a></li>
+</ul>
+</li>
 <li><a href="#_functional_bean_definitions">Functional Bean Definitions</a>
 <ul class="sectlevel2">
 <li><a href="#_comparing_functional_with_traditional_bean_definitions">Comparing Functional with Traditional Bean Definitions</a></li>
@@ -790,6 +794,130 @@ public class DeployFunctionDemo {
 }</code></pre>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_supported_packaging_scenarios"><a class="link" href="#_supported_packaging_scenarios">Supported Packaging Scenarios</a></h3>
+<div class="paragraph">
+<p>Currently Spring Cloud Function supports several packaging scenarios to give you the most flexibility when it comes to deploying functions.</p>
+</div>
+<div class="sect3">
+<h4 id="_simple_jar"><a class="link" href="#_simple_jar">Simple JAR</a></h4>
+<div class="paragraph">
+<p>This packaging option implies no dependency on anything related to Spring.
+For example; Consider that such JAR contains the following class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package function.example;
+. . .
+public class UpperCaseFunction implements Function&lt;String, String&gt; {
+	@Override
+	public String apply(String value) {
+		return value.toUpperCase();
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All you need to do is specify <code>location</code> and <code>function-class</code> properties when deploying such package:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
+--spring.cloud.function.function-class=function.example.UpperCaseFunction</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For more details please reference the complete sample available <a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/simplestjar">here</a>.
+You can also find a corresponding test in <a href="https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L70">FunctionDeployerTests</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_spring_boot_jar"><a class="link" href="#_spring_boot_jar">Spring Boot JAR</a></h4>
+<div class="paragraph">
+<p>This packaging option implies there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR
+runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
+For example; Consider that such JAR contains the following class (which could have some additional Spring dependencies providing Spring/Spring Boot is on the classpath):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package function.example;
+. . .
+public class UpperCaseFunction implements Function&lt;String, String&gt; {
+	@Override
+	public String apply(String value) {
+		return value.toUpperCase();
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As before all you need to do is specify <code>location</code> and <code>function-class</code> properties when deploying such package:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
+--spring.cloud.function.function-class=function.example.UpperCaseFunction</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For more details please reference the complete sample available <a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootjar">here</a>.
+You can also find a corresponding test in <a href="https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L50">FunctionDeployerTests</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_spring_boot_application"><a class="link" href="#_spring_boot_application">Spring Boot Application</a></h4>
+<div class="paragraph">
+<p>This packaging option implies your JAR is complete stand alone Spring Boot application with functions as managed Spring beans.
+As before there is an obvious assumption that there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR
+runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
+For example; Consider that such JAR contains the following class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package function.example;
+. . .
+@SpringBootApplication
+public class SimpleFunctionAppApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SimpleFunctionAppApplication.class, args);
+	}
+
+	@Bean
+	public Function&lt;String, String&gt; uppercase() {
+		return value -&gt; value.toUpperCase();
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Given that we&#8217;re effectively dealing with another Spring Application context and that functions are spring managed beans,
+in addition to the <code>location</code> property we also specify <code>definition</code> property instead of <code>function-class</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>"--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
+"--spring.cloud.function.definition=uppercase" };</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For more details please reference the complete sample available <a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootapp">here</a>.
+You can also find a corresponding test in <a href="https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L164">FunctionDeployerTests</a>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This particular deployment option may or may not have Spring Cloud Function on it&#8217;s classpath. From the deployer perspective this doesn&#8217;t matter.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -892,7 +1020,7 @@ public class DemoApplication implements Function&lt;String, String&gt; {
   }
 
   @Override
-  public String uppercase(String value) {
+  public String apply(String value) {
     return value.toUpperCase();
   }
 
