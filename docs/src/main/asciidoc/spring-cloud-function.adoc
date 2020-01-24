@@ -93,10 +93,7 @@ invoked only once to pass a reference to the stream (Flux or Mono) and imperativ
 Consumer is a little bit special because it has a `void` return type,
 which implies blocking, at least potentially. Most likely you will not
 need to write `Consumer<Flux<?>>`, but if you do need to do that,
-remember to subscribe to the input flux. If you declare a `Consumer`
-of a non publisher type (which is normal), it will be converted to a
-function that returns a publisher, so that it can be subscribed to in
-a controlled way.
+remember to subscribe to the input flux. 
 
 === Function Composition
 
@@ -423,8 +420,8 @@ Given that we're effectively dealing with another Spring Application context and
 in addition to the `location` property we also specify `definition` property instead of `function-class`.
 
 ```
-"--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
-"--spring.cloud.function.definition=uppercase" };
+--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar
+--spring.cloud.function.definition=uppercase
 ```
 For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootapp[here].
 You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L164[FunctionDeployerTests].
