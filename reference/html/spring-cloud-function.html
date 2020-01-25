@@ -399,10 +399,7 @@ invoked only once to pass a reference to the stream (Flux or Mono) and imperativ
 <p>Consumer is a little bit special because it has a <code>void</code> return type,
 which implies blocking, at least potentially. Most likely you will not
 need to write <code>Consumer&lt;Flux&lt;?&gt;&gt;</code>, but if you do need to do that,
-remember to subscribe to the input flux. If you declare a <code>Consumer</code>
-of a non publisher type (which is normal), it will be converted to a
-function that returns a publisher, so that it can be subscribed to in
-a controlled way.</p>
+remember to subscribe to the input flux.</p>
 </div>
 </div>
 </div>
@@ -896,8 +893,8 @@ in addition to the <code>location</code> property we also specify <code>definiti
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code>"--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
-"--spring.cloud.function.definition=uppercase" };</code></pre>
+<pre class="highlightjs highlight"><code>--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar
+--spring.cloud.function.definition=uppercase</code></pre>
 </div>
 </div>
 <div class="paragraph">
