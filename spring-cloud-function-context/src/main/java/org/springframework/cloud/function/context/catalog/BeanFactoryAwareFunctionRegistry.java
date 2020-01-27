@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -573,6 +575,7 @@ public class BeanFactoryAwareFunctionRegistry
 			return result;
 		}
 
+		@SuppressWarnings({ "rawtypes", "unchecked" })
 		private Object convertOutputValueIfNecessary(Object value, String... acceptedOutputMimeTypes) {
 			logger.debug("Applying type conversion on output value");
 			Object convertedValue = null;
@@ -585,7 +588,7 @@ public class BeanFactoryAwareFunctionRegistry
 					try {
 						convertedInputArray[i] = outputArgument instanceof Publisher
 								? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i])
-										: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
+										: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes[i]);
 					}
 					catch (ArrayIndexOutOfBoundsException e) {
 						throw new IllegalStateException("The number of 'acceptedOutputMimeTypes' for function '" + this.functionDefinition
@@ -599,32 +602,37 @@ public class BeanFactoryAwareFunctionRegistry
 			else if (value != null) {
 				List<MimeType> acceptedContentTypes = MimeTypeUtils.parseMimeTypes(acceptedOutputMimeTypes[0].toString());
 
-				convertedValue = acceptedContentTypes.stream()
-						.map(acceptedContentType -> {
-
-							Message<?> resultMessage = null;
-							if (value instanceof Message) {
-								Message<?> message = (Message<?>) value;
-								if (message.getPayload() instanceof byte[]) {
-									resultMessage = message;
-								}
-								else {
-									resultMessage = messageConverter.toMessage(message.getPayload(), message.getHeaders());
-								}
-							}
-							else {
-								if (value instanceof byte[]) {
-									resultMessage = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
-								}
-								else {
-									resultMessage = messageConverter
-											.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
-								}
-							}
-							return resultMessage;
-						})
-						.filter(v -> v != null)
-						.findFirst().orElse(null);
+				for (int i = 0; i < acceptedContentTypes.size() && convertedValue == null; i++) {
+					MimeType acceptedContentType = acceptedContentTypes.get(i);
+					if (value instanceof Message) {
+						Message<?> message = (Message<?>) value;
+						if (message.getPayload() instanceof byte[]) {
+							convertedValue = message;
+						}
+						else {
+							convertedValue = messageConverter.toMessage(message.getPayload(), message.getHeaders());
+						}
+					}
+					else if (value instanceof Iterable || ObjectUtils.isArray(value)) {
+						boolean isArray = ObjectUtils.isArray(value);
+						if (isArray) {
+							value = Arrays.asList((Object[]) value);
+						}
+						AtomicReference<List<Message>> messages = new AtomicReference<List<Message>>(new ArrayList<>());
+						((Iterable) value).forEach(element ->
+							messages.get().add((Message) convertOutputValueIfNecessary(element, acceptedContentType.toString())));
+						convertedValue = messages.get();
+					}
+					else {
+						if (value instanceof byte[]) {
+							convertedValue = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
+						}
+						else {
+							convertedValue = messageConverter
+									.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
+						}
+					}
+				}
 			}
 			return convertedValue != null ? convertedValue : value;
 

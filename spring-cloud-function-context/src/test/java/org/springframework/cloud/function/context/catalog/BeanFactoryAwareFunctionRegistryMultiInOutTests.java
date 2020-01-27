@@ -365,12 +365,14 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 					return Integer.class.isAssignableFrom(clazz);
 				}
 
+				@Override
 				protected Object convertFromInternal(
 						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 					ByteBuffer wrappedPayload = ByteBuffer.wrap((byte[]) message.getPayload());
 					return wrappedPayload.getInt();
 				}
 
+				@Override
 				protected Object convertToInternal(
 						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 
@@ -473,6 +475,7 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		public void setId(int id) {
 			this.id = id;
 		}
+		@Override
 		public String toString() {
 			return "Person: " + name + "/" + id;
 		}
