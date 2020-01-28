@@ -70,6 +70,27 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
+	public void testDefaultLookup() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog();
+		Object function = catalog.lookup("");
+		assertThat(function).isNull();
+		//==
+		System.setProperty("spring.cloud.function.definition", "uppercase");
+		function = catalog.lookup("");
+		assertThat(function).isNotNull();
+		Field field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
+		field.setAccessible(true);
+		assertThat(((boolean) field.get(function))).isFalse();
+		//==
+		System.setProperty("spring.cloud.function.definition", "uppercase|uppercaseFlux");
+		function = catalog.lookup("");
+		assertThat(function).isNotNull();
+		field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
+		field.setAccessible(true);
+		assertThat(((boolean) field.get(function))).isTrue();
+	}
+
+	@Test
 	public void testImperativeFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 
@@ -530,6 +551,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public void setId(int id) {
 			this.id = id;
 		}
+		@Override
 		public String toString() {
 			return "Person: " + name + "/" + id;
 		}

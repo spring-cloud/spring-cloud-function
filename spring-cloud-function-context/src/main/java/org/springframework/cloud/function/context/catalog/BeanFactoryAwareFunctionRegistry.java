@@ -125,6 +125,9 @@ public class BeanFactoryAwareFunctionRegistry
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
+		if (!StringUtils.hasText(definition)) {
+			definition = this.applicationContext.getEnvironment().getProperty("spring.cloud.function.definition");
+		}
 		Object function = this.proxyInvokerIfNecessary((FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes));
 		return (T) function;
 	}
