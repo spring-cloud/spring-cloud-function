@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.jar.Manifest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -59,7 +60,7 @@ public final class FunctionClassUtils {
 		return getStartClass(classLoader);
 	}
 
-	private static Class<?> getStartClass(ClassLoader classLoader) {
+	static Class<?> getStartClass(ClassLoader classLoader) {
 		Class<?> mainClass = null;
 		if (System.getenv("MAIN_CLASS") != null) {
 			mainClass = ClassUtils.resolveClassName(System.getenv("MAIN_CLASS"), classLoader);
@@ -70,10 +71,10 @@ public final class FunctionClassUtils {
 		else {
 			try {
 				Class<?> result = getStartClass(
-						Collections.list(classLoader.getResources(JarFile.MANIFEST_NAME)));
+						Collections.list(classLoader.getResources(JarFile.MANIFEST_NAME)), classLoader);
 				if (result == null) {
 					result = getStartClass(Collections
-							.list(classLoader.getResources("meta-inf/manifest.mf")));
+							.list(classLoader.getResources("meta-inf/manifest.mf")), classLoader);
 				}
 				Assert.notNull(result, "Failed to locate main class");
 				mainClass = result;
@@ -88,23 +89,25 @@ public final class FunctionClassUtils {
 		return mainClass;
 	}
 
-	private static Class<?> getStartClass(List<URL> list) {
+	private static Class<?> getStartClass(List<URL> list, ClassLoader classLoader) {
 		logger.info("Searching manifests: " + list);
 		for (URL url : list) {
 			try {
-				logger.info("Searching manifest: " + url);
-
 				InputStream inputStream = null;
+				Manifest manifest = new Manifest(url.openStream());
+				logger.info("Searching for start class in manifest: " + url);
+				if (logger.isDebugEnabled()) {
+					manifest.write(System.out);
+				}
 				try {
-					Manifest manifest = new Manifest(url.openStream());
 					String startClassName = manifest.getMainAttributes().getValue("Start-Class");
 					if (!StringUtils.hasText(startClassName)) {
 						startClassName = manifest.getMainAttributes().getValue("Main-Class");
 					}
 
 					if (StringUtils.hasText(startClassName)) {
-						Class<?> startClass = ClassUtils.forName(startClassName, FunctionClassUtils.class.getClassLoader());
-						if (startClass.getDeclaredAnnotation(SpringBootApplication.class) != null) {
+						Class<?> startClass = ClassUtils.forName(startClassName, classLoader);
+						if (isSpringBootApplication(startClass)) {
 							logger.info("Loaded Start Class: " + startClass);
 							return startClass;
 						}
@@ -121,5 +124,10 @@ public final class FunctionClassUtils {
 			}
 		}
 		return null;
+	}
+
+	private static boolean isSpringBootApplication(Class<?> startClass) {
+		return startClass.getDeclaredAnnotation(SpringBootApplication.class) != null
+				|| startClass.getDeclaredAnnotation(SpringBootConfiguration.class) != null;
 	}
 }
