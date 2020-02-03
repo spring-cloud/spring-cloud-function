@@ -71,6 +71,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
@@ -93,6 +94,16 @@ public class BeanFactoryAwareFunctionRegistry
 		implements FunctionRegistry, FunctionInspector, ApplicationContextAware {
 
 	private static Log logger = LogFactory.getLog(BeanFactoryAwareFunctionRegistry.class);
+
+	/**
+	 * Identifies MessageConversionExceptions that happen when input can't be converted.
+	 */
+	public static final String COULD_NOT_CONVERT_INPUT = "Could Not Convert Input";
+
+	/**
+	 * Identifies MessageConversionExceptions that happen when output can't be converted.
+	 */
+	public static final String COULD_NOT_CONVERT_OUTPUT = "Could Not Convert Output";
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -655,7 +666,10 @@ public class BeanFactoryAwareFunctionRegistry
 					}
 				}
 			}
-			return convertedValue != null ? convertedValue : value;
+			if (convertedValue == null) {
+				throw new MessageConversionException(COULD_NOT_CONVERT_OUTPUT);
+			}
+			return convertedValue;
 
 		}
 
@@ -763,6 +777,9 @@ public class BeanFactoryAwareFunctionRegistry
 			}
 			if (logger.isDebugEnabled()) {
 				logger.debug("Converted input value " + convertedValue);
+			}
+			if (convertedValue == null) {
+				throw new MessageConversionException(COULD_NOT_CONVERT_INPUT);
 			}
 			return convertedValue;
 		}
