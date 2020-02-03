@@ -616,6 +616,9 @@ public class BeanFactoryAwareFunctionRegistry
 							convertedValue = messageConverter.toMessage(message.getPayload(), message.getHeaders());
 						}
 					}
+					else if (value instanceof byte[]) {
+						convertedValue = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
+					}
 					else if (value instanceof Iterable || ObjectUtils.isArray(value)) {
 						boolean isArray = ObjectUtils.isArray(value);
 						if (isArray) {
@@ -627,13 +630,8 @@ public class BeanFactoryAwareFunctionRegistry
 						convertedValue = messages.get();
 					}
 					else {
-						if (value instanceof byte[]) {
-							convertedValue = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
-						}
-						else {
-							convertedValue = messageConverter
-									.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
-						}
+						convertedValue = messageConverter
+								.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
 					}
 				}
 			}
