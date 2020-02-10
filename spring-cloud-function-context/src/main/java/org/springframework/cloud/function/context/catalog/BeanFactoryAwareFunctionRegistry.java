@@ -493,7 +493,7 @@ public class BeanFactoryAwareFunctionRegistry
 		 * @return the result
 		 */
 		@SuppressWarnings("rawtypes")
-		protected Object get(Function<Message, Message> enricher) {
+		public Object get(Function<Message, Message> enricher) {
 			Object input = FunctionTypeUtils.isMono(this.functionType)
 					? Mono.empty()
 							: (FunctionTypeUtils.isMono(this.functionType) ? Flux.empty() : null);
