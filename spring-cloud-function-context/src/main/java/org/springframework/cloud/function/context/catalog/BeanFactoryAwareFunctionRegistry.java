@@ -88,6 +88,8 @@ import org.springframework.util.StringUtils;
  * {@link #register(FunctionRegistration)} operation are stored/cached locally.
  *
  * @author Oleg Zhurakousky
+ * @author Eric Botard
+ *
  * @since 3.0
  */
 public class BeanFactoryAwareFunctionRegistry
@@ -596,12 +598,12 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 				else {
 					result = this.invokeFunction(this.composed ? input
-							: this.convertInputValueIfNecessary(input, FunctionTypeUtils.getInputType(this.functionType, 0)));
+							: (input == null ? input : this.convertInputValueIfNecessary(input, FunctionTypeUtils.getInputType(this.functionType, 0))));
 				}
 			}
 
 			// Outputs will be converted only if we're told how (via  acceptedOutputMimeTypes), otherwise output returned as is.
-			if (!ObjectUtils.isEmpty(this.acceptedOutputMimeTypes)) {
+			if (result != null && !ObjectUtils.isEmpty(this.acceptedOutputMimeTypes)) {
 				result = result instanceof Publisher
 						? this.convertOutputPublisherIfNecessary((Publisher<?>) result, enricher, this.acceptedOutputMimeTypes)
 								: this.convertOutputValueIfNecessary(result, enricher, this.acceptedOutputMimeTypes);
@@ -634,43 +636,48 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 				convertedValue = Tuples.fromArray(convertedInputArray);
 			}
-			else if (value != null) {
+			else {
 				List<MimeType> acceptedContentTypes = MimeTypeUtils.parseMimeTypes(acceptedOutputMimeTypes[0].toString());
-
-				for (int i = 0; i < acceptedContentTypes.size() && convertedValue == null; i++) {
-					MimeType acceptedContentType = acceptedContentTypes.get(i);
-					if (value instanceof Message) {
-						Message<?> message = (Message<?>) value;
-						if (message.getPayload() instanceof byte[]) {
-							convertedValue = message;
+				if (CollectionUtils.isEmpty(acceptedContentTypes)) {
+					convertedValue = value;
+				}
+				else {
+					for (int i = 0; i < acceptedContentTypes.size() && convertedValue == null; i++) {
+						MimeType acceptedContentType = acceptedContentTypes.get(i);
+						if (value instanceof Message) {
+							Message<?> message = (Message<?>) value;
+							if (message.getPayload() instanceof byte[]) {
+								convertedValue = message;
+							}
+							else {
+								convertedValue = this.convertValueToMessage(message, enricher, acceptedContentType);
+							}
+						}
+						else if (value instanceof byte[]) {
+							convertedValue = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
+						}
+						else if (value instanceof Iterable || ObjectUtils.isArray(value)) {
+							boolean isArray = ObjectUtils.isArray(value);
+							if (isArray) {
+								value = Arrays.asList((Object[]) value);
+							}
+							AtomicReference<List<Message>> messages = new AtomicReference<List<Message>>(new ArrayList<>());
+							((Iterable) value).forEach(element ->
+								messages.get().add((Message) convertOutputValueIfNecessary(element, enricher, acceptedContentType.toString())));
+							convertedValue = messages.get();
 						}
 						else {
-							convertedValue = this.convertValueToMessage(message, enricher, acceptedContentType);
+							convertedValue = this.convertValueToMessage(value, enricher, acceptedContentType);
 						}
-					}
-					else if (value instanceof byte[]) {
-						convertedValue = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
-					}
-					else if (value instanceof Iterable || ObjectUtils.isArray(value)) {
-						boolean isArray = ObjectUtils.isArray(value);
-						if (isArray) {
-							value = Arrays.asList((Object[]) value);
-						}
-						AtomicReference<List<Message>> messages = new AtomicReference<List<Message>>(new ArrayList<>());
-						((Iterable) value).forEach(element ->
-							messages.get().add((Message) convertOutputValueIfNecessary(element, enricher, acceptedContentType.toString())));
-						convertedValue = messages.get();
-					}
-					else {
-						convertedValue = this.convertValueToMessage(value, enricher, acceptedContentType);
 					}
 				}
+
 			}
+
 			if (convertedValue == null) {
 				throw new MessageConversionException(COULD_NOT_CONVERT_OUTPUT);
 			}
 			return convertedValue;
-
 		}
 
 		@SuppressWarnings("rawtypes")
