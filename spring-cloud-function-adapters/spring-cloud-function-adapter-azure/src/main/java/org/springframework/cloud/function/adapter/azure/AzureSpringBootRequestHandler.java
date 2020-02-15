@@ -38,7 +38,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 	@SuppressWarnings("rawtypes")
 	private static AzureSpringBootRequestHandler thisInitializer;
 
-	private String functioinName;
+	private String functionName;
 
 	public AzureSpringBootRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
@@ -69,12 +69,12 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 
 			/*
 			 * We need this "caching" logic to ensure that we don't reinitialize Spring Boot app on each invocation
-			 * since Azuere creates a new instance of this handler for each invocation,
+			 * since Azure creates a new instance of this handler for each invocation,
 			 * see https://github.com/spring-cloud/spring-cloud-function/issues/425
 			 */
-			if (thisInitializer == null || !thisInitializer.functioinName.equals(name)) {
+			if (thisInitializer == null || !thisInitializer.functionName.equals(name)) {
 				initialize(context);
-				this.functioinName = name;
+				this.functionName = name;
 				thisInitializer = this;
 				return (O) thisInitializer.handleRequest(input, context);
 			}
