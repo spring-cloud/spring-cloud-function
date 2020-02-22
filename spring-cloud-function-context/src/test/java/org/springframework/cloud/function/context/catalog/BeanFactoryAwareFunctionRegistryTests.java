@@ -83,7 +83,10 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(((boolean) field.get(function))).isFalse();
 		//==
 		System.setProperty("spring.cloud.function.definition", "uppercase|uppercaseFlux");
-		function = catalog.lookup("");
+		function = catalog.lookup("", "application/json");
+		Function<Flux<String>, Flux<Message<String>>> typedFunction = (Function<Flux<String>, Flux<Message<String>>>) function;
+		Object blockFirst = typedFunction.apply(Flux.just("hello")).blockFirst();
+		System.out.println(blockFirst);
 		assertThat(function).isNotNull();
 		field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
 		field.setAccessible(true);
