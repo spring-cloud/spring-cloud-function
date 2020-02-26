@@ -1,0 +1,132 @@
+:branch: master
+
+=== Google Cloud Functions (Alpha)
+
+The Google Cloud Functions adapter enables Spring Cloud Function apps to run on the https://cloud.google.com/functions[Google Cloud Functions] serverless platform.
+You can either run the function locally using the open source https://github.com/GoogleCloudPlatform/functions-framework-java[Google Functions Framework for Java] or on GCP.
+
+==== Getting Started
+
+Let’s start with a simple Spring Cloud Function example:
+
+[source, java]
+----
+@SpringBootApplication
+public class CloudFunctionMain {
+
+	public static void main(String[] args) {
+		SpringApplication.run(CloudFunctionMain.class, args);
+	}
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return value -> value.toUpperCase();
+	}
+}
+----
+
+===== Test locally
+
+Start by adding the Maven plugin provided as part of the Google Functions Framework for Java.
+
+[source, xml]
+----
+<plugin>
+    <groupId>com.google.cloud.functions</groupId>
+    <artifactId>function-maven-plugin</artifactId>
+    <version>0.9.1</version>
+    <configuration>
+        <functionTarget>org.springframework.cloud.function.adapter.gcloud.GcfSpringBootHttpRequestHandler</functionTarget>
+        <port>8080</port>
+    </configuration>
+</plugin>
+----
+
+Specify your configuration main class in `resources/META-INF/MANIFEST.MF`.
+
+[source]
+----
+Main-Class: com.example.CloudFunctionMain
+----
+
+Then run the function:
+
+----
+mvn function:run
+----
+
+Invoke the HTTP function:
+
+----
+curl http://localhost:8080/ -d "hello"
+----
+
+===== Deploy to GCP
+
+As of March 2020, Google Cloud Functions for Java is in Alpha.
+You can get on the https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform[whitelist] to try it out.
+
+First, add the Shade Plugin configuration to generate a fat jar when you run the `mvn package` command.
+
+[source, xml]
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-shade-plugin</artifactId>
+    <executions>
+        <execution>
+            <phase>package</phase>
+            <goals>
+                <goal>shade</goal>
+            </goals>
+            <configuration>
+                <shadedArtifactAttached>true</shadedArtifactAttached>
+                <outputDirectory>deploy</outputDirectory>
+                <shadedClassifierName>gcp</shadedClassifierName>
+                <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                        <resource>META-INF/spring.handlers</resource>
+                    </transformer>
+                    <transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
+                        <resource>META-INF/spring.factories</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                        <resource>META-INF/spring.schemas</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        <mainClass>com.example.CloudFunctionMain</mainClass>
+                    </transformer>
+                </transformers>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+Package the application.
+
+----
+mvn package
+----
+
+You should see the fat jar in `deploy` directory.
+
+Make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
+
+From the project base directory run the following command to deploy.
+
+----
+gcloud alpha functions deploy function-sample-gcp \
+--entry-point org.springframework.cloud.function.adapter.gcloud.GcfSpringBootHttpRequestHandler \
+--runtime java11 \
+--trigger-http \
+--source deploy \
+--memory 512MB
+----
+
+Invoke the HTTP function:
+
+----
+curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp -d "hello"
+----
