@@ -194,14 +194,14 @@ public final class FunctionTypeUtils {
 
 	public static int getOutputCount(Type functionType) {
 		assertSupportedTypes(functionType);
-		int inputCount = isConsumer(functionType) ? 0 : 1;
+		int outputCount = isConsumer(functionType) ? 0 : 1;
 		if (functionType instanceof ParameterizedType && !isConsumer(functionType)) {
-			Type inputType = ((ParameterizedType) functionType).getActualTypeArguments()[isSupplier(functionType) ? 0 : 1];
-			if (isMulti(inputType)) {
-				inputCount = ((ParameterizedType) inputType).getActualTypeArguments().length;
+			Type outputType = ((ParameterizedType) functionType).getActualTypeArguments()[isSupplier(functionType) ? 0 : 1];
+			if (isMulti(outputType)) {
+				outputCount = ((ParameterizedType) outputType).getActualTypeArguments().length;
 			}
 		}
-		return inputCount;
+		return outputCount;
 	}
 
 	public static Type getInputType(Type functionType, int index) {
