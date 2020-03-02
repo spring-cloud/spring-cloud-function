@@ -162,8 +162,12 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 	private boolean shouldLoadViaDeployerLoader(String name) {
 		return name.startsWith("org.reactivestreams")
-				|| name.startsWith("reactor.");
+				|| name.startsWith("reactor.")
+				|| name.startsWith("org.springframework.messaging.Message")
+				|| name.startsWith("org.springframework.messaging.converter.MessageConverter");
 	}
+
+
 
 	private String discoverFunctionClassName(FunctionDeployerProperties functionProperties) {
 		try {

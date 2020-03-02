@@ -5,6 +5,8 @@ import java.util.function.Function;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 @SpringBootApplication
 public class SimpleFunctionAppApplication {
@@ -14,9 +16,13 @@ public class SimpleFunctionAppApplication {
 	}
 
 	@Bean
-	public Function<String, String> uppercase() {
+	public Function<Message<String>, Message<String>> uppercase() {
 		System.out.println("==> CREATING 'uppercase' FUNCTION bean");
-		return new UpperCaseFunction();
+		return message -> {
+			UpperCaseFunction func = new UpperCaseFunction();
+			String result = func.apply(message.getPayload());
+			return MessageBuilder.withPayload(result).build();
+		};
 	}
 
 	@Bean
