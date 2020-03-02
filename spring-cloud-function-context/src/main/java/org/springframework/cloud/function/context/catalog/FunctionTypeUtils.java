@@ -308,8 +308,13 @@ public final class FunctionTypeUtils {
 	}
 
 	public static boolean isOfType(Type type, Class<?> cls) {
-		Class<?> c = type instanceof ParameterizedType ? (Class<?>) ((ParameterizedType) type).getRawType() : (Class<?>) type;
-		return cls.isAssignableFrom(c);
+		if (type instanceof Class) {
+			return cls.isAssignableFrom((Class<?>) type);
+		}
+		else if (type instanceof ParameterizedType) {
+			return isOfType(((ParameterizedType) type).getRawType(), cls);
+		}
+		return false;
 	}
 
 	public static boolean isMono(Type type) {
