@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.config;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +37,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConversionException;
+import org.springframework.util.MimeType;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Variation of {@link MappingJackson2MessageConverter} to support marshalling and
@@ -48,12 +51,16 @@ import org.springframework.messaging.converter.MessageConversionException;
  */
 class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
 
+	private final Field headersField;
+
 	private final Map<Type, JavaType> typeCache = new ConcurrentHashMap<>();
 
 	ApplicationJsonMessageMarshallingConverter(@Nullable ObjectMapper objectMapper) {
 		if (objectMapper != null) {
 			this.setObjectMapper(objectMapper);
 		}
+		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
+		this.headersField.setAccessible(true);
 	}
 
 	@Override
@@ -100,7 +107,6 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		else if (conversionHint instanceof ParameterizedType) {
 			result = convertParameterizedType(message, (Type) conversionHint);
 		}
-
 		if (result == null) {
 			if (message.getPayload() instanceof byte[]
 					&& targetClass.isAssignableFrom(String.class)) {
@@ -146,6 +152,11 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 									else if (value instanceof String) {
 										return objectMapper.readValue((String) value, typeToUse.getContentType());
 									}
+									else {
+										// fall back to simple type-conversion
+										// see https://github.com/spring-cloud/spring-cloud-stream/issues/1898
+										return objectMapper.convertValue(value, typeToUse.getContentType());
+									}
 								}
 								catch (Exception e) {
 									logger.error("Failed to convert payload " + value, e);
@@ -163,4 +174,17 @@ class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageC
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	@Nullable
+	protected MimeType getMimeType(@Nullable MessageHeaders headers) {
+		Object contentType = headers.get(MessageHeaders.CONTENT_TYPE);
+		if (contentType instanceof byte[]) {
+			contentType = new String((byte[]) contentType, StandardCharsets.UTF_8);
+			contentType = ((String) contentType).replace("\"", "");
+			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(this.headersField, headers);
+			headersMap.put(MessageHeaders.CONTENT_TYPE, contentType);
+		}
+		return super.getMimeType(headers);
+	}
 }

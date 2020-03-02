@@ -18,10 +18,10 @@ package org.springframework.cloud.function.context.config;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -70,14 +70,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
 	@Bean
-	public FunctionRegistry functionCatalog(Map<String, MessageConverter> messageConverters, @Nullable ObjectMapper objectMapper) {
+	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, @Nullable ObjectMapper objectMapper) {
 		ConversionService conversionService = new DefaultConversionService();
 		CompositeMessageConverter messageConverter = null;
+		messageConverters = messageConverters.stream()
+				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
 		List<MessageConverter> mcList = new ArrayList<>();
 		boolean addDefaultConverters = true;
 
 		if (!CollectionUtils.isEmpty(messageConverters)) {
-			for (MessageConverter mc : messageConverters.values()) {
+			for (MessageConverter mc : messageConverters) {
 				if (mc instanceof CompositeMessageConverter) {
 					mcList.addAll(((CompositeMessageConverter) mc).getConverters());
 					addDefaultConverters = false;
@@ -102,6 +104,17 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Bean(RoutingFunction.FUNCTION_NAME)
 	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionInspector functionInspector, FunctionProperties functionProperties) {
 		return new RoutingFunction(functionCatalog, functionInspector, functionProperties);
+	}
+
+	private boolean isConverterEligible(Object messageConverter) {
+		String messageConverterName = messageConverter.getClass().getName();
+		if (messageConverterName.startsWith("org.springframework.cloud.")) {
+			return true;
+		}
+		else if (!messageConverterName.startsWith("org.springframework.")) {
+			return true;
+		}
+		return false;
 	}
 
 	@Configuration(proxyBeanMethods = false)
