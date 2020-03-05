@@ -545,7 +545,21 @@ public class BeanFactoryAwareFunctionRegistry
 				invocationResult = ((Supplier) target).get();
 			}
 			else {
-				((Consumer) this.target).accept(input);
+				if (input instanceof Flux) {
+					invocationResult = ((Flux) input).transform(flux -> {
+						((Consumer) this.target).accept(flux);
+						return Mono.ignoreElements((Flux) flux);
+					}).then();
+				}
+				else if (input instanceof Mono) {
+					invocationResult = ((Mono) input).transform(flux -> {
+						((Consumer) this.target).accept(flux);
+						return Mono.ignoreElements((Mono) flux);
+					}).then();
+				}
+				else {
+					((Consumer) this.target).accept(input);
+				}
 			}
 
 			if (!(this.target instanceof Consumer) && logger.isDebugEnabled()) {
@@ -566,7 +580,6 @@ public class BeanFactoryAwareFunctionRegistry
 					this.convertInputPublisherIfNecessary((Publisher<?>) input, FunctionTypeUtils.getInputType(this.functionType, 0));
 				if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(this.functionType, 0))) {
 					result = this.invokeFunction(input);
-					result = result == null ? Mono.empty() : result;
 				}
 				else {
 					if (this.composed) {
