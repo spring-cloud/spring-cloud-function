@@ -108,8 +108,9 @@ public class GcloudSpringBootHttpRequestHandler<O>
 	// 	return event;
 	// }
 
-
 	public void handleRequest(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+		Thread.currentThread()
+			.setContextClassLoader(GcloudSpringBootHttpRequestHandler.class.getClassLoader());
 		initialize(new TestExecutionContext("abc"));
 
 		Publisher<?> output = apply(extract(convert(httpRequest)));
