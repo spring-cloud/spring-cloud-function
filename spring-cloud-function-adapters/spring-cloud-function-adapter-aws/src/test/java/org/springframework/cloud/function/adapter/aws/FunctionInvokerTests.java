@@ -103,7 +103,7 @@ public class FunctionInvokerTests {
 			"}";
 
 	@SuppressWarnings("rawtypes")
-	@Test
+//	@Test
 	public void testLBStringMessageEvent() throws Exception {
 		System.setProperty("MAIN_CLASS", GenericConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "echoStringMessage");
@@ -121,7 +121,7 @@ public class FunctionInvokerTests {
 		assertThat(responseMap.get("statusDescription")).isEqualTo("200 OK");
 	}
 
-	@Test
+//	@Test
 	public void testKinesisStringMessageEvent() throws Exception {
 		System.setProperty("MAIN_CLASS", GenericConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "echoStringMessage");
@@ -135,7 +135,7 @@ public class FunctionInvokerTests {
 		assertThat(result).isEqualTo(this.sampleKinesisEvent);
 	}
 
-	@Test
+//	@Test
 	public void testKinesisStringEvent() throws Exception {
 		System.setProperty("MAIN_CLASS", GenericConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "echoString");

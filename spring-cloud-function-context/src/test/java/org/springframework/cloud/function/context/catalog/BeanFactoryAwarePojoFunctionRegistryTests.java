@@ -66,7 +66,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		assertThat(f2message.apply(MessageBuilder.withPayload("message").build())).isEqualTo("MESSAGE");
 
 		Function<Message<String>, Message<byte[]>> f2messageReturned = catalog.lookup("myFunction", "application/json");
-		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload())).isEqualTo("MESSAGE");
+		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload())).isEqualTo("\"MESSAGE\"");
 
 		Function<Flux<String>, Flux<String>> f3 = catalog.lookup("myFunction");
 		assertThat(f3.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
@@ -89,7 +89,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		assertThat(f2message.apply(MessageBuilder.withPayload("message").build())).isEqualTo("MESSAGE");
 
 		Function<Message<String>, Message<byte[]>> f2messageReturned = catalog.lookup("myFunctionLike", "application/json");
-		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload())).isEqualTo("MESSAGE");
+		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload())).isEqualTo("\"MESSAGE\"");
 
 		Function<Flux<String>, Flux<String>> f3 = catalog.lookup("myFunctionLike");
 		assertThat(f3.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");

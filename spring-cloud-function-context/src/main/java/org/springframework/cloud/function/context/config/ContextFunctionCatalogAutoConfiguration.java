@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,17 +40,19 @@ import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFuncti
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.core.convert.converter.GenericConverter;
+import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.util.CollectionUtils;
@@ -70,11 +73,15 @@ public class ContextFunctionCatalogAutoConfiguration {
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
 	@Bean
-	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, @Nullable ObjectMapper objectMapper) {
-		ConversionService conversionService = new DefaultConversionService();
+	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, @Nullable ObjectMapper objectMapper,
+			ConfigurableApplicationContext context) {
+		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
+		Map<String, GenericConverter> converters = context.getBeansOfType(GenericConverter.class);
+		for (GenericConverter converter : converters.values()) {
+			conversionService.addConverter(converter);
+		}
+
 		CompositeMessageConverter messageConverter = null;
-		messageConverters = messageConverters.stream()
-				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
 		List<MessageConverter> mcList = new ArrayList<>();
 		boolean addDefaultConverters = true;
 
@@ -89,15 +96,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 		}
+
+		mcList = mcList.stream()
+				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
 		if (addDefaultConverters) {
 			if (objectMapper == null) {
 				objectMapper = new ObjectMapper();
 			}
-			mcList.add(new ApplicationJsonMessageMarshallingConverter(objectMapper));
+			MappingJackson2MessageConverter jsonConverter = new MappingJackson2MessageConverter();
+			jsonConverter.setObjectMapper(objectMapper);
+			mcList.add(jsonConverter);
 			mcList.add(new ByteArrayMessageConverter());
 			mcList.add(new StringMessageConverter());
 		}
-		messageConverter = new CompositeMessageConverter(mcList);
+		if (!CollectionUtils.isEmpty(mcList)) {
+			messageConverter = new CompositeMessageConverter(mcList);
+		}
+
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter);
 	}
 
