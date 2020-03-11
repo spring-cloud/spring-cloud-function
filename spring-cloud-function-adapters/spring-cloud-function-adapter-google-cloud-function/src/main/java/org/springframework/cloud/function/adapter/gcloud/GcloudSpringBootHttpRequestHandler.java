@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.cloud.functions.Context;
+import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
@@ -39,7 +40,7 @@ import org.springframework.messaging.support.GenericMessage;
 
  */
 public class GcloudSpringBootHttpRequestHandler<O>
-		extends AbstractSpringFunctionAdapterInitializer<Context> {
+		extends AbstractSpringFunctionAdapterInitializer<Context> implements HttpFunction {
 
 	Gson gson = new Gson();
 
@@ -108,7 +109,7 @@ public class GcloudSpringBootHttpRequestHandler<O>
 	// 	return event;
 	// }
 
-	public void handleRequest(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread()
 			.setContextClassLoader(GcloudSpringBootHttpRequestHandler.class.getClassLoader());
 		initialize(new TestExecutionContext("abc"));

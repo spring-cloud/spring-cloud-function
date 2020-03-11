@@ -75,7 +75,7 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 
 		StringWriter writer = new StringWriter();
 		// when(response.getWriter()).thenReturn(new BufferedWriter(writer));
-		handler.handleRequest(request, new HttpResponseImpl(new BufferedWriter(writer)));
+		handler.service(request, new HttpResponseImpl(new BufferedWriter(writer)));
 
 		assertThat(GSON.fromJson(writer.toString(), Bar.class)).isEqualTo(new Bar("FOO"));
 	}
@@ -95,7 +95,7 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 
 		StringWriter writer = new StringWriter();
 		HttpResponseImpl response = new HttpResponseImpl(new BufferedWriter(writer));
-		handler.handleRequest(request, response);
+		handler.service(request, response);
 
 		// verify(this.response, times(1)).setStatusCode(eq(200));
 		assertThat(response.statusCode).isEqualTo(200);
