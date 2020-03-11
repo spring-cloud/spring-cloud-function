@@ -38,6 +38,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.NegotiatingMessageConverterWrapper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -105,9 +106,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			MappingJackson2MessageConverter jsonConverter = new MappingJackson2MessageConverter();
 			jsonConverter.setObjectMapper(objectMapper);
-			mcList.add(jsonConverter);
-			mcList.add(new ByteArrayMessageConverter());
-			mcList.add(new StringMessageConverter());
+			mcList.add(NegotiatingMessageConverterWrapper.wrap(jsonConverter));
+			mcList.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
+			mcList.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
 		}
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new CompositeMessageConverter(mcList);
