@@ -78,11 +78,11 @@ public class RoutingFunction implements Function<Object, Object> {
 	}
 
 	/*
-	 * - Check if function-name is set in header and if it is use it.
+	 * - Check if spring.cloud.function.definition is set in header and if it is use it.
 	 * If NOT
-	 * - Check routing-expression and if it is set use it
+	 * - Check spring.cloud.function.routing-expression and if it is set use it
 	 * If NOT
-	 * - Check function-name is set in FunctionProperties and if it is use it
+	 * - Check spring.cloud.function.definition is set in FunctionProperties and if it is use it
 	 * If NOT
 	 * - Fail
 	 */
