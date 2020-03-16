@@ -21,8 +21,10 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
@@ -34,15 +36,21 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
-
+ *
  */
 public class GcloudSpringBootHttpRequestHandler<O>
-		extends AbstractSpringFunctionAdapterInitializer<Context> implements HttpFunction {
+	extends AbstractSpringFunctionAdapterInitializer<Context> implements HttpFunction {
 
 	Gson gson = new Gson();
+
+	//TODO
+//	@Autowired
+//	private ObjectMapper mapper;
+
 
 	public GcloudSpringBootHttpRequestHandler() {
 		super();
@@ -60,14 +68,39 @@ public class GcloudSpringBootHttpRequestHandler<O>
 			sb.append(line).append("\n");
 		}
 
+		String requestBody = sb.toString();
 		if (functionAcceptsMessage()) {
-			Map headers = event.getHeaders();
-			return new GenericMessage<String>(sb.toString(), headers);
+			return new GenericMessage<>(toOtionalIfEmpty(requestBody), getHeaders(event, requestBody));
 		}
 		else {
-			return sb.toString();
+			return toOtionalIfEmpty(requestBody);
 		}
 
+	}
+
+	private Object toOtionalIfEmpty(String requestBody) {
+		return requestBody.isEmpty() ? Optional.empty() : requestBody;
+	}
+
+	private MessageHeaders getHeaders(HttpRequest event, String requestBody) {
+		Map<String, Object> headers = new HashMap<String, Object>();
+
+		if (event.getHeaders() != null) {
+			headers.putAll(event.getHeaders());
+		}
+		if (event.getQueryParameters() != null) {
+			headers.putAll(event.getQueryParameters());
+		}
+		if (event.getUri() != null) {
+			headers.put("path", event.getPath());
+		}
+
+		if (event.getMethod() != null) {
+			headers.put("httpMethod", event.getMethod());
+		}
+
+		headers.put("request", requestBody);
+		return new MessageHeaders(headers);
 	}
 
 	protected boolean functionAcceptsMessage() {
@@ -75,39 +108,28 @@ public class GcloudSpringBootHttpRequestHandler<O>
 	}
 
 	@SuppressWarnings("unchecked")
-	protected <T> T result(Object input, Publisher<?> output) {
+	protected <T> T result(Object input, Publisher<?> output, HttpResponse resp) {
 		List<T> result = new ArrayList<>();
 		for (Object value : Flux.from(output).toIterable()) {
-			result.add((T) convertOutput(value));
+			result.add((T) convertOutput1(value, resp));
 		}
 		if (isSingleValue(input) && result.size() == 1) {
 			return result.get(0);
 		}
 		return (T) result;
 	}
-	//
-	// protected boolean acceptsInput() {
-	// 	return !this.getInspector().getInputType(function()).equals(Void.class);
-	// }
-	//
-	// protected boolean returnsOutput() {
-	// 	return !this.getInspector().getOutputType(function()).equals(Void.class);
-	// }
+
 
 	private boolean isSingleValue(Object input) {
 		return !(input instanceof Collection);
 	}
 
 	private Flux<?> extract(Object input) {
-		// if (input instanceof Collection) {
-		// 	return Flux.fromIterable((Iterable<?>) input);
-		// }
+		if (input instanceof Collection) {
+			return Flux.fromIterable((Iterable<?>) input);
+		}
 		return Flux.just(input);
 	}
-
-	// protected Object convertEvent(E event) {
-	// 	return event;
-	// }
 
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread()
@@ -116,29 +138,46 @@ public class GcloudSpringBootHttpRequestHandler<O>
 
 		Publisher<?> output = apply(extract(convert(httpRequest)));
 		BufferedWriter writer = httpResponse.getWriter();
-		writer.write(gson.toJson((Object) result(httpRequest, output)));
-		writer.flush();
+		Object result = result(httpRequest, output, httpResponse);
+		if (returnsOutput()) {
+			writer.write(gson.toJson(result));
+			writer.flush();
+		}
+		httpResponse.setStatusCode(200);
 	}
 
-	protected O convertOutput(Object output) {
+	protected O convertOutput1(Object output, HttpResponse resp) {
 		if (functionReturnsMessage(output)) {
 			Message<?> message = (Message<?>) output;
+			for (Map.Entry<String, Object> entry : message.getHeaders().entrySet()) {
+				Object values = entry.getValue();
+				if (values instanceof List) {
+					for (Object value : (List) values) {
+						if (value != null) {
+							resp.appendHeader(entry.getKey(), value.toString());
+						}
+					}
+				}
+				else if (values != null) {
+					resp.appendHeader(entry.getKey(), values.toString());
+				}
+			}
 			return (O) message.getPayload();
-			// for (Map.Entry<String, Object> entry : message.getHeaders().entrySet()) {
-			// 	builder = builder.header(entry.getKey(), entry.getValue().toString());
-			// }
-			// return builder.build();
 		}
 		else {
 			return (O) output;
 		}
 	}
 
+	boolean returnsOutput() {
+		return !this.getInspector().getOutputType(function()).equals(Void.class);
+	}
 
 	protected boolean functionReturnsMessage(Object output) {
 		return output instanceof Message;
 	}
 }
+
 class TestExecutionContext implements Context {
 
 	private String name;

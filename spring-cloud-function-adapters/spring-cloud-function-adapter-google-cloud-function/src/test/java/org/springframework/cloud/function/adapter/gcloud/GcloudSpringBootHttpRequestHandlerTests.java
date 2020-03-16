@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
  * @author
  */
 public class GcloudSpringBootHttpRequestHandlerTests {
-	HttpRequest request =  Mockito.mock(HttpRequest.class);
+	HttpRequest request = Mockito.mock(HttpRequest.class);
 	HttpResponse response = Mockito.mock(HttpResponse.class);
 
 	private GcloudSpringBootHttpRequestHandler<?> handler = null;
@@ -82,27 +82,24 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 
 	@Test
 	public void testWithRequestParameters() throws Exception {
-		GcloudSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageBodyConfig.class);
+		GcloudSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageEchoReqParametersConfig.class);
 
-		StringReader foo = new StringReader(GSON.toJson(new Foo("foo")));
-		when(request.getReader()).thenReturn(new BufferedReader(foo));
+//		StringReader foo = new StringReader(GSON.toJson(new Foo("foo")));
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
 		when(request.getUri()).thenReturn("http://localhost:8080/pathValue");
+		when(request.getPath()).thenReturn("/pathValue");
 		when(request.getHeaders())
 			.thenReturn(Collections.singletonMap("test-header", Collections.singletonList("headerValue")));
-		when(request.getQueryParameters())
-			.thenReturn(Collections.singletonMap("query", Collections.singletonList("queryValue")));
 		when(request.getMethod()).thenReturn("GET");
 
 		StringWriter writer = new StringWriter();
 		HttpResponseImpl response = new HttpResponseImpl(new BufferedWriter(writer));
 		handler.service(request, response);
 
-		// verify(this.response, times(1)).setStatusCode(eq(200));
 		assertThat(response.statusCode).isEqualTo(200);
 		assertThat(response.headers.get("path")).containsExactly("/pathValue");
-		assertThat(response.headers.get("query")).containsExactly("queryValue");
 		assertThat(response.headers.get("test-header")).containsExactly("headerValue");
-		assertThat(GSON.fromJson(writer.toString(), Bar.class)).isEqualTo(new Bar("FOO"));
+		assertThat(GSON.fromJson(writer.toString(), Bar.class)).isEqualTo(new Bar("body"));
 	}
 	//
 	// @Test
@@ -120,14 +117,14 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 	// }
 
 	@After
-	public void close()  {
+	public void close() {
 		if (this.handler != null) {
 			this.handler.close();
 		}
 	}
 
 	@Configuration
-	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	@Import({ContextFunctionCatalogAutoConfiguration.class})
 	protected static class FunctionMessageBodyConfig {
 
 		@Bean
@@ -135,14 +132,14 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 			return (foo -> {
 				Map<String, Object> headers = new HashMap<>();
 				return new GenericMessage<>(
-						new Bar(foo.getPayload().getValue().toUpperCase()), headers);
+					new Bar(foo.getPayload().getValue().toUpperCase()), headers);
 			});
 		}
 
 	}
 
 	@Configuration
-	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	@Import({ContextFunctionCatalogAutoConfiguration.class})
 	protected static class FunctionMessageEchoReqParametersConfig {
 
 		@Bean
@@ -160,7 +157,7 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 	}
 
 	@Configuration
-	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	@Import({ContextFunctionCatalogAutoConfiguration.class})
 	protected static class FunctionMessageConsumerConfig {
 
 		@Bean
@@ -335,7 +332,7 @@ class HttpResponseImpl implements HttpResponse {
 
 	@Override
 	public void appendHeader(String header, String value) {
-		headers.getOrDefault(header, new ArrayList<>()).add(value);
+		headers.computeIfAbsent(header, x -> new ArrayList<>()).add(value);
 	}
 
 	@Override
