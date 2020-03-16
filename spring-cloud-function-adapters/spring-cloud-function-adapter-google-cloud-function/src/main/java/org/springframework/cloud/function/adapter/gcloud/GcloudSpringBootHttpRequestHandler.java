@@ -40,17 +40,12 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
- *
+ * @author Dmitry Solomakha
  */
 public class GcloudSpringBootHttpRequestHandler<O>
 	extends AbstractSpringFunctionAdapterInitializer<Context> implements HttpFunction {
 
 	Gson gson = new Gson();
-
-	//TODO
-//	@Autowired
-//	private ObjectMapper mapper;
-
 
 	public GcloudSpringBootHttpRequestHandler() {
 		super();
@@ -134,7 +129,7 @@ public class GcloudSpringBootHttpRequestHandler<O>
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread()
 			.setContextClassLoader(GcloudSpringBootHttpRequestHandler.class.getClassLoader());
-		initialize(new TestExecutionContext("abc"));
+		initialize(new TestExecutionContext());
 
 		Publisher<?> output = apply(extract(convert(httpRequest)));
 		BufferedWriter writer = httpResponse.getWriter();
@@ -179,13 +174,6 @@ public class GcloudSpringBootHttpRequestHandler<O>
 }
 
 class TestExecutionContext implements Context {
-
-	private String name;
-
-	TestExecutionContext(String name) {
-		this.name = name;
-	}
-
 	@Override
 	public String eventId() {
 		return null;

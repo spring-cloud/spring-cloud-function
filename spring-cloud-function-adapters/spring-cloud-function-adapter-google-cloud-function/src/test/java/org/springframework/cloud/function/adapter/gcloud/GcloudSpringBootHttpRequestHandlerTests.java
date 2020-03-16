@@ -50,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
- * @author
+ * @author Dmitry Solomakha
  */
 public class GcloudSpringBootHttpRequestHandlerTests {
 	HttpRequest request = Mockito.mock(HttpRequest.class);
@@ -74,7 +74,6 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 		when(request.getReader()).thenReturn(new BufferedReader(foo));
 
 		StringWriter writer = new StringWriter();
-		// when(response.getWriter()).thenReturn(new BufferedWriter(writer));
 		handler.service(request, new HttpResponseImpl(new BufferedWriter(writer)));
 
 		assertThat(GSON.fromJson(writer.toString(), Bar.class)).isEqualTo(new Bar("FOO"));
@@ -84,7 +83,6 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 	public void testWithRequestParameters() throws Exception {
 		GcloudSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageEchoReqParametersConfig.class);
 
-//		StringReader foo = new StringReader(GSON.toJson(new Foo("foo")));
 		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
 		when(request.getUri()).thenReturn("http://localhost:8080/pathValue");
 		when(request.getPath()).thenReturn("/pathValue");
@@ -101,20 +99,20 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 		assertThat(response.headers.get("test-header")).containsExactly("headerValue");
 		assertThat(GSON.fromJson(writer.toString(), Bar.class)).isEqualTo(new Bar("body"));
 	}
-	//
-	// @Test
-	// public void testWithEmptyBody() {
-	// 	AzureSpringBootHttpRequestHandler<Foo> handler = handler(
-	// 			FunctionMessageConsumerConfig.class);
-	// 	HttpRequestMessageStub<Foo> request = new HttpRequestMessageStub<Foo>();
-	//
-	// 	HttpResponseMessage response = handler.handleRequest(request,
-	// 			new TestExecutionContext("uppercase"));
-	//
-	// 	assertThat(response.getStatusCode()).isEqualTo(200);
-	// 	Bar body = (Bar) response.getBody();
-	// 	assertThat(body).isNull();
-	// }
+
+	@Test
+	public void testWithEmptyBody() throws Exception {
+		GcloudSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageConsumerConfig.class);
+
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
+
+		StringWriter writer = new StringWriter();
+		HttpResponseImpl response = new HttpResponseImpl(new BufferedWriter(writer));
+		handler.service(request, response);
+
+		assertThat(response.statusCode).isEqualTo(200);
+		assertThat(writer.toString()).isEqualTo("");
+	}
 
 	@After
 	public void close() {
@@ -162,72 +160,10 @@ public class GcloudSpringBootHttpRequestHandlerTests {
 
 		@Bean
 		public Consumer<Message<Foo>> function() {
-			return (foo -> {
-			});
+			return (foo -> { });
 		}
 
 	}
-	//
-	// class BuilderStub implements Builder {
-	//
-	// 	private HttpStatusType status;
-	// 	private Map<String, String> headers = new HashMap<>();
-	// 	private Object body;
-	//
-	// 	@Override
-	// 	public Builder status(HttpStatusType status) {
-	// 		this.status = status;
-	// 		return this;
-	// 	}
-	//
-	// 	@Override
-	// 	public Builder header(String key, String value) {
-	// 		headers.put(key, value);
-	// 		return this;
-	// 	}
-	//
-	// 	@Override
-	// 	public Builder body(Object body) {
-	// 		this.body = body;
-	// 		return this;
-	// 	}
-	//
-	// 	@Override
-	// 	public HttpResponseMessage build() {
-	// 		return new HttpResponseMessageStub(this.status, this.headers, this.body);
-	// 	}
-	//
-	// }
-	//
-	// class HttpResponseMessageStub implements HttpResponseMessage {
-	//
-	// 	private HttpStatusType status;
-	// 	private Map<String, String> headers = new HashMap<>();
-	// 	private Object body;
-	//
-	// 	HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers,
-	// 			Object body) {
-	// 		this.status = status;
-	// 		this.headers = headers;
-	// 		this.body = body;
-	// 	}
-	//
-	// 	@Override
-	// 	public HttpStatusType getStatus() {
-	// 		return this.status;
-	// 	}
-	//
-	// 	@Override
-	// 	public String getHeader(String key) {
-	// 		return this.headers.get(key);
-	// 	}
-	//
-	// 	@Override
-	// 	public Object getBody() {
-	// 		return this.body;
-	// 	}
-	//
-	// }
 }
 
 class Foo {
