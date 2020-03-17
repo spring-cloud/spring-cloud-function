@@ -42,38 +42,40 @@ import org.springframework.messaging.support.GenericMessage;
 /**
  * @author Dmitry Solomakha
  */
-public class GcloudSpringBootHttpRequestHandler<O>
+public class GCFSpringBootHttpRequestHandler<O>
 	extends AbstractSpringFunctionAdapterInitializer<Context> implements HttpFunction {
 
-	Gson gson = new Gson();
+	private final Gson gson = new Gson();
 
-	public GcloudSpringBootHttpRequestHandler() {
+	public GCFSpringBootHttpRequestHandler() {
 		super();
 	}
 
-	public GcloudSpringBootHttpRequestHandler(Class<?> configurationClass) {
+	public GCFSpringBootHttpRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
 	}
 
 	protected Object convert(HttpRequest event) throws IOException {
 		BufferedReader br = event.getReader();
 		StringBuilder sb = new StringBuilder();
-		String line;
-		while ((line = br.readLine()) != null) {
-			sb.append(line).append("\n");
+
+		char[] buffer = new char[1024 * 4];
+		int n;
+		while (-1 != (n = br.read(buffer))) {
+			sb.append(buffer, 0, n);
 		}
 
 		String requestBody = sb.toString();
 		if (functionAcceptsMessage()) {
-			return new GenericMessage<>(toOtionalIfEmpty(requestBody), getHeaders(event, requestBody));
+			return new GenericMessage<>(toOptionalIfEmpty(requestBody), getHeaders(event, requestBody));
 		}
 		else {
-			return toOtionalIfEmpty(requestBody);
+			return toOptionalIfEmpty(requestBody);
 		}
 
 	}
 
-	private Object toOtionalIfEmpty(String requestBody) {
+	private Object toOptionalIfEmpty(String requestBody) {
 		return requestBody.isEmpty() ? Optional.empty() : requestBody;
 	}
 
@@ -106,7 +108,7 @@ public class GcloudSpringBootHttpRequestHandler<O>
 	protected <T> T result(Object input, Publisher<?> output, HttpResponse resp) {
 		List<T> result = new ArrayList<>();
 		for (Object value : Flux.from(output).toIterable()) {
-			result.add((T) convertOutput1(value, resp));
+			result.add((T) convertOutputAndHeaders(value, resp));
 		}
 		if (isSingleValue(input) && result.size() == 1) {
 			return result.get(0);
@@ -128,8 +130,8 @@ public class GcloudSpringBootHttpRequestHandler<O>
 
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread()
-			.setContextClassLoader(GcloudSpringBootHttpRequestHandler.class.getClassLoader());
-		initialize(new TestExecutionContext());
+			.setContextClassLoader(GCFSpringBootHttpRequestHandler.class.getClassLoader());
+		initialize(null);
 
 		Publisher<?> output = apply(extract(convert(httpRequest)));
 		BufferedWriter writer = httpResponse.getWriter();
@@ -141,8 +143,8 @@ public class GcloudSpringBootHttpRequestHandler<O>
 		httpResponse.setStatusCode(200);
 	}
 
-	protected O convertOutput1(Object output, HttpResponse resp) {
-		if (functionReturnsMessage(output)) {
+	protected O convertOutputAndHeaders(Object output, HttpResponse resp) {
+		if (output instanceof Message) {
 			Message<?> message = (Message<?>) output;
 			for (Map.Entry<String, Object> entry : message.getHeaders().entrySet()) {
 				Object values = entry.getValue();
@@ -164,33 +166,8 @@ public class GcloudSpringBootHttpRequestHandler<O>
 		}
 	}
 
-	boolean returnsOutput() {
+	private boolean returnsOutput() {
 		return !this.getInspector().getOutputType(function()).equals(Void.class);
 	}
 
-	protected boolean functionReturnsMessage(Object output) {
-		return output instanceof Message;
-	}
-}
-
-class TestExecutionContext implements Context {
-	@Override
-	public String eventId() {
-		return null;
-	}
-
-	@Override
-	public String timestamp() {
-		return null;
-	}
-
-	@Override
-	public String eventType() {
-		return null;
-	}
-
-	@Override
-	public String resource() {
-		return null;
-	}
 }
