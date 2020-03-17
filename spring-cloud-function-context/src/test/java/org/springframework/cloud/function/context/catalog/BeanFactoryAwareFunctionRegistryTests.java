@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,30 @@ public class BeanFactoryAwareFunctionRegistryTests {
 						"--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
+	}
+
+	@Test
+	public void testDefaultLookup() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog();
+		Object function = catalog.lookup("");
+		assertThat(function).isNull();
+		//==
+		System.setProperty("spring.cloud.function.definition", "uppercase");
+		function = catalog.lookup("");
+		assertThat(function).isNotNull();
+		Field field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
+		field.setAccessible(true);
+		assertThat(((boolean) field.get(function))).isFalse();
+		//==
+		System.setProperty("spring.cloud.function.definition", "uppercase|uppercaseFlux");
+		function = catalog.lookup("", "application/json");
+		Function<Flux<String>, Flux<Message<String>>> typedFunction = (Function<Flux<String>, Flux<Message<String>>>) function;
+		Object blockFirst = typedFunction.apply(Flux.just("hello")).blockFirst();
+		System.out.println(blockFirst);
+		assertThat(function).isNotNull();
+		field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
+		field.setAccessible(true);
+		assertThat(((boolean) field.get(function))).isTrue();
 	}
 
 	@Test
@@ -458,7 +482,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Consumer<String> imperativeConsumer() {
-			return null;
+			return System.out::println;
 		}
 
 		@Bean
@@ -530,6 +554,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public void setId(int id) {
 			this.id = id;
 		}
+		@Override
 		public String toString() {
 			return "Person: " + name + "/" + id;
 		}

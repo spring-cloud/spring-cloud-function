@@ -4,10 +4,77 @@
 
 The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.
 
+The details of how to get stared with AWS Lambda is out of scope of this document, so the expectation is that user has some familiarity with
+AWS and AWS Lambda and wants to learn what additional value spring provides.
 
-The adapter has a couple of generic request handlers that you can use. The most generic is `SpringBootStreamHandler`, which uses a Jackson `ObjectMapper` provided by Spring Boot to serialize and deserialize the objects in the function. There is also a `SpringBootRequestHandler` which you can extend, and provide the input and output types as type parameters (enabling AWS to inspect the class and do the JSON conversions itself).
+==== Getting Started
 
-If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name` (e.g. as `FUNCTION_NAME` environment variable in AWS). The functions are extracted from the Spring Cloud `FunctionCatalog` (searching first for `Function` then `Consumer` and finally `Supplier`).
+One of the goals of Spring Cloud Function framework is to provide necessary infrastructure elements to enable a _simple function application_
+to interact in a certain way in a particular environment.
+A simple function application (in context or Spring) is an application that contains beans of type Supplier, Function or Consumer.
+So, with AWS it means that a simple function bean should somehow be recognised and executed in AWS Lambda environment.
+
+Let’s look at the example:
+
+[source, java]
+----
+@SpringBootApplication
+public class FunctionConfiguration {
+
+	public static void main(String[] args) {
+		SpringApplication.run(FunctionConfiguration.class, args);
+	}
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return value -> value.toUpperCase();
+	}
+}
+----
+
+It shows a complete Spring Boot application with a function bean defined in it. What’s interesting is that on the surface this is just
+another boot app, but in the context of AWS Adapter it is also a perfectly valid AWS Lambda application. No other code or configuration
+is required. All you need to do is package it and deploy it, so let’s look how we can do that.
+
+To make things simpler we’ve provided a sample project ready to be built and deployed and you can access it
+https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws[here].
+
+You simply execute `./mvnw clean package` to generate JAR file. All the necessary maven plugins have already been setup to generate
+appropriate AWS deployable JAR file. (You can read more details about JAR layout in <<Notes on JAR Layout>>).
+
+Then you have to upload the JAR file (via AWS dashboard or AWS CLI) to AWS.
+
+When ask about _handler_ you specify `org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest` which is a generic request handler.
+
+image::{github-raw}/docs/src/main/asciidoc/images/AWS-deploy.png[width=800,scaledwidth="75%",align="center"]
+
+That is all. Save and execute the function with some sample data which for this function is expected to be a
+String which function will uppercase and return back.
+
+While `org.springframework.cloud.function.adapter.aws.FunctionInvoker` is a general purpose AWS's `RequestHandler` implementation aimed at completely
+isolating you from the specifics of AWS Lambda API, for some cases you may want to specify which specific AWS's `RequestHandler` you want
+to use. The next section will explain you how you can accomplish just that.
+
+
+==== AWS Request Handlers
+
+The adapter has a couple of generic request handlers that you can use. The most generic is (and the one we used in the Getting Started section)
+is `org.springframework.cloud.function.adapter.aws.FunctionInvoke` which is the implementation of AWS's `RequestStreamHandler`.
+User doesn't need to do anything other then specify it as 'handler' on AWS dashborad when deploying function.
+It will handle most of the case including Kinesis, streaming etc. .
+
+
+
+The most generic is
+`SpringBootStreamHandler`, which uses a Jackson `ObjectMapper` provided by Spring Boot to serialize and deserialize the objects
+in the function. There is also a `SpringBootRequestHandler` which you can extend, and provide the input and output types as type
+parameters (enabling AWS to inspect the class and do the JSON conversions itself).
+
+If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name`
+(e.g. as `FUNCTION_NAME` environment variable in AWS). The functions are extracted from the Spring Cloud `FunctionCatalog`
+(searching first for `Function` then `Consumer` and finally `Supplier`).
+
+
 
 ==== Notes on JAR Layout
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import org.junit.Before;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
@@ -41,6 +42,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 3.0
  */
 public class FunctionDeployerTests {
+
+	@Before
+	public void before() {
+		System.clearProperty("spring.cloud.function.definition");
+	}
 
 	/*
 	 * Target function `class UpperCaseFunction implements Function<String, String>`

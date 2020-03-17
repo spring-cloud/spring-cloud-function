@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.adapter.azure;
 
-import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Collection;
 import java.util.function.Function;
 
@@ -36,6 +35,11 @@ import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterI
  */
 public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionAdapterInitializer<ExecutionContext> {
 
+	@SuppressWarnings("rawtypes")
+	private static AzureSpringBootRequestHandler thisInitializer;
+
+	private String functionName;
+
 	public AzureSpringBootRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
 	}
@@ -48,36 +52,47 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		return this.handleRequest(null, context);
 	}
 
+	@Override
+	public void close() {
+		thisInitializer = null;
+		super.close();
+	}
+
+	@SuppressWarnings("unchecked")
 	public O handleRequest(I input, ExecutionContext context) {
-		String name = null;
+		String name = "";
 		try {
 			if (context != null) {
 				name = context.getFunctionName();
 				context.getLogger().info("Handler processing a request for: " + name);
 			}
-			initialize(context);
 
-			Publisher<?> events = input == null ? Mono.empty() : extract(convertEvent(input));
-
-			Publisher<?> output = apply(events);
-			return result(input, output);
+			/*
+			 * We need this "caching" logic to ensure that we don't reinitialize Spring Boot app on each invocation
+			 * since Azure creates a new instance of this handler for each invocation,
+			 * see https://github.com/spring-cloud/spring-cloud-function/issues/425
+			 */
+			if (thisInitializer == null || !thisInitializer.functionName.equals(name)) {
+				initialize(context);
+				this.functionName = name;
+				thisInitializer = this;
+				return (O) thisInitializer.handleRequest(input, context);
+			}
+			else {
+				Publisher<?> events = input == null ? Mono.empty() : extract(convertEvent(input));
+				Publisher<?> output = thisInitializer.apply(events);
+				O result = result(input, output);
+				if (context != null) {
+					context.getLogger().fine("Handler processed a request for: " + name);
+				}
+				return result;
+			}
 		}
 		catch (Throwable ex) {
 			if (context != null) {
 				context.getLogger().throwing(getClass().getName(), "handle", ex);
 			}
-			if (ex instanceof RuntimeException) {
-				throw (RuntimeException) ex;
-			}
-			if (ex instanceof Error) {
-				throw (Error) ex;
-			}
-			throw new UndeclaredThrowableException(ex);
-		}
-		finally {
-			if (context != null) {
-				context.getLogger().fine("Handler processed a request for: " + name);
-			}
+			throw (RuntimeException) ex;
 		}
 	}
 

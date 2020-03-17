@@ -79,6 +79,25 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		System.out.println(result);
 	}
 
+	@Test
+	public void testMultiInputWithPojoConversion() {
+		FunctionCatalog catalog = this.configureCatalog();
+		Function<Tuple2<Flux<CartEvent>, Flux<CheckoutEvent>>, Flux<OrderEvent>> multiInputFunction =
+									catalog.lookup("thomas", "application/json");
+		CartEvent carEvent = new CartEvent();
+		carEvent.setCarEvent("carEvent");
+		Flux<CartEvent> carEventStream = Flux.just(carEvent);
+
+		CheckoutEvent checkoutEvent = new CheckoutEvent();
+		checkoutEvent.setCheckoutEvent("checkoutEvent");
+		Flux<CheckoutEvent> checkoutEventStream = Flux.just(checkoutEvent);
+
+		Tuple2<Flux<CartEvent>, Flux<CheckoutEvent>> streams = Tuples.of(carEventStream, checkoutEventStream);
+
+		List<OrderEvent> result = multiInputFunction.apply(streams).collectList().block();
+		System.out.println(result);
+	}
+
 	@SuppressWarnings("unused")
 	@Test
 	@Ignore
@@ -346,12 +365,14 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 					return Integer.class.isAssignableFrom(clazz);
 				}
 
+				@Override
 				protected Object convertFromInternal(
 						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 					ByteBuffer wrappedPayload = ByteBuffer.wrap((byte[]) message.getPayload());
 					return wrappedPayload.getInt();
 				}
 
+				@Override
 				protected Object convertToInternal(
 						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
 
@@ -380,6 +401,56 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 				return new Flux[] { repeated, sum };
 			};
 		}
+
+		@Bean
+		public Function<Tuple2<Flux<CartEvent>, Flux<CheckoutEvent>>, Flux<OrderEvent>> thomas() {
+			return tuple -> {
+				Flux<CartEvent> cartEventStream = tuple.getT1();
+				Flux<CheckoutEvent> checkoutEventStream = tuple.getT2();
+
+				return Flux.zip(cartEventStream, checkoutEventStream, (cartEvent, checkoutEvent) -> {
+					OrderEvent oe = new OrderEvent();
+					oe.setOrderEvent(cartEvent.toString() + "- " + checkoutEvent.toString());
+					return oe;
+				});
+			};
+		}
+	}
+
+	public static class CartEvent {
+		private String carEvent;
+
+		public String getCarEvent() {
+			return carEvent;
+		}
+
+		public void setCarEvent(String carEvent) {
+			this.carEvent = carEvent;
+		}
+	}
+
+	public static class CheckoutEvent {
+		private String checkoutEvent;
+
+		public String getCheckoutEvent() {
+			return checkoutEvent;
+		}
+
+		public void setCheckoutEvent(String checkoutEvent) {
+			this.checkoutEvent = checkoutEvent;
+		}
+	}
+
+	public static class OrderEvent {
+		private String orderEvent;
+
+		public String getOrderEvent() {
+			return orderEvent;
+		}
+
+		public void setOrderEvent(String orderEvent) {
+			this.orderEvent = orderEvent;
+		}
 	}
 
 	public static class Person {
@@ -404,6 +475,7 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		public void setId(int id) {
 			this.id = id;
 		}
+		@Override
 		public String toString() {
 			return "Person: " + name + "/" + id;
 		}

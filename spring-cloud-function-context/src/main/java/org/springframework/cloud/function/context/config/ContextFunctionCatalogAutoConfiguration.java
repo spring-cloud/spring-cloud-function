@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -39,14 +40,16 @@ import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFuncti
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.core.convert.converter.GenericConverter;
+import org.springframework.core.convert.support.ConfigurableConversionService;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -70,14 +73,20 @@ public class ContextFunctionCatalogAutoConfiguration {
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
 	@Bean
-	public FunctionRegistry functionCatalog(Map<String, MessageConverter> messageConverters) {
-		ConversionService conversionService = new DefaultConversionService();
+	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, @Nullable ObjectMapper objectMapper,
+			ConfigurableApplicationContext context) {
+		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
+		Map<String, GenericConverter> converters = context.getBeansOfType(GenericConverter.class);
+		for (GenericConverter converter : converters.values()) {
+			conversionService.addConverter(converter);
+		}
+
 		CompositeMessageConverter messageConverter = null;
 		List<MessageConverter> mcList = new ArrayList<>();
 		boolean addDefaultConverters = true;
 
 		if (!CollectionUtils.isEmpty(messageConverters)) {
-			for (MessageConverter mc : messageConverters.values()) {
+			for (MessageConverter mc : messageConverters) {
 				if (mc instanceof CompositeMessageConverter) {
 					mcList.addAll(((CompositeMessageConverter) mc).getConverters());
 					addDefaultConverters = false;
@@ -87,18 +96,40 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 		}
+
+		mcList = mcList.stream()
+				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
 		if (addDefaultConverters) {
-			mcList.add(new MappingJackson2MessageConverter());
+			if (objectMapper == null) {
+				objectMapper = new ObjectMapper();
+			}
+			MappingJackson2MessageConverter jsonConverter = new MappingJackson2MessageConverter();
+			jsonConverter.setObjectMapper(objectMapper);
+			mcList.add(jsonConverter);
 			mcList.add(new ByteArrayMessageConverter());
 			mcList.add(new StringMessageConverter());
 		}
-		messageConverter = new CompositeMessageConverter(mcList);
+		if (!CollectionUtils.isEmpty(mcList)) {
+			messageConverter = new CompositeMessageConverter(mcList);
+		}
+
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter);
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
 	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionInspector functionInspector, FunctionProperties functionProperties) {
 		return new RoutingFunction(functionCatalog, functionInspector, functionProperties);
+	}
+
+	private boolean isConverterEligible(Object messageConverter) {
+		String messageConverterName = messageConverter.getClass().getName();
+		if (messageConverterName.startsWith("org.springframework.cloud.")) {
+			return true;
+		}
+		else if (!messageConverterName.startsWith("org.springframework.")) {
+			return true;
+		}
+		return false;
 	}
 
 	@Configuration(proxyBeanMethods = false)

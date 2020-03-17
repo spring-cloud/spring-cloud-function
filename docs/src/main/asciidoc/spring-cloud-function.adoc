@@ -93,10 +93,7 @@ invoked only once to pass a reference to the stream (Flux or Mono) and imperativ
 Consumer is a little bit special because it has a `void` return type,
 which implies blocking, at least potentially. Most likely you will not
 need to write `Consumer<Flux<?>>`, but if you do need to do that,
-remember to subscribe to the input flux. If you declare a `Consumer`
-of a non publisher type (which is normal), it will be converted to a
-function that returns a publisher, so that it can be subscribed to in
-a controlled way.
+remember to subscribe to the input flux. 
 
 === Function Composition
 
@@ -289,7 +286,7 @@ Composite functions can be addressed using pipes or commas to separate function 
 
 For cases where there is more then a single function in catalog and you want to map a specific function to the root
 path (e.g., "/"), or you want to compose several functions and then map to the root path you can do so by providing
-`spring.cloud.function.definition` property which essentially used by spring-=cloud-function-web module to provide
+`spring.cloud.function.definition` property which essentially used by spring-cloud-function-web module to provide
 default mapping for cases where there is some type of a conflict (e.g., more then one function available etc).
 
 For example,
@@ -303,10 +300,13 @@ Functions and consumers that are declared with input and output in `Message<?>` 
 
 When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accpt headers for the best results).
 
+See <<Testing Functional Applications>> to see the details and example on how to test such application.
+
+
 == Standalone Streaming Applications
 
 To send or receive messages from a broker (such as RabbitMQ or Kafka) you can leverage `spring-cloud-stream` project and it's integration with Spring Cloud Function.
-Please refer to https://docs.spring.io/spring-cloud-stream/docs/current/reference/htmlsingle/#_spring_cloud_function[Spring Cloud Function] section of the Spring Cloud Stream reference manual for more details and examples.
+Please refer to https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring_cloud_function[Spring Cloud Function] section of the Spring Cloud Stream reference manual for more details and examples.
 
 == Deploying a Packaged Function
 
@@ -342,6 +342,91 @@ public class DeployFunctionDemo {
 	}
 }
 ```
+
+=== Supported Packaging Scenarios 
+
+Currently Spring Cloud Function supports several packaging scenarios to give you the most flexibility when it comes to deploying functions.
+
+==== Simple JAR
+
+This packaging option implies no dependency on anything related to Spring.
+For example; Consider that such JAR contains the following class:
+```java
+package function.example;
+. . .
+public class UpperCaseFunction implements Function<String, String> {
+	@Override
+	public String apply(String value) {
+		return value.toUpperCase();
+	}
+}
+```
+All you need to do is specify `location` and `function-class` properties when deploying such package:
+
+```
+--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
+--spring.cloud.function.function-class=function.example.UpperCaseFunction
+```
+For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/simplestjar[here].
+You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L70[FunctionDeployerTests].
+
+==== Spring Boot JAR
+
+This packaging option implies there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR 
+runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
+For example; Consider that such JAR contains the following class (which could have some additional Spring dependencies providing Spring/Spring Boot is on the classpath):
+```java
+package function.example;
+. . .
+public class UpperCaseFunction implements Function<String, String> {
+	@Override
+	public String apply(String value) {
+		return value.toUpperCase();
+	}
+}
+```
+As before all you need to do is specify `location` and `function-class` properties when deploying such package:
+
+```
+--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
+--spring.cloud.function.function-class=function.example.UpperCaseFunction
+```
+For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootjar[here].
+You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L50[FunctionDeployerTests].
+
+==== Spring Boot Application
+
+This packaging option implies your JAR is complete stand alone Spring Boot application with functions as managed Spring beans.
+As before there is an obvious assumption that there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR 
+runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
+For example; Consider that such JAR contains the following class:
+```java
+package function.example;
+. . .
+@SpringBootApplication
+public class SimpleFunctionAppApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SimpleFunctionAppApplication.class, args);
+	}
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return value -> value.toUpperCase();
+	}
+}
+```
+Given that we're effectively dealing with another Spring Application context and that functions are spring managed beans,
+in addition to the `location` property we also specify `definition` property instead of `function-class`.
+
+```
+--spring.cloud.function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar
+--spring.cloud.function.definition=uppercase
+```
+For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootapp[here].
+You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L164[FunctionDeployerTests].
+
+NOTE: This particular deployment option may or may not have Spring Cloud Function on it's classpath. From the deployer perspective this doesn't matter. 
 
 == Functional Bean Definitions
 

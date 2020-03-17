@@ -16,7 +16,7 @@ output types can be accessed by the framework. There is an example in github (th
 look something like this:
 
 ```java
-@SpringBootApplication
+@SpringBootConfiguration
 public class FuncApplication implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	public static void main(String[] args) throws Exception {

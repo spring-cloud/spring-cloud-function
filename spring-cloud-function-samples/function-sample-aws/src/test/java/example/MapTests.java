@@ -18,10 +18,6 @@ package example;
 
 import org.junit.Test;
 
-import org.springframework.cloud.function.adapter.aws.SpringBootRequestHandler;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Dave Syer
  *
@@ -30,16 +26,6 @@ public class MapTests {
 
 	@Test
 	public void test() {
-		Bar result = new Config(new Properties()).function().apply(new Foo("foo"));
-		assertThat(result.getValue()).isEqualTo("FOO");
-	}
 
-	@Test
-	public void start() throws Exception {
-		SpringBootRequestHandler<Object, Object> handler = new SpringBootRequestHandler<>(
-			Config.class);
-		handler.handleRequest(new Foo("foo"), null);
-		handler.close();
 	}
-
 }

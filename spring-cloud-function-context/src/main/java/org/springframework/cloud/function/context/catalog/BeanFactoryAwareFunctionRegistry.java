@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -69,6 +71,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
@@ -76,6 +79,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 
@@ -85,12 +89,24 @@ import org.springframework.util.StringUtils;
  * {@link #register(FunctionRegistration)} operation are stored/cached locally.
  *
  * @author Oleg Zhurakousky
+ * @author Eric Botard
+ *
  * @since 3.0
  */
 public class BeanFactoryAwareFunctionRegistry
 		implements FunctionRegistry, FunctionInspector, ApplicationContextAware {
 
 	private static Log logger = LogFactory.getLog(BeanFactoryAwareFunctionRegistry.class);
+
+	/**
+	 * Identifies MessageConversionExceptions that happen when input can't be converted.
+	 */
+	public static final String COULD_NOT_CONVERT_INPUT = "Could Not Convert Input";
+
+	/**
+	 * Identifies MessageConversionExceptions that happen when output can't be converted.
+	 */
+	public static final String COULD_NOT_CONVERT_OUTPUT = "Could Not Convert Output";
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -120,8 +136,12 @@ public class BeanFactoryAwareFunctionRegistry
 				this.applicationContext.getBeanNamesForType(Consumer.class).length;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
+		if (!StringUtils.hasText(definition)) {
+			definition = this.applicationContext.getEnvironment().getProperty("spring.cloud.function.definition");
+		}
 		Object function = this.proxyInvokerIfNecessary((FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes));
 		return (T) function;
 	}
@@ -159,8 +179,8 @@ public class BeanFactoryAwareFunctionRegistry
 	@Override
 	public FunctionRegistration<?> getRegistration(Object function) {
 		FunctionRegistration<?> registration = this.registrationsByFunction.get(function);
-//		// need to do this due to the deployer not wrapping the actual target into FunctionInvocationWrapper
-//		// hence the lookup would need to be made by the actual target
+		// need to do this due to the deployer not wrapping the actual target into FunctionInvocationWrapper
+		// hence the lookup would need to be made by the actual target
 		if (registration == null && function instanceof FunctionInvocationWrapper) {
 			function = ((FunctionInvocationWrapper) function).target;
 		}
@@ -447,31 +467,56 @@ public class BeanFactoryAwareFunctionRegistry
 
 		private final String functionDefinition;
 
+		private final Field headersField;
+
 		FunctionInvocationWrapper(Object target, Type functionType, String functionDefinition, String... acceptedOutputMimeTypes) {
 			this.target = target;
 			this.composed = functionDefinition.contains("|") || target instanceof RoutingFunction;
 			this.functionType = functionType;
 			this.acceptedOutputMimeTypes = acceptedOutputMimeTypes;
 			this.functionDefinition = functionDefinition;
+			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
+			this.headersField.setAccessible(true);
 		}
 
 		@Override
 		public void accept(Object input) {
-			this.doApply(input, true);
+			this.doApply(input, true, null);
 		}
 
 		@Override
 		public Object apply(Object input) {
-			return this.doApply(input, false);
+			return this.apply(input, null);
+		}
+
+		/**
+		 * !! Experimental, may change. Is not yet intended as public API !!
+		 * @param input input value
+		 * @param enricher enricher function instance
+		 * @return the result
+		 */
+		@SuppressWarnings("rawtypes")
+		public Object apply(Object input, Function<Message, Message> enricher) {
+			return this.doApply(input, false, enricher);
 		}
 
 		@Override
 		public Object get() {
+			return this.get(null);
+		}
+
+		/**
+		 * !! Experimental, may change. Is not yet intended as public API !!
+		 * @param enricher enricher function instance
+		 * @return the result
+		 */
+		@SuppressWarnings("rawtypes")
+		public Object get(Function<Message, Message> enricher) {
 			Object input = FunctionTypeUtils.isMono(this.functionType)
 					? Mono.empty()
 							: (FunctionTypeUtils.isMono(this.functionType) ? Flux.empty() : null);
 
-			return this.doApply(input, false);
+			return this.doApply(input, false, enricher);
 		}
 
 		public Type getFunctionType() {
@@ -500,7 +545,21 @@ public class BeanFactoryAwareFunctionRegistry
 				invocationResult = ((Supplier) target).get();
 			}
 			else {
-				((Consumer) this.target).accept(input);
+				if (input instanceof Flux) {
+					invocationResult = ((Flux) input).transform(flux -> {
+						((Consumer) this.target).accept(flux);
+						return Mono.ignoreElements((Flux) flux);
+					}).then();
+				}
+				else if (input instanceof Mono) {
+					invocationResult = ((Mono) input).transform(flux -> {
+						((Consumer) this.target).accept(flux);
+						return Mono.ignoreElements((Mono) flux);
+					}).then();
+				}
+				else {
+					((Consumer) this.target).accept(input);
+				}
 			}
 
 			if (!(this.target instanceof Consumer) && logger.isDebugEnabled()) {
@@ -510,7 +569,7 @@ public class BeanFactoryAwareFunctionRegistry
 		}
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private Object doApply(Object input, boolean consumer) {
+		private Object doApply(Object input, boolean consumer, Function<Message, Message> enricher) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Applying function: " + this.functionDefinition);
 			}
@@ -521,7 +580,6 @@ public class BeanFactoryAwareFunctionRegistry
 					this.convertInputPublisherIfNecessary((Publisher<?>) input, FunctionTypeUtils.getInputType(this.functionType, 0));
 				if (FunctionTypeUtils.isReactive(FunctionTypeUtils.getInputType(this.functionType, 0))) {
 					result = this.invokeFunction(input);
-					result = result == null ? Mono.empty() : result;
 				}
 				else {
 					if (this.composed) {
@@ -558,21 +616,22 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 				else {
 					result = this.invokeFunction(this.composed ? input
-							: this.convertInputValueIfNecessary(input, FunctionTypeUtils.getInputType(this.functionType, 0)));
+							: (input == null ? input : this.convertInputValueIfNecessary(input, FunctionTypeUtils.getInputType(this.functionType, 0))));
 				}
 			}
 
 			// Outputs will be converted only if we're told how (via  acceptedOutputMimeTypes), otherwise output returned as is.
-			if (!ObjectUtils.isEmpty(this.acceptedOutputMimeTypes)) {
+			if (result != null && !ObjectUtils.isEmpty(this.acceptedOutputMimeTypes)) {
 				result = result instanceof Publisher
-						? this.convertOutputPublisherIfNecessary((Publisher<?>) result, this.acceptedOutputMimeTypes)
-								: this.convertOutputValueIfNecessary(result, this.acceptedOutputMimeTypes);
+						? this.convertOutputPublisherIfNecessary((Publisher<?>) result, enricher, this.acceptedOutputMimeTypes)
+								: this.convertOutputValueIfNecessary(result, enricher, this.acceptedOutputMimeTypes);
 			}
 
 			return result;
 		}
 
-		private Object convertOutputValueIfNecessary(Object value, String... acceptedOutputMimeTypes) {
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		private Object convertOutputValueIfNecessary(Object value, Function<Message, Message> enricher, String... acceptedOutputMimeTypes) {
 			logger.debug("Applying type conversion on output value");
 			Object convertedValue = null;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
@@ -583,8 +642,8 @@ public class BeanFactoryAwareFunctionRegistry
 					Object outputArgument = parsed.getValue(value);
 					try {
 						convertedInputArray[i] = outputArgument instanceof Publisher
-								? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, acceptedOutputMimeTypes[i])
-										: this.convertOutputValueIfNecessary(outputArgument, acceptedOutputMimeTypes);
+								? this.convertOutputPublisherIfNecessary((Publisher<?>) outputArgument, enricher, acceptedOutputMimeTypes[i])
+										: this.convertOutputValueIfNecessary(outputArgument, enricher, acceptedOutputMimeTypes[i]);
 					}
 					catch (ArrayIndexOutOfBoundsException e) {
 						throw new IllegalStateException("The number of 'acceptedOutputMimeTypes' for function '" + this.functionDefinition
@@ -595,48 +654,80 @@ public class BeanFactoryAwareFunctionRegistry
 				}
 				convertedValue = Tuples.fromArray(convertedInputArray);
 			}
-			else if (value != null) {
+			else {
 				List<MimeType> acceptedContentTypes = MimeTypeUtils.parseMimeTypes(acceptedOutputMimeTypes[0].toString());
-
-				convertedValue = acceptedContentTypes.stream()
-						.map(acceptedContentType -> {
-
-							Message<?> resultMessage = null;
-							if (value instanceof Message) {
-								Message<?> message = (Message<?>) value;
-								if (message.getPayload() instanceof byte[]) {
-									resultMessage = message;
-								}
-								else {
-									resultMessage = messageConverter.toMessage(message.getPayload(), message.getHeaders());
-								}
+				if (CollectionUtils.isEmpty(acceptedContentTypes)) {
+					convertedValue = value;
+				}
+				else {
+					for (int i = 0; i < acceptedContentTypes.size() && convertedValue == null; i++) {
+						MimeType acceptedContentType = acceptedContentTypes.get(i);
+						if (value instanceof Message) {
+							Message<?> message = (Message<?>) value;
+							if (message.getPayload() instanceof byte[]) {
+								convertedValue = message;
 							}
 							else {
-								if (value instanceof byte[]) {
-									resultMessage = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
-								}
-								else {
-									resultMessage = messageConverter
-											.toMessage(value, new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, acceptedContentType)));
-								}
+								convertedValue = this.convertValueToMessage(message, enricher, acceptedContentType);
 							}
-							return resultMessage;
-						})
-						.filter(v -> v != null)
-						.findFirst().orElse(null);
+						}
+						else if (value instanceof byte[]) {
+							convertedValue = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
+						}
+						else if (value instanceof Iterable || ObjectUtils.isArray(value)) {
+							boolean isArray = ObjectUtils.isArray(value);
+							if (isArray) {
+								value = Arrays.asList((Object[]) value);
+							}
+							AtomicReference<List<Message>> messages = new AtomicReference<List<Message>>(new ArrayList<>());
+							((Iterable) value).forEach(element ->
+								messages.get().add((Message) convertOutputValueIfNecessary(element, enricher, acceptedContentType.toString())));
+							convertedValue = messages.get();
+						}
+						else {
+							convertedValue = this.convertValueToMessage(value, enricher, acceptedContentType);
+						}
+					}
+				}
+
+			}
+
+			if (convertedValue == null) {
+				throw new MessageConversionException(COULD_NOT_CONVERT_OUTPUT);
 			}
 			return convertedValue;
-
 		}
 
-		private Publisher<?> convertOutputPublisherIfNecessary(Publisher<?> publisher, String... acceptedOutputMimeTypes) {
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		private Message convertValueToMessage(Object value,  Function<Message, Message> enricher, MimeType acceptedContentType) {
+			Message outputMessage = null;
+			if (value instanceof Message) {
+				MessageHeaders headers = ((Message) value).getHeaders();
+				if (!headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+							.getField(this.headersField, headers);
+					headersMap.put(MessageHeaders.CONTENT_TYPE, acceptedContentType);
+				}
+			}
+			else {
+				value = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
+			}
+			if (enricher != null) {
+				value = enricher.apply((Message) value);
+			}
+			outputMessage = messageConverter.toMessage(((Message) value).getPayload(), ((Message) value).getHeaders());
+			return outputMessage;
+		}
+
+		@SuppressWarnings("rawtypes")
+		private Publisher<?> convertOutputPublisherIfNecessary(Publisher<?> publisher, Function<Message, Message> enricher, String... acceptedOutputMimeTypes) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Applying type conversion on output Publisher " + publisher);
 			}
 
 			Publisher<?> result = publisher instanceof Mono
-					? Mono.from(publisher) .map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes))
-							: Flux.from(publisher).map(value -> this.convertOutputValueIfNecessary(value, acceptedOutputMimeTypes));
+					? Mono.from(publisher) .map(value -> this.convertOutputValueIfNecessary(value, enricher, acceptedOutputMimeTypes))
+							: Flux.from(publisher).map(value -> this.convertOutputValueIfNecessary(value, enricher, acceptedOutputMimeTypes));
 			return result;
 		}
 
@@ -710,6 +801,9 @@ public class BeanFactoryAwareFunctionRegistry
 			}
 			if (logger.isDebugEnabled()) {
 				logger.debug("Converted input value " + convertedValue);
+			}
+			if (convertedValue == null) {
+				throw new MessageConversionException(COULD_NOT_CONVERT_INPUT);
 			}
 			return convertedValue;
 		}

@@ -7,12 +7,12 @@
 	<artifactId>spring-cloud-function-context</artifactId>
 	<packaging>jar</packaging>
 	<name>spring-cloud-function-context</name>
-	<description>Spring Cloud Function Web Support</description>
+	<description>Implementation of core API for Spring Cloud Function</description>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-function-parent</artifactId>
-		<version>3.0.1.BUILD-SNAPSHOT</version>
+		<version>3.0.4.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>

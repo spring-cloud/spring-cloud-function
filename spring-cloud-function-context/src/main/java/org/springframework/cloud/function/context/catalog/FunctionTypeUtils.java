@@ -194,14 +194,14 @@ public final class FunctionTypeUtils {
 
 	public static int getOutputCount(Type functionType) {
 		assertSupportedTypes(functionType);
-		int inputCount = isConsumer(functionType) ? 0 : 1;
+		int outputCount = isConsumer(functionType) ? 0 : 1;
 		if (functionType instanceof ParameterizedType && !isConsumer(functionType)) {
-			Type inputType = ((ParameterizedType) functionType).getActualTypeArguments()[isSupplier(functionType) ? 0 : 1];
-			if (isMulti(inputType)) {
-				inputCount = ((ParameterizedType) inputType).getActualTypeArguments().length;
+			Type outputType = ((ParameterizedType) functionType).getActualTypeArguments()[isSupplier(functionType) ? 0 : 1];
+			if (isMulti(outputType)) {
+				outputCount = ((ParameterizedType) outputType).getActualTypeArguments().length;
 			}
 		}
-		return inputCount;
+		return outputCount;
 	}
 
 	public static Type getInputType(Type functionType, int index) {
@@ -308,8 +308,13 @@ public final class FunctionTypeUtils {
 	}
 
 	public static boolean isOfType(Type type, Class<?> cls) {
-		Class<?> c = type instanceof ParameterizedType ? (Class<?>) ((ParameterizedType) type).getRawType() : (Class<?>) type;
-		return cls.isAssignableFrom(c);
+		if (type instanceof Class) {
+			return cls.isAssignableFrom((Class<?>) type);
+		}
+		else if (type instanceof ParameterizedType) {
+			return isOfType(((ParameterizedType) type).getRawType(), cls);
+		}
+		return false;
 	}
 
 	public static boolean isMono(Type type) {

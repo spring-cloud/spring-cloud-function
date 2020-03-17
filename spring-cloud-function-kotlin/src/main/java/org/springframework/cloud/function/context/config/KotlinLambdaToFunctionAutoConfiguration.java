@@ -58,7 +58,7 @@ import org.springframework.util.ObjectUtils;
  */
 @Configuration
 @ConditionalOnClass(name = "kotlin.jvm.functions.Function0")
-class KotlinLambdaToFunctionAutoConfiguration {
+public class KotlinLambdaToFunctionAutoConfiguration {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 

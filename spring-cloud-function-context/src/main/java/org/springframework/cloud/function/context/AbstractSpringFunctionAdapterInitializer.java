@@ -327,6 +327,12 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 				this.supplier = this.catalog.lookup(Supplier.class, functionName);
 				return;
 			}
+			functionName = this.catalog.getNames(Consumer.class).stream()
+					.findFirst().orElseGet(() -> null);
+			if (functionName != null) {
+				this.consumer = this.catalog.lookup(Consumer.class, functionName);
+				return;
+			}
 		}
 		else {
 			name = this.doResolveName(targetContext);

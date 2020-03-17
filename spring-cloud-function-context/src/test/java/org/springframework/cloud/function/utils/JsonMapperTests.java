@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.util;
+package org.springframework.cloud.function.utils;
 
 import java.util.Arrays;
 import java.util.List;

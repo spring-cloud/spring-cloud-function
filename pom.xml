@@ -6,13 +6,13 @@
 
 	<artifactId>spring-cloud-function-parent</artifactId>
 	<name>Spring Cloud Function Parent</name>
-	<version>3.0.1.BUILD-SNAPSHOT</version>
+	<version>3.0.4.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>2.2.1.BUILD-SNAPSHOT</version>
+		<version>2.2.3.RELEASE</version>
 		<relativePath/>
 	</parent>
 
@@ -185,6 +185,11 @@
 					<snapshots>
 						<enabled>false</enabled>
 					</snapshots>
+				</pluginRepository>
+				<pluginRepository>
+					<id>spring-releases</id>
+					<name>Spring Releases</name>
+					<url>https://repo.spring.io/release</url>
 				</pluginRepository>
 			</pluginRepositories>
 
