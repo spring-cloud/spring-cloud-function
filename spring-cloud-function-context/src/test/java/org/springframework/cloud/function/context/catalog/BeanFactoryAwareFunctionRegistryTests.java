@@ -330,6 +330,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(composed).isFalse();
 	}
 
+	@Test
+	public void byteArrayNoSpecialHandling() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(ByteArrayFunction.class);
+		FunctionInvocationWrapper function = catalog.lookup("beanFactoryAwareFunctionRegistryTests.ByteArrayFunction", "application/json");
+		assertThat(function).isNotNull();
+		Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("hello".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "application/octet-stream").build());
+		assertThat(result.getPayload()).isEqualTo("\"b2xsZWg=\"".getBytes());
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class SampleFunctionConfiguration {
@@ -570,5 +579,20 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			return t;
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@Component
+	public static class ByteArrayFunction implements Function<byte[], byte[]> {
+
+		@Override
+		public byte[] apply(byte[] bytes) {
+			byte[] result = new byte[bytes.length];
+			for (int i = 0; i < bytes.length; i++) {
+				result[i] = bytes[bytes.length - i - 1];
+			}
+			return result;
+		}
 	}
 }
