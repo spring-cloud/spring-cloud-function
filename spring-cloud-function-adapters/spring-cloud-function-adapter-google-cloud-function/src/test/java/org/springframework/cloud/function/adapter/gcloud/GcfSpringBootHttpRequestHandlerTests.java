@@ -52,23 +52,23 @@ import static org.mockito.Mockito.when;
 /**
  * @author Dmitry Solomakha
  */
-public class GCFSpringBootHttpRequestHandlerTests {
+public class GcfSpringBootHttpRequestHandlerTests {
 	HttpRequest request = Mockito.mock(HttpRequest.class);
 	HttpResponse response = Mockito.mock(HttpResponse.class);
 
-	private GCFSpringBootHttpRequestHandler<?> handler = null;
+	private GcfSpringBootHttpRequestHandler<?> handler = null;
 	public static final Gson GSON = new Gson();
 
-	<O> GCFSpringBootHttpRequestHandler<O> handler(Class<?> config) {
-		GCFSpringBootHttpRequestHandler<O> handler =
-			new GCFSpringBootHttpRequestHandler<O>(config);
+	<O> GcfSpringBootHttpRequestHandler<O> handler(Class<?> config) {
+		GcfSpringBootHttpRequestHandler<O> handler =
+			new GcfSpringBootHttpRequestHandler<O>(config);
 		this.handler = handler;
 		return handler;
 	}
 
 	@Test
 	public void testWithBody() throws Exception {
-		GCFSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageBodyConfig.class);
+		GcfSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageBodyConfig.class);
 
 		StringReader foo = new StringReader(GSON.toJson(new Foo("foo")));
 		when(request.getReader()).thenReturn(new BufferedReader(foo));
@@ -81,7 +81,7 @@ public class GCFSpringBootHttpRequestHandlerTests {
 
 	@Test
 	public void testWithRequestParameters() throws Exception {
-		GCFSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageEchoReqParametersConfig.class);
+		GcfSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageEchoReqParametersConfig.class);
 
 		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
 		when(request.getUri()).thenReturn("http://localhost:8080/pathValue");
@@ -102,7 +102,7 @@ public class GCFSpringBootHttpRequestHandlerTests {
 
 	@Test
 	public void testWithEmptyBody() throws Exception {
-		GCFSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageConsumerConfig.class);
+		GcfSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageConsumerConfig.class);
 
 		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
 

@@ -42,16 +42,16 @@ import org.springframework.messaging.support.GenericMessage;
 /**
  * @author Dmitry Solomakha
  */
-public class GCFSpringBootHttpRequestHandler<O>
+public class GcfSpringBootHttpRequestHandler<O>
 	extends AbstractSpringFunctionAdapterInitializer<Context> implements HttpFunction {
 
 	private final Gson gson = new Gson();
 
-	public GCFSpringBootHttpRequestHandler() {
+	public GcfSpringBootHttpRequestHandler() {
 		super();
 	}
 
-	public GCFSpringBootHttpRequestHandler(Class<?> configurationClass) {
+	public GcfSpringBootHttpRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
 	}
 
@@ -130,7 +130,7 @@ public class GCFSpringBootHttpRequestHandler<O>
 
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread()
-			.setContextClassLoader(GCFSpringBootHttpRequestHandler.class.getClassLoader());
+			.setContextClassLoader(GcfSpringBootHttpRequestHandler.class.getClassLoader());
 		initialize(null);
 
 		Publisher<?> output = apply(extract(convert(httpRequest)));
