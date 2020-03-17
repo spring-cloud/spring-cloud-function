@@ -55,6 +55,22 @@ public class GcfSpringBootHttpRequestHandler<O>
 		super(configurationClass);
 	}
 
+	@Override
+	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+		Thread.currentThread()
+			.setContextClassLoader(GcfSpringBootHttpRequestHandler.class.getClassLoader());
+		initialize(null);
+
+		Publisher<?> output = apply(extract(convert(httpRequest)));
+		BufferedWriter writer = httpResponse.getWriter();
+		Object result = result(httpRequest, output, httpResponse);
+		if (returnsOutput()) {
+			writer.write(gson.toJson(result));
+			writer.flush();
+		}
+		httpResponse.setStatusCode(200);
+	}
+
 	protected Object convert(HttpRequest event) throws IOException {
 		BufferedReader br = event.getReader();
 		StringBuilder sb = new StringBuilder();
@@ -126,21 +142,6 @@ public class GcfSpringBootHttpRequestHandler<O>
 			return Flux.fromIterable((Iterable<?>) input);
 		}
 		return Flux.just(input);
-	}
-
-	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
-		Thread.currentThread()
-			.setContextClassLoader(GcfSpringBootHttpRequestHandler.class.getClassLoader());
-		initialize(null);
-
-		Publisher<?> output = apply(extract(convert(httpRequest)));
-		BufferedWriter writer = httpResponse.getWriter();
-		Object result = result(httpRequest, output, httpResponse);
-		if (returnsOutput()) {
-			writer.write(gson.toJson(result));
-			writer.flush();
-		}
-		httpResponse.setStatusCode(200);
 	}
 
 	protected O convertOutputAndHeaders(Object output, HttpResponse resp) {
