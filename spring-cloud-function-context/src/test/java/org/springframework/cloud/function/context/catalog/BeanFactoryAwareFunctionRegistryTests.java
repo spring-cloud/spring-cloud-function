@@ -20,6 +20,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -41,13 +42,18 @@ import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFuncti
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeType;
 import org.springframework.util.ReflectionUtils;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -304,10 +310,10 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Test
 	public void SCF_GH_409ConfigurationTests() {
 		FunctionCatalog catalog = this.configureCatalog(SCF_GH_409ConfigurationAsSupplier.class);
-		assertThat((Object) catalog.lookup("")).isNull();
+		assertThat((Function) catalog.lookup("")).isNull();
 
 		catalog = this.configureCatalog(SCF_GH_409ConfigurationAsFunction.class);
-		assertThat((Object) catalog.lookup("")).isNull();
+		assertThat((Function) catalog.lookup("")).isNull();
 	}
 
 	@Test
@@ -328,6 +334,121 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		f.setAccessible(true);
 		boolean composed = (boolean) f.get(function);
 		assertThat(composed).isFalse();
+	}
+
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testSerializationWithCompatibleWildcardSubtypeAcceptHeader() {
+		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
+		FunctionInvocationWrapper function = catalog.lookup("echo", "text/*");
+
+		Message<Tuple2<String, String>> tupleResult = (Message<Tuple2<String, String>>) function.apply(MessageBuilder
+				.withPayload(Tuples.of("bonjour", "monde"))
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/csv"))
+				.build()
+		);
+
+		assertThat(tupleResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/csv"));
+		assertThat(tupleResult.getHeaders().get("accept")).isNull();
+
+		Message<Date> dateResult = (Message<Date>) function.apply(MessageBuilder
+				.withPayload(123)
+				.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/integer"))
+				.build()
+		);
+
+		assertThat(dateResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/integer"));
+		assertThat(dateResult.getHeaders().get("accept")).isNull();
+	}
+
+	@EnableAutoConfiguration
+	public static class NegotiatingMessageConverterConfiguration {
+
+		@Bean
+		public Function<String, String> echo() {
+			return v -> v;
+		}
+
+		@Bean
+		public MessageConverter messageConverterA() {
+			return new ConverterA();
+		}
+
+		@Bean
+		public MessageConverter messageConverterB() {
+			return new ConverterB();
+		}
+
+
+		public static class ConverterB extends ConverterA {
+			ConverterB() {
+				super("text/integer");
+			}
+
+			@Override
+			protected Object convertFromInternal(
+					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+				return message.getPayload().toString();
+			}
+
+			@Override
+			public Object convertToInternal(Object rawPayload, MessageHeaders headers, Object conversionHint) {
+				return Integer.parseInt((String) rawPayload);
+			}
+
+			@Override
+			protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
+				return supportsMimeType(message.getHeaders()) && String.class.isAssignableFrom(targetClass)
+						&& message.getPayload() instanceof Integer;
+			}
+
+			@Override
+			protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
+				return payload instanceof String;
+			}
+		}
+
+		private static class ConverterA extends AbstractMessageConverter {
+
+			ConverterA() {
+				this("text/csv");
+			}
+
+			ConverterA(String mimeType) {
+				super(singletonList(MimeType.valueOf(mimeType)));
+			}
+
+			@Override
+			protected Object convertFromInternal(
+					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+				Tuple2<String, String> payload = (Tuple2<String, String>) message.getPayload();
+
+				String convertedPayload = payload.getT1() + "," + payload.getT2();
+				return convertedPayload;
+			}
+
+			@Override
+			public Object convertToInternal(Object rawPayload, MessageHeaders headers, Object conversionHint) {
+				return Tuples.fromArray(((String) rawPayload).split(","));
+			}
+
+			@Override
+			protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
+				return supportsMimeType(message.getHeaders()) && String.class.isAssignableFrom(targetClass)
+						&& message.getPayload() instanceof Tuple2;
+			}
+
+			@Override
+			protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
+				return payload instanceof String && ((String) payload).split(",").length == 2;
+			}
+
+			@Override
+			protected boolean supports(Class<?> clazz) {
+				throw new UnsupportedOperationException();
+			}
+		}
 	}
 
 	@EnableAutoConfiguration
@@ -526,9 +647,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				// TODO Auto-generated method stub
 				return null;
 			}
-
-
-
 		}
 	}
 

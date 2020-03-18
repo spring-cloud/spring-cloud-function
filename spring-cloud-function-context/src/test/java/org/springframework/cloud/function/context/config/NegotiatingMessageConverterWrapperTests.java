@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2020-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.context.catalog;
+package org.springframework.cloud.function.context.config;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -39,10 +39,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Maps.newHashMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.springframework.cloud.function.context.catalog.NaiveCsvTupleMessageConverter.MAGIC_NULL;
-import static org.springframework.cloud.function.context.catalog.NegotiatingMessageConverterWrapper.ACCEPT;
+import static org.springframework.cloud.function.context.config.NaiveCsvTupleMessageConverter.MAGIC_NULL;
+import static org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper.ACCEPT;
 import static org.springframework.messaging.MessageHeaders.CONTENT_TYPE;
 
+/**
+ *
+ * @author Florent Biville
+ *
+ */
 public class NegotiatingMessageConverterWrapperTests {
 
 	Collection<Tuple2<?, ?>> somePayload = asList(Tuples.of("hello", "world"), Tuples.of("bonjour", "monde"));

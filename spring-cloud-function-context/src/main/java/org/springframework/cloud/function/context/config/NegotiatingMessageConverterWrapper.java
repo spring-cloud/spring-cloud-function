@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.context.catalog;
+package org.springframework.cloud.function.context.config;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -29,7 +29,7 @@ import org.springframework.util.MimeType;
  * contain a wildcard type (such as {@code text/*}, which may be tested against every
  * {@link AbstractMessageConverter#getSupportedMimeTypes() supported mime type} of the delegate MessageConverter.
  */
-public final class NegotiatingMessageConverterWrapper implements SmartMessageConverter {
+final class NegotiatingMessageConverterWrapper implements SmartMessageConverter {
 
 	/**
 	 * The Message Header key that may contain the list of (possibly wildcard) MimeTypes to convert to.

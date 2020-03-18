@@ -38,7 +38,6 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
-import org.springframework.cloud.function.context.catalog.NegotiatingMessageConverterWrapper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -51,6 +50,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -84,13 +84,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		CompositeMessageConverter messageConverter = null;
 		List<MessageConverter> mcList = new ArrayList<>();
-		boolean addDefaultConverters = true;
 
 		if (!CollectionUtils.isEmpty(messageConverters)) {
 			for (MessageConverter mc : messageConverters) {
 				if (mc instanceof CompositeMessageConverter) {
 					mcList.addAll(((CompositeMessageConverter) mc).getConverters());
-					addDefaultConverters = false;
 				}
 				else {
 					mcList.add(mc);
@@ -99,17 +97,20 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		mcList = mcList.stream()
-				.filter(c -> isConverterEligible(c)).collect(Collectors.toList());
-		if (addDefaultConverters) {
-			if (objectMapper == null) {
-				objectMapper = new ObjectMapper();
-			}
-			MappingJackson2MessageConverter jsonConverter = new MappingJackson2MessageConverter();
-			jsonConverter.setObjectMapper(objectMapper);
-			mcList.add(NegotiatingMessageConverterWrapper.wrap(jsonConverter));
-			mcList.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
-			mcList.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
-		}
+				.filter(c -> isConverterEligible(c))
+				.map(converter -> {
+					return converter instanceof AbstractMessageConverter
+							? NegotiatingMessageConverterWrapper.wrap((AbstractMessageConverter) converter)
+									: converter;
+				})
+				.collect(Collectors.toList());
+
+		MappingJackson2MessageConverter jsonConverter = new MappingJackson2MessageConverter();
+		jsonConverter.setObjectMapper(objectMapper == null ? new ObjectMapper() : objectMapper);
+		mcList.add(NegotiatingMessageConverterWrapper.wrap(jsonConverter));
+		mcList.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
+		mcList.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
+
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new CompositeMessageConverter(mcList);
 		}
