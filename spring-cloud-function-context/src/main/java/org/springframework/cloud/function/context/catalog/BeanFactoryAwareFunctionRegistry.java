@@ -17,9 +17,11 @@
 package org.springframework.cloud.function.context.catalog;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -688,34 +691,32 @@ public class BeanFactoryAwareFunctionRegistry
 				else {
 					for (int i = 0; i < acceptedContentTypes.size() && convertedValue == null; i++) {
 						MimeType acceptedContentType = acceptedContentTypes.get(i);
-						if (value instanceof Message) {
-							Message<?> message = (Message<?>) value;
-							if (message.getPayload() instanceof byte[]) {
-								convertedValue = message;
+						/*
+						 * We need to treat Iterables differently since they may represent collection of Messages
+						 * which should be converted individually
+						 */
+						boolean convertIndividualItem = false;
+						if (value instanceof Iterable || (ObjectUtils.isArray(value) && !(value instanceof byte[]))) {
+							Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
+							if (outputType instanceof ParameterizedType) {
+								convertIndividualItem = FunctionTypeUtils.isMessage(FunctionTypeUtils.getImmediateGenericType(outputType, 0));
 							}
-							else {
-								convertedValue = this.convertValueToMessage(message, enricher, acceptedContentType);
+							else if (outputType instanceof GenericArrayType) {
+								convertIndividualItem = FunctionTypeUtils.isMessage(((GenericArrayType) outputType).getGenericComponentType());
 							}
 						}
-//<<<<<<< HEAD
-//						else if (value instanceof byte[]) {
-//							convertedValue = MessageBuilder.withPayload(value)
-//								.setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
-//						}
-//						else if (value instanceof Iterable || ObjectUtils.isArray(value)) {
-//							boolean isArray = ObjectUtils.isArray(value);
-//							if (isArray) {
-//								value = Arrays.asList((Object[]) value);
-//							}
-//							AtomicReference<List<Message>> messages = new AtomicReference<List<Message>>(new ArrayList<>());
-//							((Iterable) value).forEach(element ->
-//								messages.get()
-//									.add((Message) convertOutputValueIfNecessary(element, enricher, acceptedContentType
-//										.toString())));
-//							convertedValue = messages.get();
-//						}
-//=======
-//>>>>>>> Don't treat byte[] or collections in a special way.
+
+						if (convertIndividualItem) {
+							if (ObjectUtils.isArray(value)) {
+								value = Arrays.asList((Object[]) value);
+							}
+							AtomicReference<List<Message>> messages = new AtomicReference<List<Message>>(new ArrayList<>());
+							((Iterable) value).forEach(element ->
+								messages.get()
+									.add((Message) convertOutputValueIfNecessary(element, enricher, acceptedContentType
+										.toString())));
+							convertedValue = messages.get();
+						}
 						else {
 							convertedValue = this.convertValueToMessage(value, enricher, acceptedContentType);
 						}

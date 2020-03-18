@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -50,6 +51,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ReflectionUtils;
 
@@ -336,6 +338,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(composed).isFalse();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void byteArrayNoSpecialHandling() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(ByteArrayFunction.class);
@@ -343,6 +346,21 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(function).isNotNull();
 		Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("hello".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "application/octet-stream").build());
 		assertThat(result.getPayload()).isEqualTo("\"b2xsZWg=\"".getBytes());
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testMultipleValuesInOutputHandling() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(CollectionOutConfiguration.class);
+		FunctionInvocationWrapper function = catalog.lookup("parseToList", "application/json");
+		assertThat(function).isNotNull();
+		Object result = (Message) function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		assertThat(result instanceof Message).isTrue();
+
+		function = catalog.lookup("parseToListOfMessages", "application/json");
+		assertThat(function).isNotNull();
+		result = function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		assertThat(result instanceof Message).isFalse();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -368,6 +386,25 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		assertThat(dateResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/integer"));
 		assertThat(dateResult.getHeaders().get("accept")).isNull();
+	}
+
+	@SuppressWarnings("unchecked")
+	@EnableAutoConfiguration
+	public static class CollectionOutConfiguration {
+
+		@Bean
+		public Function<String, List<String>> parseToList() {
+			return v -> CollectionUtils.arrayToList(v.split(","));
+		}
+
+		@Bean
+		public Function<String, List<Message<String>>> parseToListOfMessages() {
+			return v -> {
+				List<Message<String>> list = (List<Message<String>>) CollectionUtils.arrayToList(v.split(",")).stream()
+						.map(value -> MessageBuilder.withPayload(value).build()).collect(Collectors.toList());
+				return list;
+			};
+		}
 	}
 
 	@EnableAutoConfiguration
