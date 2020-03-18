@@ -40,15 +40,14 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
- * Implementation of {@link HttpFunction} for Google Cloud Function (GCF).
- * This is the Spring Cloud Function adapter for GCF HTTP function.
+ * Implementation of HttpFunction for Google Cloud Function.
  *
  * @param <O> input type
+ *
  * @author Dmitry Solomakha
- * @author Mike Eltsufin
  */
 public class GcfSpringBootHttpRequestHandler<O>
-	extends AbstractSpringFunctionAdapterInitializer<HttpRequest> implements HttpFunction {
+	extends AbstractSpringFunctionAdapterInitializer<Context> implements HttpFunction {
 
 	private final Gson gson = new Gson();
 
@@ -60,14 +59,11 @@ public class GcfSpringBootHttpRequestHandler<O>
 		super(configurationClass);
 	}
 
-	/**
-	 * The implementation of a GCF {@link HttpFunction} that will be used as the entrypoint from GCF.
-	 */
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread()
 			.setContextClassLoader(GcfSpringBootHttpRequestHandler.class.getClassLoader());
-		initialize(httpRequest);
+		initialize(null);
 
 		Publisher<?> output = apply(extract(convert(httpRequest)));
 		BufferedWriter writer = httpResponse.getWriter();
@@ -80,22 +76,30 @@ public class GcfSpringBootHttpRequestHandler<O>
 	}
 
 	protected Object convert(HttpRequest event) throws IOException {
-		Object input = gson.fromJson(event.getReader(), getInputType());
+		BufferedReader br = event.getReader();
+		StringBuilder sb = new StringBuilder();
 
-		if (input == null) {
-			input = event;
+		char[] buffer = new char[1024 * 4];
+		int n;
+		while (-1 != (n = br.read(buffer))) {
+			sb.append(buffer, 0, n);
 		}
 
+		String requestBody = sb.toString();
 		if (functionAcceptsMessage()) {
-			return new GenericMessage<>(input, getHeaders(event));
+			return new GenericMessage<>(toOptionalIfEmpty(requestBody), getHeaders(event, requestBody));
 		}
 		else {
-			return input;
+			return toOptionalIfEmpty(requestBody);
 		}
 
 	}
 
-	private MessageHeaders getHeaders(HttpRequest event) {
+	private Object toOptionalIfEmpty(String requestBody) {
+		return requestBody.isEmpty() ? Optional.empty() : requestBody;
+	}
+
+	private MessageHeaders getHeaders(HttpRequest event, String requestBody) {
 		Map<String, Object> headers = new HashMap<String, Object>();
 
 		if (event.getHeaders() != null) {
@@ -111,6 +115,8 @@ public class GcfSpringBootHttpRequestHandler<O>
 		if (event.getMethod() != null) {
 			headers.put("httpMethod", event.getMethod());
 		}
+
+		headers.put("request", requestBody);
 		return new MessageHeaders(headers);
 	}
 
@@ -129,6 +135,7 @@ public class GcfSpringBootHttpRequestHandler<O>
 		}
 		return (T) result;
 	}
+
 
 	private boolean isSingleValue(Object input) {
 		return !(input instanceof Collection);
