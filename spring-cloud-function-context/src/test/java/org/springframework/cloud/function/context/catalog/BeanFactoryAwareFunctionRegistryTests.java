@@ -364,7 +364,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	/**
-	 * This test tests the fallback mechanism when an accept header has several values.
+	 * The following two tests test the fallback mechanism when an accept header has several values.
 	 * The function produces Integer, which cannot be serialized by the default converter supporting text/plain
 	 * (StringMessageConverter) but can by the one supporting application/json, which comes second.
 	 */
@@ -377,6 +377,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.getPayload()).isEqualTo("5".getBytes("UTF-8"));
 	}
 
+	@Test
+	public void testMultipleOrderedAcceptValuesMessageOutput() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(MultipleOrderedAcceptValuesAsMessageOutputConfiguration.class);
+		Function<String, Message<byte[]>> function = catalog.lookup(
+				"beanFactoryAwareFunctionRegistryTests.MultipleOrderedAcceptValuesAsMessageOutputConfiguration",
+				"text/plain,application/json");
+		assertThat(function).isNotNull();
+		Message<byte[]> result = function.apply("hello");
+		assertThat(result.getPayload()).isEqualTo("5".getBytes("UTF-8"));
+	}
 
 	@SuppressWarnings("unchecked")
 	@Test
@@ -774,5 +784,17 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Integer apply(String t) {
 			return t.length();
 		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@Component
+	public static class MultipleOrderedAcceptValuesAsMessageOutputConfiguration implements Function<String, Message<Integer>> {
+
+		@Override
+		public Message<Integer> apply(String t) {
+			return MessageBuilder.withPayload(t.length()).build();
+		}
+
 	}
 }

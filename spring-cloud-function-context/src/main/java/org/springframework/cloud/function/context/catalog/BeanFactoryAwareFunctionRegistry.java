@@ -735,16 +735,14 @@ public class BeanFactoryAwareFunctionRegistry
 			Message outputMessage = null;
 			if (value instanceof Message) {
 				MessageHeaders headers = ((Message) value).getHeaders();
-				if (!headers.containsKey("accept")) {
-					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-						.getField(this.headersField, headers);
-					headersMap.put("accept", acceptedContentType);
-					// Set the contentType header to the value of accept for "legacy" reasons. But, do not set the
-					// contentType header to the value of accept if it is a wildcard type, as this doesn't make sense.
-					// This also applies to the else branch below.
-					if (acceptedContentType.isConcrete()) {
-						headersMap.put(MessageHeaders.CONTENT_TYPE, acceptedContentType);
-					}
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+					.getField(this.headersField, headers);
+				headersMap.put("accept", acceptedContentType);
+				// Set the contentType header to the value of accept for "legacy" reasons. But, do not set the
+				// contentType header to the value of accept if it is a wildcard type, as this doesn't make sense.
+				// This also applies to the else branch below.
+				if (acceptedContentType.isConcrete()) {
+					headersMap.put(MessageHeaders.CONTENT_TYPE, acceptedContentType);
 				}
 			}
 			else {
