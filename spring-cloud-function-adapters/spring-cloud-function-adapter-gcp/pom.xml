@@ -17,7 +17,7 @@
 	</properties>
 
 
-	<artifactId>spring-cloud-function-adapter-google-cloud-function</artifactId>
+	<artifactId>spring-cloud-function-adapter-gcp</artifactId>
 	<dependencies>
 		<dependency>
 			<groupId>com.google.cloud.functions</groupId>

@@ -40,7 +40,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
- * Implementation of HttpFunction for Google Cloud Function
+ * Implementation of HttpFunction for Google Cloud Function.
  *
  * @param <O> input type
  *
