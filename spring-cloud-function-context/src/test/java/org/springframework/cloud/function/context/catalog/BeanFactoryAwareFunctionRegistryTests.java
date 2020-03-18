@@ -363,6 +363,21 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result instanceof Message).isFalse();
 	}
 
+	/**
+	 * This test tests the fallback mechanism when an accept header has several values.
+	 * The function produces Integer, which cannot be serialized by the default converter supporting text/plain
+	 * (StringMessageConverter) but can by the one supporting application/json, which comes second.
+	 */
+	@Test
+	public void testMultipleOrderedAcceptValues() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(MultipleOrderedAcceptValuesConfiguration.class);
+		Function<String, Message<byte[]>> function = catalog.lookup("beanFactoryAwareFunctionRegistryTests.MultipleOrderedAcceptValuesConfiguration", "text/plain,application/json");
+		assertThat(function).isNotNull();
+		Message<byte[]> result = function.apply("hello");
+		assertThat(result.getPayload()).isEqualTo("5".getBytes("UTF-8"));
+	}
+
+
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSerializationWithCompatibleWildcardSubtypeAcceptHeader() {
@@ -747,6 +762,17 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				result[i] = bytes[bytes.length - i - 1];
 			}
 			return result;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	@Component
+	public static class MultipleOrderedAcceptValuesConfiguration implements Function<String, Integer> {
+
+		@Override
+		public Integer apply(String t) {
+			return t.length();
 		}
 	}
 }
