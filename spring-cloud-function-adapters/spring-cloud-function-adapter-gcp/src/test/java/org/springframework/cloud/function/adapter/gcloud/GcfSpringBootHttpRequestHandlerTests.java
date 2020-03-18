@@ -51,6 +51,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author Dmitry Solomakha
+ * @author Mike Eltsufin
  */
 public class GcfSpringBootHttpRequestHandlerTests {
 	HttpRequest request = Mockito.mock(HttpRequest.class);
