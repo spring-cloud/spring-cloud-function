@@ -162,127 +162,126 @@ public class GcfSpringBootHttpRequestHandlerTests {
 		public Consumer<Message<Foo>> function() {
 			return (foo -> { });
 		}
-
-	}
-}
-
-class Foo {
-
-	private String value;
-
-	Foo() {
 	}
 
-	Foo(String value) {
-		this.value = value;
-	}
+	private static class Foo {
 
-	public String lowercase() {
-		return this.value.toLowerCase();
-	}
+		private String value;
 
-	public String uppercase() {
-		return this.value.toUpperCase();
-	}
-
-	public String getValue() {
-		return this.value;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
-
-}
-
-class Bar {
-
-	private String value;
-
-	Bar() {
-	}
-
-	Bar(String value) {
-		this.value = value;
-	}
-
-	public String getValue() {
-		return this.value;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
+		Foo() {
 		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
+
+		Foo(String value) {
+			this.value = value;
 		}
-		Bar bar = (Bar) o;
-		return Objects.equals(getValue(), bar.getValue());
+
+		public String lowercase() {
+			return this.value.toLowerCase();
+		}
+
+		public String uppercase() {
+			return this.value.toUpperCase();
+		}
+
+		public String getValue() {
+			return this.value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(getValue());
-	}
-}
+	private static class Bar {
 
-class HttpResponseImpl implements HttpResponse {
+		private String value;
 
-	int statusCode;
+		Bar() {
+		}
 
-	String contentType;
+		Bar(String value) {
+			this.value = value;
+		}
 
-	BufferedWriter writer;
+		public String getValue() {
+			return this.value;
+		}
 
-	HttpResponseImpl(BufferedWriter writer) {
-		this.writer = writer;
-	}
+		public void setValue(String value) {
+			this.value = value;
+		}
 
-	Map<String, List<String>> headers = new HashMap<>();
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) {
+				return true;
+			}
+			if (o == null || getClass() != o.getClass()) {
+				return false;
+			}
+			Bar bar = (Bar) o;
+			return Objects.equals(getValue(), bar.getValue());
+		}
 
-	@Override
-	public void setStatusCode(int code) {
-		statusCode = code;
-	}
-
-	@Override
-	public void setStatusCode(int code, String message) {
-		statusCode = code;
-	}
-
-	@Override
-	public void setContentType(String contentType) {
-		this.contentType = contentType;
-	}
-
-	@Override
-	public Optional<String> getContentType() {
-		return Optional.ofNullable(contentType);
+		@Override
+		public int hashCode() {
+			return Objects.hash(getValue());
+		}
 	}
 
-	@Override
-	public void appendHeader(String header, String value) {
-		headers.computeIfAbsent(header, x -> new ArrayList<>()).add(value);
-	}
+	private static class HttpResponseImpl implements HttpResponse {
 
-	@Override
-	public Map<String, List<String>> getHeaders() {
-		return headers;
-	}
+		int statusCode;
 
-	@Override
-	public OutputStream getOutputStream() throws IOException {
-		throw new RuntimeException("unsupported!");
-	}
+		String contentType;
 
-	@Override
-	public BufferedWriter getWriter() throws IOException {
-		return writer;
+		BufferedWriter writer;
+
+		HttpResponseImpl(BufferedWriter writer) {
+			this.writer = writer;
+		}
+
+		Map<String, List<String>> headers = new HashMap<>();
+
+		@Override
+		public void setStatusCode(int code) {
+			statusCode = code;
+		}
+
+		@Override
+		public void setStatusCode(int code, String message) {
+			statusCode = code;
+		}
+
+		@Override
+		public void setContentType(String contentType) {
+			this.contentType = contentType;
+		}
+
+		@Override
+		public Optional<String> getContentType() {
+			return Optional.ofNullable(contentType);
+		}
+
+		@Override
+		public void appendHeader(String header, String value) {
+			headers.computeIfAbsent(header, x -> new ArrayList<>()).add(value);
+		}
+
+		@Override
+		public Map<String, List<String>> getHeaders() {
+			return headers;
+		}
+
+		@Override
+		public OutputStream getOutputStream() throws IOException {
+			throw new RuntimeException("unsupported!");
+		}
+
+		@Override
+		public BufferedWriter getWriter() throws IOException {
+			return writer;
+		}
 	}
 }
