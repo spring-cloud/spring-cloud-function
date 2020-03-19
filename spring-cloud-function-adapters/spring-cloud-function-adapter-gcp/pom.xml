@@ -39,23 +39,21 @@
 			<artifactId>spring-cloud-starter-function-web</artifactId>
 		</dependency>
 
+		<!-- Test-only dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.cloud.functions.invoker</groupId>
 			<artifactId>java-function-invoker</artifactId>
-			<version>1.0.0-alpha-2-rc3</version>
+			<version>${google.cloud.functions.version}</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-function-web</artifactId>
-			<version>3.0.3.RELEASE</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

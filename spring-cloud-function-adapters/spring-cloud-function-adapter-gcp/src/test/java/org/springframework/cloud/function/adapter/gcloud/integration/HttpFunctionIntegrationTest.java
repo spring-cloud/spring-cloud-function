@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.adapter.gcloud.integration;
 
-import com.google.cloud.functions.invoker.runner.Invoker;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -27,22 +26,24 @@ import org.springframework.http.ResponseEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * This test simulates deploying the function locally and sending it a request.
+ * Integration tests for GCF Http Functions.
  *
  * @author Daniel Zou
  */
-public class GcfIntegrationTest {
+public class HttpFunctionIntegrationTest {
 
+	// Port to start the Cloud Function Server
 	private static final int PORT = 7777;
 
-	private static final String MAIN_CLASS = CloudFunctionMain.class.getCanonicalName();
+	// The Cloud Functions adapter class to serve
+	private static final Class<?> ADAPTER_CLASS = GcfSpringBootHttpRequestHandler.class;
 
-	private static final String ADAPTER_CLASS = GcfSpringBootHttpRequestHandler.class.getCanonicalName();
+	// The main class which define the Spring Cloud Functions
+	private static final Class<?> MAIN_CLASS = CloudFunctionMain.class;
 
 	@BeforeClass
 	public static void setup() {
-		System.setProperty("MAIN_CLASS", MAIN_CLASS);
-		runCloudFunctionServer();
+		CloudFunctionServerUtils.startServer(7777, ADAPTER_CLASS, MAIN_CLASS);
 	}
 
 	@Test
@@ -51,29 +52,5 @@ public class GcfIntegrationTest {
 		ResponseEntity<String> response = testRestTemplate.postForEntity("http://localhost:" + PORT, "hello",
 				String.class);
 		assertThat(response.getBody()).isEqualTo("\"HELLO\"");
-	}
-
-	/**
-	 * Starts the Cloud Function Server in a separate thread that exists for the lifetime of
-	 * the test.
-	 */
-	private static void runCloudFunctionServer() {
-		Runnable startServer = () -> {
-			Invoker invoker = new Invoker(
-				PORT,
-				ADAPTER_CLASS,
-				null,
-				CloudFunctionMain.class.getClassLoader());
-
-			try {
-				invoker.startServer();
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			}
-		};
-
-		Thread thread = new Thread(startServer);
-		thread.start();
 	}
 }
