@@ -43,7 +43,7 @@ public class HttpFunctionIntegrationTest {
 
 	@BeforeClass
 	public static void setup() {
-		CloudFunctionServerUtils.startServer(7777, ADAPTER_CLASS, MAIN_CLASS);
+		CloudFunctionServerUtils.startServer(PORT, ADAPTER_CLASS, MAIN_CLASS);
 	}
 
 	@Test
