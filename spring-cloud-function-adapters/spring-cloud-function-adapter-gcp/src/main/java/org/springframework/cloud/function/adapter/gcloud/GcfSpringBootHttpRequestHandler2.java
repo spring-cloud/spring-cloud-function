@@ -61,9 +61,10 @@ public class GcfSpringBootHttpRequestHandler2<O>
 			.setContextClassLoader(GcfSpringBootHttpRequestHandler2.class.getClassLoader());
 		initialize(httpRequest);
 
-		Publisher<?> input = Mono.empty();
-
-		if (getInputType() != Void.class) {
+		Publisher<?> input;
+		if (getInputType() == Void.class) {
+			input = Mono.empty();
+		} else {
 			input = Mono.just(gson.fromJson(httpRequest.getReader(), getInputType()));
 		}
 
