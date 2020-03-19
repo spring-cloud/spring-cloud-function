@@ -69,7 +69,7 @@ public class GcfSpringBootHttpRequestHandler2<O>
 
 		Publisher<?> output = this.apply(input);
 
-		String result = this.result(input, output);
+		O result = this.result(input, output);
 
 		httpResponse.getWriter().write(gson.toJson(result));
 		httpResponse.getWriter().close();

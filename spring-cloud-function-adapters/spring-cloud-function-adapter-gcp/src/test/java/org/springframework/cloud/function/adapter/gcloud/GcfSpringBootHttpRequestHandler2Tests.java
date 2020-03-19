@@ -59,6 +59,18 @@ public class GcfSpringBootHttpRequestHandler2Tests {
 			"Thank you for sending the message: hello");
 	}
 
+	@Test
+	public void testJsonInputOutputFunction() throws Exception {
+		testFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
+			new OutgoingResponse("Thank you for sending the message: hello"));
+	}
+
+	@Test
+	public void testJsonInputConsumer() throws Exception {
+		testFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null);
+	}
+
+
 	private <I, O> void testFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
 		GcfSpringBootHttpRequestHandler2 handler = new GcfSpringBootHttpRequestHandler2(configurationClass);
 
@@ -94,12 +106,37 @@ public class GcfSpringBootHttpRequestHandler2Tests {
 		}
 	}
 
-	class IncomingRequest {
-		String message;
-
-		public IncomingRequest(String message) {
-			this.message = message;
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputOutputFunction {
+		@Bean
+		public Function<IncomingRequest, OutgoingResponse> function() {
+			return (in) -> new OutgoingResponse("Thank you for sending the message: " + in.message);
 		}
 	}
 
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputConsumer {
+		@Bean
+		public Consumer<IncomingRequest> function() {
+			return (in) -> System.out.println("Thank you for sending the message: " + in.message);
+		}
+	}
+}
+
+class IncomingRequest {
+	String message;
+
+	public IncomingRequest(String message) {
+		this.message = message;
+	}
+}
+
+class OutgoingResponse {
+	String message;
+
+	public OutgoingResponse(String message) {
+		this.message = message;
+	}
 }
