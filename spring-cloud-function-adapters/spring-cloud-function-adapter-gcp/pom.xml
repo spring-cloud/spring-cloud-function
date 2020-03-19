@@ -51,10 +51,5 @@
 			<version>${google.cloud.functions.version}</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-function-web</artifactId>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 </project>
