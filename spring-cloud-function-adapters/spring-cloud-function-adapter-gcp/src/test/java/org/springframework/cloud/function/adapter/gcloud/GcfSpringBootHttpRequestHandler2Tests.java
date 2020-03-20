@@ -16,28 +16,26 @@
 
 package org.springframework.cloud.function.adapter.gcloud;
 
-import com.google.cloud.functions.HttpRequest;
-import com.google.cloud.functions.HttpResponse;
-import com.google.gson.Gson;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.GenericMessage;
-
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.google.cloud.functions.HttpRequest;
+import com.google.cloud.functions.HttpResponse;
+import com.google.gson.Gson;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.in;
 import static org.mockito.Mockito.when;
 
 /**
@@ -75,16 +73,15 @@ public class GcfSpringBootHttpRequestHandler2Tests {
 		GcfSpringBootHttpRequestHandler2 handler = new GcfSpringBootHttpRequestHandler2(configurationClass);
 
 		HttpRequest request = Mockito.mock(HttpRequest.class);
-
 		if (input != null) {
 			when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
 		}
 
 		StringWriter writer = new StringWriter();
-		HttpResponse response = new HttpResponseImpl(new BufferedWriter(writer));
+		HttpResponse response = Mockito.mock(HttpResponse.class);
+		when(response.getWriter()).thenReturn(new BufferedWriter(writer));
 
 		handler.service(request, response);
-
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
 
@@ -123,20 +120,20 @@ public class GcfSpringBootHttpRequestHandler2Tests {
 			return (in) -> System.out.println("Thank you for sending the message: " + in.message);
 		}
 	}
-}
 
-class IncomingRequest {
-	String message;
+	private static class IncomingRequest {
+		String message;
 
-	public IncomingRequest(String message) {
-		this.message = message;
+		IncomingRequest(String message) {
+			this.message = message;
+		}
 	}
-}
 
-class OutgoingResponse {
-	String message;
+	private static class OutgoingResponse {
+		String message;
 
-	public OutgoingResponse(String message) {
-		this.message = message;
+		OutgoingResponse(String message) {
+			this.message = message;
+		}
 	}
 }

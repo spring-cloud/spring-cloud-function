@@ -21,16 +21,9 @@ import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
 import org.reactivestreams.Publisher;
-import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.GenericMessage;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.*;
+import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 
 /**
  * Implementation of {@link HttpFunction} for Google Cloud Function (GCF).
@@ -64,7 +57,8 @@ public class GcfSpringBootHttpRequestHandler2<O>
 		Publisher<?> input;
 		if (getInputType() == Void.class) {
 			input = Mono.empty();
-		} else {
+		}
+		else {
 			input = Mono.just(gson.fromJson(httpRequest.getReader(), getInputType()));
 		}
 
