@@ -51,7 +51,7 @@ public class CloudFunctionServer extends ExternalResource {
 	 * Starts up the Cloud Function Server.
 	 */
 	@Override
-	protected void before() {
+	protected void before() throws InterruptedException {
 		// Spring uses the System property to detect the correct main class.
 		System.setProperty("MAIN_CLASS", springApplicationMainClass.getCanonicalName());
 
@@ -76,6 +76,9 @@ public class CloudFunctionServer extends ExternalResource {
 
 		this.serverThread = new Thread(startServer);
 		this.serverThread.start();
+
+		// Wait for the server to start up.
+		Thread.sleep(1000);
 	}
 
 	@Override
