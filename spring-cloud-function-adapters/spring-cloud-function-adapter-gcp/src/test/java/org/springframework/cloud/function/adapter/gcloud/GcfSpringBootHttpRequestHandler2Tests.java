@@ -124,7 +124,7 @@ public class GcfSpringBootHttpRequestHandler2Tests {
 	private static class IncomingRequest {
 		String message;
 
-		public IncomingRequest(String message) {
+		IncomingRequest(String message) {
 			this.message = message;
 		}
 	}
@@ -132,7 +132,7 @@ public class GcfSpringBootHttpRequestHandler2Tests {
 	private static class OutgoingResponse {
 		String message;
 
-		public OutgoingResponse(String message) {
+		OutgoingResponse(String message) {
 			this.message = message;
 		}
 	}
