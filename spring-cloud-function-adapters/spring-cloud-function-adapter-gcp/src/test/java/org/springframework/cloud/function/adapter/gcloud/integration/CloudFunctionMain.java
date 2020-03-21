@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.gcloud.it;
+package org.springframework.cloud.function.adapter.gcloud.integration;
 
 import java.util.function.Function;
 
@@ -31,5 +31,26 @@ public class CloudFunctionMain {
 	@Bean
 	public Function<String, String> uppercase() {
 		return input -> input.toUpperCase();
+	}
+
+	@Bean
+	public Function<Foo, Bar> foobar() {
+		return input -> new Bar(input.value);
+	}
+}
+
+class Foo {
+	String value;
+
+	Foo(String value) {
+		this.value = value;
+	}
+}
+
+class Bar {
+	String value;
+
+	Bar(String value) {
+		this.value = value;
 	}
 }
