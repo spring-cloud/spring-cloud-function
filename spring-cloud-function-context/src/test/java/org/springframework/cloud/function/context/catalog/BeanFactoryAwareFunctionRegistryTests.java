@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
@@ -77,6 +78,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		return catalog;
 	}
 
+	@Before
+	public void before() {
+		System.clearProperty("spring.cloud.function.definition");
+	}
+
 	@Test
 	public void testDefaultLookup() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog();
@@ -84,6 +90,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(function).isNull();
 		//==
 		System.setProperty("spring.cloud.function.definition", "uppercase");
+		catalog = this.configureCatalog();
 		function = catalog.lookup("");
 		assertThat(function).isNotNull();
 		Field field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
@@ -91,6 +98,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(((boolean) field.get(function))).isFalse();
 		//==
 		System.setProperty("spring.cloud.function.definition", "uppercase|uppercaseFlux");
+		catalog = this.configureCatalog();
 		function = catalog.lookup("", "application/json");
 		Function<Flux<String>, Flux<Message<String>>> typedFunction = (Function<Flux<String>, Flux<Message<String>>>) function;
 		Object blockFirst = typedFunction.apply(Flux.just("hello")).blockFirst();
@@ -354,7 +362,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog(CollectionOutConfiguration.class);
 		FunctionInvocationWrapper function = catalog.lookup("parseToList", "application/json");
 		assertThat(function).isNotNull();
-		Object result = (Message) function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		Object result = function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
 		assertThat(result instanceof Message).isTrue();
 
 		function = catalog.lookup("parseToListOfMessages", "application/json");

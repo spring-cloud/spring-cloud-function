@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,6 +52,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -94,7 +96,7 @@ import org.springframework.util.StringUtils;
  * @since 3.0
  */
 public class BeanFactoryAwareFunctionRegistry
-	implements FunctionRegistry, FunctionInspector, ApplicationContextAware {
+	implements FunctionRegistry, FunctionInspector, ApplicationContextAware, InitializingBean {
 
 	private static Log logger = LogFactory.getLog(BeanFactoryAwareFunctionRegistry.class);
 
@@ -118,10 +120,22 @@ public class BeanFactoryAwareFunctionRegistry
 
 	private final CompositeMessageConverter messageConverter;
 
+	private List<String> declaredFunctionDefinitions;
+
 	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService,
 		@Nullable CompositeMessageConverter messageConverter) {
 		this.conversionService = conversionService;
 		this.messageConverter = messageConverter;
+
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		String userDefinition = this.applicationContext.getEnvironment().getProperty("spring.cloud.function.definition");
+		this.declaredFunctionDefinitions = StringUtils.hasText(userDefinition) ? Arrays.asList(userDefinition.split(";")) : Collections.emptyList();
+		if (this.declaredFunctionDefinitions.contains(RoutingFunction.FUNCTION_NAME)) {
+			Assert.isTrue(this.declaredFunctionDefinitions.size() == 1, "It is illegal to declare more then one function when using RoutingFunction");
+		}
 	}
 
 	@Override
@@ -139,9 +153,36 @@ public class BeanFactoryAwareFunctionRegistry
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
-		if (!StringUtils.hasText(definition)) {
-			definition = this.applicationContext.getEnvironment().getProperty("spring.cloud.function.definition");
+		definition = StringUtils.hasText(definition) ? definition.replaceAll(",", "|") : "";
+
+		boolean routing = definition.contains(RoutingFunction.FUNCTION_NAME)
+				|| this.declaredFunctionDefinitions.contains(RoutingFunction.FUNCTION_NAME);
+
+		if (!routing && this.declaredFunctionDefinitions.size() > 0) {
+			if (StringUtils.hasText(definition)) {
+				if (this.declaredFunctionDefinitions.size() > 1 &&!this.declaredFunctionDefinitions.contains(definition)) {
+					logger.warn("Attempted to access un-declared function definition '" + definition + "'. Declared functions are '" + this.declaredFunctionDefinitions
+							+ "' specified via `spring.cloud.function.definition` property. If the intention is to access "
+							+ "any function available in FunctionCatalog, please remove `spring.cloud.function.definition` property.");
+					return null;
+				}
+			}
+			else {
+				if (this.declaredFunctionDefinitions.size() == 1) {
+					definition = this.declaredFunctionDefinitions.get(0);
+				}
+				else if (this.declaredFunctionDefinitions.size() > 1) {
+					logger.warn("Default function can not be mapped since multiple functions are declared " + this.declaredFunctionDefinitions);
+					return null;
+				}
+				else {
+					logger.warn("Default function can not be mapped since multiple functions are available in FunctionCatalog. "
+							+ "Please use 'spring.cloud.function.definition' property.");
+					return null;
+				}
+			}
 		}
+
 		Object function = this
 			.proxyInvokerIfNecessary((FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes));
 		return (T) function;

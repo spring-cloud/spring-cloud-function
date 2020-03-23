@@ -254,6 +254,8 @@ completely.
 
 == Standalone Web Applications
 
+Functions could be automatically exported as HTTP endpoints.
+
 The `spring-cloud-function-web` module has autoconfiguration that
 activates when it is included in a Spring Boot web application (with
 MVC support). There is also a `spring-cloud-starter-function-web` to
@@ -263,7 +265,7 @@ getting started experience.
 With the web configurations activated your app will have an MVC
 endpoint (on "/" by default, but configurable with
 `spring.cloud.function.web.path`) that can be used to access the
-functions in the application context. The supported content types are
+functions in the application context where function name becomes part of the URL path. The supported content types are
 plain text and JSON.
 
 |===
@@ -278,16 +280,31 @@ plain text and JSON.
 
 |===
 
-As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or `Flux`), then the response will also contain a single value.
+As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data 
+is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or `Flux`), then the response 
+will also contain a single value.
 For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream".
 
-If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
-Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).
+Functions and consumers that are declared with input and output in `Message<?>` will see the request headers on the input messages, and the output message headers will be converted to HTTP headers.
 
-For cases where there is more then a single function in catalog and you want to map a specific function to the root
-path (e.g., "/"), or you want to compose several functions and then map to the root path you can do so by providing
-`spring.cloud.function.definition` property which essentially used by spring-cloud-function-web module to provide
-default mapping for cases where there is some type of a conflict (e.g., more then one function available etc).
+When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accept headers for the best results).
+
+See <<Testing Functional Applications>> to see the details and example on how to test such application.
+
+
+=== Function Mapping rules 
+
+If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
+In other words, providing you only have `uppercase` function in catalog 
+`curl -H "Content-Type: text/plain" localhost:8080/uppercase -d hello` and `curl -H "Content-Type: text/plain" localhost:8080/ -d hello` calls are identical.
+
+Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).
+For example,  `curl -H "Content-Type: text/plain" localhost:8080/uppercase,reverse -d hello`.
+
+For cases where there is more then a single function in catalog, each function will be exported and mapped with function name being 
+part of the path (e.g., `localhost:8080/uppercase`). 
+In this scenario you can still map specific function or function composition to the root path by providing
+`spring.cloud.function.definition` property 
 
 For example,
 ----
@@ -296,11 +313,24 @@ For example,
 
 The above property will compose 'foo' and 'bar' function and map the composed function to the "/" path.
 
-Functions and consumers that are declared with input and output in `Message<?>` will see the request headers on the input messages, and the output message headers will be converted to HTTP headers.
+=== Function Filtering rules 
 
-When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accpt headers for the best results).
+In situations where there are more then one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
+the same `spring.cloud.function.definition` property listing functions you intend to export delimited by `;`.
+Note that in this case nothing will be mapped to the root path and functions that are not listed (including compositions) are not going to be exported
 
-See <<Testing Functional Applications>> to see the details and example on how to test such application.
+For example,
+----
+--spring.cloud.function.definition=foo;bar
+----
+
+This will only export function `foo` and function `bar` regardless how many functions are available in catalog (e.g., `localhost:8080/foo`). 
+
+----
+--spring.cloud.function.definition=foo|bar;baz
+----
+
+This will only export function composition `foo|bar` and function `baz` regardless how many functions are available in catalog (e.g., `localhost:8080/foo,bar`). 
 
 
 == Standalone Streaming Applications
