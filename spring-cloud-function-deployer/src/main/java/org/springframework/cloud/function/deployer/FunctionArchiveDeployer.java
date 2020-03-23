@@ -93,11 +93,13 @@ class FunctionArchiveDeployer extends JarLauncher {
 				}
 			}
 
-			String functionClassName = discoverFunctionClassName(functionProperties);
-			if (!StringUtils.isEmpty(functionClassName)) {
-				FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(functionClassName);
-				if (registration != null) {
-					functionRegistry.register(registration);
+			String[] functionClassNames = discoverFunctionClassName(functionProperties);
+			for (String functionClassName : functionClassNames) {
+				if (!StringUtils.isEmpty(functionClassName)) {
+					FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(functionClassName);
+					if (registration != null) {
+						functionRegistry.register(registration);
+					}
 				}
 			}
 		}
@@ -169,11 +171,11 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 
 
-	private String discoverFunctionClassName(FunctionDeployerProperties functionProperties) {
+	private String[] discoverFunctionClassName(FunctionDeployerProperties functionProperties) {
 		try {
 			return StringUtils.hasText(functionProperties.getFunctionClass())
-					? functionProperties.getFunctionClass()
-							: this.getArchive().getManifest().getMainAttributes().getValue("Function-Class");
+					? functionProperties.getFunctionClass().split(";")
+							: new String[] {this.getArchive().getManifest().getMainAttributes().getValue("Function-Class")};
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Failed to discover function class name", e);
@@ -241,7 +243,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 		Class<?> bootAppClass = Thread.currentThread().getContextClassLoader()
 				.loadClass(SpringApplication.class.getName());
 		Method runMethod = bootAppClass.getDeclaredMethod("run", Class.class, String[].class);
-		Object applicationContext = runMethod.invoke(null, mainClass, (Object) args);
+		Object applicationContext = runMethod.invoke(null, mainClass, args);
 		if (logger.isInfoEnabled()) {
 			logger.info("Application context for archive '" + this.getArchive().getUrl() + "' is created.");
 		}

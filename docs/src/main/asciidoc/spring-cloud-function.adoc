@@ -397,6 +397,19 @@ All you need to do is specify `location` and `function-class` properties when de
 --spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
 --spring.cloud.function.function-class=function.example.UpperCaseFunction
 ```
+
+It's conceivable in some cases that you might want to package multiple functions together. For such scenarios you can use 
+`spring.cloud.function.function-class` property to list several classes delimiting them by `;`.
+
+For example,
+
+```
+--spring.cloud.function.function-class=function.example.UpperCaseFunction;function.example.ReverseFunction
+```
+
+Here we are identifying two functions to deploy, which we can now access in function catalog by name (e.g., `catalog.lookup("reverseFunction");`).
+
+
 For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/simplestjar[here].
 You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L70[FunctionDeployerTests].
 

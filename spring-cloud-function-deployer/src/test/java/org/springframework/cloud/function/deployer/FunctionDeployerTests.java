@@ -56,7 +56,7 @@ public class FunctionDeployerTests {
 	public void testWithMainAndStartClassNoSpringConfiguration() throws Exception {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/bootjar/target/bootjar-1.0.0.RELEASE-exec.jar",
-				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
+				"--spring.cloud.function.function-class=function.example.UpperCaseFunction;function.example.ReverseFunction" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -65,11 +65,23 @@ public class FunctionDeployerTests {
 		assertThat(function.apply("bob")).isEqualTo("BOB");
 		assertThat(function.apply("stacy")).isEqualTo("STACY");
 
+		function = catalog.lookup("reverseFunction");
+
+		assertThat(function.apply("bob")).isEqualTo("bob");
+		assertThat(function.apply("stacy")).isEqualTo("ycats");
+
 		Function<Flux<String>, Flux<String>> functionAsFlux = catalog.lookup("upperCaseFunction");
 
 		List<String> results = functionAsFlux.apply(Flux.just("bob", "stacy")).collectList().block();
 		assertThat(results.get(0)).isEqualTo("BOB");
 		assertThat(results.get(1)).isEqualTo("STACY");
+
+		functionAsFlux = catalog.lookup("reverseFunction");
+
+		results = functionAsFlux.apply(Flux.just("bob", "stacy")).collectList().block();
+
+		assertThat(results.get(0)).isEqualTo("bob");
+		assertThat(results.get(1)).isEqualTo("ycats");
 	}
 
 	@Test
