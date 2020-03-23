@@ -21,7 +21,7 @@ import java.util.function.Function;
 import org.junit.Rule;
 import org.junit.Test;
 
-import org.springframework.cloud.function.adapter.gcloud.GcfSpringBootHttpRequestHandler;
+import org.springframework.cloud.function.adapter.gcloud.GcfSpringBootHttpRequestHandler2;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,19 +31,24 @@ import org.springframework.context.annotation.Import;
 /**
  * Integration tests for GCF Http Functions.
  *
- * @author Daniel Zou
  * @author Mike Eltsufin
  */
-public class HttpFunctionIntegrationTest {
+public class GcfSpringBootHttpRequestHandler2IntegrationTest {
 
 	@Rule
 	public CloudFunctionServer cloudFunctionServer =
-		new CloudFunctionServer(GcfSpringBootHttpRequestHandler.class, CloudFunctionMain.class);
+		new CloudFunctionServer(GcfSpringBootHttpRequestHandler2.class, CloudFunctionMain.class);
 
 	@Test
-	public void test() {
-		cloudFunctionServer.test(null, "hello", "HELLO");
+	public void testUppercase() {
+		cloudFunctionServer.test("uppercase", "hello", "HELLO");
 	}
+
+	@Test
+	public void testFooBar() {
+		cloudFunctionServer.test("foobar", new Foo("Hi"), new Bar("Hi"));
+	}
+
 
 	@Configuration
 	@Import({ContextFunctionCatalogAutoConfiguration.class})
@@ -52,6 +57,27 @@ public class HttpFunctionIntegrationTest {
 		@Bean
 		public Function<String, String> uppercase() {
 			return input -> input.toUpperCase();
+		}
+
+		@Bean
+		public Function<Foo, Bar> foobar() {
+			return input -> new Bar(input.value);
+		}
+	}
+
+	private static class Foo {
+		String value;
+
+		Foo(String value) {
+			this.value = value;
+		}
+	}
+
+	private static class Bar {
+		String value;
+
+		Bar(String value) {
+			this.value = value;
 		}
 	}
 }
