@@ -109,7 +109,12 @@ $(addBlockSwitches);
 <li><a href="#_function_component_scan">Function Component Scan</a></li>
 </ul>
 </li>
-<li><a href="#_standalone_web_applications">Standalone Web Applications</a></li>
+<li><a href="#_standalone_web_applications">Standalone Web Applications</a>
+<ul class="sectlevel2">
+<li><a href="#_function_mapping_rules">Function Mapping rules</a></li>
+<li><a href="#_function_filtering_rules">Function Filtering rules</a></li>
+</ul>
+</li>
 <li><a href="#_standalone_streaming_applications">Standalone Streaming Applications</a></li>
 <li><a href="#_deploying_a_packaged_function">Deploying a Packaged Function</a>
 <ul class="sectlevel2">
@@ -630,6 +635,9 @@ completely.</p>
 <h2 id="_standalone_web_applications"><a class="link" href="#_standalone_web_applications">Standalone Web Applications</a></h2>
 <div class="sectionbody">
 <div class="paragraph">
+<p>Functions could be automatically exported as HTTP endpoints.</p>
+</div>
+<div class="paragraph">
 <p>The <code>spring-cloud-function-web</code> module has autoconfiguration that
 activates when it is included in a Spring Boot web application (with
 MVC support). There is also a <code>spring-cloud-starter-function-web</code> to
@@ -640,7 +648,7 @@ getting started experience.</p>
 <p>With the web configurations activated your app will have an MVC
 endpoint (on "/" by default, but configurable with
 <code>spring.cloud.function.web.path</code>) that can be used to access the
-functions in the application context. The supported content types are
+functions in the application context where function name becomes part of the URL path. The supported content types are
 plain text and JSON.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -706,18 +714,36 @@ plain text and JSON.</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or <code>Flux</code>), then the response will also contain a single value.
+<p>As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data
+is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or <code>Flux</code>), then the response
+will also contain a single value.
 For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream".</p>
 </div>
 <div class="paragraph">
-<p>If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
-Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).</p>
+<p>Functions and consumers that are declared with input and output in <code>Message&lt;?&gt;</code> will see the request headers on the input messages, and the output message headers will be converted to HTTP headers.</p>
 </div>
 <div class="paragraph">
-<p>For cases where there is more then a single function in catalog and you want to map a specific function to the root
-path (e.g., "/"), or you want to compose several functions and then map to the root path you can do so by providing
-<code>spring.cloud.function.definition</code> property which essentially used by spring-cloud-function-web module to provide
-default mapping for cases where there is some type of a conflict (e.g., more then one function available etc).</p>
+<p>When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accept headers for the best results).</p>
+</div>
+<div class="paragraph">
+<p>See <a href="#_testing_functional_applications">Testing Functional Applications</a> to see the details and example on how to test such application.</p>
+</div>
+<div class="sect2">
+<h3 id="_function_mapping_rules"><a class="link" href="#_function_mapping_rules">Function Mapping rules</a></h3>
+<div class="paragraph">
+<p>If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
+In other words, providing you only have <code>uppercase</code> function in catalog
+<code>curl -H "Content-Type: text/plain" localhost:8080/uppercase -d hello</code> and <code>curl -H "Content-Type: text/plain" localhost:8080/ -d hello</code> calls are identical.</p>
+</div>
+<div class="paragraph">
+<p>Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).
+For example,  <code>curl -H "Content-Type: text/plain" localhost:8080/uppercase,reverse -d hello</code>.</p>
+</div>
+<div class="paragraph">
+<p>For cases where there is more then a single function in catalog, each function will be exported and mapped with function name being
+part of the path (e.g., <code>localhost:8080/uppercase</code>).
+In this scenario you can still map specific function or function composition to the root path by providing
+<code>spring.cloud.function.definition</code> property</p>
 </div>
 <div class="paragraph">
 <p>For example,</p>
@@ -730,14 +756,33 @@ default mapping for cases where there is some type of a conflict (e.g., more the
 <div class="paragraph">
 <p>The above property will compose 'foo' and 'bar' function and map the composed function to the "/" path.</p>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_function_filtering_rules"><a class="link" href="#_function_filtering_rules">Function Filtering rules</a></h3>
 <div class="paragraph">
-<p>Functions and consumers that are declared with input and output in <code>Message&lt;?&gt;</code> will see the request headers on the input messages, and the output message headers will be converted to HTTP headers.</p>
+<p>In situations where there are more then one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
+the same <code>spring.cloud.function.definition</code> property listing functions you intend to export delimited by <code>;</code>.
+Note that in this case nothing will be mapped to the root path and functions that are not listed (including compositions) are not going to be exported</p>
 </div>
 <div class="paragraph">
-<p>When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accpt headers for the best results).</p>
+<p>For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>--spring.cloud.function.definition=foo;bar</pre>
+</div>
 </div>
 <div class="paragraph">
-<p>See <a href="#_testing_functional_applications">Testing Functional Applications</a> to see the details and example on how to test such application.</p>
+<p>This will only export function <code>foo</code> and function <code>bar</code> regardless how many functions are available in catalog (e.g., <code>localhost:8080/foo</code>).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>--spring.cloud.function.definition=foo|bar;baz</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will only export function composition <code>foo|bar</code> and function <code>baz</code> regardless how many functions are available in catalog (e.g., <code>localhost:8080/foo,bar</code>).</p>
+</div>
 </div>
 </div>
 </div>
@@ -822,6 +867,21 @@ public class UpperCaseFunction implements Function&lt;String, String&gt; {
 <pre class="highlightjs highlight"><code>--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar
 --spring.cloud.function.function-class=function.example.UpperCaseFunction</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s conceivable in some cases that you might want to package multiple functions together. For such scenarios you can use
+<code>spring.cloud.function.function-class</code> property to list several classes delimiting them by <code>;</code>.</p>
+</div>
+<div class="paragraph">
+<p>For example,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>--spring.cloud.function.function-class=function.example.UpperCaseFunction;function.example.ReverseFunction</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here we are identifying two functions to deploy, which we can now access in function catalog by name (e.g., <code>catalog.lookup("reverseFunction");</code>).</p>
 </div>
 <div class="paragraph">
 <p>For more details please reference the complete sample available <a href="https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/simplestjar">here</a>.
