@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2020-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,15 @@ package org.springframework.cloud.function.adapter.gcloud;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
-import org.junit.After;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -43,245 +34,109 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.GenericMessage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
+ * Unit tests for the HTTP functions adapter for Google Cloud Functions.
+ *
  * @author Dmitry Solomakha
+ * @author Mike Eltsufin
  */
 public class GcfSpringBootHttpRequestHandlerTests {
-	HttpRequest request = Mockito.mock(HttpRequest.class);
-	HttpResponse response = Mockito.mock(HttpResponse.class);
 
-	private GcfSpringBootHttpRequestHandler<?> handler = null;
-	public static final Gson GSON = new Gson();
+	private static final Gson gson = new Gson();
 
-	<O> GcfSpringBootHttpRequestHandler<O> handler(Class<?> config) {
-		GcfSpringBootHttpRequestHandler<O> handler =
-			new GcfSpringBootHttpRequestHandler<O>(config);
-		this.handler = handler;
-		return handler;
+	@Test
+	public void testHelloWorldSupplier() throws Exception {
+		testFunction(HelloWorldSupplier.class, null, "Hello World!");
 	}
 
 	@Test
-	public void testWithBody() throws Exception {
-		GcfSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageBodyConfig.class);
-
-		StringReader foo = new StringReader(GSON.toJson(new Foo("foo")));
-		when(request.getReader()).thenReturn(new BufferedReader(foo));
-
-		StringWriter writer = new StringWriter();
-		handler.service(request, new HttpResponseImpl(new BufferedWriter(writer)));
-
-		assertThat(GSON.fromJson(writer.toString(), Bar.class)).isEqualTo(new Bar("FOO"));
+	public void testJsonInputFunction() throws Exception {
+		testFunction(JsonInputFunction.class, new IncomingRequest("hello"),
+			"Thank you for sending the message: hello");
 	}
 
 	@Test
-	public void testWithRequestParameters() throws Exception {
-		GcfSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageEchoReqParametersConfig.class);
+	public void testJsonInputOutputFunction() throws Exception {
+		testFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
+			new OutgoingResponse("Thank you for sending the message: hello"));
+	}
 
-		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
-		when(request.getUri()).thenReturn("http://localhost:8080/pathValue");
-		when(request.getPath()).thenReturn("/pathValue");
-		when(request.getHeaders())
-			.thenReturn(Collections.singletonMap("test-header", Collections.singletonList("headerValue")));
-		when(request.getMethod()).thenReturn("GET");
+	@Test
+	public void testJsonInputConsumer() throws Exception {
+		testFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null);
+	}
 
+	private <I, O> void testFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
+		GcfSpringBootHttpRequestHandler handler = new GcfSpringBootHttpRequestHandler(configurationClass);
+
+		HttpRequest request = Mockito.mock(HttpRequest.class);
+
+		if (input != null) {
+			when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		}
+
+		HttpResponse response = Mockito.mock(HttpResponse.class);
 		StringWriter writer = new StringWriter();
-		HttpResponseImpl response = new HttpResponseImpl(new BufferedWriter(writer));
+		when(response.getWriter()).thenReturn(new BufferedWriter(writer));
+
 		handler.service(request, response);
 
-		assertThat(response.statusCode).isEqualTo(200);
-		assertThat(response.headers.get("path")).containsExactly("/pathValue");
-		assertThat(response.headers.get("test-header")).containsExactly("headerValue");
-		assertThat(GSON.fromJson(writer.toString(), Bar.class)).isEqualTo(new Bar("body"));
+		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
 
-	@Test
-	public void testWithEmptyBody() throws Exception {
-		GcfSpringBootHttpRequestHandler<Foo> handler = handler(FunctionMessageConsumerConfig.class);
-
-		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("")));
-
-		StringWriter writer = new StringWriter();
-		HttpResponseImpl response = new HttpResponseImpl(new BufferedWriter(writer));
-		handler.service(request, response);
-
-		assertThat(response.statusCode).isEqualTo(200);
-		assertThat(writer.toString()).isEqualTo("");
-	}
-
-	@After
-	public void close() {
-		if (this.handler != null) {
-			this.handler.close();
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class HelloWorldSupplier {
+		@Bean
+		public Supplier<String> supplier() {
+			return () -> "Hello World!";
 		}
 	}
 
 	@Configuration
-	@Import({ContextFunctionCatalogAutoConfiguration.class})
-	protected static class FunctionMessageBodyConfig {
-
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputFunction {
 		@Bean
-		public Function<Message<Foo>, Message<Bar>> function() {
-			return (foo -> {
-				Map<String, Object> headers = new HashMap<>();
-				return new GenericMessage<>(
-					new Bar(foo.getPayload().getValue().toUpperCase()), headers);
-			});
+		public Function<IncomingRequest, String> function() {
+			return (in) -> "Thank you for sending the message: " + in.message;
 		}
-
 	}
 
 	@Configuration
-	@Import({ContextFunctionCatalogAutoConfiguration.class})
-	protected static class FunctionMessageEchoReqParametersConfig {
-
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputOutputFunction {
 		@Bean
-		public Function<Message<Void>, Message<Bar>> function() {
-			return (message -> {
-				Map<String, Object> headers = new HashMap<>();
-				headers.put("path", message.getHeaders().get("path"));
-				headers.put("query", message.getHeaders().get("query"));
-				headers.put("test-header", message.getHeaders().get("test-header"));
-				headers.put("httpMethod", message.getHeaders().get("httpMethod"));
-				return new GenericMessage<>(new Bar("body"), headers);
-			});
+		public Function<IncomingRequest, OutgoingResponse> function() {
+			return (in) -> new OutgoingResponse("Thank you for sending the message: " + in.message);
 		}
-
 	}
 
 	@Configuration
-	@Import({ContextFunctionCatalogAutoConfiguration.class})
-	protected static class FunctionMessageConsumerConfig {
-
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputConsumer {
 		@Bean
-		public Consumer<Message<Foo>> function() {
-			return (foo -> { });
+		public Consumer<IncomingRequest> function() {
+			return (in) -> System.out.println("Thank you for sending the message: " + in.message);
 		}
 	}
 
-	private static class Foo {
+	private static class IncomingRequest {
+		String message;
 
-		private String value;
-
-		Foo() {
-		}
-
-		Foo(String value) {
-			this.value = value;
-		}
-
-		public String lowercase() {
-			return this.value.toLowerCase();
-		}
-
-		public String uppercase() {
-			return this.value.toUpperCase();
-		}
-
-		public String getValue() {
-			return this.value;
-		}
-
-		public void setValue(String value) {
-			this.value = value;
-		}
-
-	}
-
-	private static class Bar {
-
-		private String value;
-
-		Bar() {
-		}
-
-		Bar(String value) {
-			this.value = value;
-		}
-
-		public String getValue() {
-			return this.value;
-		}
-
-		public void setValue(String value) {
-			this.value = value;
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (this == o) {
-				return true;
-			}
-			if (o == null || getClass() != o.getClass()) {
-				return false;
-			}
-			Bar bar = (Bar) o;
-			return Objects.equals(getValue(), bar.getValue());
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(getValue());
+		IncomingRequest(String message) {
+			this.message = message;
 		}
 	}
 
-	private static class HttpResponseImpl implements HttpResponse {
+	private static class OutgoingResponse {
+		String message;
 
-		int statusCode;
-
-		String contentType;
-
-		BufferedWriter writer;
-
-		HttpResponseImpl(BufferedWriter writer) {
-			this.writer = writer;
-		}
-
-		Map<String, List<String>> headers = new HashMap<>();
-
-		@Override
-		public void setStatusCode(int code) {
-			statusCode = code;
-		}
-
-		@Override
-		public void setStatusCode(int code, String message) {
-			statusCode = code;
-		}
-
-		@Override
-		public void setContentType(String contentType) {
-			this.contentType = contentType;
-		}
-
-		@Override
-		public Optional<String> getContentType() {
-			return Optional.ofNullable(contentType);
-		}
-
-		@Override
-		public void appendHeader(String header, String value) {
-			headers.computeIfAbsent(header, x -> new ArrayList<>()).add(value);
-		}
-
-		@Override
-		public Map<String, List<String>> getHeaders() {
-			return headers;
-		}
-
-		@Override
-		public OutputStream getOutputStream() throws IOException {
-			throw new RuntimeException("unsupported!");
-		}
-
-		@Override
-		public BufferedWriter getWriter() throws IOException {
-			return writer;
+		OutgoingResponse(String message) {
+			this.message = message;
 		}
 	}
 }

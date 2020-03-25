@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2020-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.gcloud.integration;
+package com.example;
 
 import java.util.function.Function;
 
@@ -24,13 +24,13 @@ import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class CloudFunctionMain {
+
 	public static void main(String[] args) {
 		SpringApplication.run(CloudFunctionMain.class, args);
 	}
 
 	@Bean
-	public Function<String, String> uppercase() {
-		return input -> input.toUpperCase();
+	public Function<String, String> function() {
+		return value -> value.toUpperCase();
 	}
 }
-
