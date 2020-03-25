@@ -84,9 +84,6 @@ First, add the Shade Plugin configuration to generate a fat jar when you run the
                 <outputDirectory>deploy</outputDirectory>
                 <shadedClassifierName>gcp</shadedClassifierName>
                 <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                        <mainClass>com.example.CloudFunctionMain</mainClass>
-                    </transformer>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                         <resource>META-INF/spring.handlers</resource>
                     </transformer>
@@ -97,6 +94,9 @@ First, add the Shade Plugin configuration to generate a fat jar when you run the
                         <resource>META-INF/spring.schemas</resource>
                     </transformer>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        <mainClass>com.example.CloudFunctionMain</mainClass>
+                    </transformer>
                 </transformers>
             </configuration>
         </execution>
