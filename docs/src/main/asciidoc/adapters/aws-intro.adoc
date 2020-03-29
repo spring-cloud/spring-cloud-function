@@ -178,7 +178,7 @@ dependencies {
 }
 ----
 
-As pointed out in <<Notes on JAR Layout>>, you wil need a shaded jar in order to upload it
+As pointed out in <<Notes on JAR Layout>>, you will need a shaded jar in order to upload it
 to AWS Lambda. You can use the https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow/[Gradle Shadow Plugin] for that:
 
 [source,groovy]
