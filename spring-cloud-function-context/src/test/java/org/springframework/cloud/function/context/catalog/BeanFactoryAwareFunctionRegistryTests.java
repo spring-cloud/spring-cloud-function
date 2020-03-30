@@ -41,6 +41,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtilsTests.ReactiveFunction;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -356,7 +357,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.getPayload()).isEqualTo("\"b2xsZWg=\"".getBytes());
 	}
 
-	@SuppressWarnings("rawtypes")
 	@Test
 	public void testMultipleValuesInOutputHandling() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(CollectionOutConfiguration.class);
@@ -419,6 +419,29 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		assertThat(dateResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/integer"));
 		assertThat(dateResult.getHeaders().get("accept")).isNull();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testWithComplexHierarchyAndTypeConversion() {
+		FunctionCatalog catalog = this.configureCatalog(ReactiveFunctionImpl.class);
+		Function<Object, Flux> f = catalog.lookup("");
+		assertThat(f.apply(new GenericMessage("23")).blockFirst()).isEqualTo(23);
+		assertThat(f.apply(Flux.just("25")).blockFirst()).isEqualTo(25);
+		assertThat(f.apply(Flux.just(25)).blockFirst()).isEqualTo(25);
+	}
+
+	public interface ReactiveFunction<S, T> extends Function<Flux<S>, Flux<T>> {
+
+	}
+
+	@Component
+	@EnableAutoConfiguration
+	public static class ReactiveFunctionImpl implements ReactiveFunction<String, Integer> {
+		@Override
+		public Flux<Integer> apply(Flux<String> inFlux) {
+			return inFlux.map(v -> Integer.parseInt(v));
+		}
 	}
 
 	@SuppressWarnings("unchecked")

@@ -30,6 +30,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import net.jodah.typetools.TypeResolver;
 import org.reactivestreams.Publisher;
 import reactor.util.function.Tuple2;
 
@@ -118,29 +119,18 @@ public final class FunctionTypeUtils {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
 		Assert.isTrue(isFunctional(functionalClass), "Type must be one of Supplier, Function or Consumer");
-		Type[] generics = functionalClass.getGenericInterfaces();
-		if (ObjectUtils.isEmpty(generics)) {
-			return functionalClass;
+
+		if (Function.class.isAssignableFrom(functionalClass)) {
+			return TypeResolver.reify(Function.class, (Class<Function<?, ?>>) functionalClass);
 		}
-		else  {
-			for (Type generic : generics) {
-				if (generic instanceof ParameterizedType) {
-					Class<?> rawClsss = (Class<?>) ((ParameterizedType) generic).getRawType();
-					if (Function.class.isAssignableFrom(rawClsss)
-							|| Consumer.class.isAssignableFrom(rawClsss)
-							|| Supplier.class.isAssignableFrom(rawClsss)) {
-						return generic;
-					}
-					else {
-						return discoverFunctionTypeFromClass(rawClsss);
-					}
-				}
-				else {
-					return discoverFunctionTypeFromClass((Class<?>) generic);
-				}
-			}
+		else if (Consumer.class.isAssignableFrom(functionalClass)) {
+			return TypeResolver.reify(Consumer.class, (Class<Consumer<?>>) functionalClass);
+		}
+		else if (Supplier.class.isAssignableFrom(functionalClass)) {
+			return TypeResolver.reify(Supplier.class, (Class<Supplier<?>>) functionalClass);
 		}
 		return null;
 	}

@@ -254,6 +254,9 @@ public class BeanFactoryAwareFunctionRegistry
 	}
 
 	private Type discoverFunctionType(Object function, String... names) {
+		if (function instanceof RoutingFunction) {
+			return FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType();
+		}
 		boolean beanDefinitionExists = false;
 		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
 			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
@@ -267,9 +270,15 @@ public class BeanFactoryAwareFunctionRegistry
 			logger.info("BeanDefinition for function name(s) '" + Arrays.asList(names) +
 				"' can not be located. FunctionType will be based on " + function.getClass());
 		}
-		return beanDefinitionExists
-			? FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType()
-			: new FunctionType(function.getClass()).getType();
+
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(function.getClass());
+		if (beanDefinitionExists) {
+			Type t = FunctionTypeUtils.getImmediateGenericType(type, 0);
+			if (t == null || t == Object.class) {
+				type = FunctionType.of(FunctionContextUtils.findType(this.applicationContext.getBeanFactory(), names)).getType();
+			}
+		}
+		return type;
 	}
 
 	private String discoverDefaultDefinitionIfNecessary(String definition) {
