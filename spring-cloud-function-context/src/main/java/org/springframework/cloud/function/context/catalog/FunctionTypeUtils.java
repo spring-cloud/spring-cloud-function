@@ -128,9 +128,9 @@ public final class FunctionTypeUtils {
 			for (Type generic : generics) {
 				if (generic instanceof ParameterizedType) {
 					Class<?> rawClsss = (Class<?>) ((ParameterizedType) generic).getRawType();
-					if (rawClsss.isAssignableFrom(Function.class)
-							|| rawClsss.isAssignableFrom(Consumer.class)
-							|| rawClsss.isAssignableFrom(Supplier.class)) {
+					if (Function.class.isAssignableFrom(rawClsss)
+							|| Consumer.class.isAssignableFrom(rawClsss)
+							|| Supplier.class.isAssignableFrom(rawClsss)) {
 						return generic;
 					}
 					else {
@@ -144,6 +144,8 @@ public final class FunctionTypeUtils {
 		}
 		return null;
 	}
+
+
 
 	public static Type discoverFunctionTypeFromFunctionMethod(Method functionMethod) {
 		Assert.isTrue(

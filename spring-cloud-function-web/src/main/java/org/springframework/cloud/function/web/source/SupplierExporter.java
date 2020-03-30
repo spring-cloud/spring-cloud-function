@@ -175,7 +175,7 @@ public class SupplierExporter implements SmartLifecycle {
 			body = message.getPayload();
 		}
 		Mono<ClientResponse> result = this.client.post().uri(uri)
-				.headers(headers -> headers(headers, destination, value)).syncBody(body)
+				.headers(headers -> headers(headers, destination, value)).bodyValue(body)
 				.exchange();
 		if (this.debug) {
 			result = result.log();

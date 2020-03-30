@@ -19,7 +19,6 @@ package org.springframework.cloud.function.context.catalog;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.sql.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -132,6 +131,13 @@ public class FunctionTypeUtilsTests {
 		assertThat(type.getInputType()).isAssignableFrom(String.class);
 	}
 
+	@Test
+	public void foo() {
+		FunctionType type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(ReactiveFunctionImpl.class));
+		assertThat(String.class).isAssignableFrom(type.getInputType());
+		assertThat(Integer.class).isAssignableFrom(type.getOutputType());
+	}
+
 //	@Test
 //	public void testInputTypeByIndex() throws Exception {
 //		Type functionType = getReturnType("function");
@@ -208,19 +214,19 @@ public class FunctionTypeUtilsTests {
 
 	//============
 
-	private interface MessageFunction<T> extends Function<Message<String>, Message<String>> {
+	private interface MessageFunction extends Function<Message<String>, Message<String>> {
 
 	}
 
-	private interface MyMessageFunction extends MessageFunction<Date> {
+	private interface MyMessageFunction extends MessageFunction {
 
 	}
 
-	private interface MessageConsumer<T> extends Consumer<Message<String>> {
+	private interface MessageConsumer extends Consumer<Message<String>> {
 
 	}
 
-	private interface MyMessageConsumer extends MessageConsumer<Date> {
+	private interface MyMessageConsumer extends MessageConsumer {
 
 	}
 
@@ -228,5 +234,18 @@ public class FunctionTypeUtilsTests {
 		@Override
 		public void accept(Flux<Message<String>> messageFlux) {
 		}
+	}
+
+	public interface ReactiveFunction<S, T> extends Function<Flux<S>, Flux<T>> {
+
+	}
+
+	public static class ReactiveFunctionImpl implements ReactiveFunction<String, Integer> {
+
+		@Override
+		public Flux<Integer> apply(Flux<String> inFlux) {
+			return inFlux.map(v -> Integer.parseInt(v));
+		}
+
 	}
 }

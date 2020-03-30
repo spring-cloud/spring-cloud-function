@@ -20,12 +20,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.function.context.FunctionProperties;
 
 /**
  * @author Dave Syer
  *
  */
-@ConfigurationProperties("spring.cloud.function.web.export")
+@ConfigurationProperties(prefix = FunctionProperties.PREFIX + ".web.export")
 public class ExporterProperties {
 
 	/**
