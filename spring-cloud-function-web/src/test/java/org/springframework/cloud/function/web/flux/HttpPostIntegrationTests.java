@@ -351,6 +351,15 @@ public class HttpPostIntegrationTests {
 				String.class).getBody()).isEqualTo("{\"A\":2,\"B\":1}");
 	}
 
+	@Test
+	public void fluxWithList() throws Exception {
+		List<String> list = Arrays.asList("A", "B", "A");
+		assertThat(this.rest.exchange(
+				RequestEntity.post(new URI("/fluxCollectionEcho")).accept(MediaType.APPLICATION_JSON)
+						.contentType(MediaType.APPLICATION_JSON).body(list),
+				String.class).getBody()).isEqualTo("[\"A\",\"B\",\"A\"]");
+	}
+
 	private String sse(String... values) {
 		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
 	}
@@ -479,6 +488,11 @@ public class HttpPostIntegrationTests {
 		public Function<Flux<String>, Mono<Map<String, Integer>>> count() {
 			return flux -> flux.collect(HashMap::new,
 					(map, word) -> map.merge(word, 1, Integer::sum));
+		}
+
+		@Bean
+		public Function<Flux<List<String>>, Flux<String>> fluxCollectionEcho() {
+			return flux -> flux.flatMap(v -> Flux.fromIterable(v));
 		}
 
 	}

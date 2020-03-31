@@ -145,7 +145,7 @@ public class RequestProcessor {
 				Type jsonType = body.startsWith("[")
 						&& Collection.class.isAssignableFrom(inputType)
 						|| body.startsWith("{") ? inputType : Collection.class;
-				if (body.startsWith("[")) {
+				if (body.startsWith("[") && itemType instanceof Class) {
 					jsonType = ResolvableType.forClassWithGenerics((Class<?>) jsonType,
 							(Class<?>) itemType).getType();
 				}
