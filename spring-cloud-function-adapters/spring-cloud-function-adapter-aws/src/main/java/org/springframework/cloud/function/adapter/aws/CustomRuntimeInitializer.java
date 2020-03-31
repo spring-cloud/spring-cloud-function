@@ -22,6 +22,7 @@ import org.springframework.cloud.function.web.source.DestinationResolver;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.annotation.Order;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
@@ -41,7 +42,8 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
 				context.registerBean(LambdaDestinationResolver.class, () -> new LambdaDestinationResolver());
 			}
-			context.registerBean(CommandLineRunner.class, () -> args -> CustomRuntimeAutoConfiguration.background());
+			context.registerBean(StringUtils.uncapitalize(CustomRuntimeAutoConfiguration.class.getSimpleName()),
+					CommandLineRunner.class, () -> args -> CustomRuntimeAutoConfiguration.background());
 		}
 	}
 
