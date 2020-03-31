@@ -18,6 +18,7 @@ package org.springframework.cloud.function.web.function;
 
 import java.net.URI;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.After;
 import org.junit.Before;
@@ -90,10 +91,36 @@ public class FunctionEndpointInitializerTests {
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
+	@Test
+	public void testGetWithtFunction() throws Exception {
+		FunctionalSpringApplication.run(ApplicationConfiguration.class);
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		String port = System.getProperty("server.port");
+		Thread.sleep(200);
+		ResponseEntity<String> response = testRestTemplate
+				.getForEntity(new URI("http://localhost:" + port + "/reverse/stressed"), String.class);
+		assertThat(response.getBody()).isEqualTo("desserts");
+	}
+
+	@Test
+	public void testGetWithtSupplier() throws Exception {
+		FunctionalSpringApplication.run(ApplicationConfiguration.class);
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		String port = System.getProperty("server.port");
+		Thread.sleep(200);
+		ResponseEntity<String> response = testRestTemplate
+				.getForEntity(new URI("http://localhost:" + port + "/supplier"), String.class);
+		assertThat(response.getBody()).isEqualTo("Jim Lahey");
+	}
+
 
 	@SpringBootConfiguration
 	protected static class ApplicationConfiguration
 			implements ApplicationContextInitializer<GenericApplicationContext> {
+
+		public Supplier<String> supplier() {
+			return () -> "Jim Lahey";
+		}
 
 		public Function<String, String> uppercase() {
 			return s -> s.toUpperCase();
@@ -118,6 +145,9 @@ public class FunctionEndpointInitializerTests {
 			applicationContext.registerBean("lowercase", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(lowercase())
 						.type(FunctionType.from(String.class).to(String.class)));
+			applicationContext.registerBean("supplier", FunctionRegistration.class,
+					() -> new FunctionRegistration<>(supplier())
+						.type(FunctionType.supplier(String.class)));
 		}
 
 	}

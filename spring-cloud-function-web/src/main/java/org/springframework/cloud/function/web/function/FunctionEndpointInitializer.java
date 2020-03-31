@@ -20,6 +20,7 @@ import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,6 +44,7 @@ import org.springframework.cloud.function.web.BasicStringConverter;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.StringConverter;
+import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
@@ -61,10 +63,12 @@ import org.springframework.web.reactive.function.server.HandlerStrategies;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.WebExceptionHandler;
 import org.springframework.web.server.adapter.HttpWebHandlerAdapter;
 import org.springframework.web.server.adapter.WebHttpHandlerBuilder;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
@@ -209,9 +213,8 @@ class FunctionEndpointFactory {
 		this.handler = handler;
 	}
 
-	@SuppressWarnings("unchecked")
-	private Function<Flux<?>, Flux<?>> extract(ServerRequest request) {
-		Function<Flux<?>, Flux<?>> function;
+	private Object extract(ServerRequest request) {
+		Object function;
 		if (handler != null) {
 			logger.info("Configured function: " + handler);
 			Set<String> names = this.functionCatalog.getNames(Function.class);
@@ -219,7 +222,7 @@ class FunctionEndpointFactory {
 			function = this.functionCatalog.lookup(Function.class, handler);
 		}
 		else {
-			function = (Function<Flux<?>, Flux<?>>) FunctionWebUtils.findFunction(request.method(), functionCatalog,
+			function = FunctionWebUtils.findFunction(request.method(), functionCatalog,
 					request.attributes(), request.path());
 		}
 		return function;
@@ -228,7 +231,7 @@ class FunctionEndpointFactory {
 	@SuppressWarnings({ "unchecked" })
 	public <T> RouterFunction<?> functionEndpoints() {
 		return route(POST("/**"), request -> {
-			Function<Flux<?>, Flux<?>> function = extract(request);
+			Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) extract(request);
 			Class<T> outputType = (Class<T>) this.inspector.getOutputType(function);
 			FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
@@ -237,7 +240,26 @@ class FunctionEndpointFactory {
 				return status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()))
 						.body(Mono.just((T) entity.getBody()), outputType);
 			});
+		})
+		.andRoute(GET("/**"), request -> {
+			Object functionComponent = extract(request);
+			if (functionComponent instanceof Supplier || functionComponent instanceof Function) {
+				Class<T> outputType = (Class<T>) this.inspector.getOutputType(functionComponent);
+				if (functionComponent instanceof Supplier) {
+					Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
+					FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);
+					return ServerResponse.ok().body(wrapper.supplier().get(), outputType);
+				}
+				else if (functionComponent instanceof Function) {
+					Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) functionComponent;
+					FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
+					wrapper.headers(request.headers().asHttpHeaders());
+					String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
+					wrapper.argument(Flux.just(argument));
+					return ServerResponse.ok().body(wrapper.function().apply(wrapper.argument()), outputType);
+				}
+			}
+			throw new UnsupportedOperationException("Consumer is not supported for GET");
 		});
 	}
-
 }
