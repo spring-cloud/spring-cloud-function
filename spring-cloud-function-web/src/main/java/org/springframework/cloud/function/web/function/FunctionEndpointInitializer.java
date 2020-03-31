@@ -243,23 +243,20 @@ class FunctionEndpointFactory {
 		})
 		.andRoute(GET("/**"), request -> {
 			Object functionComponent = extract(request);
-			if (functionComponent instanceof Supplier || functionComponent instanceof Function) {
-				Class<T> outputType = (Class<T>) this.inspector.getOutputType(functionComponent);
-				if (functionComponent instanceof Supplier) {
-					Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
-					FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);
-					return ServerResponse.ok().body(wrapper.supplier().get(), outputType);
-				}
-				else if (functionComponent instanceof Function) {
-					Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) functionComponent;
-					FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
-					wrapper.headers(request.headers().asHttpHeaders());
-					String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
-					wrapper.argument(Flux.just(argument));
-					return ServerResponse.ok().body(wrapper.function().apply(wrapper.argument()), outputType);
-				}
+			Class<T> outputType = (Class<T>) this.inspector.getOutputType(functionComponent);
+			if (functionComponent instanceof Supplier) {
+				Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
+				FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);
+				return ServerResponse.ok().body(wrapper.supplier().get(), outputType);
 			}
-			throw new UnsupportedOperationException("Consumer is not supported for GET");
+			else {
+				Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) functionComponent;
+				FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
+				wrapper.headers(request.headers().asHttpHeaders());
+				String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
+				wrapper.argument(Flux.just(argument));
+				return ServerResponse.ok().body(wrapper.function().apply(wrapper.argument()), outputType);
+			}
 		});
 	}
 }
