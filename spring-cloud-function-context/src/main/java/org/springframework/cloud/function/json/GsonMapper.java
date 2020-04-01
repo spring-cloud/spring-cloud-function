@@ -16,14 +16,16 @@
 
 package org.springframework.cloud.function.json;
 
+import java.io.Reader;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
- *
  */
 public class GsonMapper implements JsonMapper {
 
@@ -35,12 +37,35 @@ public class GsonMapper implements JsonMapper {
 
 	@Override
 	public <T> T toObject(String json, Type type) {
-		return this.gson.fromJson(json, type);
+		return this.fromJson(json, type);
 	}
 
 	@Override
 	public String toString(Object value) {
 		return this.gson.toJson(value);
+	}
+
+	@Override
+	public <T> T fromJson(Object json, Type type) {
+		T convertedValue = null;
+		if (json instanceof byte[]) {
+			convertedValue = this.gson.fromJson(new String(((byte[]) json), StandardCharsets.UTF_8), type);
+		}
+		else if (json instanceof String) {
+			convertedValue = this.gson.fromJson((String) json, type);
+		}
+		else if (json instanceof Reader) {
+			convertedValue = this.gson.fromJson((Reader) json, type);
+		}
+		else if (json instanceof JsonElement) {
+			convertedValue = this.gson.fromJson((JsonElement) json, type);
+		}
+		return convertedValue;
+	}
+
+	@Override
+	public byte[] toJson(Object value) {
+		return this.gson.toJson(value).getBytes(StandardCharsets.UTF_8);
 	}
 
 }

@@ -16,9 +16,11 @@
 
 package org.springframework.cloud.function.json;
 
+import java.io.Reader;
 import java.lang.reflect.Type;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
@@ -36,13 +38,40 @@ public class JacksonMapper implements JsonMapper {
 
 	@Override
 	public <T> T toObject(String json, Type type) {
+		return this.fromJson(json, type);
+	}
+
+	@Override
+	public <T> T fromJson(Object json, Type type) {
+		T convertedValue = null;
+		JavaType constructType = TypeFactory.defaultInstance().constructType(type);
+
 		try {
-			return this.mapper.readValue(json,
-					TypeFactory.defaultInstance().constructType(type));
+			if (json instanceof String) {
+				convertedValue = this.mapper.readValue((String) json, constructType);
+			}
+			else if (json instanceof byte[]) {
+				convertedValue = this.mapper.readValue((byte[]) json, constructType);
+			}
+			else if (json instanceof Reader) {
+				convertedValue = this.mapper.readValue((Reader) json, constructType);
+			}
 		}
 		catch (Exception e) {
-			throw new IllegalArgumentException("Cannot convert JSON " + json, e);
+			//ignore and let other converters have a chance
 		}
+		return convertedValue;
+	}
+
+	@Override
+	public byte[] toJson(Object value) {
+		try {
+			return this.mapper.writeValueAsBytes(value);
+		}
+		catch (Exception e) {
+			//ignore and let other converters have a chance
+		}
+		return null;
 	}
 
 	@Override
@@ -54,5 +83,7 @@ public class JacksonMapper implements JsonMapper {
 			throw new IllegalArgumentException("Cannot convert to JSON", e);
 		}
 	}
+
+
 
 }

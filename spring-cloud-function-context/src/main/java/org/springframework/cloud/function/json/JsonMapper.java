@@ -50,8 +50,14 @@ public interface JsonMapper {
 	 * @param type type
 	 * @return object
 	 * @since 2.0
+	 * @deprecated since v3.0.4 in favor of {@link #fromJson(Object, Type)}
 	 */
+	@Deprecated
 	<T> T toObject(String json, Type type);
+
+	<T> T fromJson(Object json, Type type);
+
+	byte[] toJson(Object value);
 
 	/**
 	 * @param <T> type for list arguments
@@ -60,6 +66,7 @@ public interface JsonMapper {
 	 * @return single object
 	 * @deprecated since v2.0 in favor of {@link #toObject(String, Type)}
 	 */
+	@Deprecated
 	default <T> T toSingle(String json, Class<T> type) {
 		return toObject(json, type);
 	}
