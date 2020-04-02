@@ -33,7 +33,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
@@ -79,7 +78,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 	private FunctionInspector inspector;
 
 	@Autowired(required = false)
-	private FunctionCatalog catalog;
+	protected FunctionCatalog catalog;
 
 	private ConfigurableApplicationContext context;
 
@@ -266,7 +265,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 				new FunctionRegistration(context.getBean(name), name);
 
 		Type type = FunctionContextUtils.
-				findType(name, (ConfigurableListableBeanFactory) this.context.getBeanFactory());
+				findType(name, this.context.getBeanFactory());
 
 		this.functionRegistration = functionRegistration.type(new FunctionType(type)).wrap();
 

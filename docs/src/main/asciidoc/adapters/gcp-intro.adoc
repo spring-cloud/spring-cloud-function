@@ -36,7 +36,7 @@ Start by adding the Maven plugin provided as part of the Google Functions Framew
     <artifactId>function-maven-plugin</artifactId>
     <version>0.9.1</version>
     <configuration>
-        <functionTarget>org.springframework.cloud.function.adapter.gcloud.GcfSpringBootHttpRequestHandler</functionTarget>
+        <functionTarget>org.springframework.cloud.function.adapter.gcloud.FunctionInvoker</functionTarget>
         <port>8080</port>
     </configuration>
 </plugin>
@@ -118,7 +118,7 @@ From the project base directory run the following command to deploy.
 
 ----
 gcloud alpha functions deploy function-sample-gcp \
---entry-point org.springframework.cloud.function.adapter.gcloud.GcfSpringBootHttpRequestHandler \
+--entry-point org.springframework.cloud.function.adapter.gcloud.FunctionInvoker \
 --runtime java11 \
 --trigger-http \
 --source deploy \

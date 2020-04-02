@@ -34,6 +34,8 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -44,7 +46,7 @@ import static org.mockito.Mockito.when;
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  */
-public class GcfSpringBootHttpRequestHandlerTests {
+public class FunctionInvokerTests {
 
 	private static final Gson gson = new Gson();
 
@@ -71,21 +73,23 @@ public class GcfSpringBootHttpRequestHandlerTests {
 	}
 
 	private <I, O> void testFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
-		GcfSpringBootHttpRequestHandler handler = new GcfSpringBootHttpRequestHandler(configurationClass);
+		try (FunctionInvoker handler = new FunctionInvoker(configurationClass);) {
 
-		HttpRequest request = Mockito.mock(HttpRequest.class);
+			HttpRequest request = Mockito.mock(HttpRequest.class);
 
-		if (input != null) {
-			when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+			if (input != null) {
+				when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+			}
+
+			HttpResponse response = Mockito.mock(HttpResponse.class);
+			StringWriter writer = new StringWriter();
+			when(response.getWriter()).thenReturn(new BufferedWriter(writer));
+
+			handler.service(request, response);
+			if (expectedOutput != null) {
+				assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+			}
 		}
-
-		HttpResponse response = Mockito.mock(HttpResponse.class);
-		StringWriter writer = new StringWriter();
-		when(response.getWriter()).thenReturn(new BufferedWriter(writer));
-
-		handler.service(request, response);
-
-		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
 
 	@Configuration
@@ -110,8 +114,11 @@ public class GcfSpringBootHttpRequestHandlerTests {
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
 	protected static class JsonInputOutputFunction {
 		@Bean
-		public Function<IncomingRequest, OutgoingResponse> function() {
-			return (in) -> new OutgoingResponse("Thank you for sending the message: " + in.message);
+		public Function<IncomingRequest, Message<OutgoingResponse>> function() {
+			return (in) -> {
+				return MessageBuilder.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
+						.setHeader("foo", "bar").build();
+			};
 		}
 	}
 
