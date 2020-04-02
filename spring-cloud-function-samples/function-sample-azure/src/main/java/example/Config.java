@@ -22,6 +22,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import com.microsoft.azure.functions.ExecutionContext;
+
 @SpringBootApplication
 public class Config {
 
@@ -30,58 +32,12 @@ public class Config {
 	}
 
 	@Bean
-	public Function<Foo, Bar> uppercase() {
-		return foo -> new Bar(foo.getValue().toUpperCase());
+	public Function<String, String> uppercase(ExecutionContext context) {
+		return value -> {
+			context.getLogger().info("Uppercasing " + value);
+			return value.toUpperCase();
+		};
 	}
 
 }
 
-class Foo {
-
-	private String value;
-
-	Foo() {
-	}
-
-	Foo(String value) {
-		this.value = value;
-	}
-
-	public String lowercase() {
-		return this.value.toLowerCase();
-	}
-
-	public String uppercase() {
-		return this.value.toUpperCase();
-	}
-
-	public String getValue() {
-		return this.value;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
-
-}
-
-class Bar {
-
-	private String value;
-
-	Bar() {
-	}
-
-	Bar(String value) {
-		this.value = value;
-	}
-
-	public String getValue() {
-		return this.value;
-	}
-
-	public void setValue(String value) {
-		this.value = value;
-	}
-
-}

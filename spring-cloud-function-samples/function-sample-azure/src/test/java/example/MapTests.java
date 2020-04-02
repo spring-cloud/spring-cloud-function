@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,18 +29,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MapTests {
 
 	@Test
-	public void test() {
-		Bar result = new Config().uppercase().apply(new Foo("foo"));
-		assertThat(result.getValue()).isEqualTo("FOO");
-	}
-
-	@Test
 	public void start() throws Exception {
-		AzureSpringBootRequestHandler<Foo, Bar> handler = new AzureSpringBootRequestHandler<>(
+		AzureSpringBootRequestHandler<String, String> handler = new AzureSpringBootRequestHandler<>(
 			Config.class);
-		Bar result = handler.handleRequest(new Foo("foo"), null);
+		String result = handler.handleRequest("foo", null);
 		handler.close();
-		assertThat(result.getValue()).isEqualTo("FOO");
+		assertThat(result).isEqualTo("FOO");
 	}
 
 }

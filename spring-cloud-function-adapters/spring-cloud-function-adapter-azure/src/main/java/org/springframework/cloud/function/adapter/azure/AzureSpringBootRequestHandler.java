@@ -18,6 +18,7 @@ package org.springframework.cloud.function.adapter.azure;
 
 import java.util.Collection;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.OutputBinding;
@@ -40,6 +41,8 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 
 	private String functionName;
 
+	private final static ExecutionContextDelegate EXECUTION_CTX_DELEGATE = new ExecutionContextDelegate();
+
 	public AzureSpringBootRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);
 	}
@@ -60,6 +63,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 
 	@SuppressWarnings("unchecked")
 	public O handleRequest(I input, ExecutionContext context) {
+		EXECUTION_CTX_DELEGATE.targetContext = context;
 		String name = "";
 		try {
 			if (context != null) {
@@ -73,7 +77,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 			 * see https://github.com/spring-cloud/spring-cloud-function/issues/425
 			 */
 			if (thisInitializer == null || !thisInitializer.functionName.equals(name)) {
-				initialize(context);
+				initialize(EXECUTION_CTX_DELEGATE);
 				this.functionName = name;
 				thisInitializer = this;
 				return (O) thisInitializer.handleRequest(input, context);
@@ -118,10 +122,6 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		return Flux.just(input);
 	}
 
-//	@SuppressWarnings("unchecked")
-//	protected O convertOutput(I input, Object output) {
-//		return (O) output;
-//	}
 
 	protected boolean isSingleInput(Function<?, ?> function, Object input) {
 		if (!(input instanceof Collection)) {
@@ -145,4 +145,31 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		return ((Collection<?>) output).size() <= 1;
 	}
 
+	private static class ExecutionContextDelegate implements ExecutionContext {
+
+		ExecutionContext targetContext;
+
+		@Override
+		public Logger getLogger() {
+			if (targetContext == null || targetContext.getLogger() == null) {
+				return Logger.getAnonymousLogger();
+			}
+			return targetContext.getLogger();
+		}
+
+		@Override
+		public String getInvocationId() {
+			return targetContext.getInvocationId();
+		}
+
+		@Override
+		public String getFunctionName() {
+			return targetContext.getFunctionName();
+		}
+
+		@Override
+		public String toString() {
+			return "ExecutionContextDelegate over: " + this.targetContext;
+		}
+	}
 }

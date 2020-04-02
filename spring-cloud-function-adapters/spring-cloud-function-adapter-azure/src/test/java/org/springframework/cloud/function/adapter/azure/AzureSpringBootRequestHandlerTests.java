@@ -232,13 +232,20 @@ public class AzureSpringBootRequestHandlerTests {
 	protected static class MultiConfig {
 
 		@Bean
-		public Function<Foo, Bar> uppercase() {
-			return foo -> new Bar(foo.getValue().toUpperCase());
+		public Function<Foo, Bar> uppercase(ExecutionContext context) {
+
+			return foo -> {
+				context.getLogger().info("Executing uppercase function");
+				return new Bar(foo.getValue().toUpperCase());
+			};
 		}
 
 		@Bean
-		public Function<Bar, Foo> lowercase() {
-			return bar -> new Foo(bar.getValue().toLowerCase());
+		public Function<Bar, Foo> lowercase(ExecutionContext context) {
+			return bar -> {
+				context.getLogger().info("Executing lowercase function");
+				return new Foo(bar.getValue().toLowerCase());
+			};
 		}
 
 	}
