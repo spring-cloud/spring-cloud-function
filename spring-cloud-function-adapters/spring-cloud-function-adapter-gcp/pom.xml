@@ -17,14 +17,15 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<google.cloud.functions.version>1.0.0-alpha-2-rc3</google.cloud.functions.version>
+		<google.cloud.functions.api.version>1.0.0-alpha-2-rc3</google.cloud.functions.api.version>
+		<google.cloud.functions.invoker.version>1.0.0-alpha-2-rc4</google.cloud.functions.invoker.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.google.cloud.functions</groupId>
 			<artifactId>functions-framework-api</artifactId>
-			<version>${google.cloud.functions.version}</version>
+			<version>${google.cloud.functions.api.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -44,7 +45,7 @@
 		<dependency>
 			<groupId>com.google.cloud.functions.invoker</groupId>
 			<artifactId>java-function-invoker</artifactId>
-			<version>${google.cloud.functions.version}</version>
+			<version>${google.cloud.functions.invoker.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
