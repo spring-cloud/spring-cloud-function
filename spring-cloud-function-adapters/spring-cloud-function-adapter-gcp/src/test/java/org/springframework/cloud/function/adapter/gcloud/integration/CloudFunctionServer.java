@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.adapter.gcloud.integration;
 
+import java.util.concurrent.TimeUnit;
+
 import com.google.cloud.functions.invoker.runner.Invoker;
 import org.junit.rules.ExternalResource;
 

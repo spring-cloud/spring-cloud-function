@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.gcloud.it;
+package org.springframework.cloud.function.adapter.gcloud.integration;
 
 import org.junit.ClassRule;
 import org.junit.Test;
