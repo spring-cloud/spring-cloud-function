@@ -130,3 +130,7 @@ Invoke the HTTP function:
 ----
 curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp -d "hello"
 ----
+
+==== Sample Function
+
+Go to the link:../../spring-cloud-function-samples/function-sample-gcp/[function-sample-gcp] to try out a sample function that you can test locally or deploy to GCP.
