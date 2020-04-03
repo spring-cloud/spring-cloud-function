@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.gcloud.integration;
 
+import java.io.IOException;
 import java.util.function.Function;
 
 import org.junit.Rule;
@@ -35,13 +36,37 @@ import org.springframework.context.annotation.Import;
  */
 public class HttpFunctionIntegrationTest {
 
-	@Rule
-	public CloudFunctionServer cloudFunctionServer = new CloudFunctionServer(FunctionInvoker.class,
-			CloudFunctionMain.class);
+//	@Rule
+//	public CloudFunctionServer cloudFunctionServer = new CloudFunctionServer(FunctionInvoker.class,
+//			CloudFunctionMain.class);
 
 	@Test
 	public void test() {
-		cloudFunctionServer.test(null, "hello", "HELLO");
+		doTest(CloudFunctionMainSingular.class, null, "hello", "HELLO");
+	}
+
+	@Test
+	public void testUppercase() throws InterruptedException, IOException {
+		doTest(CloudFunctionMain.class, "uppercase", "hello", "HELLO");
+
+	}
+
+	@Test
+	public void testFooBar() {
+		doTest(CloudFunctionMain.class, "foobar", new Foo("Hi"), new Bar("Hi"));
+	}
+
+	private <I, O> void doTest(Class mainClass, String function, I input, O expectedOutput) {
+		CloudFunctionServer2 cloudFunctionServer = new CloudFunctionServer2(
+				mainClass, function);
+		try {
+			cloudFunctionServer.before();
+			cloudFunctionServer.test(input, expectedOutput);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			cloudFunctionServer.after();
+		}
 	}
 
 	@Configuration
@@ -57,7 +82,7 @@ public class HttpFunctionIntegrationTest {
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
-	protected static class CloudFunctionMain {
+	public static class CloudFunctionMain {
 
 		@Bean
 		public Function<String, String> uppercase() {

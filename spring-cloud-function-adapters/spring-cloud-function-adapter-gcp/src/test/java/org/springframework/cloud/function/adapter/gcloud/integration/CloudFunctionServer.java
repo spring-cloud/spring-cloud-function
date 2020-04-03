@@ -92,11 +92,11 @@ public class CloudFunctionServer extends ExternalResource {
 		CloudFunctionServer.nextPort++;
 
 		// Wait for the server to start up.
-		TestRestTemplate template = new TestRestTemplate();
-		await().atMost(5, TimeUnit.SECONDS)
-				.until(() -> template.postForEntity("http://localhost:" + this.port, "test", String.class)
-						.getStatusCode().is2xxSuccessful());
-		// Thread.sleep(1000);
+//		TestRestTemplate template = new TestRestTemplate();
+//		await().atMost(5, TimeUnit.SECONDS)
+//				.until(() -> template.postForEntity("http://localhost:" + this.port, "test", String.class)
+//						.getStatusCode().is2xxSuccessful());
+		Thread.sleep(5000);
 	}
 
 	@Override
