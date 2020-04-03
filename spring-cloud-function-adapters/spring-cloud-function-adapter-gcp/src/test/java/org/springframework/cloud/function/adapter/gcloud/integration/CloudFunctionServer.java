@@ -18,19 +18,9 @@ package org.springframework.cloud.function.adapter.gcloud.integration;
 
 import java.util.concurrent.TimeUnit;
 
-import java.util.concurrent.TimeUnit;
-
 import com.google.cloud.functions.invoker.runner.Invoker;
 import com.google.gson.Gson;
 import org.junit.rules.ExternalResource;
-
-import org.springframework.boot.test.web.client.TestRestTemplate;
-
-import static org.awaitility.Awaitility.await;
-
-import org.springframework.boot.test.web.client.TestRestTemplate;
-
-import static org.awaitility.Awaitility.await;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -38,6 +28,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * Test rule for starting the Cloud Function server.
@@ -61,7 +52,6 @@ public class CloudFunctionServer extends ExternalResource {
 
 	/**
 	 * Initializes the Cloud Function Server rule.
-	 *
 	 * @param adapterClass the Cloud Function adapter class being used
 	 * @param springApplicationMainClass the Spring main class containing function beans
 	 */
@@ -81,11 +71,8 @@ public class CloudFunctionServer extends ExternalResource {
 		this.port = nextPort;
 
 		Runnable startServer = () -> {
-			Invoker invoker = new Invoker(
-				port,
-				adapterClass.getCanonicalName(),
-				null,
-				springApplicationMainClass.getClassLoader());
+			Invoker invoker = new Invoker(port, adapterClass.getCanonicalName(), null,
+					springApplicationMainClass.getClassLoader());
 
 			try {
 				invoker.startServer();
@@ -107,9 +94,9 @@ public class CloudFunctionServer extends ExternalResource {
 		// Wait for the server to start up.
 		TestRestTemplate template = new TestRestTemplate();
 		await().atMost(5, TimeUnit.SECONDS)
-				.until(() -> template.postForEntity(
-						"http://localhost:" + this.port, "test", String.class).getStatusCode().is2xxSuccessful());
-		//Thread.sleep(1000);
+				.until(() -> template.postForEntity("http://localhost:" + this.port, "test", String.class)
+						.getStatusCode().is2xxSuccessful());
+		// Thread.sleep(1000);
 	}
 
 	@Override
@@ -127,9 +114,8 @@ public class CloudFunctionServer extends ExternalResource {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("spring.function", function);
 
-		ResponseEntity<String> response = testRestTemplate.postForEntity(
-			"http://localhost:" + getPort(),
-			new HttpEntity<>(gson.toJson(request), headers), String.class);
+		ResponseEntity<String> response = testRestTemplate.postForEntity("http://localhost:" + getPort(),
+				new HttpEntity<>(gson.toJson(request), headers), String.class);
 
 		assertThat(response.getBody()).isEqualTo(gson.toJson(expectedResponse));
 	}
