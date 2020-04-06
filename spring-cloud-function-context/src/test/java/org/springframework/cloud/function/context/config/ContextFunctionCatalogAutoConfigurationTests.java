@@ -44,8 +44,6 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.function.compiler.CompiledFunctionFactory;
-import org.springframework.cloud.function.compiler.FunctionCompiler;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -61,14 +59,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DescriptiveResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -533,73 +529,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 //				.isNull();
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "other"))
 				.isInstanceOf(Function.class);
-	}
-
-	@Test
-	public void compiledFunction() throws Exception {
-		create(EmptyConfiguration.class,
-				"spring.cloud.function.compile.foos.lambda=v -> v.toUpperCase()",
-				"spring.cloud.function.compile.foos.inputType=String",
-				"spring.cloud.function.compile.foos.outputType=String");
-		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(String.class);
-	}
-
-	@Test
-	public void byteCodeFunction() throws Exception {
-		CompiledFunctionFactory<Function<String, String>> compiled = new FunctionCompiler<String, String>(
-				String.class.getName()).compile("foos", "v -> v.toUpperCase()", "String",
-						"String");
-		FileSystemResource resource = new FileSystemResource("target/foos.fun");
-		StreamUtils.copy(compiled.getGeneratedClassBytes(), resource.getOutputStream());
-		create(EmptyConfiguration.class,
-				"spring.cloud.function.imports.foos.location=file:./target/foos.fun");
-		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(String.class);
-	}
-
-	@Test
-	public void compiledConsumer() throws Exception {
-		create(EmptyConfiguration.class,
-				"spring.cloud.function.compile.foos.lambda=" + getClass().getName()
-						+ "::set",
-				"spring.cloud.function.compile.foos.type=consumer",
-				"spring.cloud.function.compile.foos.inputType=String");
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(String.class);
-		@SuppressWarnings("unchecked")
-		Consumer<String> consumer = (Consumer<String>) this.context.getBean("foos");
-		consumer.accept("hello");
-		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
-	}
-
-	@Test
-	public void compiledFluxConsumer() throws Exception {
-		create(EmptyConfiguration.class,
-				"spring.cloud.function.compile.foos.lambda=f -> f.subscribe("
-						+ getClass().getName() + "::set)",
-				"spring.cloud.function.compile.foos.type=consumer");
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(Flux.class);
-		@SuppressWarnings("unchecked")
-		Consumer<Flux<String>> consumer = (Consumer<Flux<String>>) this.context
-				.getBean("foos");
-		consumer.accept(Flux.just("hello"));
-		assertThat(ContextFunctionCatalogAutoConfigurationTests.value).isEqualTo("hello");
 	}
 
 	@Test
