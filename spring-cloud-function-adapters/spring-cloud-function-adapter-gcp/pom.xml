@@ -43,20 +43,14 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.cloud.functions.invoker</groupId>
 			<artifactId>java-function-invoker</artifactId>
 			<version>${google.cloud.functions.invoker.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.awaitility</groupId>
-			<artifactId>awaitility</artifactId>
-			<version>4.0.2</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

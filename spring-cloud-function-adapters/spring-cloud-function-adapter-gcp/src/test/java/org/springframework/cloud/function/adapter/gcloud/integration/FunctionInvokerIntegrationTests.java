@@ -34,7 +34,7 @@ import static org.springframework.cloud.function.adapter.gcloud.integration.Loca
  * @author Daniel Zou
  * @author Mike Eltsufin
  */
-public class HttpFunctionIntegrationTest {
+public class FunctionInvokerIntegrationTests {
 
 	@Test
 	public void testSingular() {
