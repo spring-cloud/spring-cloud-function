@@ -86,7 +86,26 @@ function createSwitchItem(block, blockSwitch) {
 	return {'item': item, 'content': content};
 }
 
+function globalSwitch() {
+	$('.switch--item').each(function() {
+		$(this).off('click');
+		$(this).on('click', function() {
+			selectedText = $(this).text()
+			selectedIndex = $(this).index()
+			$(".switch--item").filter(function() { return ($(this).text() === selectedText) }).each(function() {
+				$(this).addClass('selected');
+				$(this).siblings().removeClass('selected');
+				selectedContent = $(this).parent().siblings(".content").eq(selectedIndex)
+				selectedContent.removeClass('hidden');
+				selectedContent.siblings().addClass('hidden');
+			});
+		});
+	});
+}
+
 $(addBlockSwitches);
+$(globalSwitch);
+
 </script>
 
 </head>
@@ -103,7 +122,7 @@ $(addBlockSwitches);
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>3.0.4.BUILD-SNAPSHOT</strong></p>
+<p><strong>3.1.0.BUILD-SNAPSHOT</strong></p>
 </div>
 <div class="paragraph">
 <p>The <a href="https://azure.microsoft.com">Azure</a> adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but invasive programming model, involving annotations in user code that are specific to the platform. The easiest way to use it with Spring Cloud is to extend a base class and write a method in it with the <code>@FunctionName</code> annotation which delegates to a base class method.</p>
@@ -306,7 +325,7 @@ The Azure sample app is written in the "non-functional" style (using <code>@Bean
 </div>
 <script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
 <script type="text/javascript" src="js/toc.js"></script>
-<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<link rel="stylesheet" href="js/highlight/styles/github.min.css">
 <script src="js/highlight/highlight.min.js"></script>
 <script>hljs.initHighlighting()</script>
 </body>

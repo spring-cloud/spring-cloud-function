@@ -86,7 +86,26 @@ function createSwitchItem(block, blockSwitch) {
 	return {'item': item, 'content': content};
 }
 
+function globalSwitch() {
+	$('.switch--item').each(function() {
+		$(this).off('click');
+		$(this).on('click', function() {
+			selectedText = $(this).text()
+			selectedIndex = $(this).index()
+			$(".switch--item").filter(function() { return ($(this).text() === selectedText) }).each(function() {
+				$(this).addClass('selected');
+				$(this).siblings().removeClass('selected');
+				selectedContent = $(this).parent().siblings(".content").eq(selectedIndex)
+				selectedContent.removeClass('hidden');
+				selectedContent.siblings().addClass('hidden');
+			});
+		});
+	});
+}
+
 $(addBlockSwitches);
+$(globalSwitch);
+
 </script>
 
 </head>
@@ -426,7 +445,7 @@ we will not attempt any conversion and will pass the raw input directly to a fun
 </div>
 <script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
 <script type="text/javascript" src="js/toc.js"></script>
-<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<link rel="stylesheet" href="js/highlight/styles/github.min.css">
 <script src="js/highlight/highlight.min.js"></script>
 <script>hljs.initHighlighting()</script>
 </body>

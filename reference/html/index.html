@@ -87,7 +87,26 @@ function createSwitchItem(block, blockSwitch) {
 	return {'item': item, 'content': content};
 }
 
+function globalSwitch() {
+	$('.switch--item').each(function() {
+		$(this).off('click');
+		$(this).on('click', function() {
+			selectedText = $(this).text()
+			selectedIndex = $(this).index()
+			$(".switch--item").filter(function() { return ($(this).text() === selectedText) }).each(function() {
+				$(this).addClass('selected');
+				$(this).siblings().removeClass('selected');
+				selectedContent = $(this).parent().siblings(".content").eq(selectedIndex)
+				selectedContent.removeClass('hidden');
+				selectedContent.siblings().addClass('hidden');
+			});
+		});
+	});
+}
+
 $(addBlockSwitches);
+$(globalSwitch);
+
 </script>
 
 </head>
@@ -102,7 +121,7 @@ $(addBlockSwitches);
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p><strong>3.0.4.BUILD-SNAPSHOT</strong></p>
+<p><strong>3.1.0.BUILD-SNAPSHOT</strong></p>
 </div>
 <div class="paragraph">
 <p>The reference documentation consists of the following sections:</p>
@@ -131,6 +150,14 @@ $(addBlockSwitches);
 </td>
 <td class="hdlist2">
 <p>Azure Adapter Reference</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<a href="gcp.html">GCP Adapter</a> 
+</td>
+<td class="hdlist2">
+<p>GCP Adapter Reference</p>
 </td>
 </tr>
 <tr>
@@ -171,7 +198,7 @@ $(addBlockSwitches);
 </div>
 <script type="text/javascript" src="js/tocbot/tocbot.min.js"></script>
 <script type="text/javascript" src="js/toc.js"></script>
-<link rel="stylesheet" href="js/highlight/styles/atom-one-dark-reasonable.min.css">
+<link rel="stylesheet" href="js/highlight/styles/github.min.css">
 <script src="js/highlight/highlight.min.js"></script>
 <script>hljs.initHighlighting()</script>
 </body>
