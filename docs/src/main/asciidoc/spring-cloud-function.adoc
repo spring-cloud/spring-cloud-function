@@ -585,4 +585,5 @@ Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
 include::adapters/aws-intro.adoc[]
 include::adapters/azure-intro.adoc[]
+include::adapters/gcp-intro.adoc[]
 

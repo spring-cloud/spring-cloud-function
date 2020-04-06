@@ -46,13 +46,18 @@ public class FunctionInvoker
 
 	public FunctionInvoker() {
 		super();
+		init();
 	}
 
 	public FunctionInvoker(Class<?> configurationClass) {
 		super(configurationClass);
+		init();
+	}
+
+	private void init() {
 		System.setProperty("spring.http.converters.preferred-json-mapper", "gson");
-		Thread.currentThread() //TODO investigate if it is necessary
-			.setContextClassLoader(FunctionInvoker.class.getClassLoader());
+		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
+				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 		initialize(null);
 	}
 

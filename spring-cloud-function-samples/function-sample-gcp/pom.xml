@@ -27,7 +27,7 @@
 				<artifactId>function-maven-plugin</artifactId>
 				<version>0.9.1</version>
 				<configuration>
-					<functionTarget>org.springframework.cloud.function.adapter.gcloud.GcfSpringBootHttpRequestHandler</functionTarget>
+					<functionTarget>org.springframework.cloud.function.adapter.gcloud.FunctionInvoker</functionTarget>
 					<port>8080</port>
 				</configuration>
 			</plugin>

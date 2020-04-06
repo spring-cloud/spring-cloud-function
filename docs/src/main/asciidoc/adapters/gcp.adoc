@@ -1,0 +1,3 @@
+*{spring-cloud-function-version}*
+
+include::adapters/gcp-intro.adoc[]
