@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -71,7 +74,8 @@ class FunctionArchiveDeployer extends JarLauncher {
 		ClassLoader currentLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
-			Thread.currentThread().setContextClassLoader(createClassLoader(discoverClassPathAcrhives()));
+			ClassLoader cl = createClassLoader(discoverClassPathAcrhives().iterator());
+			Thread.currentThread().setContextClassLoader(cl);
 			evalContext.setTypeLocator(new StandardTypeLocator(Thread.currentThread().getContextClassLoader()));
 
 			if (this.isBootApplicationWithMain()) {
@@ -120,6 +124,13 @@ class FunctionArchiveDeployer extends JarLauncher {
 		catch (IOException e) {
 			logger.error("Failed to closed archive class loader", e);
 		}
+	}
+
+	// TODO remove this method all together once https://github.com/spring-projects/spring-boot/pull/20851 is addressed
+	@Override
+	protected ClassLoader createClassLoader(Iterator<Archive> archives) throws Exception {
+		URLClassLoader cl = (URLClassLoader) super.createClassLoader(archives);
+		return this.createClassLoader(cl.getURLs());
 	}
 
 	@Override
@@ -195,7 +206,12 @@ class FunctionArchiveDeployer extends JarLauncher {
 	}
 
 	private List<Archive> discoverClassPathAcrhives() throws Exception {
-		List<Archive> classPathArchives = getClassPathArchives();
+		Iterator<Archive> iter = this.getClassPathArchivesIterator();
+		List<Archive> classPathArchives = new ArrayList<>();
+		while (iter.hasNext()) {
+			classPathArchives.add(iter.next());
+		}
+
 		if (CollectionUtils.isEmpty(classPathArchives)) {
 			classPathArchives.add(this.getArchive());
 		}
