@@ -19,14 +19,14 @@ package org.springframework.cloud.function.adapter.gcloud.integration;
 import java.io.IOException;
 import java.util.function.Function;
 
-import org.junit.Rule;
 import org.junit.Test;
 
-import org.springframework.cloud.function.adapter.gcloud.FunctionInvoker;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import static org.springframework.cloud.function.adapter.gcloud.integration.LocalServerTestSupport.verify;
 
 /**
  * Integration tests for GCF Http Functions.
@@ -36,37 +36,20 @@ import org.springframework.context.annotation.Import;
  */
 public class HttpFunctionIntegrationTest {
 
-//	@Rule
-//	public CloudFunctionServer cloudFunctionServer = new CloudFunctionServer(FunctionInvoker.class,
-//			CloudFunctionMain.class);
-
 	@Test
-	public void test() {
-		doTest(CloudFunctionMainSingular.class, null, "hello", "HELLO");
+	public void testSingular() {
+		verify(CloudFunctionMainSingular.class, null, "hello", "HELLO");
 	}
 
 	@Test
 	public void testUppercase() throws InterruptedException, IOException {
-		doTest(CloudFunctionMain.class, "uppercase", "hello", "HELLO");
+		verify(CloudFunctionMain.class, "uppercase", "hello", "HELLO");
 
 	}
 
 	@Test
 	public void testFooBar() {
-		doTest(CloudFunctionMain.class, "foobar", new Foo("Hi"), new Bar("Hi"));
-	}
-
-	private <I, O> void doTest(Class mainClass, String function, I input, O expectedOutput) {
-		CloudFunctionServer2 cloudFunctionServer = new CloudFunctionServer2(
-				mainClass, function);
-		try {
-			cloudFunctionServer.before();
-			cloudFunctionServer.test(input, expectedOutput);
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			cloudFunctionServer.after();
-		}
+		verify(CloudFunctionMain.class, "foobar", new Foo("Hi"), new Bar("Hi"));
 	}
 
 	@Configuration
