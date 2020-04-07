@@ -54,10 +54,10 @@ public class FunctionInvokerIntegrationTests {
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
-	protected static class CloudFunctionMainSingular {
+	static class CloudFunctionMainSingular {
 
 		@Bean
-		public Function<String, String> uppercase() {
+		Function<String, String> uppercase() {
 			return input -> input.toUpperCase();
 		}
 
@@ -65,15 +65,15 @@ public class FunctionInvokerIntegrationTests {
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
-	public static class CloudFunctionMain {
+	static class CloudFunctionMain {
 
 		@Bean
-		public Function<String, String> uppercase() {
+		Function<String, String> uppercase() {
 			return input -> input.toUpperCase();
 		}
 
 		@Bean
-		public Function<Foo, Bar> foobar() {
+		Function<Foo, Bar> foobar() {
 			return input -> new Bar(input.value);
 		}
 
