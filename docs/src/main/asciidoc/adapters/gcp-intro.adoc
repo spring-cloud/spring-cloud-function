@@ -115,7 +115,7 @@ Then, *add( the Shade Plugin configuration to generate a fat jar when you run th
 </plugin>
 ----
 
-IMPORTANT: If both Spring Boot plugin and Shade plugin are present, Shade plugin may be shading a Spring Boot produced JAR, resulting a Fat JAR that's unusable in Google Cloud Function. Don't forget to remove the Spring Boot plugin!
+IMPORTANT: If both Spring Boot plugin and Shade plugin are present, Shade plugin may be shading a Spring Boot produced JAR, resulting in a Fat JAR that's unusable in Google Cloud Function. Don't forget to remove the Spring Boot plugin!
 
 Package the application.
 
