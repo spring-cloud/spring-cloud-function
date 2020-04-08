@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2020-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public class LocalServerTestSupport {
 	/**
 	 * Starts up the Cloud Function Server and executes the test
 	 */
-	public static <I, O> void verify(Class mainClass, String function, I input, O expectedOutput) {
+	public static <I, O> void verify(Class<?> mainClass, String function, I input, O expectedOutput) {
 		try (ServerProcess serverProcess = LocalServerTestSupport.startServer(mainClass, function)) {
 			TestRestTemplate testRestTemplate = new TestRestTemplate();
 
@@ -140,7 +140,6 @@ public class LocalServerTestSupport {
 			}
 		}
 		catch (IOException e) {
-			e.printStackTrace();
 			throw new UncheckedIOException(e);
 		}
 	}
@@ -166,15 +165,6 @@ public class LocalServerTestSupport {
 			return process;
 		}
 
-		Future<?> outputMonitorResult() {
-			return outputMonitorResult;
-		}
-
-		String output() {
-			synchronized (output) {
-				return output.toString();
-			}
-		}
 
 		@Override
 		public void close() {
