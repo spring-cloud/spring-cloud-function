@@ -66,7 +66,21 @@ curl http://localhost:8080/ -d "hello"
 As of March 2020, Google Cloud Functions for Java is in Alpha.
 You can get on the https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform[whitelist] to try it out.
 
-First, add the Shade Plugin configuration to generate a fat jar when you run the `mvn package` command.
+To deploy to Google Cloud Function, you need to produce a fat jar using the Shade plugin, rather than the Spring Boot plugin.
+
+First, if you already have the Spring Boot plugin in your `pom.xml`, *remove* it:
+[source, xml]
+----
+<!-- Remove this block by deleting or commenting it out -->
+<!--
+<plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+</plugin>
+-->
+----
+
+Then, *add* the Shade Plugin configuration to generate a fat jar when you run the `mvn package` command.
 
 [source, xml]
 ----
@@ -103,6 +117,8 @@ First, add the Shade Plugin configuration to generate a fat jar when you run the
     </executions>
 </plugin>
 ----
+
+IMPORTANT: If both Spring Boot plugin and Shade plugin are present, Shade plugin may be shading a Spring Boot produced JAR, resulting in a Fat JAR that's unusable in Google Cloud Function. Don't forget to remove the Spring Boot plugin!
 
 Package the application.
 
