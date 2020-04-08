@@ -1,8 +1,0 @@
-This project provides an adapter layer for a Spring Cloud Function application onto Azure.
-You can write an app with a single `@Bean` of type `Function` and it will be deployable in Azure if you get the JAR file laid out right.
-
-include::./adapters/azure-intro.adoc[]
-
-== Sample Function
-
-Go to the link:../../spring-cloud-function-samples/function-sample-azure/[function-sample-azure] to learn about how the sample works, and how to run and test it.
