@@ -77,7 +77,7 @@ First, if you already have the Spring Boot plugin in your `pom.xml`, *remove* it
 </plugin>
 ----
 
-Then, *add( the Shade Plugin configuration to generate a fat jar when you run the `mvn package` command.
+Then, *add* the Shade Plugin configuration to generate a fat jar when you run the `mvn package` command.
 
 [source, xml]
 ----
