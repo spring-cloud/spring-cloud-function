@@ -66,7 +66,7 @@ curl http://localhost:8080/ -d "hello"
 As of March 2020, Google Cloud Functions for Java is in Alpha.
 You can get on the https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform[whitelist] to try it out.
 
-To deploy to Google Cloud Function, you need to produce a fat jar using the Shade plugin, rather than Spring Boot plugin.
+To deploy to Google Cloud Function, you need to produce a fat jar using the Shade plugin, rather than the Spring Boot plugin.
 
 First, *remove* Spring Boot plugin, e.g. remove this block:
 [source, xml]
