@@ -27,7 +27,7 @@ Package the application.
 mvn package
 ----
 
-You should see the fat jar in the `deploy` directory.
+You should see the fat jar in the `target/deploy` directory.
 
 Make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
 
@@ -38,7 +38,7 @@ gcloud alpha functions deploy function-sample-gcp \
 --entry-point org.springframework.cloud.function.adapter.gcloud.FunctionInvoker \
 --runtime java11 \
 --trigger-http \
---source deploy \
+--source target/deploy \
 --memory 512MB
 ----
 

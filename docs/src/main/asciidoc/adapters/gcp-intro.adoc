@@ -81,7 +81,7 @@ First, add the Shade Plugin configuration to generate a fat jar when you run the
             </goals>
             <configuration>
                 <shadedArtifactAttached>true</shadedArtifactAttached>
-                <outputDirectory>deploy</outputDirectory>
+                <outputDirectory>target/deploy</outputDirectory>
                 <shadedClassifierName>gcp</shadedClassifierName>
                 <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
@@ -110,7 +110,7 @@ Package the application.
 mvn package
 ----
 
-You should see the fat jar in `deploy` directory.
+You should see the fat jar in `target/deploy` directory.
 
 Make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
 
@@ -121,7 +121,7 @@ gcloud alpha functions deploy function-sample-gcp \
 --entry-point org.springframework.cloud.function.adapter.gcloud.FunctionInvoker \
 --runtime java11 \
 --trigger-http \
---source deploy \
+--source target/deploy \
 --memory 512MB
 ----
 
