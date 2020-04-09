@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-import com.google.cloud.functions.BackgroundFunction;
 import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
@@ -51,6 +50,8 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
 
+	private String functionName = "";
+
 	public FunctionInvoker() {
 		super();
 		init();
@@ -62,10 +63,20 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	}
 
 	private void init() {
+		if (System.getenv().containsKey("spring.cloud.function.definition")) {
+			this.functionName = System.getenv("spring.cloud.function.definition");
+		}
 		System.setProperty("spring.http.converters.preferred-json-mapper", "gson");
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
 				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 		initialize(null);
+	}
+
+	private <I> Function<Message<I>, Message<byte[]>> lookupFunction() {
+		Function<Message<I>, Message<byte[]>> function = this.catalog.lookup(functionName,
+				MimeTypeUtils.APPLICATION_JSON.toString());
+		Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
+		return function;
 	}
 
 	/**
@@ -75,12 +86,7 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		try {
-			String functionName = System.getenv().containsKey("spring.cloud.function.definition")
-					? System.getenv("spring.cloud.function.definition") : "";
-
-			Function<Message<BufferedReader>, Message<byte[]>> function = this.catalog.lookup(functionName,
-					MimeTypeUtils.APPLICATION_JSON.toString());
-			Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
+			Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
 			Message<BufferedReader> message = getInputType() == Void.class ? null
 					: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
@@ -99,19 +105,16 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	}
 
 	/**
-	 * The implementation of a GCF {@link BackgroundFunction} that will be used as the entry
-	 * point from GCF.
+	 * The implementation of a GCF {@link RawBackgroundFunction} that will be used as the
+	 * entry point from GCF.
 	 * @param json the payload.
 	 * @param context event context.
+	 * @since 3.0.5
 	 */
 	@Override
 	public void accept(String json, Context context) {
-		String functionName = System.getenv().containsKey("spring.cloud.function.definition")
-				? System.getenv("spring.cloud.function.definition") : "";
 
-		Function<Message<String>, Message<byte[]>> function = this.catalog.lookup(functionName,
-				MimeTypeUtils.APPLICATION_JSON.toString());
-		Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
+		Function<Message<String>, Message<byte[]>> function = lookupFunction();
 
 		Message<String> message = getInputType() == Void.class ? null
 				: MessageBuilder.withPayload(json).setHeader("context", context).build();

@@ -104,7 +104,7 @@ public class FunctionInvokerTests {
 	}
 
 	@Test
-	public void testPubSubBackgroundFunction() throws Exception {
+	public void testPubSubBackgroundFunction_PubSub() throws Exception {
 		PubSubMessage pubSubMessage = new PubSubMessage();
 		pubSubMessage.data = "hello";
 		testBackgroundFunction(PubsubBackgroundFunction.class, pubSubMessage, null,
