@@ -21,9 +21,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.google.cloud.functions.RawBackgroundFunction;
+import com.google.gson.Gson;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.messaging.Message;
@@ -32,17 +37,23 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
 /**
- * Implementation of {@link HttpFunction} for Google Cloud Function (GCF).
- * This is the Spring Cloud Function adapter for GCF HTTP function.
+ * Implementation of {@link HttpFunction} and {@link RawBackgroundFunction} for Google
+ * Cloud Function (GCF). This is the Spring Cloud Function adapter for GCF HTTP and Raw
+ * Background function.
  *
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  * @author Oleg Zhurakousky
- *
  * @since 3.0.4
  */
-public class FunctionInvoker
-	extends AbstractSpringFunctionAdapterInitializer<HttpRequest> implements HttpFunction {
+public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<HttpRequest>
+		implements HttpFunction, RawBackgroundFunction {
+
+	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
+
+	private String functionName = "";
+
+	private static final Gson gson = new Gson();
 
 	public FunctionInvoker() {
 		super();
@@ -55,29 +66,33 @@ public class FunctionInvoker
 	}
 
 	private void init() {
+		if (System.getenv().containsKey("spring.cloud.function.definition")) {
+			this.functionName = System.getenv("spring.cloud.function.definition");
+		}
 		System.setProperty("spring.http.converters.preferred-json-mapper", "gson");
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
 				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 		initialize(null);
 	}
 
+	private <I> Function<Message<I>, Message<byte[]>> lookupFunction() {
+		Function<Message<I>, Message<byte[]>> function = this.catalog.lookup(functionName,
+				MimeTypeUtils.APPLICATION_JSON.toString());
+		Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
+		return function;
+	}
+
 	/**
-	 * The implementation of a GCF {@link HttpFunction} that will be used as the entry point from GCF.
+	 * The implementation of a GCF {@link HttpFunction} that will be used as the entry
+	 * point from GCF.
 	 */
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		try {
-			String functionName = System.getenv().containsKey("spring.cloud.function.definition")
-					? System.getenv("spring.cloud.function.definition") : "";
+			Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
-			Function<Message<BufferedReader>, Message<byte[]>> function =
-					this.catalog.lookup(functionName, MimeTypeUtils.APPLICATION_JSON.toString());
-			Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
-
-			Message<BufferedReader> message = getInputType() == Void.class
-					? null : MessageBuilder.withPayload(httpRequest.getReader())
-								.copyHeaders(httpRequest.getHeaders())
-								.build();
+			Message<BufferedReader> message = getInputType() == Void.class ? null
+					: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 			Message<byte[]> result = function.apply(message);
 
 			if (result != null) {
@@ -91,4 +106,40 @@ public class FunctionInvoker
 			httpResponse.getWriter().close();
 		}
 	}
+
+	/**
+	 * The implementation of a GCF {@link RawBackgroundFunction} that will be used as the
+	 * entry point from GCF.
+	 * @param json the payload.
+	 * @param context event context.
+	 * @since 3.0.5
+	 */
+	@Override
+	public void accept(String json, Context context) {
+
+		Function<Message<String>, Message<byte[]>> function = lookupFunction();
+		Message<String> message;
+
+		if ("google.pubsub.topic.publish".equals(context.eventType()) && getInputType() != PubSubMessage.class) {
+			// If the input type is not PubSubMessage, use the PubSubMessage.data field as
+			// payload, and put the full PubSubMessage and Context into message headers.
+
+			PubSubMessage pubSubMessage = gson.fromJson(json, PubSubMessage.class);
+
+			message = getInputType() == Void.class ? null : MessageBuilder.withPayload(pubSubMessage.getData())
+					.setHeader("gcf_context", context).setHeader("gcf_message", pubSubMessage).build();
+		}
+		else {
+			message = getInputType() == Void.class ? null
+					: MessageBuilder.withPayload(json).setHeader("context", context).build();
+		}
+
+		Message<byte[]> result = function.apply(message);
+
+		if (result != null) {
+			log.info("Dropping background function result: " + new String(result.getPayload()));
+		}
+
+	}
+
 }
