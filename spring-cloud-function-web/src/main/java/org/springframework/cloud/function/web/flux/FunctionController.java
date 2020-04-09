@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.web.RequestProcessor;
@@ -100,9 +101,9 @@ public class FunctionController {
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<?>> postStream(ServerWebExchange request,
-			@RequestBody(required = false) String body) {
-		FunctionWrapper wrapper = wrapper(request);
-		return this.processor.post(wrapper, body, true);
+											  @RequestBody(required = false) Flux<String> body) {
+		final FunctionWrapper wrapper = wrapper(request);
+		return this.processor.response(wrapper, body, true);
 	}
 
 	@GetMapping(path = "/**")
