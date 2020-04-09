@@ -206,7 +206,7 @@ public class RequestProcessor {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Mono<ResponseEntity<?>> response(FunctionWrapper wrapper, Object body,
+	public Mono<ResponseEntity<?>> response(FunctionWrapper wrapper, Object body,
 			boolean stream) {
 
 		Function function = wrapper.function();
@@ -215,8 +215,9 @@ public class RequestProcessor {
 			if (Collection.class
 					.isAssignableFrom(this.inspector.getInputType(wrapper.handler()))) {
 				flux = Flux.just(body);
-			}
-			else {
+			} else if (body instanceof Flux) {
+				flux  = Flux.from((Flux) body);
+			} else {
 				Iterable<?> iterable = body instanceof Collection ? (Collection<?>) body
 						: (body instanceof Set ? Collections.singleton(body)
 								: Collections.singletonList(body));
