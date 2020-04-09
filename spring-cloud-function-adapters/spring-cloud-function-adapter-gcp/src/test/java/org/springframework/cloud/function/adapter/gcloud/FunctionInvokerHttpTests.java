@@ -46,33 +46,33 @@ import static org.mockito.Mockito.when;
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  */
-public class FunctionInvokerTests {
+public class FunctionInvokerHttpTests {
 
 	private static final Gson gson = new Gson();
 
 	@Test
 	public void testHelloWorldSupplier() throws Exception {
-		testFunction(HelloWorldSupplier.class, null, "Hello World!");
+		testHttpFunction(HelloWorldSupplier.class, null, "Hello World!");
 	}
 
 	@Test
 	public void testJsonInputFunction() throws Exception {
-		testFunction(JsonInputFunction.class, new IncomingRequest("hello"),
-			"Thank you for sending the message: hello");
+		testHttpFunction(JsonInputFunction.class, new IncomingRequest("hello"),
+				"Thank you for sending the message: hello");
 	}
 
 	@Test
 	public void testJsonInputOutputFunction() throws Exception {
-		testFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
-			new OutgoingResponse("Thank you for sending the message: hello"));
+		testHttpFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
+				new OutgoingResponse("Thank you for sending the message: hello"));
 	}
 
 	@Test
-	public void testJsonInputConsumer() throws Exception {
-		testFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null);
+	public void testJsonInputConsumer_Background() throws Exception {
+		testHttpFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null);
 	}
 
-	private <I, O> void testFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
+	private <I, O> void testHttpFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
 		try (FunctionInvoker handler = new FunctionInvoker(configurationClass);) {
 
 			HttpRequest request = Mockito.mock(HttpRequest.class);
@@ -95,55 +95,69 @@ public class FunctionInvokerTests {
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
 	protected static class HelloWorldSupplier {
+
 		@Bean
 		public Supplier<String> supplier() {
 			return () -> "Hello World!";
 		}
+
 	}
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
 	protected static class JsonInputFunction {
+
 		@Bean
 		public Function<IncomingRequest, String> function() {
 			return (in) -> "Thank you for sending the message: " + in.message;
 		}
+
 	}
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
 	protected static class JsonInputOutputFunction {
+
 		@Bean
 		public Function<IncomingRequest, Message<OutgoingResponse>> function() {
 			return (in) -> {
-				return MessageBuilder.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
+				return MessageBuilder
+						.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
 						.setHeader("foo", "bar").build();
 			};
 		}
+
 	}
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
 	protected static class JsonInputConsumer {
+
 		@Bean
 		public Consumer<IncomingRequest> function() {
 			return (in) -> System.out.println("Thank you for sending the message: " + in.message);
 		}
+
 	}
 
 	private static class IncomingRequest {
+
 		String message;
 
 		IncomingRequest(String message) {
 			this.message = message;
 		}
+
 	}
 
 	private static class OutgoingResponse {
+
 		String message;
 
 		OutgoingResponse(String message) {
 			this.message = message;
 		}
+
 	}
+
 }
