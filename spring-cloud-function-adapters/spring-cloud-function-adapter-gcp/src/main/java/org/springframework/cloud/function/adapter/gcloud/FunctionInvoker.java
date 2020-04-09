@@ -21,9 +21,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import com.google.cloud.functions.BackgroundFunction;
+import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.google.cloud.functions.RawBackgroundFunction;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.messaging.Message;
@@ -32,17 +37,19 @@ import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
 
 /**
- * Implementation of {@link HttpFunction} for Google Cloud Function (GCF).
- * This is the Spring Cloud Function adapter for GCF HTTP function.
+ * Implementation of {@link HttpFunction} and {@link RawBackgroundFunction} for Google
+ * Cloud Function (GCF). This is the Spring Cloud Function adapter for GCF HTTP and Raw
+ * Background function.
  *
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  * @author Oleg Zhurakousky
- *
  * @since 3.0.4
  */
-public class FunctionInvoker
-	extends AbstractSpringFunctionAdapterInitializer<HttpRequest> implements HttpFunction {
+public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<HttpRequest>
+		implements HttpFunction, RawBackgroundFunction {
+
+	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
 
 	public FunctionInvoker() {
 		super();
@@ -62,7 +69,8 @@ public class FunctionInvoker
 	}
 
 	/**
-	 * The implementation of a GCF {@link HttpFunction} that will be used as the entry point from GCF.
+	 * The implementation of a GCF {@link HttpFunction} that will be used as the entry
+	 * point from GCF.
 	 */
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
@@ -70,14 +78,12 @@ public class FunctionInvoker
 			String functionName = System.getenv().containsKey("spring.cloud.function.definition")
 					? System.getenv("spring.cloud.function.definition") : "";
 
-			Function<Message<BufferedReader>, Message<byte[]>> function =
-					this.catalog.lookup(functionName, MimeTypeUtils.APPLICATION_JSON.toString());
+			Function<Message<BufferedReader>, Message<byte[]>> function = this.catalog.lookup(functionName,
+					MimeTypeUtils.APPLICATION_JSON.toString());
 			Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
 
-			Message<BufferedReader> message = getInputType() == Void.class
-					? null : MessageBuilder.withPayload(httpRequest.getReader())
-								.copyHeaders(httpRequest.getHeaders())
-								.build();
+			Message<BufferedReader> message = getInputType() == Void.class ? null
+					: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 			Message<byte[]> result = function.apply(message);
 
 			if (result != null) {
@@ -91,4 +97,30 @@ public class FunctionInvoker
 			httpResponse.getWriter().close();
 		}
 	}
+
+	/**
+	 * The implementation of a GCF {@link BackgroundFunction} that will be used as the entry
+	 * point from GCF.
+	 * @param json the payload.
+	 * @param context event context.
+	 */
+	@Override
+	public void accept(String json, Context context) {
+		String functionName = System.getenv().containsKey("spring.cloud.function.definition")
+				? System.getenv("spring.cloud.function.definition") : "";
+
+		Function<Message<String>, Message<byte[]>> function = this.catalog.lookup(functionName,
+				MimeTypeUtils.APPLICATION_JSON.toString());
+		Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
+
+		Message<String> message = getInputType() == Void.class ? null
+				: MessageBuilder.withPayload(json).setHeader("context", context).build();
+		Message<byte[]> result = function.apply(message);
+
+		if (result != null) {
+			log.info("Dropping background function result: " + new String(result.getPayload()));
+		}
+
+	}
+
 }
