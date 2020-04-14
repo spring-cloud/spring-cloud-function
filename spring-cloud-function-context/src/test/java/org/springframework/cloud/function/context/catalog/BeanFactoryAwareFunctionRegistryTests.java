@@ -408,7 +408,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				.build()
 		);
 
-		assertThat(tupleResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/csv"));
+		MimeType originalMimeType = (MimeType) tupleResult.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+		MimeType mimeType = new MimeType(originalMimeType.getType(), originalMimeType.getSubtype());
+		assertThat(mimeType).isEqualTo(MimeType.valueOf("text/csv"));
 		assertThat(tupleResult.getHeaders().get("accept")).isNull();
 
 		Message<Date> dateResult = (Message<Date>) function.apply(MessageBuilder
@@ -417,7 +419,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				.build()
 		);
 
-		assertThat(dateResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/integer"));
+		originalMimeType = (MimeType) dateResult.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+		mimeType = new MimeType(originalMimeType.getType(), originalMimeType.getSubtype());
+		assertThat(mimeType).isEqualTo(MimeType.valueOf("text/integer"));
 		assertThat(dateResult.getHeaders().get("accept")).isNull();
 	}
 

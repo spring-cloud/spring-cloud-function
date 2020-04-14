@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
@@ -62,12 +66,16 @@ final class NegotiatingMessageConverterWrapper implements SmartMessageConverter 
 		if (accepted == null) {
 			accepted = headers.get(MessageHeaders.CONTENT_TYPE, MimeType.class);
 		}
-
 		if (accepted != null) {
 			for (MimeType supportedConcreteType : delegate.getSupportedMimeTypes()) {
 				if (accepted.includes(supportedConcreteType)) {
+					Map<String, String> parameters = new ConcurrentHashMap<>();
+					if (!payload.getClass().isAssignableFrom(byte[].class)) {
+						parameters.put(BeanFactoryAwareFunctionRegistry.TARGET_TYPE, payload.getClass().getCanonicalName());
+					}
+					MimeType mimeType = new MimeType(supportedConcreteType, parameters);
 					// Note the use of setHeader() which will set the value even if already present.
-					accessor.setHeader(MessageHeaders.CONTENT_TYPE, supportedConcreteType);
+					accessor.setHeader(MessageHeaders.CONTENT_TYPE, mimeType);
 					Message<?> result = delegate.toMessage(payload, accessor.toMessageHeaders(), conversionHint);
 					if (result != null) {
 						return result;

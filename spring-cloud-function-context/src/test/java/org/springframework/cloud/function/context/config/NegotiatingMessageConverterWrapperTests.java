@@ -180,7 +180,11 @@ public class NegotiatingMessageConverterWrapperTests {
 		assertThat(result.getPayload()).isEqualTo(payload);
 		assertThat(result.getHeaders())
 			.doesNotContainKey(ACCEPT)
-			.containsEntry(CONTENT_TYPE, MimeType.valueOf(expectedContentType));
+			.hasEntrySatisfying(CONTENT_TYPE, value -> {
+				MimeType originalMimeType = (MimeType) value;
+				MimeType mimeType = new MimeType(originalMimeType.getType(), originalMimeType.getSubtype());
+				assertThat(mimeType).isEqualTo(MimeType.valueOf(expectedContentType));
+			});
 	}
 }
 

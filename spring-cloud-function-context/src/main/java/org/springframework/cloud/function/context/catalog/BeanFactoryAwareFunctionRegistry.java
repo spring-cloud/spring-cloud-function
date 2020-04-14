@@ -21,6 +21,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,6 +79,7 @@ import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
@@ -109,6 +111,11 @@ public class BeanFactoryAwareFunctionRegistry
 	 * Identifies MessageConversionExceptions that happen when output can't be converted.
 	 */
 	public static final String COULD_NOT_CONVERT_OUTPUT = "Could Not Convert Output";
+
+	/**
+	 * Target type mime type parameter to attach to the content type.
+	 */
+	public static final String TARGET_TYPE = "target-type";
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -867,7 +874,21 @@ public class BeanFactoryAwareFunctionRegistry
 				if (rawType instanceof ParameterizedType) {
 					rawType = ((ParameterizedType) rawType).getRawType();
 				}
+
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
+					if (rawType instanceof WildcardType) {
+						final Object contentType = ((Message<?>) value).getHeaders().get(MessageHeaders.CONTENT_TYPE);
+						if (contentType instanceof MimeType) {
+							MimeType mimeType = (MimeType) contentType;
+							final String targetClazz = mimeType.getParameters().get(BeanFactoryAwareFunctionRegistry.TARGET_TYPE);
+							try {
+								rawType = ClassUtils.forName(targetClazz, null);
+							}
+							catch (ClassNotFoundException cnfe) {
+								throw new IllegalStateException(cnfe);
+							}
+						}
+					}
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
 						convertedValue = FunctionTypeUtils.isTypeCollection(type)
 							? messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, type)
