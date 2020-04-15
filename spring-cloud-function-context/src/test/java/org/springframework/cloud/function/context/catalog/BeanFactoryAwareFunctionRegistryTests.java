@@ -21,8 +21,11 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -425,6 +428,21 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(dateResult.getHeaders().get("accept")).isNull();
 	}
 
+	@Test
+	public void testDeserializationWithContentTypeTargetTypeInfo() throws InterruptedException {
+		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
+		FunctionInvocationWrapper function = catalog.lookup("hello");
+		Map<String, String> parameters = new HashMap<>();
+		parameters.put("target-type", "java.lang.String");
+		final MimeType mimeType = new MimeType("text", "csv", parameters);
+		function.accept(MessageBuilder
+			.withPayload(Tuples.of("bonjour", "monde"))
+			.setHeader(MessageHeaders.CONTENT_TYPE, mimeType)
+			.build()
+		);
+		assertThat(NegotiatingMessageConverterConfiguration.countDownLatch.await(5, TimeUnit.SECONDS)).isTrue();
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
 	public void testWithComplexHierarchyAndTypeConversion() {
@@ -469,6 +487,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@EnableAutoConfiguration
 	public static class NegotiatingMessageConverterConfiguration {
+
+		public static CountDownLatch countDownLatch = new CountDownLatch(1);
+
+		@Bean
+		public Consumer<Message<?>> hello() {
+			return m -> {
+				this.countDownLatch.countDown();
+			};
+		}
 
 		@Bean
 		public Function<String, String> echo() {

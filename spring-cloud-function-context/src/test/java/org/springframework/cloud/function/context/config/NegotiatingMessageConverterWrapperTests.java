@@ -135,6 +135,26 @@ public class NegotiatingMessageConverterWrapperTests {
 	}
 
 	@Test
+	public void testSerializationWithTargetTypeAdded() {
+		MimeType contentType = MimeType.valueOf("text/csv");
+
+		Message<?> result = NegotiatingMessageConverterWrapper.wrap(new NaiveCsvTupleMessageConverter())
+			.toMessage(somePayload, new MessageHeaders(newHashMap(CONTENT_TYPE, contentType)));
+
+		assertThat(result)
+			.isNotNull();
+		assertThat(result.getHeaders())
+			.hasEntrySatisfying(CONTENT_TYPE, value -> {
+				MimeType originalMimeType = (MimeType) value;
+				MimeType mimeType = new MimeType(originalMimeType.getType(), originalMimeType.getSubtype());
+				assertThat(mimeType).isEqualTo(MimeType.valueOf("text/csv"));
+				final Map<String, String> parameters = originalMimeType.getParameters();
+				final String targetType = parameters.get("target-type");
+				assertThat(targetType).isEqualTo("java.util.Arrays.ArrayList");
+			});
+	}
+
+	@Test
 	public void testNoSerializationWithoutMimeType() {
 		Message<?> result = NegotiatingMessageConverterWrapper.wrap(new NaiveCsvTupleMessageConverter())
 			.toMessage(somePayload, new MessageHeaders(null));
