@@ -881,15 +881,10 @@ public class BeanFactoryAwareFunctionRegistry
 						if (contentType instanceof MimeType) {
 							MimeType mimeType = (MimeType) contentType;
 							final String targetClazz = mimeType.getParameters().get(BeanFactoryAwareFunctionRegistry.TARGET_TYPE);
-							try {
-								rawType = ClassUtils.forName(targetClazz, null);
-							}
-							catch (ClassNotFoundException cnfe) {
-								throw new IllegalStateException(cnfe);
-							}
+							rawType = getRawType(rawType, targetClazz);
 						}
 					}
-					if (messageNeedsConversion(rawType, (Message<?>) value)) {
+					if (rawType != null && messageNeedsConversion(rawType, (Message<?>) value)) {
 						convertedValue = FunctionTypeUtils.isTypeCollection(type)
 							? messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, type)
 							: messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
@@ -924,6 +919,18 @@ public class BeanFactoryAwareFunctionRegistry
 				throw new MessageConversionException(COULD_NOT_CONVERT_INPUT);
 			}
 			return convertedValue;
+		}
+
+		private Type getRawType(Type rawType, String targetClazz) {
+			if (targetClazz != null) {
+				try {
+					return ClassUtils.forName(targetClazz, null);
+				}
+				catch (ClassNotFoundException cnfe) {
+					throw new IllegalStateException(cnfe);
+				}
+			}
+			return null;
 		}
 
 		private boolean messageNeedsConversion(Type rawType, Message<?> message) {
