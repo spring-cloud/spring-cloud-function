@@ -27,7 +27,10 @@ import org.springframework.util.Assert;
  * @author Dave Syer
  * @author Mark Fisher
  * @author Oleg Zhurakousky
+ *
+ * @deprecated since 3.1. End-of-life. Not used by the framework anymore in favor of SimpleFunctionRegistry
  */
+@Deprecated
 public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry {
 
 	public InMemoryFunctionCatalog() {

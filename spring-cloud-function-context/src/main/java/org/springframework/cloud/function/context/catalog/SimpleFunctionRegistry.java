@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +49,7 @@ import reactor.util.function.Tuples;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -72,6 +74,11 @@ import org.springframework.util.StringUtils;
 
 
 /**
+ *
+ * Basic implementation of FunctionRegistry which maintains the cache of registered functions while
+ * decorating them with additional features such as transparent type conversion, composition, routing etc.
+ *
+ * Unlike {@link BeanFactoryAwareFunctionRegistry}, this implementation does not depend on {@link BeanFactory}.
  *
  * @author Oleg Zhurakousky
  *
@@ -217,8 +224,31 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		else if (!this.registrationsByName.containsKey(definition) && this.registrationsByName.size() == 1) {
 			definition = this.registrationsByName.keySet().iterator().next();
 		}
+		else if (definition.endsWith("|")) {
+			if (this.registrationsByName.size() == 2) {
+				Set<String> fNames = this.getNames(null);
+				definition = this.determinImpliedDefinition(fNames, definition);
+			}
+		}
 		return definition;
+	}
 
+	String determinImpliedDefinition(Set<String> fNames, String originalDefinition) {
+		if (fNames.size() == 2) {
+			Iterator<String> iter = fNames.iterator();
+			String n1 = iter.next();
+			String n2 = iter.next();
+			String[] definitionName = StringUtils.delimitedListToStringArray(originalDefinition, "|");
+			if (definitionName[0].equals(n1)) {
+				definitionName[1] = n2;
+				originalDefinition = definitionName[0] + "|" + definitionName[1];
+			}
+			else {
+				definitionName[1] = n1;
+				originalDefinition = definitionName[0] + "|" + definitionName[1];
+			}
+		}
+		return originalDefinition;
 	}
 
 	Type discovereFunctionTypeByName(String name) {

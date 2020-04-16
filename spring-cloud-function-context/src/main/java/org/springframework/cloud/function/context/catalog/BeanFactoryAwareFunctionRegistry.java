@@ -154,7 +154,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 	@Override
 	String discoverDefaultDefinitionIfNecessary(String definition) {
-		if (StringUtils.isEmpty(definition)) {
+		if (StringUtils.isEmpty(definition) || definition.endsWith("|")) {
 			// the underscores are for Kotlin function registrations (see KotlinLambdaToFunctionAutoConfiguration)
 			String[] functionNames = Stream.of(this.applicationContext.getBeanNamesForType(Function.class))
 				.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n
@@ -183,6 +183,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 					return null;
 				}
 				definition = names.get(0);
+			}
+			else if (definition.endsWith("|")) {
+				Set<String> fNames = this.getNames(null);
+				definition = this.determinImpliedDefinition(fNames, definition);
 			}
 			else {
 				definition = this.discoverDefaultDefinitionFromRegistration();
