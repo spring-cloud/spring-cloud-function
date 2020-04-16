@@ -91,6 +91,7 @@ public class SpringFunctionAdapterInitializerTests {
 		};
 		this.initializer.initialize(null);
 		Flux<?> result = Flux.from(this.initializer.apply(Flux.just(new Foo())));
+		Object o = result.blockFirst();
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 

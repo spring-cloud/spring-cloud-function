@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
@@ -38,6 +39,7 @@ import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.BasicStringConverter;
@@ -244,10 +246,15 @@ class FunctionEndpointFactory {
 		.andRoute(GET("/**"), request -> {
 			Object functionComponent = extract(request);
 			Class<T> outputType = (Class<T>) this.inspector.getOutputType(functionComponent);
-			if (functionComponent instanceof Supplier) {
+//			if (functionComponent instanceof Supplier) {
+			if (((FunctionInvocationWrapper) functionComponent).isSupplier()) {
 				Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
 				FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);
-				return ServerResponse.ok().body(wrapper.supplier().get(), outputType);
+				Object result = wrapper.supplier().get();
+				if (!(result instanceof Publisher)) {
+					result = Mono.just(result);
+				}
+				return ServerResponse.ok().body(result, outputType);
 			}
 			else {
 				Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) functionComponent;

@@ -58,7 +58,7 @@ public class FunctionalExporterTests {
 	@Autowired
 	private SupplierExporter forwarder;
 
-	private static RestConfiguration app;
+	private static RestPojoConfiguration app;
 
 	private static ConfigurableApplicationContext context;
 
@@ -67,9 +67,9 @@ public class FunctionalExporterTests {
 		String port = "" + SocketUtils.findAvailableTcpPort();
 		System.setProperty("server.port", port);
 		System.setProperty("my.port", port);
-		context = SpringApplication.run(RestConfiguration.class,
+		context = SpringApplication.run(RestPojoConfiguration.class,
 				"--spring.main.web-application-type=reactive");
-		app = context.getBean(RestConfiguration.class);
+		app = context.getBean(RestPojoConfiguration.class);
 		// Sometimes the server doesn't start quick enough
 		Thread.sleep(500L);
 	}
@@ -97,8 +97,8 @@ public class FunctionalExporterTests {
 	protected static class ApplicationConfiguration
 			implements ApplicationContextInitializer<GenericApplicationContext> {
 
-		Function<Message<String>, Message<String>> uppercase() {
-			return value -> MessageBuilder.withPayload(value.getPayload().toUpperCase())
+		Function<Message<Person>, Message<String>> uppercase() {
+			return value -> MessageBuilder.withPayload(value.getPayload().getName().toUpperCase())
 					.copyHeaders(value.getHeaders()).build();
 		}
 
@@ -106,9 +106,20 @@ public class FunctionalExporterTests {
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("uppercase", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(uppercase()).type(
-							FunctionType.from(String.class).to(String.class).message()));
+							FunctionType.from(Person.class).to(String.class).message()));
 		}
-
 	}
 
+}
+
+class Person {
+	private String name;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
 }

@@ -96,9 +96,10 @@ public class FunctionEndpointInitializerTests {
 		FunctionalSpringApplication.run(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = System.getProperty("server.port");
-		Thread.sleep(200);
+		Thread.sleep(2000);
 		ResponseEntity<String> response = testRestTemplate
 				.getForEntity(new URI("http://localhost:" + port + "/reverse/stressed"), String.class);
+		System.out.println();
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
@@ -131,7 +132,9 @@ public class FunctionEndpointInitializerTests {
 		}
 
 		public Function<String, String> reverse() {
-			return s -> new StringBuilder(s).reverse().toString();
+			return s -> {
+				return new StringBuilder(s).reverse().toString();
+			};
 		}
 
 		@Override
