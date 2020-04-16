@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 
 /**

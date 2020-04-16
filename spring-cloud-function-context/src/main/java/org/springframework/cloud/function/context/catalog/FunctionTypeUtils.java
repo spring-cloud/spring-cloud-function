@@ -35,7 +35,7 @@ import org.reactivestreams.Publisher;
 import reactor.util.function.Tuple2;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -196,11 +196,25 @@ public final class FunctionTypeUtils {
 		return outputCount;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static Type getInputType(Type functionType, int index) {
 		assertSupportedTypes(functionType);
 		if (isSupplier(functionType)) {
 			return getOutputType(functionType, index);
 		}
+		if (functionType instanceof Class) {
+			Class<?> functionClass  = (Class<?>) functionType;
+			if (Function.class.isAssignableFrom(functionClass)) {
+				functionType = TypeResolver.reify(Function.class, (Class<Function<?, ?>>) functionClass);
+			}
+			else if (Consumer.class.isAssignableFrom(functionClass)) {
+				functionType = TypeResolver.reify(Consumer.class, (Class<Consumer<?>>) functionClass);
+			}
+			else if (Supplier.class.isAssignableFrom(functionClass)) {
+				functionType = TypeResolver.reify(Supplier.class, (Class<Supplier<?>>) functionClass);
+			}
+		}
+
 		Type inputType = isSupplier(functionType) ? null :  Object.class;
 		if ((isFunction(functionType) || isConsumer(functionType)) && functionType instanceof ParameterizedType) {
 			inputType = ((ParameterizedType) functionType).getActualTypeArguments()[0];

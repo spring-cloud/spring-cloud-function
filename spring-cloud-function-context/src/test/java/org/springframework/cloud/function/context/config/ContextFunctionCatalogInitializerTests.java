@@ -187,8 +187,8 @@ public class ContextFunctionCatalogInitializerTests {
 		create(SimpleConfiguration.class);
 		assertThat(this.context.getBean("supplier"))
 				.isInstanceOf(FunctionRegistration.class);
-		Supplier<Flux<String>> supplier = this.catalog.lookup(Supplier.class, "supplier");
-		assertThat(supplier.get().blockFirst()).isEqualTo("hello");
+		Supplier<String> supplier = this.catalog.lookup(Supplier.class, "supplier");
+		assertThat(supplier.get()).isEqualTo("hello");
 	}
 
 	@Test
