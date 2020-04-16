@@ -169,7 +169,6 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 			}
 
 			if (this.context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class, false, false).length == 0) {
-
 				this.context.registerBean(SimpleFunctionRegistry.class, () -> {
 					List<MessageConverter> messageConverters = new ArrayList<>();
 					JsonMapper jsonMapper = this.context.getBean(JsonMapper.class);

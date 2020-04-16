@@ -28,6 +28,7 @@ import org.junit.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
@@ -103,21 +104,20 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	@Test
-	@Ignore
 	public void testFunctionCompositionImplicit() {
 		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
 				new Words(), "words").type(FunctionType.of(Words.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
 				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
-		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter);
+		FunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter);
 		catalog.register(wordsRegistration);
 		catalog.register(reverseRegistration);
 
 		// There's only one function, we should be able to leave that blank
-		Supplier<Flux<String>> lookedUpFunction = catalog.lookup("words|");
+		Supplier<String> lookedUpFunction = catalog.lookup("words|");
 
 		assertThat(lookedUpFunction).isNotNull();
-		assertThat(lookedUpFunction.get().blockFirst()).isEqualTo("olleh");
+		assertThat(lookedUpFunction.get()).isEqualTo("olleh");
 	}
 
 	@Test

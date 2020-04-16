@@ -26,10 +26,12 @@ public class LambdaDestinationResolver implements DestinationResolver {
 
 	@Override
 	public String destination(Supplier<?> supplier, String name, Object value) {
-		Message<?> message = (Message<?>) value;
-		MessageHeaders headers = message.getHeaders();
-		if (headers.containsKey("lambda-runtime-aws-request-id")) {
-			return (String) headers.get("lambda-runtime-aws-request-id");
+		if (value instanceof Message) {
+			Message<?> message = (Message<?>) value;
+			MessageHeaders headers = message.getHeaders();
+			if (headers.containsKey("lambda-runtime-aws-request-id")) {
+				return (String) headers.get("lambda-runtime-aws-request-id");
+			}
 		}
 		return "unknown";
 	}
