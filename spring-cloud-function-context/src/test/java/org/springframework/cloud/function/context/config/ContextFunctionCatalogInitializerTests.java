@@ -158,13 +158,13 @@ public class ContextFunctionCatalogInitializerTests {
 		create(SimpleConfiguration.class);
 		Object bean = this.context.getBean("function");
 		assertThat(bean).isInstanceOf(FunctionRegistration.class);
-		Function<Flux<String>, Flux<String>> function = this.catalog
-				.lookup(Function.class, "function");
-		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
+		Function<Flux<String>, Flux<Person>> function
+			= this.catalog.lookup(Function.class, "function");
+		assertThat(function.apply(Flux.just("{\"name\":\"foo\"}")).blockFirst().getName()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
 		assertThat(this.inspector.getRegistration(function)).isNotNull();
 		assertThat(this.inspector.getRegistration(function).getType())
-				.isEqualTo(FunctionType.from(String.class).to(String.class));
+				.isEqualTo(FunctionType.from(Person.class).to(Person.class));
 	}
 
 	@Test
@@ -187,8 +187,8 @@ public class ContextFunctionCatalogInitializerTests {
 		create(SimpleConfiguration.class);
 		assertThat(this.context.getBean("supplier"))
 				.isInstanceOf(FunctionRegistration.class);
-		Supplier<Flux<String>> supplier = this.catalog.lookup(Supplier.class, "supplier");
-		assertThat(supplier.get().blockFirst()).isEqualTo("hello");
+		Supplier<String> supplier = this.catalog.lookup(Supplier.class, "supplier");
+		assertThat(supplier.get()).isEqualTo("hello");
 	}
 
 	@Test
@@ -276,7 +276,7 @@ public class ContextFunctionCatalogInitializerTests {
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("function", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(function()).type(
-							FunctionType.from(String.class).to(String.class).getType()));
+							FunctionType.from(Person.class).to(Person.class).getType()));
 			context.registerBean("supplier", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(supplier())
 							.type(FunctionType.supplier(String.class).getType()));
@@ -287,8 +287,12 @@ public class ContextFunctionCatalogInitializerTests {
 		}
 
 		@Bean
-		public Function<String, String> function() {
-			return value -> value.toUpperCase();
+		public Function<Person, Person> function() {
+			return person -> {
+				Person p = new Person();
+				p.setName(person.getName().toUpperCase());
+				return p;
+			};
 		}
 
 		@Bean
@@ -300,7 +304,6 @@ public class ContextFunctionCatalogInitializerTests {
 		public Consumer<String> consumer() {
 			return value -> this.list.add(value);
 		}
-
 	}
 
 	@ConfigurationProperties("app")
@@ -440,4 +443,15 @@ public class ContextFunctionCatalogInitializerTests {
 
 	}
 
+	private static class Person {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
 }
