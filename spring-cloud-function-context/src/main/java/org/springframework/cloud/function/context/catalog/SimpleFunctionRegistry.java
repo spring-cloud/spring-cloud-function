@@ -319,7 +319,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 				registrationsByFunction.putIfAbsent(function, registration);
 				registrationsByName.putIfAbsent(name, registration);
-				function = new FunctionInvocationWrapper(function, currentFunctionType, name, acceptedOutputTypes);
+				function = new FunctionInvocationWrapper(function, currentFunctionType, name, names.length > 1 ? new String[] {} : acceptedOutputTypes);
 
 				if (originFunctionType == null) {
 					originFunctionType = currentFunctionType;
@@ -447,6 +447,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.headersField.setAccessible(true);
 		}
 
+		public String getFunctionDefinition() {
+			return this.functionDefinition;
+		}
+
 		@Override
 		public void accept(Object input) {
 			this.doApply(input, true, null);
@@ -503,6 +507,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		public Object getTarget() {
 			return target;
+		}
+
+		@Override
+		public String toString() {
+			return "definition: " + this.functionDefinition + "; type: " + this.functionType;
 		}
 
 		@SuppressWarnings({"rawtypes", "unchecked"})

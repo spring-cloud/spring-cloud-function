@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,8 @@ public class SupplierExporter implements SmartLifecycle {
 
 	private final String supplier;
 
+	private final String contentType;
+
 	private volatile boolean running;
 
 	private volatile boolean ok = true;
@@ -70,14 +72,15 @@ public class SupplierExporter implements SmartLifecycle {
 
 	SupplierExporter(RequestBuilder requestBuilder,
 			DestinationResolver destinationResolver, FunctionCatalog catalog,
-			WebClient client, ExporterProperties props) {
+			WebClient client, ExporterProperties exporterProperties) {
 		this.requestBuilder = requestBuilder;
 		this.destinationResolver = destinationResolver;
 		this.catalog = catalog;
 		this.client = client;
-		this.debug = props.isDebug();
-		this.autoStartup = props.isAutoStartup();
-		this.supplier = props.getSink().getName();
+		this.debug = exporterProperties.isDebug();
+		this.autoStartup = exporterProperties.isAutoStartup();
+		this.supplier = exporterProperties.getSink().getName();
+		this.contentType = exporterProperties.getSink().getContentType();
 	}
 
 	@Override
@@ -93,7 +96,7 @@ public class SupplierExporter implements SmartLifecycle {
 
 		boolean suppliersPresent = false;
 		for (String name : names) {
-			Supplier<Publisher<Object>> supplier = this.catalog.lookup(Supplier.class, name);
+			Supplier<Publisher<Object>> supplier = this.catalog.lookup(name, this.contentType);
 			if (supplier == null) {
 				logger.warn("No such Supplier: " + name);
 				continue;
@@ -163,8 +166,7 @@ public class SupplierExporter implements SmartLifecycle {
 
 	private Flux<ClientResponse> forward(Supplier<Publisher<Object>> supplier, String name) {
 		return Flux.from(supplier.get()).flatMap(value -> {
-			String destination = this.destinationResolver.destination(supplier, name,
-					value);
+			String destination = this.destinationResolver.destination(supplier, name, value);
 			if (this.debug) {
 				logger.info("Posting to: " + destination);
 			}
@@ -178,9 +180,17 @@ public class SupplierExporter implements SmartLifecycle {
 			Message<?> message = (Message<?>) value;
 			body = message.getPayload();
 		}
+		if (this.debug) {
+			logger.debug("Sending BODY as type: " + body.getClass().getName());
+		}
 		Mono<ClientResponse> result = this.client.post().uri(uri)
 				.headers(headers -> headers(headers, destination, value)).bodyValue(body)
-				.exchange();
+				.exchange()
+				.doOnNext(response -> {
+					if (this.debug) {
+						logger.debug("Response STATUS: " + response.statusCode());
+					}
+				});
 		if (this.debug) {
 			result = result.log();
 		}

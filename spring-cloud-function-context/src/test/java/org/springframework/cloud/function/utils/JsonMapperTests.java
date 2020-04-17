@@ -56,7 +56,7 @@ public class JsonMapperTests {
 	@Test
 	public void vanillaArray() {
 		String json = "[{\"value\":\"foo\"},{\"value\":\"foo\"}]";
-		List<Foo> list = this.mapper.toObject(json,
+		List<Foo> list = this.mapper.fromJson(json,
 				ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0).getValue()).isEqualTo("foo");
@@ -65,7 +65,7 @@ public class JsonMapperTests {
 
 	@Test
 	public void intArray() {
-		List<Integer> list = this.mapper.toObject("[123,456]",
+		List<Integer> list = this.mapper.fromJson("[123,456]",
 				ResolvableType.forClassWithGenerics(List.class, Integer.class).getType());
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0)).isEqualTo(123);
@@ -73,7 +73,7 @@ public class JsonMapperTests {
 
 	@Test
 	public void emptyArray() {
-		List<Foo> list = this.mapper.toObject("[]",
+		List<Foo> list = this.mapper.fromJson("[]",
 				ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
 		assertThat(list).hasSize(0);
 	}
@@ -81,20 +81,27 @@ public class JsonMapperTests {
 	@Test
 	public void vanillaObject() {
 		String json = "{\"value\":\"foo\"}";
-		Foo foo = this.mapper.toObject(json, Foo.class);
+		Foo foo = this.mapper.fromJson(json, Foo.class);
 		assertThat(foo.getValue()).isEqualTo("foo");
 		assertThat(this.mapper.toString(foo)).isEqualTo(json);
 	}
 
 	@Test
+	public void stringRepresentingJson() {
+		String json = "{\"value\":\"foo\"}";
+		byte[] bytes = this.mapper.toJson(json);
+		assertThat(new String(bytes)).isEqualTo(json);
+	}
+
+	@Test
 	public void intValue() {
-		int foo = this.mapper.toObject("123", Integer.class);
+		int foo = this.mapper.fromJson("123", Integer.class);
 		assertThat(foo).isEqualTo(123);
 	}
 
 	@Test
 	public void empty() {
-		Foo foo = this.mapper.toObject("{}", Foo.class);
+		Foo foo = this.mapper.fromJson("{}", Foo.class);
 		assertThat(foo.getValue()).isNull();
 	}
 

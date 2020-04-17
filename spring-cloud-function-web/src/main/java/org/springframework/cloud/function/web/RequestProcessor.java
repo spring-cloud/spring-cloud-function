@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,8 +127,10 @@ public class RequestProcessor {
 
 	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper,
 			ServerWebExchange exchange) {
-		return Mono.from(body(wrapper.handler(), exchange))
+		Mono<ResponseEntity<?>> responseEntity = Mono.from(body(wrapper.handler(), exchange))
 				.flatMap(body -> response(wrapper, body, false));
+
+		return responseEntity;
 	}
 
 	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
@@ -149,7 +151,7 @@ public class RequestProcessor {
 					jsonType = ResolvableType.forClassWithGenerics((Class<?>) jsonType,
 							(Class<?>) itemType).getType();
 				}
-				input = this.mapper.toObject((String) input, jsonType);
+				input = this.mapper.fromJson((String) input, jsonType);
 			}
 			else {
 				input = this.converter.convert(function, (String) input);
@@ -178,7 +180,6 @@ public class RequestProcessor {
 
 	private Mono<ResponseEntity<?>> response(FunctionWrapper request, Object handler,
 			Publisher<?> result, Boolean single, boolean getter) {
-
 		BodyBuilder builder = ResponseEntity.ok();
 		if (this.inspector.isMessage(handler)) {
 			result = Flux.from(result)
@@ -389,7 +390,11 @@ public class RequestProcessor {
 								exchange.getLogPrefix() + "0..1 [" + elementType + "]");
 					}
 					Mono<?> mono = reader.readMono(actualType, elementType, request,
-							response, readHints);
+							response, readHints).doOnNext(v -> {
+								if (logger.isDebugEnabled()) {
+									logger.debug("received: " + v);
+								}
+							});
 					mono = mono.onErrorResume(
 							ex -> Mono.error(handleReadError(bodyParam, ex)));
 					if (isBodyRequired) {

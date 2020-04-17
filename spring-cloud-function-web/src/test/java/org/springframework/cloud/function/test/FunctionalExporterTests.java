@@ -52,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.function.web.export.sink.url=http://localhost:${my.port}",
 		"spring.cloud.function.web.export.source.url=http://localhost:${my.port}",
 		"spring.cloud.function.web.export.sink.name=origin|uppercase",
+		"spring.cloud.function.web.export.sink.contentType=text/plain",
 		"spring.cloud.function.web.export.debug=true" })
 public class FunctionalExporterTests {
 

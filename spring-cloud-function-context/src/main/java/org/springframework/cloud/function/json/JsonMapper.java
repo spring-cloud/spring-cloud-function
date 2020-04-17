@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,13 @@
 package org.springframework.cloud.function.json;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 
 import org.springframework.core.ResolvableType;
 
@@ -26,26 +31,27 @@ import org.springframework.core.ResolvableType;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-public interface JsonMapper {
+public abstract class JsonMapper {
+
+	private static Log logger = LogFactory.getLog(JsonMapper.class);
 
 	/**
-	 * @param <T> type for list arguments
+	 * @param <T>  type for list arguments
 	 * @param json JSON input
 	 * @param type type of list arguments
 	 * @return list of elements
 	 * @deprecated since v2.0 in favor of {@link #toObject(String, Type)}
 	 */
 	@Deprecated
-	default <T> List<T> toList(String json, Class<T> type) {
+	<T> List<T> toList(String json, Class<T> type) {
 		Type actualType = (json.startsWith("[") && !List.class.isAssignableFrom(type))
-				? ResolvableType.forClassWithGenerics(ArrayList.class, (Class<?>) type)
-						.getType()
+				? ResolvableType.forClassWithGenerics(ArrayList.class, (Class<?>) type).getType()
 				: type;
 		return toObject(json, actualType);
 	}
 
 	/**
-	 * @param <T> return type
+	 * @param <T>  return type
 	 * @param json JSON input
 	 * @param type type
 	 * @return object
@@ -53,24 +59,39 @@ public interface JsonMapper {
 	 * @deprecated since v3.0.4 in favor of {@link #fromJson(Object, Type)}
 	 */
 	@Deprecated
-	<T> T toObject(String json, Type type);
+	abstract <T> T toObject(String json, Type type);
 
-	<T> T fromJson(Object json, Type type);
+	public abstract <T> T fromJson(Object json, Type type);
 
-	byte[] toJson(Object value);
+	public byte[] toJson(Object value) {
+		if (value instanceof String) {
+			try {
+				new JSONObject((String) value);
+				if (logger.isDebugEnabled()) {
+					logger.debug(
+							"String already represents JSON. Skipping conversion in favor of 'getBytes(StandardCharsets.UTF_8'.");
+				}
+				return ((String) value).getBytes(StandardCharsets.UTF_8);
+			}
+			catch (Exception ex) {
+				// ignore
+			}
+		}
+		return null;
+	}
 
 	/**
-	 * @param <T> type for list arguments
+	 * @param <T>  type for list arguments
 	 * @param json JSON input
 	 * @param type type of list arguments
 	 * @return single object
 	 * @deprecated since v2.0 in favor of {@link #toObject(String, Type)}
 	 */
 	@Deprecated
-	default <T> T toSingle(String json, Class<T> type) {
+	<T> T toSingle(String json, Class<T> type) {
 		return toObject(json, type);
 	}
 
-	String toString(Object value);
+	public abstract String toString(Object value);
 
 }
