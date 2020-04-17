@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -36,17 +38,23 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesBindin
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.catalog.InMemoryFunctionCatalog;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.format.support.DefaultFormattingConversionService;
+import org.springframework.messaging.converter.ByteArrayMessageConverter;
+import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -161,7 +169,18 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 			}
 
 			if (this.context.getBeanFactory().getBeanNamesForType(FunctionCatalog.class, false, false).length == 0) {
-				this.context.registerBean(InMemoryFunctionCatalog.class, () -> new InMemoryFunctionCatalog());
+				this.context.registerBean(SimpleFunctionRegistry.class, () -> {
+					List<MessageConverter> messageConverters = new ArrayList<>();
+					JsonMapper jsonMapper = this.context.getBean(JsonMapper.class);
+
+					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new JsonMessageConverter(jsonMapper)));
+					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
+					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
+					CompositeMessageConverter messageConverter = new CompositeMessageConverter(messageConverters);
+
+					ConversionService conversionService = new DefaultConversionService();
+					return new SimpleFunctionRegistry(conversionService, messageConverter);
+				});
 				this.context.registerBean(FunctionRegistrationPostProcessor.class,
 						() -> new FunctionRegistrationPostProcessor(this.context.getAutowireCapableBeanFactory()
 								.getBeanProvider(FunctionRegistration.class)));

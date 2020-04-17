@@ -31,15 +31,15 @@ import org.springframework.util.MimeType;
  * @author Oleg Zhurakousky
  * @since 3.0.4
  */
-class JsonMessageConverter extends AbstractMessageConverter {
+public class JsonMessageConverter extends AbstractMessageConverter {
 
 	private final JsonMapper jsonMapper;
 
-	JsonMessageConverter(JsonMapper jsonMapper) {
+	public JsonMessageConverter(JsonMapper jsonMapper) {
 		this(jsonMapper, new MimeType("application", "json"));
 	}
 
-	JsonMessageConverter(JsonMapper jsonMapper, MimeType... supportedMimeTypes) {
+	public JsonMessageConverter(JsonMapper jsonMapper, MimeType... supportedMimeTypes) {
 		super(supportedMimeTypes);
 		this.jsonMapper = jsonMapper;
 	}
