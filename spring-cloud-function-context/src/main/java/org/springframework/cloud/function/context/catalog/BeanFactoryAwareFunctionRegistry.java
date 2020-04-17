@@ -173,7 +173,11 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 				.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames)))
 				.collect(Collectors.toList());
 
-			if (!ObjectUtils.isEmpty(names)) {
+			if (definition.endsWith("|")) {
+				Set<String> fNames = this.getNames(null);
+				definition = this.determinImpliedDefinition(fNames, definition);
+			}
+			else if (!ObjectUtils.isEmpty(names)) {
 				if (names.size() > 1) {
 					logger.info("Found more then one function beans in BeanFactory: " + names
 						+ ". If you did not intend to use functions, ignore this message. However, if you did "
@@ -183,10 +187,6 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 					return null;
 				}
 				definition = names.get(0);
-			}
-			else if (definition.endsWith("|")) {
-				Set<String> fNames = this.getNames(null);
-				definition = this.determinImpliedDefinition(fNames, definition);
 			}
 			else {
 				definition = this.discoverDefaultDefinitionFromRegistration();
