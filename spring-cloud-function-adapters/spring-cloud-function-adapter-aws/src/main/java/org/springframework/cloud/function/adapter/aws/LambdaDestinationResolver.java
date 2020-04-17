@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,39 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.util.function.Supplier;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.function.web.source.DestinationResolver;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
+/**
+ * Implementation of {@link DestinationResolver}for AWS Lambda which resolves destination
+ * from `lambda-runtime-aws-request-id` message header.
+ *
+ * @author Dave Syer
+ * @author Oleg Zhurakousky
+ *
+ */
 public class LambdaDestinationResolver implements DestinationResolver {
+
+	private static Log logger = LogFactory.getLog(LambdaDestinationResolver.class);
 
 	@Override
 	public String destination(Supplier<?> supplier, String name, Object value) {
+		String destination = "unknown";
 		if (value instanceof Message) {
 			Message<?> message = (Message<?>) value;
 			MessageHeaders headers = message.getHeaders();
 			if (headers.containsKey("lambda-runtime-aws-request-id")) {
-				return (String) headers.get("lambda-runtime-aws-request-id");
+				destination = (String) headers.get("lambda-runtime-aws-request-id");
 			}
 		}
-		return "unknown";
+		if (logger.isDebugEnabled()) {
+			logger.debug("Lambda destination resolved to: " + destination);
+		}
+		return destination;
 	}
 
 }

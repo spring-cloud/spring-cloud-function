@@ -27,7 +27,7 @@ import com.google.gson.JsonElement;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-public class GsonMapper implements JsonMapper {
+public class GsonMapper extends JsonMapper {
 
 	private final Gson gson;
 
@@ -65,7 +65,11 @@ public class GsonMapper implements JsonMapper {
 
 	@Override
 	public byte[] toJson(Object value) {
-		return this.gson.toJson(value).getBytes(StandardCharsets.UTF_8);
+		byte[] jsonBytes = super.toJson(value);
+		if (jsonBytes == null) {
+			jsonBytes = this.gson.toJson(value).getBytes(StandardCharsets.UTF_8);
+		}
+		return jsonBytes;
 	}
 
 }

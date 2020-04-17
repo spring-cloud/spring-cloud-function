@@ -85,8 +85,8 @@ public class FunctionAutoConfigurationIntegrationTests {
 		}
 		// It completed
 		assertThat(this.forwarder.isOk()).isTrue();
-		assertThat(this.app.inputs).contains("HELLO");
-		assertThat(this.app.inputs).contains("WORLD");
+		assertThat(this.app.inputs).contains("\"HELLO\"");
+		assertThat(this.app.inputs).contains("\"WORLD\"");
 	}
 
 	@EnableAutoConfiguration

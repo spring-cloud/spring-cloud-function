@@ -24,6 +24,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  *
  */
 @ConfigurationProperties(prefix = FunctionProperties.PREFIX + ".web.export")
@@ -149,6 +150,11 @@ public class ExporterProperties {
 		 */
 		private String name;
 
+		/**
+		 * Content type to use when serializing source's output for transport (default 'application/json`).
+		 */
+		private String contentType = "application/json";
+
 		public String getName() {
 			return this.name;
 		}
@@ -169,6 +175,13 @@ public class ExporterProperties {
 			return this.headers;
 		}
 
+		public String getContentType() {
+			return contentType;
+		}
+
+		public void setContentType(String contentType) {
+			this.contentType = contentType;
+		}
 	}
 
 }
