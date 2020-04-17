@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -28,9 +27,7 @@ import java.util.function.Supplier;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.mockito.Mockito;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
@@ -49,14 +46,9 @@ import static org.mockito.Mockito.when;
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  */
-public class FunctionInvokerTests {
+public class FunctionInvokerHttpTests {
 
 	private static final Gson gson = new Gson();
-
-	@Rule
-	public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-
-	private static final String DROPPED_LOG_PREFIX = "Dropping background function result: ";
 
 	@Test
 	public void testHelloWorldSupplier() throws Exception {
@@ -80,37 +72,6 @@ public class FunctionInvokerTests {
 		testHttpFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null);
 	}
 
-	@Test
-	public void testHelloWorldSupplier_Background() throws Exception {
-		testBackgroundFunction(HelloWorldSupplier.class, null, "Hello World!", null);
-	}
-
-	@Test
-	public void testJsonInputFunction_Background() throws Exception {
-		testBackgroundFunction(JsonInputFunction.class, new IncomingRequest("hello"),
-				"Thank you for sending the message: hello", null);
-	}
-
-	@Test
-	public void testJsonInputOutputFunction_Background() throws Exception {
-		testBackgroundFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
-				new OutgoingResponse("Thank you for sending the message: hello"), null);
-	}
-
-	@Test
-	public void testJsonInputConsumer() throws Exception {
-		testBackgroundFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null,
-				"Thank you for sending the message: hello");
-	}
-
-	@Test
-	public void testPubSubBackgroundFunction_PubSub() throws Exception {
-		PubSubMessage pubSubMessage = new PubSubMessage();
-		pubSubMessage.data = "hello";
-		testBackgroundFunction(PubsubBackgroundFunction.class, pubSubMessage, null,
-				"Thank you for sending the message: hello");
-	}
-
 	private <I, O> void testHttpFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
 		try (FunctionInvoker handler = new FunctionInvoker(configurationClass);) {
 
@@ -129,28 +90,6 @@ public class FunctionInvokerTests {
 				assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 			}
 		}
-	}
-
-	private <I, O> void testBackgroundFunction(Class<?> configurationClass, I input, O expectedResult,
-			String expectedSysOut) {
-
-		FunctionInvoker handler = new FunctionInvoker(configurationClass);
-
-		handler.accept(gson.toJson(input), null);
-
-		// verify function sysout statements
-		if (expectedSysOut != null) {
-			assertThat(systemOutRule.getLog()).contains(expectedSysOut);
-		}
-
-		// verify that if function had a return type, it was logged as being dropped
-		if (expectedResult != null) {
-			assertThat(systemOutRule.getLog()).contains(DROPPED_LOG_PREFIX + gson.toJson(expectedResult));
-		}
-		else {
-			assertThat(systemOutRule.getLog()).doesNotContain(DROPPED_LOG_PREFIX);
-		}
-
 	}
 
 	@Configuration
@@ -218,29 +157,6 @@ public class FunctionInvokerTests {
 		OutgoingResponse(String message) {
 			this.message = message;
 		}
-
-	}
-
-	@Configuration
-	@Import({ ContextFunctionCatalogAutoConfiguration.class })
-	protected static class PubsubBackgroundFunction {
-
-		@Bean
-		public Consumer<PubSubMessage> consumer() {
-			return (in) -> System.out.println("Thank you for sending the message: " + in.data);
-		}
-
-	}
-
-	private static class PubSubMessage {
-
-		String data;
-
-		Map<String, String> attributes;
-
-		String messageId;
-
-		String publishTime;
 
 	}
 

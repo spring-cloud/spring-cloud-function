@@ -26,6 +26,7 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.cloud.functions.RawBackgroundFunction;
+import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -51,6 +52,8 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
 
 	private String functionName = "";
+
+	private static final Gson gson = new Gson();
 
 	public FunctionInvoker() {
 		super();
@@ -115,9 +118,22 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	public void accept(String json, Context context) {
 
 		Function<Message<String>, Message<byte[]>> function = lookupFunction();
+		Message<String> message;
 
-		Message<String> message = getInputType() == Void.class ? null
-				: MessageBuilder.withPayload(json).setHeader("context", context).build();
+		if ("google.pubsub.topic.publish".equals(context.eventType()) && getInputType() != PubSubMessage.class) {
+			// If the input type is not PubSubMessage, use the PubSubMessage.data field as
+			// payload, and put the full PubSubMessage and Context into message headers.
+
+			PubSubMessage pubSubMessage = gson.fromJson(json, PubSubMessage.class);
+
+			message = getInputType() == Void.class ? null : MessageBuilder.withPayload(pubSubMessage.getData())
+					.setHeader("gcf_context", context).setHeader("gcf_message", pubSubMessage).build();
+		}
+		else {
+			message = getInputType() == Void.class ? null
+					: MessageBuilder.withPayload(json).setHeader("context", context).build();
+		}
+
 		Message<byte[]> result = function.apply(message);
 
 		if (result != null) {
