@@ -39,6 +39,9 @@ public class LambdaDestinationResolver implements DestinationResolver {
 
 	@Override
 	public String destination(Supplier<?> supplier, String name, Object value) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Lambda invoming value: " + value);
+		}
 		String destination = "unknown";
 		if (value instanceof Message) {
 			Message<?> message = (Message<?>) value;
