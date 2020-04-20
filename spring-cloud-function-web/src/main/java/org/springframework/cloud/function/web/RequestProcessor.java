@@ -22,6 +22,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -298,7 +299,11 @@ public class RequestProcessor {
 	}
 
 	private Flux<?> messages(FunctionWrapper request, Object function, Flux<?> flux) {
-		Map<String, Object> headers = HeaderUtils.fromHttp(request.headers());
+		Map<String, Object> headers = new HashMap<>(HeaderUtils.fromHttp(request.headers()));
+
+		if (function instanceof FunctionInvocationWrapper) {
+			headers.put("scf-func-name", ((FunctionInvocationWrapper) function).getFunctionDefinition());
+		}
 		return flux.map(payload -> MessageUtils.create(function, payload, headers));
 	}
 

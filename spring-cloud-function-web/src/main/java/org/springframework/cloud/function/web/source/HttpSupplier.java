@@ -88,6 +88,8 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 		return MessageBuilder.withPayload(payload)
 				.copyHeaders(HeaderUtils.fromHttp(
 						HeaderUtils.sanitize(response.headers().asHttpHeaders())))
+				.setHeader("scf-sink-url", this.props.getSink().getUrl())
+				.setHeader("scf-func-name", this.props.getSink().getName())
 				.build();
 	}
 
