@@ -21,6 +21,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,6 +42,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONObject;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -793,13 +795,19 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					}
 				}
 				else if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
-					try {
-						convertedValue = conversionService.convert(value, (Class<?>) rawType);
-					}
-					catch (Exception e) {
-						if (value instanceof String || value instanceof byte[]) {
-							convertedValue = messageConverter
+					if (this.isJson(value)) {
+						convertedValue = messageConverter
 								.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
+					}
+					else {
+						try {
+							convertedValue = conversionService.convert(value, (Class<?>) rawType);
+						}
+						catch (Exception e) {
+							if (value instanceof String || value instanceof byte[]) {
+								convertedValue = messageConverter
+									.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
+							}
 						}
 					}
 				}
@@ -811,6 +819,22 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				throw new MessageConversionException(COULD_NOT_CONVERT_INPUT);
 			}
 			return convertedValue;
+		}
+
+		private boolean isJson(Object value) {
+			String v = value instanceof byte[]
+					? new String((byte[]) value, StandardCharsets.UTF_8)
+							: (value instanceof String ? (String) value : null);
+			if (v != null) {
+				try {
+					new JSONObject(v);
+					return true;
+				}
+				catch (Exception ex) {
+					// ignore
+				}
+			}
+			return false;
 		}
 
 		private boolean messageNeedsConversion(Type rawType, Message<?> message) {
