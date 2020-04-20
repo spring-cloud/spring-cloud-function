@@ -127,7 +127,9 @@ public class RequestProcessor {
 
 	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper,
 			ServerWebExchange exchange) {
-		Mono<ResponseEntity<?>> responseEntity = Mono.from(body(wrapper.handler(), exchange))
+		Mono<ResponseEntity<?>> responseEntity = Mono
+				.from(body(wrapper.handler(), exchange))
+				.doOnError(e -> logger.error("Failed to generate POST input for function: " + wrapper.function, e))
 				.flatMap(body -> response(wrapper, body, false));
 
 		return responseEntity;
@@ -207,7 +209,6 @@ public class RequestProcessor {
 			boolean stream) {
 
 		Function function = wrapper.function();
-
 		Flux<?> flux;
 		if (body != null) {
 			if (Collection.class
@@ -258,7 +259,7 @@ public class RequestProcessor {
 			}
 			else {
 				result = Flux.from((Publisher) result);
-				logger.debug("Handled POST with function");
+				logger.debug("Handled POST with function: " + function);
 				if (stream) {
 					responseEntityMono = stream(wrapper, result);
 				}
@@ -344,7 +345,12 @@ public class RequestProcessor {
 	private Publisher<?> body(Object handler, ServerWebExchange exchange) {
 		ResolvableType elementType = ResolvableType
 				.forClass(this.inspector.getInputType(handler));
+
+		// we effectively delegate type conversion to FunctionCatalog
+		elementType = ResolvableType.forClass(String.class);
+
 		ResolvableType actualType = elementType;
+
 		Class<?> resolvedType = elementType.resolve();
 		ReactiveAdapter adapter = (resolvedType != null
 				? getAdapterRegistry().getAdapter(resolvedType) : null);
@@ -386,8 +392,7 @@ public class RequestProcessor {
 				else {
 					// Single-value (with or without reactive type wrapper)
 					if (logger.isDebugEnabled()) {
-						logger.debug(
-								exchange.getLogPrefix() + "0..1 [" + elementType + "]");
+						logger.debug(exchange.getLogPrefix() + "0..1 [" + elementType + "]");
 					}
 					Mono<?> mono = reader.readMono(actualType, elementType, request,
 							response, readHints).doOnNext(v -> {
