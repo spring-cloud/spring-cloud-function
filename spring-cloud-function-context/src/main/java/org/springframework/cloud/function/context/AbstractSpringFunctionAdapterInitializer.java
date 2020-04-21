@@ -38,6 +38,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -79,6 +80,9 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 
 	@Autowired(required = false)
 	protected FunctionCatalog catalog;
+
+	@Autowired(required = false)
+	protected JsonMapper jsonMapper;
 
 	private ConfigurableApplicationContext context;
 
