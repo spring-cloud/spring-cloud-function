@@ -196,7 +196,24 @@ public class CloudFunctionMain {
 You can get on the <a href="https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform">whitelist</a> to try it out.</p>
 </div>
 <div class="paragraph">
-<p>First, add the Shade Plugin configuration to generate a fat jar when you run the <code>mvn package</code> command.</p>
+<p>To deploy to Google Cloud Function, you need to produce a fat jar using the Shade plugin, rather than the Spring Boot plugin.</p>
+</div>
+<div class="paragraph">
+<p>First, if you already have the Spring Boot plugin in your <code>pom.xml</code>, <strong>remove</strong> it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;!-- Remove this block by deleting or commenting it out --&gt;
+&lt;!--
+&lt;plugin&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
+&lt;/plugin&gt;
+--&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then, <strong>add</strong> the Shade Plugin configuration to generate a fat jar when you run the <code>mvn package</code> command.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -211,7 +228,7 @@ You can get on the <a href="https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7Cf
             &lt;/goals&gt;
             &lt;configuration&gt;
                 &lt;shadedArtifactAttached&gt;true&lt;/shadedArtifactAttached&gt;
-                &lt;outputDirectory&gt;deploy&lt;/outputDirectory&gt;
+                &lt;outputDirectory&gt;target/deploy&lt;/outputDirectory&gt;
                 &lt;shadedClassifierName&gt;gcp&lt;/shadedClassifierName&gt;
                 &lt;transformers&gt;
                     &lt;transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"&gt;
@@ -234,6 +251,18 @@ You can get on the <a href="https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7Cf
 &lt;/plugin&gt;</code></pre>
 </div>
 </div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+If both Spring Boot plugin and Shade plugin are present, Shade plugin may be shading a Spring Boot produced JAR, resulting in a Fat JAR that&#8217;s unusable in Google Cloud Function. Don&#8217;t forget to remove the Spring Boot plugin!
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Package the application.</p>
 </div>
@@ -243,7 +272,7 @@ You can get on the <a href="https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7Cf
 </div>
 </div>
 <div class="paragraph">
-<p>You should see the fat jar in <code>deploy</code> directory.</p>
+<p>You should see the fat jar in <code>target/deploy</code> directory.</p>
 </div>
 <div class="paragraph">
 <p>Make sure that you have the <a href="https://cloud.google.com/sdk/install">Cloud SDK CLI</a> installed.</p>
@@ -257,7 +286,7 @@ You can get on the <a href="https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7Cf
 --entry-point org.springframework.cloud.function.adapter.gcloud.FunctionInvoker \
 --runtime java11 \
 --trigger-http \
---source deploy \
+--source target/deploy \
 --memory 512MB</pre>
 </div>
 </div>
