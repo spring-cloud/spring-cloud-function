@@ -9,7 +9,7 @@
 	<parent>
 		<artifactId>spring-cloud-function-samples</artifactId>
 		<groupId>org.springframework.cloud</groupId>
-		<version>3.0.5.BUILD-SNAPSHOT</version>
+		<version>3.0.6.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
