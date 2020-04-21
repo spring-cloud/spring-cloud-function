@@ -128,7 +128,7 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 		}
 		else {
 			message = getInputType() == Void.class ? null
-					: MessageBuilder.withPayload(json).setHeader("context", context).build();
+					: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
 		}
 
 		Message<byte[]> result = function.apply(message);
