@@ -115,21 +115,8 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	public void accept(String json, Context context) {
 
 		Function<Message<String>, Message<byte[]>> function = lookupFunction();
-		Message<String> message;
-
-		if ("google.pubsub.topic.publish".equals(context.eventType()) && getInputType() != PubSubMessage.class) {
-			// If the input type is not PubSubMessage, use the PubSubMessage.data field as
-			// payload, and put the full PubSubMessage and Context into message headers.
-
-			PubSubMessage pubSubMessage = this.jsonMapper.fromJson(json, PubSubMessage.class);
-
-			message = getInputType() == Void.class ? null : MessageBuilder.withPayload(pubSubMessage.getData())
-					.setHeader("gcf_context", context).setHeader("gcf_message", pubSubMessage).build();
-		}
-		else {
-			message = getInputType() == Void.class ? null
-					: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
-		}
+		Message<String> message = getInputType() == Void.class ? null
+				: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
 
 		Message<byte[]> result = function.apply(message);
 
