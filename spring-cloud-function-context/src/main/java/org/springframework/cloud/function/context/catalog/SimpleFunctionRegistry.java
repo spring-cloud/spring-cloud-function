@@ -524,7 +524,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Object invokeFunction(Object input) {
 			Message incomingMessage = null;
 			if (!this.functionDefinition.startsWith(RoutingFunction.FUNCTION_NAME)) {
-				if (input instanceof Message && !FunctionTypeUtils.isMessage(FunctionTypeUtils.getInputType(functionType, 0))) {
+				if (input instanceof Message && !FunctionTypeUtils.isMessage(FunctionTypeUtils.getInputType(functionType, 0))
+						&& ((Message) input).getHeaders().containsKey("scf-func-name")) {
 					incomingMessage = (Message) input;
 					input = incomingMessage.getPayload();
 				}
