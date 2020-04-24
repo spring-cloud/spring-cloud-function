@@ -47,7 +47,7 @@ public class FunctionSampleGcpIntegrationTest {
 
 			if (startedSuccessfully.await(10, TimeUnit.SECONDS)) {
 				String result = rest.postForObject("http://localhost:8080/", "Hello", String.class);
-				assertThat(result).isEqualTo("HELLO");
+				assertThat(result).isEqualTo("\"HELLO\"");
 			}
 			else {
 				fail("Failed to start the function.");
