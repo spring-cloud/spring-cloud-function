@@ -21,7 +21,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.gson.Gson;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemOutRule;
@@ -94,7 +93,6 @@ public class FunctionInvokerBackgroundTests {
 	}
 
 	@Test
-	@Ignore("Conversion to String is not supported yet.")
 	public void testPubSubBackgroundFunction_StringMessage() throws Exception {
 		PubSubMessage pubSubMessage = new PubSubMessage();
 		pubSubMessage.setMessageId("1234");
@@ -228,33 +226,16 @@ public class FunctionInvokerBackgroundTests {
 	protected static class PubsubBackgroundFunctionStringMessage {
 
 		@Bean
-		public Consumer<Message<String>> consumeStringMessage() {
+		public Consumer<Message<String>> consumeStringMessage(JsonMapper mapper) {
 			return (message) -> {
-				String payload = message.getPayload();
+				PubSubMessage pubSubMessage = mapper.fromJson(message.getPayload(), PubSubMessage.class);
+				String payload = pubSubMessage.getData();
+
 				String eventType = ((Context) message.getHeaders().get("gcf_context")).eventType();
-				String messageId = message.getHeaders().get("messageId").toString();
+				String messageId = pubSubMessage.getMessageId();
 				System.out.println("Message: " + payload + "; Type: " + eventType + "; Message ID: " + messageId);
 			};
 		}
-
-		@Bean
-		public MessageConverter messageToStringPayloadConverter(JsonMapper mapper) {
-			return new AbstractMessageConverter() {
-
-				@Override
-				protected boolean supports(Class<?> aClass) {
-					return aClass == String.class;
-				}
-
-				@Override
-				protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
-					PubSubMessage pubSubMessage = mapper.fromJson(message.getPayload(), PubSubMessage.class);
-					return MessageBuilder.withPayload(pubSubMessage.getData())
-							.setHeader("messageId", pubSubMessage.getMessageId()).build();
-				}
-			};
-		}
-
 	}
 
 	@Configuration
