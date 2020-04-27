@@ -96,7 +96,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 			if (context != null) {
 				context.getLogger().throwing(getClass().getName(), "handle", ex);
 			}
-			throw (RuntimeException) ex;
+			throw new RuntimeException(ex);
 		}
 	}
 
