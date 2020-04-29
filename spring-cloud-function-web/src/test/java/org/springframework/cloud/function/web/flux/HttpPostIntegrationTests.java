@@ -308,8 +308,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	public void uppercaseSSE() throws Exception {
-		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase"))
-				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
+		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class).getBody())
 						.isEqualTo(sse("(FOO)", "(BAR)"));
 	}
@@ -361,7 +360,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	private String sse(String... values) {
-		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
+		return "[\"" + StringUtils.arrayToDelimitedString(values, "\",\"") + "\"]";
 	}
 
 	@EnableAutoConfiguration
