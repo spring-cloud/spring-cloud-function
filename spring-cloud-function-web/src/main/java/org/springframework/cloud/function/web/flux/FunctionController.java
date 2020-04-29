@@ -100,8 +100,7 @@ public class FunctionController {
 
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
-	public Mono<ResponseEntity<?>> postStream(ServerWebExchange request,
-											  @RequestBody(required = false) Flux<String> body) {
+	public Mono<ResponseEntity<?>> postStream(ServerWebExchange request, @RequestBody(required = false) Flux<String> body) {
 		final FunctionWrapper wrapper = wrapper(request);
 		return this.processor.response(wrapper, body, true);
 	}

@@ -215,9 +215,11 @@ public class RequestProcessor {
 			if (Collection.class
 					.isAssignableFrom(this.inspector.getInputType(wrapper.handler()))) {
 				flux = Flux.just(body);
-			} else if (body instanceof Flux) {
+			}
+			else if (body instanceof Flux) {
 				flux  = Flux.from((Flux) body);
-			} else {
+			}
+			else {
 				Iterable<?> iterable = body instanceof Collection ? (Collection<?>) body
 						: (body instanceof Set ? Collections.singleton(body)
 								: Collections.singletonList(body));
