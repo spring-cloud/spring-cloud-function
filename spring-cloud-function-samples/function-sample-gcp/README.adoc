@@ -35,7 +35,7 @@ Run the following command from the project root to deploy.
 
 ----
 gcloud alpha functions deploy function-sample-gcp \
---entry-point org.springframework.cloud.function.adapter.gcloud.FunctionInvoker \
+--entry-point org.springframework.cloud.function.adapter.gcp.FunctionInvoker \
 --runtime java11 \
 --trigger-http \
 --source target/deploy \

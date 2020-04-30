@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.gcloud.integration;
+package org.springframework.cloud.function.adapter.gcp.integration;
 
 import java.io.IOException;
 import java.util.function.Function;
@@ -26,7 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import static org.springframework.cloud.function.adapter.gcloud.integration.LocalServerTestSupport.verify;
+import static org.springframework.cloud.function.adapter.gcp.integration.LocalServerTestSupport.verify;
 
 /**
  * Integration tests for GCF Http Functions.
