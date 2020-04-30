@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.gcloud.integration;
+package org.springframework.cloud.function.adapter.gcp.integration;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,7 +38,7 @@ import com.google.cloud.functions.invoker.runner.Invoker;
 import com.google.gson.Gson;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.cloud.function.adapter.gcloud.FunctionInvoker;
+import org.springframework.cloud.function.adapter.gcp.FunctionInvoker;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;

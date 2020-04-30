@@ -29,14 +29,14 @@ public class CloudFunctionMain {
 
 Start by adding the Maven plugin provided as part of the Google Functions Framework for Java.
 
-[source, xml]
+[source,xml]
 ----
 <plugin>
     <groupId>com.google.cloud.functions</groupId>
     <artifactId>function-maven-plugin</artifactId>
     <version>0.9.1</version>
     <configuration>
-        <functionTarget>org.springframework.cloud.function.adapter.gcloud.FunctionInvoker</functionTarget>
+        <functionTarget>org.springframework.cloud.function.adapter.gcp.FunctionInvoker</functionTarget>
         <port>8080</port>
     </configuration>
 </plugin>
@@ -134,7 +134,7 @@ From the project base directory run the following command to deploy.
 
 ----
 gcloud alpha functions deploy function-sample-gcp \
---entry-point org.springframework.cloud.function.adapter.gcloud.FunctionInvoker \
+--entry-point org.springframework.cloud.function.adapter.gcp.FunctionInvoker \
 --runtime java11 \
 --trigger-http \
 --source target/deploy \
