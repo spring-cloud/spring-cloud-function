@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.gcloud;
+package org.springframework.cloud.function.adapter.gcp;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
