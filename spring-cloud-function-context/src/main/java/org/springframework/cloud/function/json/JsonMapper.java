@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
 
 import org.springframework.core.ResolvableType;
 
@@ -64,20 +63,18 @@ public abstract class JsonMapper {
 	public abstract <T> T fromJson(Object json, Type type);
 
 	public byte[] toJson(Object value) {
-		if (value instanceof String) {
-			try {
-				new JSONObject((String) value);
-				if (logger.isDebugEnabled()) {
-					logger.debug(
-							"String already represents JSON. Skipping conversion in favor of 'getBytes(StandardCharsets.UTF_8'.");
-				}
-				return ((String) value).getBytes(StandardCharsets.UTF_8);
+		byte[] result = null;
+		if (isJsonString(value)) {
+			if (logger.isDebugEnabled()) {
+				logger.debug(
+						"String already represents JSON. Skipping conversion in favor of 'getBytes(StandardCharsets.UTF_8'.");
 			}
-			catch (Exception ex) {
-				// ignore
-			}
+			result = ((String) value).getBytes(StandardCharsets.UTF_8);
 		}
-		return null;
+		else {
+			logger.warn("Object does not represent a valid JSON. Object is: " + value);
+		}
+		return result;
 	}
 
 	/**
@@ -94,4 +91,22 @@ public abstract class JsonMapper {
 
 	public abstract String toString(Object value);
 
+	/**
+	 * Performs a simple validation on an object to see if it appears to be a JSON string.
+	 * NOTE: the validation is very rudimentary and simply checks that the object is a String and begins
+	 * and ends with matching pairs of "{}" or "[]" or "\"\"" and therefore may not handle some corner cases.
+	 * Primarily intended for internal of  the framework.
+	 * @param value candidate object to evaluate
+	 * @return true if and object appears to be a valid JSON string, otherwise false.
+	 */
+	public static boolean isJsonString(Object value) {
+		boolean isJson = false;
+		if (value instanceof String) {
+			String str = ((String) value).trim();
+			isJson = (str.startsWith("\"") && str.endsWith("\"")) ||
+					(str.startsWith("{") && str.endsWith("}")) ||
+					(str.startsWith("[") && str.endsWith("]"));
+		}
+		return isJson;
+	}
 }
