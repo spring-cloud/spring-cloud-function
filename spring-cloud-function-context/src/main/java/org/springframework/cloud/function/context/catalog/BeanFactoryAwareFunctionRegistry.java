@@ -32,6 +32,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -110,6 +111,14 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	@Override
 	Object locateFunction(String name) {
 		Object function = super.locateFunction(name);
+		if (function == null) {
+			try {
+				function = BeanFactoryAnnotationUtils.qualifiedBeanOfType(this.applicationContext.getBeanFactory(), Object.class, name);
+			}
+			catch (Exception e) {
+				// ignore
+			}
+		}
 		if (function == null && this.applicationContext.containsBean(name)) {
 			function = this.applicationContext.getBean(name);
 		}
