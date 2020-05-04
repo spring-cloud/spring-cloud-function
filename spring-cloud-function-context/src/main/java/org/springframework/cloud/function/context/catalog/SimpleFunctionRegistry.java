@@ -42,7 +42,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.json.JSONObject;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -56,6 +55,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -845,14 +845,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			String v = value instanceof byte[]
 					? new String((byte[]) value, StandardCharsets.UTF_8)
 							: (value instanceof String ? (String) value : null);
-			if (v != null) {
-				try {
-					new JSONObject(v);
-					return true;
-				}
-				catch (Exception ex) {
-					// ignore
-				}
+			if (v != null && JsonMapper.isJsonString(v)) {
+				return true;
 			}
 			return false;
 		}
