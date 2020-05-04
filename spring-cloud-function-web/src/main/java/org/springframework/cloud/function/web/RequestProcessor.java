@@ -200,7 +200,10 @@ public class RequestProcessor {
 		}
 
 		if (result instanceof Flux) {
-			result = Flux.from(result).collectList();
+			result = Flux.from(result).onErrorContinue((e, v) -> {
+				logger.error("Failed to process value: " + v, e);
+			})
+			.collectList();
 		}
 		return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 	}

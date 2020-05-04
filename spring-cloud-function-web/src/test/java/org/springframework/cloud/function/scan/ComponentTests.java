@@ -19,7 +19,6 @@ package org.springframework.cloud.function.scan;
 import java.net.URI;
 import java.util.function.Function;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import reactor.core.publisher.Flux;
@@ -63,7 +62,6 @@ public class ComponentTests {
 	}
 
 	@Test
-	@Ignore("FIXME")
 	public void greeter() throws Exception {
 		ResponseEntity<String> result = this.rest
 				.exchange(
@@ -71,7 +69,7 @@ public class ComponentTests {
 								.contentType(MediaType.TEXT_PLAIN).body("World"),
 						String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody()).isEqualTo("Hello World");
+		assertThat(result.getBody()).isEqualTo("[\"Hello World\"]");
 	}
 
 	@SpringBootApplication
