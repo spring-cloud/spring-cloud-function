@@ -165,7 +165,7 @@ public class CloudFunctionMain {
     &lt;artifactId&gt;function-maven-plugin&lt;/artifactId&gt;
     &lt;version&gt;0.9.1&lt;/version&gt;
     &lt;configuration&gt;
-        &lt;functionTarget&gt;org.springframework.cloud.function.adapter.gcloud.FunctionInvoker&lt;/functionTarget&gt;
+        &lt;functionTarget&gt;org.springframework.cloud.function.adapter.gcp.FunctionInvoker&lt;/functionTarget&gt;
         &lt;port&gt;8080&lt;/port&gt;
     &lt;/configuration&gt;
 &lt;/plugin&gt;</code></pre>
@@ -290,7 +290,7 @@ If both Spring Boot plugin and Shade plugin are present, Shade plugin may be sha
 <div class="listingblock">
 <div class="content">
 <pre>gcloud alpha functions deploy function-sample-gcp \
---entry-point org.springframework.cloud.function.adapter.gcloud.FunctionInvoker \
+--entry-point org.springframework.cloud.function.adapter.gcp.FunctionInvoker \
 --runtime java11 \
 --trigger-http \
 --source target/deploy \
