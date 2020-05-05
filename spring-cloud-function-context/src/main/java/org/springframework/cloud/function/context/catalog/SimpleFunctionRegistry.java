@@ -282,8 +282,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			for (String name : names) {
 				Object function = this.locateFunction(name);
 				if (function == null) {
-					logger.warn("!!! Failed to discover function '" + definition + "' in function catalog. "
-						+ "Function available in catalog are: " + this.getNames(null));
+					logger.debug("Failed to discover function '" + definition + "' in function catalog. "
+						+ "Function available in catalog are: " + this.getNames(null) + ". This is generally "
+								+ "acceptable for cases where there was no intention to use functions.");
 					return null;
 				}
 				else {
@@ -419,8 +420,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		return pf.getProxy();
 	}
 
-	Collection<String> getAliases(String key) {
-		return Collections.singletonList(key);
+	/**
+	 * Returns a list of aliases for 'functionName' if implementation is based on the
+	 * system that supports name aliasing (see {@link BeanFactoryAwareFunctionRegistry}
+	 * @param functionName
+	 * @return collection of aliases
+	 */
+	Collection<String> getAliases(String functionName) {
+		return Collections.singletonList(functionName);
 	}
 
 	/**
