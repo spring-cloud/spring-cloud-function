@@ -421,9 +421,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	}
 
 	/**
-	 * Returns a list of aliases for 'functionName' if implementation is based on the
+	 * Returns a list of aliases for 'functionName'.
+	 * It will do so providing the underlying implementation is based on the
 	 * system that supports name aliasing (see {@link BeanFactoryAwareFunctionRegistry}
-	 * @param functionName
+	 * @param functionName the name of the function
 	 * @return collection of aliases
 	 */
 	Collection<String> getAliases(String functionName) {
