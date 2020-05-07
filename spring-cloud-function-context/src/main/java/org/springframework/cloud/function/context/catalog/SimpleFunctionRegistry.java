@@ -47,7 +47,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
-
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanFactory;
@@ -73,6 +72,8 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+
+
 
 
 /**
@@ -532,7 +533,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Object invokeFunction(Object input) {
 			Message incomingMessage = null;
 			if (!this.functionDefinition.startsWith(RoutingFunction.FUNCTION_NAME)) {
-				if (input instanceof Message && !FunctionTypeUtils.isMessage(FunctionTypeUtils.getInputType(functionType, 0))) {
+				if (input instanceof Message
+						&& !FunctionTypeUtils.isMessage(FunctionTypeUtils.getInputType(functionType, 0))
+						&& ((Message) input).getHeaders().containsKey("scf-func-name")) {
 					incomingMessage = (Message) input;
 					input = incomingMessage.getPayload();
 				}
