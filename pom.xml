@@ -102,13 +102,15 @@
 					<groupId>org.springframework.boot</groupId>
 					<artifactId>spring-boot-maven-plugin</artifactId>
 					<version>${spring-boot.version}</version>
-					<dependencies>
-						<dependency>
-							<groupId>org.springframework.boot.experimental</groupId>
-							<artifactId>spring-boot-thin-layout</artifactId>
-							<version>${wrapper.version}</version>
-						</dependency>
-					</dependencies>
+					<!-- TODO: Only 1 layout dependency is allowed per application.
+					How do we exclude this without deleting ?? -->
+<!--					<dependencies>-->
+<!--						<dependency>-->
+<!--							<groupId>org.springframework.boot.experimental</groupId>-->
+<!--							<artifactId>spring-boot-thin-layout</artifactId>-->
+<!--							<version>${wrapper.version}</version>-->
+<!--						</dependency>-->
+<!--					</dependencies>-->
 				</plugin>
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
