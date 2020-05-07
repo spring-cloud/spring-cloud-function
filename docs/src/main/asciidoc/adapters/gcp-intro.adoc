@@ -36,7 +36,7 @@ Start by adding the Maven plugin provided as part of the Google Functions Framew
     <artifactId>function-maven-plugin</artifactId>
     <version>0.9.1</version>
     <configuration>
-        <functionTarget>org.springframework.cloud.function.adapter.gcp.FunctionInvoker</functionTarget>
+        <functionTarget>org.springframework.cloud.function.adapter.gcp.GcfJarLauncher</functionTarget>
         <port>8080</port>
     </configuration>
 </plugin>
@@ -66,59 +66,35 @@ curl http://localhost:8080/ -d "hello"
 As of March 2020, Google Cloud Functions for Java is in Alpha.
 You can get on the https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform[whitelist] to try it out.
 
-To deploy to Google Cloud Function, you need to produce a fat jar using the Shade plugin, rather than the Spring Boot plugin.
+In order to use the adapter, first add the dependency to your pom.xml:
 
-First, if you already have the Spring Boot plugin in your `pom.xml`, *remove* it:
 [source, xml]
 ----
-<!-- Remove this block by deleting or commenting it out -->
-<!--
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-function-adapter-gcp</artifactId>
+</dependency>
+----
+
+Then, add the `spring-boot-maven-plugin` with `spring-cloud-function-adapter-gcp` as a dependency.
+The extra dependency is used for `spring-boot-maven-plugin` to package your function in the correct JAR format for deployment on Google Cloud Functions.
+
+[source, xml]
+----
 <plugin>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-maven-plugin</artifactId>
-</plugin>
--->
-----
-
-Then, *add* the Shade Plugin configuration to generate a fat jar when you run the `mvn package` command.
-
-[source, xml]
-----
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-shade-plugin</artifactId>
-    <executions>
-        <execution>
-            <phase>package</phase>
-            <goals>
-                <goal>shade</goal>
-            </goals>
-            <configuration>
-                <shadedArtifactAttached>true</shadedArtifactAttached>
-                <outputDirectory>target/deploy</outputDirectory>
-                <shadedClassifierName>gcp</shadedClassifierName>
-                <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                        <resource>META-INF/spring.handlers</resource>
-                    </transformer>
-                    <transformer implementation="org.springframework.boot.maven.PropertiesMergingResourceTransformer">
-                        <resource>META-INF/spring.factories</resource>
-                    </transformer>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                        <resource>META-INF/spring.schemas</resource>
-                    </transformer>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                        <mainClass>com.example.CloudFunctionMain</mainClass>
-                    </transformer>
-                </transformers>
-            </configuration>
-        </execution>
-    </executions>
+    <configuration>
+        <outputDirectory>target/deploy</outputDirectory>
+    </configuration>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-function-adapter-gcp</artifactId>
+        </dependency>
+    </dependencies>
 </plugin>
 ----
-
-IMPORTANT: If both Spring Boot plugin and Shade plugin are present, Shade plugin may be shading a Spring Boot produced JAR, resulting in a Fat JAR that's unusable in Google Cloud Function. Don't forget to remove the Spring Boot plugin!
 
 Package the application.
 
@@ -126,7 +102,8 @@ Package the application.
 mvn package
 ----
 
-You should see the fat jar in `target/deploy` directory.
+You should see the resulting JAR in `target/deploy` directory.
+This JAR is correctly formatted for deployment to Google Cloud Functions.
 
 Make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
 
@@ -134,7 +111,7 @@ From the project base directory run the following command to deploy.
 
 ----
 gcloud alpha functions deploy function-sample-gcp \
---entry-point org.springframework.cloud.function.adapter.gcp.FunctionInvoker \
+--entry-point org.springframework.cloud.function.adapter.gcp.GcfJarLauncher \
 --runtime java11 \
 --trigger-http \
 --source target/deploy \
