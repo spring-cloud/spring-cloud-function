@@ -26,7 +26,6 @@
 			<groupId>com.google.cloud.functions</groupId>
 			<artifactId>functions-framework-api</artifactId>
 			<version>${google.cloud.functions.api.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
@@ -36,6 +35,17 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-context</artifactId>
 		</dependency>
+
+		<!-- Jar Layout dependencies -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-loader-tools</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-loader</artifactId>
+		</dependency>
+
 		<!-- Test-only dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
