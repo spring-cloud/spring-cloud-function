@@ -18,11 +18,10 @@ package org.springframework.cloud.function.adapter.gcp.layout;
 
 import java.io.IOException;
 
-import com.example.GcfJarLauncher;
-
 import org.springframework.boot.loader.tools.CustomLoaderLayout;
 import org.springframework.boot.loader.tools.Layouts;
 import org.springframework.boot.loader.tools.LoaderClassesWriter;
+import org.springframework.cloud.function.adapter.gcp.GcfJarLauncher;
 
 /**
  * A custom JAR Layout that writes GCF adapter classes to the top-level of the output JAR

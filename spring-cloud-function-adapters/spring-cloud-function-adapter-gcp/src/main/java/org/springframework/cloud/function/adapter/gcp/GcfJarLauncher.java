@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example;
+package org.springframework.cloud.function.adapter.gcp;
 
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
