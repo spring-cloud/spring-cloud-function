@@ -23,6 +23,12 @@ import com.google.cloud.functions.HttpResponse;
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.jar.JarFile;
 
+/**
+ * The launcher class written at the top-level of the output JAR to be deployed to
+ * Google Cloud Functions. This is the entry point to the function when run from JAR.
+ *
+ * @author Daniel Zou
+ */
 public class GcfJarLauncher extends JarLauncher implements HttpFunction {
 
 	private final ClassLoader loader;
