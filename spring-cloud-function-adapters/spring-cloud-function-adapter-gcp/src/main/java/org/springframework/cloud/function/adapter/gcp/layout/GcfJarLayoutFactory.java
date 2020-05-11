@@ -24,6 +24,7 @@ import org.springframework.boot.loader.tools.LayoutFactory;
 /**
  * Factory boilerplate class that constructs {@link GcfJarLayout}.
  *
+ * @author Ray Tsang
  * @author Daniel Zou
  */
 public class GcfJarLayoutFactory implements LayoutFactory {

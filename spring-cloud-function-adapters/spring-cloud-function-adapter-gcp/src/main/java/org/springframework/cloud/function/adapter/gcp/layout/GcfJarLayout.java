@@ -27,6 +27,7 @@ import org.springframework.cloud.function.adapter.gcp.GcfJarLauncher;
  * A custom JAR Layout that writes GCF adapter classes to the top-level of the output JAR
  * for deploying to GCF.
  *
+ * @author Ray Tsang
  * @author Daniel Zou
  */
 public class GcfJarLayout extends Layouts.Jar implements CustomLoaderLayout {
