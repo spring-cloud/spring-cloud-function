@@ -26,8 +26,6 @@
 			<groupId>com.google.cloud.functions</groupId>
 			<artifactId>functions-framework-api</artifactId>
 			<version>${google.cloud.functions.api.version}</version>
-			<!-- TODO: Figure out if we can keep this?? Seems like not right now... -->
-<!--			<scope>provided</scope>-->
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
