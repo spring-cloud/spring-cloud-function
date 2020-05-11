@@ -2,21 +2,28 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
 
+	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-gcp</artifactId>
+	<version>2.0.0.RELEASE</version>
+	<packaging>jar</packaging>
+
+	<name>function-sample-gcp</name>
 
 	<parent>
-		<artifactId>spring-cloud-function-samples</artifactId>
-		<groupId>org.springframework.cloud</groupId>
-		<version>3.1.0.BUILD-SNAPSHOT</version>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.3.0.BUILD-SNAPSHOT</version>
+		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-gcp</artifactId>
-			<version>${project.version}</version>
+			<version>3.1.0.BUILD-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 
@@ -32,7 +39,7 @@
 					<dependency>
 						<groupId>org.springframework.cloud</groupId>
 						<artifactId>spring-cloud-function-adapter-gcp</artifactId>
-						<version>${project.version}</version>
+						<version>3.1.0.BUILD-SNAPSHOT</version>
 					</dependency>
 				</dependencies>
 			</plugin>
