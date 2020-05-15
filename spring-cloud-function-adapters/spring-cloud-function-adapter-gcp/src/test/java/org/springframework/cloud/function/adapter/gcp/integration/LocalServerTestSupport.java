@@ -51,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Daniel Zou
  * @author Mike Eltsufin
  */
-public class LocalServerTestSupport {
+final public class LocalServerTestSupport {
 
 	private static final Gson gson = new Gson();
 
@@ -61,8 +61,11 @@ public class LocalServerTestSupport {
 
 	private static AtomicInteger nextPort = new AtomicInteger(8080);
 
+	private LocalServerTestSupport() {
+	}
+
 	/**
-	 * Starts up the Cloud Function Server and executes the test
+	 * Starts up the Cloud Function Server and executes the test.
 	 */
 	public static <I, O> void verify(Class<?> mainClass, String function, I input, O expectedOutput) {
 		try (ServerProcess serverProcess = LocalServerTestSupport.startServer(mainClass, function)) {

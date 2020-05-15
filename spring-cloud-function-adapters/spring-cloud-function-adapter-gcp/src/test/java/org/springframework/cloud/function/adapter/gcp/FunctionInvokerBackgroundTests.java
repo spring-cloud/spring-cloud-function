@@ -47,6 +47,9 @@ public class FunctionInvokerBackgroundTests {
 
 	private static final Gson gson = new Gson();
 
+	/**
+	 * The rule for log.
+	 */
 	@Rule
 	public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
