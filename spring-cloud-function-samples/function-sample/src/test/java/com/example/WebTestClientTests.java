@@ -23,6 +23,12 @@ public class WebTestClientTests {
 	private WebTestClient client;
 
 	@Test
+	public void words() {
+		client.get().uri("/words").exchange()
+			.expectStatus().isOk().expectBody(String.class).isEqualTo("[\"foo\",\"bar\"]");
+	}
+
+	@Test
 	public void uppercase() {
 		client.post().uri("/uppercase").body(Mono.just("foo"), String.class).exchange()
 				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
@@ -32,6 +38,12 @@ public class WebTestClientTests {
 	public void lowercase() {
 		client.post().uri("/lowercase").body(Flux.just("FOO", "BAR"), String.class).exchange()
 				.expectStatus().isOk().expectBody(String.class).isEqualTo("[\"foobar\"]");
+	}
+
+	@Test
+	public void lowercaseMulti() {
+		client.post().uri("/lowercase").contentType(MediaType.APPLICATION_JSON).body(Mono.just("[\"FOO\"]"), String.class).exchange()
+			.expectStatus().isOk().expectBody(String.class).isEqualTo("[\"foo\"]");
 	}
 
 	@Test
