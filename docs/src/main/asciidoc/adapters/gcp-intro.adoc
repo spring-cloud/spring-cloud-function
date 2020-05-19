@@ -5,7 +5,68 @@
 The Google Cloud Functions adapter enables Spring Cloud Function apps to run on the https://cloud.google.com/functions[Google Cloud Functions] serverless platform.
 You can either run the function locally using the open source https://github.com/GoogleCloudPlatform/functions-framework-java[Google Functions Framework for Java] or on GCP.
 
-==== Getting Started
+==== Project Dependencies
+
+Start by adding the `spring-cloud-function-adapter-gcp` dependency to your project.
+
+[source, xml]
+----
+<dependencies>
+	<dependency>
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-function-adapter-gcp</artifactId>
+	</dependency>
+
+	...
+</dependencies>
+----
+
+In addition, add the `spring-boot-maven-plugin` which will build the JAR of the function to deploy.
+
+NOTE: Notice that we also reference `spring-cloud-function-adapter-gcp` as a dependency of the `spring-boot-maven-plugin`. This is necessary because it modifies the plugin to package your function in the correct JAR format for deployment on Google Cloud Functions.
+
+[source, xml]
+----
+<plugin>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-maven-plugin</artifactId>
+	<configuration>
+		<outputDirectory>target/deploy</outputDirectory>
+	</configuration>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-adapter-gcp</artifactId>
+		</dependency>
+	</dependencies>
+</plugin>
+----
+
+Finally, add the Maven plugin provided as part of the Google Functions Framework for Java.
+This allows you to test your functions locally via `mvn function:run`.
+
+NOTE: The function target should always be set to `org.springframework.cloud.function.adapter.gcp.GcfJarLauncher`; this is an adapter class which acts as the entry point to your Spring Cloud Function from the Google Cloud Functions platform.
+
+[source,xml]
+----
+<plugin>
+	<groupId>com.google.cloud.functions</groupId>
+	<artifactId>function-maven-plugin</artifactId>
+	<version>0.9.1</version>
+	<configuration>
+		<functionTarget>org.springframework.cloud.function.adapter.gcp.GcfJarLauncher</functionTarget>
+		<port>8080</port>
+	</configuration>
+</plugin>
+----
+
+A full example of a working `pom.xml` can be found in the https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-gcp-http/pom.xml[Spring Cloud Functions GCP sample].
+
+==== HTTP Functions
+
+Google Cloud Functions supports deploying https://cloud.google.com/functions/docs/writing/http[HTTP Functions], which are functions that are invoked by HTTP request. The sections below describe instructions for deploying a Spring Cloud Function as an HTTP Function.
+
+===== Getting Started
 
 Let’s start with a simple Spring Cloud Function example:
 
@@ -25,23 +86,6 @@ public class CloudFunctionMain {
 }
 ----
 
-===== Test locally
-
-Start by adding the Maven plugin provided as part of the Google Functions Framework for Java.
-
-[source,xml]
-----
-<plugin>
-    <groupId>com.google.cloud.functions</groupId>
-    <artifactId>function-maven-plugin</artifactId>
-    <version>0.9.1</version>
-    <configuration>
-        <functionTarget>org.springframework.cloud.function.adapter.gcp.GcfJarLauncher</functionTarget>
-        <port>8080</port>
-    </configuration>
-</plugin>
-----
-
 Specify your configuration main class in `resources/META-INF/MANIFEST.MF`.
 
 [source]
@@ -49,7 +93,8 @@ Specify your configuration main class in `resources/META-INF/MANIFEST.MF`.
 Main-Class: com.example.CloudFunctionMain
 ----
 
-Then run the function:
+Then run the function locally.
+This is provided by the Google Cloud Functions `function-maven-plugin` described in the project dependencies section.
 
 ----
 mvn function:run
@@ -66,51 +111,21 @@ curl http://localhost:8080/ -d "hello"
 As of March 2020, Google Cloud Functions for Java is in Alpha.
 You can get on the https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform[whitelist] to try it out.
 
-In order to use the adapter, first add the dependency to your pom.xml:
-
-[source, xml]
-----
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-function-adapter-gcp</artifactId>
-</dependency>
-----
-
-Then, add the `spring-boot-maven-plugin` with `spring-cloud-function-adapter-gcp` as a dependency.
-The extra dependency is used for `spring-boot-maven-plugin` to package your function in the correct JAR format for deployment on Google Cloud Functions.
-
-[source, xml]
-----
-<plugin>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-maven-plugin</artifactId>
-    <configuration>
-        <outputDirectory>target/deploy</outputDirectory>
-    </configuration>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-function-adapter-gcp</artifactId>
-        </dependency>
-    </dependencies>
-</plugin>
-----
-
-Package the application.
+Start by packaging your application.
 
 ----
 mvn package
 ----
 
-You should see the resulting JAR in `target/deploy` directory.
+If you added the custom `spring-boot-maven-plugin` plugin defined above, you should see the resulting JAR in `target/deploy` directory.
 This JAR is correctly formatted for deployment to Google Cloud Functions.
 
-Make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
+Next, make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
 
 From the project base directory run the following command to deploy.
 
 ----
-gcloud alpha functions deploy function-sample-gcp \
+gcloud alpha functions deploy function-sample-gcp-http \
 --entry-point org.springframework.cloud.function.adapter.gcp.GcfJarLauncher \
 --runtime java11 \
 --trigger-http \
@@ -121,9 +136,141 @@ gcloud alpha functions deploy function-sample-gcp \
 Invoke the HTTP function:
 
 ----
-curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp -d "hello"
+curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp-http -d "hello"
 ----
 
-==== Sample Function
+==== Background Functions
 
-Go to the https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-gcp/[function-sample-gcp] to try out a sample function that you can test locally or deploy to GCP.
+Google Cloud Functions also supports deploying https://cloud.google.com/functions/docs/writing/background[Background Functions] which are invoked indirectly in response to an event, such as a message on a https://cloud.google.com/pubsub[Cloud Pub/Sub] topic, a change in a https://cloud.google.com/storage[Cloud Storage] bucket, or a https://firebase.google.com/[Firebase] event.
+
+The `spring-cloud-function-adapter-gcp` allows for functions to be deployed as background functions as well.
+
+The sections below describe the process for writing a Cloud Pub/Sub topic background function.
+However, there are a number of different event types that can trigger a background function to execute which are not discussed here; these are described in the https://cloud.google.com/functions/docs/calling[Background Function triggers documentation].
+
+===== Getting Started
+
+Let’s start with a simple Spring Cloud Function which will run as a GCF background function:
+
+[source, java]
+----
+@SpringBootApplication
+public class BackgroundFunctionMain {
+
+	public static void main(String[] args) {
+		SpringApplication.run(BackgroundFunctionMain.class, args);
+	}
+
+	@Bean
+	public Consumer<PubSubMessage> pubSubFunction() {
+		return message -> System.out.println("The Pub/Sub message data: " + message.getData());
+	}
+}
+----
+
+In addition, create `PubSubMessage` class in the project with the below definition.
+This class represents the https://cloud.google.com/functions/docs/calling/pubsub#event_structure[Pub/Sub event structure] which gets passed to your function on a Pub/Sub topic event.
+
+[source, java]
+----
+public class PubSubMessage {
+
+	private String data;
+
+	private Map<String, String> attributes;
+
+	private String messageId;
+
+	private String publishTime;
+
+	public String getData() {
+		return data;
+	}
+
+	public void setData(String data) {
+		this.data = data;
+	}
+
+	public Map<String, String> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(Map<String, String> attributes) {
+		this.attributes = attributes;
+	}
+
+	public String getMessageId() {
+		return messageId;
+	}
+
+	public void setMessageId(String messageId) {
+		this.messageId = messageId;
+	}
+
+	public String getPublishTime() {
+		return publishTime;
+	}
+
+	public void setPublishTime(String publishTime) {
+		this.publishTime = publishTime;
+	}
+
+}
+----
+
+Specify your configuration main class in `resources/META-INF/MANIFEST.MF`.
+
+[source]
+----
+Main-Class: com.example.BackgroundFunctionMain
+----
+
+Then run the function locally.
+This is provided by the Google Cloud Functions `function-maven-plugin` described in the project dependencies section.
+
+----
+mvn function:run
+----
+
+Invoke the HTTP function:
+
+----
+curl localhost:8080 -H "Content-Type: application/json" -d '{"data":"hello"}'
+----
+
+Verify that the function was invoked by viewing the logs.
+
+===== Deploy to GCP
+
+In order to deploy your background function to GCP, first package your application.
+
+----
+mvn package
+----
+
+If you added the custom `spring-boot-maven-plugin` plugin defined above, you should see the resulting JAR in `target/deploy` directory.
+This JAR is correctly formatted for deployment to Google Cloud Functions.
+
+Next, make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
+
+From the project base directory run the following command to deploy.
+
+----
+gcloud alpha functions deploy function-sample-gcp-background \
+--entry-point org.springframework.cloud.function.adapter.gcp.GcfJarLauncher \
+--runtime java11 \
+--trigger-topic my-functions-topic \
+--source target/deploy \
+--memory 512MB
+----
+
+Google Cloud Function will now invoke the function every time a message is published to the topic specified by `--trigger-topic`.
+
+For a walkthrough on testing and verifying your background function, see the instructions for running the https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-gcp-background/[GCF Background Function sample].
+
+==== Sample Functions
+
+The project provides the following sample functions as reference:
+
+* The https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-gcp-http/[function-sample-gcp-http] is an HTTP Function which you can test locally and try deploying.
+* The https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-gcp-background/[function-sample-gcp-background] shows an example of a background function that is triggered by a message being published to a specified Pub/Sub topic.

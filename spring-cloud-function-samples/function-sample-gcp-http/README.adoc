@@ -34,7 +34,7 @@ Make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] 
 Run the following command from the project root to deploy.
 
 ----
-gcloud alpha functions deploy function-sample-gcp \
+gcloud alpha functions deploy function-sample-gcp-http \
 --entry-point org.springframework.cloud.function.adapter.gcp.GcfJarLauncher \
 --runtime java11 \
 --trigger-http \
@@ -45,5 +45,5 @@ gcloud alpha functions deploy function-sample-gcp \
 Invoke the HTTP function:
 
 ----
-curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp -d "hello"
+curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp-http -d "hello"
 ----
