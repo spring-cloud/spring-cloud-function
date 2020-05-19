@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>io.spring.sample</groupId>
+	<artifactId>function-sample-gcp-background</artifactId>
+	<version>2.0.0.RELEASE</version>
+	<packaging>jar</packaging>
+
+	<name>function-sample-gcp-background</name>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.3.0.BUILD-SNAPSHOT</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-adapter-gcp</artifactId>
+			<version>3.1.0.BUILD-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<outputDirectory>target/deploy</outputDirectory>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.cloud</groupId>
+						<artifactId>spring-cloud-function-adapter-gcp</artifactId>
+						<version>3.1.0.BUILD-SNAPSHOT</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+
+			<plugin>
+				<groupId>com.google.cloud.functions</groupId>
+				<artifactId>function-maven-plugin</artifactId>
+				<version>0.9.1</version>
+				<configuration>
+					<functionTarget>org.springframework.cloud.function.adapter.gcp.GcfJarLauncher</functionTarget>
+					<port>8080</port>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

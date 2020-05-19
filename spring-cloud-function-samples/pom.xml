@@ -24,8 +24,9 @@
 		<module>function-sample-aws-custom</module>
 		<module>function-sample-supplier-exporter</module>
 		<module>function-sample-azure</module>
-		<module>function-sample-spring-integration</module>
-		<module>function-sample-gcp</module>
+		<!--><module>function-sample-spring-integration</module>-->
+		<module>function-sample-gcp-http</module>
+		<module>function-sample-gcp-background</module>
 	</modules>
 
 	<build>
