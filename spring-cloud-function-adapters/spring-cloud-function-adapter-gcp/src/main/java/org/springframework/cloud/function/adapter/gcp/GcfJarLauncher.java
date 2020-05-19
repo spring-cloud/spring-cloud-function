@@ -16,9 +16,11 @@
 
 package org.springframework.cloud.function.adapter.gcp;
 
+import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.google.cloud.functions.RawBackgroundFunction;
 
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.jar.JarFile;
@@ -30,11 +32,11 @@ import org.springframework.boot.loader.jar.JarFile;
  * @author Ray Tsang
  * @author Daniel Zou
  */
-public class GcfJarLauncher extends JarLauncher implements HttpFunction {
+public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBackgroundFunction {
 
 	private final ClassLoader loader;
 
-	private final HttpFunction delegate;
+	private final Object delegate;
 
 	public GcfJarLauncher() throws Exception {
 		JarFile.registerUrlProtocolHandler();
@@ -43,12 +45,18 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction {
 
 		Class<?> clazz = this.loader
 			.loadClass("org.springframework.cloud.function.adapter.gcp.FunctionInvoker");
-		this.delegate = (HttpFunction) clazz.getConstructor().newInstance();
+		this.delegate = clazz.getConstructor().newInstance();
 	}
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread().setContextClassLoader(this.loader);
-		delegate.service(httpRequest, httpResponse);
+		((HttpFunction) delegate).service(httpRequest, httpResponse);
+	}
+
+	@Override
+	public void accept(String json, Context context) {
+		Thread.currentThread().setContextClassLoader(this.loader);
+		((RawBackgroundFunction) delegate).accept(json, context);
 	}
 }
 

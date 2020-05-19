@@ -1,0 +1,86 @@
+:branch: master
+
+=== Google Cloud Background Functions Sample Application
+
+Google Cloud Functions supports deploying https://cloud.google.com/functions/docs/writing/background[Background Functions] which are invoked indirectly in response to an event, such as a message on a https://cloud.google.com/pubsub[Pub/Sub] topic, a change in a https://cloud.google.com/storage[Cloud Storage] bucket, or a https://firebase.google.com/[Firebase] event.
+
+This sample demonstrates a simple background function which triggers from a Pub/Sub event.
+
+===== Test locally
+
+In a terminal window, run:
+
+----
+mvn function:run
+----
+
+In a separate window, invoke the background function by issuing the `curl` command below.
+
+NOTE: In this sample, we demonstrate a background function which is triggered when a message is https://cloud.google.com/functions/docs/calling/pubsub[published to a specified Cloud Pub/Sub topic].
+The `curl` request simulates sending the message that would be received by your function when a Pub/Sub event occurs.
+
+----
+curl localhost:8080 -H "Content-Type: application/json" -d '{"data":"hello"}'
+----
+
+In the original terminal window where the `mvn function:run` was invoked, you should see a message printed.
+
+----
+The Pub/Sub message data: hello
+----
+
+===== Deploy to GCP
+
+As of March 2020, Google Cloud Functions for Java is in Alpha.
+You can get on the https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform[whitelist] to try it out.
+
+The next steps will demonstrate how to deploy your background function to GCP and have it be invoked by a Pub/Sub event.
+
+To complete the next steps, make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
+
+1. Create a new Pub/Sub topic. This topic will be used as the trigger for the background function.
++
+----
+gcloud pubsub topics create my-functions-topic
+----
+
+2. In this sample directory, package the application by running:
++
+----
+mvn package
+----
++
+You should see the JAR to deploy in the `target/deploy` directory.
+
+3. Deploy the JAR that you created by running
++
+----
+gcloud alpha functions deploy function-sample-gcp-background \
+--entry-point org.springframework.cloud.function.adapter.gcp.GcfJarLauncher \
+--runtime java11 \
+--trigger-topic my-functions-topic \
+--source target/deploy \
+--memory 512MB
+----
++
+Notice the parameter `--trigger-topic` which topic will trigger the function invocation when new messages are published to it.
+
+4. Invoke the background function by publishing a message to your topic.
++
+----
+gcloud pubsub topics publish my-functions-topic --message="Hello world"
+----
+
+5. To verify that this sample background function was invoked, check the logs of the background function on GCF by running:
++
+----
+gcloud functions logs read function-sample-gcp-background
+----
++
+You should see a log message that looks like:
++
+----
+function-sample-gcp-background-2  h8q1jt46069r  2020-05-19 19:48:27.960  The Pub/Sub message data: <MESSAGE DATA HERE>
+----
++
+This log output is produced by the sample background function, so this entry in the logs means that the background function was successfully invoked.
