@@ -16,11 +16,18 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.stream.Collectors;
+
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 
 /**
@@ -47,7 +54,54 @@ public final class NegotiatingMessageConverterWrapper implements SmartMessageCon
 	}
 
 	@Override
+	public Object fromMessage(Message<?> message, Class<?> targetClass) {
+		return fromMessage(message, targetClass, null);
+	}
+
+	private boolean isJsonContentType(Message<?> message) {
+		Object ct = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+		if (ct != null) {
+			ct = ct.toString();
+			return ((String) ct).startsWith("application/json");
+		}
+		return false;
+	}
+
+	@Override
 	public Object fromMessage(Message<?> message, Class<?> targetClass, Object conversionHint) {
+		if (!this.isJsonContentType(message) && message.getPayload() instanceof Collection) {
+			Collection<?> collection = ((Collection<?>) message.getPayload()).stream()
+					.map(value -> {
+						try {
+							Message<?> m = new Message<Object>() {
+								@Override
+								public Object getPayload() {
+									return value;
+								}
+
+								@Override
+								public MessageHeaders getHeaders() {
+									return message.getHeaders();
+								}
+							};
+							if (conversionHint != null && conversionHint instanceof ParameterizedType) {
+								Type tClass = FunctionTypeUtils.getImmediateGenericType((ParameterizedType) conversionHint, 0);
+								if (byte[].class.isAssignableFrom((Class<?>) tClass)) {
+									return message;
+								}
+								return delegate.fromMessage(m, (Class<?>) tClass);
+							}
+
+							return delegate.fromMessage(m, targetClass, conversionHint);
+						}
+						catch (Exception e) {
+							e.printStackTrace();
+							//logger.error("Failed to convert payload " + value, e);
+						}
+						return null;
+					}).filter(v -> v != null).collect(Collectors.toList());
+			return CollectionUtils.isEmpty(collection) ? null : collection;
+		}
 		return delegate.fromMessage(message, targetClass, conversionHint);
 	}
 
@@ -78,10 +132,7 @@ public final class NegotiatingMessageConverterWrapper implements SmartMessageCon
 		return null;
 	}
 
-	@Override
-	public Object fromMessage(Message<?> message, Class<?> targetClass) {
-		return fromMessage(message, targetClass, null);
-	}
+
 
 	@Override
 	public Message<?> toMessage(Object payload, MessageHeaders headers) {
