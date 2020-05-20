@@ -12,6 +12,11 @@
 
 	<name>function-sample-gcp</name>
 
+	<properties>
+		<!-- TODO: Remove after resolving Travis build? -->
+		<surefire.useFile>false</surefire.useFile>
+	</properties>
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
