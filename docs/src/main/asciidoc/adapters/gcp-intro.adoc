@@ -60,7 +60,7 @@ NOTE: The function target should always be set to `org.springframework.cloud.fun
 </plugin>
 ----
 
-A full example of a working pom.xml can be found in the https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-gcp-http/pom.xml[Spring Cloud Functions GCP sample].
+A full example of a working `pom.xml` can be found in the https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-gcp-http/pom.xml[Spring Cloud Functions GCP sample].
 
 ==== HTTP Functions
 
@@ -141,7 +141,7 @@ curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp-http -d "h
 
 ==== Background Functions
 
-Google Cloud Functions also supports deploying https://cloud.google.com/functions/docs/writing/background[Background Functions] which are invoked indirectly in response to an event, such as a message on a https://cloud.google.com/pubsub[Pub/Sub] topic, a change in a https://cloud.google.com/storage[Cloud Storage] bucket, or a https://firebase.google.com/[Firebase] event.
+Google Cloud Functions also supports deploying https://cloud.google.com/functions/docs/writing/background[Background Functions] which are invoked indirectly in response to an event, such as a message on a https://cloud.google.com/pubsub[Cloud Pub/Sub] topic, a change in a https://cloud.google.com/storage[Cloud Storage] bucket, or a https://firebase.google.com/[Firebase] event.
 
 The `spring-cloud-function-adapter-gcp` allows for functions to be deployed as background functions as well.
 
