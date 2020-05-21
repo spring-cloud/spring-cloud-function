@@ -19,8 +19,11 @@ In a separate window, invoke the background function by issuing the `curl` comma
 NOTE: In this sample, we demonstrate a background function which is triggered when a message is https://cloud.google.com/functions/docs/calling/pubsub[published to a specified Cloud Pub/Sub topic].
 The `curl` request simulates sending the message that would be received by your function when a Pub/Sub event occurs.
 
+In order to simulate how Pub/Sub will send you this message, we use a base64-encoded string as the input because Pub/Sub encodes the message data in base64 in the Pub/Sub event.
+See the notes section below for a more information on the Pub/Sub event structure.
+
 ----
-curl localhost:8080 -H "Content-Type: application/json" -d '{"data":"hello"}'
+curl localhost:8080 -H "Content-Type: application/json" -d '{"data":"aGVsbG8="}'
 ----
 
 In the original terminal window where the `mvn function:run` was invoked, you should see a message printed.
@@ -77,10 +80,28 @@ gcloud pubsub topics publish my-functions-topic --message="Hello world"
 gcloud functions logs read function-sample-gcp-background --filter=Received
 ----
 +
-You should see a log message that looks like:
+You should see a log message that looks like below.
+It might take a minute or two for the log to appear.
 +
 ----
-function-sample-gcp-background-2  h8q1jt46069r  2020-05-19 19:48:27.960  Received Pub/Sub message with data: <MESSAGE DATA HERE>
+function-sample-gcp-background-2  h8q1jt46069r  2020-05-19 19:48:27.960  Received Pub/Sub message with data: Hello world
 ----
 +
 This log output is produced by the sample background function, so this entry in the logs means that the background function was successfully invoked.
+
+===== Notes
+
+One important note about the Pub/Sub background function provided in `BackgroundFunctionMain` is that the `data` field must be decoded from base64 encoding because Pub/Sub will encode the published message in base64 according to the https://cloud.google.com/functions/docs/calling/pubsub#event_structure[PubSubMessage event structure].
+
+[source, java]
+----
+@Bean
+public Consumer<PubSubMessage> pubSubFunction() {
+	return message -> {
+		// The PubSubMessage data field arrives as a base-64 encoded string and must be decoded.
+		// See: https://cloud.google.com/functions/docs/calling/pubsub#event_structure
+		String decodedMessage = new String(Base64.decode(message.getData()), StandardCharsets.UTF_8);
+		System.out.println("Received Pub/Sub message with data: " + decodedMessage);
+	};
+}
+----

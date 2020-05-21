@@ -1,5 +1,7 @@
 package com.example;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.function.Consumer;
 
 import org.springframework.boot.SpringApplication;
@@ -19,6 +21,11 @@ public class BackgroundFunctionMain {
 	 */
 	@Bean
 	public Consumer<PubSubMessage> pubSubFunction() {
-		return message -> System.out.println("Received Pub/Sub message with data: " + message.getData());
+		return message -> {
+			// The PubSubMessage data field arrives as a base-64 encoded string and must be decoded.
+			// See: https://cloud.google.com/functions/docs/calling/pubsub#event_structure
+			String decodedMessage = new String(Base64.getDecoder().decode(message.getData()), StandardCharsets.UTF_8);
+			System.out.println("Received Pub/Sub message with data: " + decodedMessage);
+		};
 	}
 }
