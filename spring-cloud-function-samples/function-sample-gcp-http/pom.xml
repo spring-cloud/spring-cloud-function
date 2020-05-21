@@ -6,11 +6,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>io.spring.sample</groupId>
-	<artifactId>function-sample-gcp</artifactId>
+	<artifactId>function-sample-gcp-http</artifactId>
 	<version>2.0.0.RELEASE</version>
 	<packaging>jar</packaging>
 
-	<name>function-sample-gcp</name>
+	<name>function-sample-gcp-http</name>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
