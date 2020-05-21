@@ -26,7 +26,7 @@ curl localhost:8080 -H "Content-Type: application/json" -d '{"data":"hello"}'
 In the original terminal window where the `mvn function:run` was invoked, you should see a message printed.
 
 ----
-The Pub/Sub message data: hello
+Received Pub/Sub message with data: hello
 ----
 
 ===== Deploy to GCP
@@ -74,13 +74,13 @@ gcloud pubsub topics publish my-functions-topic --message="Hello world"
 5. To verify that this sample background function was invoked, check the logs of the background function on GCF by running:
 +
 ----
-gcloud functions logs read function-sample-gcp-background
+gcloud functions logs read function-sample-gcp-background --filter=Received
 ----
 +
 You should see a log message that looks like:
 +
 ----
-function-sample-gcp-background-2  h8q1jt46069r  2020-05-19 19:48:27.960  The Pub/Sub message data: <MESSAGE DATA HERE>
+function-sample-gcp-background-2  h8q1jt46069r  2020-05-19 19:48:27.960  Received Pub/Sub message with data: <MESSAGE DATA HERE>
 ----
 +
 This log output is produced by the sample background function, so this entry in the logs means that the background function was successfully invoked.

@@ -19,6 +19,6 @@ public class BackgroundFunctionMain {
 	 */
 	@Bean
 	public Consumer<PubSubMessage> pubSubFunction() {
-		return message -> System.out.println("The Pub/Sub message data: " + message.getData());
+		return message -> System.out.println("Received Pub/Sub message with data: " + message.getData());
 	}
 }
