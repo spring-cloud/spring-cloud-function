@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.adapter.gcp;
 
+import java.util.List;
+
 import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
@@ -23,7 +25,9 @@ import com.google.cloud.functions.HttpResponse;
 import com.google.cloud.functions.RawBackgroundFunction;
 
 import org.springframework.boot.loader.JarLauncher;
+import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.jar.JarFile;
+import org.springframework.util.CollectionUtils;
 
 /**
  * The launcher class written at the top-level of the output JAR to be deployed to
@@ -31,6 +35,7 @@ import org.springframework.boot.loader.jar.JarFile;
  *
  * @author Ray Tsang
  * @author Daniel Zou
+ * @author Oleg Zhurakousky
  */
 public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBackgroundFunction {
 
@@ -41,12 +46,13 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 	public GcfJarLauncher() throws Exception {
 		JarFile.registerUrlProtocolHandler();
 
-		this.loader = createClassLoader(getClassPathArchivesIterator());
+		this.loader = createClassLoader(discoverClassPathAcrhives());
 
 		Class<?> clazz = this.loader
 			.loadClass("org.springframework.cloud.function.adapter.gcp.FunctionInvoker");
 		this.delegate = clazz.getConstructor().newInstance();
 	}
+
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Thread.currentThread().setContextClassLoader(this.loader);
@@ -57,6 +63,14 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 	public void accept(String json, Context context) {
 		Thread.currentThread().setContextClassLoader(this.loader);
 		((RawBackgroundFunction) delegate).accept(json, context);
+	}
+
+	private List<Archive> discoverClassPathAcrhives() throws Exception {
+		List<Archive> classPathArchives = getClassPathArchives();
+		if (CollectionUtils.isEmpty(classPathArchives)) {
+			classPathArchives.add(this.getArchive());
+		}
+		return classPathArchives;
 	}
 }
 

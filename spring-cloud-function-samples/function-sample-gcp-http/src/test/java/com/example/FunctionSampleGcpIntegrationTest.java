@@ -75,7 +75,7 @@ public class FunctionSampleGcpIntegrationTest {
 				String line;
 				while ((line = reader.readLine()) != null) {
 					System.out.println(line);
-					if (line.equals("INFO: URL: http://localhost:8080/")) {
+					if (line.endsWith("URL: http://localhost:8080/")) {
 						startedSuccessfully.countDown();
 					}
 				}
