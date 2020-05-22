@@ -59,20 +59,14 @@ to use. The next section will explain you how you can accomplish just that.
 ==== AWS Request Handlers
 
 The adapter has a couple of generic request handlers that you can use. The most generic is (and the one we used in the Getting Started section)
-is `org.springframework.cloud.function.adapter.aws.FunctionInvoke` which is the implementation of AWS's `RequestStreamHandler`.
+is `org.springframework.cloud.function.adapter.aws.FunctionInvoker` which is the implementation of AWS's `RequestStreamHandler`.
 User doesn't need to do anything other then specify it as 'handler' on AWS dashborad when deploying function.
 It will handle most of the case including Kinesis, streaming etc. .
 
 
-
-The most generic is
-`SpringBootStreamHandler`, which uses a Jackson `ObjectMapper` provided by Spring Boot to serialize and deserialize the objects
-in the function. There is also a `SpringBootRequestHandler` which you can extend, and provide the input and output types as type
-parameters (enabling AWS to inspect the class and do the JSON conversions itself).
-
-If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name`
-(e.g. as `FUNCTION_NAME` environment variable in AWS). The functions are extracted from the Spring Cloud `FunctionCatalog`
-(searching first for `Function` then `Consumer` and finally `Supplier`).
+If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `spring.cloud.function.definition` 
+property or environment variable. The functions are extracted from the Spring Cloud `FunctionCatalog`. In the event you don't specify `spring.cloud.function.definition`
+the framework will attempt to find a default following the search order where it searches first for `Function` then `Consumer` and finally `Supplier`).
 
 
 
