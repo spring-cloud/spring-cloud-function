@@ -16,77 +16,23 @@
 
 package com.example;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 public class FunctionSampleGcpIntegrationTest {
 
 	private TestRestTemplate rest = new TestRestTemplate();
 
-	private CountDownLatch startedSuccessfully = new CountDownLatch(1);
-
 	@Test
-	@Ignore
-	public void testSample() throws IOException {
-		Process process = new ProcessBuilder("./../../mvnw", "function:run").start();
-
-		try {
-			Executors.defaultThreadFactory().newThread(new OutputCapture(process.getErrorStream())).start();
-			Executors.defaultThreadFactory().newThread(new OutputCapture(process.getInputStream())).start();
-
-			if (startedSuccessfully.await(10, TimeUnit.SECONDS)) {
-				String result = rest.postForObject("http://localhost:8080/", "Hello", String.class);
-				assertThat(result).isEqualTo("\"HELLO\"");
-			}
-			else {
-				fail("Failed to start the function.");
-			}
-		}
-		catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		finally {
-			process.destroy();
+	public void testSample() throws IOException, InterruptedException {
+		try (LocalServerTestSupport.ServerProcess process = LocalServerTestSupport.startServer(CloudFunctionMain.class)) {
+			String result = rest.postForObject("http://localhost:8080/", "Hello", String.class);
+			assertThat(result).isEqualTo("\"HELLO\"");
 		}
 	}
-
-	class OutputCapture implements Runnable {
-
-		private InputStream inputStream;
-
-		OutputCapture(InputStream inputStream) {
-			this.inputStream = inputStream;
-		}
-
-		@Override
-		public void run() {
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-				String line;
-				while ((line = reader.readLine()) != null) {
-					System.out.println(line);
-					if (line.endsWith("URL: http://localhost:8080/")) {
-						startedSuccessfully.countDown();
-					}
-				}
-			}
-			catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-	}
-
 }
