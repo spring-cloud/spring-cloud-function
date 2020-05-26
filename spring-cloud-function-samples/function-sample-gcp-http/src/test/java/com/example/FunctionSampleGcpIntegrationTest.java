@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -38,6 +39,7 @@ public class FunctionSampleGcpIntegrationTest {
 	private CountDownLatch startedSuccessfully = new CountDownLatch(1);
 
 	@Test
+	@Ignore
 	public void testSample() throws IOException {
 		Process process = new ProcessBuilder("./../../mvnw", "function:run").start();
 

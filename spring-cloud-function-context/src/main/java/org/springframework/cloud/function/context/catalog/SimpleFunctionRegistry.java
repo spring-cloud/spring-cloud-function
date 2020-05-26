@@ -48,7 +48,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -89,7 +88,7 @@ import org.springframework.util.StringUtils;
  */
 public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspector {
 
-	Log logger = LogFactory.getLog(BeanFactoryAwareFunctionRegistry.class);
+	Log logger = LogFactory.getLog(SimpleFunctionRegistry.class);
 
 	/**
 	 * Identifies MessageConversionExceptions that happen when input can't be converted.
@@ -167,8 +166,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 		}
 
-		Object function = this
-			.proxyInvokerIfNecessary((FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes));
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes);
 		return (T) function;
 	}
 
@@ -254,7 +252,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		return originalDefinition;
 	}
 
-	Type discovereFunctionTypeByName(String name) {
+	Type discoverFunctionTypeByName(String name) {
 		return this.registrationsByName.get(name).getType().getType();
 	}
 
@@ -289,7 +287,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					return null;
 				}
 				else {
-					Type functionType = this.discovereFunctionTypeByName(name);
+					Type functionType = this.discoverFunctionTypeByName(name);
 					if (functionType != null && functionType.toString().contains("org.apache.kafka.streams.")) {
 						logger
 							.debug("Kafka Streams function '" + definition + "' is not supported by spring-cloud-function.");
@@ -356,47 +354,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		return !function.getClass().isSynthetic()
 			&& !(function instanceof Supplier) && !(function instanceof Function) && !(function instanceof Consumer)
 			&& !function.getClass().getPackage().getName().startsWith("org.springframework.cloud.function.compiler");
-	}
-
-	/*
-	 * == OUTER PROXY ===
-	 * For cases where function is POJO we need to be able to look it up as Function
-	 * as well as the type of actual pojo (e.g., MyFunction f1 = catalog.lookup("myFunction");)
-	 * To do this we wrap the target into CglibProxy (for cases when function is a POJO ) with the
-	 * actual target class (e.g., MyFunction). Meanwhile the invocation will be delegated to
-	 * the FunctionInvocationWrapper which will trigger the INNER PROXY. This effectively ensures that
-	 * conversion, composition and/or fluxification would happen (code inside of FunctionInvocationWrapper)
-	 * while the inner proxy invocation will delegate the invocation with already converted arguments
-	 * to the actual target class (e.g., MyFunction).
-	 */
-	private Object proxyInvokerIfNecessary(FunctionInvocationWrapper functionInvoker) {
-		if (functionInvoker != null && AopUtils.isCglibProxy(functionInvoker.getTarget())) {
-			if (logger.isInfoEnabled()) {
-				logger
-					.info("Proxying POJO function: " + functionInvoker.functionDefinition + ". . ." + functionInvoker.target
-						.getClass());
-			}
-			ProxyFactory pf = new ProxyFactory(functionInvoker.getTarget());
-			pf.setProxyTargetClass(true);
-			pf.setInterfaces(Function.class, Supplier.class, Consumer.class);
-			pf.addAdvice(new MethodInterceptor() {
-				@Override
-				public Object invoke(MethodInvocation invocation) throws Throwable {
-					// this will trigger the INNER PROXY
-					if (ObjectUtils.isEmpty(invocation.getArguments())) {
-						Object o = functionInvoker.get();
-						return o;
-					}
-					else {
-						// this is where we probably would need to gather all arguments into tuples
-						return functionInvoker.apply(invocation.getArguments()[0]);
-					}
-
-				}
-			});
-			return pf.getProxy();
-		}
-		return functionInvoker;
 	}
 
 	/*
