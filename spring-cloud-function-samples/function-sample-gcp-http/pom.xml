@@ -47,7 +47,12 @@
 			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>com.google.cloud.functions.invoker</groupId>
+			<artifactId>java-function-invoker</artifactId>
+			<version>1.0.0-alpha-2-rc5</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
