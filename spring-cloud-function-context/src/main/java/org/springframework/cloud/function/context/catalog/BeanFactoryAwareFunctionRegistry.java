@@ -216,7 +216,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	}
 
 	@Override
-	Type discovereFunctionTypeByName(String name) {
+	Type discoverFunctionTypeByName(String name) {
 		return FunctionContextUtils.findType(applicationContext.getBeanFactory(), name);
 	}
 
