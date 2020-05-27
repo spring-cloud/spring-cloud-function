@@ -161,10 +161,10 @@ public class FunctionInvoker implements RequestStreamHandler {
 		byte[] payload = StreamUtils.copyToByteArray(input);
 
 		if (logger.isInfoEnabled()) {
-			logger.info("===> Incoming JSON for ApiGateway Event: " + new String(payload));
+			logger.info("Incoming JSON for ApiGateway Event: " + new String(payload));
 		}
 
-		Message message = null;
+		MessageBuilder messageBuilder = null;
 		Object request = this.mapper.readValue(payload, Object.class);
 		Type inputType = FunctionTypeUtils.getInputType(function.getFunctionType(), 0);
 		if (FunctionTypeUtils.isMessage(inputType)) {
@@ -178,39 +178,29 @@ public class FunctionInvoker implements RequestStreamHandler {
 				Assert.isTrue(inputType instanceof Class && KinesisEvent.class.isAssignableFrom((Class<?>) inputType) || mapInputType,
 						"Only KinesisEvent or Map type is supported as input type for functions that accept with Kinesis Event");
 				Object event = mapInputType ? requestMap : this.mapper.convertValue(requestMap, KinesisEvent.class);
-				message = MessageBuilder.withPayload(event).setHeader("aws-context", context).build();
+				messageBuilder = MessageBuilder.withPayload(event);
 			}
-			else if (requestMap.containsKey("httpMethod")) {
+			else if (requestMap.containsKey("httpMethod")) { // API Gateway
 				logger.info("Incoming request is API Gateway");
 				if (inputType.getTypeName().endsWith(APIGatewayProxyRequestEvent.class.getSimpleName())) {
 					APIGatewayProxyRequestEvent gatewayEvent = this.mapper.convertValue(requestMap, APIGatewayProxyRequestEvent.class);
-					message = MessageBuilder.withPayload(gatewayEvent).setHeader("aws-context", context).build();
+					messageBuilder = MessageBuilder.withPayload(gatewayEvent);
 				}
 				else if (mapInputType) {
-					message = MessageBuilder.withPayload(requestMap)
-							.setHeader("httpMethod", requestMap.get("httpMethod"))
-							.setHeader("aws-context", context)
-							.build();
+					messageBuilder = MessageBuilder.withPayload(requestMap)
+							.setHeader("httpMethod", requestMap.get("httpMethod"));
 				}
 				else {
 					Object body = requestMap.remove("body");
-					if (body instanceof String) {
-						body = ("\"" + body + "\"").getBytes(StandardCharsets.UTF_8);
-					}
-					else { // assume array or map
-						body = mapper.writeValueAsBytes(body);
-					}
-
-					message = MessageBuilder.withPayload(body)
-							.copyHeaders(requestMap)
-							.setHeader("aws-context", context)
-							.build();
+					body = body instanceof String ? ("\"" + body + "\"").getBytes(StandardCharsets.UTF_8) : mapper.writeValueAsBytes(body);
+					messageBuilder = MessageBuilder.withPayload(body)
+							.copyHeaders(requestMap);
 				}
 			}
 		}
-		if (message == null) {
-			message = MessageBuilder.withPayload(payload).setHeader("aws-context", context).build();
+		if (messageBuilder == null) {
+			messageBuilder = MessageBuilder.withPayload(payload);
 		}
-		return message;
+		return messageBuilder.setHeader("aws-context", context).build();
 	}
 }

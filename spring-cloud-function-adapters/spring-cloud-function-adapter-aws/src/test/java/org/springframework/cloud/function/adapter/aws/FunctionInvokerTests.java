@@ -379,6 +379,7 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("hello");
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayEventAsMap() throws Exception {
 		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
