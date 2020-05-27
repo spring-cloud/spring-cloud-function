@@ -71,9 +71,6 @@ public abstract class JsonMapper {
 			}
 			result = ((String) value).getBytes(StandardCharsets.UTF_8);
 		}
-		else {
-			logger.warn("Object does not represent a valid JSON. Object is: " + value);
-		}
 		return result;
 	}
 
