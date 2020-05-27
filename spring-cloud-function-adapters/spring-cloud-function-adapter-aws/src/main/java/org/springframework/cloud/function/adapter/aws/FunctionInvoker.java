@@ -19,15 +19,18 @@ package org.springframework.cloud.function.adapter.aws;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -40,11 +43,14 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
@@ -64,40 +70,50 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 	private ObjectMapper mapper;
 
-	private Function<Message<byte[]>, Message<byte[]>> function;
+	private FunctionInvocationWrapper function;
 
 	public FunctionInvoker() {
 		this.start();
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+		Message requestMessage = this.generateMessage(input, context);
 
-		Message<byte[]> requestMessage = this.generateMessage(input, context);
-
-		Message<byte[]> responseMessage = this.function.apply(requestMessage);
+		Message<byte[]> responseMessage = (Message<byte[]>) this.function.apply(requestMessage);
 
 		byte[] responseBytes = responseMessage.getPayload();
-		Map<String, Object> requestPayloadMap = this.getRequestPayloadAsMap(requestMessage);
-		if (requestPayloadMap != null && requestPayloadMap.containsKey("httpMethod")) {
+		if (requestMessage.getHeaders().containsKey("httpMethod") || requestMessage.getPayload() instanceof APIGatewayProxyRequestEvent) { // API Gateway
 			Map<String, Object> response = new HashMap<String, Object>();
 			response.put("isBase64Encoded", false);
 
-			int statusCode = responseMessage.getHeaders().containsKey("statusCode")
-					? (int) responseMessage.getHeaders().get("statusCode")
+			MessageHeaders headers = responseMessage.getHeaders();
+			int statusCode = headers.containsKey("statusCode")
+					? (int) headers.get("statusCode")
 					: 200;
 
-			HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
-
 			response.put("statusCode", statusCode);
-			response.put("statusDescription", httpStatus.toString());
-			response.put("body", new String(responseMessage.getPayload(), StandardCharsets.UTF_8));
-			response.put("headers", responseMessage.getHeaders());
+			if (isKinesis(requestMessage)) {
+				HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+				response.put("statusDescription", httpStatus.toString());
+			}
 
+			String body = new String(responseMessage.getPayload(), StandardCharsets.UTF_8).replaceAll("\"", "");
+			response.put("body", body);
+
+			Map<String, String> responseHeaders = new HashMap<>();
+			headers.keySet().forEach(key -> responseHeaders.put(key, headers.get(key).toString()));
+
+			response.put("headers", responseHeaders);
 			responseBytes = mapper.writeValueAsBytes(response);
 		}
 
 		StreamUtils.copy(responseBytes, output);
+	}
+
+	private boolean isKinesis(Message<byte[]> requestMessage) {
+		return requestMessage.getHeaders().containsKey("Records");
 	}
 
 	private void start() {
@@ -140,22 +156,61 @@ public class FunctionInvoker implements RequestStreamHandler {
 		mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Message<byte[]> generateMessage(InputStream input, Context context) throws IOException {
 		byte[] payload = StreamUtils.copyToByteArray(input);
 
-		Message<byte[]> message = MessageBuilder.withPayload(payload).setHeader("aws-context", context).build();
+		if (logger.isInfoEnabled()) {
+			logger.info("===> Incoming JSON for ApiGateway Event: " + new String(payload));
+		}
 
+		Message message = null;
+		Object request = this.mapper.readValue(payload, Object.class);
+		Type inputType = FunctionTypeUtils.getInputType(function.getFunctionType(), 0);
+		if (FunctionTypeUtils.isMessage(inputType)) {
+			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
+		}
+		boolean mapInputType = (inputType instanceof ParameterizedType && ((Class<?>) ((ParameterizedType) inputType).getRawType()).isAssignableFrom(Map.class));
+		if (request instanceof Map) {
+			Map<String, ?> requestMap = (Map<String, ?>) request;
+			if (requestMap.containsKey("Records")) {
+				logger.info("Incoming request is Kinesis Event");
+				Assert.isTrue(inputType instanceof Class && KinesisEvent.class.isAssignableFrom((Class<?>) inputType) || mapInputType,
+						"Only KinesisEvent or Map type is supported as input type for functions that accept with Kinesis Event");
+				Object event = mapInputType ? requestMap : this.mapper.convertValue(requestMap, KinesisEvent.class);
+				message = MessageBuilder.withPayload(event).setHeader("aws-context", context).build();
+			}
+			else if (requestMap.containsKey("httpMethod")) {
+				logger.info("Incoming request is API Gateway");
+				if (inputType.getTypeName().endsWith(APIGatewayProxyRequestEvent.class.getSimpleName())) {
+					APIGatewayProxyRequestEvent gatewayEvent = this.mapper.convertValue(requestMap, APIGatewayProxyRequestEvent.class);
+					message = MessageBuilder.withPayload(gatewayEvent).setHeader("aws-context", context).build();
+				}
+				else if (mapInputType) {
+					message = MessageBuilder.withPayload(requestMap)
+							.setHeader("httpMethod", requestMap.get("httpMethod"))
+							.setHeader("aws-context", context)
+							.build();
+				}
+				else {
+					Object body = requestMap.remove("body");
+					if (body instanceof String) {
+						body = ("\"" + body + "\"").getBytes(StandardCharsets.UTF_8);
+					}
+					else { // assume array or map
+						body = mapper.writeValueAsBytes(body);
+					}
+
+					message = MessageBuilder.withPayload(body)
+							.copyHeaders(requestMap)
+							.setHeader("aws-context", context)
+							.build();
+				}
+			}
+		}
+		if (message == null) {
+			message = MessageBuilder.withPayload(payload).setHeader("aws-context", context).build();
+		}
 		return message;
-	}
-
-	@SuppressWarnings("unchecked")
-	private Map<String, Object> getRequestPayloadAsMap(Message<byte[]> message) {
-		try {
-			return this.mapper.readValue(message.getPayload(), Map.class);
-		}
-		catch (Exception e) {
-			// ignore
-		}
-		return null;
 	}
 }
