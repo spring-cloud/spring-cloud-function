@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -195,7 +197,12 @@ class FunctionArchiveDeployer extends JarLauncher {
 	}
 
 	private List<Archive> discoverClassPathAcrhives() throws Exception {
-		List<Archive> classPathArchives = getClassPathArchives();
+		Iterator<Archive> iter = getClassPathArchivesIterator();
+		List<Archive> classPathArchives = new ArrayList<>();
+		while (iter.hasNext()) {
+			classPathArchives.add(iter.next());
+		}
+//		List<Archive> classPathArchives = getClassPathArchives();
 		if (CollectionUtils.isEmpty(classPathArchives)) {
 			classPathArchives.add(this.getArchive());
 		}
