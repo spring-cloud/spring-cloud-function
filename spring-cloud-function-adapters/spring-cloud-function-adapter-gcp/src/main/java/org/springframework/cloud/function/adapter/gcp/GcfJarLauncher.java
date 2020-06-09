@@ -16,7 +16,8 @@
 
 package org.springframework.cloud.function.adapter.gcp;
 
-import java.util.List;
+import java.util.Collections;
+import java.util.Iterator;
 
 import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
@@ -27,7 +28,6 @@ import com.google.cloud.functions.RawBackgroundFunction;
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.jar.JarFile;
-import org.springframework.util.CollectionUtils;
 
 /**
  * The launcher class written at the top-level of the output JAR to be deployed to
@@ -65,12 +65,14 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 		((RawBackgroundFunction) delegate).accept(json, context);
 	}
 
-	private List<Archive> discoverClassPathAcrhives() throws Exception {
-		List<Archive> classPathArchives = getClassPathArchives();
-		if (CollectionUtils.isEmpty(classPathArchives)) {
-			classPathArchives.add(this.getArchive());
+	private Iterator<Archive> discoverClassPathAcrhives() throws Exception {
+		Iterator<Archive> classPathArchives = getClassPathArchivesIterator();
+		if (classPathArchives.hasNext()) {
+			return classPathArchives;
 		}
-		return classPathArchives;
+		else {
+			return Collections.singleton(this.getArchive()).iterator();
+		}
 	}
 }
 

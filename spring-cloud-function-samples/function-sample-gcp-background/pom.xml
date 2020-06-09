@@ -19,11 +19,15 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
+	<properties>
+		<spring-cloud-function.version>3.0.8.BUILD-SNAPSHOT</spring-cloud-function.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-gcp</artifactId>
-			<version>3.1.0.BUILD-SNAPSHOT</version>
+			<version>${spring-cloud-function.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -46,7 +50,7 @@
 					<dependency>
 						<groupId>org.springframework.cloud</groupId>
 						<artifactId>spring-cloud-function-adapter-gcp</artifactId>
-						<version>3.1.0.BUILD-SNAPSHOT</version>
+						<version>${spring-cloud-function.version}</version>
 					</dependency>
 				</dependencies>
 			</plugin>
