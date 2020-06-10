@@ -27,10 +27,13 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import net.jodah.typetools.TypeResolver;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+
 import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxFunction;
@@ -42,6 +45,8 @@ import org.springframework.cloud.function.core.MonoSupplier;
 import org.springframework.cloud.function.core.MonoToFluxFunction;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+
+
 
 /**
  * @param <T> target type
@@ -114,11 +119,21 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	}
 
 	public FunctionRegistration<T> type(Type type) {
-		this.type = FunctionType.of(type);
-		return this;
+		return type(FunctionType.of(type));
 	}
 
 	public FunctionRegistration<T> type(FunctionType type) {
+
+		Type t = FunctionTypeUtils.discoverFunctionTypeFromFunctionalObject(this.target);
+		FunctionType discoveredFunctionType = FunctionType.of(t);
+		Class<?> inputType = TypeResolver.resolveRawClass(discoveredFunctionType.getInputType(), null);
+		Class<?> outputType = TypeResolver.resolveRawClass(discoveredFunctionType.getOutputType(), null);
+
+		if (!(inputType.isAssignableFrom(TypeResolver.resolveRawClass(type.getInputType(), null))
+				&& outputType.isAssignableFrom(TypeResolver.resolveRawClass(type.getOutputType(), null)))) {
+			throw new IllegalStateException("Discovered function type does not match provided function type. Discovered: "
+					+ discoveredFunctionType + "; Provided: " + type);
+		}
 		this.type = type;
 		return this;
 	}

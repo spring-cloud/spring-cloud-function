@@ -40,6 +40,9 @@ import reactor.util.function.Tuples;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -58,6 +61,7 @@ import org.springframework.util.ReflectionUtils;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -83,6 +87,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDefaultLookup() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog();
@@ -317,6 +322,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		result.getT3().subscribe(v -> System.out.println("=> 3: " + v));
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void SCF_GH_409ConfigurationTests() {
 		FunctionCatalog catalog = this.configureCatalog(SCF_GH_409ConfigurationAsSupplier.class);
@@ -430,6 +436,46 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(f.apply(Flux.just(25)).blockFirst()).isEqualTo(25);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testRegisteringWithTypeThatDoesNotMatchDiscoveredType() {
+		FunctionCatalog catalog = this.configureCatalog(EmptyConfiguration.class);
+		Function func = catalog.lookup("func");
+		assertThat(func).isNull();
+		FunctionRegistry registry = (FunctionRegistry) catalog;
+		try {
+			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "a").type(FunctionType.from(Integer.class).to(String.class));
+			registry.register(registration);
+			fail();
+		}
+		catch (IllegalStateException e) {
+			// good as we expect it to fail
+		}
+		//
+		try {
+			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "b").type(FunctionType.from(String.class).to(Integer.class));
+			registry.register(registration);
+			fail();
+		}
+		catch (IllegalStateException e) {
+			// good as we expect it to fail
+		}
+		//
+		FunctionRegistration c = new FunctionRegistration(new MyFunction(), "c").type(FunctionType.from(String.class).to(String.class));
+		registry.register(c);
+		//
+		FunctionRegistration d = new FunctionRegistration(new RawFunction(), "d").type(FunctionType.from(Person.class).to(String.class));
+		registry.register(d);
+		//
+		FunctionRegistration e = new FunctionRegistration(new RawFunction(), "e").type(FunctionType.from(Object.class).to(Object.class));
+		registry.register(e);
+	}
+
+	@EnableAutoConfiguration
+	public static class EmptyConfiguration {
+
+	}
+
 	public interface ReactiveFunction<S, T> extends Function<Flux<S>, Flux<T>> {
 
 	}
@@ -519,6 +565,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				super(singletonList(MimeType.valueOf(mimeType)));
 			}
 
+			@SuppressWarnings("unchecked")
 			@Override
 			protected Object convertFromInternal(
 					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
@@ -785,6 +832,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Override
 		public String apply(String t) {
+			return t;
+		}
+
+	}
+
+	public static class RawFunction implements Function<Object, Object> {
+
+		@Override
+		public Object apply(Object t) {
 			return t;
 		}
 
