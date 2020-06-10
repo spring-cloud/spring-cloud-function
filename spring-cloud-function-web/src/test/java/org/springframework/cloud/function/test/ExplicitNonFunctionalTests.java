@@ -18,8 +18,7 @@ package org.springframework.cloud.function.test;
 
 import java.util.function.Function;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +27,12 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * @author Dave Syer
  *
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest({ "spring.main.web-application-type=REACTIVE",
 		"spring.functional.enabled=false" })
 @AutoConfigureWebTestClient

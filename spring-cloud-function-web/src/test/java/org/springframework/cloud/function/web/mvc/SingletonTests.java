@@ -19,8 +19,7 @@ package org.springframework.cloud.function.web.mvc;
 import java.net.URI;
 import java.util.function.Supplier;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.BeansException;
@@ -33,7 +32,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.mvc.SingletonTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -41,7 +39,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,13 +46,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class SingletonTests {
-
-	@LocalServerPort
-	private int port;
 
 	@Autowired
 	private TestRestTemplate rest;

@@ -20,9 +20,9 @@ import java.net.URI;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -45,13 +45,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 */
 public class FunctionEndpointInitializerTests {
 
-	@Before
+	@BeforeEach
 	public void init() throws Exception {
 		String port = "" + SocketUtils.findAvailableTcpPort();
 		System.setProperty("server.port", port);
 	}
 
-	@After
+	@AfterEach
 	public void close() throws Exception {
 		System.clearProperty("server.port");
 	}

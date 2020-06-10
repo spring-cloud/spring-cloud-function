@@ -24,11 +24,10 @@ import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -38,7 +37,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.source.WebAppIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.SocketUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,7 +48,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = { RestApplication.class, ApplicationConfiguration.class },
 	webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
 		"spring.main.web-application-type=reactive",
@@ -67,18 +64,18 @@ public class WebAppIntegrationTests {
 	@Autowired
 	private ApplicationConfiguration app;
 
-	@BeforeClass
+	@BeforeAll
 	public static void init() {
 		System.setProperty("server.port", "" + SocketUtils.findAvailableTcpPort());
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void close() {
 		System.clearProperty("server.port");
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void posts() throws Exception {
 		this.forwarder.start();
 		this.app.latch.await(10, TimeUnit.SECONDS);

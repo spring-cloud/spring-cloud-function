@@ -18,8 +18,9 @@ package org.springframework.cloud.function.context.config;
 
 import java.util.function.Function;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -33,7 +34,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  *
@@ -44,7 +44,7 @@ public class RoutingFunctionTests {
 
 	private ConfigurableApplicationContext context;
 
-	@After
+	@AfterEach
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
 		System.clearProperty("spring.cloud.function.routing-expression");
@@ -55,8 +55,7 @@ public class RoutingFunctionTests {
 		context = new SpringApplicationBuilder(RoutingFunctionConfiguration.class).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.routing.enabled=true");
-		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-		return catalog;
+		return context.getBean(FunctionCatalog.class);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -82,7 +81,7 @@ public class RoutingFunctionTests {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@Test(expected = Exception.class)
+	@Test
 	public void testRoutingReactiveInputWithReactiveFunctionAndDefinitionMessageHeader() {
 		FunctionCatalog functionCatalog = this.configureCatalog();
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
@@ -90,11 +89,11 @@ public class RoutingFunctionTests {
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
-		resultFlux.subscribe();
+		Assertions.assertThrows(Exception.class, resultFlux::subscribe);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@Test(expected = Exception.class)
+	@Test
 	public void testRoutingReactiveInputWithReactiveFunctionAndExpressionMessageHeader() {
 		FunctionCatalog functionCatalog = this.configureCatalog();
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
@@ -102,7 +101,7 @@ public class RoutingFunctionTests {
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".routing-expression", "'echoFlux'").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
-		resultFlux.subscribe();
+		Assertions.assertThrows(Exception.class, resultFlux::subscribe);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -135,7 +134,7 @@ public class RoutingFunctionTests {
 		// no function.definition header or function property
 		try {
 			function.apply(MessageBuilder.withPayload("hello").build());
-			fail();
+			Assertions.fail();
 		}
 		catch (Exception e) {
 			//ignore
@@ -144,7 +143,7 @@ public class RoutingFunctionTests {
 		// non existing function
 		try {
 			function.apply(MessageBuilder.withPayload("hello").setHeader(FunctionProperties.PREFIX + ".definition", "blah").build());
-			fail();
+			Assertions.fail();
 		}
 		catch (Exception e) {
 			//ignore
@@ -176,7 +175,7 @@ public class RoutingFunctionTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return String::toUpperCase;
 		}
 
 		@Bean

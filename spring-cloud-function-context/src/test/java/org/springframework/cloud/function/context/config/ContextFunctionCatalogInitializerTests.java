@@ -26,9 +26,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.gson.Gson;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -61,7 +62,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 	private FunctionInspector inspector;
 
-	@After
+	@AfterEach
 	public void close() {
 		if (this.context != null) {
 			this.context.close();
@@ -102,7 +103,7 @@ public class ContextFunctionCatalogInitializerTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void compose() {
 		create(SimpleConfiguration.class);
 		assertThat(this.context.getBean("function"))
@@ -115,14 +116,16 @@ public class ContextFunctionCatalogInitializerTests {
 		// TODO: support for function composition
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test
 	public void missingType() {
-		create(MissingTypeConfiguration.class);
-		assertThat(this.context.getBean("function"))
+		Assertions.assertThrows(BeanCreationException.class, () -> {
+			create(MissingTypeConfiguration.class);
+			assertThat(this.context.getBean("function"))
 				.isInstanceOf(FunctionRegistration.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
+			assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
-		// TODO: support for type inference from functional bean registrations
+			// TODO: support for type inference from functional bean registrations
+		});
 	}
 
 	@Test

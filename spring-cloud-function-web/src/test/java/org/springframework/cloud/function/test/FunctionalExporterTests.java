@@ -20,10 +20,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -39,7 +38,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +46,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-@RunWith(SpringRunner.class)
 @FunctionalSpringBootTest(classes = ApplicationConfiguration.class, webEnvironment = WebEnvironment.NONE, properties = {
 		"spring.main.web-application-type=none",
 		"spring.cloud.function.web.export.sink.url=http://localhost:${my.port}",
@@ -67,7 +64,7 @@ public class FunctionalExporterTests {
 
 	private static Map<String, Object> headers = new HashMap<>();
 
-	@BeforeClass
+	@BeforeAll
 	public static void init() throws Exception {
 		headers.clear();
 		String port = "" + SocketUtils.findAvailableTcpPort();
@@ -80,7 +77,7 @@ public class FunctionalExporterTests {
 		Thread.sleep(500L);
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void close() {
 		headers.clear();
 		System.clearProperty("server.port");

@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +45,7 @@ public class SpringBootStreamHandlerTests {
 
 	private SpringBootStreamHandler handler;
 
-	@Before
+	@BeforeEach
 	public void before() {
 		System.clearProperty("function.name");
 	}

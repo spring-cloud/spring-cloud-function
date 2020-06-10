@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;

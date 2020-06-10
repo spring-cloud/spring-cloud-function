@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.microsoft.azure.functions.ExecutionContext;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -142,7 +142,7 @@ public class AzureSpringBootRequestHandlerTests {
 		assertThat(consumerResult).isEqualTo("foo1");
 	}
 
-	@After
+	@AfterEach
 	public void close() throws IOException {
 		if (this.handler != null) {
 			this.handler.close();

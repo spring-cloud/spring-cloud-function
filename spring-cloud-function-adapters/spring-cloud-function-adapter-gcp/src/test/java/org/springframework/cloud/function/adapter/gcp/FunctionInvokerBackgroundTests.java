@@ -20,10 +20,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.github.blindpirate.extensions.CaptureSystemOutput;
 import com.google.gson.Gson;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -35,85 +35,77 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * Unit tests for the background functions adapter for Google Cloud Functions.
  *
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  */
+@CaptureSystemOutput
 public class FunctionInvokerBackgroundTests {
 
 	private static final Gson gson = new Gson();
 
-	/**
-	 * The rule for log.
-	 */
-	@Rule
-	public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-
 	private static final String DROPPED_LOG_PREFIX = "Dropping background function result: ";
 
 	@Test
-	public void testHelloWorldSupplier_Background() throws Exception {
-		testBackgroundFunction(HelloWorldSupplier.class, null, "Hello World!", null, null);
+	public void testHelloWorldSupplier_Background(CaptureSystemOutput.OutputCapture outputCapture) {
+		testBackgroundFunction(outputCapture, HelloWorldSupplier.class, null, "Hello World!", null, null);
 	}
-
 	@Test
-	public void testJsonInputFunction_Background() throws Exception {
-		testBackgroundFunction(JsonInputFunction.class, new IncomingRequest("hello"),
+	public void testJsonInputFunction_Background(CaptureSystemOutput.OutputCapture outputCapture) {
+		testBackgroundFunction(outputCapture, JsonInputFunction.class, new IncomingRequest("hello"),
 				"Thank you for sending the message: hello", null, null);
 	}
 
 	@Test
-	public void testJsonInputOutputFunction_Background() throws Exception {
-		testBackgroundFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
+	public void testJsonInputOutputFunction_Background(CaptureSystemOutput.OutputCapture outputCapture) {
+		testBackgroundFunction(outputCapture, JsonInputOutputFunction.class, new IncomingRequest("hello"),
 				new OutgoingResponse("Thank you for sending the message: hello"), null, null);
 	}
 
 	@Test
-	public void testJsonInputConsumer() throws Exception {
-		testBackgroundFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null,
+	public void testJsonInputConsumer(CaptureSystemOutput.OutputCapture outputCapture) {
+		testBackgroundFunction(outputCapture, JsonInputConsumer.class, new IncomingRequest("hello"), null,
 				"Thank you for sending the message: hello", null);
 	}
 
 	@Test
-	public void testPubSubBackgroundFunction_PubSub() throws Exception {
+	public void testPubSubBackgroundFunction_PubSub(CaptureSystemOutput.OutputCapture outputCapture) {
 		PubSubMessage pubSubMessage = new PubSubMessage();
 		pubSubMessage.setData("hello");
-		testBackgroundFunction(PubsubBackgroundFunction.class, pubSubMessage, null,
+		testBackgroundFunction(outputCapture, PubsubBackgroundFunction.class, pubSubMessage, null,
 				"Thank you for sending the message: hello", "google.pubsub.topic.publish");
 	}
 
 	@Test
-	public void testPubSubBackgroundFunction_PubSubPayload() throws Exception {
+	public void testPubSubBackgroundFunction_PubSubPayload(CaptureSystemOutput.OutputCapture outputCapture) {
 		PubSubMessage pubSubMessage = new PubSubMessage();
 		IncomingRequest message = new IncomingRequest("Hello");
 		pubSubMessage.setData(gson.toJson(message));
-		testBackgroundFunction(PubsubBackgroundFunctionPayload.class, pubSubMessage, null,
+		testBackgroundFunction(outputCapture, PubsubBackgroundFunctionPayload.class, pubSubMessage, null,
 				"Thank you for sending the message: Hello", "google.pubsub.topic.publish");
 	}
 
 	@Test
-	public void testPubSubBackgroundFunction_StringMessage() throws Exception {
+	public void testPubSubBackgroundFunction_StringMessage(CaptureSystemOutput.OutputCapture outputCapture) {
 		PubSubMessage pubSubMessage = new PubSubMessage();
 		pubSubMessage.setMessageId("1234");
 		pubSubMessage.setData("Hello");
-		testBackgroundFunction(PubsubBackgroundFunctionStringMessage.class, pubSubMessage, null,
+		testBackgroundFunction(outputCapture, PubsubBackgroundFunctionStringMessage.class, pubSubMessage, null,
 				"Message: Hello; Type: google.pubsub.topic.publish; Message ID: 1234", "google.pubsub.topic.publish");
 	}
 
 	@Test
-	public void testPubSubBackgroundFunction_PubSubMessage() throws Exception {
+	public void testPubSubBackgroundFunction_PubSubMessage(CaptureSystemOutput.OutputCapture outputCapture) {
 		PubSubMessage pubSubMessage = new PubSubMessage();
 		pubSubMessage.setMessageId("1234");
 		pubSubMessage.setData("Hello");
-		testBackgroundFunction(PubsubBackgroundFunctionPubSubMessage.class, pubSubMessage, null,
+		testBackgroundFunction(outputCapture, PubsubBackgroundFunctionPubSubMessage.class, pubSubMessage, null,
 				"Message: Hello; Type: google.pubsub.topic.publish; Message ID: 1234", "google.pubsub.topic.publish");
 	}
 
-	private <I, O> void testBackgroundFunction(Class<?> configurationClass, I input, O expectedResult,
+	private <I, O> void testBackgroundFunction(CaptureSystemOutput.OutputCapture outputCapture, Class<?> configurationClass, I input, O expectedResult,
 			String expectedSysOut, String eventType) {
 
 		FunctionInvoker handler = new FunctionInvoker(configurationClass);
@@ -122,15 +114,15 @@ public class FunctionInvokerBackgroundTests {
 
 		// verify function sysout statements
 		if (expectedSysOut != null) {
-			assertThat(systemOutRule.getLog()).contains(expectedSysOut);
+			outputCapture.expect(Matchers.containsString(expectedSysOut));
 		}
 
 		// verify that if function had a return type, it was logged as being dropped
 		if (expectedResult != null) {
-			assertThat(systemOutRule.getLog()).contains(DROPPED_LOG_PREFIX + gson.toJson(expectedResult));
+			outputCapture.expect(Matchers.containsString(DROPPED_LOG_PREFIX + gson.toJson(expectedResult)));
 		}
 		else {
-			assertThat(systemOutRule.getLog()).doesNotContain(DROPPED_LOG_PREFIX);
+			outputCapture.expect(Matchers.not(Matchers.containsString(DROPPED_LOG_PREFIX)));
 		}
 
 	}
@@ -163,11 +155,9 @@ public class FunctionInvokerBackgroundTests {
 
 		@Bean
 		public Function<IncomingRequest, Message<OutgoingResponse>> function() {
-			return (in) -> {
-				return MessageBuilder
-						.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
-						.setHeader("foo", "bar").build();
-			};
+			return (in) -> MessageBuilder
+					.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
+					.setHeader("foo", "bar").build();
 		}
 
 	}
@@ -200,9 +190,7 @@ public class FunctionInvokerBackgroundTests {
 
 		@Bean
 		public Consumer<IncomingRequest> consumerPayload() {
-			return (in) -> {
-				System.out.println("Thank you for sending the message: " + in.message);
-			};
+			return (in) -> System.out.println("Thank you for sending the message: " + in.message);
 		}
 
 		@Bean
