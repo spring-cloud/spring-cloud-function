@@ -55,8 +55,7 @@ public class RoutingFunctionTests {
 		context = new SpringApplicationBuilder(RoutingFunctionConfiguration.class).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.routing.enabled=true");
-		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-		return catalog;
+		return context.getBean(FunctionCatalog.class);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -82,7 +81,7 @@ public class RoutingFunctionTests {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@Test//(expected = Exception.class)
+	@Test
 	public void testRoutingReactiveInputWithReactiveFunctionAndDefinitionMessageHeader() {
 		FunctionCatalog functionCatalog = this.configureCatalog();
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
@@ -90,11 +89,11 @@ public class RoutingFunctionTests {
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
-		resultFlux.subscribe();
+		Assertions.assertThrows(Exception.class, resultFlux::subscribe);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@Test//(expected = Exception.class)
+	@Test
 	public void testRoutingReactiveInputWithReactiveFunctionAndExpressionMessageHeader() {
 		FunctionCatalog functionCatalog = this.configureCatalog();
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
@@ -102,7 +101,7 @@ public class RoutingFunctionTests {
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".routing-expression", "'echoFlux'").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
-		resultFlux.subscribe();
+		Assertions.assertThrows(Exception.class, resultFlux::subscribe);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -176,7 +175,7 @@ public class RoutingFunctionTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return String::toUpperCase;
 		}
 
 		@Bean

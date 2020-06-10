@@ -27,12 +27,14 @@ import java.util.function.Supplier;
 
 import com.google.gson.Gson;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -114,14 +116,16 @@ public class ContextFunctionCatalogInitializerTests {
 		// TODO: support for function composition
 	}
 
-	@Test//(expected = BeanCreationException.class)
+	@Test
 	public void missingType() {
-		create(MissingTypeConfiguration.class);
-		assertThat(this.context.getBean("function"))
+		Assertions.assertThrows(BeanCreationException.class, () -> {
+			create(MissingTypeConfiguration.class);
+			assertThat(this.context.getBean("function"))
 				.isInstanceOf(FunctionRegistration.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
+			assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
 				.isInstanceOf(Function.class);
-		// TODO: support for type inference from functional bean registrations
+			// TODO: support for type inference from functional bean registrations
+		});
 	}
 
 	@Test

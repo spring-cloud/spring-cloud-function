@@ -293,7 +293,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@Test//(expected = IllegalArgumentException.class)
+	@Test
 	public void monoToMonoNonVoidFunction() {
 		create(MonoToMonoNonVoidConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);

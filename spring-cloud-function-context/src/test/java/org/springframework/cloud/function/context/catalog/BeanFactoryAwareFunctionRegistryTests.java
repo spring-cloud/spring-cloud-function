@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -245,11 +246,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	 * Further more, such flux will need to be triggered (e.g., subscribe(..) )
 	 */
 	@SuppressWarnings("unused")
-	@Test//(expected = ClassCastException.class)
+	@Test
 	public void testReactiveFunctionWithImperativeInputAndOutputFail() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<String, String> reverse = catalog.lookup("reverseFlux");
-		String result = reverse.apply("reverseFlux");
+		Assertions.assertThrows(ClassCastException.class, () -> {
+			String result = reverse.apply("reverseFlux");
+		});
 	}
 
 	@Test
