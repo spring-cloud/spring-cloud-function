@@ -24,8 +24,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -100,7 +100,7 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 
 	@SuppressWarnings("unused")
 	@Test
-	@Ignore
+	@Disabled
 	public void testMultiInputBiFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 		BiFunction<Flux<String>, Flux<Integer>, Flux<String>> multiInputFunction =

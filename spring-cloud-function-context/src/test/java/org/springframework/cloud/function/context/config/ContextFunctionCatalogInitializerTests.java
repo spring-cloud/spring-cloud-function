@@ -26,14 +26,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.gson.Gson;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -61,7 +60,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 	private FunctionInspector inspector;
 
-	@After
+	@AfterEach
 	public void close() {
 		if (this.context != null) {
 			this.context.close();
@@ -102,7 +101,7 @@ public class ContextFunctionCatalogInitializerTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void compose() {
 		create(SimpleConfiguration.class);
 		assertThat(this.context.getBean("function"))
@@ -115,7 +114,7 @@ public class ContextFunctionCatalogInitializerTests {
 		// TODO: support for function composition
 	}
 
-	@Test(expected = BeanCreationException.class)
+	@Test//(expected = BeanCreationException.class)
 	public void missingType() {
 		create(MissingTypeConfiguration.class);
 		assertThat(this.context.getBean("function"))

@@ -27,9 +27,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -88,7 +88,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		ContextFunctionCatalogAutoConfigurationTests.value = value.toString();
 	}
 
-	@After
+	@AfterEach
 	public void close() {
 		if (this.context != null) {
 			this.context.close();
@@ -119,7 +119,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	// do we really need this test and behavior? What does this even mean?
 	public void ambiguousFunction() {
 		create(AmbiguousConfiguration.class);
@@ -137,7 +137,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void configurationFunction() {
 		create(FunctionConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
@@ -369,7 +369,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void singletonMessageFunction() {
 		create(SingletonMessageConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
@@ -474,7 +474,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void simpleSupplier() {
 		create(SimpleConfiguration.class);
 		assertThat(this.context.getBean("supplier")).isInstanceOf(Supplier.class);
@@ -493,7 +493,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void qualifiedBean() {
 		create(QualifiedConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
@@ -517,7 +517,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void registrationBean() {
 		create(RegistrationConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);

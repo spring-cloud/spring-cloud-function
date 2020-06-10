@@ -21,10 +21,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
@@ -38,7 +35,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-@RunWith(Parameterized.class)
 public class JsonMapperTests {
 
 	private JsonMapper mapper;
@@ -47,11 +43,11 @@ public class JsonMapperTests {
 		this.mapper = mapper;
 	}
 
-	@Parameters
-	public static List<Object[]> params() {
-		return Arrays.asList(new Object[] { new GsonMapper(new Gson()) },
-				new Object[] { new JacksonMapper(new ObjectMapper()) });
-	}
+//	@Parameters
+//	public static List<Object[]> params() {
+//		return Arrays.asList(new Object[] { new GsonMapper(new Gson()) },
+//				new Object[] { new JacksonMapper(new ObjectMapper()) });
+//	}
 
 	@Test
 	public void vanillaArray() {
