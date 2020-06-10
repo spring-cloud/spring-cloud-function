@@ -16,15 +16,13 @@
 
 package org.springframework.cloud.function.utils;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
@@ -38,70 +36,68 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-@RunWith(Parameterized.class)
 public class JsonMapperTests {
 
-	private JsonMapper mapper;
-
-	public JsonMapperTests(JsonMapper mapper) {
-		this.mapper = mapper;
+	public static Stream<JsonMapper> params() {
+		return Stream.of(new GsonMapper(new Gson()), new JacksonMapper(new ObjectMapper()));
 	}
 
-	@Parameters
-	public static List<Object[]> params() {
-		return Arrays.asList(new Object[] { new GsonMapper(new Gson()) },
-				new Object[] { new JacksonMapper(new ObjectMapper()) });
-	}
-
-	@Test
-	public void vanillaArray() {
+	@ParameterizedTest
+	@MethodSource("params")
+	public void vanillaArray(JsonMapper mapper) {
 		String json = "[{\"value\":\"foo\"},{\"value\":\"foo\"}]";
-		List<Foo> list = this.mapper.fromJson(json,
+		List<Foo> list = mapper.fromJson(json,
 				ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0).getValue()).isEqualTo("foo");
-		assertThat(this.mapper.toString(list)).isEqualTo(json);
+		assertThat(mapper.toString(list)).isEqualTo(json);
 	}
 
-	@Test
-	public void intArray() {
-		List<Integer> list = this.mapper.fromJson("[123,456]",
+	@ParameterizedTest
+	@MethodSource("params")
+	public void intArray(JsonMapper mapper) {
+		List<Integer> list = mapper.fromJson("[123,456]",
 				ResolvableType.forClassWithGenerics(List.class, Integer.class).getType());
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0)).isEqualTo(123);
 	}
 
-	@Test
-	public void emptyArray() {
-		List<Foo> list = this.mapper.fromJson("[]",
+	@ParameterizedTest
+	@MethodSource("params")
+	public void emptyArray(JsonMapper mapper) {
+		List<Foo> list = mapper.fromJson("[]",
 				ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
 		assertThat(list).hasSize(0);
 	}
 
-	@Test
-	public void vanillaObject() {
+	@ParameterizedTest
+	@MethodSource("params")
+	public void vanillaObject(JsonMapper mapper) {
 		String json = "{\"value\":\"foo\"}";
-		Foo foo = this.mapper.fromJson(json, Foo.class);
+		Foo foo = mapper.fromJson(json, Foo.class);
 		assertThat(foo.getValue()).isEqualTo("foo");
-		assertThat(this.mapper.toString(foo)).isEqualTo(json);
+		assertThat(mapper.toString(foo)).isEqualTo(json);
 	}
 
-	@Test
-	public void stringRepresentingJson() {
+	@ParameterizedTest
+	@MethodSource("params")
+	public void stringRepresentingJson(JsonMapper mapper) {
 		String json = "{\"value\":\"foo\"}";
-		byte[] bytes = this.mapper.toJson(json);
+		byte[] bytes = mapper.toJson(json);
 		assertThat(new String(bytes)).isEqualTo(json);
 	}
 
-	@Test
-	public void intValue() {
-		int foo = this.mapper.fromJson("123", Integer.class);
+	@ParameterizedTest
+	@MethodSource("params")
+	public void intValue(JsonMapper mapper) {
+		int foo = mapper.fromJson("123", Integer.class);
 		assertThat(foo).isEqualTo(123);
 	}
 
-	@Test
-	public void empty() {
-		Foo foo = this.mapper.fromJson("{}", Foo.class);
+	@ParameterizedTest
+	@MethodSource("params")
+	public void empty(JsonMapper mapper) {
+		Foo foo = mapper.fromJson("{}", Foo.class);
 		assertThat(foo.getValue()).isNull();
 	}
 

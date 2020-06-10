@@ -19,9 +19,8 @@ package com.example;
 import java.net.URI;
 import java.util.Arrays;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -31,7 +30,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class SampleApplicationTests {
 
@@ -51,7 +48,7 @@ public class SampleApplicationTests {
 
 	private TestRestTemplate rest = new TestRestTemplate();
 
-	@Before
+	@BeforeEach
 	public void before() {
 		this.headers = new HttpHeaders();
 		this.headers.setContentType(MediaType.APPLICATION_JSON);

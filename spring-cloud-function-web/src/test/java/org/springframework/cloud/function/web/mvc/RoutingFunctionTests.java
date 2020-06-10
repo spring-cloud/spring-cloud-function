@@ -21,9 +21,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +44,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,7 +51,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
 		"spring.main.web-application-type=servlet",
 		"spring.cloud.function.web.path=/functions",
@@ -134,7 +131,7 @@ public class RoutingFunctionTests {
 
 	@Test
 	@DirtiesContext
-	@Ignore
+	@Disabled
 	public void testFluxConsumer() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
@@ -148,7 +145,7 @@ public class RoutingFunctionTests {
 
 	@Test
 	@DirtiesContext
-	@Ignore
+	@Disabled
 	public void testFunctionPojo() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
@@ -161,7 +158,7 @@ public class RoutingFunctionTests {
 
 	@Test
 	@DirtiesContext
-	@Ignore
+	@Disabled
 	public void testConsumerMessage() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))

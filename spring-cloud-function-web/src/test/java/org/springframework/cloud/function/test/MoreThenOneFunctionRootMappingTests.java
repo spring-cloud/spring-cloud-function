@@ -18,8 +18,7 @@ package org.springframework.cloud.function.test;
 
 import java.util.function.Function;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +28,12 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * @author Oleg Zhurakousky
  *
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest({ "spring.main.web-application-type=REACTIVE",
 		"spring.functional.enabled=false",
 		"spring.cloud.function.definition=uppercase|reverse" })
@@ -48,7 +45,7 @@ public class MoreThenOneFunctionRootMappingTests {
 	private WebTestClient client;
 
 	@Test
-	public void words() throws Exception {
+	public void words() {
 		this.client.post().uri("/").body(Mono.just("star"), String.class).exchange()
 				.expectStatus().isOk().expectBody(String.class).isEqualTo("RATS");
 	}
@@ -59,7 +56,7 @@ public class MoreThenOneFunctionRootMappingTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return String::toUpperCase;
 		}
 
 		@Bean

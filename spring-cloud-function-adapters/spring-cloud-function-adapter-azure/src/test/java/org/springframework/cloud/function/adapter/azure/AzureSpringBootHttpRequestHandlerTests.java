@@ -31,8 +31,8 @@ import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.HttpResponseMessage.Builder;
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.HttpStatusType;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -108,7 +108,7 @@ public class AzureSpringBootHttpRequestHandlerTests {
 		assertThat(body).isNull();
 	}
 
-	@After
+	@AfterEach
 	public void close() throws IOException {
 		if (this.handler != null) {
 			this.handler.close();

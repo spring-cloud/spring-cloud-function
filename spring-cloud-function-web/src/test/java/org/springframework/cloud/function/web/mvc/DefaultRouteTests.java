@@ -19,9 +19,8 @@ package org.springframework.cloud.function.web.mvc;
 import java.net.URI;
 import java.util.function.Function;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +36,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,7 +43,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "")
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class DefaultRouteTests {
@@ -57,7 +54,7 @@ public class DefaultRouteTests {
 	private TestRestTemplate rest;
 
 	@Test
-	@Ignore("FIXME")
+	@Disabled("FIXME")
 	public void explicit() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/uppercase")).body("foo"), String.class);
@@ -66,7 +63,7 @@ public class DefaultRouteTests {
 	}
 
 	@Test
-	@Ignore("FIXME")
+	@Disabled("FIXME")
 	public void implicit() throws Exception {
 		ResponseEntity<String> result = this.rest
 				.exchange(RequestEntity.post(new URI("/")).body("foo"), String.class);

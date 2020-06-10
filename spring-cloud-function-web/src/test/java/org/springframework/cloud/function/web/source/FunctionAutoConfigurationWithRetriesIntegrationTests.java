@@ -22,11 +22,10 @@ import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -37,7 +36,6 @@ import org.springframework.cloud.function.web.source.FunctionAutoConfigurationWi
 import org.springframework.cloud.function.web.source.FunctionAutoConfigurationWithRetriesIntegrationTests.RestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.SocketUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,7 +48,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = { RestConfiguration.class,
 		ApplicationConfiguration.class },
 	webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
@@ -66,18 +63,18 @@ public class FunctionAutoConfigurationWithRetriesIntegrationTests {
 	@Autowired
 	private RestConfiguration app;
 
-	@BeforeClass
+	@BeforeAll
 	public static void init() {
 		System.setProperty("server.port", "" + SocketUtils.findAvailableTcpPort());
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void close() {
 		System.clearProperty("server.port");
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void copiesMessages() throws Exception {
 		int count = 0;
 		while (this.forwarder.isRunning() && count++ < 30) {

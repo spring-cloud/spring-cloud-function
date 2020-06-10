@@ -22,9 +22,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.gson.Gson;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -56,7 +56,7 @@ public class SimpleFunctionRegistryTests {
 
 	private ConversionService conversionService;
 
-	@Before
+	@BeforeEach
 	public void before() {
 		List<MessageConverter> messageConverters = new ArrayList<>();
 		JsonMapper jsonMapper = new GsonMapper(new Gson());
@@ -121,7 +121,7 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	@Test
-	@Ignore
+	@Disabled
 	public void testFunctionCompletelyImplicitComposition() {
 		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
 				new Words(), "words").type(FunctionType.of(Words.class));

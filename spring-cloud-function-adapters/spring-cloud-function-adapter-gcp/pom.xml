@@ -63,11 +63,11 @@
 			<version>${google.cloud.functions.invoker.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<!-- replace com.github.stefanbirkner:system-rules:1.19.0. Used in FunctionInvokerBackgroundTests -->
 		<dependency>
-			<groupId>com.github.stefanbirkner</groupId>
-			<artifactId>system-rules</artifactId>
-			<version>1.19.0</version>
-			<scope>test</scope>
+			<groupId>com.github.blindpirate</groupId>
+			<artifactId>junit5-capture-system-output-extension</artifactId>
+			<version>0.1.2</version>
 		</dependency>
 	</dependencies>
 </project>

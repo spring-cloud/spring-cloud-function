@@ -26,10 +26,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -52,7 +51,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -63,7 +61,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Dave Syer
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=reactive")
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class HttpPostIntegrationTests {
@@ -79,7 +76,7 @@ public class HttpPostIntegrationTests {
 	@Autowired
 	private ApplicationConfiguration test;
 
-	@Before
+	@BeforeEach
 	public void init() {
 		this.test.list.clear();
 	}
@@ -182,7 +179,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
-	@Ignore("WebFlux would split the request body into lines: TODO make this work the same")
+	@Disabled("WebFlux would split the request body into lines: TODO make this work the same")
 	public void uppercasePlainText() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/uppercase"))

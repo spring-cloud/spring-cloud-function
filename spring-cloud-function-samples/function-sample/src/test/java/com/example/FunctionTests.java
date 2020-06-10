@@ -21,7 +21,7 @@ import java.util.List;
 import com.example.functions.CharCounter;
 import com.example.functions.Exclaimer;
 import com.example.functions.Greeter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import static org.assertj.core.api.Assertions.assertThat;

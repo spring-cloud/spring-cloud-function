@@ -18,8 +18,8 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.util.function.Function;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
@@ -37,7 +37,7 @@ public class SpringBootRequestHandlerTests {
 
 	private SpringBootRequestHandler<Foo, Bar> handler;
 
-	@Before
+	@BeforeEach
 	public void after() {
 		System.clearProperty("spring.cloud.function.definition");
 	}

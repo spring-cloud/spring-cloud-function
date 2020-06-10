@@ -19,7 +19,7 @@ package org.springframework.cloud.function.adapter.gcp.integration;
 import java.io.IOException;
 import java.util.function.Function;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;

@@ -21,9 +21,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
@@ -32,8 +33,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
-
-
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,7 +45,7 @@ public class SpringFunctionAdapterInitializerTests {
 
 	private AbstractSpringFunctionAdapterInitializer<Object> initializer;
 
-	@After
+	@AfterEach
 	public void after() {
 		System.clearProperty("function.name");
 		if (this.initializer != null) {
@@ -54,11 +53,12 @@ public class SpringFunctionAdapterInitializerTests {
 		}
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void nullSource() {
-		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(null) {
+		Assertions.assertThrows(IllegalArgumentException.class, () ->
+			this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(null) {
 
-		};
+			});
 	}
 
 	@Test
@@ -106,7 +106,7 @@ public class SpringFunctionAdapterInitializerTests {
 	}
 
 	@Test
-	@Ignore // related to boot 2.1 no bean override change
+	@Disabled // related to boot 2.1 no bean override change
 	public void functionRegistrar() {
 		this.initializer = new AbstractSpringFunctionAdapterInitializer<Object>(FunctionRegistrar.class) {
 

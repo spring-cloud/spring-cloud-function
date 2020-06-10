@@ -26,8 +26,8 @@ import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
@@ -47,7 +47,7 @@ public class SpringBootApiGatewayRequestHandlerTests {
 
 	private SpringBootApiGatewayRequestHandler handler;
 
-	@After
+	@AfterEach
 	public void after() {
 		System.clearProperty("function.name");
 	}
