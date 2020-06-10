@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class FunctionDeployerTests {
 
-	@Before
+	@BeforeEach
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
 	}

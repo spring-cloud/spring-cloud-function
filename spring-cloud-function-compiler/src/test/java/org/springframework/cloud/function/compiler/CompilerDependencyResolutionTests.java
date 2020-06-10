@@ -35,7 +35,7 @@ import java.util.zip.ZipEntry;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.function.compiler.java.CompilationResult;

@@ -18,7 +18,7 @@ package org.springframework.cloud.function.compiler;
 
 import java.util.function.Function;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.core.FunctionFactoryUtils;
 
