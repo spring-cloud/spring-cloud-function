@@ -18,9 +18,8 @@ package org.springframework.cloud.function.web.source;
 
 import java.util.function.Supplier;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -30,7 +29,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.function.web.source.SourceAutoConfigurationIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,19 +36,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@RunWith(SpringRunner.class)
 // @formatter:off
 @SpringBootTest(webEnvironment = WebEnvironment.NONE,
 	properties = "spring.cloud.function.web.export.sink.url=https://nosuchhost")
 // @formatter:on
 @ContextConfiguration(classes = { ApplicationConfiguration.class })
+@Disabled
 public class SourceAutoConfigurationIntegrationTests {
 
 	@Autowired
 	private SupplierExporter forwarder;
 
 	@Test
-	@Ignore
 	public void fails() throws Exception {
 		int count = 0;
 		while (this.forwarder.isRunning() && count++ < 1000) {

@@ -20,22 +20,19 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * @author Dave Syer
  *
  */
-@RunWith(SpringRunner.class)
 @FunctionalSpringBootTest("spring.main.web-application-type=reactive")
 @AutoConfigureWebTestClient
 public class FunctionalWithInputListTests {

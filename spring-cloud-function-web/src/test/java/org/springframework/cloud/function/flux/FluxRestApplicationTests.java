@@ -24,10 +24,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -44,7 +43,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,7 +60,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@RunWith(SpringRunner.class)
 // @checkstyle:off
 @SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=reactive")
 // @checkstyle:on
@@ -79,7 +76,7 @@ public class FluxRestApplicationTests {
 	@Autowired
 	private TestConfiguration test;
 
-	@Before
+	@BeforeEach
 	public void init() {
 		this.test.list.clear();
 	}
@@ -100,7 +97,7 @@ public class FluxRestApplicationTests {
 	}
 
 	@Test
-	@Ignore("Fix error handling")
+	@Disabled("Fix error handling")
 	public void errorJson() throws Exception {
 		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/bang"))
@@ -134,7 +131,7 @@ public class FluxRestApplicationTests {
 	}
 
 	@Test
-	@Ignore("Should this even work? Or do we need to be explicit about the JSON?")
+	@Disabled("Should this even work? Or do we need to be explicit about the JSON?")
 	public void updates() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);

@@ -18,8 +18,7 @@ package org.springframework.cloud.function.test;
 
 import java.util.function.Function;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +27,12 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * @author Oleg Zhurakousky
  *
  */
-@RunWith(SpringRunner.class)
 // Only need web-application-type because MVC is on the classpath
 @FunctionalSpringBootTest("spring.main.web-application-type=reactive")
 @AutoConfigureWebTestClient

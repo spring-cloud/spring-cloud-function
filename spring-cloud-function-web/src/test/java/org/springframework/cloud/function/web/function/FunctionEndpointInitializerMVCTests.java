@@ -19,9 +19,9 @@ package org.springframework.cloud.function.web.function;
 import java.net.URI;
 import java.util.function.Function;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -40,13 +40,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class FunctionEndpointInitializerMVCTests {
 
-	@Before
+	@BeforeEach
 	public void init() throws Exception {
 		String port = "" + SocketUtils.findAvailableTcpPort();
 		System.setProperty("server.port", port);
 	}
 
-	@After
+	@AfterEach
 	public void close() throws Exception {
 		System.clearProperty("server.port");
 	}
