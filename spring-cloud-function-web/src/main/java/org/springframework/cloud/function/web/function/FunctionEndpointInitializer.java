@@ -240,13 +240,12 @@ class FunctionEndpointFactory {
 					.flatMap(content -> this.processor.post(wrapper, content, false));
 			return stream.flatMap(entity -> {
 				return status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()))
-						.body(Mono.just((T) entity.getBody()), outputType);
+						.body(entity.hasBody() ? Mono.just((T) entity.getBody()) : Mono.empty(), outputType);
 			});
 		})
 		.andRoute(GET("/**"), request -> {
 			Object functionComponent = extract(request);
 			Class<T> outputType = (Class<T>) this.inspector.getOutputType(functionComponent);
-//			if (functionComponent instanceof Supplier) {
 			if (((FunctionInvocationWrapper) functionComponent).isSupplier()) {
 				Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
 				FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);
