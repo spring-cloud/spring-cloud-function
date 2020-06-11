@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -39,6 +38,7 @@ import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -47,13 +47,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 
 /**
@@ -138,33 +139,49 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(Gson.class)
-	@ConditionalOnProperty(name = PREFERRED_MAPPER_PROPERTY, havingValue = "gson", matchIfMissing = false)
-	protected static class GsonConfiguration {
-
+	public static class JsonMapperConfiguration {
 		@Bean
-		public GsonMapper jsonMapper(@Nullable Gson gson) {
-			if (gson == null) {
+		public JsonMapper jsonMapper(ApplicationContext context) {
+			String preferredMapper = context.getEnvironment().getProperty(PREFERRED_MAPPER_PROPERTY);
+			if (StringUtils.hasText(preferredMapper)) {
+				if ("gson".equals(preferredMapper) && ClassUtils.isPresent("com.google.gson.Gson", null)) {
+					return gson(context);
+				}
+				else if ("jackson".equals(preferredMapper) && ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", null)) {
+					return jackson(context);
+				}
+			}
+			else {
+				if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", null)) {
+					return jackson(context);
+				}
+				else if (ClassUtils.isPresent("com.google.gson.Gson", null)) {
+					return gson(context);
+				}
+			}
+			throw new IllegalStateException("Failed to configure JsonMapper. Neither jackson nor gson are present on the claspath");
+		}
+
+		private JsonMapper gson(ApplicationContext context) {
+			Gson gson;
+			try {
+				gson = context.getBean(Gson.class);
+			}
+			catch (Exception e) {
 				gson = new Gson();
 			}
 			return new GsonMapper(gson);
 		}
 
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(ObjectMapper.class)
-	@ConditionalOnProperty(name = PREFERRED_MAPPER_PROPERTY, havingValue = "jackson", matchIfMissing = true)
-	protected static class JacksonConfiguration {
-
-		@Bean
-		public JacksonMapper jsonMapper(@Nullable ObjectMapper mapper) {
-			if (mapper == null) {
+		private JsonMapper jackson(ApplicationContext context) {
+			ObjectMapper mapper;
+			try {
+				mapper = context.getBean(ObjectMapper.class);
+			}
+			catch (Exception e) {
 				mapper = new ObjectMapper();
 			}
 			return new JacksonMapper(mapper);
 		}
-
 	}
-
 }

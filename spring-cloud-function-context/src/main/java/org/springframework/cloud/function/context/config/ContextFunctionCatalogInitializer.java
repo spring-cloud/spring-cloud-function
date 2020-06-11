@@ -136,17 +136,13 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 				if (this.context.getBeanFactory().getBeanNamesForType(Gson.class, false, false).length == 0) {
 					this.context.registerBean(Gson.class, () -> new Gson());
 				}
-				this.context.registerBean(JsonMapper.class,
-						() -> new ContextFunctionCatalogAutoConfiguration.GsonConfiguration()
-								.jsonMapper(this.context.getBean(Gson.class)));
+				this.context.registerBean(JsonMapper.class, () -> new ContextFunctionCatalogAutoConfiguration.JsonMapperConfiguration().jsonMapper(this.context));
 			}
 			else if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", null)) {
 				if (this.context.getBeanFactory().getBeanNamesForType(ObjectMapper.class, false, false).length == 0) {
 					this.context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
 				}
-				this.context.registerBean(JsonMapper.class,
-						() -> new ContextFunctionCatalogAutoConfiguration.JacksonConfiguration()
-								.jsonMapper(this.context.getBean(ObjectMapper.class)));
+				this.context.registerBean(JsonMapper.class, () -> new ContextFunctionCatalogAutoConfiguration.JsonMapperConfiguration().jsonMapper(this.context));
 
 			}
 
