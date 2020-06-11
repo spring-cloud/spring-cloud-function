@@ -27,6 +27,10 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
+
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
@@ -35,14 +39,20 @@ import org.springframework.cloud.function.context.config.JsonMessageConverter;
 import org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -192,6 +202,77 @@ public class SimpleFunctionRegistryTests {
 		assertThat(lookedUpFunction).isNotNull();
 		String result = lookedUpFunction.apply(MessageBuilder.withPayload("star").setHeader("foo", "bar").build());
 		assertThat(result).isEqualTo("RATS");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testWithCustomMessageConverter() {
+		FunctionCatalog catalog = this.configureCatalog(CustomConverterConfiguration.class);
+		Function function = catalog.lookup("func");
+		Object result = function.apply(MessageBuilder.withPayload("Jim Lahey").setHeader(MessageHeaders.CONTENT_TYPE, "text/person").build());
+		assertThat(result).isEqualTo("Jim Lahey");
+	}
+
+	private FunctionCatalog configureCatalog(Class<?>... configClass) {
+		ApplicationContext context = new SpringApplicationBuilder(configClass)
+				.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true");
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		return catalog;
+	}
+
+	@EnableAutoConfiguration
+	private static class CustomConverterConfiguration {
+		@Bean
+		public MessageConverter stringToPersonConverter() {
+			return new AbstractMessageConverter(MimeType.valueOf("text/person")) {
+				@Override
+				protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+					String payload =  message.getPayload() instanceof byte[] ? new String((byte[]) message.getPayload()) : (String) message.getPayload();
+					Person person = new Person();
+					person.setName(payload);
+					return person;
+				}
+
+				@Override
+				protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
+					return supportsMimeType(message.getHeaders()) && Person.class.isAssignableFrom(targetClass) && (
+							message.getPayload() instanceof String || message.getPayload() instanceof byte[]);
+				}
+
+				@Override
+				public Object convertToInternal(Object rawPayload, MessageHeaders headers, Object conversionHint) {
+					return rawPayload.toString();
+				}
+
+				@Override
+				protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
+					return true;
+				}
+
+				@Override
+				protected boolean supports(Class<?> clazz) {
+					throw new UnsupportedOperationException();
+				}
+			};
+		}
+
+		@Bean
+		public Function<Person, String> func() {
+			return person -> person.getName();
+		}
+	}
+
+	public static class Person {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
 	}
 
 	private static class Words implements Supplier<String> {
