@@ -73,7 +73,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-
 /**
  *
  * Basic implementation of FunctionRegistry which maintains the cache of registered functions while

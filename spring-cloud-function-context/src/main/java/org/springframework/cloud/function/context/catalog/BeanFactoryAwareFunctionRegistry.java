@@ -137,6 +137,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		if (function instanceof RoutingFunction) {
 			return FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType();
 		}
+		else if (function instanceof FunctionRegistration) {
+			return ((FunctionRegistration) function).getType().getType();
+		}
 		boolean beanDefinitionExists = false;
 		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
 			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
@@ -188,7 +191,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			}
 			else if (!ObjectUtils.isEmpty(names)) {
 				if (names.size() > 1) {
-					logger.info("Found more then one function beans in BeanFactory: " + names
+					logger.debug("Found more then one function beans in BeanFactory: " + names
 						+ ". If you did not intend to use functions, ignore this message. However, if you did "
 						+ "intend to use functions in the context of spring-cloud-function, consider "
 						+ "providing 'spring.cloud.function.definition' property pointing to a function bean(s) "
@@ -205,10 +208,26 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 				Type functionType = discoverFunctionType(this.applicationContext.getBean(definition), definition);
 				if (!FunctionTypeUtils.isSupplier(functionType) && !FunctionTypeUtils
 					.isFunction(functionType) && !FunctionTypeUtils.isConsumer(functionType)) {
-					logger
-						.info("Discovered functional instance of bean '" + definition + "' as a default function, however its "
+					logger.debug("Discovered functional instance of bean '" + definition + "' as a default function, however its "
 							+ "function argument types can not be determined. Discarding.");
 					definition = null;
+				}
+			}
+		}
+		if (!StringUtils.hasText(definition)) {
+			String[] functionRegistrationNames = Stream.of(applicationContext.getBeanNamesForType(FunctionRegistration.class))
+					.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n
+						.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
+			if (functionRegistrationNames != null) {
+				if (functionRegistrationNames.length == 1) {
+					definition = functionRegistrationNames[0];
+				}
+				else {
+					logger.debug("Found more then one function registration beans in BeanFactory: " + functionRegistrationNames
+							+ ". If you did not intend to use functions, ignore this message. However, if you did "
+							+ "intend to use functions in the context of spring-cloud-function, consider "
+							+ "providing 'spring.cloud.function.definition' property pointing to a function bean(s) "
+							+ "you intend to use. For example, 'spring.cloud.function.definition=myFunction'");
 				}
 			}
 		}
