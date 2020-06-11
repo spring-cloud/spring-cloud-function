@@ -41,6 +41,7 @@ import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.lang.Nullable;
@@ -222,7 +223,8 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	@EnableAutoConfiguration
-	private static class CustomConverterConfiguration {
+	@Configuration
+	public static class CustomConverterConfiguration {
 		@Bean
 		public MessageConverter stringToPersonConverter() {
 			return new AbstractMessageConverter(MimeType.valueOf("text/person")) {
