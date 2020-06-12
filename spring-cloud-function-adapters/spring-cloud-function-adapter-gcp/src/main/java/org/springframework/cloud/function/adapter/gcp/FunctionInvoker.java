@@ -98,6 +98,11 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 					httpResponse.appendHeader(header.getKey(), header.getValue().toString());
 				}
 			}
+			httpResponse.setStatusCode(200);
+		}
+		catch (Exception e) {
+			log.error("Error in HTTP Function Invoker", e);
+			httpResponse.setStatusCode(500, e.getMessage());
 		}
 		finally {
 			httpResponse.getWriter().close();

@@ -31,6 +31,8 @@ public class CloudFunctionMain {
 
 	@Bean
 	public Function<String, String> function() {
-		return value -> value.toUpperCase();
+		return value -> {
+				throw new IllegalArgumentException("Function broken.");
+		};
 	}
 }

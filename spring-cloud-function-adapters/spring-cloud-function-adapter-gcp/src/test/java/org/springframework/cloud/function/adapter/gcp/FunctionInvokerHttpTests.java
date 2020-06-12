@@ -38,6 +38,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -72,8 +73,22 @@ public class FunctionInvokerHttpTests {
 		testHttpFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null);
 	}
 
+	@Test
+	public void testErrorHandling() throws Exception {
+		try (FunctionInvoker handler = new FunctionInvoker(ErrorFunction.class)) {
+			HttpRequest request = Mockito.mock(HttpRequest.class);
+			HttpResponse response = Mockito.mock(HttpResponse.class);
+
+			StringWriter writer = new StringWriter();
+			when(response.getWriter()).thenReturn(new BufferedWriter(writer));
+
+			handler.service(request, response);
+			verify(response).setStatusCode(500, "The function is broken.");
+		}
+	}
+
 	private <I, O> void testHttpFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
-		try (FunctionInvoker handler = new FunctionInvoker(configurationClass);) {
+		try (FunctionInvoker handler = new FunctionInvoker(configurationClass)) {
 
 			HttpRequest request = Mockito.mock(HttpRequest.class);
 
@@ -89,6 +104,18 @@ public class FunctionInvokerHttpTests {
 			if (expectedOutput != null) {
 				assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 			}
+		}
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class ErrorFunction {
+
+		@Bean
+		public Supplier<String> supplier() {
+			return () -> {
+				throw new RuntimeException("The function is broken.");
+			};
 		}
 	}
 
