@@ -763,7 +763,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
 						convertedValue = FunctionTypeUtils.isTypeCollection(type)
-							? messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, type)
+							? messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType, FunctionTypeUtils.getPayloadType(type))
 							: messageConverter.fromMessage((Message<?>) value, (Class<?>) rawType);
 						if (logger.isDebugEnabled()) {
 							logger.debug("Converted from Message: " + convertedValue);
