@@ -17,14 +17,23 @@
 package org.springframework.cloud.function.context.catalog;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
+<<<<<<< HEAD
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+=======
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+>>>>>>> a97bdcaf... SimpleFunctionRegistryTests: reactive function test case
 import reactor.core.publisher.Flux;
 
 
@@ -207,6 +216,27 @@ public class SimpleFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testReactiveFunctionMessages() {
+		FunctionRegistration<ReactiveFunction> registration = new FunctionRegistration<>(new ReactiveFunction(), "reactive")
+			.type(FunctionType.of(ReactiveFunction.class));
+
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter);
+		catalog.register(registration);
+
+		Function lookedUpFunction = catalog.lookup("reactive");
+
+		assertThat(lookedUpFunction).isNotNull();
+		Flux<List<String>> result = (Flux<List<String>>) lookedUpFunction
+			.apply(Flux.just(MessageBuilder
+				.withPayload("[{\"name\":\"item1\"},{\"name\":\"item2\"}]")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build()
+			));
+		Assertions.assertIterableEquals(result.blockFirst(), Arrays.asList("item1", "item2"));
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testWithCustomMessageConverter() {
 		FunctionCatalog catalog = this.configureCatalog(CustomConverterConfiguration.class);
 		Function function = catalog.lookup("func");
@@ -334,6 +364,16 @@ public class SimpleFunctionRegistryTests {
 			return "i=" + t;
 		}
 
+	}
+
+	private static class ReactiveFunction implements Function<Flux<Message<List<Person>>>, Flux<List<String>>> {
+
+		@Override
+		public Flux<List<String>> apply(Flux<Message<List<Person>>> listFlux) {
+			return listFlux
+				.map(Message::getPayload)
+				.map(lst -> lst.stream().map(Person::getName).collect(Collectors.toList()));
+		}
 	}
 
 }

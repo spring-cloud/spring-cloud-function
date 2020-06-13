@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -71,7 +74,13 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 		if (targetClass.isInstance(message.getPayload())) {
 			return message.getPayload();
 		}
-		Object result = jsonMapper.fromJson(message.getPayload(), targetClass);
+		Object result = null;
+		if (conversionHint == null) {
+			result = jsonMapper.fromJson(message.getPayload(), targetClass);
+		}
+		else if (conversionHint instanceof ParameterizedType) {
+			result = jsonMapper.fromJson(message.getPayload(), (Type) conversionHint);
+		}
 		return result;
 	}
 

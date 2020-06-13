@@ -32,6 +32,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 
 import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.messaging.Message;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -136,6 +137,14 @@ public class FunctionTypeUtilsTests {
 		FunctionType type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(ReactiveFunctionImpl.class));
 		assertThat(String.class).isAssignableFrom(type.getInputType());
 		assertThat(Integer.class).isAssignableFrom(type.getOutputType());
+	}
+
+	@Test
+	public void testIsTypeCollection() {
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<String>() { }.getType())).isFalse();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<List<String>>() { }.getType())).isTrue();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<List<String>>>() { }.getType())).isTrue();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<Message<List<String>>>>() { }.getType())).isTrue();
 	}
 
 	private static Function<String, Integer> function() {
