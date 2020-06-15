@@ -84,7 +84,7 @@ final public class LocalServerTestSupport {
 		}
 	}
 
-	private static ServerProcess startServer(Class<?> springApplicationMainClass, String function)
+	static ServerProcess startServer(Class<?> springApplicationMainClass, String function)
 			throws InterruptedException, IOException {
 		int port = nextPort.getAndIncrement();
 
@@ -147,7 +147,7 @@ final public class LocalServerTestSupport {
 		}
 	}
 
-	private static class ServerProcess implements AutoCloseable {
+	static class ServerProcess implements AutoCloseable {
 
 		private final Process process;
 

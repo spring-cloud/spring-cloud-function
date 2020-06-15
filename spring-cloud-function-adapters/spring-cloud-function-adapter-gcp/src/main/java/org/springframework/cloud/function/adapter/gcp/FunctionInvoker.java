@@ -85,22 +85,17 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	 */
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
-		try {
-			Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
+		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
-			Message<BufferedReader> message = getInputType() == Void.class ? null
-					: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
-			Message<byte[]> result = function.apply(message);
+		Message<BufferedReader> message = getInputType() == Void.class ? null
+				: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
+		Message<byte[]> result = function.apply(message);
 
-			if (result != null) {
-				httpResponse.getWriter().write(new String(result.getPayload(), StandardCharsets.UTF_8));
-				for (Entry<String, Object> header : result.getHeaders().entrySet()) {
-					httpResponse.appendHeader(header.getKey(), header.getValue().toString());
-				}
+		if (result != null) {
+			httpResponse.getWriter().write(new String(result.getPayload(), StandardCharsets.UTF_8));
+			for (Entry<String, Object> header : result.getHeaders().entrySet()) {
+				httpResponse.appendHeader(header.getKey(), header.getValue().toString());
 			}
-		}
-		finally {
-			httpResponse.getWriter().close();
 		}
 	}
 
