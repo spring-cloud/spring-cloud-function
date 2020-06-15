@@ -18,14 +18,20 @@ package org.springframework.cloud.function.adapter.gcp.integration;
 
 import java.io.IOException;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.Test;
 
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.cloud.function.adapter.gcp.integration.LocalServerTestSupport.verify;
 
 /**
@@ -50,6 +56,40 @@ public class FunctionInvokerIntegrationTests {
 	@Test
 	public void testFooBar() {
 		verify(CloudFunctionMain.class, "foobar", new Foo("Hi"), new Bar("Hi"));
+	}
+
+	@Test
+	public void testErrorResponse() {
+		try (LocalServerTestSupport.ServerProcess serverProcess =
+						LocalServerTestSupport.startServer(ErrorFunction.class, "errorFunction")) {
+
+			TestRestTemplate testRestTemplate = new TestRestTemplate();
+
+			HttpHeaders headers = new HttpHeaders();
+			ResponseEntity<String> response = testRestTemplate.postForEntity(
+					"http://localhost:" + serverProcess.getPort(), new HttpEntity<>("test", headers),
+					String.class);
+
+			assertThat(response.getStatusCode().is5xxServerError()).isTrue();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * An example function which throws an error to test response code propagation.
+	 */
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	static class ErrorFunction {
+
+		@Bean
+		Supplier<String> errorFunction() {
+			return () -> {
+				throw new RuntimeException();
+			};
+		}
 	}
 
 	@Configuration

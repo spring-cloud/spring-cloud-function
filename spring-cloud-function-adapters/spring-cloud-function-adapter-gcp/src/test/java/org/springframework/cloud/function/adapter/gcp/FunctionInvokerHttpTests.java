@@ -83,9 +83,14 @@ public class FunctionInvokerHttpTests {
 
 			HttpResponse response = Mockito.mock(HttpResponse.class);
 			StringWriter writer = new StringWriter();
-			when(response.getWriter()).thenReturn(new BufferedWriter(writer));
 
+			BufferedWriter bufferedWriter = new BufferedWriter(writer);
+			when(response.getWriter()).thenReturn(bufferedWriter);
 			handler.service(request, response);
+
+			// Closing the writer is done by the Framework/caller.
+			bufferedWriter.close();
+
 			if (expectedOutput != null) {
 				assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 			}
