@@ -83,7 +83,7 @@ public class FunctionInvokerHttpTests {
 			when(response.getWriter()).thenReturn(new BufferedWriter(writer));
 
 			handler.service(request, response);
-			verify(response).setStatusCode(500, "The function is broken.");
+			verify(response).setStatusCode(500);
 		}
 	}
 
