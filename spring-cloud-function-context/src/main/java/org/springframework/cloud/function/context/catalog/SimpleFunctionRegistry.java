@@ -116,7 +116,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	void init(String functionDefinition) {
 		this.declaredFunctionDefinitions = StringUtils.hasText(functionDefinition) ? Arrays.asList(functionDefinition.split(";")) : Collections.emptyList();
 		if (this.declaredFunctionDefinitions.contains(RoutingFunction.FUNCTION_NAME)) {
-			Assert.isTrue(this.declaredFunctionDefinitions.size() == 1, "It is illegal to declare more then one function when using RoutingFunction");
+			Assert.isTrue(this.declaredFunctionDefinitions.size() == 1, "It is illegal to declare more than one function when using RoutingFunction");
 		}
 	}
 
@@ -209,7 +209,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		String definition = null;
 		if (this.registrationsByName.size() > 0) {
 			Assert
-				.isTrue(this.registrationsByName.size() == 1, "Found more then one function in local registry");
+				.isTrue(this.registrationsByName.size() == 1, "Found more than one function in local registry");
 			definition = this.registrationsByName.keySet().iterator().next();
 		}
 		return definition;
