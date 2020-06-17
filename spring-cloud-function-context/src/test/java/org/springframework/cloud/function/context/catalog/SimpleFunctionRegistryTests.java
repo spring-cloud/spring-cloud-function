@@ -24,18 +24,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
-<<<<<<< HEAD
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-=======
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
->>>>>>> a97bdcaf... SimpleFunctionRegistryTests: reactive function test case
 import reactor.core.publisher.Flux;
-
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
