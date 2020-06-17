@@ -11,7 +11,7 @@
 		{
 			"name": "spring.cloud.function.definition",
 			"type": "java.lang.String",
-			"description": "Name (e.g., 'foo') or composition instruction (e.g., 'foo|bar') used to resolve default function especially for cases where there is more then once function available in catalog.",
+			"description": "Name (e.g., 'foo') or composition instruction (e.g., 'foo|bar') used to resolve default function especially for cases where there is more than one function available in catalog.",
 			"defaultValue": ""
 		},
 		{
