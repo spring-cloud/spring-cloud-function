@@ -85,7 +85,7 @@ import org.springframework.util.StringUtils;
  */
 public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspector {
 
-	Log logger = LogFactory.getLog(SimpleFunctionRegistry.class);
+	protected Log logger = LogFactory.getLog(this.getClass());
 
 	/**
 	 * Identifies MessageConversionExceptions that happen when input can't be converted.
