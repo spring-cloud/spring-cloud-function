@@ -46,6 +46,8 @@ import org.springframework.util.ReflectionUtils;
  * Set of utility operations to interrogate function definitions.
  *
  * @author Oleg Zhurakousky
+ * @author Andrey Shlykov
+ *
  * @since 3.0
  */
 public final class FunctionTypeUtils {
@@ -63,14 +65,21 @@ public final class FunctionTypeUtils {
 	 * @return 'true' if this type represents a {@link Collection}. Otherwise 'false'.
 	 */
 	public static boolean isTypeCollection(Type type) {
-		type = getPayloadType(type);
+		type = getGenericType(type);
 		Type rawType = type instanceof ParameterizedType ? ((ParameterizedType) type).getRawType() : type;
 
 		return rawType instanceof Class<?> && Collection.class.isAssignableFrom((Class<?>) rawType);
 	}
 
-	public static Type getPayloadType(Type type) {
-		if (isPublisher(type)) {
+	/**
+	 * A convenience method identical to {@link #getImmediateGenericType(Type, int)}
+	 * for cases when provided 'type' is {@link Publisher} or {@link Message}.
+	 *
+	 * @param type type to interrogate
+	 * @return generic type if possible otherwise the same type as provided
+	 */
+	public static Type getGenericType(Type type) {
+		if (isPublisher(type) || isMessage(type)) {
 			type = getImmediateGenericType(type, 0);
 		}
 		if (isMessage(type)) {
