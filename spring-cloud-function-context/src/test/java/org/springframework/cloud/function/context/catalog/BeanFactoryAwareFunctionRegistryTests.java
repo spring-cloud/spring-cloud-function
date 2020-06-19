@@ -471,6 +471,40 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		registry.register(e);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testValueWrappedInMessageIfNecessary() {
+		FunctionCatalog catalog = this.configureCatalog(PojoToMessageFunctionCompositionConfiguration.class);
+		Function f = catalog.lookup("uppercase|echo");
+		assertThat(f.apply("hello")).isEqualTo("HELLO");
+		f = catalog.lookup("toJson|uppercasePerson");
+		assertThat(f.apply("Bubbles")).isEqualTo("BUBBLES");
+	}
+
+	@EnableAutoConfiguration
+	public static class PojoToMessageFunctionCompositionConfiguration {
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<Message<String>, String> echo() {
+			return v -> v.getPayload();
+		}
+
+		@Bean
+		public Function<String, String> toJson() {
+			return v -> "{\"id\":1, \"name\":\"" + v + "\"}";
+		}
+
+		@Bean
+		public Function<Message<Person>, String> uppercasePerson() {
+			return v -> v.getPayload().getName().toUpperCase();
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class EmptyConfiguration {
 
