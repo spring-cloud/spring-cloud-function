@@ -91,7 +91,7 @@ public class SimpleFunctionRegistryTests {
 		catalog.register(registration);
 
 		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("hello");
-		assertThat(lookedUpFunction).isNotNull(); // becouse we only have one and can look it up with any name
+		assertThat(lookedUpFunction).isNotNull(); // because we only have one and can look it up with any name
 		FunctionRegistration<TestFunction> registration2 = new FunctionRegistration<>(
 				function, "foo2").type(FunctionType.of(TestFunction.class));
 		catalog.register(registration2);

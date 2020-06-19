@@ -760,6 +760,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				if (rawType instanceof ParameterizedType) {
 					rawType = ((ParameterizedType) rawType).getRawType();
 				}
+				if (value != null && !(value instanceof Message) && FunctionTypeUtils.isMessage(type)) {
+					value = new GenericMessage<>(value);
+					convertedValue = value;
+				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
 						convertedValue = FunctionTypeUtils.isTypeCollection(type)
