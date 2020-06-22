@@ -62,7 +62,7 @@ endpoints and/or message stream listeners/publishers with RabbitMQ, Kafka etc.
 * _Adapters to expose function to the outside world as HTTP endpoints etc._
 * _Deploying a JAR file containing such an application context with an isolated classloader, so that you can pack them together in a single JVM._
 * _Compiling strings which are Java function bodies into bytecode, and then turning them into `@Beans` that can be wrapped as above._
-* _Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers._
+* _Adapters for https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS Lambda], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-gcp[Google Cloud Functions], https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-adapters/spring-cloud-function-adapter-openwhisk[Apache OpenWhisk] and possibly other "serverless" service providers._
 
 == Getting Started
 
@@ -163,6 +163,11 @@ https://www.springsource.com/developer/sts[Spring Tools Suite] or
 https://eclipse.org[Eclipse] when working with the code. We use the
 https://eclipse.org/m2e/[m2eclipse] eclipse plugin for maven support. Other IDEs and tools
 should also work without issue as long as they use Maven 3.3.3 or better.
+
+==== Activate the Spring Maven profile
+Spring Cloud projects require the 'spring' Maven profile to be activated to resolve
+the spring milestone and snapshot repositories. Use your preferred IDE to set this
+profile to be active, or you may experience build errors.
 
 ==== Importing into eclipse with m2eclipse
 We recommend the https://eclipse.org/m2e/[m2eclipse] eclipse plugin when working with
