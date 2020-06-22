@@ -9,25 +9,17 @@
 		<artifactId>spring-cloud-function-parent</artifactId>
 		<version>3.0.8.RELEASE</version>
 	</parent>
-	<packaging>pom</packaging>
+	<packaging>jar</packaging>
 	<name>Spring Cloud Function Docs</name>
 	<description>Spring Cloud Function Docs</description>
 	<properties>
 		<docs.main>spring-cloud-function</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 		<maven.plugin.plugin.version>3.4</maven.plugin.plugin.version>
+		<upload-docs-zip.phase>deploy</upload-docs-zip.phase>
+		<maven-deploy-plugin.deployZipRepositoryId>repo.spring.io</maven-deploy-plugin.deployZipRepositoryId>
+		<maven-deploy-plugin.deployZipUrl>https://repo.spring.io/libs-release-local</maven-deploy-plugin.deployZipUrl>
 	</properties>
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>2.8.2</version>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 	<profiles>
 		<profile>
 			<id>docs</id>
@@ -61,8 +53,26 @@
 						<artifactId>maven-antrun-plugin</artifactId>
 					</plugin>
 					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>build-helper-maven-plugin</artifactId>
+						<artifactId>maven-deploy-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>upload-docs-zip</id>
+								<phase>${upload-docs-zip.phase}</phase>
+								<goals>
+									<goal>deploy-file</goal>
+								</goals>
+								<configuration>
+									<generatePom>false</generatePom>
+									<groupId>${project.groupId}</groupId>
+									<artifactId>${project.artifactId}</artifactId>
+									<version>${project.version}</version>
+									<repositoryId>${maven-deploy-plugin.deployZipRepositoryId}</repositoryId>
+									<url>${maven-deploy-plugin.deployZipUrl}</url>
+									<file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
+									<packaging>zip;zip.type=docs;zip.deployed=false;</packaging>
+								</configuration>
+							</execution>
+						</executions>
 					</plugin>
 				</plugins>
 			</build>
