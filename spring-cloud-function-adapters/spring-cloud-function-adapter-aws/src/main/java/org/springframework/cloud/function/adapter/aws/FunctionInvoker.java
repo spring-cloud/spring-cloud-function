@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -174,11 +176,23 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (request instanceof Map) {
 			Map<String, ?> requestMap = (Map<String, ?>) request;
 			if (requestMap.containsKey("Records")) {
-				logger.info("Incoming request is Kinesis Event");
-				Assert.isTrue(inputType instanceof Class && KinesisEvent.class.isAssignableFrom((Class<?>) inputType) || mapInputType,
-						"Only KinesisEvent or Map type is supported as input type for functions that accept with Kinesis Event");
-				Object event = mapInputType ? requestMap : this.mapper.convertValue(requestMap, KinesisEvent.class);
-				messageBuilder = MessageBuilder.withPayload(event);
+				List<Map<String, ?>> records = (List<Map<String, ?>>) requestMap.get("Records");
+				Assert.notEmpty(records, "Incoming event has no records: " + requestMap);
+				boolean kinesisEvent = records.get(0).containsKey("kinesis");
+				if (kinesisEvent) {
+					logger.info("Incoming request is Kinesis Event");
+					Assert.isTrue(inputType instanceof Class && KinesisEvent.class.isAssignableFrom((Class<?>) inputType) || mapInputType,
+							"Only KinesisEvent or Map type is supported as input type for functions that accept Kinesis Event");
+					Object event = mapInputType ? requestMap : this.mapper.convertValue(requestMap, KinesisEvent.class);
+					messageBuilder = MessageBuilder.withPayload(event);
+				}
+				else {
+					logger.info("Incoming request is SQS Event");
+					Assert.isTrue(inputType instanceof Class && SQSEvent.class.isAssignableFrom((Class<?>) inputType) || mapInputType,
+							"Only SQSEvent or Map type is supported as input type for functions that accept SQS Event");
+					Object event = mapInputType ? requestMap : this.mapper.convertValue(requestMap, SQSEvent.class);
+					messageBuilder = MessageBuilder.withPayload(event);
+				}
 			}
 			else if (requestMap.containsKey("httpMethod")) { // API Gateway
 				logger.info("Incoming request is API Gateway");

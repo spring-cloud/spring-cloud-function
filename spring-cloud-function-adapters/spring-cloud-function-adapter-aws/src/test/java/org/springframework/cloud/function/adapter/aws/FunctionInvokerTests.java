@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,27 @@ public class FunctionInvokerTests {
 			"    }," +
 			"    \"isBase64Encoded\": false," +
 			"    \"body\": \"request_body\"" +
+			"}";
+
+	String sampleSQSEvent = "{\n" +
+			"  \"Records\": [\n" +
+			"    {\n" +
+			"      \"messageId\": \"19dd0b57-b21e-4ac1-bd88-01bbb068cb78\",\n" +
+			"      \"receiptHandle\": \"MessageReceiptHandle\",\n" +
+			"      \"body\": \"Hello from SQS!\",\n" +
+			"      \"attributes\": {\n" +
+			"        \"ApproximateReceiveCount\": \"1\",\n" +
+			"        \"SentTimestamp\": \"1523232000000\",\n" +
+			"        \"SenderId\": \"123456789012\",\n" +
+			"        \"ApproximateFirstReceiveTimestamp\": \"1523232000001\"\n" +
+			"      },\n" +
+			"      \"messageAttributes\": {},\n" +
+			"      \"md5OfBody\": \"7b270e59b47ff90a553787216d55d91d\",\n" +
+			"      \"eventSource\": \"aws:sqs\",\n" +
+			"      \"eventSourceARN\": \"arn:aws:sqs:eu-central-1:123456789012:MyQueue\",\n" +
+			"      \"awsRegion\": \"eu-central-1\"\n" +
+			"    }\n" +
+			"  ]\n" +
 			"}";
 
 	String sampleKinesisEvent = "{" +
@@ -317,6 +339,61 @@ public class FunctionInvokerTests {
 		assertThat(result).contains("49590338271490256608559692538361571095921575989136588898");
 	}
 
+	@Test
+	public void testSQSStringEvent() throws Exception {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
+			System.setProperty("spring.cloud.function.definition", "echoString");
+			FunctionInvoker invoker = new FunctionInvoker();
+
+			InputStream targetStream = new ByteArrayInputStream(this.sampleSQSEvent.getBytes());
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			invoker.handleRequest(targetStream, output, null);
+		});
+	}
+
+	@Test
+	public void testSQSEvent() throws Exception {
+		System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputSQSEvent");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSQSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sqs:eu-central-1:123456789012:MyQueue");
+	}
+
+	@Test
+	public void testSQSEventAsMessage() throws Exception {
+		System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputSQSEventAsMessage");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSQSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sqs:eu-central-1:123456789012:MyQueue");
+	}
+
+	@Test
+	public void testSQSEventAsMap() throws Exception {
+		System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputSQSEventAsMap");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSQSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sqs:eu-central-1:123456789012:MyQueue");
+	}
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayStringEventBody() throws Exception {
@@ -421,6 +498,39 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<Map<String, Object>, String> inputKinesisEventAsMap() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class SQSConfiguration {
+		@Bean
+		public Function<String, String> echoString() {
+			return v -> v;
+		}
+
+		@Bean
+		public Function<SQSEvent, String> inputSQSEvent() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
+		}
+
+		@Bean
+		public Function<Message<SQSEvent>, String> inputSQSEventAsMessage() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
+		}
+
+		@Bean
+		public Function<Map<String, Object>, String> inputSQSEventAsMap() {
 			return v -> {
 				System.out.println("Received: " + v);
 				return v.toString();
