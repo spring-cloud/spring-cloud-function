@@ -1,0 +1,7 @@
+
+spring.cloud.function.rsocket.bind-address=localhost
+spring.cloud.function.rsocket.bind-port=1234
+
+spring.cloud.function.rsocket.target-address=localhost
+spring.cloud.function.rsocket.target-port=1235
+
