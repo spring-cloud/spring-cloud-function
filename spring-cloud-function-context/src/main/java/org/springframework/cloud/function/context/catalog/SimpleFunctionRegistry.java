@@ -541,6 +541,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				logger.debug("Applying function: " + this.functionDefinition);
 			}
 
+
 			Object result;
 			if (input instanceof Publisher) {
 				input = this.composed ? input :
