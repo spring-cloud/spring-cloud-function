@@ -25,18 +25,24 @@ import io.rsocket.RSocket;
 import io.rsocket.core.RSocketConnector;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.util.DefaultPayload;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import reactor.util.retry.Retry;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.SocketUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
@@ -47,58 +53,79 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testRequestReplyFunction() throws Exception {
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).run(
-				"--logging.level.org.springframework.cloud.function=DEBUG",
-				"--spring.cloud.function.definition=uppercase",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=12345");
-
-		RSocket socket = RSocketConnector.connectWith(TcpClientTransport.create("localhost", 12345)).log()
-				.retryWhen(Retry.backoff(5, Duration.ofSeconds(1))).block();
-		socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8).subscribe(System.out::println);
-
-		Thread.sleep(1000);
-//		assertThat(result).isEqualTo("\"HELLO\"");
-	}
-
-	@Test
-	public void testRequestChannelFunction() throws Exception {
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).run(
-				"--logging.level.org.springframework.cloud.function=DEBUG",
-				"--spring.cloud.function.definition=uppercaseReactive",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=12345");
-
-		RSocket socket = RSocketConnector.connectWith(TcpClientTransport.create("localhost", 12345)).log()
-				.retryWhen(Retry.backoff(5, Duration.ofSeconds(1))).block();
-		socket.requestChannel(Flux.just(DefaultPayload.create("\"Ricky\""), DefaultPayload.create("\"Julien\""), DefaultPayload.create("\"Bubbles\"")))
-			.subscribe(System.out::println);
-
-		Thread.sleep(1000);
-//		assertThat(result).isEqualTo("\"HELLO\"");
-	}
-
-	@Test
-	public void testRequestReplyFunctionWithComposition() throws Exception {
+		int port = SocketUtils.findAvailableTcpPort();
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase",
 				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=12345");
+				"--spring.cloud.function.rsocket.bind-port=" + port);
+
+		RSocket socket = RSocketConnector.connectWith(TcpClientTransport.create("localhost", port)).log()
+				.retryWhen(Retry.backoff(5, Duration.ofSeconds(1))).block();
+		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+
+		StepVerifier
+		  .create(result)
+		  .expectNext("\"HELLO\"")
+		  .expectComplete()
+		  .verify();
+	}
+
+	@Test
+	public void testRequestReplyFunctionWithComposition() throws Exception {
+		int portA = SocketUtils.findAvailableTcpPort();
+		int portB = SocketUtils.findAvailableTcpPort();
+		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+				"--logging.level.org.springframework.cloud.function=DEBUG",
+				"--spring.cloud.function.definition=uppercase",
+				"--spring.cloud.function.rsocket.bind-address=localhost",
+				"--spring.cloud.function.rsocket.bind-port=" + portA);
 
 		new SpringApplicationBuilder(AdditionalFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=reverse", "--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=12346",
+				"--spring.cloud.function.rsocket.bind-port=" + portB,
 				"--spring.cloud.function.rsocket.target-address=localhost",
-				"--spring.cloud.function.rsocket.target-port=12345");
+				"--spring.cloud.function.rsocket.target-port=" + portA);
 
-		RSocket socket = RSocketConnector.connectWith(TcpClientTransport.create("localhost", 12346)).log()
+		RSocket socket = RSocketConnector.connectWith(TcpClientTransport.create("localhost", portB)).log()
 				.retryWhen(Retry.backoff(5, Duration.ofSeconds(1))).block();
-		socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8).subscribe(System.out::println);
-		Thread.sleep(1000);
-//		assertThat(result).isEqualTo("\"OLLEH\"");
+		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+		StepVerifier
+		  .create(result)
+		  .expectNext("\"OLLEH\"")
+		  .expectComplete()
+		  .verify();
 	}
+
+	@Test
+	public void testRequestChannelFunction() throws Exception {
+		int port = SocketUtils.findAvailableTcpPort();
+		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+				"--logging.level.org.springframework.cloud.function=DEBUG",
+				"--spring.cloud.function.definition=uppercaseReactive",
+				"--spring.cloud.function.rsocket.bind-address=localhost",
+				"--spring.cloud.function.rsocket.bind-port=" + port);
+
+		RSocket socket = RSocketConnector.connectWith(TcpClientTransport.create("localhost", port)).log()
+				.retryWhen(Retry.backoff(5, Duration.ofSeconds(1))).block();
+		Flux<String> result = socket.requestChannel(Flux.just(
+				DefaultPayload.create("\"Ricky\""),
+				DefaultPayload.create("\"Julien\""),
+				DefaultPayload.create("\"Bubbles\""))
+		)
+		.map(Payload::getDataUtf8);
+
+		StepVerifier
+		  .create(result)
+		  .expectNext("\"RICKY\"")
+		  .expectNext("\"JULIEN\"")
+		  .expectNext("\"BUBBLES\"")
+		  .expectComplete()
+		  .verify();
+	}
+
+
 
 //	@Test
 //	public void testFireAndForgetConsumer() throws Exception {
