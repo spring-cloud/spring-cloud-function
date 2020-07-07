@@ -28,6 +28,9 @@ import io.rsocket.transport.netty.server.TcpServerTransport;
 import io.rsocket.util.DefaultPayload;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.InitializingBean;
@@ -91,6 +94,36 @@ public class RSocketAutoConfiguration {
 				}
 			};
 		}
+		else if (isRequestChannel(functionType)) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Mapping function '" + definition + "' as RSocket `requestChannel`.");
+			}
+			clientRSocket = new RSocket() { // imperative function or Function<?, Mono> = requestResponse
+				@SuppressWarnings("unchecked")
+				@Override
+				public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
+					return Flux.from(payloads).transform(flux -> {
+						return flux.map(payload -> {
+							ByteBuffer buffer = payload.getData();
+							byte[] rawData = new byte[buffer.remaining()];
+							buffer.get(rawData);
+							if (payload.hasMetadata()) {
+								String metadata = payload.getMetadataUtf8(); // TODO see what to do with it
+							}
+							Message<byte[]> inputMessage = MessageBuilder.withPayload(rawData).build();
+							return inputMessage;
+						});
+					})
+					.transform(function)
+					.transform(resultFlux -> {
+						return ((Flux<Message<byte[]>>) resultFlux).map(message -> {
+							Payload p = DefaultPayload.create(message.getPayload());
+							return p;
+						});
+					});
+				}
+			};
+		}
 		else {
 			throw new UnsupportedOperationException("Only RSocket 'requestResponse' is currently supported");
 		}
@@ -120,6 +153,12 @@ public class RSocketAutoConfiguration {
 		Type inputType = FunctionTypeUtils.getInputType(functionType, 0);
 		Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
 		return !FunctionTypeUtils.isPublisher(inputType) && (!FunctionTypeUtils.isPublisher(outputType) || FunctionTypeUtils.isMono(outputType));
+	}
+
+	private static boolean isRequestChannel(Type functionType) {
+		Type inputType = FunctionTypeUtils.getInputType(functionType, 0);
+		Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
+		return FunctionTypeUtils.isPublisher(inputType) && FunctionTypeUtils.isFlux(outputType);
 	}
 
 	/**
