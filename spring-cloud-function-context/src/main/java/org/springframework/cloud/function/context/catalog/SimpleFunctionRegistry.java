@@ -686,7 +686,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				// Set the contentType header to the value of accept for "legacy" reasons. But, do not set the
 				// contentType header to the value of accept if it is a wildcard type, as this doesn't make sense.
 				// This also applies to the else branch below.
-				if (acceptedContentType.isConcrete()) {
+				if (acceptedContentType.isConcrete() && !headersMap.containsKey(MessageHeaders.CONTENT_TYPE)) {
 					headersMap.put(MessageHeaders.CONTENT_TYPE, acceptedContentType);
 				}
 			}

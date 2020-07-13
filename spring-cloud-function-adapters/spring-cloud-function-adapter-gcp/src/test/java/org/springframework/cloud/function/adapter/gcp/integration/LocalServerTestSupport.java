@@ -59,7 +59,7 @@ final public class LocalServerTestSupport {
 
 	private static final String SERVER_READY_STRING = "Started ServerConnector";
 
-	private static AtomicInteger nextPort = new AtomicInteger(8080);
+	private static AtomicInteger nextPort = new AtomicInteger(55555);
 
 	private LocalServerTestSupport() {
 	}
