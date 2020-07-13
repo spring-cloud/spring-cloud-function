@@ -23,7 +23,7 @@
 		<module>function-sample-azure</module>
 		<!--><module>function-sample-spring-integration</module>-->
 		<module>function-sample-gcp-http</module>
-		<module>function-sample-gcp-background</module>
+<!-- 		<module>function-sample-gcp-background</module> -->
 	</modules>
 
 	<build>
