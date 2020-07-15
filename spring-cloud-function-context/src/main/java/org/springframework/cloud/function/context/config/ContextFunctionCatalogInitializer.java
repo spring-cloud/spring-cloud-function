@@ -123,7 +123,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 			}
 
 			if (!this.context.getBeanFactory()
-					.containsBean(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+					.containsBeanDefinition(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 				// Switch off the ConfigurationClassPostProcessor
 				this.context.registerBean(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME,
 						DummyProcessor.class, () -> new DummyProcessor());
