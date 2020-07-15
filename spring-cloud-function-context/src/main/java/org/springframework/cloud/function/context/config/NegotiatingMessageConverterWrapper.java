@@ -35,6 +35,9 @@ import org.springframework.util.MimeType;
  * negotiation when <em>producing</em> messages. To that effect, messages should contain an "accept" header, that may
  * contain a wildcard type (such as {@code text/*}, which may be tested against every
  * {@link AbstractMessageConverter#getSupportedMimeTypes() supported mime type} of the delegate MessageConverter.
+ *
+ * @author Eric Bottard
+ * @author Oleg Zhurakousky
  */
 public final class NegotiatingMessageConverterWrapper implements SmartMessageConverter {
 
@@ -118,21 +121,23 @@ public final class NegotiatingMessageConverterWrapper implements SmartMessageCon
 		}
 
 		if (accepted != null) {
+			Message<?> result = null;
 			for (MimeType supportedConcreteType : delegate.getSupportedMimeTypes()) {
-				if (accepted.includes(supportedConcreteType)) {
+				if (supportedConcreteType.isWildcardType() || supportedConcreteType.isWildcardSubtype()) {
+					result = delegate.toMessage(payload, accessor.toMessageHeaders(), conversionHint);
+				}
+				if (result == null && accepted.includes(supportedConcreteType)) {
 					// Note the use of setHeader() which will set the value even if already present.
 					accessor.setHeader(MessageHeaders.CONTENT_TYPE, supportedConcreteType);
-					Message<?> result = delegate.toMessage(payload, accessor.toMessageHeaders(), conversionHint);
-					if (result != null) {
-						return result;
-					}
+					result = delegate.toMessage(payload, accessor.toMessageHeaders(), conversionHint);
+				}
+				if (result != null) {
+					return result;
 				}
 			}
 		}
 		return null;
 	}
-
-
 
 	@Override
 	public Message<?> toMessage(Object payload, MessageHeaders headers) {
