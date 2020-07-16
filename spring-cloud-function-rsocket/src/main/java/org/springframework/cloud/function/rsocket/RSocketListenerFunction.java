@@ -44,7 +44,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byte[]>>> {
+public class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Message<byte[]>>> {
 
 	private static String splash = "   ____         _             _______             __  ____              __  _             ___  ____         __       __ \n" +
 			"  / __/__  ____(_)__  ___ _  / ___/ /__  __ _____/ / / __/_ _____  ____/ /_(_)__  ___    / _ \\/ __/__  ____/ /_____ / /_\n" +
@@ -53,7 +53,7 @@ class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byt
 			"   /_/              /___/                                                                                               \n" +
 			"";
 
-	private static Log logger = LogFactory.getLog(RSocketFunction.class);
+	private static Log logger = LogFactory.getLog(RSocketListenerFunction.class);
 
 	private final InetSocketAddress listenAddress;
 
@@ -61,7 +61,7 @@ class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byt
 
 	private Disposable rsocketConnection;
 
-	RSocketFunction(FunctionInvocationWrapper targetFunction, InetSocketAddress listenAddress) {
+	RSocketListenerFunction(FunctionInvocationWrapper targetFunction, InetSocketAddress listenAddress) {
 		this.listenAddress = listenAddress;
 		this.targetFunction = targetFunction;
 	}
@@ -179,9 +179,8 @@ class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byt
 
 	private void printSplashScreen(String definition, Type type) {
 		System.out.println(splash);
-		System.out.println("Function Definition: " + definition + ":[" + type + "]");
+		System.out.println("Function Definition: " + definition + "; T[" + type + "]");
 		System.out.println("RSocket Listen Address: " + this.listenAddress);
-//		System.out.println("RSocket Target Address: " + this.outputAddress);
 		System.out.println("======================================================\n");
 	}
 
