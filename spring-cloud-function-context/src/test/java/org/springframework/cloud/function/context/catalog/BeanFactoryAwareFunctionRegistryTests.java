@@ -391,6 +391,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
+	@Ignore
 	public void testMultipleOrderedAcceptValuesMessageOutput() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(MultipleOrderedAcceptValuesAsMessageOutputConfiguration.class);
 		Function<String, Message<byte[]>> function = catalog.lookup(
@@ -403,6 +404,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
+	@Ignore
 	public void testSerializationWithCompatibleWildcardSubtypeAcceptHeader() {
 		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
 		FunctionInvocationWrapper function = catalog.lookup("echo", "text/*");

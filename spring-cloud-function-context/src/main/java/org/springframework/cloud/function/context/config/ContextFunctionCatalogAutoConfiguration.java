@@ -47,7 +47,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
-import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
@@ -93,17 +92,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 		}
 
+//		mcList = mcList.stream()
+//				.filter(c -> isConverterEligible(c))
+//				.map(converter -> {
+//					return converter instanceof AbstractMessageConverter
+//							? NegotiatingMessageConverterWrapper.wrap((AbstractMessageConverter) converter)
+//									: converter;
+//				})
+//				.collect(Collectors.toList());
+//		mcList.add(NegotiatingMessageConverterWrapper.wrap(new JsonMessageConverter(jsonMapper)));
+//		mcList.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
+//		mcList.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
+
 		mcList = mcList.stream()
 				.filter(c -> isConverterEligible(c))
-				.map(converter -> {
-					return converter instanceof AbstractMessageConverter
-							? NegotiatingMessageConverterWrapper.wrap((AbstractMessageConverter) converter)
-									: converter;
-				})
 				.collect(Collectors.toList());
-		mcList.add(NegotiatingMessageConverterWrapper.wrap(new JsonMessageConverter(jsonMapper)));
-		mcList.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
-		mcList.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
+		mcList.add(new JsonMessageConverter(jsonMapper));
+		mcList.add(new ByteArrayMessageConverter());
+		mcList.add(new StringMessageConverter());
 
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new CompositeMessageConverter(mcList);
