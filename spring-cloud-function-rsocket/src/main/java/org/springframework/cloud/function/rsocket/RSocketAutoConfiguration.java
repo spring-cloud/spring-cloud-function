@@ -69,7 +69,7 @@ public class RSocketAutoConfiguration {
 
 		private final RSocketFunctionProperties rSocketFunctionProperties;
 
-		private RSocketFunction invocableFunction;
+		private RSocketListenerFunction invocableFunction;
 
 		private GenericApplicationContext context;
 
@@ -82,7 +82,7 @@ public class RSocketAutoConfiguration {
 		@Override
 		public void afterPropertiesSet() throws Exception {
 			String definition = this.functionProperties.getDefinition();
-			this.registerRsocketProxiesIfNecessary(definition);
+			this.registerRsocketForwardingFunctionIfNecessary(definition);
 			//TODO externalize content-type
 			FunctionInvocationWrapper function = functionCatalog.lookup(definition, "application/json");
 			if (function.isSupplier()) {
@@ -93,21 +93,20 @@ public class RSocketAutoConfiguration {
 					.createUnresolved(this.rSocketFunctionProperties.getBindAddress(), this.rSocketFunctionProperties.getBindPort());
 
 			if (this.invocableFunction == null) {
-				this.invocableFunction = new RSocketFunction(function, bindAddress);
+				this.invocableFunction = new RSocketListenerFunction(function, bindAddress);
 				this.invocableFunction.start();
 			}
 		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
-		private void registerRsocketProxiesIfNecessary(String definition) {
+		private void registerRsocketForwardingFunctionIfNecessary(String definition) {
 			String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
-
-//			InetSocketAddress listenAddress = InetSocketAddress
-//					.createUnresolved(this.rSocketFunctionProperties.getBindAddress(), this.rSocketFunctionProperties.getBindPort());
-
 
 			for (String name : names) {
 				if (!this.context.containsBean(name)) { // this means RSocket
+					if (logger.isDebugEnabled()) {
+						logger.debug("Registering rsocket forwarder for '" + name + "' function.");
+					}
 					String[] functionToRSocketDefinition = StringUtils.delimitedListToStringArray(name, ">");
 					Assert.isTrue(functionToRSocketDefinition.length == 2, "Must only contain one output redirect");
 					FunctionInvocationWrapper function = functionCatalog.lookup(functionToRSocketDefinition[0], "application/json");
@@ -119,11 +118,8 @@ public class RSocketAutoConfiguration {
 					RSocketForwardingFunction rsocketFunction = new RSocketForwardingFunction(function, outputAddress);
 					FunctionRegistration functionRegistration = new FunctionRegistration(rsocketFunction, name);
 
-					functionRegistration.type(FunctionTypeUtils.discoverFunctionTypeFromClass(RSocketFunction.class));
+					functionRegistration.type(FunctionTypeUtils.discoverFunctionTypeFromClass(RSocketListenerFunction.class));
 					((FunctionRegistry) this.functionCatalog).register(functionRegistration);
-//
-//					this.invocableFunction = rsocketFunction;
-//					this.invocableFunction.start();
 				}
 			}
 		}

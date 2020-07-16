@@ -33,10 +33,6 @@ public class RSocketFunctionProperties {
 
 	private int bindPort = 55555;
 
-//	private String targetAddress;
-//
-//	private int targetPort;
-
 	public String getBindAddress() {
 		return bindAddress;
 	}
@@ -52,20 +48,4 @@ public class RSocketFunctionProperties {
 	public void setBindPort(int bindPort) {
 		this.bindPort = bindPort;
 	}
-
-//	public String getTargetAddress() {
-//		return targetAddress;
-//	}
-//
-//	public void setTargetAddress(String targetAddress) {
-//		this.targetAddress = targetAddress;
-//	}
-
-//	public int getTargetPort() {
-//		return targetPort;
-//	}
-//
-//	public void setTargetPort(int targetPort) {
-//		this.targetPort = targetPort;
-//	}
 }
