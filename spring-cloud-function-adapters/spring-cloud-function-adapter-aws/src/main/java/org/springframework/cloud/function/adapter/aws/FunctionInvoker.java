@@ -32,6 +32,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
+import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -178,12 +179,18 @@ public class FunctionInvoker implements RequestStreamHandler {
 			if (requestMap.containsKey("Records")) {
 				List<Map<String, ?>> records = (List<Map<String, ?>>) requestMap.get("Records");
 				Assert.notEmpty(records, "Incoming event has no records: " + requestMap);
-				boolean kinesisEvent = records.get(0).containsKey("kinesis");
-				if (kinesisEvent) {
+				if (records.get(0).containsKey("kinesis")) {
 					logger.info("Incoming request is Kinesis Event");
 					Assert.isTrue(inputType instanceof Class && KinesisEvent.class.isAssignableFrom((Class<?>) inputType) || mapInputType,
 							"Only KinesisEvent or Map type is supported as input type for functions that accept Kinesis Event");
 					Object event = mapInputType ? requestMap : this.mapper.convertValue(requestMap, KinesisEvent.class);
+					messageBuilder = MessageBuilder.withPayload(event);
+				}
+				else if (records.get(0).containsKey("s3")) {
+					logger.info("Incoming request is S3 Event");
+					Assert.isTrue(inputType instanceof Class && S3Event.class.isAssignableFrom((Class<?>) inputType) || mapInputType,
+							"Only S3Event or Map type is supported as input type for functions that accept S3 Event");
+					Object event = mapInputType ? requestMap : this.mapper.convertValue(requestMap, S3Event.class);
 					messageBuilder = MessageBuilder.withPayload(event);
 				}
 				else {
