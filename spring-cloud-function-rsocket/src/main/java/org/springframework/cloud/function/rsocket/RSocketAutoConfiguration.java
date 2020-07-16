@@ -93,7 +93,7 @@ public class RSocketAutoConfiguration {
 					.createUnresolved(this.rSocketFunctionProperties.getBindAddress(), this.rSocketFunctionProperties.getBindPort());
 
 			if (this.invocableFunction == null) {
-				this.invocableFunction = new RSocketFunction(function, bindAddress, null);
+				this.invocableFunction = new RSocketFunction(function, bindAddress);
 				this.invocableFunction.start();
 			}
 		}
@@ -102,8 +102,8 @@ public class RSocketAutoConfiguration {
 		private void registerRsocketProxiesIfNecessary(String definition) {
 			String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
 
-			InetSocketAddress listenAddress = InetSocketAddress
-					.createUnresolved(this.rSocketFunctionProperties.getBindAddress(), this.rSocketFunctionProperties.getBindPort());
+//			InetSocketAddress listenAddress = InetSocketAddress
+//					.createUnresolved(this.rSocketFunctionProperties.getBindAddress(), this.rSocketFunctionProperties.getBindPort());
 
 
 			for (String name : names) {
@@ -116,14 +116,14 @@ public class RSocketAutoConfiguration {
 					InetSocketAddress outputAddress = InetSocketAddress
 							.createUnresolved(hostPort[0], Integer.valueOf(hostPort[1]));
 
-					RSocketFunction rsocketFunction = new RSocketFunction(function, listenAddress, outputAddress);
+					RSocketForwardingFunction rsocketFunction = new RSocketForwardingFunction(function, outputAddress);
 					FunctionRegistration functionRegistration = new FunctionRegistration(rsocketFunction, name);
 
 					functionRegistration.type(FunctionTypeUtils.discoverFunctionTypeFromClass(RSocketFunction.class));
 					((FunctionRegistry) this.functionCatalog).register(functionRegistration);
-
-					this.invocableFunction = rsocketFunction;
-					this.invocableFunction.start();
+//
+//					this.invocableFunction = rsocketFunction;
+//					this.invocableFunction.start();
 				}
 			}
 		}
