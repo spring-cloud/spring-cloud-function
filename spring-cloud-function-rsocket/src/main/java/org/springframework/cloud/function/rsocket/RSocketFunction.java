@@ -19,13 +19,10 @@ package org.springframework.cloud.function.rsocket;
 import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.util.function.Function;
 
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
-import io.rsocket.core.RSocketConnector;
-import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.util.DefaultPayload;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,11 +30,9 @@ import org.reactivestreams.Publisher;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -62,23 +57,13 @@ class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byt
 
 	private final InetSocketAddress listenAddress;
 
-	private final InetSocketAddress outputAddress;
-
 	private final FunctionInvocationWrapper targetFunction;
-
-	private final RSocket rSocket;
 
 	private Disposable rsocketConnection;
 
-	RSocketFunction(FunctionInvocationWrapper targetFunction, InetSocketAddress listenAddress, @Nullable InetSocketAddress outputAddress) {
+	RSocketFunction(FunctionInvocationWrapper targetFunction, InetSocketAddress listenAddress) {
 		this.listenAddress = listenAddress;
-		this.outputAddress = outputAddress;
 		this.targetFunction = targetFunction;
-		this.rSocket = outputAddress == null ? null
-						: RSocketConnector.connectWith(TcpClientTransport.create(this.outputAddress))
-							.log()
-							.retryWhen(Retry.backoff(5, Duration.ofSeconds(1)))
-							.block();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -89,20 +74,7 @@ class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byt
 		}
 
 		Object rawResult = this.targetFunction.apply(input);
-		if (rawResult instanceof Message) {
-			Publisher<Message<byte[]>> resultMessage = null;
-			if (this.outputAddress != null) {
-				resultMessage = this.rSocket
-						.requestStream(DefaultPayload.create(((Message<byte[]>) rawResult).getPayload()))
-						.map(this::buildResultMessage);
-			}
-			resultMessage = rawResult instanceof Publisher ? (Publisher<Message<byte[]>>) rawResult : Mono.just((Message<byte[]>) rawResult);
-			return resultMessage;
-		}
-		else  {
-			return (Publisher<Message<byte[]>>) rawResult;
-		}
-
+		return rawResult instanceof Publisher ? (Publisher<Message<byte[]>>) rawResult : Mono.just((Message<byte[]>) rawResult);
 	}
 
 	void start() {
@@ -136,15 +108,7 @@ class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byt
 				else {
 					Message<byte[]> inputMessage = deserealizePayload(payload);
 					Mono<Message<byte[]>> result = Mono.from(function.apply(inputMessage));
-					if (rSocket != null) {
-						return result.flatMap(message -> {
-							Mono<Payload> requestResponse = rSocket.requestResponse(DefaultPayload.create(message.getPayload()));
-							return requestResponse;
-						});
-					}
-					else {
-						return result.map(message -> DefaultPayload.create(message.getPayload()));
-					}
+					return result.map(message -> DefaultPayload.create(message.getPayload()));
 				}
 			}
 
@@ -213,18 +177,11 @@ class RSocketFunction implements Function<Message<byte[]>, Publisher<Message<byt
 
 	}
 
-	private Message<byte[]> buildResultMessage(Payload payload) {
-		ByteBuffer payloadBuffer = payload.getData();
-		byte[] payloadData = new byte[payloadBuffer.remaining()];
-		payloadBuffer.get(payloadData);
-		return MessageBuilder.withPayload(payloadData).build();
-	}
-
 	private void printSplashScreen(String definition, Type type) {
 		System.out.println(splash);
 		System.out.println("Function Definition: " + definition + ":[" + type + "]");
 		System.out.println("RSocket Listen Address: " + this.listenAddress);
-		System.out.println("RSocket Target Address: " + this.outputAddress);
+//		System.out.println("RSocket Target Address: " + this.outputAddress);
 		System.out.println("======================================================\n");
 	}
 

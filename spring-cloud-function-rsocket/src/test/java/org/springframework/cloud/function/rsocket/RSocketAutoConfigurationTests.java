@@ -184,7 +184,7 @@ public class RSocketAutoConfigurationTests {
 
 		new SpringApplicationBuilder(AdditionalFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
-				"--spring.cloud.function.definition=reverse>localhost:" + portA,
+				"--spring.cloud.function.definition=reverse>localhost:" + portA + "|wrap",
 				"--spring.cloud.function.rsocket.bind-address=localhost",
 				"--spring.cloud.function.rsocket.bind-port=" + portB);
 
@@ -192,7 +192,7 @@ public class RSocketAutoConfigurationTests {
 		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
 		StepVerifier
 			.create(result)
-			.expectNext("\"OLLEHOLLEH\"")
+			.expectNext("\"(OLLEHOLLEH)\"")
 			.expectComplete()
 			.verify();
 	}
