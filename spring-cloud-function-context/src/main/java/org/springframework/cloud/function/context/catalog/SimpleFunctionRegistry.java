@@ -49,6 +49,7 @@ import reactor.util.function.Tuples;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -107,6 +108,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 	private List<String> declaredFunctionDefinitions;
 
+	@Autowired(required = false)
+	private FunctionAroundWrapper functionAroundWrapper;
+
 	public SimpleFunctionRegistry(ConversionService conversionService, @Nullable CompositeMessageConverter messageConverter) {
 		this.conversionService = conversionService;
 		this.messageConverter = messageConverter;
@@ -164,6 +168,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		FunctionInvocationWrapper function = (FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes);
+
+		if (this.functionAroundWrapper != null && function != null) {
+			return (T) new FunctionInvocationWrapper(function) {
+				@Override
+				Object doApply(Object input, boolean consumer, Function<Message, Message> enricher) {
+					return functionAroundWrapper.apply(input, function);
+				}
+			};
+		}
 		return (T) function;
 	}
 
@@ -406,6 +419,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		private final Field headersField;
 
+		private FunctionInvocationWrapper delegate;
+
+		FunctionInvocationWrapper(FunctionInvocationWrapper delegate) {
+			this.delegate = delegate;
+			this.target = delegate.target;
+			this.composed = delegate.composed;
+			this.functionType = delegate.functionType;
+			this.acceptedOutputMimeTypes = delegate.acceptedOutputMimeTypes;
+			this.functionDefinition = delegate.functionDefinition;
+			this.headersField = delegate.headersField;
+		}
+
 		FunctionInvocationWrapper(Object target, Type functionType, String functionDefinition, String... acceptedOutputMimeTypes) {
 			this.target = target;
 			this.composed = functionDefinition.contains("|") || target instanceof RoutingFunction;
@@ -414,6 +439,22 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.functionDefinition = functionDefinition;
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 			this.headersField.setAccessible(true);
+		}
+
+		@Override
+		public int hashCode() {
+			if (this.delegate != null) {
+				return this.delegate.hashCode();
+			}
+			return super.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this.delegate != null) {
+				return this.delegate.equals(o);
+			}
+			return super.equals(o);
 		}
 
 		public String getFunctionDefinition() {
@@ -536,7 +577,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private Object doApply(Object input, boolean consumer, Function<Message, Message> enricher) {
+		Object doApply(Object input, boolean consumer, Function<Message, Message> enricher) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Applying function: " + this.functionDefinition);
 			}
