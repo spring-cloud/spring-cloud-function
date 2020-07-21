@@ -353,7 +353,12 @@ The standard entry point is to add `spring-cloud-function-deployer` to the class
 ```
 
 
-At a minimum the user has to provide a `spring.cloud.function.location` which is a URL or resource location for the archive containing the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though it was created in an isolated class loader (by deault).
+At a minimum the user has to provide a `spring.cloud.function.location` which is a URL or resource location for the archive containing 
+the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` 
+for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so 
+that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function 
+registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though 
+it was created in an isolated class loader (by deault).
 
 Here is the example of deploying a JAR which contains an 'uppercase' function and invoking it .
 
@@ -370,6 +375,39 @@ public class DeployFunctionDemo {
 		Function<String, String> function = catalog.lookup("uppercase");
 		System.out.println(function.apply("hello"));
 	}
+}
+```
+
+And here is the example using Maven URI (taken from one of the tests in `FunctionDeployerTests`):
+
+```java
+@SpringBootApplication
+public class DeployFunctionDemo {
+
+	public static void main(String[] args) {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=maven://oz.demo:demo-uppercase:0.0.1-SNAPSHOT",
+				"--spring.cloud.function.function-class=oz.demo.uppercase.MyFunction" };
+
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<String, String> function = catalog.lookup("myFunction");
+
+		assertThat(function.apply("bob")).isEqualTo("BOB");
+	}
+}
+```
+
+Keep in mind that Maven resource such as local and remote repositories, user, password and more are resolved using default MavenProperties which 
+effectively use local defaults and will work for majority of cases. However if you need to customize you can simply provide a bean of type 
+`MavenProperties` where you can set additional properties (see example below).
+
+```java
+@Bean
+public MavenProperties mavenProperties() {
+	MavenProperties properties = new MavenProperties();
+	properties.setLocalRepository("target/it/");
+	return properties;
 }
 ```
 
