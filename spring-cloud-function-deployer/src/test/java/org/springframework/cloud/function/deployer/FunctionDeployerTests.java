@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.deployer;
 
+
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +31,13 @@ import reactor.util.function.Tuples;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,6 +51,19 @@ public class FunctionDeployerTests {
 	@BeforeEach
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	public void testWithMavenConfiguration() throws Exception {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=maven://oz.demo:demo-stream:0.0.1-SNAPSHOT",
+				"--spring.cloud.function.function-class=oz.demo.demostream.MyFunction" };
+
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<String, String> function = catalog.lookup("myFunction");
+
+		assertThat(function.apply("bob")).isEqualTo("BOB");
 	}
 
 	/*
@@ -376,5 +394,11 @@ public class FunctionDeployerTests {
 
 	@SpringBootApplication(proxyBeanMethods = false)
 	private static class DeployerApplication {
+		@Bean
+		public MavenProperties mavenProperties() {
+			MavenProperties properties = new MavenProperties();
+			properties.setLocalRepository("mavenrepo/");
+			return properties;
+		}
 	}
 }

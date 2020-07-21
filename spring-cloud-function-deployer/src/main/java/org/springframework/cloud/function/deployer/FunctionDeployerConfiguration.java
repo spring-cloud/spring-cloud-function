@@ -33,6 +33,8 @@ import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.loader.archive.Archive;
 import org.springframework.boot.loader.archive.ExplodedArchive;
 import org.springframework.boot.loader.archive.JarFileArchive;
+import org.springframework.cloud.deployer.resource.maven.MavenProperties;
+import org.springframework.cloud.deployer.resource.maven.MavenResourceLoader;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.context.SmartLifecycle;
@@ -42,6 +44,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertiesPropertySource;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -64,13 +68,23 @@ public class FunctionDeployerConfiguration {
 
 	@Bean
 	SmartLifecycle functionArchiveDeployer(FunctionDeployerProperties functionProperties,
-			FunctionRegistry functionRegistry, ApplicationArguments arguments) {
+			FunctionRegistry functionRegistry, ApplicationArguments arguments, @Nullable MavenProperties mavenProperties) {
 
 		ApplicationArguments updatedArguments = this.updateArguments(arguments);
 
 		Archive archive = null;
 		try {
-			File file = new File(functionProperties.getLocation());
+			File file;
+			String location = functionProperties.getLocation();
+			Assert.hasText(location, "`spring.cloud.function.location` property must be defined.");
+			if (location.startsWith("maven://")) {
+				MavenResourceLoader resourceLoader = new MavenResourceLoader(mavenProperties);
+				file = resourceLoader.getResource(location).getFile();
+			}
+			else {
+				file = new File(location);
+			}
+
 			if (!file.exists()) {
 				throw new IllegalStateException("Failed to create archive: " + functionProperties.getLocation() + " does not exist");
 			}
