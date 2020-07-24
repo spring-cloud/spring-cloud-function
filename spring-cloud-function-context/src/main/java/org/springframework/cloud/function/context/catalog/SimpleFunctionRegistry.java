@@ -787,6 +787,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						}
 					}
 					else if (!FunctionTypeUtils.isMessage(type)) {
+						if (this.payloadIsSpecialType(((Message<?>) value).getPayload())) {
+							return null;
+						}
 						convertedValue = ((Message<?>) convertedValue).getPayload();
 					}
 				}
@@ -836,7 +839,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			return rawType instanceof Class<?>
 				&& !(message.getPayload() instanceof Optional)
+				&& !this.payloadIsSpecialType(message.getPayload())
 				&& !(message.getPayload().getClass().isAssignableFrom(((Class<?>) rawType)));
 		}
+
+		private boolean payloadIsSpecialType(Object payload) {
+			return "org.springframework.kafka.support.KafkaNull".equals(payload.getClass().getName());
+		}
 	}
+
+
 }
