@@ -199,12 +199,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	@Override
 	public FunctionRegistration<?> getRegistration(Object function) {
 		FunctionRegistration<?> registration = this.registrationsByFunction.get(function);
-		// need to do this due to the deployer not wrapping the actual target into FunctionInvocationWrapper
-		// hence the lookup would need to be made by the actual target
 		if (registration == null && function instanceof FunctionInvocationWrapper) {
-			function = ((FunctionInvocationWrapper) function).target;
+			registration = this.registrationsByName.get(((FunctionInvocationWrapper) function).getFunctionDefinition());
+			if (registration == null) {
+				function = ((FunctionInvocationWrapper) function).target;
+				registration = this.registrationsByFunction.get(function);
+			}
 		}
-		return this.registrationsByFunction.get(function);
+		return registration;
 	}
 
 	Object locateFunction(String name) {
@@ -280,7 +282,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		if (this.registrationsByName.containsKey(definition)) {
 			Object targetFunction = this.registrationsByName.get(definition).getTarget();
 			Type functionType = this.registrationsByName.get(definition).getType().getType();
-			resultFunction = new FunctionInvocationWrapper(targetFunction, functionType, definition, acceptedOutputTypes);
+			if (targetFunction instanceof FunctionInvocationWrapper) {
+				resultFunction = new FunctionInvocationWrapper(((FunctionInvocationWrapper) targetFunction).getTarget(), functionType, definition, acceptedOutputTypes);
+			}
+			else {
+				resultFunction = new FunctionInvocationWrapper(targetFunction, functionType, definition, acceptedOutputTypes);
+			}
 		}
 		else {
 			String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
