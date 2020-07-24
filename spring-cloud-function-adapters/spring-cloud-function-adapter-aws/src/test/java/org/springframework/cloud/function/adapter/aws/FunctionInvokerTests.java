@@ -26,6 +26,7 @@ import java.util.function.Function;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
+import com.amazonaws.services.lambda.runtime.events.SNSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
@@ -88,6 +89,38 @@ public class FunctionInvokerTests {
 			"      \"eventSource\": \"aws:sqs\",\n" +
 			"      \"eventSourceARN\": \"arn:aws:sqs:eu-central-1:123456789012:MyQueue\",\n" +
 			"      \"awsRegion\": \"eu-central-1\"\n" +
+			"    }\n" +
+			"  ]\n" +
+			"}";
+
+	String sampleSNSEvent = "{\n" +
+			"  \"Records\": [\n" +
+			"    {\n" +
+			"      \"EventVersion\": \"1.0\",\n" +
+			"      \"EventSubscriptionArn\": \"arn:aws:sns:us-east-2:123456789012:sns-lambda:21be56ed-a058-49f5-8c98-aedd2564c486\",\n" +
+			"      \"EventSource\": \"aws:sns\",\n" +
+			"      \"Sns\": {\n" +
+			"        \"SignatureVersion\": \"1\",\n" +
+			"        \"Timestamp\": \"2019-01-02T12:45:07.000Z\",\n" +
+			"        \"Signature\": \"tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==\",\n" +
+			"        \"SigningCertUrl\": \"https://sns.us-east-2.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem\",\n" +
+			"        \"MessageId\": \"95df01b4-ee98-5cb9-9903-4c221d41eb5e\",\n" +
+			"        \"Message\": \"Hello from SNS!\",\n" +
+			"        \"MessageAttributes\": {\n" +
+			"          \"Test\": {\n" +
+			"            \"Type\": \"String\",\n" +
+			"            \"Value\": \"TestString\"\n" +
+			"          },\n" +
+			"          \"TestBinary\": {\n" +
+			"            \"Type\": \"Binary\",\n" +
+			"            \"Value\": \"TestBinary\"\n" +
+			"          }\n" +
+			"        },\n" +
+			"        \"Type\": \"Notification\",\n" +
+			"        \"UnsubscribeUrl\": \"https://sns.us-east-2.amazonaws.com/?Action=Unsubscribe&amp;SubscriptionArn=arn:aws:sns:us-east-2:123456789012:test-lambda:21be56ed-a058-49f5-8c98-aedd2564c486\",\n" +
+			"        \"TopicArn\":\"arn:aws:sns:us-east-2:123456789012:sns-lambda\",\n" +
+			"        \"Subject\": \"TestInvoke\"\n" +
+			"      }\n" +
 			"    }\n" +
 			"  ]\n" +
 			"}";
@@ -435,6 +468,62 @@ public class FunctionInvokerTests {
 	}
 
 	@Test
+	public void testSNSStringEvent() throws Exception {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			System.setProperty("MAIN_CLASS", SNSConfiguration.class.getName());
+			System.setProperty("spring.cloud.function.definition", "echoString");
+			FunctionInvoker invoker = new FunctionInvoker();
+
+			InputStream targetStream = new ByteArrayInputStream(this.sampleSNSEvent.getBytes());
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			invoker.handleRequest(targetStream, output, null);
+		});
+	}
+
+	@Test
+	public void testSNSEvent() throws Exception {
+		System.setProperty("MAIN_CLASS", SNSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputSNSEvent");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSNSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sns");
+	}
+
+	@Test
+	public void testSNSEventAsMessage() throws Exception {
+		System.setProperty("MAIN_CLASS", SNSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputSNSEventAsMessage");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSNSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sns");
+	}
+
+	@Test
+	public void testSNSEventAsMap() throws Exception {
+		System.setProperty("MAIN_CLASS", SNSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputSNSEventAsMap");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSNSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sns");
+	}
+
+
+	@Test
 	public void testS3StringEvent() throws Exception {
 		Assertions.assertThrows(IllegalArgumentException.class, () -> {
 			System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
@@ -626,6 +715,39 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<Map<String, Object>, String> inputSQSEventAsMap() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class SNSConfiguration {
+		@Bean
+		public Function<String, String> echoString() {
+			return v -> v;
+		}
+
+		@Bean
+		public Function<SNSEvent, String> inputSNSEvent() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
+		}
+
+		@Bean
+		public Function<Message<SNSEvent>, String> inputSNSEventAsMessage() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
+		}
+
+		@Bean
+		public Function<Map<String, Object>, String> inputSNSEventAsMap() {
 			return v -> {
 				System.out.println("Received: " + v);
 				return v.toString();
