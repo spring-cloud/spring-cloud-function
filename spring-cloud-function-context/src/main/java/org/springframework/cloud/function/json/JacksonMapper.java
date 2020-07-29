@@ -23,16 +23,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
 public class JacksonMapper extends JsonMapper {
-
-	private static Log logger = LogFactory.getLog(JsonMapper.class);
 
 	private final ObjectMapper mapper;
 
@@ -62,7 +58,7 @@ public class JacksonMapper extends JsonMapper {
 			}
 		}
 		catch (Exception e) {
-			logger.warn("Failed to convert. Possible bug as the conversion probably shouldn't have been attampted here", e);
+			throw new IllegalStateException("Failed to convert. Possible bug as the conversion probably shouldn't have been attampted here", e);
 		}
 		return convertedValue;
 	}
