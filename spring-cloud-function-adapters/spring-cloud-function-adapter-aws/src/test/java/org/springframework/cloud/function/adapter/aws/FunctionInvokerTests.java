@@ -29,13 +29,14 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -359,15 +360,15 @@ public class FunctionInvokerTests {
 
 	@Test
 	public void testKinesisStringEvent() throws Exception {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			System.setProperty("MAIN_CLASS", KinesisConfiguration.class.getName());
-			System.setProperty("spring.cloud.function.definition", "echoString");
-			FunctionInvoker invoker = new FunctionInvoker();
+		System.setProperty("MAIN_CLASS", KinesisConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoString");
+		FunctionInvoker invoker = new FunctionInvoker();
 
-			InputStream targetStream = new ByteArrayInputStream(this.sampleKinesisEvent.getBytes());
-			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			invoker.handleRequest(targetStream, output, null);
-		});
+		InputStream targetStream = new ByteArrayInputStream(this.sampleKinesisEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("kinesisSchemaVersion");
 	}
 
 	@Test
@@ -414,15 +415,15 @@ public class FunctionInvokerTests {
 
 	@Test
 	public void testSQSStringEvent() throws Exception {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
-			System.setProperty("spring.cloud.function.definition", "echoString");
-			FunctionInvoker invoker = new FunctionInvoker();
+		System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoString");
+		FunctionInvoker invoker = new FunctionInvoker();
 
-			InputStream targetStream = new ByteArrayInputStream(this.sampleSQSEvent.getBytes());
-			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			invoker.handleRequest(targetStream, output, null);
-		});
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSQSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result.length()).isEqualTo(14); // some additional JSON formatting
 	}
 
 	@Test
@@ -469,15 +470,15 @@ public class FunctionInvokerTests {
 
 	@Test
 	public void testSNSStringEvent() throws Exception {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			System.setProperty("MAIN_CLASS", SNSConfiguration.class.getName());
-			System.setProperty("spring.cloud.function.definition", "echoString");
-			FunctionInvoker invoker = new FunctionInvoker();
+		System.setProperty("MAIN_CLASS", SNSConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoString");
+		FunctionInvoker invoker = new FunctionInvoker();
 
-			InputStream targetStream = new ByteArrayInputStream(this.sampleSNSEvent.getBytes());
-			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			invoker.handleRequest(targetStream, output, null);
-		});
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSNSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sns");
 	}
 
 	@Test
@@ -522,18 +523,17 @@ public class FunctionInvokerTests {
 		assertThat(result).contains("arn:aws:sns");
 	}
 
-
 	@Test
 	public void testS3StringEvent() throws Exception {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> {
-			System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
-			System.setProperty("spring.cloud.function.definition", "echoString");
-			FunctionInvoker invoker = new FunctionInvoker();
+		System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoString");
+		FunctionInvoker invoker = new FunctionInvoker();
 
-			InputStream targetStream = new ByteArrayInputStream(this.s3Event.getBytes());
-			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			invoker.handleRequest(targetStream, output, null);
-		});
+		InputStream targetStream = new ByteArrayInputStream(this.s3Event.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("s3SchemaVersion");
 	}
 
 	@Test
@@ -693,8 +693,11 @@ public class FunctionInvokerTests {
 	@Configuration
 	public static class SQSConfiguration {
 		@Bean
-		public Function<String, String> echoString() {
-			return v -> v;
+		public Function<Person, String> echoString() {
+			return v -> {
+				System.out.println("Echo: " + v);
+				return v.toString();
+			};
 		}
 
 		@Bean
@@ -720,6 +723,32 @@ public class FunctionInvokerTests {
 				return v.toString();
 			};
 		}
+
+		@Bean
+		public MyCustomMessageConverter messageConverter() {
+			return new MyCustomMessageConverter();
+		}
+	}
+
+	public static class MyCustomMessageConverter extends AbstractMessageConverter {
+
+		public MyCustomMessageConverter() {
+			super(new MimeType("*", "*"));
+		}
+
+		@Override
+		protected boolean supports(Class<?> clazz) {
+			return (Person.class.equals(clazz));
+		}
+
+		@Override
+		protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+			Object payload = message.getPayload();
+			String v = payload instanceof String ? (String) payload : new String((byte[]) payload);
+			Person person = new Person();
+			person.setName(v.substring(0, 10));
+			return person;
+		}
 	}
 
 	@EnableAutoConfiguration
@@ -727,7 +756,10 @@ public class FunctionInvokerTests {
 	public static class SNSConfiguration {
 		@Bean
 		public Function<String, String> echoString() {
-			return v -> v;
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
 		}
 
 		@Bean
@@ -833,6 +865,11 @@ public class FunctionInvokerTests {
 
 		public void setName(String name) {
 			this.name = name;
+		}
+
+		@Override
+		public String toString() {
+			return this.name;
 		}
 	}
 }
