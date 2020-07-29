@@ -77,8 +77,13 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 		}
 
 		Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
-		Object result = jsonMapper.fromJson(message.getPayload(), convertToType);
-		return result;
+		try {
+			return this.jsonMapper.fromJson(message.getPayload(), convertToType);
+		}
+		catch (Exception e) {
+			// ignore
+		}
+		return null;
 	}
 
 	@Override

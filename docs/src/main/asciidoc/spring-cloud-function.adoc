@@ -210,6 +210,140 @@ IMPORTANT: IMPORTANT: At the moment, function arity is *only* supported for reac
 where evaluation and computation on confluence of events typically requires view into a
 stream of events rather than single event.
 
+=== Type conversion (Content-Type negotiation)
+
+Content-Type negotiation is one of the core features of Spring Cloud Function as it allows to not only transform the incoming data to the types declared 
+by the function signature, but to do the same transformation during function composition making otherwise un-composable (by type) functions composable.
+
+To better understand the mechanics and the necessity behind content-type negotiation, we take a look at a very simple use case by 
+using the following function as an example:
+
+[source, java]
+----
+@Bean
+public Function<Person, String> personFunction {..}
+----
+
+The function shown in the preceding example expects a `Person` object as an argument and produces a String type as an output. If such function is
+invoked with the type `Person`, than all works fine. But typically function plays a role of a handler for the incoming data which most often comes
+in the raw format such as `byte[]`, `JSON String` etc. In order for the framework to succeed in passing the incoming data as an argument to 
+this function, it has to somehow transform the incoming data to a `Person` type. 
+ 
+Spring Cloud Function relies on two native to Spring mechanisms to accomplish that. 
+ 
+. _MessageConverter_ - to convert from incoming Message data to a type declared by the function.
+. _ConversionService_ - to convert from incoming non-Message data to a type declared by the function.
+ 
+This means that depending on the type of the raw data (Message or non-Message) Spring Cloud Function will apply one or the other mechanisms. 
+ 
+For most cases when dealing with functions that are invoked as part of some other request (e.g., HTTP, Messaging etc) the framework relies on `MessageConverters`, 
+since such requests already converted to Spring `Message`. In other words, the framework locates and applies the appropriate `MessageConverter`. 
+To accomplish that, the framework needs some instructions from the user. One of these instructions is already provided by the signature of the function 
+itself (Person type). Consequently, in theory, that should be (and, in some cases, is) enough. However, for the majority of use cases, in order to 
+select the appropriate `MessageConverter`, the framework needs an additional piece of information. That missing piece is `contentType` header.
+ 
+Such header usually comes as part of the Message where it is injected by the corresponding adapter that created such Message in the first place. 
+For example, HTTP POST request will have its content-type HTTP header copied to `contentType` header of the Message.
+ 
+For cases when such header does not exist framework relies on the default content type as `application/json`.
+
+
+==== Content Type versus Argument Type
+
+As mentioned earlier, for the framework to select the appropriate `MessageConverter`, it requires argument type and, optionally, content type information.
+The logic for selecting the appropriate `MessageConverter` resides with the argument resolvers which trigger right before the invocation of the user-defined 
+function (which is when the actual argument type is known to the framework).
+If the argument type does not match the type of the current payload, the framework delegates to the stack of the
+pre-configured `MessageConverters` to see if any one of them can convert the payload.
+
+The combination of `contentType` and argument type is the mechanism by which framework determines if message can be converted to a target type by locating 
+the appropriate `MessageConverter`.
+If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter` 
+(see `<<user-defined-message-converters>>`).
+
+NOTE: Do not expect `Message` to be converted into some other type based only on the `contentType`.
+Remember that the `contentType` is complementary to the target type.
+It is a hint, which `MessageConverter` may or may not take into consideration.
+
+==== Message Converters
+
+`MessageConverters` define two methods:
+
+[source, java]
+----
+Object fromMessage(Message<?> message, Class<?> targetClass);
+
+Message<?> toMessage(Object payload, @Nullable MessageHeaders headers);
+----
+
+It is important to understand the contract of these methods and their usage, specifically in the context of Spring Cloud Stream.
+
+The `fromMessage` method converts an incoming `Message` to an argument type.
+The payload of the `Message` could be any type, and it is
+up to the actual implementation of the `MessageConverter` to support multiple types.
+
+
+==== Provided MessageConverters
+
+As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
+The following list describes the provided `MessageConverters`, in order of precedence (the first `MessageConverter` that works is used):
+
+. `JsonMessageConverter`:  Supports conversion of the payload of the `Message` to/from POJO for cases when `contentType` is `application/json` using Jackson or Gson libraries (DEFAULT).
+. `ByteArrayMessageConverter`: Supports conversion of the payload of the `Message` from `byte[]` to `byte[]` for cases when `contentType` is `application/octet-stream`. It is essentially a pass through and exists primarily for backward compatibility.
+. `StringMessageConverter`: Supports conversion of any type to a `String` when `contentType` is `text/plain`.
+
+When no appropriate converter is found, the framework throws an exception. When that happens, you should check your code and configuration and ensure you did 
+not miss anything (that is, ensure that you provided a `contentType` by using a binding or a header).
+However, most likely, you found some uncommon case (such as a custom `contentType` perhaps) and the current stack of provided `MessageConverters`
+does not know how to convert. If that is the case, you can add custom `MessageConverter`. See <<user-defined-message-converters>>.
+
+[[user-defined-message-converters]]
+==== User-defined Message Converters
+
+Spring Cloud Function exposes a mechanism to define and register additional `MessageConverters`.
+To use it, implement `org.springframework.messaging.converter.MessageConverter`, configure it as a `@Bean`.
+It is then appended to the existing stack of `MessageConverter`s.
+
+NOTE: It is important to understand that custom `MessageConverter` implementations are added to the head of the existing stack.
+Consequently, custom `MessageConverter` implementations take precedence over the existing ones, which lets you override as well as add to the existing converters.
+
+The following example shows how to create a message converter bean to support a new content type called `application/bar`:
+
+[source,java]
+----
+@SpringBootApplication
+public static class SinkApplication {
+
+    ...
+
+    @Bean
+    public MessageConverter customMessageConverter() {
+        return new MyCustomMessageConverter();
+    }
+}
+
+public class MyCustomMessageConverter extends AbstractMessageConverter {
+
+    public MyCustomMessageConverter() {
+        super(new MimeType("application", "bar"));
+    }
+
+    @Override
+    protected boolean supports(Class<?> clazz) {
+        return (Bar.class.equals(clazz));
+    }
+
+    @Override
+    protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
+        Object payload = message.getPayload();
+        return (payload instanceof Bar ? payload : new Bar((byte[]) payload));
+    }
+}
+----
+
+
+
+
 === Kotlin Lambda support
 
 We also provide support for Kotlin lambdas (since v2.0).
