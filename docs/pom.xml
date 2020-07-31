@@ -43,16 +43,14 @@
 						<artifactId>maven-resources-plugin</artifactId>
 					</plugin>
 					<plugin>
+	                    <groupId>org.codehaus.mojo</groupId>
+	                    <artifactId>exec-maven-plugin</artifactId> 
+	                </plugin>
+					<plugin>
 						<groupId>org.asciidoctor</groupId>
 						<artifactId>asciidoctor-maven-plugin</artifactId>
-						<version>${asciidoctor-maven-plugin.version}</version>
-						<configuration>
-							<sourceDirectory>${project.build.directory}/refdocs/</sourceDirectory>
-							<attributes>
-								<spring-cloud-function-version>${project.version}</spring-cloud-function-version>
-							</attributes>
-						</configuration>
 					</plugin>
+					
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-antrun-plugin</artifactId>
@@ -61,6 +59,9 @@
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>build-helper-maven-plugin</artifactId>
 					</plugin>
+	                <plugin>
+	                    <artifactId>maven-deploy-plugin</artifactId>
+	                </plugin>
 				</plugins>
 			</build>
 		</profile>
