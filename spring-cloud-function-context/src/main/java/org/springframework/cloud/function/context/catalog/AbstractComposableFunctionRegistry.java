@@ -30,14 +30,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.function.core.FluxConsumer;
-import org.springframework.cloud.function.core.FluxSupplier;
 import org.springframework.cloud.function.core.FluxToMonoFunction;
 import org.springframework.cloud.function.core.IsolatedConsumer;
 import org.springframework.cloud.function.core.IsolatedFunction;
@@ -360,27 +357,28 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 			}
 		}
 		Object composedFunction = null;
-		if (a instanceof Supplier && b instanceof Function) {
-			Supplier<Flux<Object>> supplier = (Supplier<Flux<Object>>) a;
-			if (b instanceof FluxConsumer) {
-				if (supplier instanceof FluxSupplier) {
-					FluxConsumer<Object> fConsumer = ((FluxConsumer<Object>) b);
-					composedFunction = (Supplier<Mono<Void>>) () -> Mono.from(
-							supplier.get().compose(v -> fConsumer.apply(supplier.get())));
-				}
-				else {
-					throw new IllegalStateException(
-							"The provided supplier is finite (i.e., already composed with Consumer) "
-									+ "therefore it can not be composed with another consumer");
-				}
-			}
-			else {
-				Function<Object, Object> function = (Function<Object, Object>) b;
-				composedFunction = (Supplier<Object>) () -> function
-						.apply(supplier.get());
-			}
-		}
-		else if (a instanceof Function && b instanceof Function) {
+//		if (a instanceof Supplier && b instanceof Function) {
+//			Supplier<Flux<Object>> supplier = (Supplier<Flux<Object>>) a;
+//			if (b instanceof FluxConsumer) {
+//				if (supplier instanceof FluxSupplier) {
+//					FluxConsumer<Object> fConsumer = ((FluxConsumer<Object>) b);
+//					composedFunction = (Supplier<Mono<Void>>) () -> Mono.from(
+//							supplier.get().compose(v -> fConsumer.apply(supplier.get())));
+//				}
+//				else {
+//					throw new IllegalStateException(
+//							"The provided supplier is finite (i.e., already composed with Consumer) "
+//									+ "therefore it can not be composed with another consumer");
+//				}
+//			}
+//			else {
+//				Function<Object, Object> function = (Function<Object, Object>) b;
+//				composedFunction = (Supplier<Object>) () -> function
+//						.apply(supplier.get());
+//			}
+//		}
+//		else
+		if (a instanceof Function && b instanceof Function) {
 			Function<Object, Object> function1 = (Function<Object, Object>) a;
 			Function<Object, Object> function2 = (Function<Object, Object>) b;
 			if (function1 instanceof FluxToMonoFunction) {
