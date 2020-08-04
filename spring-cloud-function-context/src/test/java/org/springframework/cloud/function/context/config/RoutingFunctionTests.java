@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -89,7 +90,11 @@ public class RoutingFunctionTests {
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
-		Assertions.assertThrows(Exception.class, resultFlux::subscribe);
+
+		StepVerifier
+		.create(resultFlux)
+		.expectError()
+		.verify();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -101,7 +106,10 @@ public class RoutingFunctionTests {
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".routing-expression", "'echoFlux'").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
-		Assertions.assertThrows(Exception.class, resultFlux::subscribe);
+		StepVerifier
+		.create(resultFlux)
+		.expectError()
+		.verify();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
