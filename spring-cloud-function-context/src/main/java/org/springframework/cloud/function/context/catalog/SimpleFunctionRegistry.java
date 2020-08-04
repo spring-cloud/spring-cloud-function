@@ -142,7 +142,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		if (!routing && this.declaredFunctionDefinitions.size() > 0) {
 			if (StringUtils.hasText(definition)) {
-				if (this.declaredFunctionDefinitions.size() > 1 && !this.declaredFunctionDefinitions.contains(definition)) {
+				if (this.declaredFunctionDefinitions.size() > 1
+						&& !this.declaredFunctionDefinitions.contains(definition)
+						&& !this.registrationsByName.containsKey(definition)) {
 					logger.warn("Attempted to access un-declared function definition '" + definition + "'. Declared functions are '" + this.declaredFunctionDefinitions
 							+ "' specified via `spring.cloud.function.definition` property. If the intention is to access "
 							+ "any function available in FunctionCatalog, please remove `spring.cloud.function.definition` property.");
