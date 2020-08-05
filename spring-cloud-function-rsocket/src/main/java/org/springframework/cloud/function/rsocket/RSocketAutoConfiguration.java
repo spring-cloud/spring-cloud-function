@@ -82,6 +82,13 @@ public class RSocketAutoConfiguration {
 		@Override
 		public void afterPropertiesSet() throws Exception {
 			String definition = this.functionProperties.getDefinition();
+			if (!StringUtils.hasText(definition)) {
+				FunctionInvocationWrapper f = this.functionCatalog.lookup("");
+				if (f != null) {
+					definition = f.getFunctionDefinition();
+				}
+			}
+			Assert.isTrue(StringUtils.hasText(definition), "Failed to determine target function for RSocket.");
 			this.registerRsocketForwardingFunctionIfNecessary(definition);
 			//TODO externalize content-type
 			FunctionInvocationWrapper function = functionCatalog.lookup(definition, "application/json");
