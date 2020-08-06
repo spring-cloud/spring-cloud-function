@@ -590,7 +590,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 		ObjectMapper mapper = new ObjectMapper();
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("HELLO");
+		assertThat(result.get("body")).isEqualTo("\"HELLO\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -605,7 +605,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("JIM LAHEY");
+		assertThat(result.get("body")).isEqualTo("\"JIM LAHEY\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -621,7 +621,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("hello");
+		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -637,7 +637,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("hello");
+		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -653,7 +653,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("hello");
+		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
 	@EnableAutoConfiguration
