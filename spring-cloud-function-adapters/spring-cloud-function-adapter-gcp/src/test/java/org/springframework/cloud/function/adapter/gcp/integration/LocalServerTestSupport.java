@@ -32,7 +32,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.cloud.functions.invoker.runner.Invoker;
 import com.google.gson.Gson;
@@ -42,6 +41,7 @@ import org.springframework.cloud.function.adapter.gcp.FunctionInvoker;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,8 +58,6 @@ final public class LocalServerTestSupport {
 	private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
 
 	private static final String SERVER_READY_STRING = "Started ServerConnector";
-
-	private static AtomicInteger nextPort = new AtomicInteger(55555);
 
 	private LocalServerTestSupport() {
 	}
@@ -86,7 +84,7 @@ final public class LocalServerTestSupport {
 
 	static ServerProcess startServer(Class<?> springApplicationMainClass, String function)
 			throws InterruptedException, IOException {
-		int port = nextPort.getAndIncrement();
+		int port = SocketUtils.findAvailableTcpPort();
 
 		String signatureType = "http";
 		String target = FunctionInvoker.class.getCanonicalName();
