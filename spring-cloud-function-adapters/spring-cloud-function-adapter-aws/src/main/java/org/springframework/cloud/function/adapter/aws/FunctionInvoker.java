@@ -100,7 +100,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 				response.put("statusDescription", httpStatus.toString());
 			}
 
-			String body = new String(responseMessage.getPayload(), StandardCharsets.UTF_8).replaceAll("\"", "");
+			String body = new String(responseMessage.getPayload(), StandardCharsets.UTF_8).replaceAll("\\\"", "\"");
 			response.put("body", body);
 
 			Map<String, String> responseHeaders = new HashMap<>();
@@ -193,7 +193,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 				}
 				else {
 					Object body = requestMap.remove("body");
-					body = body instanceof String ? ("\"" + body + "\"").getBytes(StandardCharsets.UTF_8) : mapper.writeValueAsBytes(body);
+					body = body instanceof String ? String.valueOf(body).getBytes(StandardCharsets.UTF_8) : mapper.writeValueAsBytes(body);
 					messageBuilder = MessageBuilder.withPayload(body).copyHeaders(requestMap);
 				}
 			}
