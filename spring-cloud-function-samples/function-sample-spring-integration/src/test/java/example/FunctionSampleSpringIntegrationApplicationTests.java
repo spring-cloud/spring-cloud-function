@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package example;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ public class FunctionSampleSpringIntegrationApplicationTests {
 		httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<String> requestEntity = new HttpEntity<>("[\"foo\", \"bar\"]", httpHeaders);
 		HttpEntity<String> result = this.restTemplate.postForEntity("/uppercase", requestEntity, String.class);
-		assertEquals("[\"FOO\",\"BAR\"]", result.getBody());
+		assertThat(result.getBody()).isEqualTo("[\"FOO\",\"BAR\"]");
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class FunctionSampleSpringIntegrationApplication {
 
 	@Bean
 	public IntegrationFlow uppercaseFlow() {
-		return IntegrationFlows.from(MessageFunction.class, "uppercase")
+		return IntegrationFlows.from(MessageFunction.class, (gateway) -> gateway.beanName("uppercase"))
 				.<String, String>transform(String::toUpperCase)
 				.logAndReply(LoggingHandler.Level.WARN);
 	}
@@ -43,4 +43,5 @@ public class FunctionSampleSpringIntegrationApplication {
 	public interface MessageFunction extends Function<Message<String>, Message<String>> {
 
 	}
+
 }
