@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -33,6 +32,7 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
@@ -53,15 +53,15 @@ public class RSocketAutoConfiguration {
 
 
 	@Bean
-	public FunctionToDestinationBinder functionToDestinationBinder(FunctionCatalog functionCatalog,
+	public FunctionToRSocketBinder functionToDestinationBinder(FunctionCatalog functionCatalog,
 			FunctionProperties functionProperties, RSocketFunctionProperties rSocketFunctionProperties) {
-		return new FunctionToDestinationBinder(functionCatalog, functionProperties, rSocketFunctionProperties);
+		return new FunctionToRSocketBinder(functionCatalog, functionProperties, rSocketFunctionProperties);
 	}
 
 	/**
 	 *
 	 */
-	private static class FunctionToDestinationBinder implements InitializingBean, DisposableBean, ApplicationContextAware {
+	private static class FunctionToRSocketBinder implements InitializingBean, ApplicationContextAware, SmartLifecycle {
 
 		private final FunctionCatalog functionCatalog;
 
@@ -73,7 +73,9 @@ public class RSocketAutoConfiguration {
 
 		private GenericApplicationContext context;
 
-		FunctionToDestinationBinder(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
+		private boolean started;
+
+		FunctionToRSocketBinder(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
 				RSocketFunctionProperties rSocketFunctionProperties) {
 			this.functionCatalog = functionCatalog;
 			this.functionProperties = functionProperties;
@@ -99,10 +101,7 @@ public class RSocketAutoConfiguration {
 			InetSocketAddress bindAddress = InetSocketAddress
 					.createUnresolved(this.rSocketFunctionProperties.getBindAddress(), this.rSocketFunctionProperties.getBindPort());
 
-			if (this.invocableFunction == null) {
-				this.invocableFunction = new RSocketListenerFunction(function, bindAddress);
-				this.invocableFunction.start();
-			}
+			this.invocableFunction = new RSocketListenerFunction(function, bindAddress);
 		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -137,10 +136,20 @@ public class RSocketAutoConfiguration {
 		}
 
 		@Override
-		public void destroy() throws Exception {
-			if (this.invocableFunction != null) {
+		public void start() {
+			if (!this.isRunning() && this.invocableFunction != null) {
+				this.invocableFunction.start();
+			}
+		}
+		@Override
+		public void stop() {
+			if (this.isRunning() && this.invocableFunction != null) {
 				this.invocableFunction.stop();
 			}
+		}
+		@Override
+		public boolean isRunning() {
+			return this.started;
 		}
 	}
 }
