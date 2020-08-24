@@ -60,6 +60,7 @@ public class RSocketListenerFunction implements Function<Message<byte[]>, Publis
 	private final FunctionInvocationWrapper targetFunction;
 
 	private Disposable rsocketConnection;
+	private RSocket rsocket;
 
 	RSocketListenerFunction(FunctionInvocationWrapper targetFunction, InetSocketAddress listenAddress) {
 		this.listenAddress = listenAddress;
@@ -80,7 +81,9 @@ public class RSocketListenerFunction implements Function<Message<byte[]>, Publis
 	void start() {
 		Type functionType = this.targetFunction.getFunctionType();
 
-		RSocket rsocket = buildRSocket(this.targetFunction.getFunctionDefinition(), functionType, this);
+		if (rsocket == null) {
+			rsocket = buildRSocket(this.targetFunction, functionType, this);
+		}
 		if (this.listenAddress != null) {
 			this.rsocketConnection = RSocketConnectionUtils.createServerSocket(rsocket, this.listenAddress);
 			this.printSplashScreen(this.targetFunction.getFunctionDefinition(), functionType);
@@ -93,7 +96,15 @@ public class RSocketListenerFunction implements Function<Message<byte[]>, Publis
 		}
 	}
 
-	private RSocket buildRSocket(String definition, Type functionType, Function<Message<byte[]>, Publisher<Message<byte[]>>> function) {
+	public RSocket getRsocket() {
+		if (this.rsocket == null) {
+			start();
+		}
+		return this.rsocket;
+	}
+
+	private RSocket buildRSocket(FunctionInvocationWrapper targetFunction, Type functionType, Function<Message<byte[]>, Publisher<Message<byte[]>>> function) {
+		String definition = targetFunction.getFunctionDefinition();
 		RSocket clientRSocket = new RSocket() { // imperative function or Function<?, Mono> = requestResponse
 			@Override
 			public Mono<Payload> requestResponse(Payload payload) {
