@@ -29,9 +29,19 @@ import org.springframework.cloud.function.context.FunctionProperties;
 @ConfigurationProperties(prefix = FunctionProperties.PREFIX + ".rsocket")
 public class RSocketFunctionProperties {
 
-	private String bindAddress = "localhost";
+	private boolean enabled;
 
-	private int bindPort = 55555;
+	private String bindAddress;
+
+	private Integer bindPort;
+
+	public boolean isEnabled() {
+		return this.enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
 
 	public String getBindAddress() {
 		return bindAddress;
@@ -41,11 +51,11 @@ public class RSocketFunctionProperties {
 		this.bindAddress = bindAddress;
 	}
 
-	public int getBindPort() {
+	public Integer getBindPort() {
 		return bindPort;
 	}
 
-	public void setBindPort(int bindPort) {
+	public void setBindPort(Integer bindPort) {
 		this.bindPort = bindPort;
 	}
 }
