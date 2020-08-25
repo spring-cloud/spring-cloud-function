@@ -19,7 +19,7 @@ package org.springframework.cloud.function.rsocket;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.rsocket.routing.client.spring.SpringRouting;
+import io.rsocket.routing.client.spring.RoutingMetadata;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -85,10 +85,10 @@ public class RoutingBrokerTests {
 					"--io.rsocket.routing.broker.enabled=false");
 
 			RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
-			//SpringRouting routing = clientContext.getBean(SpringRouting.class);
+			//RoutingMetadata metadata = clientContext.getBean(RoutingMetadata.class);
 			Mono<String> result = requester.route("toupper") // used to find a messagemapping, so unused here
 				// auto creates metadata
-				//.metadata(routing.address("samplefn"))
+				//.metadata(metadata.address("samplefn"))
 				.data("\"hello\"")
 				.retrieveMono(String.class);
 
