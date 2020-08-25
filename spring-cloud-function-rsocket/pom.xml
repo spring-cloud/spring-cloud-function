@@ -38,6 +38,12 @@
 			<artifactId>spring-cloud-function-context</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>io.rsocket.routing</groupId>
+			<artifactId>rsocket-routing-client-spring</artifactId>
+			<version>${rsocket-routing.version}</version>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
@@ -51,12 +57,6 @@
 		    <groupId>io.projectreactor</groupId>
 		    <artifactId>reactor-test</artifactId>
 		    <scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.rsocket.routing</groupId>
-			<artifactId>rsocket-routing-client-spring</artifactId>
-			<version>${rsocket-routing.version}</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.rsocket.routing</groupId>

@@ -1,1 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.springframework.cloud.function.rsocket.RSocketAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.cloud.function.rsocket.RSocketAutoConfiguration,\
+org.springframework.cloud.function.rsocket.RSocketRoutingAutoConfiguration
