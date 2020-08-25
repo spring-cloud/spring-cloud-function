@@ -79,6 +79,7 @@ public class RoutingBrokerTests {
 					"--spring.cloud.function.rsocket.enabled=false",
 					"--io.rsocket.routing.client.enabled=true",
 					"--io.rsocket.routing.client.service-name=testclient",
+					"--io.rsocket.routing.client.address.toupper.service_name=samplefn",
 					"--io.rsocket.routing.client.brokers[0].host=localhost",
 					"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
 					"--io.rsocket.routing.broker.enabled=false");
@@ -87,7 +88,7 @@ public class RoutingBrokerTests {
 			SpringRouting routing = clientContext.getBean(SpringRouting.class);
 			Mono<String> result = requester.route("toupper") // used to find a messagemapping, so unused here
 				// auto creates metadata
-				.metadata(routing.address("samplefn"))
+				//.metadata(routing.address("samplefn"))
 				.data("\"hello\"")
 				.retrieveMono(String.class);
 
