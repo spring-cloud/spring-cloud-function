@@ -19,14 +19,11 @@ package org.springframework.cloud.function.rsocket;
 import java.net.InetSocketAddress;
 
 import io.rsocket.RSocket;
-import io.rsocket.SocketAcceptor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -41,7 +38,6 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.messaging.rsocket.RSocketConnectorConfigurer;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -55,7 +51,6 @@ import org.springframework.util.StringUtils;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ FunctionProperties.class, RSocketFunctionProperties.class })
 @ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
-@AutoConfigureBefore(name = "io.rsocket.routing.client.spring.RoutingClientAutoConfiguration")
 public class RSocketAutoConfiguration {
 
 	private static Log logger = LogFactory.getLog(RSocketAutoConfiguration.class);
@@ -66,18 +61,10 @@ public class RSocketAutoConfiguration {
 		return new FunctionToRSocketBinder(functionCatalog, functionProperties, rSocketFunctionProperties);
 	}
 
-	@Bean
-	@ConditionalOnClass(name = "io.rsocket.routing.client.spring.RoutingClientAutoConfiguration")
-	//TODO: move to broker specific auto config
-	public RSocketConnectorConfigurer functionRSocketConnectorConfigurer(
-			FunctionToRSocketBinder binder) {
-		return connector -> connector.acceptor(SocketAcceptor.with(binder.getRSocket()));
-	}
-
 	/**
 	 *
 	 */
-	private static class FunctionToRSocketBinder implements InitializingBean, ApplicationContextAware, SmartLifecycle {
+	static class FunctionToRSocketBinder implements InitializingBean, ApplicationContextAware, SmartLifecycle {
 
 		private final FunctionCatalog functionCatalog;
 
