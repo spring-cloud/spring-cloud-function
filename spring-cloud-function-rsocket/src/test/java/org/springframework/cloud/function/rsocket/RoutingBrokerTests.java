@@ -85,7 +85,7 @@ public class RoutingBrokerTests {
 					"--io.rsocket.routing.broker.enabled=false");
 
 			RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
-			SpringRouting routing = clientContext.getBean(SpringRouting.class);
+			//SpringRouting routing = clientContext.getBean(SpringRouting.class);
 			Mono<String> result = requester.route("toupper") // used to find a messagemapping, so unused here
 				// auto creates metadata
 				//.metadata(routing.address("samplefn"))
