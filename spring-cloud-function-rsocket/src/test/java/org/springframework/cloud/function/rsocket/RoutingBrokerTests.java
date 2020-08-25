@@ -16,12 +16,11 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.rsocket.routing.client.spring.RoutingMetadata;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -36,79 +35,90 @@ import org.springframework.util.SocketUtils;
 
 
 /**
- *
+ * @author Spencer Gibb
  * @author Oleg Zhurakousky
  * @since 3.1
  */
 public class RoutingBrokerTests {
 
+	ConfigurableApplicationContext functionContext;
+	ConfigurableApplicationContext brokerContext;
+	ConfigurableApplicationContext clientContext;
+
+	@AfterEach
+	public void cleanup() {
+		if (functionContext != null) {
+			functionContext.close();
+		}
+		if (brokerContext != null) {
+			brokerContext.close();
+		}
+		if (clientContext != null) {
+			clientContext.close();
+		}
+	}
+
 	@Test
-	public void testImperativeFunctionAsRequestReply() throws Exception {
+	public void testRoutingWithProperty() throws Exception {
+		this.setup(true);
+		RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
+		Mono<String> result = requester.route("toupper") // used to find a messagemapping, so unused here
+			// auto creates metadata
+			.data("\"hello\"")
+			.retrieveMono(String.class);
 
-		ConfigurableApplicationContext functionContext = null;
-		ConfigurableApplicationContext brokerContext = null;
-		ConfigurableApplicationContext clientContext = null;
-		try {
-			int routingBrokerProxyPort = SocketUtils.findAvailableTcpPort();
-			int routingBrokerClusterPort = SocketUtils.findAvailableTcpPort();
+		StepVerifier
+			.create(result)
+			.expectNext("\"HELLO\"")
+			.expectComplete()
+			.verify();
+	}
 
-			// start broker
-			brokerContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
-				"--logging.level.io.rsocket.routing.broker=TRACE",
-				"--spring.cloud.function.rsocket.enabled=false",
-				"--io.rsocket.routing.client.enabled=false",
-				"--io.rsocket.routing.broker.enabled=true",
+	@Test
+	public void testRoutingWithMessage() throws Exception {
+		this.setup(false);
+		RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
+		RoutingMetadata metadata = clientContext.getBean(RoutingMetadata.class);
+		Mono<String> result = requester.route("toupper") // used to find a messagemapping, so unused here
+			.metadata(metadata.address("samplefn"))
+			.data("\"hello\"")
+			.retrieveMono(String.class);
+
+		StepVerifier
+			.create(result)
+			.expectNext("\"HELLO\"")
+			.expectComplete()
+			.verify();
+	}
+
+	private void setup(boolean routingWithProperty) {
+		int routingBrokerProxyPort = SocketUtils.findAvailableTcpPort();
+		int routingBrokerClusterPort = SocketUtils.findAvailableTcpPort();
+		// start broker
+		brokerContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
+				"--logging.level.io.rsocket.routing.broker=TRACE", "--spring.cloud.function.rsocket.enabled=false",
+				"--io.rsocket.routing.client.enabled=false", "--io.rsocket.routing.broker.enabled=true",
 				"--io.rsocket.routing.broker.tcp.port=" + routingBrokerProxyPort,
 				"--io.rsocket.routing.broker.cluster.port=" + routingBrokerClusterPort);
 
-			// start function connecting to broker, service-name=samplefn
-			functionContext = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
-				.web(WebApplicationType.NONE).run(
-					"--logging.level.org.springframework.cloud.function=DEBUG",
-					"--io.rsocket.routing.client.enabled=true",
-					"--io.rsocket.routing.client.service-name=samplefn",
-					"--io.rsocket.routing.client.brokers[0].host=localhost",
-					"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
-					"--io.rsocket.routing.broker.enabled=false",
-					"--spring.cloud.function.definition=uppercase");
+		// start function connecting to broker, service-name=samplefn
+		functionContext = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE)
+				.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--io.rsocket.routing.client.enabled=true", "--io.rsocket.routing.client.service-name=samplefn",
+						"--io.rsocket.routing.client.brokers[0].host=localhost",
+						"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
+						"--io.rsocket.routing.broker.enabled=false", "--spring.cloud.function.definition=uppercase");
 
-			// start testclient connecting to broker, for RSocketRequester
-			clientContext = new SpringApplicationBuilder(SimpleConfiguration.class)
-				.web(WebApplicationType.NONE).run(
-					"--logging.level.io.rsocket.routing.client=TRACE",
-					"--spring.cloud.function.rsocket.enabled=false",
-					"--io.rsocket.routing.client.enabled=true",
-					"--io.rsocket.routing.client.service-name=testclient",
-					"--io.rsocket.routing.client.address.toupper.service_name=samplefn",
-					"--io.rsocket.routing.client.brokers[0].host=localhost",
-					"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
-					"--io.rsocket.routing.broker.enabled=false");
-
-			RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
-			//RoutingMetadata metadata = clientContext.getBean(RoutingMetadata.class);
-			Mono<String> result = requester.route("toupper") // used to find a messagemapping, so unused here
-				// auto creates metadata
-				//.metadata(metadata.address("samplefn"))
-				.data("\"hello\"")
-				.retrieveMono(String.class);
-
-			StepVerifier
-				.create(result)
-				.expectNext("\"HELLO\"")
-				.expectComplete()
-				.verify();
-		} finally {
-			if (functionContext != null) {
-				functionContext.close();
-			}
-			if (brokerContext != null) {
-				brokerContext.close();
-			}
-			if (clientContext != null) {
-				clientContext.close();
-			}
-		}
+		// start testclient connecting to broker, for RSocketRequester
+		clientContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
+				"--logging.level.io.rsocket.routing.client=TRACE", "--spring.cloud.function.rsocket.enabled=false",
+				"--io.rsocket.routing.client.enabled=true", "--io.rsocket.routing.client.service-name=testclient",
+				routingWithProperty ? "--io.rsocket.routing.client.address.toupper.service_name=samplefn" : "",
+				"--io.rsocket.routing.client.brokers[0].host=localhost",
+				"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
+				"--io.rsocket.routing.broker.enabled=false");
 	}
+
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -123,51 +133,6 @@ public class RoutingBrokerTests {
 		public Function<String, String> uppercase() {
 			return v -> {
 				return v.toUpperCase();
-			};
-		}
-
-		@Bean
-		public Function<String, String> concat() {
-			return v -> {
-				return v + v;
-			};
-		}
-
-		@Bean
-		public Function<String, String> echo() {
-			return v -> v;
-		}
-
-		@Bean
-		public Function<Flux<String>, Flux<String>> uppercaseReactive() {
-			return flux -> flux.map(v -> {
-				System.out.println("Uppercasing: " + v);
-				return v.toUpperCase();
-			});
-		}
-
-		@Bean
-		public Consumer<byte[]> log() {
-			return v -> {
-				System.out.println("==> In Consumer: " + new String(v));
-			};
-		}
-	}
-
-	@EnableAutoConfiguration
-	@Configuration
-	public static class AdditionalFunctionConfiguration {
-		@Bean
-		public Function<String, String> reverse() {
-			return v -> {
-				return new StringBuilder(v).reverse().toString();
-			};
-		}
-
-		@Bean
-		public Function<String, String> wrap() {
-			return v -> {
-				return "(" + v + ")";
 			};
 		}
 	}
