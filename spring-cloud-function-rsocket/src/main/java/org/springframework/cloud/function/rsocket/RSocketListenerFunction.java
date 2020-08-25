@@ -44,7 +44,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-public class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Message<byte[]>>> {
+class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Message<byte[]>>> {
 
 	private static String splash = "   ____         _             _______             __  ____              __  _             ___  ____         __       __ \n" +
 			"  / __/__  ____(_)__  ___ _  / ___/ /__  __ _____/ / / __/_ _____  ____/ /_(_)__  ___    / _ \\/ __/__  ____/ /_____ / /_\n" +
@@ -86,8 +86,8 @@ public class RSocketListenerFunction implements Function<Message<byte[]>, Publis
 		}
 		if (this.listenAddress != null) {
 			this.rsocketConnection = RSocketConnectionUtils.createServerSocket(rsocket, this.listenAddress);
-			this.printSplashScreen(this.targetFunction.getFunctionDefinition(), functionType);
 		}
+		this.printSplashScreen(this.targetFunction.getFunctionDefinition(), functionType);
 	}
 
 	void stop() {
@@ -191,7 +191,6 @@ public class RSocketListenerFunction implements Function<Message<byte[]>, Publis
 	private void printSplashScreen(String definition, Type type) {
 		System.out.println(splash);
 		System.out.println("Function Definition: " + definition + "; T[" + type + "]");
-		System.out.println("RSocket Listen Address: " + this.listenAddress);
 		System.out.println("======================================================\n");
 	}
 

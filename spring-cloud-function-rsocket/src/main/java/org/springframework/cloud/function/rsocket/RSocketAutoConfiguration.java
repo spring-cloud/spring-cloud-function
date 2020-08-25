@@ -51,7 +51,7 @@ import org.springframework.util.StringUtils;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ FunctionProperties.class, RSocketFunctionProperties.class })
 @ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
-public class RSocketAutoConfiguration {
+class RSocketAutoConfiguration {
 
 	private static Log logger = LogFactory.getLog(RSocketAutoConfiguration.class);
 

@@ -41,7 +41,7 @@ import org.springframework.messaging.rsocket.RSocketConnectorConfigurer;
 @ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
 @AutoConfigureBefore(RoutingClientAutoConfiguration.class)
 @AutoConfigureAfter(RSocketAutoConfiguration.class)
-public class RSocketRoutingAutoConfiguration {
+class RSocketRoutingAutoConfiguration {
 
 	@Bean
 	public RSocketConnectorConfigurer functionRSocketConnectorConfigurer(
