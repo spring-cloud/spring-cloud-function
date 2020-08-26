@@ -18,6 +18,7 @@ package org.springframework.cloud.function.rsocket;
 
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.function.Function;
 
 import io.rsocket.Payload;
@@ -26,14 +27,15 @@ import io.rsocket.util.DefaultPayload;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Wrapper over an instance of target Function (represented by {@link FunctionInvocationWrapper})
@@ -56,11 +58,13 @@ class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Mes
 
 	private final FunctionInvocationWrapper targetFunction;
 
-	private Disposable rsocketConnection;
 	private RSocket rsocket;
 
-	RSocketListenerFunction(FunctionInvocationWrapper targetFunction) {
+	private final JsonMapper jsonMapper;
+
+	RSocketListenerFunction(FunctionInvocationWrapper targetFunction, JsonMapper jsonMapper) {
 		this.targetFunction = targetFunction;
+		this.jsonMapper = jsonMapper;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -74,24 +78,14 @@ class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Mes
 		return rawResult instanceof Publisher ? (Publisher<Message<byte[]>>) rawResult : Mono.just((Message<byte[]>) rawResult);
 	}
 
-	void start() {
-		Type functionType = this.targetFunction.getFunctionType();
-
-		if (rsocket == null) {
-			rsocket = buildRSocket(this.targetFunction, functionType, this);
-		}
-		this.printSplashScreen(this.targetFunction.getFunctionDefinition(), functionType);
-	}
-
-	void stop() {
-		if (this.rsocketConnection != null) {
-			this.rsocketConnection.dispose();
-		}
-	}
-
 	public RSocket getRsocket() {
 		if (this.rsocket == null) {
-			start();
+			Type functionType = this.targetFunction.getFunctionType();
+
+			if (this.rsocket == null) {
+				this.rsocket = this.buildRSocket(this.targetFunction, functionType, this);
+			}
+			this.printSplashScreen(this.targetFunction.getFunctionDefinition(), functionType);
 		}
 		return this.rsocket;
 	}
@@ -112,7 +106,7 @@ class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Mes
 				else {
 					Message<byte[]> inputMessage = deserealizePayload(payload);
 					Mono<Message<byte[]>> result = Mono.from(function.apply(inputMessage));
-					return result.map(message -> DefaultPayload.create(message.getPayload()));
+					return result.map(message -> DefaultPayload.create(message.getPayload(), jsonMapper.toJson(message.getHeaders())));
 				}
 			}
 
@@ -167,15 +161,28 @@ class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Mes
 		return FunctionTypeUtils.isPublisher(inputType) && FunctionTypeUtils.isFlux(outputType);
 	}
 
-	@SuppressWarnings("rawtypes")
-	private static Message<byte[]> deserealizePayload(Payload payload) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private Message<byte[]> deserealizePayload(Payload payload) {
 		ByteBuffer buffer = payload.getData();
 		byte[] rawData = new byte[buffer.remaining()];
 		buffer.get(rawData);
+		Map<String, Object> headers = null;
 		if (payload.hasMetadata()) {
-			String metadata = payload.getMetadataUtf8(); // TODO see what to do with it
+			try {
+				ByteBuffer metadata = payload.getMetadata();
+				byte[] metadataBytes = new byte[metadata.remaining()];
+				metadata.get(metadataBytes);
+				headers = this.jsonMapper.fromJson(metadataBytes, Map.class);
+			}
+			catch (Exception e) {
+				//throw new IllegalStateException(e);
+				logger.warn("Failed to extract headers from metadata", e);
+			}
 		}
-		MessageBuilder builder = MessageBuilder.withPayload(rawData);
+		MessageBuilder builder =  MessageBuilder.withPayload(rawData);
+		if (!CollectionUtils.isEmpty(headers)) {
+			builder.copyHeaders(headers);
+		}
 		Message<byte[]> inputMessage = builder.build();
 		return inputMessage;
 
