@@ -96,23 +96,29 @@ public class RoutingBrokerTests {
 		int routingBrokerClusterPort = SocketUtils.findAvailableTcpPort();
 		// start broker
 		brokerContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
-				"--logging.level.io.rsocket.routing.broker=TRACE", "--spring.cloud.function.rsocket.enabled=false",
-				"--io.rsocket.routing.client.enabled=false", "--io.rsocket.routing.broker.enabled=true",
+				"--logging.level.io.rsocket.routing.broker=TRACE",
+				"--spring.cloud.function.rsocket.enabled=false",
+				"--io.rsocket.routing.client.enabled=false",
+				"--io.rsocket.routing.broker.enabled=true",
 				"--io.rsocket.routing.broker.tcp.port=" + routingBrokerProxyPort,
 				"--io.rsocket.routing.broker.cluster.port=" + routingBrokerClusterPort);
 
 		// start function connecting to broker, service-name=samplefn
 		functionContext = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE)
 				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--io.rsocket.routing.client.enabled=true", "--io.rsocket.routing.client.service-name=samplefn",
+						"--io.rsocket.routing.client.enabled=true",
+						"--io.rsocket.routing.client.service-name=samplefn",
 						"--io.rsocket.routing.client.brokers[0].host=localhost",
 						"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
-						"--io.rsocket.routing.broker.enabled=false", "--spring.cloud.function.definition=uppercase");
+						"--io.rsocket.routing.broker.enabled=false",
+						"--spring.cloud.function.definition=uppercase");
 
 		// start testclient connecting to broker, for RSocketRequester
 		clientContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
-				"--logging.level.io.rsocket.routing.client=TRACE", "--spring.cloud.function.rsocket.enabled=false",
-				"--io.rsocket.routing.client.enabled=true", "--io.rsocket.routing.client.service-name=testclient",
+				"--logging.level.io.rsocket.routing.client=TRACE",
+				"--spring.cloud.function.rsocket.enabled=false",
+				"--io.rsocket.routing.client.enabled=true",
+				"--io.rsocket.routing.client.service-name=testclient",
 				routingWithProperty ? "--io.rsocket.routing.client.address.toupper.service_name=samplefn" : "",
 				"--io.rsocket.routing.client.brokers[0].host=localhost",
 				"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
