@@ -48,8 +48,7 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + port);
+				"--spring.rsocket.server.port=" + port);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
 		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
@@ -67,8 +66,7 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + port);
+				"--spring.rsocket.server.port=" + port);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
 		Flux<String> result = socket.requestStream(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
@@ -86,8 +84,7 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + port);
+				"--spring.rsocket.server.port=" + port);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
 		Flux<String> result = socket.requestChannel(Flux.just(
@@ -111,8 +108,7 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + port);
+				"--spring.rsocket.server.port=" + port);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
 
@@ -131,8 +127,7 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + port);
+				"--spring.rsocket.server.port=" + port);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
 
@@ -151,8 +146,7 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + port);
+				"--spring.rsocket.server.port=" + port);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
 
@@ -179,14 +173,12 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase|concat",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + portA);
+				"--spring.rsocket.server.port=" + portA);
 
 		new SpringApplicationBuilder(AdditionalFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=reverse>localhost:" + portA + "|wrap",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + portB);
+				"--spring.rsocket.server.port=" + portB);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", portB), null);
 		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
@@ -203,8 +195,7 @@ public class RSocketAutoConfigurationTests {
 		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
-				"--spring.cloud.function.rsocket.bind-address=localhost",
-				"--spring.cloud.function.rsocket.bind-port=" + port);
+				"--spring.rsocket.server.port=" + port);
 
 		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
 

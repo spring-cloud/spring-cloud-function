@@ -19,13 +19,17 @@ package org.springframework.cloud.function.rsocket;
 import java.net.InetSocketAddress;
 
 import io.rsocket.RSocket;
+import io.rsocket.SocketAcceptor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.rsocket.context.RSocketServerBootstrap;
+import org.springframework.boot.rsocket.server.RSocketServerFactory;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -57,8 +61,16 @@ class RSocketAutoConfiguration {
 
 	@Bean
 	public FunctionToRSocketBinder functionToDestinationBinder(FunctionCatalog functionCatalog,
-			FunctionProperties functionProperties, RSocketFunctionProperties rSocketFunctionProperties) {
-		return new FunctionToRSocketBinder(functionCatalog, functionProperties, rSocketFunctionProperties);
+			FunctionProperties functionProperties) {
+		return new FunctionToRSocketBinder(functionCatalog, functionProperties);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	@ConditionalOnProperty("spring.rsocket.server.port")
+	RSocketServerBootstrap rSocketServerBootstrap(RSocketServerFactory rSocketServerFactory,
+			FunctionToRSocketBinder binder) {
+		return new RSocketServerBootstrap(rSocketServerFactory, SocketAcceptor.with(binder.getRSocket()));
 	}
 
 	/**
@@ -70,19 +82,15 @@ class RSocketAutoConfiguration {
 
 		private final FunctionProperties functionProperties;
 
-		private final RSocketFunctionProperties rSocketFunctionProperties;
-
 		private RSocketListenerFunction invocableFunction;
 
 		private GenericApplicationContext context;
 
 		private boolean started;
 
-		FunctionToRSocketBinder(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
-				RSocketFunctionProperties rSocketFunctionProperties) {
+		FunctionToRSocketBinder(FunctionCatalog functionCatalog, FunctionProperties functionProperties) {
 			this.functionCatalog = functionCatalog;
 			this.functionProperties = functionProperties;
-			this.rSocketFunctionProperties = rSocketFunctionProperties;
 		}
 
 		@Override
@@ -102,15 +110,7 @@ class RSocketAutoConfiguration {
 				throw new UnsupportedOperationException("Supplier is not currently supported for RSocket interaction");
 			}
 
-			if (StringUtils.hasText(rSocketFunctionProperties.getBindAddress())
-					&& rSocketFunctionProperties.getBindPort() != null) {
-				InetSocketAddress bindAddress = InetSocketAddress.createUnresolved(
-						this.rSocketFunctionProperties.getBindAddress(), this.rSocketFunctionProperties.getBindPort());
-				this.invocableFunction = new RSocketListenerFunction(function, bindAddress);
-			}
-			else {
-				this.invocableFunction = new RSocketListenerFunction(function, null);
-			}
+			this.invocableFunction = new RSocketListenerFunction(function);
 		}
 
 		RSocket getRSocket() {

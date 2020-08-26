@@ -24,6 +24,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
  * The prefix for these properties is `spring.cloud.function.rscocket`.
  *
  * @author Oleg Zhurakousky
+ * @author Spencer Gibb
  * @since 3.1
  */
 @ConfigurationProperties(prefix = FunctionProperties.PREFIX + ".rsocket")
@@ -31,31 +32,11 @@ public class RSocketFunctionProperties {
 
 	private boolean enabled;
 
-	private String bindAddress;
-
-	private Integer bindPort;
-
 	public boolean isEnabled() {
 		return this.enabled;
 	}
 
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
-	}
-
-	public String getBindAddress() {
-		return bindAddress;
-	}
-
-	public void setBindAddress(String bindAddress) {
-		this.bindAddress = bindAddress;
-	}
-
-	public Integer getBindPort() {
-		return bindPort;
-	}
-
-	public void setBindPort(Integer bindPort) {
-		this.bindPort = bindPort;
 	}
 }
