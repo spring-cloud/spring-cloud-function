@@ -16,12 +16,10 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.rsocket.Payload;
-import io.rsocket.RSocket;
 import io.rsocket.util.DefaultPayload;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
@@ -31,8 +29,11 @@ import reactor.test.StepVerifier;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.util.SocketUtils;
 
 
@@ -45,13 +46,13 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	public void testImperativeFunctionAsRequestReply() throws Exception {
 		int port = SocketUtils.findAvailableTcpPort();
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase",
 				"--spring.rsocket.server.port=" + port);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
-		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Mono<String> result = requester.rsocket().requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
 
 		StepVerifier
 			.create(result)
@@ -63,13 +64,13 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	public void testImperativeFunctionAsRequestStream() throws Exception {
 		int port = SocketUtils.findAvailableTcpPort();
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase",
 				"--spring.rsocket.server.port=" + port);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
-		Flux<String> result = socket.requestStream(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Flux<String> result = requester.rsocket().requestStream(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
 
 		StepVerifier
 			.create(result)
@@ -81,13 +82,13 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	public void testImperativeFunctionAsRequestChannel() throws Exception {
 		int port = SocketUtils.findAvailableTcpPort();
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercase",
 				"--spring.rsocket.server.port=" + port);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
-		Flux<String> result = socket.requestChannel(Flux.just(
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Flux<String> result = requester.rsocket().requestChannel(Flux.just(
 				DefaultPayload.create("\"Ricky\""),
 				DefaultPayload.create("\"Julien\""),
 				DefaultPayload.create("\"Bubbles\""))
@@ -105,14 +106,13 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	public void testReactiveFunctionAsRequestReply() throws Exception {
 		int port = SocketUtils.findAvailableTcpPort();
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
 				"--spring.rsocket.server.port=" + port);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
-
-		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Mono<String> result = requester.rsocket().requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
 
 		StepVerifier
 			.create(result)
@@ -124,14 +124,13 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	public void testReactiveFunctionAsRequestStream() throws Exception {
 		int port = SocketUtils.findAvailableTcpPort();
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
 				"--spring.rsocket.server.port=" + port);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
-
-		Flux<String> result = socket.requestStream(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Flux<String> result = requester.rsocket().requestStream(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
 
 		StepVerifier
 			.create(result)
@@ -143,14 +142,13 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	public void testReactiveFunctionAsRequestChannel() throws Exception {
 		int port = SocketUtils.findAvailableTcpPort();
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
 				"--spring.rsocket.server.port=" + port);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
-
-		Flux<String> result = socket.requestChannel(Flux.just(
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Flux<String> result = requester.rsocket().requestChannel(Flux.just(
 				DefaultPayload.create("\"Ricky\""),
 				DefaultPayload.create("\"Julien\""),
 				DefaultPayload.create("\"Bubbles\""))
@@ -175,13 +173,14 @@ public class RSocketAutoConfigurationTests {
 				"--spring.cloud.function.definition=uppercase|concat",
 				"--spring.rsocket.server.port=" + portA);
 
-		new SpringApplicationBuilder(AdditionalFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext bContext = new SpringApplicationBuilder(AdditionalFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=reverse>localhost:" + portA + "|wrap",
 				"--spring.rsocket.server.port=" + portB);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", portB), null);
-		Mono<String> result = socket.requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+		RSocketRequester requester = bContext.getBean(RSocketRequester.class);
+
+		Mono<String> result = requester.rsocket().requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
 		StepVerifier
 			.create(result)
 			.expectNext("\"(OLLEHOLLEH)\"")
@@ -192,14 +191,13 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	public void testRequestChannelFunction() throws Exception {
 		int port = SocketUtils.findAvailableTcpPort();
-		new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.definition=uppercaseReactive",
 				"--spring.rsocket.server.port=" + port);
 
-		RSocket socket = RSocketConnectionUtils.createClientSocket(InetSocketAddress.createUnresolved("localhost", port), null);
-
-		Flux<String> result = socket.requestChannel(Flux.just(
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Flux<String> result = requester.rsocket().requestChannel(Flux.just(
 				DefaultPayload.create("\"Ricky\""),
 				DefaultPayload.create("\"Julien\""),
 				DefaultPayload.create("\"Bubbles\""))
@@ -239,6 +237,7 @@ public class RSocketAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
+	@Import(RSocketTestConfiguration.class)
 	public static class SampleFunctionConfiguration {
 		@Bean
 		public Function<String, String> uppercase() {
@@ -277,6 +276,7 @@ public class RSocketAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
+	@Import(RSocketTestConfiguration.class)
 	public static class AdditionalFunctionConfiguration {
 		@Bean
 		public Function<String, String> reverse() {
