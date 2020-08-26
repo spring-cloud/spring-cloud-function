@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.rsocket;
 
 import java.lang.reflect.Type;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.function.Function;
 
@@ -55,15 +54,12 @@ class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Mes
 
 	private static Log logger = LogFactory.getLog(RSocketListenerFunction.class);
 
-	private final InetSocketAddress listenAddress;
-
 	private final FunctionInvocationWrapper targetFunction;
 
 	private Disposable rsocketConnection;
 	private RSocket rsocket;
 
-	RSocketListenerFunction(FunctionInvocationWrapper targetFunction, InetSocketAddress listenAddress) {
-		this.listenAddress = listenAddress;
+	RSocketListenerFunction(FunctionInvocationWrapper targetFunction) {
 		this.targetFunction = targetFunction;
 	}
 
@@ -71,7 +67,7 @@ class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Mes
 	@Override
 	public Publisher<Message<byte[]>> apply(Message<byte[]> input) {
 		if (logger.isDebugEnabled()) {
-			logger.debug("Executiing: " + this.targetFunction + " on " + this.listenAddress);
+			logger.debug("Executiing: " + this.targetFunction);
 		}
 
 		Object rawResult = this.targetFunction.apply(input);
@@ -83,9 +79,6 @@ class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Mes
 
 		if (rsocket == null) {
 			rsocket = buildRSocket(this.targetFunction, functionType, this);
-		}
-		if (this.listenAddress != null) {
-			this.rsocketConnection = RSocketConnectionUtils.createServerSocket(rsocket, this.listenAddress);
 		}
 		this.printSplashScreen(this.targetFunction.getFunctionDefinition(), functionType);
 	}
