@@ -39,6 +39,16 @@ import org.springframework.messaging.support.MessageBuilder;
 
 /**
  *
+ * An implementation of {@link Function} to support distributed function composition.
+ * <br>
+ * This function wraps target function and forwards the result of
+ * the invocation of the target function to another RSocket returning the result of such forwarding as {@link Publisher}.
+ * <br><br>
+ * A typical example is `spring.cloud.function.definition=uppercase>localhost:8888'.
+ * <br>
+ * In this case 'uppercase' is targetFunction which will be invoked during the call to 'apply' and the result of
+ * this invocation sent to RSocket reachable at localhost:8888.
+ *
  * @author Oleg Zhurakousky
  * @author Artem Bilan
  *

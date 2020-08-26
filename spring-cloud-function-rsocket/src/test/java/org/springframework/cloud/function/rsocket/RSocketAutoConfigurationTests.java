@@ -34,8 +34,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.messaging.rsocket.RSocketRequester;
+import org.springframework.util.Assert;
 import org.springframework.util.SocketUtils;
-
 
 /**
  *
@@ -53,6 +53,28 @@ public class RSocketAutoConfigurationTests {
 
 		RSocketRequester requester = context.getBean(RSocketRequester.class);
 		Mono<String> result = requester.rsocket().requestResponse(DefaultPayload.create("\"hello\"")).map(Payload::getDataUtf8);
+
+		StepVerifier
+			.create(result)
+			.expectNext("\"HELLO\"")
+			.expectComplete()
+			.verify();
+	}
+
+	@Test
+	public void testImperativeFunctionAsRequestReplyWithMetadata() throws Exception {
+		int port = SocketUtils.findAvailableTcpPort();
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+				"--logging.level.org.springframework.cloud.function=DEBUG",
+				"--spring.cloud.function.definition=uppercase",
+				"--spring.rsocket.server.port=" + port);
+
+		RSocketRequester requester = context.getBean(RSocketRequester.class);
+		Mono<String> result = requester.rsocket().requestResponse(DefaultPayload.create("\"hello\"", "{\"name\":\"bob\", \"age\":23}"))
+				.map(payload -> {
+					Assert.hasText(payload.getMetadataUtf8(), "Metadata must not be null");
+					return payload.getDataUtf8();
+				});
 
 		StepVerifier
 			.create(result)

@@ -36,9 +36,9 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
@@ -61,8 +61,8 @@ class RSocketAutoConfiguration {
 
 	@Bean
 	public FunctionToRSocketBinder functionToDestinationBinder(FunctionCatalog functionCatalog,
-			FunctionProperties functionProperties) {
-		return new FunctionToRSocketBinder(functionCatalog, functionProperties);
+			FunctionProperties functionProperties, JsonMapper jsonMapper) {
+		return new FunctionToRSocketBinder(functionCatalog, functionProperties, jsonMapper);
 	}
 
 	@Bean
@@ -76,21 +76,22 @@ class RSocketAutoConfiguration {
 	/**
 	 *
 	 */
-	static class FunctionToRSocketBinder implements InitializingBean, ApplicationContextAware, SmartLifecycle {
+	static class FunctionToRSocketBinder implements InitializingBean, ApplicationContextAware {
 
 		private final FunctionCatalog functionCatalog;
 
 		private final FunctionProperties functionProperties;
 
+		private final JsonMapper jsonMapper;
+
 		private RSocketListenerFunction invocableFunction;
 
 		private GenericApplicationContext context;
 
-		private boolean started;
-
-		FunctionToRSocketBinder(FunctionCatalog functionCatalog, FunctionProperties functionProperties) {
+		FunctionToRSocketBinder(FunctionCatalog functionCatalog, FunctionProperties functionProperties, JsonMapper jsonMapper) {
 			this.functionCatalog = functionCatalog;
 			this.functionProperties = functionProperties;
+			this.jsonMapper = jsonMapper;
 		}
 
 		@Override
@@ -110,7 +111,7 @@ class RSocketAutoConfiguration {
 				throw new UnsupportedOperationException("Supplier is not currently supported for RSocket interaction");
 			}
 
-			this.invocableFunction = new RSocketListenerFunction(function);
+			this.invocableFunction = new RSocketListenerFunction(function, this.jsonMapper);
 		}
 
 		RSocket getRSocket() {
@@ -152,26 +153,6 @@ class RSocketAutoConfiguration {
 		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 			this.context = (GenericApplicationContext) applicationContext;
 		}
-
-		@Override
-		public void start() {
-			if (!this.isRunning() && this.invocableFunction != null) {
-				this.invocableFunction.start();
-			}
-		}
-
-		@Override
-		public void stop() {
-			if (this.isRunning() && this.invocableFunction != null) {
-				this.invocableFunction.stop();
-			}
-		}
-
-		@Override
-		public boolean isRunning() {
-			return this.started;
-		}
-
 	}
 
 }
