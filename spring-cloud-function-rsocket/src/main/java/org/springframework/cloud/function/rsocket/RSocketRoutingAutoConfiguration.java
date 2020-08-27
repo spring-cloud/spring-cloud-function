@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import io.rsocket.SocketAcceptor;
 import io.rsocket.routing.client.spring.RoutingClientAutoConfiguration;
 
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -24,7 +23,6 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionProperties;
-import org.springframework.cloud.function.rsocket.RSocketAutoConfiguration.FunctionToRSocketBinder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.rsocket.RSocketConnectorConfigurer;
@@ -45,8 +43,8 @@ class RSocketRoutingAutoConfiguration {
 
 	@Bean
 	public RSocketConnectorConfigurer functionRSocketConnectorConfigurer(
-			FunctionToRSocketBinder binder) {
-		return connector -> connector.acceptor(SocketAcceptor.with(binder.getRSocket()));
+			FunctionRSocketMessageHandler handler) {
+		return connector -> connector.acceptor(handler.responder());
 	}
 
 }

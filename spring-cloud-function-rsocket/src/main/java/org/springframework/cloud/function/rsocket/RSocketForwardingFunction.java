@@ -16,38 +16,25 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.util.function.Function;
 
-import io.rsocket.Payload;
-import io.rsocket.RSocket;
-import io.rsocket.core.RSocketConnector;
-import io.rsocket.transport.netty.client.TcpClientTransport;
-import io.rsocket.util.DefaultPayload;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.rsocket.RSocketRequester;
+import org.springframework.messaging.support.GenericMessage;
 
 
 /**
- *
- * An implementation of {@link Function} to support distributed function composition.
- * <br>
- * This function wraps target function and forwards the result of
- * the invocation of the target function to another RSocket returning the result of such forwarding as {@link Publisher}.
- * <br><br>
- * A typical example is `spring.cloud.function.definition=uppercase>localhost:8888'.
- * <br>
- * In this case 'uppercase' is targetFunction which will be invoked during the call to 'apply' and the result of
- * this invocation sent to RSocket reachable at localhost:8888.
+ * Wrapper over an instance of target Function (represented by {@link FunctionInvocationWrapper})
+ * which will use the result of the invocation of such function as an input to another RSocket
+ * effectively composing two functions over RSocket.
+ * <p>
+ * Note: the remote RSocket route is not necessary to be as a Spring Cloud Function binding.
  *
  * @author Oleg Zhurakousky
  * @author Artem Bilan
@@ -59,39 +46,37 @@ class RSocketForwardingFunction implements Function<Message<byte[]>, Publisher<M
 
 	private static final Log LOGGER = LogFactory.getLog(RSocketForwardingFunction.class);
 
-	private final Mono<RSocket> rsocketMono;
-
 	private final FunctionInvocationWrapper targetFunction;
 
-	RSocketForwardingFunction(FunctionInvocationWrapper targetFunction, InetSocketAddress outputAddress) {
+	private final RSocketRequester rSocketRequester;
+
+//	private final String remoteFunctionName;
+
+	RSocketForwardingFunction(FunctionInvocationWrapper targetFunction, RSocketRequester rsocketRequester,
+		String remoteFunctionName) {
+
 		this.targetFunction = targetFunction;
-		this.rsocketMono =
-			outputAddress == null
-				? null
-				: RSocketConnector.create()
-						.reconnect(Retry.backoff(5, Duration.ofSeconds(1)))
-						.connect(TcpClientTransport.create(outputAddress));
+		this.rSocketRequester = rsocketRequester;
+//		this.remoteFunctionName = remoteFunctionName;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Publisher<Message<byte[]>> apply(Message<byte[]> input) {
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Executing: " + this.targetFunction);
 		}
 
-		Object rawResult = this.targetFunction.apply(input);
-		return this.rsocketMono
-			.flatMapMany((rsocket) ->
-				rsocket.requestStream(DefaultPayload.create(((Message<byte[]>) rawResult).getPayload())))
-			.map(this::buildResultMessage);
-	}
+		Mono<Object> targetFunctionCall = Mono.just(input)
+			.map(this.targetFunction)
+			.cast(Message.class)
+			.map(Message::getPayload);
 
-	private Message<byte[]> buildResultMessage(Payload payload) {
-		ByteBuffer payloadBuffer = payload.getData();
-		byte[] payloadData = new byte[payloadBuffer.remaining()];
-		payloadBuffer.get(payloadData);
-		return MessageBuilder.withPayload(payloadData).build();
+		return this.rSocketRequester
+//			.route(this.remoteFunctionName)
+			.route("uppercase")
+			.data(targetFunctionCall, byte[].class)
+			.retrieveFlux(byte[].class)
+			.map(GenericMessage::new);
 	}
 
 }

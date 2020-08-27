@@ -17,181 +17,93 @@
 package org.springframework.cloud.function.rsocket;
 
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
-import java.util.Map;
 import java.util.function.Function;
 
-import io.rsocket.Payload;
-import io.rsocket.RSocket;
-import io.rsocket.util.DefaultPayload;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import io.rsocket.frame.FrameType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.rsocket.annotation.support.RSocketFrameTypeMessageCondition;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.CollectionUtils;
+
+
 
 /**
- * Wrapper over an instance of target Function (represented by {@link FunctionInvocationWrapper})
- * which will use the result of the invocation of such function as an input to another RSocket
- * effectively composing two functions over RSocket.
+ * A function wrapper which is bound onto an RSocket route.
  *
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
+ *
  * @since 3.1
  */
-class RSocketListenerFunction implements Function<Message<byte[]>, Publisher<Message<byte[]>>> {
-
-	private static String splash = "   ____         _             _______             __  ____              __  _             ___  ____         __       __ \n" +
-			"  / __/__  ____(_)__  ___ _  / ___/ /__  __ _____/ / / __/_ _____  ____/ /_(_)__  ___    / _ \\/ __/__  ____/ /_____ / /_\n" +
-			" _\\ \\/ _ \\/ __/ / _ \\/ _ `/ / /__/ / _ \\/ // / _  / / _// // / _ \\/ __/ __/ / _ \\/ _ \\  / , _/\\ \\/ _ \\/ __/  '_/ -_) __/\n" +
-			"/___/ .__/_/ /_/_//_/\\_, /  \\___/_/\\___/\\_,_/\\_,_/ /_/  \\_,_/_//_/\\__/\\__/_/\\___/_//_/ /_/|_/___/\\___/\\__/_/\\_\\\\__/\\__/ \n" +
-			"   /_/              /___/                                                                                               \n" +
-			"";
-
-	private static Log logger = LogFactory.getLog(RSocketListenerFunction.class);
+public class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publisher<?>> {
 
 	private final FunctionInvocationWrapper targetFunction;
 
-	private RSocket rsocket;
-
-	private final JsonMapper jsonMapper;
-
-	RSocketListenerFunction(FunctionInvocationWrapper targetFunction, JsonMapper jsonMapper) {
+	RSocketListenerFunction(FunctionInvocationWrapper targetFunction) {
 		this.targetFunction = targetFunction;
-		this.jsonMapper = jsonMapper;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Publisher<Message<byte[]>> apply(Message<byte[]> input) {
-		if (logger.isDebugEnabled()) {
-			logger.debug("Executiing: " + this.targetFunction);
+	public Publisher<?> apply(Message<Flux<byte[]>> input) {
+		FrameType frameType = RSocketFrameTypeMessageCondition.getFrameType(input);
+		switch (frameType) {
+			case REQUEST_FNF:
+				return handle(input);
+			case REQUEST_RESPONSE:
+			case REQUEST_STREAM:
+			case REQUEST_CHANNEL:
+				return handleAndReply(input);
+			default:
+				throw new UnsupportedOperationException();
 		}
-
-		Object rawResult = this.targetFunction.apply(input);
-		return rawResult instanceof Publisher ? (Publisher<Message<byte[]>>) rawResult : Mono.just((Message<byte[]>) rawResult);
 	}
 
-	public RSocket getRsocket() {
-		if (this.rsocket == null) {
-			Type functionType = this.targetFunction.getFunctionType();
-
-			if (this.rsocket == null) {
-				this.rsocket = this.buildRSocket(this.targetFunction, functionType, this);
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Mono<Void> handle(Message<Flux<byte[]>> messageToProcess) {
+		if (this.targetFunction.isConsumer()) {
+			Flux<?> dataFlux =
+				messageToProcess.getPayload()
+					.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
+			if (isFunctionInputReactive(this.targetFunction.getFunctionType())) {
+				dataFlux = dataFlux.transform((Function) this.targetFunction);
 			}
-			this.printSplashScreen(this.targetFunction.getFunctionDefinition(), functionType);
+			else {
+				dataFlux = dataFlux.doOnNext(this.targetFunction);
+			}
+			return dataFlux.then();
 		}
-		return this.rsocket;
+		else {
+			return Mono.error(new IllegalStateException("Only 'Consumer' can handle 'fire-and-forget' RSocket frame."));
+		}
 	}
 
-	private RSocket buildRSocket(FunctionInvocationWrapper targetFunction, Type functionType, Function<Message<byte[]>, Publisher<Message<byte[]>>> function) {
-		String definition = targetFunction.getFunctionDefinition();
-		RSocket clientRSocket = new RSocket() { // imperative function or Function<?, Mono> = requestResponse
-			@Override
-			public Mono<Payload> requestResponse(Payload payload) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Invoking function '" + definition + "' as RSocket `requestResponse`.");
-				}
-
-				if (isFunctionReactive(functionType)) {
-					Flux<Payload> result = this.requestChannel(Flux.just(payload));
-					return Mono.from(result);
-				}
-				else {
-					Message<byte[]> inputMessage = deserealizePayload(payload);
-					Mono<Message<byte[]>> result = Mono.from(function.apply(inputMessage));
-					return result.map(message -> DefaultPayload.create(message.getPayload(), jsonMapper.toJson(message.getHeaders())));
-				}
-			}
-
-			@Override
-			public Flux<Payload> requestStream(Payload payload) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Invoking function '" + definition + "' as RSocket `requestStream`.");
-				}
-				if (isFunctionReactive(functionType)) {
-					return this.requestChannel(Flux.just(payload));
-				}
-				else {
-					Message<byte[]> inputMessage = deserealizePayload(payload);
-					Flux<Message<byte[]>> result = Flux.from(function.apply(inputMessage));
-					return result.map(message -> DefaultPayload.create(message.getPayload()));
-				}
-			}
-
-			@SuppressWarnings({ "unchecked", "rawtypes" })
-			@Override
-			public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Invoking function '" + definition + "' as RSocket `requestChannel`.");
-				}
-				if (isFunctionReactive(functionType)) {
-					return Flux.from(payloads)
-							.transform(inputFlux -> inputFlux.map(payload -> deserealizePayload(payload)))
-							.transform((Function) targetFunction)
-							.transform(outputFlux -> ((Flux<Message<byte[]>>) outputFlux).map(message -> DefaultPayload.create(message.getPayload())));
-				}
-				else {
-					return Flux.from(payloads)
-							.transform(flux -> {
-								return flux.flatMap(payload -> {
-									Message<byte[]> inputMessage = deserealizePayload(payload);
-									Flux<Message<byte[]>> result = Flux.from(function.apply(inputMessage));
-									return result;
-								});
-							})
-							.doOnNext(System.out::println)
-							.transform(outputFlux -> outputFlux.map(message -> DefaultPayload.create(message.getPayload())));
-				}
-
-			}
-		};
-		return clientRSocket;
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Flux<?> handleAndReply(Message<Flux<byte[]>> messageToProcess) {
+		Flux<?> dataFlux =
+			messageToProcess.getPayload()
+				.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
+		if (isFunctionInputReactive(this.targetFunction.getFunctionType())) {
+			dataFlux = dataFlux.transform((Function) this.targetFunction);
+		}
+		else {
+			dataFlux = dataFlux.flatMap((data) -> {
+				Object result = this.targetFunction.apply(data);
+				return result instanceof Publisher<?>
+					? (Publisher<Message<byte[]>>) result
+					: Mono.just((Message<byte[]>) result);
+			});
+		}
+		return dataFlux.cast(Message.class).map(Message::getPayload);
 	}
 
-	private static boolean isFunctionReactive(Type functionType) {
+	private static boolean isFunctionInputReactive(Type functionType) {
 		Type inputType = FunctionTypeUtils.getInputType(functionType, 0);
-		Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
-		return FunctionTypeUtils.isPublisher(inputType) && FunctionTypeUtils.isFlux(outputType);
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Message<byte[]> deserealizePayload(Payload payload) {
-		ByteBuffer buffer = payload.getData();
-		byte[] rawData = new byte[buffer.remaining()];
-		buffer.get(rawData);
-		Map<String, Object> headers = null;
-		if (payload.hasMetadata()) {
-			try {
-				ByteBuffer metadata = payload.getMetadata();
-				byte[] metadataBytes = new byte[metadata.remaining()];
-				metadata.get(metadataBytes);
-				headers = this.jsonMapper.fromJson(metadataBytes, Map.class);
-			}
-			catch (Exception e) {
-				//throw new IllegalStateException(e);
-				logger.warn("Failed to extract headers from metadata", e);
-			}
-		}
-		MessageBuilder builder =  MessageBuilder.withPayload(rawData);
-		if (!CollectionUtils.isEmpty(headers)) {
-			builder.copyHeaders(headers);
-		}
-		Message<byte[]> inputMessage = builder.build();
-		return inputMessage;
-
-	}
-
-	private void printSplashScreen(String definition, Type type) {
-		System.out.println(splash);
-		System.out.println("Function Definition: " + definition + "; T[" + type + "]");
-		System.out.println("======================================================\n");
+		return FunctionTypeUtils.isPublisher(inputType);
 	}
 
 }
