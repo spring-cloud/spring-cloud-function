@@ -20,7 +20,16 @@
 	</properties>
 
 	<dependencies>
-		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-rsocket</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.dataformat</groupId>
+					<artifactId>jackson-dataformat-cbor</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 		<dependency>
 		    <groupId>io.rsocket</groupId>
 		    <artifactId>rsocket-core</artifactId>
