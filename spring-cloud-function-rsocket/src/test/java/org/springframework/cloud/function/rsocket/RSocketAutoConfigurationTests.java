@@ -220,7 +220,7 @@ public class RSocketAutoConfigurationTests {
 		}
 	}
 
-	@Disabled
+//	@Disabled
 	@Test
 	public void testRequestReplyFunctionWithComposition() {
 		int portA = SocketUtils.findAvailableTcpPort();
@@ -247,7 +247,7 @@ public class RSocketAutoConfigurationTests {
 					applicationContext2.getBean(RSocketRequester.Builder.class);
 
 				rsocketRequesterBuilder.tcp("localhost", portB)
-					.route("reverse")
+					.route("reverse>localhost:" + portA + "|wrap")
 					.data("\"hello\"")
 					.retrieveMono(String.class)
 					.as(StepVerifier::create)

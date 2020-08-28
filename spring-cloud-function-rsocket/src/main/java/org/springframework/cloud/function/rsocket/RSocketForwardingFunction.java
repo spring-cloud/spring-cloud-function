@@ -50,14 +50,11 @@ class RSocketForwardingFunction implements Function<Message<byte[]>, Publisher<M
 
 	private final RSocketRequester rSocketRequester;
 
-//	private final String remoteFunctionName;
-
 	RSocketForwardingFunction(FunctionInvocationWrapper targetFunction, RSocketRequester rsocketRequester,
 		String remoteFunctionName) {
 
 		this.targetFunction = targetFunction;
 		this.rSocketRequester = rsocketRequester;
-//		this.remoteFunctionName = remoteFunctionName;
 	}
 
 	@Override
@@ -72,11 +69,9 @@ class RSocketForwardingFunction implements Function<Message<byte[]>, Publisher<M
 			.map(Message::getPayload);
 
 		return this.rSocketRequester
-//			.route(this.remoteFunctionName)
-			.route("uppercase")
+			.route("")
 			.data(targetFunctionCall, byte[].class)
 			.retrieveFlux(byte[].class)
 			.map(GenericMessage::new);
 	}
-
 }

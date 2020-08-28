@@ -19,6 +19,7 @@ package org.springframework.cloud.function.rsocket;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import io.rsocket.frame.FrameType;
@@ -26,6 +27,8 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ReactiveAdapterRegistry;
 import org.springframework.core.ResolvableType;
@@ -36,6 +39,7 @@ import org.springframework.core.codec.Encoder;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.CompositeMessageCondition;
 import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
 import org.springframework.messaging.handler.invocation.reactive.HandlerMethodArgumentResolver;
@@ -51,10 +55,13 @@ import org.springframework.util.ReflectionUtils;
  * An {@link RSocketMessageHandler} extension for Spring Cloud Function specifics.
  *
  * @author Artem Bilan
+ * @author Oleg Zhurakousky
  *
  * @since 3.1
  */
 public class FunctionRSocketMessageHandler extends RSocketMessageHandler {
+
+	private final FunctionCatalog functionCatalog;
 
 	private static final Method FUNCTION_APPLY_METHOD =
 		ReflectionUtils.findMethod(Function.class, "apply", (Class<?>[]) null);
@@ -66,8 +73,9 @@ public class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 			FrameType.REQUEST_STREAM,
 			FrameType.REQUEST_CHANNEL);
 
-	public FunctionRSocketMessageHandler() {
+	public FunctionRSocketMessageHandler(FunctionCatalog functionCatalog) {
 		setHandlerPredicate((clazz) -> false);
+		this.functionCatalog = functionCatalog;
 	}
 
 
@@ -75,6 +83,21 @@ public class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	public void afterPropertiesSet() {
 		setEncoders(Collections.singletonList(new ByteArrayEncoder()));
 		super.afterPropertiesSet();
+	}
+
+	@Override
+	public Mono<Void> handleMessage(Message<?> message) throws MessagingException {
+		if (!FrameType.SETUP.equals(message.getHeaders().get("rsocketFrameType"))) {
+			String destination = this.getDestination(message).value();
+			Set<String> mappings = this.getDestinationLookup().keySet();
+			if (!mappings.contains(destination)) {
+				FunctionRSocketUtils.registerRSocketForwardingFunctionIfNecessary(destination, functionCatalog, this.getApplicationContext());
+				FunctionInvocationWrapper function = functionCatalog.lookup(destination, "application/json");
+				this.registerFunctionHandler(new RSocketListenerFunction(function), destination);
+			}
+		}
+
+		return super.handleMessage(message);
 	}
 
 	public void registerFunctionHandler(Function<?, ?> function, String route) {
