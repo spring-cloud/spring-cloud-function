@@ -70,9 +70,8 @@ class RSocketAutoConfiguration implements ApplicationContextAware {
 			FunctionCatalog functionCatalog, FunctionProperties functionProperties) {
 		String definition = functionProperties.getDefinition();
 		if (StringUtils.hasText(definition)) {
-			FunctionRSocketUtils.registerRSocketForwardingFunctionIfNecessary(definition, functionCatalog, this.applicationContext);
-			//TODO externalize content-type
-			FunctionInvocationWrapper function = functionCatalog.lookup(definition, "application/json");
+			FunctionInvocationWrapper function = FunctionRSocketUtils
+					.registerFunctionForDestination(definition, functionCatalog, this.applicationContext);
 			rsocketMessageHandler.registerFunctionHandler(new RSocketListenerFunction(function), definition);
 			rsocketMessageHandler.registerFunctionHandler(new RSocketListenerFunction(function), "");
 		}

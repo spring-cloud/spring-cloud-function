@@ -34,7 +34,7 @@ import org.springframework.messaging.support.GenericMessage;
  * which will use the result of the invocation of such function as an input to another RSocket
  * effectively composing two functions over RSocket.
  * <p>
- * Note: the remote RSocket route is not necessary to be as a Spring Cloud Function binding.
+ * Note: the remote RSocket route is not required to represent Spring Cloud Function binding.
  *
  * @author Oleg Zhurakousky
  * @author Artem Bilan
