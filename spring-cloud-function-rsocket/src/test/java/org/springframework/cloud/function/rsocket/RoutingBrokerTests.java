@@ -20,7 +20,6 @@ import java.util.function.Function;
 
 import io.rsocket.routing.client.spring.RoutingMetadata;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -40,7 +39,6 @@ import org.springframework.util.SocketUtils;
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-@Disabled
 public class RoutingBrokerTests {
 
 	ConfigurableApplicationContext functionContext;
@@ -64,7 +62,8 @@ public class RoutingBrokerTests {
 	public void testRoutingWithProperty() throws Exception {
 		this.setup(true);
 		RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
-		Mono<String> result = requester.route("uppercase") // used to find a messagemapping, so unused here
+		// route(uppercase) used to find function, must match io.rsocket.routing.client.address entry
+		Mono<String> result = requester.route("uppercase")
 			// auto creates metadata
 			.data("\"hello\"")
 			.retrieveMono(String.class);
@@ -81,7 +80,7 @@ public class RoutingBrokerTests {
 		this.setup(false);
 		RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
 		RoutingMetadata metadata = clientContext.getBean(RoutingMetadata.class);
-		Mono<String> result = requester.route("uppercase") // used to find a messagemapping, so unused here
+		Mono<String> result = requester.route("uppercase") // used to find function
 			.metadata(metadata.address("samplefn"))
 			.data("\"hello\"")
 			.retrieveMono(String.class);
