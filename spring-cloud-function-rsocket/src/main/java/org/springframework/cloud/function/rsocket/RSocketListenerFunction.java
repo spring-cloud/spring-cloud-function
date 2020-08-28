@@ -40,7 +40,7 @@ import org.springframework.messaging.support.MessageBuilder;
  *
  * @since 3.1
  */
-public class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publisher<?>> {
+class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publisher<?>> {
 
 	private final FunctionInvocationWrapper targetFunction;
 

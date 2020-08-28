@@ -50,10 +50,16 @@ final class FunctionRSocketUtils {
 
 	}
 
-	static String registerRSocketForwardingFunctionIfNecessary(String definition, FunctionCatalog functionCatalog,
+	static FunctionInvocationWrapper registerFunctionForDestination(String destination, FunctionCatalog functionCatalog,
+			ApplicationContext applicationContext) {
+		registerRSocketForwardingFunctionIfNecessary(destination, functionCatalog, applicationContext);
+		FunctionInvocationWrapper function = functionCatalog.lookup(destination, "application/json");
+		return function;
+	}
+
+	static void registerRSocketForwardingFunctionIfNecessary(String definition, FunctionCatalog functionCatalog,
 			ApplicationContext applicationContext) {
 		String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
-		String rootFunctionName = names[0];
 		for (String name : names) {
 			if (!applicationContext.containsBean(name)) { // this means RSocket
 				if (LOGGER.isDebugEnabled()) {
@@ -65,18 +71,11 @@ final class FunctionRSocketUtils {
 
 				String[] hostPort = StringUtils.delimitedListToStringArray(functionToRSocketDefinition[1], ":");
 
-				rootFunctionName = function.getFunctionDefinition();
 				String forwardingUrl = functionToRSocketDefinition[1];
-				RSocketRequester rsocketRequester;
-
 				Builder rsocketRequesterBuilder = applicationContext.getBean(Builder.class);
-
-				if (WS_URI_PATTERN.matcher(forwardingUrl).matches()) {
-					rsocketRequester = rsocketRequesterBuilder.websocket(URI.create(forwardingUrl));
-				}
-				else {
-					rsocketRequester = rsocketRequesterBuilder.tcp(hostPort[0], Integer.parseInt(hostPort[1]));
-				}
+				RSocketRequester rsocketRequester = (WS_URI_PATTERN.matcher(forwardingUrl).matches())
+						? rsocketRequesterBuilder.websocket(URI.create(forwardingUrl))
+						: rsocketRequesterBuilder.tcp(hostPort[0], Integer.parseInt(hostPort[1]));
 
 				RSocketForwardingFunction rsocketFunction =
 					new RSocketForwardingFunction(function, rsocketRequester, null);
@@ -87,7 +86,5 @@ final class FunctionRSocketUtils {
 				((FunctionRegistry) functionCatalog).register(functionRegistration);
 			}
 		}
-
-		return rootFunctionName;
 	}
 }

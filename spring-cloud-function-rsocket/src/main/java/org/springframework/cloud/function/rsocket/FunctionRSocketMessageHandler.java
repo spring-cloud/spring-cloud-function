@@ -59,7 +59,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @since 3.1
  */
-public class FunctionRSocketMessageHandler extends RSocketMessageHandler {
+class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	private final FunctionCatalog functionCatalog;
 
@@ -73,7 +73,7 @@ public class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 			FrameType.REQUEST_STREAM,
 			FrameType.REQUEST_CHANNEL);
 
-	public FunctionRSocketMessageHandler(FunctionCatalog functionCatalog) {
+	FunctionRSocketMessageHandler(FunctionCatalog functionCatalog) {
 		setHandlerPredicate((clazz) -> false);
 		this.functionCatalog = functionCatalog;
 	}
@@ -85,14 +85,18 @@ public class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 		super.afterPropertiesSet();
 	}
 
+	/**
+	 * Will check if there is a function handler registered for destination before proceeding.
+	 * This typically happens when user avoids using 'spring.cloud.function.definition' property.
+	 */
 	@Override
 	public Mono<Void> handleMessage(Message<?> message) throws MessagingException {
 		if (!FrameType.SETUP.equals(message.getHeaders().get("rsocketFrameType"))) {
 			String destination = this.getDestination(message).value();
 			Set<String> mappings = this.getDestinationLookup().keySet();
 			if (!mappings.contains(destination)) {
-				FunctionRSocketUtils.registerRSocketForwardingFunctionIfNecessary(destination, functionCatalog, this.getApplicationContext());
-				FunctionInvocationWrapper function = functionCatalog.lookup(destination, "application/json");
+				FunctionInvocationWrapper function = FunctionRSocketUtils
+						.registerFunctionForDestination(destination, functionCatalog, this.getApplicationContext());
 				this.registerFunctionHandler(new RSocketListenerFunction(function), destination);
 			}
 		}
@@ -100,7 +104,7 @@ public class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 		return super.handleMessage(message);
 	}
 
-	public void registerFunctionHandler(Function<?, ?> function, String route) {
+	void registerFunctionHandler(Function<?, ?> function, String route) {
 		CompositeMessageCondition condition =
 			new CompositeMessageCondition(REQUEST_CONDITION,
 				new DestinationPatternsMessageCondition(new String[]{ route },
