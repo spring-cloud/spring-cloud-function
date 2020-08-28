@@ -119,7 +119,7 @@ public class RoutingBrokerTests {
 				"--spring.cloud.function.rsocket.enabled=false",
 				"--io.rsocket.routing.client.enabled=true",
 				"--io.rsocket.routing.client.service-name=testclient",
-				routingWithProperty ? "--io.rsocket.routing.client.address.toupper.service_name=samplefn" : "",
+				routingWithProperty ? "--io.rsocket.routing.client.address.uppercase.service_name=samplefn" : "",
 				"--io.rsocket.routing.client.brokers[0].host=localhost",
 				"--io.rsocket.routing.client.brokers[0].port=" + routingBrokerProxyPort,
 				"--io.rsocket.routing.broker.enabled=false");
