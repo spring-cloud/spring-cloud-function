@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.lang.Nullable;
@@ -76,12 +77,16 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 			return message.getPayload();
 		}
 
+
+
 		Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
 		try {
 			return this.jsonMapper.fromJson(message.getPayload(), convertToType);
 		}
 		catch (Exception e) {
-			// ignore
+			if (message.getPayload() instanceof byte[] && targetClass.isAssignableFrom(String.class)) {
+				return new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
+			}
 		}
 		return null;
 	}

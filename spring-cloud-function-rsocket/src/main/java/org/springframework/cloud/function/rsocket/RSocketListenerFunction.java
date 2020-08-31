@@ -29,6 +29,7 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.messaging.Message;
 import org.springframework.messaging.rsocket.annotation.support.RSocketFrameTypeMessageCondition;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.Assert;
 
 
 
@@ -50,6 +51,10 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 
 	@Override
 	public Publisher<?> apply(Message<Flux<byte[]>> input) {
+		Assert.isTrue(this.targetFunction != null, "Failed to discover target function. \n"
+				+ "To fix it you should either provide 'spring.cloud.function.definition' property "
+				+ "or if you are using RSocketRequester provide valid function definition via 'route' "
+				+ "operator (e.g., requester.route(\"echo\"))");
 		FrameType frameType = RSocketFrameTypeMessageCondition.getFrameType(input);
 		switch (frameType) {
 			case REQUEST_FNF:
