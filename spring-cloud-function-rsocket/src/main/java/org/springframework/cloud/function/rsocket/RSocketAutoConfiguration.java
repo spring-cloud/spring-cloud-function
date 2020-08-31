@@ -29,6 +29,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 import org.springframework.util.StringUtils;
 
@@ -55,6 +56,7 @@ class RSocketAutoConfiguration implements ApplicationContextAware {
 
 	@Bean
 	@ConditionalOnMissingBean
+	@Primary
 	public FunctionRSocketMessageHandler functionRSocketMessageHandler(RSocketStrategies rSocketStrategies,
 		ObjectProvider<RSocketMessageHandlerCustomizer> customizers, FunctionCatalog functionCatalog,
 		FunctionProperties functionProperties) {
