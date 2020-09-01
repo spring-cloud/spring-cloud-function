@@ -31,12 +31,14 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.rsocket.context.RSocketServerBootstrap;
 import org.springframework.boot.rsocket.server.RSocketServer;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.SocketUtils;
 
 /**
@@ -220,7 +222,6 @@ public class RSocketAutoConfigurationTests {
 		}
 	}
 
-//	@Disabled
 	@Test
 	public void testRequestReplyFunctionWithComposition() {
 		int portA = SocketUtils.findAvailableTcpPort();
@@ -362,6 +363,32 @@ public class RSocketAutoConfigurationTests {
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
 				.expectNext("\"(hello)\"")
+				.expectComplete()
+				.verify();
+		}
+	}
+
+	@Test
+	public void testRoutingWithRoutingFunction() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+							"--spring.cloud.function.routing-expression=headers.function_definition",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route(RoutingFunction.FUNCTION_NAME)
+				.metadata("{\"function_definition\":\"uppercase|concat\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("\"hello\"")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("\"HELLOHELLO\"")
 				.expectComplete()
 				.verify();
 		}
