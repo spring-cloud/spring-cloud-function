@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +41,6 @@ import org.springframework.core.codec.Encoder;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.CompositeMessageCondition;
 import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
@@ -70,8 +68,6 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	private final FunctionCatalog functionCatalog;
 
-	private final Field headersField;
-
 	private static final Method FUNCTION_APPLY_METHOD =
 		ReflectionUtils.findMethod(Function.class, "apply", (Class<?>[]) null);
 
@@ -85,8 +81,6 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	FunctionRSocketMessageHandler(FunctionCatalog functionCatalog) {
 		setHandlerPredicate((clazz) -> false);
 		this.functionCatalog = functionCatalog;
-		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
-		this.headersField.setAccessible(true);
 	}
 
 
@@ -185,14 +179,17 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 		}
 	}
 
+	/**
+	 * This metadata extractor will ensure that any JSON data passed
+	 * via metadata will be copied into Message headers.
+	 */
 	private static class HeadersAwareMetadataExtractor extends DefaultMetadataExtractor {
 		HeadersAwareMetadataExtractor(List<Decoder<?>> decoders) {
 			super(decoders);
 			super.metadataToExtract(MimeTypeUtils.APPLICATION_JSON,
 					new ParameterizedTypeReference<Map<String, String>>() {
-					}, (jsonMap, outputMap) -> {
-						outputMap.putAll(jsonMap);
-					});
+					}, (jsonMap, outputMap) -> outputMap.putAll(jsonMap)
+			);
 		}
 	}
 

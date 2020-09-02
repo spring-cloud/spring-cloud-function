@@ -48,7 +48,7 @@ import org.springframework.util.SocketUtils;
  */
 public class RSocketAutoConfigurationTests {
 	@Test
-	public void testImperativeFunctionAsRequestReply() {
+	public void testImperativeFunctionAsRequestReplyWithDefinition() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
@@ -56,6 +56,30 @@ public class RSocketAutoConfigurationTests {
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.cloud.function.definition=uppercase",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("")
+				.data("\"hello\"")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("\"HELLO\"")
+				.expectComplete()
+				.verify();
+		}
+	}
+
+	@Test
+	public void testImperativeFunctionAsRequestReply() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
@@ -73,6 +97,30 @@ public class RSocketAutoConfigurationTests {
 	}
 
 	@Test
+	public void testImperativeFunctionAsRequestReplyWithComposition() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercase|concat")
+				.data("\"hello\"")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("\"HELLOHELLO\"")
+				.expectComplete()
+				.verify();
+		}
+	}
+
+	@Test
 	public void testSupplierAsRequestReply() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (
@@ -80,7 +128,6 @@ public class RSocketAutoConfigurationTests {
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.cloud.function.definition=source",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
@@ -105,7 +152,6 @@ public class RSocketAutoConfigurationTests {
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.cloud.function.definition=uppercase",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
@@ -130,7 +176,6 @@ public class RSocketAutoConfigurationTests {
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.cloud.function.definition=uppercase",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
@@ -155,7 +200,6 @@ public class RSocketAutoConfigurationTests {
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.cloud.function.definition=uppercaseReactive",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
@@ -180,7 +224,6 @@ public class RSocketAutoConfigurationTests {
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.cloud.function.definition=uppercaseReactive",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
@@ -205,7 +248,6 @@ public class RSocketAutoConfigurationTests {
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.cloud.function.definition=uppercaseReactive",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
@@ -223,7 +265,7 @@ public class RSocketAutoConfigurationTests {
 	}
 
 	@Test
-	public void testRequestReplyFunctionWithComposition() {
+	public void testRequestReplyFunctionWithDistributedComposition() {
 		int portA = SocketUtils.findAvailableTcpPort();
 		int portB = SocketUtils.findAvailableTcpPort();
 		try (
@@ -303,20 +345,18 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testFireAndForgetConsumer() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.cloud.function.definition=log",
-						"--spring.rsocket.server.port=0");
+						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
-			RSocketServerBootstrap serverBootstrap = applicationContext.getBean(RSocketServerBootstrap.class);
-			RSocketServer server = (RSocketServer) ReflectionTestUtils.getField(serverBootstrap, "server");
 
-			rsocketRequesterBuilder.tcp("localhost", server.address().getPort())
+			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("log")
 				.data("\"hello\"")
 				.send()
