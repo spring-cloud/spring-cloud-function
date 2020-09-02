@@ -191,7 +191,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			}
 			else if (!ObjectUtils.isEmpty(names)) {
 				if (names.size() > 1) {
-					logger.debug("Found more than one function bean in BeanFactory: " + names
+					logger.warn("Found more than one function bean in BeanFactory: " + names
 						+ ". If you did not intend to use functions, ignore this message. However, if you did "
 						+ "intend to use functions in the context of spring-cloud-function, consider "
 						+ "providing 'spring.cloud.function.definition' property pointing to a function bean(s) "
