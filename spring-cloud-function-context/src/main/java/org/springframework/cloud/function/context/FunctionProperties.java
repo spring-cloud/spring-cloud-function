@@ -43,6 +43,12 @@ public class FunctionProperties {
 	 */
 	private String definition;
 
+
+	private String contentType = "application/json";
+
+
+	private String accept = "application/json";
+
 	/**
 	 * SpEL expression which should result in function definition (e.g., function name or composition instruction).
 	 * NOTE: SpEL evaluation context's root object is the input argument (e.g., Message).
@@ -63,5 +69,21 @@ public class FunctionProperties {
 
 	public void setRoutingExpression(String routingExpression) {
 		this.routingExpression = routingExpression;
+	}
+
+	public String getContentType() {
+		return contentType;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
+
+	public String getAccept() {
+		return accept;
+	}
+
+	public void setAccept(String accept) {
+		this.accept = accept;
 	}
 }
