@@ -61,7 +61,7 @@ class RSocketAutoConfiguration implements ApplicationContextAware {
 		ObjectProvider<RSocketMessageHandlerCustomizer> customizers, FunctionCatalog functionCatalog,
 		FunctionProperties functionProperties) {
 
-		FunctionRSocketMessageHandler rsocketMessageHandler = new FunctionRSocketMessageHandler(functionCatalog);
+		FunctionRSocketMessageHandler rsocketMessageHandler = new FunctionRSocketMessageHandler(functionCatalog, functionProperties);
 		rsocketMessageHandler.setRSocketStrategies(rSocketStrategies);
 		customizers.orderedStream().forEach((customizer) -> customizer.customize(rsocketMessageHandler));
 		registerFunctionsWithRSocketHandler(rsocketMessageHandler, functionCatalog, functionProperties);
@@ -75,7 +75,6 @@ class RSocketAutoConfiguration implements ApplicationContextAware {
 			FunctionInvocationWrapper function = FunctionRSocketUtils
 					.registerFunctionForDestination(definition, functionCatalog, this.applicationContext);
 			rsocketMessageHandler.registerFunctionHandler(new RSocketListenerFunction(function), definition);
-			rsocketMessageHandler.registerFunctionHandler(new RSocketListenerFunction(function), "");
 		}
 	}
 

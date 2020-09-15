@@ -173,6 +173,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		if (this.functionAroundWrapper != null && function != null) {
 			return (T) new FunctionInvocationWrapper(function) {
+				@SuppressWarnings("rawtypes")
 				@Override
 				Object doApply(Object input, boolean consumer, Function<Message, Message> enricher) {
 					return functionAroundWrapper.apply(input, function);
@@ -805,7 +806,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				// this needs revisiting as the type is not always Class (think really complex types)
 				Type rawType = FunctionTypeUtils.unwrapActualTypeByIndex(type, 0);
 				if (logger.isDebugEnabled()) {
-					logger.debug("Raw type of value: " + value + "is " + rawType);
+					logger.debug("Raw type of value: " + value + " is " + rawType);
 				}
 
 				if (rawType instanceof ParameterizedType) {
