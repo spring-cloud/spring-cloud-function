@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.regex.Pattern;
 
@@ -23,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
@@ -50,10 +52,25 @@ final class FunctionRSocketUtils {
 
 	}
 
-	static FunctionInvocationWrapper registerFunctionForDestination(String destination, FunctionCatalog functionCatalog,
+	static FunctionInvocationWrapper registerFunctionForDestination(String functionDefinition, FunctionCatalog functionCatalog,
 			ApplicationContext applicationContext) {
-		registerRSocketForwardingFunctionIfNecessary(destination, functionCatalog, applicationContext);
-		FunctionInvocationWrapper function = functionCatalog.lookup(destination, "application/json");
+
+		registerRSocketForwardingFunctionIfNecessary(functionDefinition, functionCatalog, applicationContext);
+		FunctionProperties functionProperties = applicationContext.getBean(FunctionProperties.class);
+		String acceptContentType = functionProperties.getAccept();
+		if (!StringUtils.hasText(acceptContentType)) {
+			FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
+			Type functionType = function.getFunctionType();
+			Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
+			if (outputType instanceof Class && String.class.isAssignableFrom((Class<?>) outputType)) {
+				acceptContentType = "text/plain";
+			}
+			else {
+				acceptContentType = "application/json";
+			}
+		}
+
+		FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, acceptContentType);
 		return function;
 	}
 
@@ -73,6 +90,7 @@ final class FunctionRSocketUtils {
 
 				String forwardingUrl = functionToRSocketDefinition[1];
 				Builder rsocketRequesterBuilder = applicationContext.getBean(Builder.class);
+
 				RSocketRequester rsocketRequester = (WS_URI_PATTERN.matcher(forwardingUrl).matches())
 						? rsocketRequesterBuilder.websocket(URI.create(forwardingUrl))
 						: rsocketRequesterBuilder.tcp(hostPort[0], Integer.parseInt(hostPort[1]));

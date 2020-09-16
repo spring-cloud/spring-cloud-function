@@ -49,7 +49,6 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.type.StandardMethodMetadata;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -85,20 +84,19 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			this.applicationContext.getBeanNamesForType(Consumer.class).length;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Set<String> getNames(Class<?> type) {
 		Set<String> registeredNames = super.getNames(type);
 		if (type == null) {
 			registeredNames
-				.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(Function.class)));
+				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Function.class)));
 			registeredNames
-				.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(Supplier.class)));
+				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Supplier.class)));
 			registeredNames
-				.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(Consumer.class)));
+				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Consumer.class)));
 		}
 		else {
-			registeredNames.addAll(CollectionUtils.arrayToList(this.applicationContext.getBeanNamesForType(type)));
+			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(type)));
 		}
 		return registeredNames;
 	}

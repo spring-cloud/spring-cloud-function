@@ -20,6 +20,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,6 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ReflectionUtils;
 
@@ -532,13 +532,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<String, List<String>> parseToList() {
-			return v -> CollectionUtils.arrayToList(v.split(","));
+			return v -> Arrays.asList(v.split(","));
 		}
 
 		@Bean
 		public Function<String, List<Message<String>>> parseToListOfMessages() {
 			return v -> {
-				List<Message<String>> list = (List<Message<String>>) CollectionUtils.arrayToList(v.split(",")).stream()
+				List<Message<String>> list = Arrays.asList(v.split(",")).stream()
 						.map(value -> MessageBuilder.withPayload(value).build()).collect(Collectors.toList());
 				return list;
 			};

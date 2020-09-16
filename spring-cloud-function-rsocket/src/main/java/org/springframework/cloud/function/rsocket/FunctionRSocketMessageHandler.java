@@ -41,7 +41,6 @@ import org.springframework.core.codec.ByteArrayEncoder;
 import org.springframework.core.codec.Decoder;
 import org.springframework.core.codec.Encoder;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.server.PathContainer;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -57,11 +56,8 @@ import org.springframework.messaging.rsocket.annotation.support.RSocketFrameType
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler;
 import org.springframework.messaging.rsocket.annotation.support.RSocketPayloadReturnValueHandler;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.RouteMatcher;
-import org.springframework.util.SimpleRouteMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.pattern.PathPatternRouteMatcher;
 
@@ -116,25 +112,18 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	 * Will check if there is a function handler registered for destination before proceeding.
 	 * This typically happens when user avoids using 'spring.cloud.function.definition' property.
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
 	public Mono<Void> handleMessage(Message<?> message) throws MessagingException {
-
 		if (!FrameType.SETUP.equals(message.getHeaders().get("rsocketFrameType"))) {
 			String destination = this.getDestination(message).value();
 			if (!StringUtils.hasText(destination)) {
-				destination = this.functionProperties.getDefinition();
-				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-						.getField(this.headersField, message.getHeaders());
-
-				PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
-
-				headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+				destination = this.discoverAndInjectDestinationHeader(message);
 			}
+
 			Set<String> mappings = this.getDestinationLookup().keySet();
 			if (!mappings.contains(destination)) {
 				FunctionInvocationWrapper function = FunctionRSocketUtils
-						.registerFunctionForDestination(destination, functionCatalog, this.getApplicationContext());
+						.registerFunctionForDestination(destination, this.functionCatalog, this.getApplicationContext());
 				this.registerFunctionHandler(new RSocketListenerFunction(function), destination);
 			}
 		}
@@ -160,6 +149,18 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	protected List<? extends HandlerMethodReturnValueHandler> initReturnValueHandlers() {
 		return Collections.singletonList(new FunctionRSocketPayloadReturnValueHandler((List<Encoder<?>>) getEncoders(),
 			getReactiveAdapterRegistry()));
+	}
+
+	@SuppressWarnings("unchecked")
+	private String discoverAndInjectDestinationHeader(Message<?> message) {
+		String destination = this.functionProperties.getDefinition();
+		Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+				.getField(this.headersField, message.getHeaders());
+
+		PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
+
+		headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+		return destination;
 	}
 
 	protected static final class MessageHandlerMethodArgumentResolver implements SyncHandlerMethodArgumentResolver {
