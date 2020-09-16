@@ -66,6 +66,32 @@ public class RSocketAutoConfigurationTests {
 				.data("\"hello\"")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
+				.expectNext("HELLO")
+				.expectComplete()
+				.verify();
+		}
+	}
+
+	@Test
+	public void testImperativeFunctionAsRequestReplyWithDefinitionExplicitAccept() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.cloud.function.definition=uppercase",
+						"--spring.cloud.function.accept=application/json",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("")
+				.data("\"hello\"")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
 				.expectNext("\"HELLO\"")
 				.expectComplete()
 				.verify();
@@ -87,10 +113,10 @@ public class RSocketAutoConfigurationTests {
 
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("uppercase")
-				.data("\"hello\"")
+				.data("hello")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"HELLO\"")
+				.expectNext("HELLO")
 				.expectComplete()
 				.verify();
 		}
@@ -114,7 +140,7 @@ public class RSocketAutoConfigurationTests {
 				.data("\"hello\"")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"HELLOHELLO\"")
+				.expectNext("HELLOHELLO")
 				.expectComplete()
 				.verify();
 		}
@@ -138,7 +164,7 @@ public class RSocketAutoConfigurationTests {
 				.data("\"hello\"")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"test data\"")
+				.expectNext("test data")
 				.expectComplete()
 				.verify();
 		}
@@ -162,7 +188,7 @@ public class RSocketAutoConfigurationTests {
 				.data("\"hello\"")
 				.retrieveFlux(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"HELLO\"")
+				.expectNext("HELLO")
 				.expectComplete()
 				.verify();
 		}
@@ -186,7 +212,7 @@ public class RSocketAutoConfigurationTests {
 				.data(Flux.just("\"Ricky\"", "\"Julien\"", "\"Bubbles\""))
 				.retrieveFlux(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"RICKY\"", "\"JULIEN\"", "\"BUBBLES\"")
+				.expectNext("RICKY", "JULIEN", "BUBBLES")
 				.expectComplete()
 				.verify();
 		}
@@ -294,7 +320,7 @@ public class RSocketAutoConfigurationTests {
 					.data("\"hello\"")
 					.retrieveMono(String.class)
 					.as(StepVerifier::create)
-					.expectNext("\"(OLLEHOLLEH)\"")
+					.expectNext("(OLLEHOLLEH)")
 					.expectComplete()
 					.verify();
 			}
@@ -394,7 +420,7 @@ public class RSocketAutoConfigurationTests {
 				.data("\"hello\"")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"olleh\"")
+				.expectNext("olleh")
 				.expectComplete()
 				.verify();
 
@@ -402,7 +428,7 @@ public class RSocketAutoConfigurationTests {
 				.data("\"hello\"")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"(hello)\"")
+				.expectNext("(hello)")
 				.expectComplete()
 				.verify();
 		}
@@ -443,7 +469,9 @@ public class RSocketAutoConfigurationTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return String::toUpperCase;
+			return v -> {
+				return v.toUpperCase();
+			};
 		}
 
 		@Bean

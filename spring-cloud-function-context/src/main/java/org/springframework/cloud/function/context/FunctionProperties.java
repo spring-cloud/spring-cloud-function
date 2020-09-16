@@ -44,10 +44,7 @@ public class FunctionProperties {
 	private String definition;
 
 
-	private String contentType = "application/json";
-
-
-	private String accept = "application/json";
+	private String accept;
 
 	/**
 	 * SpEL expression which should result in function definition (e.g., function name or composition instruction).
@@ -69,14 +66,6 @@ public class FunctionProperties {
 
 	public void setRoutingExpression(String routingExpression) {
 		this.routingExpression = routingExpression;
-	}
-
-	public String getContentType() {
-		return contentType;
-	}
-
-	public void setContentType(String contentType) {
-		this.contentType = contentType;
 	}
 
 	public String getAccept() {
