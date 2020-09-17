@@ -32,6 +32,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import net.jodah.typetools.TypeResolver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -41,6 +42,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -184,10 +186,12 @@ public class RequestProcessor {
 	private Mono<ResponseEntity<?>> response(FunctionWrapper request, Object handler,
 			Publisher<?> result, Boolean single, boolean getter) {
 		BodyBuilder builder = ResponseEntity.ok();
-		if (this.inspector.isMessage(handler)) {
+		if (((FunctionInvocationWrapper) handler).isInputTypeMessage()) {
 			result = Flux.from(result)
 					.map(message -> MessageUtils.unpack(handler, message))
-					.doOnNext(value -> addHeaders(builder, value))
+					.doOnNext(value -> {
+						addHeaders(builder, value);
+					})
 					.map(message -> message.getPayload());
 		}
 		else {
@@ -256,6 +260,7 @@ public class RequestProcessor {
 		}
 		else if (function instanceof FunctionInvocationWrapper) {
 			Publisher<?> result = (Publisher<?>) function.apply(flux);
+//			Publisher<?> result = null;
 			if (((FunctionInvocationWrapper) function).isConsumer()) {
 				if (result != null) {
 					((Mono) result).subscribe();
@@ -455,11 +460,33 @@ public class RequestProcessor {
 	}
 
 	private Type getItemType(Object function) {
-		Class<?> inputType = this.inspector.getInputType(function);
+
+		if (function == null || ((FunctionInvocationWrapper) function).getInputType() == Object.class) {
+			return Object.class;
+		}
+
+		Type itemType;
+		if (((FunctionInvocationWrapper) function).isInputTypePublisher() && ((FunctionInvocationWrapper) function).isInputTypeMessage()) {
+			itemType = FunctionTypeUtils.getImmediateGenericType(((FunctionInvocationWrapper) function).getInputType(), 0);
+			itemType = FunctionTypeUtils.getImmediateGenericType(itemType, 0);
+		}
+		else {
+			itemType = FunctionTypeUtils.getImmediateGenericType(((FunctionInvocationWrapper) function).getInputType(), 0);
+		}
+
+		if (itemType != null) {
+			return itemType;
+		}
+
+		Class<?> inputType = ((FunctionInvocationWrapper) function).isInputTypeMessage() || ((FunctionInvocationWrapper) function).isInputTypePublisher()
+				? TypeResolver.resolveRawClass(itemType, null)
+						: ((FunctionInvocationWrapper) function).getRawInputType();
 		if (!Collection.class.isAssignableFrom(inputType)) {
 			return inputType;
 		}
-		Type type = this.inspector.getRegistration(function).getType().getType();
+
+//		Type type = this.inspector.getRegistration(function).getType().getType();
+		Type type = ((FunctionInvocationWrapper) function).getInputType();
 		if (type instanceof ParameterizedType) {
 			type = ((ParameterizedType) type).getActualTypeArguments()[0];
 		}

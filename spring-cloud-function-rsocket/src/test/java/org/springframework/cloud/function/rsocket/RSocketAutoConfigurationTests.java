@@ -73,7 +73,7 @@ public class RSocketAutoConfigurationTests {
 	}
 
 	@Test
-	public void testImperativeFunctionAsRequestReplyWithDefinitionExplicitAccept() {
+	public void testImperativeFunctionAsRequestReplyWithDefinitionExplicitExpectedOutputCt() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
@@ -81,7 +81,7 @@ public class RSocketAutoConfigurationTests {
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.cloud.function.accept=application/json",
+						"--spring.cloud.function.expected-content-type=application/json",
 						"--spring.rsocket.server.port=" + port);
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =

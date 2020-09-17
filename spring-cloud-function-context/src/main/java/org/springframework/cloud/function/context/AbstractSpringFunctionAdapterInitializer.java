@@ -171,7 +171,14 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 
 	protected Publisher<?> apply(Publisher<?> input) {
 		if (this.function != null) {
-			return Flux.from(this.function.apply(input));
+			//return Flux.from(this.function.apply(input));
+			Object result = this.function.apply(input);
+			if (result instanceof Publisher) {
+				return Flux.from((Publisher) result);
+			}
+			else {
+				return Flux.just(result);
+			}
 		}
 		if (this.consumer != null) {
 			this.consumer.accept(input);

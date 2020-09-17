@@ -30,6 +30,33 @@ import javax.activation.MimeType;
  */
 public interface FunctionCatalog {
 
+	/**
+	 * Will look up the instance of the functional interface by name only.
+	 *
+	 * @param                    <T> instance type
+	 * @param functionDefinition the definition of the functional interface. Must
+	 *                           not be null;
+	 * @return instance of the functional interface registered with this catalog
+	 */
+	default <T> T lookup(String functionDefinition) {
+		return this.lookup(null, functionDefinition, (String[]) null);
+	}
+
+	/**
+	 * Will look up the instance of the functional interface by name and type which
+	 * can only be Supplier, Consumer or Function. If type is not provided, the
+	 * lookup will be made based on name only.
+	 *
+	 * @param                    <T> instance type
+	 * @param type               the type of functional interface. Can be null
+	 * @param functionDefinition the definition of the functional interface. Must
+	 *                           not be null;
+	 * @return instance of the functional interface registered with this catalog
+	 */
+	default <T> T lookup(Class<?> type, String functionDefinition) {
+		return this.lookup(type, functionDefinition, (String[]) null);
+	}
+
 
 	/**
 	 * Will look up the instance of the functional interface by name only.
@@ -56,34 +83,17 @@ public interface FunctionCatalog {
 	 * 						used to convert function output back to {@code Message<byte[]>}.
 	 * @return instance of the functional interface registered with this catalog
 	 */
-	default <T> T lookup(String functionDefinition, String... acceptedOutputMimeTypes) {
-		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
+	default <T> T lookup(String functionDefinition, String... expectedOutputMimeTypes) {
+		return this.lookup(null, functionDefinition, expectedOutputMimeTypes);
 	}
 
-	/**
-	 * Will look up the instance of the functional interface by name only.
-	 *
-	 * @param                    <T> instance type
-	 * @param functionDefinition the definition of the functional interface. Must
-	 *                           not be null;
-	 * @return instance of the functional interface registered with this catalog
-	 */
-	default <T> T lookup(String functionDefinition) {
-		return this.lookup(null, functionDefinition);
-	}
+	<T> T lookup(Class<?> type, String functionDefinition, String... expectedOutputMimeTypes); //{
+//		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
+//	}
 
-	/**
-	 * Will look up the instance of the functional interface by name and type which
-	 * can only be Supplier, Consumer or Function. If type is not provided, the
-	 * lookup will be made based on name only.
-	 *
-	 * @param                    <T> instance type
-	 * @param type               the type of functional interface. Can be null
-	 * @param functionDefinition the definition of the functional interface. Must
-	 *                           not be null;
-	 * @return instance of the functional interface registered with this catalog
-	 */
-	<T> T lookup(Class<?> type, String functionDefinition);
+
+
+
 
 	Set<String> getNames(Class<?> type);
 

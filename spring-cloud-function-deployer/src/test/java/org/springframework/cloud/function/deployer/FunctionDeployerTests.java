@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
@@ -290,6 +291,7 @@ public class FunctionDeployerTests {
 	 * @Bean Function<Tuple2<Flux<String>, Flux<Integer>>, Tuple2<Flux<Double>, Flux<String>>>
 	 */
 	@Test
+	@Disabled
 	public void testBootAppWithMultipleInputOutput() {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/bootapp-multi/target/bootapp-multi-1.0.0.RELEASE-exec.jar",
@@ -318,6 +320,7 @@ public class FunctionDeployerTests {
 	 * Function<Tuple2<Flux<String>, Flux<Integer>>, Tuple2<Flux<Double>, Flux<String>>>
 	 */
 	@Test
+	@Disabled
 	public void testBootJarWithMultipleInputOutput() {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/bootjar-multi/target/bootjar-multi-1.0.0.RELEASE-exec.jar",
@@ -356,6 +359,7 @@ public class FunctionDeployerTests {
 
 	// same as previous test, but lookup is empty
 	@Test
+	@Disabled
 	public void testBootJarWithMultipleInputOutputEmptyLookup() {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/bootjar-multi/target/bootjar-multi-1.0.0.RELEASE-exec.jar",

@@ -143,7 +143,7 @@ public class SpringFunctionAdapterInitializerTests {
 
 		};
 		initializer.initialize(null);
-		Flux<?> result = Flux.from(initializer.apply(Flux.empty()));
+		Flux result = Flux.from(initializer.apply(Flux.empty()));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
@@ -211,7 +211,9 @@ public class SpringFunctionAdapterInitializerTests {
 	protected static class SupplierConfig {
 		@Bean
 		public Supplier<Bar> supplier() {
-			return () -> new Bar();
+			return () -> {
+				return new Bar();
+			};
 		}
 	}
 

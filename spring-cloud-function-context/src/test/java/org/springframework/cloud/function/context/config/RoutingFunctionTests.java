@@ -163,13 +163,13 @@ public class RoutingFunctionTests {
 	public void testInvocationWithMessageComposed() {
 		FunctionCatalog functionCatalog = this.configureCatalog();
 
-		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME + "|uppercase");
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME + "|reverse");
 		assertThat(function).isNotNull();
 
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".definition", "uppercase").build();
 
-		assertThat(function.apply(message)).isEqualTo("HELLO");
+		assertThat(function.apply(message)).isEqualTo("OLLEH");
 	}
 
 	@EnableAutoConfiguration

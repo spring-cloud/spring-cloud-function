@@ -29,6 +29,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+
 /**
  * @author Oleg Zhurakousky
  *
@@ -44,15 +45,16 @@ public class HeadersToMessageTests {
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		this.client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
-				.expectStatus().isOk().expectHeader()
-				.valueEquals("x-content-type", "application/xml").expectHeader()
-				.valueEquals("foo", "bar").expectBody(String.class).isEqualTo("FOO");
+		.expectStatus().isOk().expectHeader()
+		.valueEquals("x-content-type", "application/xml").expectHeader()
+		.valueEquals("foo", "bar").expectBody(String.class).isEqualTo("FOO");
 	}
 
 	@SpringBootConfiguration
 	protected static class TestConfiguration
 			implements Function<Message<String>, Message<String>> {
 
+		@Override
 		public Message<String> apply(Message<String> request) {
 			Message<String> message = MessageBuilder
 					.withPayload(request.getPayload().toUpperCase())

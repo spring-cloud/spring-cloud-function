@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.source;
 
+import java.lang.reflect.Type;
 import java.util.function.Supplier;
 
 import reactor.core.publisher.Flux;
@@ -34,6 +35,7 @@ import org.springframework.cloud.function.web.source.FunctionExporterAutoConfigu
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.env.Environment;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -66,9 +68,11 @@ public class FunctionExporterAutoConfiguration {
 	public FunctionRegistration<Supplier<Flux<?>>> origin(WebClient.Builder builder) {
 		HttpSupplier supplier = new HttpSupplier(builder.build(), this.props);
 		FunctionRegistration<Supplier<Flux<?>>> registration = new FunctionRegistration<>(supplier);
-		FunctionType type = FunctionType.supplier(this.props.getSource().getType()).wrap(Flux.class);
+		Type rawType = ResolvableType.forClassWithGenerics(Supplier.class, this.props.getSource().getType()).getType();
+//		FunctionType functionType = FunctionType.supplier(this.props.getSource().getType()).wrap(Flux.class);
+		FunctionType type = FunctionType.of(rawType);
 		if (this.props.getSource().isIncludeHeaders()) {
-			type = type.message();
+//			type = type.message();
 		}
 		registration = registration.type(type);
 		return registration;

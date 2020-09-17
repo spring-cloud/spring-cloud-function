@@ -40,7 +40,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.scan.TestFunction;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -59,8 +58,6 @@ public class ContextFunctionCatalogInitializerTests {
 	private GenericApplicationContext context;
 
 	private FunctionCatalog catalog;
-
-	private FunctionInspector inspector;
 
 	@AfterEach
 	public void close() {
@@ -129,31 +126,11 @@ public class ContextFunctionCatalogInitializerTests {
 	}
 
 	@Test
-	public void configurationFunction() {
-		create(FunctionConfiguration.class);
-		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		assertThat(
-				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(String.class);
-		assertThat(
-				this.inspector.getOutputType(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(Foo.class);
-		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(Flux.class);
-	}
-
-	@Test
 	public void dependencyInjection() {
 		create(DependencyInjectionConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(FunctionRegistration.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
-		assertThat(
-				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(String.class);
 	}
 
 	@Test
@@ -165,9 +142,6 @@ public class ContextFunctionCatalogInitializerTests {
 			= this.catalog.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("{\"name\":\"foo\"}")).blockFirst().getName()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
-		assertThat(this.inspector.getRegistration(function)).isNotNull();
-		assertThat(this.inspector.getRegistration(function).getType())
-				.isEqualTo(FunctionType.from(Person.class).to(Person.class));
 	}
 
 	@Test
@@ -180,9 +154,6 @@ public class ContextFunctionCatalogInitializerTests {
 				.lookup(Function.class, TestFunction.class.getName());
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
-		assertThat(this.inspector.getRegistration(function)).isNotNull();
-		assertThat(this.inspector.getRegistration(function).getType())
-				.isEqualTo(FunctionType.from(String.class).to(String.class));
 	}
 
 	@Test
@@ -242,7 +213,6 @@ public class ContextFunctionCatalogInitializerTests {
 				this.context).postProcessBeanDefinitionRegistry(this.context);
 		this.context.refresh();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
-		this.inspector = this.context.getBean(FunctionInspector.class);
 	}
 
 	protected static class EmptyConfiguration

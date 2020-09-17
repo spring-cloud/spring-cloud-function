@@ -16,11 +16,17 @@
 
 package org.springframework.cloud.function.context.catalog;
 
-import java.util.Collections;
-import java.util.Set;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+
+import net.jodah.typetools.TypeResolver;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 
 /**
  * @author Dave Syer
@@ -31,42 +37,84 @@ public interface FunctionInspector {
 	FunctionRegistration<?> getRegistration(Object function);
 
 	default boolean isMessage(Object function) {
-		FunctionRegistration<?> registration = getRegistration(function);
-		if (registration != null && registration.getTarget() instanceof RoutingFunction) {
-			return true;
+		if (function == null) {
+			return false;
 		}
-		return registration == null ? false : registration.getType().isMessage();
+
+		return ((FunctionInvocationWrapper) function).isInputTypeMessage();
 	}
 
 	default Class<?> getInputType(Object function) {
-		FunctionRegistration<?> registration = getRegistration(function);
-		return registration == null ? Object.class
-				: registration.getType().getInputType();
+		if (function == null) {
+			return Object.class;
+		}
+		Type type = ((FunctionInvocationWrapper) function).getInputType();
+		Class<?> inputType;
+		if (type instanceof ParameterizedType) {
+			if (function != null && (((FunctionInvocationWrapper) function).isInputTypePublisher() || ((FunctionInvocationWrapper) function).isInputTypeMessage())) {
+				inputType = TypeResolver.resolveRawClass(FunctionTypeUtils.getImmediateGenericType(type, 0), null);
+			}
+			else {
+				inputType = ((FunctionInvocationWrapper) function).getRawInputType();
+			}
+		}
+		else {
+			inputType = type instanceof TypeVariable || type instanceof WildcardType ? Object.class : (Class<?>) type;
+		}
+		return inputType;
 	}
 
 	default Class<?> getOutputType(Object function) {
-		FunctionRegistration<?> registration = getRegistration(function);
-		return registration == null ? Object.class
-				: registration.getType().getOutputType();
+		if (function == null) {
+			return Object.class;
+		}
+		Type type = ((FunctionInvocationWrapper) function).getOutputType();
+		Class<?> outputType;
+		if (type instanceof ParameterizedType) {
+			if (function != null && ((FunctionInvocationWrapper) function).isOutputTypePublisher() || ((FunctionInvocationWrapper) function).isOutputTypeMessage()) {
+				outputType = TypeResolver.resolveRawClass(FunctionTypeUtils.getImmediateGenericType(type, 0), null);
+			}
+			else {
+				outputType = ((FunctionInvocationWrapper) function).getRawOutputType();
+			}
+		}
+		else {
+			outputType = type instanceof TypeVariable || type instanceof WildcardType ? Object.class : (Class<?>) type;
+		}
+		return outputType;
 	}
 
 	default Class<?> getInputWrapper(Object function) {
-		FunctionRegistration<?> registration = getRegistration(function);
-		return registration == null ? Object.class
-				: registration.getType().getInputWrapper();
+		Class c = function == null ? Object.class : TypeResolver.resolveRawClass(((FunctionInvocationWrapper) function).getInputType(), null);
+		if (Flux.class.isAssignableFrom(c)) {
+			return c;
+		}
+		else if (Mono.class.isAssignableFrom(c)) {
+			return c;
+		}
+		else {
+			return this.getInputType(function);
+		}
 	}
 
 	default Class<?> getOutputWrapper(Object function) {
-		FunctionRegistration<?> registration = getRegistration(function);
-		return registration == null ? Object.class
-				: registration.getType().getOutputWrapper();
+		Class c  = function == null ? Object.class : TypeResolver.resolveRawClass(((FunctionInvocationWrapper) function).getOutputType(), null);
+		if (Flux.class.isAssignableFrom(c)) {
+			return c;
+		}
+		else if (Mono.class.isAssignableFrom(c)) {
+			return c;
+		}
+		else {
+			return this.getOutputType(function);
+		}
 	}
 
 	default String getName(Object function) {
-		FunctionRegistration<?> registration = getRegistration(function);
-		Set<String> names = registration == null ? Collections.emptySet()
-				: registration.getNames();
-		return names.isEmpty() ? null : names.iterator().next();
+		if (function == null) {
+			return null;
+		}
+		return ((FunctionInvocationWrapper) function).getFunctionDefinition();
 	}
 
 }

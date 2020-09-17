@@ -33,9 +33,19 @@ public class FunctionProperties {
 	public final static String PREFIX = "spring.cloud.function";
 
 	/**
-	 * Name of he header to be used to instruct function catalog to skip type conversion.
+	 * Name of the header to be used to instruct function catalog to skip type conversion.
 	 */
 	public final static String SKIP_CONVERSION_HEADER = "skip-type-conversion";
+
+	/**
+	 * Name of the header to be used to instruct function to apply this content type for output conversion.
+	 */
+	public final static String EXPECT_CONTENT_TYPE_HEADER = "expected-content-type";
+
+	/**
+	 * The name of function definition property.
+	 */
+	public final static String FUNCTION_DEFINITION = PREFIX + ".definition";
 
 	/**
 	 * Definition of the function to be used. This could be function name (e.g., 'myFunction')
@@ -44,7 +54,7 @@ public class FunctionProperties {
 	private String definition;
 
 
-	private String accept;
+	private String expectedContentType;
 
 	/**
 	 * SpEL expression which should result in function definition (e.g., function name or composition instruction).
@@ -68,11 +78,11 @@ public class FunctionProperties {
 		this.routingExpression = routingExpression;
 	}
 
-	public String getAccept() {
-		return accept;
+	public String getExpectedContentType() {
+		return this.expectedContentType;
 	}
 
-	public void setAccept(String accept) {
-		this.accept = accept;
+	public void setExpectedContentType(String expectedContentType) {
+		this.expectedContentType = expectedContentType;
 	}
 }

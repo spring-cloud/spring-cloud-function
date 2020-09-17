@@ -169,7 +169,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 		MessageBuilder messageBuilder = null;
 		Object request = this.mapper.readValue(payload, Object.class);
-		Type inputType = FunctionTypeUtils.getInputType(function.getFunctionType(), 0);
+		Type inputType = function.getInputType();
 		if (FunctionTypeUtils.isMessage(inputType)) {
 			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
 		}
