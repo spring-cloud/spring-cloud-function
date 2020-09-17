@@ -57,11 +57,11 @@ final class FunctionRSocketUtils {
 
 		registerRSocketForwardingFunctionIfNecessary(functionDefinition, functionCatalog, applicationContext);
 		FunctionProperties functionProperties = applicationContext.getBean(FunctionProperties.class);
-		String acceptContentType = functionProperties.getAccept();
+		String acceptContentType = functionProperties.getExpectedContentType();
 		if (!StringUtils.hasText(acceptContentType)) {
 			FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
-			Type functionType = function.getFunctionType();
-			Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
+			//Type functionType = function.getFunctionType();
+			Type outputType = function.getOutputType();
 			if (outputType instanceof Class && String.class.isAssignableFrom((Class<?>) outputType)) {
 				acceptContentType = "text/plain";
 			}

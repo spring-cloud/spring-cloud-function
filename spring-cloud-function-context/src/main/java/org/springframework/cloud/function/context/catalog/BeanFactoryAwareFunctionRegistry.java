@@ -16,74 +16,63 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.core.type.StandardMethodMetadata;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
+public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry implements ApplicationContextAware {
 
-/**
- * Implementation of {@link FunctionRegistry} and {@link FunctionCatalog} which is aware of the
- * underlying {@link BeanFactory} to access available functions. Functions that are registered via
- * {@link #register(FunctionRegistration)} operation are stored/cached locally.
- *
- * @author Oleg Zhurakousky
- * @author Eric Botard
- * @since 3.0
- */
-public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry implements ApplicationContextAware, InitializingBean {
+	private GenericApplicationContext applicationContext;
 
-	private ConfigurableApplicationContext applicationContext;
 
-	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService,
-		@Nullable CompositeMessageConverter messageConverter) {
-		super(conversionService, messageConverter);
+	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
+		super(conversionService, messageConverter, jsonMapper);
 	}
 
 	@Override
-	public void afterPropertiesSet() throws Exception {
-		String userDefinition = this.applicationContext.getEnvironment().getProperty("spring.cloud.function.definition");
-		init(userDefinition);
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = (GenericApplicationContext) applicationContext;
 	}
 
+	/*
+	 * Basically gives an approximation only including function registrations and SFC.
+	 * Excludes possible POJOs that can be treated as functions
+	 */
 	@Override
 	public int size() {
 		return this.applicationContext.getBeanNamesForType(Supplier.class).length +
 			this.applicationContext.getBeanNamesForType(Function.class).length +
-			this.applicationContext.getBeanNamesForType(Consumer.class).length;
+			this.applicationContext.getBeanNamesForType(Consumer.class).length +
+			super.size();
 	}
 
+	/*
+	 * Doesn't account for POJO so we really don't know until it's been lookedup
+	 */
 	@Override
 	public Set<String> getNames(Class<?> type) {
 		Set<String> registeredNames = super.getNames(type);
@@ -101,172 +90,162 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		return registeredNames;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+	public <T> T lookup(Class<?> type, String functionDefinition, String... expectedOutputMimeTypes) {
+		functionDefinition = StringUtils.hasText(functionDefinition)
+				? functionDefinition
+						: this.applicationContext.getEnvironment().getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
+
+		functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
+		if (!StringUtils.hasText(functionDefinition)) {
+			logger.debug("Can't determine default function name");
+			return null;
+		}
+		FunctionInvocationWrapper function = this.doLookup(type, functionDefinition, expectedOutputMimeTypes);
+
+		if (function == null) {
+			Set<String> functionRegistratioinNames = super.getNames(null);
+			String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+			for (String functionName : functionNames) {
+				if (functionRegistratioinNames.contains(functionName)) {
+					logger.info("Skipping function '" + functionName + "' since it is already present");
+				}
+				else {
+					Object functionCandidate = this.discoverFunctionInBeanFactory(functionName);
+					if (functionCandidate != null) {
+						Type functionType = null;
+						FunctionRegistration functionRegistration = null;
+						if (functionCandidate instanceof FunctionRegistration) {
+							functionRegistration = (FunctionRegistration) functionCandidate;
+						}
+						else if (this.isFunctionPojo(functionCandidate, functionName)) {
+							Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
+							functionCandidate = this.proxyTarget(functionCandidate, functionalMethod);
+							functionType = FunctionTypeUtils.fromFunctionMethod(functionalMethod);
+						}
+						else if (this.isSpecialFunctionRegistration(functionNames, functionName)) {
+							functionRegistration = this.applicationContext
+									.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
+						}
+						else {
+							functionType = this.discoverFunctionType(functionCandidate, functionName);
+						}
+						if (functionRegistration == null) {
+							functionRegistration = new FunctionRegistration(functionCandidate, functionName).type(functionType);
+						}
+
+						this.register(functionRegistration);
+					}
+					else {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Function '" + functionName + "' is not available in FunctionCatalog or BeanFactory");
+						}
+					}
+				}
+			}
+			function = super.doLookup(type, functionDefinition, expectedOutputMimeTypes);
+		}
+
+		return (T) function;
 	}
 
-	@Override
-	Object locateFunction(String name) {
-		Object function = super.locateFunction(name);
-		if (function == null) {
+	private Object discoverFunctionInBeanFactory(String functionName) {
+		Object functionCandidate = null;
+		if (this.applicationContext.containsBean(functionName)) {
+			functionCandidate = this.applicationContext.getBean(functionName);
+		}
+		else {
 			try {
-				function = BeanFactoryAnnotationUtils.qualifiedBeanOfType(this.applicationContext.getBeanFactory(), Object.class, name);
+				functionCandidate = BeanFactoryAnnotationUtils.qualifiedBeanOfType(this.applicationContext.getBeanFactory(), Object.class, functionName);
 			}
 			catch (Exception e) {
-				// ignore
+				// ignore since there is no safe isAvailable-kind of method
 			}
 		}
-		if (function == null && this.applicationContext.containsBean(name)) {
-			function = this.applicationContext.getBean(name);
-		}
-
-		if (function != null && this.notFunction(function.getClass())
-			&& this.applicationContext
-			.containsBean(name + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) { // e.g., Kotlin lambdas
-			function = this.applicationContext
-				.getBean(name + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
-		}
-		return function;
+		return functionCandidate;
 	}
 
 	@Override
-	Type discoverFunctionType(Object function, String... names) {
+	protected boolean containsFunction(String functionName) {
+		return super.containsFunction(functionName) ? true : this.applicationContext.containsBean(functionName);
+	}
+
+	@SuppressWarnings("rawtypes")
+	Type discoverFunctionType(Object function, String functionName) {
 		if (function instanceof RoutingFunction) {
-			return FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), names)).getType();
+			return FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionName)).getType();
 		}
 		else if (function instanceof FunctionRegistration) {
 			return ((FunctionRegistration) function).getType().getType();
 		}
 		boolean beanDefinitionExists = false;
-		for (int i = 0; i < names.length && !beanDefinitionExists; i++) {
-			beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(names[i]);
-			if (this.applicationContext.containsBean("&" + names[i])) {
-				Class<?> objectType = this.applicationContext.getBean("&" + names[i], FactoryBean.class)
-					.getObjectType();
-				return FunctionTypeUtils.discoverFunctionTypeFromClass(objectType);
-			}
+		String functionBeanDefinitionName = this.discoverDefinitionName(functionName);
+		beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(functionBeanDefinitionName);
+		if (this.applicationContext.containsBean("&" + functionName)) {
+			Class<?> objectType = this.applicationContext.getBean("&" + functionName, FactoryBean.class)
+				.getObjectType();
+			return FunctionTypeUtils.discoverFunctionTypeFromClass(objectType);
 		}
-		if (!beanDefinitionExists) {
-			logger.info("BeanDefinition for function name(s) '" + Arrays.asList(names) +
-				"' can not be located. FunctionType will be based on " + function.getClass());
-		}
+//		if (!beanDefinitionExists) {
+//			logger.info("BeanDefinition for function name(s) '" + Arrays.asList(names) +
+//				"' can not be located. FunctionType will be based on " + function.getClass());
+//		}
 
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(function.getClass());
 		if (beanDefinitionExists) {
 			Type t = FunctionTypeUtils.getImmediateGenericType(type, 0);
 			if (t == null || t == Object.class) {
-				type = FunctionType.of(FunctionContextUtils.findType(this.applicationContext.getBeanFactory(), names)).getType();
+				type = FunctionType.of(FunctionContextUtils.findType(this.applicationContext.getBeanFactory(), functionBeanDefinitionName)).getType();
 			}
 		}
 		return type;
 	}
 
-	@Override
-	String discoverDefaultDefinitionIfNecessary(String definition) {
-		if (StringUtils.isEmpty(definition) || definition.endsWith("|")) {
-			// the underscores are for Kotlin function registrations (see KotlinLambdaToFunctionAutoConfiguration)
-			String[] functionNames = Stream.of(this.applicationContext.getBeanNamesForType(Function.class))
-				.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n
-					.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
-			String[] consumerNames = Stream.of(this.applicationContext.getBeanNamesForType(Consumer.class))
-				.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n
-					.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
-			String[] supplierNames = Stream.of(this.applicationContext.getBeanNamesForType(Supplier.class))
-				.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n
-					.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
-
-			/*
-			 * we may need to add BiFunction and BiConsumer at some point
-			 */
-			List<String> names = Stream
-				.concat(Stream.of(functionNames), Stream.concat(Stream.of(consumerNames), Stream.of(supplierNames)))
-				.collect(Collectors.toList());
-
-			if (definition.endsWith("|")) {
-				Set<String> fNames = this.getNames(null);
-				definition = this.determinImpliedDefinition(fNames, definition);
-			}
-			else if (!ObjectUtils.isEmpty(names)) {
-				if (names.size() > 1) {
-					logger.warn("Found more than one function bean in BeanFactory: " + names
-						+ ". If you did not intend to use functions, ignore this message. However, if you did "
-						+ "intend to use functions in the context of spring-cloud-function, consider "
-						+ "providing 'spring.cloud.function.definition' property pointing to a function bean(s) "
-						+ "you intend to use. For example, 'spring.cloud.function.definition=myFunction'");
-					return null;
-				}
-				definition = names.get(0);
-			}
-			else {
-				definition = this.discoverDefaultDefinitionFromRegistration();
-			}
-
-			if (StringUtils.hasText(definition) && this.applicationContext.containsBean(definition)) {
-				Type functionType = discoverFunctionType(this.applicationContext.getBean(definition), definition);
-				if (!FunctionTypeUtils.isSupplier(functionType) && !FunctionTypeUtils
-					.isFunction(functionType) && !FunctionTypeUtils.isConsumer(functionType)) {
-					logger.debug("Discovered functional instance of bean '" + definition + "' as a default function, however its "
-							+ "function argument types can not be determined. Discarding.");
-					definition = null;
-				}
+	private String discoverDefinitionName(String functionDefinition) {
+		String[] aliases = this.applicationContext.getAliases(functionDefinition);
+		for (String alias : aliases) {
+			if (this.applicationContext.getBeanFactory().containsBeanDefinition(alias)) {
+				return alias;
 			}
 		}
-		if (!StringUtils.hasText(definition)) {
-			String[] functionRegistrationNames = Stream.of(applicationContext.getBeanNamesForType(FunctionRegistration.class))
-					.filter(n -> !n.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX) && !n
-						.equals(RoutingFunction.FUNCTION_NAME)).toArray(String[]::new);
-			if (functionRegistrationNames != null) {
-				if (functionRegistrationNames.length == 1) {
-					definition = functionRegistrationNames[0];
-				}
-				else {
-					logger.debug("Found more than one function registration bean in BeanFactory: " + functionRegistrationNames
-							+ ". If you did not intend to use functions, ignore this message. However, if you did "
-							+ "intend to use functions in the context of spring-cloud-function, consider "
-							+ "providing 'spring.cloud.function.definition' property pointing to a function bean(s) "
-							+ "you intend to use. For example, 'spring.cloud.function.definition=myFunction'");
-				}
+		return functionDefinition;
+	}
+
+	private boolean isFunctionPojo(Object functionCandidate, String functionName) {
+		return !functionCandidate.getClass().isSynthetic()
+			&& !(functionCandidate instanceof Supplier)
+			&& !(functionCandidate instanceof Function)
+			&& !(functionCandidate instanceof Consumer)
+			&& !this.applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX);
+	}
+
+	/**
+	 * At the moment 'special function registration' simply implies that a bean under the provided functionName
+	 * may have already been wrapped and registered as FunuctionRegistration with BeanFactory under the name of
+	 * the function suffixed with {@link FunctionRegistration#REGISTRATION_NAME_SUFFIX}
+	 * (e.g., 'myKotlinFunction_registration').
+	 * <br><br>
+	 * At the moment only Kotlin module does this
+	 *
+	 * @param functionCandidate candidate for FunctionInvocationWrapper instance
+	 * @param functionName the name of the function
+	 * @return true if this function candidate qualifies
+	 */
+	private boolean isSpecialFunctionRegistration(Object functionCandidate, String functionName) {
+		return this.applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX);
+	}
+
+	private Object proxyTarget(Object targetFunction, Method actualMethodToCall) {
+		ProxyFactory pf = new ProxyFactory(targetFunction);
+		pf.setProxyTargetClass(true);
+		pf.setInterfaces(Function.class);
+		pf.addAdvice(new MethodInterceptor() {
+			@Override
+			public Object invoke(MethodInvocation invocation) throws Throwable {
+				return actualMethodToCall.invoke(invocation.getThis(), invocation.getArguments());
 			}
-		}
-		return definition;
-	}
-
-	@Override
-	Type discoverFunctionTypeByName(String name) {
-		return FunctionContextUtils.findType(applicationContext.getBeanFactory(), name);
-	}
-
-	@Override
-	Collection<String> getAliases(String key) {
-		Collection<String> names = new LinkedHashSet<>();
-		String value = getQualifier(key);
-		if (value.equals(key) && this.applicationContext != null) {
-			names.addAll(Arrays.asList(this.applicationContext.getBeanFactory().getAliases(key)));
-		}
-		names.add(value);
-		return names;
-	}
-
-	private boolean notFunction(Class<?> functionClass) {
-		return !Function.class.isAssignableFrom(functionClass)
-			&& !Supplier.class.isAssignableFrom(functionClass)
-			&& !Consumer.class.isAssignableFrom(functionClass);
-	}
-
-	private String getQualifier(String key) {
-		if (this.applicationContext != null && this.applicationContext.getBeanFactory().containsBeanDefinition(key)) {
-			BeanDefinition beanDefinition = this.applicationContext.getBeanFactory().getBeanDefinition(key);
-			Object source = beanDefinition.getSource();
-			if (source instanceof StandardMethodMetadata) {
-				StandardMethodMetadata metadata = (StandardMethodMetadata) source;
-				Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(metadata.getIntrospectedMethod(),
-					Qualifier.class);
-				if (qualifier != null && qualifier.value().length() > 0) {
-					return qualifier.value();
-				}
-			}
-		}
-		return key;
+		});
+		return pf.getProxy();
 	}
 }

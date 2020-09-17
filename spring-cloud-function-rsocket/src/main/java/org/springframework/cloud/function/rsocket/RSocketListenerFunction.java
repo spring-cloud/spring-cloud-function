@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import java.lang.reflect.Type;
 import java.util.function.Function;
 
 import io.rsocket.frame.FrameType;
@@ -74,7 +73,7 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 			Flux<?> dataFlux =
 				messageToProcess.getPayload()
 					.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
-			if (isFunctionInputReactive(this.targetFunction.getFunctionType())) {
+			if (FunctionTypeUtils.isPublisher(this.targetFunction.getInputType())) {
 				dataFlux = dataFlux.transform((Function) this.targetFunction);
 			}
 			else {
@@ -92,12 +91,12 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 		Flux<?> dataFlux =
 			messageToProcess.getPayload()
 				.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
-		if (isFunctionInputReactive(this.targetFunction.getFunctionType())) {
+		if (this.targetFunction.getInputType() != null && FunctionTypeUtils.isPublisher(this.targetFunction.getInputType())) {
 			dataFlux = dataFlux.transform((Function) this.targetFunction);
 		}
 		else {
 			dataFlux = dataFlux.flatMap((data) -> {
-				Object result = this.targetFunction.apply(data);
+				Object result = this.targetFunction.isSupplier() ? this.targetFunction.apply(null) : this.targetFunction.apply(data);
 				return result instanceof Publisher<?>
 					? (Publisher<Message<byte[]>>) result
 					: Mono.just((Message<byte[]>) result);
@@ -105,10 +104,4 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 		}
 		return dataFlux.cast(Message.class).map(Message::getPayload);
 	}
-
-	private static boolean isFunctionInputReactive(Type functionType) {
-		Type inputType = FunctionTypeUtils.getInputType(functionType, 0);
-		return FunctionTypeUtils.isPublisher(inputType);
-	}
-
 }

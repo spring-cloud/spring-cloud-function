@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,13 +27,16 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 
 /**
  * @param <E> event type
  * @param <O> result types
  * @author Mark Fisher
  * @author Oleg Zhurakousky
+ *
  */
+@Deprecated
 public class SpringBootRequestHandler<E, O> extends AbstractSpringFunctionAdapterInitializer<Context>
 		implements RequestHandler<E, Object> {
 
@@ -66,11 +70,13 @@ public class SpringBootRequestHandler<E, O> extends AbstractSpringFunctionAdapte
 	}
 
 	protected boolean acceptsInput() {
-		return !this.getInspector().getInputType(function()).equals(Void.class);
+		Type inputType = ((FunctionInvocationWrapper) this.function()).getInputType();
+		return inputType == null || inputType.equals(Void.class) ? false : true;
 	}
 
 	protected boolean returnsOutput() {
-		return !this.getInspector().getOutputType(function()).equals(Void.class);
+		Type outputType = ((FunctionInvocationWrapper) this.function()).getOutputType();
+		return outputType == null || outputType.equals(Void.class) ? false : true;
 	}
 
 	private boolean isSingleValue(Object input) {

@@ -169,13 +169,16 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 					List<MessageConverter> messageConverters = new ArrayList<>();
 					JsonMapper jsonMapper = this.context.getBean(JsonMapper.class);
 
-					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new JsonMessageConverter(jsonMapper)));
-					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
-					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
+//					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new JsonMessageConverter(jsonMapper)));
+//					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
+//					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
+					messageConverters.add(new JsonMessageConverter(jsonMapper));
+					messageConverters.add(new ByteArrayMessageConverter());
+					messageConverters.add(new StringMessageConverter());
 					CompositeMessageConverter messageConverter = new CompositeMessageConverter(messageConverters);
 
 					ConversionService conversionService = new DefaultConversionService();
-					return new SimpleFunctionRegistry(conversionService, messageConverter);
+					return new SimpleFunctionRegistry(conversionService, messageConverter, this.context.getBean(JsonMapper.class));
 				});
 				this.context.registerBean(FunctionRegistrationPostProcessor.class,
 						() -> new FunctionRegistrationPostProcessor(this.context.getAutowireCapableBeanFactory()

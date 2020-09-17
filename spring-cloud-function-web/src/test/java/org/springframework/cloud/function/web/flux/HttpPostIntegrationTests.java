@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.cloud.function.web.RestApplication;
@@ -50,6 +50,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
@@ -81,7 +82,13 @@ public class HttpPostIntegrationTests {
 		this.test.list.clear();
 	}
 
+	@AfterEach
+	public void done() {
+		this.test.list.clear();
+	}
+
 	@Test
+	@DirtiesContext
 	public void qualifierFoos() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/foos")).contentType(MediaType.APPLICATION_JSON)
@@ -92,6 +99,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void updates() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON)
@@ -102,6 +110,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void updatesJson() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON)
@@ -112,6 +121,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void addFoos() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/addFoos")).contentType(MediaType.APPLICATION_JSON)
@@ -122,6 +132,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void addFoosFlux() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/addFoosFlux")).contentType(MediaType.APPLICATION_JSON)
@@ -132,6 +143,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void bareUpdates() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
@@ -141,6 +153,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void uppercase() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
@@ -149,6 +162,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void messages() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
@@ -159,6 +173,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void headers() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/headers")).contentType(MediaType.APPLICATION_JSON)
@@ -169,6 +184,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void uppercaseSingleValue() throws Exception {
 		ResponseEntity<String> result = this.rest
 				.exchange(
@@ -189,6 +205,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void uppercaseFoos() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
@@ -198,6 +215,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void uppercaseFoo() throws Exception {
 		// Single Foo can be parsed
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
@@ -207,6 +225,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void bareUppercaseFoos() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpFoos")).contentType(MediaType.APPLICATION_JSON)
@@ -216,6 +235,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void typelessFunctionPassingArray() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/typelessFunctionExpectingText"))
@@ -225,6 +245,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void bareUppercaseFoo() throws Exception {
 		// Single Foo can be parsed and returns a single value if the function is defined
 		// that way
@@ -235,6 +256,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void bareUppercase() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUppercase")).contentType(MediaType.APPLICATION_JSON)
@@ -243,6 +265,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void singleValuedText() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.post(new URI("/bareUppercase")).accept(MediaType.TEXT_PLAIN)
@@ -252,6 +275,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void transform() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/transform")).contentType(MediaType.APPLICATION_JSON)
@@ -260,6 +284,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void postMore() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/post/more")).contentType(MediaType.APPLICATION_JSON)
@@ -268,6 +293,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void convertPost() throws Exception {
 		ResponseEntity<String> result = this.rest
 				.exchange(
@@ -279,6 +305,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void convertPostJson() throws Exception {
 		// If you POST a single value to a Function<Flux<Integer>,Flux<Integer>> it can't
 		// determine if the output is single valued, so it has to send an array back
@@ -291,6 +318,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void uppercaseJsonArray() throws Exception {
 		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/maps"))
@@ -302,6 +330,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void uppercaseSSE() throws Exception {
 		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class).getBody())
@@ -309,6 +338,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void sum() throws Exception {
 
 		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -323,6 +353,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void multipart() throws Exception {
 
 		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -337,6 +368,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void count() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
 		assertThat(this.rest.exchange(
@@ -346,6 +378,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@Test
+	@DirtiesContext
 	public void fluxWithList() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
 		assertThat(this.rest.exchange(
@@ -359,7 +392,6 @@ public class HttpPostIntegrationTests {
 	}
 
 	@EnableAutoConfiguration
-	@TestConfiguration
 	public static class ApplicationConfiguration {
 
 		private List<String> list = new ArrayList<>();

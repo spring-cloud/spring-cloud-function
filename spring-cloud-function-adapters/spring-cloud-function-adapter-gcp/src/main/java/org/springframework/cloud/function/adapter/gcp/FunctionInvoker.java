@@ -87,7 +87,7 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
-		Message<BufferedReader> message = getInputType() == Void.class ? null
+		Message<BufferedReader> message = getInputType() == Void.class || getInputType() == null ? null
 				: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 		Message<byte[]> result = function.apply(message);
 

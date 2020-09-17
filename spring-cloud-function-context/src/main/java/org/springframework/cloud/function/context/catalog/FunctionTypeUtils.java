@@ -129,7 +129,9 @@ public final class FunctionTypeUtils {
 
 	public static Type discoverFunctionTypeFromFunctionalObject(Object functionalObject) {
 		if (functionalObject instanceof FunctionInvocationWrapper) {
-			return ((FunctionInvocationWrapper) functionalObject).getFunctionType();
+//			return ((FunctionInvocationWrapper) functionalObject).getFunctionType();
+//			return null;
+			throw new UnsupportedOperationException("Code is temporarily comented");
 		}
 		else {
 			return discoverFunctionTypeFromClass(functionalObject.getClass());
@@ -235,9 +237,9 @@ public final class FunctionTypeUtils {
 		Type inputType = isSupplier(functionType) ? null :  Object.class;
 		if ((isFunction(functionType) || isConsumer(functionType)) && functionType instanceof ParameterizedType) {
 			inputType = ((ParameterizedType) functionType).getActualTypeArguments()[0];
-			inputType = isMulti(inputType)
-					? ((ParameterizedType) inputType).getActualTypeArguments()[index]
-							: inputType;
+//			inputType = isMulti(inputType)
+//					? ((ParameterizedType) inputType).getActualTypeArguments()[index]
+//							: inputType;
 		}
 
 		return inputType;
@@ -245,15 +247,34 @@ public final class FunctionTypeUtils {
 
 	public static Type getOutputType(Type functionType, int index) {
 		assertSupportedTypes(functionType);
-		Type outputType = isConsumer(functionType) ? null :  Object.class;
-		if ((isFunction(functionType) || isSupplier(functionType)) && functionType instanceof ParameterizedType) {
-			outputType = ((ParameterizedType) functionType).getActualTypeArguments()[isFunction(functionType) ? 1 : 0];
-			outputType = isMulti(outputType)
-					? ((ParameterizedType) outputType).getActualTypeArguments()[index]
-							: outputType;
+		if (isFunction(functionType)) {
+			if (functionType instanceof ParameterizedType) {
+				return ((ParameterizedType) functionType).getActualTypeArguments()[1];
+			}
+			else {
+				return Object.class;
+			}
 		}
-
-		return outputType;
+		else if (isSupplier(functionType)) {
+			if (functionType instanceof ParameterizedType) {
+				return ((ParameterizedType) functionType).getActualTypeArguments()[0];
+			}
+			else {
+				return Object.class;
+			}
+		}
+		else {
+			return null;
+		}
+//		Type outputType = isConsumer(functionType) ? null :  Object.class;
+//		if ((isFunction(functionType) || isSupplier(functionType)) && functionType instanceof ParameterizedType) {
+//			outputType = ((ParameterizedType) functionType).getActualTypeArguments()[isFunction(functionType) ? 1 : 0];
+//			outputType = isMulti(outputType)
+//					? ((ParameterizedType) outputType).getActualTypeArguments()[index]
+//							: outputType;
+//		}
+//
+//		return outputType;
 	}
 
 	public static Type getImmediateGenericType(Type type, int index) {
@@ -282,6 +303,9 @@ public final class FunctionTypeUtils {
 
 	public static boolean isMessage(Type type) {
 		if (isPublisher(type)) {
+			type = getImmediateGenericType(type, 0);
+		}
+		if (type instanceof ParameterizedType && !type.getTypeName().startsWith("org.springframework.messaging.Message")) {
 			type = getImmediateGenericType(type, 0);
 		}
 		return type.getTypeName().startsWith("org.springframework.messaging.Message");
@@ -358,13 +382,15 @@ public final class FunctionTypeUtils {
 				|| Consumer.class.isAssignableFrom(candidateType);
 	}
 
-	public static boolean isMultipleInputArguments(Type functionType) {
-		boolean multipleInputs = false;
-		if (functionType instanceof ParameterizedType && !isSupplier(functionType)) {
-			Type inputType = ((ParameterizedType) functionType).getActualTypeArguments()[0];
-			multipleInputs = isMulti(inputType);
+	public static boolean isMultipleArgumentType(Type type) {
+		if (type != null) {
+			if (TypeResolver.resolveRawClass(type, null).isArray()) {
+				return false;
+			}
+			Class<?> clazz = TypeResolver.resolveRawClass(TypeResolver.reify(type), null);
+			return clazz.getName().startsWith("reactor.util.function.Tuple");
 		}
-		return multipleInputs;
+		return false;
 	}
 
 	public static boolean isMultipleArgumentsHolder(Object argument) {

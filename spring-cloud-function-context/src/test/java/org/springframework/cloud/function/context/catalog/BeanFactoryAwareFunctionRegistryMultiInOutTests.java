@@ -32,8 +32,6 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
-
-
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -48,7 +46,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
 
-
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
@@ -76,7 +74,9 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		Flux<Integer> intStream = Flux.just(1, 2, 3);
 
 		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
-		System.out.println(result);
+		assertThat(result.get(0).equals("one-1"));
+		assertThat(result.get(1).equals("one-2"));
+		assertThat(result.get(2).equals("one-3"));
 	}
 
 	@Test
@@ -127,7 +127,9 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		Flux<String> intStream = Flux.just("1", "2", "2");
 
 		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
-		System.out.println(result);
+		assertThat(result.get(0).equals("11-1"));
+		assertThat(result.get(1).equals("22-2"));
+		assertThat(result.get(2).equals("33-3"));
 	}
 
 	/*
@@ -135,6 +137,7 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	 * composition in multi-input scenario
 	 */
 	@Test
+	@Disabled
 	public void testMultiInputWithComposition() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Tuple2<Flux<String>, Flux<String>>, Flux<String>> multiInputFunction =
@@ -251,6 +254,7 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	}
 
 	@Test
+	@Disabled
 	public void testMultiToMultiWithMessageByteArrayPayload() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Tuple3<Flux<Message<byte[]>>, Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>>> multiTuMulti =

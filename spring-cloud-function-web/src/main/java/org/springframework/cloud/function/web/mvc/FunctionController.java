@@ -63,7 +63,8 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> post(WebRequest request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		return this.processor.post(wrapper, body, false);
+		Mono<ResponseEntity<?>> result = this.processor.post(wrapper, body, false);
+		return result;
 	}
 
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

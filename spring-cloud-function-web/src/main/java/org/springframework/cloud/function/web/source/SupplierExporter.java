@@ -168,7 +168,11 @@ public class SupplierExporter implements SmartLifecycle {
 	}
 
 	private Flux<ClientResponse> forward(Supplier<Publisher<Object>> supplier, String name) {
-		return Flux.from(supplier.get()).flatMap(value -> {
+		Flux o = (Flux) supplier.get();
+//		o.subscribe(v -> {
+//			System.out.println(v);
+//		});
+		return Flux.from(o).flatMap(value -> {
 			String destination = this.destinationResolver.destination(supplier, name, value);
 			if (this.debug) {
 				logger.info("Posting to: " + destination);
