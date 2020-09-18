@@ -37,6 +37,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.HybridFunctionalRegistrationTests.UppercaseFunction;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
 import org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper;
@@ -79,6 +80,27 @@ public class SimpleFunctionRegistryTests {
 		this.messageConverter = new CompositeMessageConverter(messageConverters);
 
 		this.conversionService = new DefaultConversionService();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testSCF588() {
+
+		UpperCase function = new UpperCase();
+		FunctionRegistration<UpperCase> registration = new FunctionRegistration<>(
+				function, "foo").type(FunctionType.of(UppercaseFunction.class));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter);
+		catalog.register(registration);
+
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("uppercase");
+
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader("scf-sink-url", "blah")
+				.setHeader("scf-func-name", "blah")
+				.build();
+		Object result = lookedUpFunction.apply(message);
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<String>) result).getPayload()).isEqualTo("HELLO");
 	}
 
 	@Test

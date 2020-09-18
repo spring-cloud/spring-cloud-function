@@ -777,8 +777,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 
 			Publisher<?> result = publisher instanceof Mono
-				? Mono.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type))
-				: Flux.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type));
+				? Mono.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type)).doOnError(v -> {
+					v.printStackTrace();
+				})
+				: Flux.from(publisher).map(value -> this.convertInputValueIfNecessary(value, type)).doOnError(v -> {
+					v.printStackTrace();
+				});
 			return result;
 		}
 
@@ -834,7 +838,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						if (this.payloadIsSpecialType(((Message<?>) value).getPayload())) {
 							return null;
 						}
-						convertedValue = ((Message<?>) convertedValue).getPayload();
+						if (!((Message<?>) convertedValue).getHeaders().containsKey("scf-sink-url")) {
+							convertedValue = ((Message<?>) convertedValue).getPayload();
+						}
 					}
 				}
 				else if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
