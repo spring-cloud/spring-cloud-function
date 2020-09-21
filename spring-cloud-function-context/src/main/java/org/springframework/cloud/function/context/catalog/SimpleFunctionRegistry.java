@@ -456,7 +456,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.delegate != null) {
 				return this.delegate.hashCode();
 			}
-			return super.hashCode();
+			else {
+				return this.target.hashCode();
+			}
+			//return super.hashCode();
 		}
 
 		@Override
@@ -464,7 +467,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.delegate != null) {
 				return this.delegate.equals(o);
 			}
-			return super.equals(o);
+			else {
+				return this.target.equals(o);
+			}
+//			return super.equals(o);
 		}
 
 		public String getFunctionDefinition() {
