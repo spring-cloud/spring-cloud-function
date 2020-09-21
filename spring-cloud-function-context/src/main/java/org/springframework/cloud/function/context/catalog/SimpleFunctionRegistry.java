@@ -454,24 +454,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		@Override
 		public int hashCode() {
-			if (this.delegate != null) {
-				return this.delegate.hashCode();
-			}
-			else {
-				return this.target.hashCode();
-			}
-			//return super.hashCode();
+			return this.delegate == null ? this.target.hashCode() : this.delegate.hashCode();
 		}
 
 		@Override
 		public boolean equals(Object o) {
-			if (this.delegate != null) {
-				return this.delegate.equals(o);
-			}
-			else {
-				return this.target.equals(o);
-			}
-//			return super.equals(o);
+			return this.delegate == null ? this.target.equals(o) : this.delegate.equals(o);
 		}
 
 		public String getFunctionDefinition() {

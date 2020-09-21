@@ -32,11 +32,6 @@ public interface FunctionInspector {
 
 	default boolean isMessage(Object function) {
 		FunctionRegistration<?> registration = getRegistration(function);
-//		if (registration != null && registration.getTarget() instanceof FunctionInvocationWrapper
-//				&& ((FunctionInvocationWrapper) registration.getTarget()).getTarget() instanceof RoutingFunction) {
-//			// we always want to give routing function as much information as possible
-//			return true;
-//		}
 		if (registration != null && registration.getTarget() instanceof RoutingFunction) {
 			return true;
 		}
