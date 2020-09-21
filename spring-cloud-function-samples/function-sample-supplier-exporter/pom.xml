@@ -21,7 +21,6 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<spring-cloud-function.version>3.1.0-SNAPSHOT</spring-cloud-function.version>
-		<wrapper.version>1.0.17.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>
@@ -40,6 +39,16 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.awaitility</groupId>
+			<artifactId>awaitility</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>1.14.3</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -68,13 +77,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<dependencies>
-					<dependency>
-						<groupId>org.springframework.boot.experimental</groupId>
-						<artifactId>spring-boot-thin-layout</artifactId>
-						<version>${wrapper.version}</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 		</plugins>
 	</build>
