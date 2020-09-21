@@ -415,7 +415,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 *
 	 * @author Oleg Zhurakousky
 	 */
-	public class FunctionInvocationWrapper implements Function<Object, Object>, Consumer<Object>, Supplier<Object> {
+	public class FunctionInvocationWrapper implements Function<Object, Object>, Consumer<Object>,
+			Supplier<Object>, Runnable {
 
 		private final Object target;
 
@@ -517,6 +518,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				: (FunctionTypeUtils.isMono(this.functionType) ? Flux.empty() : null);
 
 			return this.doApply(input, false, enricher);
+		}
+
+		@Override
+		public void run() {
+			this.apply(null);
 		}
 
 		public Type getFunctionType() {

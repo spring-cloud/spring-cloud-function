@@ -484,6 +484,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(f.apply("Bubbles")).isEqualTo("BUBBLES");
 	}
 
+	@Test
+	public void testSupplierConsumerAsRunnable() {
+		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
+		Runnable f = catalog.lookup("numberword|imperativeConsumer");
+		f.run();
+	}
+
 	@EnableAutoConfiguration
 	public static class PojoToMessageFunctionCompositionConfiguration {
 
