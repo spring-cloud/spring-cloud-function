@@ -427,6 +427,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.headersField.setAccessible(true);
 		}
 
+		@Override
+		public int hashCode() {
+			return this.target.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			return this.target.equals(o);
+		}
+
 		public String getFunctionDefinition() {
 			return this.functionDefinition;
 		}
