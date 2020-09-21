@@ -89,6 +89,12 @@ public class RoutingFunctionTests {
 						.contentType(MediaType.TEXT_PLAIN)
 						.header("spring.cloud.function.definition", "echo")
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+		postForEntity = this.rest
+				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+						.contentType(MediaType.TEXT_PLAIN)
+						.header("spring.cloud.function.definition", "echo")
+						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
