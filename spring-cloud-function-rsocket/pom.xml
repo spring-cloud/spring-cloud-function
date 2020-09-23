@@ -16,7 +16,7 @@
 	</parent>
 
 	<properties>
-		<rsocket-routing.version>0.0.2-SNAPSHOT</rsocket-routing.version>
+<!-- 		<rsocket-routing.version>0.0.2-SNAPSHOT</rsocket-routing.version> -->
 	</properties>
 
 	<dependencies>
@@ -42,12 +42,12 @@
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-context</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>io.rsocket.routing</groupId>
-			<artifactId>rsocket-routing-client-spring</artifactId>
-			<version>${rsocket-routing.version}</version>
-			<optional>true</optional>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>io.rsocket.routing</groupId> -->
+<!-- 			<artifactId>rsocket-routing-client-spring</artifactId> -->
+<!-- 			<version>${rsocket-routing.version}</version> -->
+<!-- 			<optional>true</optional> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
@@ -63,12 +63,12 @@
 		    <artifactId>reactor-test</artifactId>
 		    <scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>io.rsocket.routing</groupId>
-			<artifactId>rsocket-routing-broker-spring</artifactId>
-			<version>${rsocket-routing.version}</version>
-			<scope>test</scope>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>io.rsocket.routing</groupId> -->
+<!-- 			<artifactId>rsocket-routing-broker-spring</artifactId> -->
+<!-- 			<version>${rsocket-routing.version}</version> -->
+<!-- 			<scope>test</scope> -->
+<!-- 		</dependency> -->
 	</dependencies>
 
 </project>
