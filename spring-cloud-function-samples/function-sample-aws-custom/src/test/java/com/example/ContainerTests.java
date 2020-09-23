@@ -52,7 +52,7 @@ public class ContainerTests {
 						String.class);
 				return result;
 			}, result -> result != null);
-			assertThat(response.getBody()).contains("hi foo!");
+			assertThat(response.getBody()).isEqualTo("\"FOO\"");
 			assertThat(response.getHeaders()).containsKey("X-Amzn-Requestid");
 		}
 		String output = consumer.toUtf8String();
