@@ -16,6 +16,15 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import io.rsocket.routing.client.spring.RoutingClientAutoConfiguration;
+
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.rsocket.RSocketConnectorConfigurer;
 
 /**
@@ -25,14 +34,14 @@ import org.springframework.messaging.rsocket.RSocketConnectorConfigurer;
  * @author Spencer Gibb
  * @since 3.1
  */
-//@Configuration(proxyBeanMethods = false)
-//@ConditionalOnClass(RoutingClientAutoConfiguration.class)
-//@ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
-//@AutoConfigureBefore(RoutingClientAutoConfiguration.class)
-//@AutoConfigureAfter(RSocketAutoConfiguration.class)
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnClass(RoutingClientAutoConfiguration.class)
+@ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
+@AutoConfigureBefore(RoutingClientAutoConfiguration.class)
+@AutoConfigureAfter(RSocketAutoConfiguration.class)
 class RSocketRoutingAutoConfiguration {
 
-//	@Bean
+	@Bean
 	public RSocketConnectorConfigurer functionRSocketConnectorConfigurer(
 			FunctionRSocketMessageHandler handler) {
 		return connector -> connector.acceptor(handler.responder());
