@@ -478,7 +478,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		public Object get(Function<Message, Message> enricher) {
 			Object input = FunctionTypeUtils.isMono(this.functionType)
 				? Mono.empty()
-				: (FunctionTypeUtils.isMono(this.functionType) ? Flux.empty() : null);
+				: (FunctionTypeUtils.isFlux(this.functionType) ? Flux.empty() : null);
 
 			return this.doApply(input, false, enricher);
 		}
