@@ -16,7 +16,7 @@
 	</parent>
 
 	<properties>
-		<rsocket-routing.version>0.0.2-SNAPSHOT</rsocket-routing.version>
+		<rsocket-routing.version>0.1.0</rsocket-routing.version>
 	</properties>
 
 	<dependencies>
