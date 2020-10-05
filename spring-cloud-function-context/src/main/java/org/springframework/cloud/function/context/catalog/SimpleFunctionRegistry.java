@@ -53,6 +53,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.cloud.function.context.catalog.exception.FunctionDefinitionDoesNotExistException;
+import org.springframework.cloud.function.context.catalog.exception.UnsupportedFunctionException;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.convert.ConversionService;
@@ -137,6 +139,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T lookup(String definition, String... acceptedOutputTypes) {
+		return this.lookup(definition, false, acceptedOutputTypes);
+	}
+
+	private <T> T lookup(String definition, boolean strict, String... acceptedOutputTypes) {
 		definition = StringUtils.hasText(definition) ? definition.replaceAll(",", "|") : "";
 
 		boolean routing = definition.contains(RoutingFunction.FUNCTION_NAME)
@@ -169,7 +175,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 		}
 
-		FunctionInvocationWrapper function = (FunctionInvocationWrapper) this.compose(null, definition, acceptedOutputTypes);
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) this.compose(null, definition, strict, acceptedOutputTypes);
 
 		if (this.functionAroundWrapper != null && function != null) {
 			return (T) new FunctionInvocationWrapper(function) {
@@ -181,6 +187,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			};
 		}
 		return (T) function;
+	}
+
+	@Override
+	public <T> T lookupStrict(String functionDefinition) {
+		return this.lookup(functionDefinition, true, new String[]{});
 	}
 
 	@Override
@@ -272,7 +283,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	private Function<?, ?> compose(Class<?> type, String definition, String... acceptedOutputTypes) {
+	private Function<?, ?> compose(Class<?> type, String definition, boolean strict, String... acceptedOutputTypes) {
 		if (logger.isInfoEnabled()) {
 			logger.info("Looking up function '" + definition + "' with acceptedOutputTypes: " + Arrays
 				.asList(acceptedOutputTypes));
@@ -301,16 +312,26 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			for (String name : names) {
 				Object function = this.locateFunction(name);
 				if (function == null) {
-					logger.warn("Failed to discover function '" + definition + "' in function catalog. "
-						+ "Function available in catalog are: " + this.getNames(null) + ". This is generally "
-								+ "acceptable for cases where there was no intention to use functions.");
-					return null;
+					if (strict) {
+						throw new FunctionDefinitionDoesNotExistException("Failed to discover function '" + definition + "' in function catalog. "
+							+ "Function available in catalog are: " + this.getNames(null));
+					}
+					else {
+						logger.warn("Failed to discover function '" + definition + "' in function catalog. "
+							+ "Function available in catalog are: " + this.getNames(null) + ". This is generally "
+							+ "acceptable for cases where there was no intention to use functions.");
+						return null;
+					}
 				}
 				else {
 					Type functionType = this.discoverFunctionTypeByName(name);
 					if (functionType != null && functionType.toString().contains("org.apache.kafka.streams.")) {
+						if (strict) {
+							throw new UnsupportedFunctionException(
+								"Kafka Streams function '" + definition + "' is not supported by spring-cloud-function.");
+						}
 						logger
-							.debug("Kafka Streams function '" + definition + "' is not supported by spring-cloud-function.");
+							.warn("Kafka Streams function '" + definition + "' is not supported by spring-cloud-function.");
 						return null;
 					}
 				}

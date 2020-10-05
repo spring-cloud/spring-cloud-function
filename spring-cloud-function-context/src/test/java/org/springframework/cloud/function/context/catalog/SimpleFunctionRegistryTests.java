@@ -24,12 +24,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
+import org.apache.kafka.streams.kstream.KStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
-
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -39,12 +39,15 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.HybridFunctionalRegistrationTests.UppercaseFunction;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.catalog.exception.FunctionDefinitionDoesNotExistException;
+import org.springframework.cloud.function.context.catalog.exception.UnsupportedFunctionException;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
 import org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.lang.Nullable;
@@ -59,6 +62,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author Oleg Zhurakousky
@@ -119,6 +123,33 @@ public class SimpleFunctionRegistryTests {
 		catalog.register(registration2);
 		lookedUpFunction = catalog.lookup("hello");
 		assertThat(lookedUpFunction).isNull();
+	}
+
+	@Test
+	public void testStrictLookup() {
+
+		TestFunction function = new TestFunction();
+		FunctionRegistration<TestFunction> registration = new FunctionRegistration<>(
+			function, "foo").type(FunctionType.of(TestFunction.class));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter);
+		catalog.register(registration);
+
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookupStrict("hello");
+		assertThat(lookedUpFunction).isNotNull(); // because we only have one and can look it up with any name
+
+		FunctionRegistration<TestFunction> registration2 = new FunctionRegistration<>(
+			function, "foo2").type(FunctionType.of(TestFunction.class));
+		catalog.register(registration2);
+		assertThatThrownBy(() ->
+			catalog.lookupStrict("hello")).isInstanceOf(FunctionDefinitionDoesNotExistException.class);
+
+		Function<KStream, KStream> kafkaStreamFunction = kStream -> kStream;
+		FunctionRegistration<Function<KStream, KStream>> kstreamRegistration = new FunctionRegistration<>(
+			kafkaStreamFunction, "kstreamFunction")
+			.type(new ParameterizedTypeReference<Function<KStream, KStream>>() { }.getType());
+		catalog.register(kstreamRegistration);
+		assertThatThrownBy(() ->
+			catalog.lookupStrict("kstreamFunction|foo2")).isInstanceOf(UnsupportedFunctionException.class);
 	}
 
 	@Test

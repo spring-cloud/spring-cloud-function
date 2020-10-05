@@ -14,6 +14,9 @@
 		<artifactId>spring-cloud-function-parent</artifactId>
 		<version>3.1.0-SNAPSHOT</version>
 	</parent>
+	<properties>
+		<kafka.version>2.5.0</kafka.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -63,6 +66,18 @@
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-streams</artifactId>
+			<version>${kafka.version}</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>

@@ -23,10 +23,14 @@ import java.util.function.Supplier;
 
 import javax.activation.MimeType;
 
+import org.springframework.cloud.function.context.catalog.exception.FunctionDefinitionDoesNotExistException;
+import org.springframework.cloud.function.context.catalog.exception.UnsupportedFunctionException;
+
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author David Turanski
  */
 public interface FunctionCatalog {
 
@@ -71,6 +75,19 @@ public interface FunctionCatalog {
 	default <T> T lookup(String functionDefinition) {
 		return this.lookup(null, functionDefinition);
 	}
+
+	/**
+	 * Will look up the instance of the functional interface by name only.
+	 *
+	 * @param                    <T> instance type
+	 * @param functionDefinition the definition of the functional interface. Must
+	 *                           not be null;
+	 * @return instance of the functional interface registered with this catalog
+	 * @throws FunctionDefinitionDoesNotExistException if no function with the given definition exists
+	 * @throws UnsupportedFunctionException if the function exists but is an unsupported type
+	 */
+	<T> T lookupStrict(String functionDefinition);
+
 
 	/**
 	 * Will look up the instance of the functional interface by name and type which

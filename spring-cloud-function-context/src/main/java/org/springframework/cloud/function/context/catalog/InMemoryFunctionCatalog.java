@@ -50,4 +50,9 @@ public class InMemoryFunctionCatalog extends AbstractComposableFunctionRegistry 
 		}
 		return functionType;
 	}
+
+	@Override
+	public <T> T lookupStrict(String functionDefinition) {
+		throw new UnsupportedOperationException();
+	}
 }
