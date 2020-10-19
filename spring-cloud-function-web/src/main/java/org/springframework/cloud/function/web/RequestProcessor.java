@@ -41,7 +41,6 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
@@ -81,7 +80,6 @@ public class RequestProcessor {
 
 	private static Log logger = LogFactory.getLog(RequestProcessor.class);
 
-	private final FunctionInspector inspector;
 
 	private final FunctionCatalog functionCatalog;
 
@@ -91,12 +89,10 @@ public class RequestProcessor {
 
 	private final List<HttpMessageReader<?>> messageReaders;
 
-	public RequestProcessor(FunctionInspector inspector,
-			FunctionCatalog functionCatalog,
+	public RequestProcessor(FunctionCatalog functionCatalog,
 			ObjectProvider<JsonMapper> mapper, StringConverter converter,
 			ObjectProvider<ServerCodecConfigurer> codecs) {
 		this.mapper = mapper.getIfAvailable();
-		this.inspector = inspector;
 		this.functionCatalog = functionCatalog;
 		this.converter = converter;
 		ServerCodecConfigurer source = codecs.getIfAvailable();
@@ -141,7 +137,9 @@ public class RequestProcessor {
 	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
 			boolean stream) {
 		Object function = wrapper.handler();
-		Class<?> inputType = this.inspector.getInputType(function);
+		Class<?> inputType = function == null
+				? Object.class
+				: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getInputType()));
 		Type itemType = getItemType(function);
 
 		Object input = body == null && inputType.isAssignableFrom(String.class) ? "" : body;
@@ -218,9 +216,10 @@ public class RequestProcessor {
 
 		Function function = wrapper.function();
 		Flux<?> flux;
+		Class<?> inputType = function == null ? Object.class : FunctionTypeUtils
+				.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) wrapper.handler()).getInputType()));
 		if (body != null) {
-			if (Collection.class
-					.isAssignableFrom(this.inspector.getInputType(wrapper.handler()))) {
+			if (Collection.class.isAssignableFrom(inputType)) {
 				flux = Flux.just(body);
 			}
 			else if (body instanceof Flux) {
@@ -233,8 +232,7 @@ public class RequestProcessor {
 				flux = Flux.fromIterable(iterable);
 			}
 		}
-		else if (MultiValueMap.class
-				.isAssignableFrom(this.inspector.getInputType(wrapper.handler()))) {
+		else if (MultiValueMap.class.isAssignableFrom(inputType)) {
 			flux = Flux.just(wrapper.params());
 		}
 		else {
@@ -261,7 +259,6 @@ public class RequestProcessor {
 		}
 		else if (function instanceof FunctionInvocationWrapper) {
 			Publisher<?> result = (Publisher<?>) function.apply(flux);
-//			Publisher<?> result = null;
 			if (((FunctionInvocationWrapper) function).isConsumer()) {
 				if (result != null) {
 					((Mono) result).subscribe();
@@ -342,26 +339,41 @@ public class RequestProcessor {
 
 
 	private boolean isInputMultiple(Object handler) {
-		Class<?> type = this.inspector.getInputType(handler);
-		Class<?> wrapper = this.inspector.getInputWrapper(handler);
-		return Collection.class.isAssignableFrom(type) || Flux.class.equals(wrapper);
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) handler;
+		Class<?> type = function == null ? Object.class : FunctionTypeUtils
+				.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()));
+		return Collection.class.isAssignableFrom(type) || (function != null && FunctionTypeUtils.isFlux(function.getInputType()));
+
 	}
 
 	private boolean isOutputSingle(Object handler) {
-		Class<?> type = this.inspector.getOutputType(handler);
-		Class<?> wrapper = this.inspector.getOutputWrapper(handler);
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) handler;
+		Type outputType = function.getOutputType();
+//		if (function.isOutputTypePublisher()) {
+//			outputType = FunctionTypeUtils.getGenericType(outputType);
+//		}
+//		if (function.isOutputTypeMessage()) {
+//			outputType = FunctionTypeUtils.getGenericType(outputType);
+//		}
+		Class<?> type =  FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(outputType));
+//		Class<?> type1 = this.inspector.getOutputType(handler);
+//		Class<?> wrapper1 = this.inspector.getOutputWrapper(handler);
+		Class<?> wrapper = function.isOutputTypePublisher() ? FunctionTypeUtils.getRawType(outputType) : type;
 		if (Stream.class.isAssignableFrom(type)) {
 			return false;
 		}
 		else {
+
 			return wrapper == type || Mono.class.equals(wrapper)
 					|| Optional.class.equals(wrapper);
 		}
 	}
 
 	private Publisher<?> body(Object handler, ServerWebExchange exchange) {
-		ResolvableType elementType = ResolvableType
-				.forClass(this.inspector.getInputType(handler));
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) handler;
+		Class<?> inputType = FunctionTypeUtils
+				.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()));
+		ResolvableType elementType = ResolvableType.forClass(inputType);
 
 		// we effectively delegate type conversion to FunctionCatalog
 		elementType = ResolvableType.forClass(String.class);

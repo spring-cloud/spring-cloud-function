@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.inject.FooConfiguration;
 import org.springframework.cloud.function.scan.ScannedFunction;
@@ -77,24 +78,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ContextFunctionCatalogAutoConfigurationTests {
 
-	private static String value;
-
 	private ConfigurableApplicationContext context;
 
 	private FunctionCatalog catalog;
-
-	private FunctionInspector inspector;
-
-	public static void set(Object value) {
-		ContextFunctionCatalogAutoConfigurationTests.value = value.toString();
-	}
 
 	@AfterEach
 	public void close() {
 		if (this.context != null) {
 			this.context.close();
 		}
-		ContextFunctionCatalogAutoConfigurationTests.value = null;
 	}
 
 	@Test
@@ -112,11 +104,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(f.apply(Flux.just("hello")).blockFirst())
 				.isEqualTo("HELLOfunction2function3");
 		assertThat(this.context.getBean("supplierFoo")).isInstanceOf(Supplier.class);
-//		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "supplierFoo"))
-//				.isInstanceOf(Supplier.class);
-//		assertThat(this.context.getBean("supplier_Foo")).isInstanceOf(Supplier.class);
-//		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "supplier_Foo"))
-//				.isInstanceOf(Supplier.class);
+		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "supplierFoo"))
+				.isInstanceOf(Supplier.class);
+		assertThat(this.context.getBean("supplier_Foo")).isInstanceOf(Supplier.class);
 	}
 
 	@Test
@@ -128,29 +118,23 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.isInstanceOf(Function.class);
 		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "foos"))
 				.isInstanceOf(Supplier.class);
-		assertThat(
-				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(String.class);
-		assertThat(
-				this.inspector.getOutputType(this.catalog.lookup(Supplier.class, "foos")))
-						.isEqualTo(Foo.class);
+		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos")).getRawInputType();
+		assertThat(inputType).isEqualTo(String.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("foos");
+		Type outputType = function.getOutputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(outputType)).isEqualTo(Foo.class);
 	}
 
 	@Test
 	public void configurationFunction() {
 		create(FunctionConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		assertThat(
-				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(String.class);
-		assertThat(
-				this.inspector.getOutputType(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(Foo.class);
-		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Function.class, "foos")))
-						.isEqualTo(Flux.class);
+		FunctionInvocationWrapper function = this.catalog.lookup(Function.class, "foos");
+		assertThat(function).isInstanceOf(Function.class);
+		Type inputType = function.getInputType();
+		assertThat(FunctionTypeUtils.getGenericType(inputType)).isEqualTo(String.class);
+		Type outputType = function.getOutputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(outputType)).isEqualTo(Foo.class);
 	}
 
 	@Test
@@ -159,9 +143,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
-//		assertThat(
-//				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
-//						.isEqualTo(String.class);
+		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos")).getRawInputType();
+		assertThat(inputType).isEqualTo(String.class);
 	}
 
 	@Test
@@ -170,200 +153,145 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
 				.isInstanceOf(Function.class);
-//		assertThat(
-//				this.inspector.getInputType(this.catalog.lookup(Function.class, "foos")))
-//						.isEqualTo(String.class);
+		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos")).getRawInputType();
+		assertThat(inputType).isEqualTo(String.class);
 	}
 
 	@Test
 	public void composedFunction() {
 		create(MultipleConfiguration.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos,bars"))
-				.isInstanceOf(Function.class);
-//		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "names,foos"))
-//				.isNull();
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "foos,bars")))
-//						.isAssignableFrom(String.class);
-//		assertThat(this.inspector
-//				.getOutputType(this.catalog.lookup(Function.class, "foos,bars")))
-//						.isAssignableFrom(Bar.class);
+		FunctionInvocationWrapper function = this.catalog.lookup(Function.class, "foos");
+		assertThat(function).isInstanceOf(Function.class);
+
+		function = this.catalog.lookup(Function.class, "foos,bars");
+		Class<?> inputType = function.getRawInputType();
+		assertThat(inputType).isAssignableFrom(String.class);
+		Class<?> outputType = function.getRawOutputType();
+		assertThat(outputType).isAssignableFrom(Bar.class);
 	}
 
 	@Test
 	public void composedSupplier() {
 		create(MultipleConfiguration.class);
-		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "names,foos"))
-				.isInstanceOf(Supplier.class);
-//		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "names,foos"))
-//				.isNull();
-//		assertThat(this.inspector
-//				.getOutputType(this.catalog.lookup(Supplier.class, "names,foos")))
-//						.isAssignableFrom(Foo.class);
-		// The input type is the same as the input type of the first element in the chain
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Supplier.class, "names,foos")))
-//						.isAssignableFrom(Void.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("names,foos");
+		assertThat(function).isInstanceOf(Supplier.class);
+		assertThat(function.getRawOutputType()).isAssignableFrom(Foo.class);
+		assertThat(function.getRawInputType()).isNull();
 	}
 
 	@Test
 	public void composedConsumer() {
 		create(MultipleConfiguration.class);
-		assertThat((Consumer<?>) this.catalog.lookup(Consumer.class, "foos,print"))
-			.isInstanceOf(Consumer.class);
-//				.isNull();
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos,print"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "foos,print")))
-//						.isAssignableFrom(String.class);
-//		// The output type is the same as the output type of the last element in the chain
-//		assertThat(this.inspector
-//				.getOutputType(this.catalog.lookup(Function.class, "foos,print")))
-//						.isAssignableFrom(Void.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("foos,print");
+		assertThat(function).isInstanceOf(Consumer.class);
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.getRawInputType()).isAssignableFrom(String.class);
+		assertThat(function.getRawOutputType()).isNull();
 	}
 
 	@Test
 	public void genericFunction() {
 		create(GenericConfiguration.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.getRawInputType()).isAssignableFrom(Map.class);
 	}
 
 	@Test
 	public void fluxMessageFunction() {
 		create(FluxMessageConfiguration.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(
-//				this.inspector.isMessage(this.catalog.lookup(Function.class, "function")))
-//						.isTrue();
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(String.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Flux.class);
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.isInputTypeMessage()).isTrue();
+
+		Type inputType = function.getInputType();
+
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
 	}
 
 	@Test
 	public void publisherMessageFunction() {
 		create(PublisherMessageConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(
-//				this.inspector.isMessage(this.catalog.lookup(Function.class, "function")))
-//						.isTrue();
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(String.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Publisher.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.isInputTypeMessage()).isTrue();
+
+		Type inputType = function.getInputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Publisher.class);
 	}
 
 	@Test
 	public void monoFunction() {
 		create(MonoConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(
-//				this.inspector.isMessage(this.catalog.lookup(Function.class, "function")))
-//						.isFalse();
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(String.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Flux.class);
-//		assertThat(this.inspector
-//				.getOutputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Mono.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.isInputTypeMessage()).isFalse();
+		Type inputType = function.getInputType();
+		Type outputType = function.getOutputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Flux.class);
+		assertThat(FunctionTypeUtils.getRawType(outputType)).isAssignableFrom(Mono.class);
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void monoToMonoNonVoidFunction() {
 		create(MonoToMonoNonVoidConfiguration.class);
-		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(String.class);
-//		assertThat(this.inspector
-//				.getOutputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(String.class);
-
-		Function function = this.context.getBean(FunctionCatalog.class).lookup("function");
-		Object result = ((Mono) function.apply(Mono.just("flux"))).block();
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		Type inputType = function.getInputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
+		Type outputType = function.getOutputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(outputType)).isAssignableFrom(String.class);
 	}
 
 	@Test
 	public void messageFunction() {
 		create(MessageConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(
-//				this.inspector.isMessage(this.catalog.lookup(Function.class, "function")))
-//						.isTrue();
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(String.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(String.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.isInputTypeMessage()).isTrue();
+		assertThat(function.isOutputTypeMessage()).isTrue();
+		Type inputType = function.getInputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
 	}
 
 	@Test
 	public void genericFluxFunction() {
 		create(GenericFluxConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Flux.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		Type inputType = function.getInputType();
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
+		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Flux.class);
 	}
 
 	@Test
 	public void externalFunction() {
 		create(ExternalConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		Type inputType = function.getInputType();
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
 	}
 
 	@Test
 	public void singletonFunction() {
 		create(SingletonConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Integer.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Integer.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.isInputTypePublisher()).isFalse();
+		assertThat(function.isOutputTypePublisher()).isFalse();
+		Type inputType = function.getInputType();
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Integer.class);
 	}
 
 	@Test
@@ -371,58 +299,41 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void singletonMessageFunction() {
 		create(SingletonMessageConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-		assertThat(this.inspector
-				.getInputType(this.catalog.lookup(Function.class, "function")))
-						.isAssignableFrom(Integer.class);
-		assertThat(this.inspector
-				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-						.isAssignableFrom(Integer.class);
-		assertThat(((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "function")).isInputTypeMessage())
-						.isTrue();
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(function.isInputTypeMessage()).isTrue();
+		Type inputType = function.getInputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(Integer.class);
 	}
 
 	@Test
 	public void nonParametericTypeFunction() {
 		create(NonParametricTypeSingletonConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Integer.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Integer.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		Type inputType = function.getInputType();
+		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(Integer.class);
 	}
 
 	@Test
 	public void componentScanBeanFunction() {
 		create(ComponentScanBeanConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		Type inputType = function.getInputType();
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
 	}
 
 	@Test
 	public void componentScanFunction() {
 		create(ComponentScanConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-//		assertThat(this.inspector
-//				.getInputType(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
-//		assertThat(this.inspector
-//				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
-//						.isAssignableFrom(Map.class);
+		FunctionInvocationWrapper function = this.catalog.lookup("function");
+		assertThat(function).isInstanceOf(Function.class);
+		Type inputType = function.getInputType();
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
 	}
 
 	@Test
@@ -430,14 +341,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		try {
 			create("greeter.jar", ComponentScanJarConfiguration.class);
 			assertThat(this.context.getBean("greeter")).isInstanceOf(Function.class);
-			assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "greeter"))
-					.isInstanceOf(Function.class);
-//			assertThat(this.inspector
-//					.getInputType(this.catalog.lookup(Function.class, "greeter")))
-//							.isAssignableFrom(String.class);
-//			assertThat(this.inspector
-//					.getInputWrapper(this.catalog.lookup(Function.class, "greeter")))
-//							.isAssignableFrom(String.class);
+			FunctionInvocationWrapper function = this.catalog.lookup("greeter");
+			assertThat(function).isInstanceOf(Function.class);
+			Type inputType = function.getInputType();
+			assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
 		}
 		finally {
 			ClassUtils.overrideThreadContextClassLoader(getClass().getClassLoader());
@@ -465,9 +372,6 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 				.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
-//		assertThat(this.inspector.getRegistration(function)).isNotNull();
-//		assertThat(this.inspector.getRegistration(function).getType())
-//				.isEqualTo(this.inspector.getRegistration(function).getType());
 	}
 
 	@Test
@@ -494,12 +398,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void qualifiedBean() {
 		create(QualifiedConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isNull();
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "other"))
-				.isInstanceOf(Function.class);
-		assertThat(
-				this.inspector.getInputType(this.catalog.lookup(Function.class, "other")))
+		assertThat((Function<?, ?>) this.catalog.lookup("function")).isNull();
+		assertThat((Function<?, ?>) this.catalog.lookup("other")).isNotNull();
+		assertThat(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) this.catalog.lookup("other")).getInputType()))
 						.isEqualTo(String.class);
 	}
 
@@ -518,12 +419,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void registrationBean() {
 		create(RegistrationConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-		.isInstanceOf(Function.class);
-//				.isNull();
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "registration"))
-		.isInstanceOf(Function.class);
-//				.isNull();
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function")).isInstanceOf(Function.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "registration")).isInstanceOf(Function.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "other"))
 				.isInstanceOf(Function.class);
 	}
@@ -557,7 +454,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	private void create(Class<?>[] types, String... props) {
 		this.context = new SpringApplicationBuilder(types).properties(props).run();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
-		this.inspector = this.context.getBean(FunctionInspector.class);
+//		this.inspector = this.context.getBean(FunctionInspector.class);
 	}
 
 	@EnableAutoConfiguration
@@ -616,7 +513,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public BeanFactoryPostProcessor someBeanFactoryPostProcessor(Environment environment,
-			@Nullable FunctionRegistry functionCatalog, @Nullable FunctionInspector inspector) {
+			@Nullable FunctionRegistry functionCatalog) {
 			return beanFactory -> { };
 		}
 	}

@@ -17,7 +17,8 @@
 package org.springframework.cloud.function.web;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 
@@ -32,11 +33,7 @@ public class BasicStringConverter implements StringConverter {
 
 	private ConfigurableListableBeanFactory registry;
 
-	private FunctionInspector inspector;
-
-	public BasicStringConverter(FunctionInspector inspector,
-			ConfigurableListableBeanFactory registry) {
-		this.inspector = inspector;
+	public BasicStringConverter(ConfigurableListableBeanFactory registry) {
 		this.registry = registry;
 	}
 
@@ -47,7 +44,8 @@ public class BasicStringConverter implements StringConverter {
 			this.conversionService = conversionService != null ? conversionService
 					: new DefaultConversionService();
 		}
-		Class<?> type = this.inspector.getInputType(function);
+		//Class<?> type = this.inspector.getInputType(function);
+		Class<?> type = function == null ? Object.class : FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getInputType()));
 		return this.conversionService.canConvert(String.class, type)
 				? this.conversionService.convert(value, type) : value;
 	}

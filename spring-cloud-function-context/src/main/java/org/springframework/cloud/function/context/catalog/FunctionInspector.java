@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,10 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public interface FunctionInspector {
 
 	FunctionRegistration<?> getRegistration(Object function);
@@ -49,6 +52,11 @@ public interface FunctionInspector {
 		return ((FunctionInvocationWrapper) function).isInputTypeMessage();
 	}
 
+	/**
+	 *
+	 * @deprecated since 3.1 no longer used by the framework
+	 */
+	@Deprecated
 	default Class<?> getInputType(Object function) {
 		if (function == null) {
 			return Object.class;
@@ -69,6 +77,11 @@ public interface FunctionInspector {
 		return inputType;
 	}
 
+	/**
+	 *
+	 * @deprecated since 3.1 no longer used by the framework
+	 */
+	@Deprecated
 	default Class<?> getOutputType(Object function) {
 		if (function == null) {
 			return Object.class;
@@ -89,6 +102,11 @@ public interface FunctionInspector {
 		return outputType;
 	}
 
+	/**
+	 *
+	 * @deprecated since 3.1 no longer used by the framework
+	 */
+	@Deprecated
 	default Class<?> getInputWrapper(Object function) {
 		Class c = function == null ? Object.class : TypeResolver.resolveRawClass(((FunctionInvocationWrapper) function).getInputType(), null);
 		if (Flux.class.isAssignableFrom(c)) {
@@ -102,6 +120,11 @@ public interface FunctionInspector {
 		}
 	}
 
+	/**
+	 *
+	 * @deprecated since 3.1 no longer used by the framework
+	 */
+	@Deprecated
 	default Class<?> getOutputWrapper(Object function) {
 		Class c  = function == null ? Object.class : TypeResolver.resolveRawClass(((FunctionInvocationWrapper) function).getOutputType(), null);
 		if (Flux.class.isAssignableFrom(c)) {
@@ -115,6 +138,11 @@ public interface FunctionInspector {
 		}
 	}
 
+	/**
+	 *
+	 * @deprecated since 3.1 no longer used by the framework
+	 */
+	@Deprecated
 	default String getName(Object function) {
 		if (function == null) {
 			return null;
