@@ -124,7 +124,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 
 	public FunctionRegistration<T> type(FunctionType type) {
 
-		Type t = FunctionTypeUtils.discoverFunctionTypeFromFunctionalObject(this.target);
+		Type t = FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
 		FunctionType discoveredFunctionType = FunctionType.of(t);
 		Class<?> inputType = TypeResolver.resolveRawClass(discoveredFunctionType.getInputType(), null);
 		Class<?> outputType = TypeResolver.resolveRawClass(discoveredFunctionType.getOutputType(), null);

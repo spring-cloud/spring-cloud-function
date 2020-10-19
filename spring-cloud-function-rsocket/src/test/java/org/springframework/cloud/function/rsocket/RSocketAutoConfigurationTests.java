@@ -494,7 +494,7 @@ public class RSocketAutoConfigurationTests {
 
 		@Bean
 		public Consumer<byte[]> log() {
-			return this.consumerData::emitValue;
+			return this.consumerData::tryEmitValue;
 		}
 
 		@Bean

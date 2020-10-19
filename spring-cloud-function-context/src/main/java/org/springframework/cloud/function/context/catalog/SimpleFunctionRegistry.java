@@ -249,7 +249,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 */
 	private FunctionInvocationWrapper invocationWrapperInstance(String functionDefinition, Object target, Type functionType) {
 		return invocationWrapperInstance(functionDefinition, target,
-				FunctionTypeUtils.isSupplier(functionType) ? null : FunctionTypeUtils.getInputType(functionType, 0),
+				FunctionTypeUtils.isSupplier(functionType) ? null : FunctionTypeUtils.getInputType(functionType),
 				FunctionTypeUtils.getOutputType(functionType, 0));
 	}
 
@@ -477,7 +477,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 *
 		 */
 		private boolean isTypePublisher(Type type) {
-			return type != null && FunctionTypeUtils.isReactive(type);
+			return type != null && FunctionTypeUtils.isPublisher(type);
 		}
 
 		/**

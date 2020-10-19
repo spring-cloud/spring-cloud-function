@@ -32,14 +32,12 @@ import java.util.stream.Stream;
 
 import net.jodah.typetools.TypeResolver;
 import org.reactivestreams.Publisher;
-import reactor.util.function.Tuple2;
+import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -127,17 +125,6 @@ public final class FunctionTypeUtils {
 		return methods.get(0);
 	}
 
-	public static Type discoverFunctionTypeFromFunctionalObject(Object functionalObject) {
-		if (functionalObject instanceof FunctionInvocationWrapper) {
-//			return ((FunctionInvocationWrapper) functionalObject).getFunctionType();
-//			return null;
-			throw new UnsupportedOperationException("Code is temporarily comented");
-		}
-		else {
-			return discoverFunctionTypeFromClass(functionalObject.getClass());
-		}
-	}
-
 	@SuppressWarnings("unchecked")
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
 		Assert.isTrue(isFunctional(functionalClass), "Type must be one of Supplier, Function or Consumer");
@@ -153,8 +140,6 @@ public final class FunctionTypeUtils {
 		}
 		return null;
 	}
-
-
 
 	public static Type discoverFunctionTypeFromFunctionMethod(Method functionMethod) {
 		Assert.isTrue(
@@ -177,18 +162,6 @@ public final class FunctionTypeUtils {
 			return ResolvableType.forClassWithGenerics(Supplier.class,
 					ResolvableType.forMethodReturnType(functionMethod)).getType();
 		}
-	}
-
-	public static Type unwrapActualTypeByIndex(Type type, int index) {
-		if (isMessage(type) || isPublisher(type)) {
-			if (isPublisher(type)) {
-				return unwrapActualTypeByIndex(FunctionTypeUtils.getImmediateGenericType(type, index), index);
-			}
-			else if (isMessage(type)) {
-				return unwrapActualTypeByIndex(FunctionTypeUtils.getImmediateGenericType(type, index), index);
-			}
-		}
-		return type;
 	}
 
 	public static int getInputCount(Type functionType) {
@@ -216,11 +189,11 @@ public final class FunctionTypeUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Type getInputType(Type functionType, int index) {
+	public static Type getInputType(Type functionType) {
 		assertSupportedTypes(functionType);
-		if (isSupplier(functionType)) {
-			return getOutputType(functionType, index);
-		}
+//		if (isSupplier(functionType)) {
+//			return getOutputType(functionType, index);
+//		}
 		if (functionType instanceof Class) {
 			Class<?> functionClass  = (Class<?>) functionType;
 			if (Function.class.isAssignableFrom(functionClass)) {
@@ -229,17 +202,17 @@ public final class FunctionTypeUtils {
 			else if (Consumer.class.isAssignableFrom(functionClass)) {
 				functionType = TypeResolver.reify(Consumer.class, (Class<Consumer<?>>) functionClass);
 			}
-			else if (Supplier.class.isAssignableFrom(functionClass)) {
-				functionType = TypeResolver.reify(Supplier.class, (Class<Supplier<?>>) functionClass);
+			else {
+				return null;
 			}
+//			else if (Supplier.class.isAssignableFrom(functionClass)) {
+//				functionType = TypeResolver.reify(Supplier.class, (Class<Supplier<?>>) functionClass);
+//			}
 		}
 
-		Type inputType = isSupplier(functionType) ? null :  Object.class;
+		Type inputType = Object.class;
 		if ((isFunction(functionType) || isConsumer(functionType)) && functionType instanceof ParameterizedType) {
 			inputType = ((ParameterizedType) functionType).getActualTypeArguments()[0];
-//			inputType = isMulti(inputType)
-//					? ((ParameterizedType) inputType).getActualTypeArguments()[index]
-//							: inputType;
 		}
 
 		return inputType;
@@ -248,33 +221,14 @@ public final class FunctionTypeUtils {
 	public static Type getOutputType(Type functionType, int index) {
 		assertSupportedTypes(functionType);
 		if (isFunction(functionType)) {
-			if (functionType instanceof ParameterizedType) {
-				return ((ParameterizedType) functionType).getActualTypeArguments()[1];
-			}
-			else {
-				return Object.class;
-			}
+			return functionType instanceof ParameterizedType ? ((ParameterizedType) functionType).getActualTypeArguments()[1] : Object.class;
 		}
 		else if (isSupplier(functionType)) {
-			if (functionType instanceof ParameterizedType) {
-				return ((ParameterizedType) functionType).getActualTypeArguments()[0];
-			}
-			else {
-				return Object.class;
-			}
+			return functionType instanceof ParameterizedType ? ((ParameterizedType) functionType).getActualTypeArguments()[0] : Object.class;
 		}
 		else {
 			return null;
 		}
-//		Type outputType = isConsumer(functionType) ? null :  Object.class;
-//		if ((isFunction(functionType) || isSupplier(functionType)) && functionType instanceof ParameterizedType) {
-//			outputType = ((ParameterizedType) functionType).getActualTypeArguments()[isFunction(functionType) ? 1 : 0];
-//			outputType = isMulti(outputType)
-//					? ((ParameterizedType) outputType).getActualTypeArguments()[index]
-//							: outputType;
-//		}
-//
-//		return outputType;
 	}
 
 	public static Type getImmediateGenericType(Type type, int index) {
@@ -284,31 +238,24 @@ public final class FunctionTypeUtils {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
-	public static Class<? extends Publisher<?>> getPublisherType(Type type) {
-		if (type instanceof ParameterizedType && isReactive(type)) {
-			return (Class<? extends Publisher<?>>) ((ParameterizedType) type).getRawType();
-		}
-		throw new IllegalStateException("The provided type is not a Publisher");
-	}
-
 	public static boolean isPublisher(Type type) {
 		return isFlux(type) || isMono(type);
 	}
 
 	public static boolean isFlux(Type type) {
-		type = extractReactiveType(type);
-		return type.getTypeName().startsWith("reactor.core.publisher.Flux");
+		return TypeResolver.resolveRawClass(type, null) == Flux.class;
+//		type = extractReactiveType(type);
+//		return type.getTypeName().startsWith("reactor.core.publisher.Flux");
 	}
 
 	public static boolean isMessage(Type type) {
 		if (isPublisher(type)) {
 			type = getImmediateGenericType(type, 0);
 		}
-		if (type instanceof ParameterizedType && !type.getTypeName().startsWith("org.springframework.messaging.Message")) {
+		if (type instanceof ParameterizedType && TypeResolver.resolveRawClass(type, null) != Message.class) {
 			type = getImmediateGenericType(type, 0);
 		}
-		return type.getTypeName().startsWith("org.springframework.messaging.Message");
+		return TypeResolver.resolveRawClass(type, null) == Message.class;
 	}
 
 	/**
@@ -317,7 +264,7 @@ public final class FunctionTypeUtils {
 	 * @return true if input type is an array, otherwise false
 	 */
 	public static boolean isInputArray(Type functionType) {
-		Type inputType = FunctionTypeUtils.getInputType(functionType, 0);
+		Type inputType = FunctionTypeUtils.getInputType(functionType);
 		return inputType instanceof GenericArrayType || inputType instanceof Class && ((Class<?>) inputType).isArray();
 	}
 
@@ -329,17 +276,6 @@ public final class FunctionTypeUtils {
 	public static boolean isOutputArray(Type functionType) {
 		Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
 		return outputType instanceof GenericArrayType || outputType instanceof Class && ((Class<?>) outputType).isArray();
-	}
-
-	/**
-	 * Evaluates if provided type is an assignable to {@link Publisher}.
-	 * @param type type to evaluate
-	 * @return true is provided type is an assignable to {@link Publisher}
-	 */
-	public static boolean isReactive(Type type) {
-		Class<?> rawType = type instanceof ParameterizedType
-				? (Class<?>) ((ParameterizedType) type).getRawType() : (type instanceof Class<?> ? (Class<?>) type : Object.class);
-		return Publisher.class.isAssignableFrom(rawType);
 	}
 
 	public static boolean isSupplier(Type type) {
@@ -354,7 +290,7 @@ public final class FunctionTypeUtils {
 		return isOfType(type, Consumer.class);
 	}
 
-	public static boolean isOfType(Type type, Class<?> cls) {
+	private static boolean isOfType(Type type, Class<?> cls) {
 		if (type instanceof Class) {
 			return cls.isAssignableFrom((Class<?>) type);
 		}
@@ -369,7 +305,7 @@ public final class FunctionTypeUtils {
 		return type.getTypeName().startsWith("reactor.core.publisher.Mono");
 	}
 
-	public static boolean isFunctional(Type type) {
+	private static boolean isFunctional(Type type) {
 		if (type instanceof ParameterizedType) {
 			type = ((ParameterizedType) type).getRawType();
 			Assert.isTrue(type instanceof Class<?>, "Must be one of Supplier, Function, Consumer"
@@ -393,35 +329,6 @@ public final class FunctionTypeUtils {
 		return false;
 	}
 
-	public static boolean isMultipleArgumentsHolder(Object argument) {
-		return argument != null && argument.getClass().getName().startsWith("reactor.util.function.Tuple");
-	}
-
-	public static Type compose(Type originType, Type composedType) {
-		ResolvableType resolvableOriginType = ResolvableType.forType(originType);
-		ResolvableType resolvableComposedType = ResolvableType.forType(composedType);
-		if (FunctionTypeUtils.isSupplier(originType)) {
-			if (FunctionTypeUtils.isFunction(composedType)) {
-				ResolvableType resolvableLastArgument = resolvableComposedType.getGenerics()[1];
-				resolvableLastArgument = FunctionTypeUtils.isPublisher(resolvableOriginType.getGeneric(0).getType())
-						? ResolvableType.forClassWithGenerics(resolvableOriginType.getGeneric(0).getRawClass(), resolvableLastArgument)
-								: resolvableLastArgument;
-						originType = ResolvableType.forClassWithGenerics(Supplier.class, resolvableLastArgument).getType();
-			}
-		}
-		else  {
-			ResolvableType outType = FunctionTypeUtils.isConsumer(composedType)
-					? ResolvableType.forClass(Void.class)
-							: (ObjectUtils.isEmpty(resolvableComposedType.getGenerics())
-									? ResolvableType.forClass(Object.class) : resolvableComposedType.getGenerics()[1]);
-
-			originType = ResolvableType.forClassWithGenerics(Function.class,
-					ObjectUtils.isEmpty(resolvableOriginType.getGenerics()) ? resolvableOriginType : resolvableOriginType.getGenerics()[0],
-							outType).getType();
-		}
-		return originType;
-	}
-
 	static Type fromFunctionMethod(Method functionalMethod) {
 		Type[] parameterTypes = functionalMethod.getGenericParameterTypes();
 
@@ -442,22 +349,16 @@ public final class FunctionTypeUtils {
 						ResolvableType.forMethodReturnType(functionalMethod)).getType();
 			}
 			break;
-		case 2:
-			ResolvableType canonicalParametersWrapper = fromTwoArityFunction(functionalMethod);
-			functionType =  ResolvableType.forClassWithGenerics(Function.class,
-					canonicalParametersWrapper,
-					ResolvableType.forMethodReturnType(functionalMethod)).getType();
-			break;
+//		case 2:
+//			ResolvableType canonicalParametersWrapper = fromTwoArityFunction(functionalMethod);
+//			functionType =  ResolvableType.forClassWithGenerics(Function.class,
+//					canonicalParametersWrapper,
+//					ResolvableType.forMethodReturnType(functionalMethod)).getType();
+//			break;
 		default:
 			throw new UnsupportedOperationException("Functional method: " + functionalMethod + " is not supported");
 		}
 		return functionType;
-	}
-
-	private static ResolvableType fromTwoArityFunction(Method functionalMethod) {
-		return  ResolvableType.forClassWithGenerics(Tuple2.class,
-				ResolvableType.forMethodParameter(functionalMethod, 0),
-				ResolvableType.forMethodParameter(functionalMethod, 1));
 	}
 
 	private static boolean isMulti(Type type) {
@@ -490,6 +391,4 @@ public final class FunctionTypeUtils {
 		}
 		return type;
 	}
-
-
 }
