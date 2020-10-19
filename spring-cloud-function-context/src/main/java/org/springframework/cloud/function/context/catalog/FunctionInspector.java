@@ -36,6 +36,11 @@ public interface FunctionInspector {
 
 	FunctionRegistration<?> getRegistration(Object function);
 
+	/**
+	 *
+	 * @deprecated since 3.1 no longer used by the framework
+	 */
+	@Deprecated
 	default boolean isMessage(Object function) {
 		if (function == null) {
 			return false;

@@ -25,6 +25,7 @@ import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.HttpResponseMessage.Builder;
 
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
@@ -74,7 +75,7 @@ public class AzureSpringBootHttpRequestHandler<I> extends
 
 	protected boolean functionAcceptsMessage() {
 
-		return this.getInspector().isMessage(function());
+		return ((FunctionInvocationWrapper) function()).isInputTypeMessage();
 	}
 
 	private MessageHeaders getHeaders(HttpRequestMessage<I> event) {

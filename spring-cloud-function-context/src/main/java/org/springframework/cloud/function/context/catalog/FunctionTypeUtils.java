@@ -191,9 +191,6 @@ public final class FunctionTypeUtils {
 	@SuppressWarnings("unchecked")
 	public static Type getInputType(Type functionType) {
 		assertSupportedTypes(functionType);
-//		if (isSupplier(functionType)) {
-//			return getOutputType(functionType, index);
-//		}
 		if (functionType instanceof Class) {
 			Class<?> functionClass  = (Class<?>) functionType;
 			if (Function.class.isAssignableFrom(functionClass)) {
@@ -205,9 +202,6 @@ public final class FunctionTypeUtils {
 			else {
 				return null;
 			}
-//			else if (Supplier.class.isAssignableFrom(functionClass)) {
-//				functionType = TypeResolver.reify(Supplier.class, (Class<Supplier<?>>) functionClass);
-//			}
 		}
 
 		Type inputType = Object.class;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -37,7 +38,10 @@ import static java.util.stream.Collectors.toList;
  * @author Mark Fisher
  * @author Halvdan Hoem Grelland
  * @author Oleg Zhurakousky
+ *
+ * @deprecated since 3.1 in favor of {@link FunctionInvoker}
  */
+@Deprecated
 public class SpringBootKinesisEventHandler<E, O>
 		extends SpringBootRequestHandler<KinesisEvent, O> {
 
@@ -62,7 +66,7 @@ public class SpringBootKinesisEventHandler<E, O>
 	protected Object convertEvent(KinesisEvent event) {
 		List<E> payloads = deserializePayloads(event.getRecords());
 
-		if (getInspector().isMessage(function())) {
+		if (((FunctionInvocationWrapper) function()).isInputTypeMessage()) {
 			return wrapInMessages(payloads);
 		}
 		else {
