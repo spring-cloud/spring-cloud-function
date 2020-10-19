@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import net.jodah.typetools.TypeResolver;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
@@ -49,6 +51,8 @@ import org.springframework.util.ReflectionUtils;
  * @since 3.0
  */
 public final class FunctionTypeUtils {
+
+	private static  Log logger = LogFactory.getLog(FunctionTypeUtils.class);
 
 	private FunctionTypeUtils() {
 
@@ -84,6 +88,10 @@ public final class FunctionTypeUtils {
 			type = getImmediateGenericType(type, 0);
 		}
 		return type;
+	}
+
+	public static Class<?> getRawType(Type type) {
+		return type != null ? TypeResolver.resolveRawClass(type, null) : null;
 	}
 
 	/**
@@ -188,41 +196,52 @@ public final class FunctionTypeUtils {
 		return outputCount;
 	}
 
+	/**
+	 * Returns input type of function type that represents Function or Consumer.
+	 * @param functionType  the Type of Function or Consumer
+	 * @return the input type as {@link Type}
+	 */
 	@SuppressWarnings("unchecked")
 	public static Type getInputType(Type functionType) {
+		if (isSupplier(functionType)) {
+			logger.debug("Supplier does not have input type, returning null as input type.");
+			return null;
+		}
 		assertSupportedTypes(functionType);
+
+		Type inputType;
 		if (functionType instanceof Class) {
-			Class<?> functionClass  = (Class<?>) functionType;
-			if (Function.class.isAssignableFrom(functionClass)) {
-				functionType = TypeResolver.reify(Function.class, (Class<Function<?, ?>>) functionClass);
-			}
-			else if (Consumer.class.isAssignableFrom(functionClass)) {
-				functionType = TypeResolver.reify(Consumer.class, (Class<Consumer<?>>) functionClass);
-			}
-			else {
-				return null;
-			}
+			functionType = Function.class.isAssignableFrom((Class<?>) functionType)
+					? TypeResolver.reify(Function.class, (Class<Function<?, ?>>) functionType)
+					: TypeResolver.reify(Consumer.class, (Class<Consumer<?>>) functionType);
 		}
 
-		Type inputType = Object.class;
-		if ((isFunction(functionType) || isConsumer(functionType)) && functionType instanceof ParameterizedType) {
-			inputType = ((ParameterizedType) functionType).getActualTypeArguments()[0];
-		}
+		inputType = functionType instanceof ParameterizedType
+				? ((ParameterizedType) functionType).getActualTypeArguments()[0]
+				: Object.class;
 
 		return inputType;
 	}
 
-	public static Type getOutputType(Type functionType, int index) {
+	@SuppressWarnings("unchecked")
+	public static Type getOutputType(Type functionType) {
 		assertSupportedTypes(functionType);
-		if (isFunction(functionType)) {
-			return functionType instanceof ParameterizedType ? ((ParameterizedType) functionType).getActualTypeArguments()[1] : Object.class;
-		}
-		else if (isSupplier(functionType)) {
-			return functionType instanceof ParameterizedType ? ((ParameterizedType) functionType).getActualTypeArguments()[0] : Object.class;
-		}
-		else {
+		if (isConsumer(functionType)) {
+			logger.debug("Consumer does not have output type, returning null as output type.");
 			return null;
 		}
+		Type inputType;
+		if (functionType instanceof Class) {
+			functionType = Function.class.isAssignableFrom((Class<?>) functionType)
+					? TypeResolver.reify(Function.class, (Class<Function<?, ?>>) functionType)
+					: TypeResolver.reify(Function.class, (Class<Supplier<?>>) functionType);
+		}
+
+		inputType = functionType instanceof ParameterizedType
+				? (isSupplier(functionType) ? ((ParameterizedType) functionType).getActualTypeArguments()[0] : ((ParameterizedType) functionType).getActualTypeArguments()[1])
+				: Object.class;
+
+		return inputType;
 	}
 
 	public static Type getImmediateGenericType(Type type, int index) {
@@ -238,8 +257,6 @@ public final class FunctionTypeUtils {
 
 	public static boolean isFlux(Type type) {
 		return TypeResolver.resolveRawClass(type, null) == Flux.class;
-//		type = extractReactiveType(type);
-//		return type.getTypeName().startsWith("reactor.core.publisher.Flux");
 	}
 
 	public static boolean isMessage(Type type) {
@@ -257,18 +274,8 @@ public final class FunctionTypeUtils {
 	 * @param functionType the function type
 	 * @return true if input type is an array, otherwise false
 	 */
-	public static boolean isInputArray(Type functionType) {
-		Type inputType = FunctionTypeUtils.getInputType(functionType);
-		return inputType instanceof GenericArrayType || inputType instanceof Class && ((Class<?>) inputType).isArray();
-	}
-
-	/**
-	 * Determines if input argument to a Function is an array.
-	 * @param functionType the function type
-	 * @return true if input type is an array, otherwise false
-	 */
 	public static boolean isOutputArray(Type functionType) {
-		Type outputType = FunctionTypeUtils.getOutputType(functionType, 0);
+		Type outputType = FunctionTypeUtils.getOutputType(functionType);
 		return outputType instanceof GenericArrayType || outputType instanceof Class && ((Class<?>) outputType).isArray();
 	}
 
@@ -296,7 +303,7 @@ public final class FunctionTypeUtils {
 
 	public static boolean isMono(Type type) {
 		type = extractReactiveType(type);
-		return type.getTypeName().startsWith("reactor.core.publisher.Mono");
+		return type == null ? false : type.getTypeName().startsWith("reactor.core.publisher.Mono");
 	}
 
 	private static boolean isFunctional(Type type) {

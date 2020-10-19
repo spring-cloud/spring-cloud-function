@@ -250,7 +250,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	private FunctionInvocationWrapper invocationWrapperInstance(String functionDefinition, Object target, Type functionType) {
 		return invocationWrapperInstance(functionDefinition, target,
 				FunctionTypeUtils.isSupplier(functionType) ? null : FunctionTypeUtils.getInputType(functionType),
-				FunctionTypeUtils.getOutputType(functionType, 0));
+				FunctionTypeUtils.getOutputType(functionType));
 	}
 
 	/**
@@ -325,11 +325,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		public Class<?> getRawOutputType() {
-			return TypeResolver.resolveRawClass(this.outputType, null);
+			return this.outputType == null ? null : TypeResolver.resolveRawClass(this.outputType, null);
 		}
 
 		public Class<?> getRawInputType() {
-			return TypeResolver.resolveRawClass(this.inputType, null);
+			return this.inputType == null ? null : TypeResolver.resolveRawClass(this.inputType, null);
 		}
 
 		/**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.web.BasicStringConverter;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.StringConverter;
@@ -55,9 +54,8 @@ public class ReactorAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public StringConverter functionStringConverter(FunctionInspector inspector,
-			ConfigurableListableBeanFactory beanFactory) {
-		return new BasicStringConverter(inspector, beanFactory);
+	public StringConverter functionStringConverter(ConfigurableListableBeanFactory beanFactory) {
+		return new BasicStringConverter(beanFactory);
 	}
 
 }

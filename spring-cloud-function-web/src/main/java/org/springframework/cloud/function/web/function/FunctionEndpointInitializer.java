@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -104,15 +104,14 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 
 	private void registerEndpoint(GenericApplicationContext context) {
 		context.registerBean(StringConverter.class,
-				() -> new BasicStringConverter(context.getBean(FunctionInspector.class), context.getBeanFactory()));
+				() -> new BasicStringConverter(context.getBeanFactory()));
 		context.registerBean(RequestProcessor.class,
-				() -> new RequestProcessor(context.getBean(FunctionInspector.class),
+				() -> new RequestProcessor(
 						context.getBean(FunctionCatalog.class),
 						context.getBeanProvider(JsonMapper.class), context.getBean(StringConverter.class),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
-				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),
-						context.getBean(FunctionInspector.class), context.getBean(RequestProcessor.class),
+				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class), context.getBean(RequestProcessor.class),
 						context.getEnvironment()));
 		context.registerBean(RouterFunction.class,
 				() -> context.getBean(FunctionEndpointFactory.class).functionEndpoints());
@@ -199,18 +198,18 @@ class FunctionEndpointFactory {
 
 	private final String handler;
 
-	private final FunctionInspector inspector;
+//	private final FunctionInspector inspector;
 
 	private final RequestProcessor processor;
 
-	FunctionEndpointFactory(FunctionCatalog functionCatalog, FunctionInspector inspector, RequestProcessor processor,
+	FunctionEndpointFactory(FunctionCatalog functionCatalog, RequestProcessor processor,
 			Environment environment) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
 			handler = null;
 		}
 		this.processor = processor;
-		this.inspector = inspector;
+//		this.inspector = inspector;
 		this.functionCatalog = functionCatalog;
 		this.handler = handler;
 	}
@@ -233,9 +232,12 @@ class FunctionEndpointFactory {
 	@SuppressWarnings({ "unchecked" })
 	public <T> RouterFunction<?> functionEndpoints() {
 		return route(POST("/**"), request -> {
-			Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) extract(request);
-			Class<T> outputType = (Class<T>) this.inspector.getOutputType(function);
-			FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
+			Object function = extract(request);
+			FunctionInvocationWrapper funcWrapper = (FunctionInvocationWrapper) function;
+			Class<?> outputType = funcWrapper == null
+					? Object.class
+					: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
+			FunctionWrapper wrapper = RequestProcessor.wrapper((Function<Flux<?>, Flux<?>>) function, null, null);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
 					.flatMap(content -> this.processor.post(wrapper, content, false));
 			return stream.flatMap(entity -> {
@@ -245,7 +247,8 @@ class FunctionEndpointFactory {
 		})
 		.andRoute(GET("/**"), request -> {
 			Object functionComponent = extract(request);
-			Class<T> outputType = (Class<T>) this.inspector.getOutputType(functionComponent);
+			FunctionInvocationWrapper funcWrapper = (FunctionInvocationWrapper) functionComponent;
+			Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
 			if (((FunctionInvocationWrapper) functionComponent).isSupplier()) {
 				Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
 				FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);

@@ -27,6 +27,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 
 /**
  * @param <I> input type
@@ -129,7 +131,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		}
 		if (getInspector() != null) {
 			return Collection.class
-					.isAssignableFrom(getInspector().getInputType(function));
+					.isAssignableFrom(((FunctionInvocationWrapper) function).getRawInputType());
 		}
 		return ((Collection<?>) input).size() <= 1;
 	}
@@ -139,8 +141,8 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 			return true;
 		}
 		if (getInspector() != null) {
-			return Collection.class
-					.isAssignableFrom(getInspector().getOutputType(function));
+			Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getOutputType()));
+			return Collection.class.isAssignableFrom(outputType);
 		}
 		return ((Collection<?>) output).size() <= 1;
 	}

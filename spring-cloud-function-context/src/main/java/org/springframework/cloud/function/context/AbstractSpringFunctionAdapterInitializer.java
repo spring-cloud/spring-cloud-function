@@ -36,6 +36,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -138,15 +140,18 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		}
 	}
 
+	@Deprecated
 	protected FunctionInspector getInspector() {
 		return inspector;
 	}
 
 	protected Class<?> getInputType() {
-		if (this.inspector != null) {
-			return this.inspector.getInputType(function());
+
+		Object func =  function();
+		if (func != null && func instanceof FunctionInvocationWrapper) {
+			return FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) func).getInputType()));
 		}
-		else if (functionRegistration != null) {
+		if (functionRegistration != null) {
 			return functionRegistration.getType().getInputType();
 		}
 		return Object.class;
@@ -237,7 +242,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		}
 		if (getInspector() != null) {
 			return Collection.class
-					.isAssignableFrom(getInspector().getInputType(function));
+					.isAssignableFrom(((FunctionInvocationWrapper) function).getRawInputType());
 		}
 		return ((Collection<?>) input).size() <= 1;
 	}
@@ -247,8 +252,8 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 			return true;
 		}
 		if (getInspector() != null) {
-			return Collection.class
-					.isAssignableFrom(getInspector().getOutputType(function));
+			Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getOutputType()));
+			return Collection.class.isAssignableFrom(outputType);
 		}
 		return ((Collection<?>) output).size() <= 1;
 	}
