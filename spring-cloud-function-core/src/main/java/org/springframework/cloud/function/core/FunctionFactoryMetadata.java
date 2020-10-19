@@ -21,7 +21,10 @@ import java.lang.reflect.Method;
 /**
  * @param <F> target type
  * @author Dave Syer
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public interface FunctionFactoryMetadata<F> {
 
 	Method getFactoryMethod();

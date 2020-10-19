@@ -19,7 +19,10 @@ package org.springframework.cloud.function.core;
 /**
  * @param <T> target type
  * @author Dave Syer
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public interface FluxWrapper<T> {
 
 	T getTarget();

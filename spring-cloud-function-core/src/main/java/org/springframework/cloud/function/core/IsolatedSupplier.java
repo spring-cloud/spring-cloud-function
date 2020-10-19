@@ -23,7 +23,9 @@ import org.springframework.util.ClassUtils;
 /**
  * @param <T> supplied type
  * @author Dave Syer
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public class IsolatedSupplier<T> implements Supplier<T>, Isolated {
 
 	private final Supplier<T> supplier;
