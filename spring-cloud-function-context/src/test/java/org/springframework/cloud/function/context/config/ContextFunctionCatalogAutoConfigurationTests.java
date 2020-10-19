@@ -48,6 +48,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.inject.FooConfiguration;
 import org.springframework.cloud.function.scan.ScannedFunction;
 import org.springframework.cloud.function.test.GenericFunction;
@@ -378,8 +379,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(this.inspector
 				.getInputWrapper(this.catalog.lookup(Function.class, "function")))
 						.isAssignableFrom(Integer.class);
-		assertThat(
-				this.inspector.isMessage(this.catalog.lookup(Function.class, "function")))
+		assertThat(((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "function")).isInputTypeMessage())
 						.isTrue();
 	}
 
