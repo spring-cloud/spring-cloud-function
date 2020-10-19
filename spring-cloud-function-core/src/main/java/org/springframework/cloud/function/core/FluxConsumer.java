@@ -29,7 +29,10 @@ import reactor.core.publisher.Mono;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  * @see FluxedConsumer
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public class FluxConsumer<I>
 		extends WrappedFunction<I, Void, Flux<I>, Mono<Void>, Consumer<I>> {
 

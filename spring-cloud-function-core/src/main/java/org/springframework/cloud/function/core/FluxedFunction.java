@@ -28,7 +28,10 @@ import reactor.core.publisher.Flux;
  * @param <O> output type of target function
  * @author Oleg Zhurakousky
  * @since 2.0.1
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public class FluxedFunction<I, O>
 		extends WrappedFunction<I, O, Flux<I>, Flux<O>, Function<Flux<I>, Flux<O>>> {
 

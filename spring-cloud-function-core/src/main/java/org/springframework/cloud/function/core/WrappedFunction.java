@@ -34,7 +34,10 @@ import org.reactivestreams.Publisher;
  * {@link Consumer})
  * @author Oleg Zhurakousky
  * @since 2.0.1
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public abstract class WrappedFunction<I, O, IP extends Publisher<I>, OP extends Publisher<O>, T>
 		implements Function<IP, OP>, FluxWrapper<T> {
 

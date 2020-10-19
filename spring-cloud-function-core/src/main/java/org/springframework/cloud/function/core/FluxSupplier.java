@@ -31,7 +31,10 @@ import reactor.core.publisher.Flux;
  *
  * @param <T> output type of target supplier
  * @author Mark Fisher
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public class FluxSupplier<T> implements Supplier<Flux<T>>, FluxWrapper<Supplier<T>> {
 
 	private final Supplier<T> supplier;

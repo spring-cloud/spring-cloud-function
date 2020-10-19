@@ -27,7 +27,10 @@ import reactor.core.publisher.Mono;
  * @param <T> output type of target supplier
  * @author Mark Fisher
  * @since 2.1
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public class MonoSupplier<T> implements Supplier<Mono<T>>, FluxWrapper<Supplier<T>> {
 
 	private final Supplier<T> supplier;

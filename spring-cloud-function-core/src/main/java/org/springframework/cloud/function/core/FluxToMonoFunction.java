@@ -33,7 +33,10 @@ import reactor.core.publisher.Mono;
  * @param <O> type of {@link Mono} output of the target function
  * @author Oleg Zhurakousky
  * @since 2.0
+ *
+ * @deprecated since 3.1 no longer used by the framework
  */
+@Deprecated
 public class FluxToMonoFunction<I, O>
 		extends WrappedFunction<I, O, Flux<I>, Mono<O>, Function<Flux<I>, Mono<O>>> {
 

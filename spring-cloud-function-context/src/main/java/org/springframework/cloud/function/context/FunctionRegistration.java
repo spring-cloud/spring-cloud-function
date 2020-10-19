@@ -171,6 +171,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	 * @return {@code FunctionRegistration} with the appropriately wrapped target.
 	 *
 	 */
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public <S> FunctionRegistration<S> wrap() {
 		this.isFunctionSignatureSupported();
