@@ -35,7 +35,6 @@ import reactor.core.publisher.Mono;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
@@ -55,7 +54,10 @@ import org.springframework.util.CollectionUtils;
  *
  * @author Oleg Zhurakousky
  * @since 2.1
+ *
+ * @deprecated since 3.1 in favor of individual implementations of invokers
  */
+@Deprecated
 public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Closeable {
 
 	private static Log logger = LogFactory.getLog(AbstractSpringFunctionAdapterInitializer.class);
@@ -76,9 +78,6 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 	private FunctionRegistration<?> functionRegistration;
 
 	private AtomicBoolean initialized = new AtomicBoolean();
-
-	@Autowired(required = false)
-	private FunctionInspector inspector;
 
 	@Autowired(required = false)
 	protected FunctionCatalog catalog;
@@ -138,11 +137,6 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 				}
 			});
 		}
-	}
-
-	@Deprecated
-	protected FunctionInspector getInspector() {
-		return inspector;
 	}
 
 	protected Class<?> getInputType() {
@@ -240,7 +234,8 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		if (!(input instanceof Collection)) {
 			return true;
 		}
-		if (getInspector() != null) {
+
+		if (function != null) {
 			return Collection.class
 					.isAssignableFrom(((FunctionInvocationWrapper) function).getRawInputType());
 		}
@@ -251,7 +246,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		if (!(output instanceof Collection)) {
 			return true;
 		}
-		if (getInspector() != null) {
+		if (function != null) {
 			Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getOutputType()));
 			return Collection.class.isAssignableFrom(outputType);
 		}

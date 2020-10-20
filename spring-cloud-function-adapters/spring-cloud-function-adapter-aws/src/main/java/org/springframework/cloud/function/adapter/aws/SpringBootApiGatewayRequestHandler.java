@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.binary.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
@@ -49,9 +48,6 @@ public class SpringBootApiGatewayRequestHandler extends
 
 	@Autowired
 	private ObjectMapper mapper;
-
-	@Autowired
-	private FunctionInspector inspector;
 
 	public SpringBootApiGatewayRequestHandler(Class<?> configurationClass) {
 		super(configurationClass);

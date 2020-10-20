@@ -27,7 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,8 +44,6 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 	private FunctionCatalog catalog;
 
-	private FunctionInspector inspector;
-
 	@AfterEach
 	public void close() {
 		if (this.context != null) {
@@ -58,35 +57,26 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 				SimpleConfiguration.class });
 
 		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "kotlinFunction"))
-				.isInstanceOf(Function.class);
-		assertThat(this.inspector
-				.getInputType(this.catalog.lookup(Function.class, "kotlinFunction")))
-						.isAssignableFrom(String.class);
-		assertThat(this.inspector
-				.getOutputType(this.catalog.lookup(Function.class, "kotlinFunction")))
-						.isAssignableFrom(String.class);
+		FunctionInvocationWrapper function = this.catalog.lookup(Function.class, "kotlinFunction");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getOutputType()))).isAssignableFrom(String.class);
 
+
+		function = this.catalog.lookup(Function.class, "kotlinConsumer");
 		assertThat(this.context.getBean("kotlinConsumer")).isInstanceOf(Function1.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "kotlinConsumer"))
-				.isInstanceOf(Function.class);
-		assertThat(this.inspector
-				.getInputType(this.catalog.lookup(Function.class, "kotlinConsumer")))
-						.isAssignableFrom(String.class);
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
+
 
 		assertThat(this.context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
-		Supplier<String> supplier = this.catalog.lookup(Supplier.class, "kotlinSupplier");
+		FunctionInvocationWrapper supplier = this.catalog.lookup(Function.class, "kotlinSupplier");
+		assertThat(supplier).isInstanceOf(Supplier.class);
 		assertThat(supplier.get()).isEqualTo("Hello");
-		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "kotlinSupplier"))
-				.isInstanceOf(Supplier.class);
-		assertThat(this.inspector
-				.getOutputType(this.catalog.lookup(Supplier.class, "kotlinSupplier")))
-						.isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(supplier.getOutputType()))).isAssignableFrom(String.class);
 
-		Function<String, String> function = this.catalog
-				.lookup(Function.class, "kotlinFunction|function2");
-		assertThat(function.apply("Hello"))
-				.isEqualTo("HELLOfunction2");
+		function = this.catalog.lookup(Function.class, "kotlinFunction|function2");
+		assertThat(function.apply("Hello")).isEqualTo("HELLOfunction2");
 
 		Function<String, String> javaFunction = this.catalog
 				.lookup(Function.class, "javaFunction");
@@ -97,7 +87,6 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 	private void create(Class<?>[] types, String... props) {
 		this.context = new SpringApplicationBuilder(types).properties(props).run();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
-		this.inspector = this.context.getBean(FunctionInspector.class);
 	}
 
 	@EnableAutoConfiguration
