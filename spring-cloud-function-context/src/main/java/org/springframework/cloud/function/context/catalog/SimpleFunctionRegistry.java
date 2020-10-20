@@ -77,7 +77,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  *
  */
-public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspector {
+public class SimpleFunctionRegistry implements FunctionRegistry {
 	protected Log logger = LogFactory.getLog(this.getClass());
 	/*
 	 * - do we care about FunctionRegistration after it's been registered? What additional value does it bring?
@@ -120,11 +120,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 		}
 		return (T) function;
-	}
-
-	@Override
-	public FunctionRegistration<?> getRegistration(Object function) {
-		throw new UnsupportedOperationException();
 	}
 
 	@Override

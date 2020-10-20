@@ -129,7 +129,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		if (!(input instanceof Collection)) {
 			return true;
 		}
-		if (getInspector() != null) {
+		if (function != null) {
 			return Collection.class
 					.isAssignableFrom(((FunctionInvocationWrapper) function).getRawInputType());
 		}
@@ -140,7 +140,7 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 		if (!(output instanceof Collection)) {
 			return true;
 		}
-		if (getInspector() != null) {
+		if (function != null) {
 			Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getOutputType()));
 			return Collection.class.isAssignableFrom(outputType);
 		}
