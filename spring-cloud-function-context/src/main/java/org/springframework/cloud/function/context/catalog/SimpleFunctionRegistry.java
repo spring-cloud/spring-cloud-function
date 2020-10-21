@@ -21,6 +21,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +40,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import net.jodah.typetools.TypeResolver;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.logging.Log;
@@ -49,8 +51,10 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
 
+
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -73,6 +77,8 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+
+
 
 /**
  *
@@ -108,6 +114,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	private final CompositeMessageConverter messageConverter;
 
 	private List<String> declaredFunctionDefinitions;
+
+	@Autowired
+	private JsonMapper jsonMapper;
 
 	public SimpleFunctionRegistry(ConversionService conversionService, @Nullable CompositeMessageConverter messageConverter) {
 		this.conversionService = conversionService;
@@ -791,7 +800,23 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
 					if (messageNeedsConversion(rawType, (Message<?>) value)) {
-						convertedValue = FunctionTypeUtils.isTypeCollection(type)
+
+						boolean convertWithHint = false;
+						Type hint = type;
+						if (FunctionTypeUtils.isTypeCollection(type)) {
+							hint = FunctionTypeUtils.getGenericType(type);
+							convertWithHint = true;
+						}
+						else if (!rawType.equals(type)) {
+//							hint = FunctionTypeUtils.getGenericType(type);
+							convertWithHint = true;
+						}
+
+
+
+
+
+						convertedValue = convertWithHint
 							? this.fromMessage((Message<?>) value, (Class<?>) rawType, FunctionTypeUtils.getGenericType(type))
 							: this.fromMessage((Message<?>) value, (Class<?>) rawType, null);
 						if (logger.isDebugEnabled()) {
@@ -812,22 +837,23 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						}
 					}
 				}
-				else if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
-					if (this.isJson(value)) {
-						convertedValue = messageConverter
-								.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
-					}
-					else {
-						try {
-							convertedValue = conversionService.convert(value, (Class<?>) rawType);
-						}
-						catch (Exception e) {
-							if (value instanceof String || value instanceof byte[]) {
-								convertedValue = messageConverter
-									.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
-							}
-						}
-					}
+				else { //if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
+					convertedValue = this.convertNonMessageInputIfNecessary(type, value);
+//					if (this.isJson(value)) {
+//						convertedValue = messageConverter
+//								.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
+//					}
+//					else {
+//						try {
+//							convertedValue = conversionService.convert(value, (Class<?>) rawType);
+//						}
+//						catch (Exception e) {
+//							if (value instanceof String || value instanceof byte[]) {
+//								convertedValue = messageConverter
+//									.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
+//							}
+//						}
+//					}
 				}
 			}
 			if (logger.isDebugEnabled()) {
@@ -838,6 +864,35 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			return convertedValue;
 		}
+
+		private Object convertNonMessageInputIfNecessary(Type inputType, Object input) {
+			Object convertedInput = input;
+			Class<?> rawInputType = FunctionTypeUtils.isReactive(inputType) || FunctionTypeUtils.isMessage(inputType)
+					? TypeResolver.resolveRawClass(FunctionTypeUtils.getImmediateGenericType(inputType, 0), null)
+					: TypeResolver.resolveRawClass(inputType, null);
+
+			if (JsonMapper.isJsonString(input) && !Message.class.isAssignableFrom(rawInputType)) {
+				if (FunctionTypeUtils.isMessage(inputType)) {
+					inputType = FunctionTypeUtils.getGenericType(inputType);
+				}
+				if (!(inputType instanceof WildcardType) && Object.class != inputType && SimpleFunctionRegistry.this.jsonMapper != null) {
+					try {
+						convertedInput = SimpleFunctionRegistry.this.jsonMapper.fromJson(input, inputType);
+					}
+					catch (Exception e) {
+						// ignore
+					}
+				}
+			}
+			else if (SimpleFunctionRegistry.this.conversionService != null
+					&& !rawInputType.equals(input.getClass())
+					&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
+				convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, rawInputType);
+			}
+			return convertedInput;
+		}
+
+
 
 		private Object fromMessage(Message<?> message, Class<?> rawType, Object conversionHint) {
 			Stream<?> stream = null;
