@@ -269,6 +269,29 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(block).isNull();
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void textTypeConversionWithComplexInputType() {
+		FunctionCatalog catalog = this.configureCatalog(ComplexTypeFunctionConfiguration.class);
+		Function function = catalog.lookup("function");
+
+		// as String
+		String result = (String) function.apply("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}");
+		assertThat(result).isEqualTo("BIKE");
+
+		// as byte[]
+		result = (String) function.apply("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}".getBytes());
+		assertThat(result).isEqualTo("BIKE");
+
+		// as Message<String>
+		result = (String) function.apply(MessageBuilder.withPayload("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}").build());
+		assertThat(result).isEqualTo("BIKE");
+
+		// as Message<BYTE[]>
+		result = (String) function.apply(MessageBuilder.withPayload("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}".getBytes()).build());
+		assertThat(result).isEqualTo("BIKE");
+	}
+
 	// MULTI INPUT/OUTPUT
 
 
@@ -918,5 +941,49 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			return MessageBuilder.withPayload(t.length()).build();
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class ComplexTypeFunctionConfiguration {
+		@Bean
+		public Function<Event<String, Product>, String> function() {
+			return v -> v.getData().getName().toUpperCase();
+		}
+	}
+
+	private static class Product {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
+
+	private static class Event<K, V> {
+
+		private K key;
+
+		public K getKey() {
+			return key;
+		}
+
+		public void setKey(K key) {
+			this.key = key;
+		}
+
+		private V data;
+
+		public V getData() {
+			return data;
+		}
+
+		public void setData(V data) {
+			this.data = data;
+		}
 	}
 }

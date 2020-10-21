@@ -127,6 +127,8 @@ public class SimpleFunctionRegistryTests {
 		assertThat(lookedUpFunction).isNull();
 	}
 
+
+
 	@Test
 	public void testFunctionComposition() {
 		FunctionRegistration<UpperCase> upperCaseRegistration = new FunctionRegistration<>(
@@ -500,5 +502,4 @@ public class SimpleFunctionRegistryTests {
 				.map(lst -> lst.stream().map(Person::getName).collect(Collectors.toList()));
 		}
 	}
-
 }

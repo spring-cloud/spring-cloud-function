@@ -676,11 +676,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 			}
 			else {
-				Class<?> inputType = this.isTypePublisher(type) || this.isInputTypeMessage()
-						? TypeResolver.resolveRawClass(FunctionTypeUtils.getImmediateGenericType(type, 0), null)
-						: this.getRawClassFor(type);
-
-				convertedInput = this.convertNonMessageInputIfNecessary(inputType, input);
+				convertedInput = this.convertNonMessageInputIfNecessary(type, input);
 			}
 			// wrap in Message if necessary
 			if (this.isWrapConvertedInputInMessage(convertedInput)) {
@@ -721,17 +717,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		/*
 		 *
 		 */
-		private Object convertNonMessageInputIfNecessary(Class<?> inputType, Object input) {
+		private Object convertNonMessageInputIfNecessary(Type inputType, Object input) {
 			Object convertedInput = input;
-			if (!inputType.isAssignableFrom(input.getClass())) {
-				if (inputType != input.getClass()
-						&& SimpleFunctionRegistry.this.conversionService != null
-						&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), inputType)) {
-					convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, inputType);
+			Class<?> rawInputType = this.isTypePublisher(inputType) || this.isInputTypeMessage()
+					? TypeResolver.resolveRawClass(FunctionTypeUtils.getImmediateGenericType(inputType, 0), null)
+					: this.getRawClassFor(inputType);
+
+			if (JsonMapper.isJsonString(input) && !Message.class.isAssignableFrom(rawInputType)) {
+				if (FunctionTypeUtils.isMessage(inputType)) {
+					inputType = FunctionTypeUtils.getGenericType(inputType);
 				}
-				else {
+				if (Object.class != inputType) {
 					convertedInput = SimpleFunctionRegistry.this.jsonMapper.fromJson(input, inputType);
 				}
+			}
+			else if (SimpleFunctionRegistry.this.conversionService != null
+					&& !rawInputType.equals(input.getClass())
+					&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
+				convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, rawInputType);
 			}
 			return convertedInput;
 		}
@@ -764,6 +767,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return type;
 		}
 
+		private boolean isConversionHintRequired(Object actualType, Class<?> rawType) {
+			return rawType != actualType;
+		}
+
 		/*
 		 *
 		 */
@@ -778,7 +785,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			Object convertedInput = message;
 			type = this.extractActualValueTypeIfNecessary(type);
 			Class rawType = TypeResolver.resolveRawClass(type, null);
-			convertedInput = FunctionTypeUtils.isTypeCollection(type)
+			convertedInput = this.isConversionHintRequired(type, rawType)
 					? SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType, type)
 					: SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType);
 
