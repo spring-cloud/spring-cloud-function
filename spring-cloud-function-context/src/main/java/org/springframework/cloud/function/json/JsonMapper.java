@@ -98,12 +98,16 @@ public abstract class JsonMapper {
 	 */
 	public static boolean isJsonString(Object value) {
 		boolean isJson = false;
+		if (value instanceof byte[]) {
+			value = new String((byte[]) value, StandardCharsets.UTF_8);
+		}
 		if (value instanceof String) {
 			String str = ((String) value).trim();
 			isJson = (str.startsWith("\"") && str.endsWith("\"")) ||
 					(str.startsWith("{") && str.endsWith("}")) ||
 					(str.startsWith("[") && str.endsWith("]"));
 		}
+
 		return isJson;
 	}
 }
