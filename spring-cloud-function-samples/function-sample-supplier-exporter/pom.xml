@@ -69,6 +69,14 @@
 	<build>
 		<plugins>
 			<plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>com/example/demo/ContainerTests.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-deploy-plugin</artifactId>
 				<configuration>
@@ -82,7 +90,35 @@
 		</plugins>
 	</build>
 
-	
+	<profiles>
+	  <profile>
+		 <id>integration</id>
+	    <build>
+	    	<plugins>
+			    <plugin>
+		            <artifactId>maven-surefire-plugin</artifactId>
+		            <version>2.22.0</version>
+		            <executions>
+		                <execution>
+		                    <phase>integration-test</phase>
+		                    <goals>
+		                        <goal>test</goal>
+		                    </goals>
+		                    <configuration>
+		                        <excludes>
+		                            <exclude>none</exclude>
+		                        </excludes>
+		                        <includes>
+		                            <include>com/example/demo/ContainerTests.java</include>
+		                        </includes>
+		                    </configuration>
+		                </execution>
+		            </executions>
+		        </plugin>
+	        </plugins>
+        </build>
+	  </profile>
+	</profiles>
 
 	<pluginRepositories>
 		<pluginRepository>
