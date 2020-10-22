@@ -29,13 +29,11 @@ import org.aopalliance.intercept.MethodInvocation;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
-import org.springframework.cloud.function.context.config.FunctionContextUtils;
-import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -44,6 +42,11 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.util.StringUtils;
 
+/**
+ * Implementation of {@link FunctionRegistry} capable of discovering functioins in {@link BeanFactory}
+ *
+ * @author Oleg Zhurakousky
+ */
 public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry implements ApplicationContextAware {
 
 	private GenericApplicationContext applicationContext;
@@ -129,7 +132,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 									.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
 						}
 						else {
-							functionType = this.discoverFunctionType(functionCandidate, functionName);
+							functionType = FunctionTypeUtils.discoverFunctionType(functionCandidate, functionName, this.applicationContext);
 						}
 						if (functionRegistration == null) {
 							functionRegistration = new FunctionRegistration(functionCandidate, functionName).type(functionType);
@@ -169,47 +172,6 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	@Override
 	protected boolean containsFunction(String functionName) {
 		return super.containsFunction(functionName) ? true : this.applicationContext.containsBean(functionName);
-	}
-
-	@SuppressWarnings("rawtypes")
-	Type discoverFunctionType(Object function, String functionName) {
-		if (function instanceof RoutingFunction) {
-			return FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionName)).getType();
-		}
-		else if (function instanceof FunctionRegistration) {
-			return ((FunctionRegistration) function).getType().getType();
-		}
-		boolean beanDefinitionExists = false;
-		String functionBeanDefinitionName = this.discoverDefinitionName(functionName);
-		beanDefinitionExists = this.applicationContext.getBeanFactory().containsBeanDefinition(functionBeanDefinitionName);
-		if (this.applicationContext.containsBean("&" + functionName)) {
-			Class<?> objectType = this.applicationContext.getBean("&" + functionName, FactoryBean.class)
-				.getObjectType();
-			return FunctionTypeUtils.discoverFunctionTypeFromClass(objectType);
-		}
-//		if (!beanDefinitionExists) {
-//			logger.info("BeanDefinition for function name(s) '" + Arrays.asList(names) +
-//				"' can not be located. FunctionType will be based on " + function.getClass());
-//		}
-
-		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(function.getClass());
-		if (beanDefinitionExists) {
-			Type t = FunctionTypeUtils.getImmediateGenericType(type, 0);
-			if (t == null || t == Object.class) {
-				type = FunctionType.of(FunctionContextUtils.findType(this.applicationContext.getBeanFactory(), functionBeanDefinitionName)).getType();
-			}
-		}
-		return type;
-	}
-
-	private String discoverDefinitionName(String functionDefinition) {
-		String[] aliases = this.applicationContext.getAliases(functionDefinition);
-		for (String alias : aliases) {
-			if (this.applicationContext.getBeanFactory().containsBeanDefinition(alias)) {
-				return alias;
-			}
-		}
-		return functionDefinition;
 	}
 
 	private boolean isFunctionPojo(Object functionCandidate, String functionName) {

@@ -36,7 +36,12 @@ import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.config.FunctionContextUtils;
+import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -223,6 +228,33 @@ public final class FunctionTypeUtils {
 		return inputType;
 	}
 
+	@SuppressWarnings("rawtypes")
+	public static Type discoverFunctionType(Object function, String functionName, GenericApplicationContext applicationContext) {
+		if (function instanceof RoutingFunction) {
+			return FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionName)).getType();
+		}
+		else if (function instanceof FunctionRegistration) {
+			return ((FunctionRegistration) function).getType().getType();
+		}
+		boolean beanDefinitionExists = false;
+		String functionBeanDefinitionName = discoverDefinitionName(functionName, applicationContext);
+		beanDefinitionExists = applicationContext.getBeanFactory().containsBeanDefinition(functionBeanDefinitionName);
+		if (applicationContext.containsBean("&" + functionName)) {
+			Class<?> objectType = applicationContext.getBean("&" + functionName, FactoryBean.class)
+				.getObjectType();
+			return FunctionTypeUtils.discoverFunctionTypeFromClass(objectType);
+		}
+
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(function.getClass());
+		if (beanDefinitionExists) {
+			Type t = FunctionTypeUtils.getImmediateGenericType(type, 0);
+			if (t == null || t == Object.class) {
+				type = FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionBeanDefinitionName)).getType();
+			}
+		}
+		return type;
+	}
+
 	@SuppressWarnings("unchecked")
 	public static Type getOutputType(Type functionType) {
 		assertSupportedTypes(functionType);
@@ -291,32 +323,9 @@ public final class FunctionTypeUtils {
 		return isOfType(type, Consumer.class);
 	}
 
-	private static boolean isOfType(Type type, Class<?> cls) {
-		if (type instanceof Class) {
-			return cls.isAssignableFrom((Class<?>) type);
-		}
-		else if (type instanceof ParameterizedType) {
-			return isOfType(((ParameterizedType) type).getRawType(), cls);
-		}
-		return false;
-	}
-
 	public static boolean isMono(Type type) {
 		type = extractReactiveType(type);
 		return type == null ? false : type.getTypeName().startsWith("reactor.core.publisher.Mono");
-	}
-
-	private static boolean isFunctional(Type type) {
-		if (type instanceof ParameterizedType) {
-			type = ((ParameterizedType) type).getRawType();
-			Assert.isTrue(type instanceof Class<?>, "Must be one of Supplier, Function, Consumer"
-					+ " or FunctionRegistration. Was " + type);
-		}
-
-		Class<?> candidateType = (Class<?>) type;
-		return Supplier.class.isAssignableFrom(candidateType)
-				|| Function.class.isAssignableFrom(candidateType)
-				|| Consumer.class.isAssignableFrom(candidateType);
 	}
 
 	public static boolean isMultipleArgumentType(Type type) {
@@ -350,12 +359,6 @@ public final class FunctionTypeUtils {
 						ResolvableType.forMethodReturnType(functionalMethod)).getType();
 			}
 			break;
-//		case 2:
-//			ResolvableType canonicalParametersWrapper = fromTwoArityFunction(functionalMethod);
-//			functionType =  ResolvableType.forClassWithGenerics(Function.class,
-//					canonicalParametersWrapper,
-//					ResolvableType.forMethodReturnType(functionalMethod)).getType();
-//			break;
 		default:
 			throw new UnsupportedOperationException("Functional method: " + functionalMethod + " is not supported");
 		}
@@ -364,6 +367,16 @@ public final class FunctionTypeUtils {
 
 	private static boolean isMulti(Type type) {
 		return type.getTypeName().startsWith("reactor.util.function.Tuple");
+	}
+
+	private static boolean isOfType(Type type, Class<?> cls) {
+		if (type instanceof Class) {
+			return cls.isAssignableFrom((Class<?>) type);
+		}
+		else if (type instanceof ParameterizedType) {
+			return isOfType(((ParameterizedType) type).getRawType(), cls);
+		}
+		return false;
 	}
 
 	private static void assertSupportedTypes(Type type) {
@@ -391,5 +404,30 @@ public final class FunctionTypeUtils {
 			}
 		}
 		return type;
+	}
+
+	private static String discoverDefinitionName(String functionDefinition, GenericApplicationContext applicationContext) {
+		String[] aliases = applicationContext.getAliases(functionDefinition);
+		for (String alias : aliases) {
+			if (applicationContext.getBeanFactory().containsBeanDefinition(alias)) {
+				return alias;
+			}
+		}
+		return functionDefinition;
+	}
+
+	private static boolean isFunctional(Type type) {
+		if (type instanceof ParameterizedType) {
+			type = ((ParameterizedType) type).getRawType();
+			Assert.isTrue(type instanceof Class<?>, "Must be one of Supplier, Function, Consumer"
+					+ " or FunctionRegistration. Was " + type);
+		}
+
+		Class<?> candidateType = (Class<?>) type;
+		return Supplier.class.isAssignableFrom(candidateType)
+				|| Function.class.isAssignableFrom(candidateType)
+				|| Consumer.class.isAssignableFrom(candidateType)
+				|| BiFunction.class.isAssignableFrom(candidateType)
+				|| BiConsumer.class.isAssignableFrom(candidateType);
 	}
 }
