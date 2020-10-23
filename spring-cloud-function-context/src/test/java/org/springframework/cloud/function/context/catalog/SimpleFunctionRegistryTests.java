@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -97,10 +98,8 @@ public class SimpleFunctionRegistryTests {
 		catalog.register(registration);
 
 		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("uppercase");
-
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader("scf-sink-url", "blah")
-				.setHeader("scf-func-name", "blah")
+				.setHeader("lambda-runtime-aws-request-id", UUID.randomUUID())
 				.build();
 		Object result = lookedUpFunction.apply(message);
 		assertThat(result).isInstanceOf(Message.class);
