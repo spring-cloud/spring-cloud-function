@@ -34,20 +34,10 @@ public class FunctionProperties {
 
 	/**
 	 * Name of the header to be used to instruct function catalog to skip input type conversion.
-	 * @deprecated since 3.1. Use #SKIP_INPUT_CONVERSION_HEADER
+	 * @deprecated since 3.1. Not used anymore
 	 */
 	@Deprecated
 	public final static String SKIP_CONVERSION_HEADER = "skip-input-type-conversion";
-
-	/**
-	 * Name of the header to be used to instruct function catalog to skip input type conversion.
-	 */
-	public final static String SKIP_INPUT_CONVERSION_HEADER = "skip-input-type-conversion";
-
-	/**
-	 * Name of the header to be used to instruct function catalog to skip output type conversion.
-	 */
-	public final static String SKIP_OUTPUT_CONVERSION_HEADER = "skip-output-type-conversion";
 
 	/**
 	 * Name of the header to be used to instruct function to apply this content type for output conversion.
