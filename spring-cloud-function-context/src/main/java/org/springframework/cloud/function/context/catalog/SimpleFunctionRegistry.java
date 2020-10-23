@@ -275,6 +275,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		private String[] expectedOutputContentType;
 
+		private boolean skipInputConversion;
+
+		private boolean skipOutputConversion;
+
 		/*
 		 * This is primarily to support Stream's ability to access
 		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
@@ -290,6 +294,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.outputType = this.normalizeType(outputType);
 			this.functionDefinition = functionDefinition;
 			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
+		}
+
+		public void setSkipInputConversion(boolean skipInputConversion) {
+			this.skipInputConversion = skipInputConversion;
+		}
+
+		public void setSkipOutputConversion(boolean skipOutputConversion) {
+			this.skipOutputConversion = skipOutputConversion;
 		}
 
 		public Object getTarget() {
@@ -684,7 +696,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						+ this.functionDefinition + "' since it's input type is Void and as such it is treated as Supplier.");
 				input = null;
 			}
-			if (this.isSkipConversionHeaderSet(input, true)) {
+			if (this.skipInputConversion && !(input instanceof Publisher)) {
 				if (!FunctionTypeUtils.isMessage(type)) {
 					input = this.isFunction()
 							? new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input)
@@ -733,7 +745,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * set as a header in a message or explicitly provided as part of the lookup.
 		 */
 		private Object convertOutputIfNecessary(Object output, Type type, String[] contentType) {
-			if (this.isSkipConversionHeaderSet(output, false)) {
+			if (this.skipOutputConversion) {
 				return output;
 			}
 			if (output instanceof Message && !this.containsRetainMessageSignalInHeaders((Message) output)) {
@@ -767,23 +779,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 
 			return convertedOutput;
-		}
-
-		/*
-		 * This header may be set by a framework that uses s-c-function but does not want to rely on type
-		 * conversion mechanism provided by s-c-function
-		 */
-		private boolean isSkipConversionHeaderSet(Object value, boolean input) {
-			if (value instanceof Message) {
-				Message message = (Message) value;
-				String headerName = input ? FunctionProperties.SKIP_INPUT_CONVERSION_HEADER : FunctionProperties.SKIP_OUTPUT_CONVERSION_HEADER;
-				if (message.getHeaders().containsKey(headerName)) {
-					Object skipValue = message.getHeaders().get(headerName);
-					boolean skip = skipValue instanceof Boolean ? (boolean) skipValue : Boolean.parseBoolean((String) skipValue);
-					return skip;
-				}
-			}
-			return false;
 		}
 
 		/**
