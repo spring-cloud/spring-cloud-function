@@ -426,6 +426,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		private final Field headersField;
 
+		private boolean skipInputConversion;
+
+		private boolean skipOutputConversion;
+
 		FunctionInvocationWrapper(Object target, Type functionType, String functionDefinition, String... acceptedOutputMimeTypes) {
 			this.target = target;
 			this.composed = functionDefinition.contains("|") || target instanceof RoutingFunction;
@@ -435,6 +439,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 			this.headersField.setAccessible(true);
 		}
+
+		public void setSkipInputConversion(boolean skipInputConversion) {
+			this.skipInputConversion = skipInputConversion;
+		}
+
+		public void setSkipOutputConversion(boolean skipOutputConversion) {
+			this.skipOutputConversion = skipOutputConversion;
+		}
+
 
 		@Override
 		public int hashCode() {
@@ -634,6 +647,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		@SuppressWarnings({"rawtypes", "unchecked"})
 		private Object convertOutputValueIfNecessary(Object value, Function<Message, Message> enricher, String... acceptedOutputMimeTypes) {
+			if (this.skipOutputConversion) {
+				return value;
+			}
 			logger.debug("Applying type conversion on output value");
 			Object convertedValue = null;
 			if (FunctionTypeUtils.isMultipleArgumentsHolder(value)) {
@@ -768,6 +784,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (logger.isDebugEnabled()) {
 				logger.debug("Applying type conversion on input value " + value);
 				logger.debug("Function type: " + this.functionType);
+			}
+
+			if (this.skipInputConversion && !(value instanceof Publisher)) {
+				if (!FunctionTypeUtils.isMessage(type) && value instanceof Message) {
+					value = ((Message) value).getPayload();
+//					input = this.isFunction()
+//							? new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input)
+//							: input;
+				}
+				return value;
 			}
 
 			Object convertedValue = value;
