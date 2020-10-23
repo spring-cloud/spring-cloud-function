@@ -291,6 +291,13 @@ public final class FunctionTypeUtils {
 		return TypeResolver.resolveRawClass(type, null) == Flux.class;
 	}
 
+	public static boolean isCollectionOfMessage(Type type) {
+		if (isMessage(type)) {
+			return isTypeCollection(type);
+		}
+		return false;
+	}
+
 	public static boolean isMessage(Type type) {
 		if (isPublisher(type)) {
 			type = getImmediateGenericType(type, 0);
