@@ -46,6 +46,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -96,6 +97,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 	private final JsonMapper jsonMapper;
 
+	@Autowired(required = false)
+	private FunctionAroundWrapper functionAroundWrapper;
+
 	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
 		Assert.notNull(messageConverter, "'messageConverter' must not be null");
 		Assert.notNull(jsonMapper, "'jsonMapper' must not be null");
@@ -104,13 +108,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		this.messageConverter = messageConverter;
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 		this.headersField.setAccessible(true);
-	}
-
-	@Override
-	public FunctionRegistration<?> getRegistration(Object function) {
-		throw new UnsupportedOperationException("FunctionInspector is deprecated. There is no need "
-				+ "to access FunctionRegistration directly since you can interogate the actual "
-				+ "looked-up function (see FunctionInvocationWrapper.");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -127,6 +124,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 		}
 		return (T) function;
+	}
+
+	@Override
+	public FunctionRegistration<?> getRegistration(Object function) {
+		throw new UnsupportedOperationException("FunctionInspector is deprecated. There is no need "
+				+ "to access FunctionRegistration directly since you can interogate the actual "
+				+ "looked-up function (see FunctionInvocationWrapper.");
 	}
 
 	@Override
@@ -168,8 +172,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			function.expectedOutputContentType = expectedOutputMimeTypes;
 		}
 		else {
-			logger.debug("Function '" + functionDefinition + "' is not found");
+			logger.debug("Function '" + functionDefinition + "' is not found in cache");
 		}
+
+		function = this.wrapInAroundAviceIfNecessary(function);
+
 		return (T) function;
 	}
 
@@ -196,6 +203,25 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 		}
 		return functionDefinition;
+	}
+
+	/**
+	 * This is primarily to support spring-cloud-sleauth.
+	 * There is no current use cases in functions where it is used.
+	 * The approach may change in the future.
+	 */
+	private FunctionInvocationWrapper wrapInAroundAviceIfNecessary(FunctionInvocationWrapper function) {
+		FunctionInvocationWrapper wrappedFunction = function;
+		if (function != null && this.functionAroundWrapper != null) {
+			wrappedFunction = new FunctionInvocationWrapper(function) {
+				@Override
+				Object doApply(Object input) {
+					logger.info("Executing around advise(s)");
+					return functionAroundWrapper.apply(input, function);
+				}
+			};
+		}
+		return wrappedFunction;
 	}
 
 	/*
@@ -259,7 +285,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 *
 	 */
 	@SuppressWarnings("rawtypes")
-	public final class FunctionInvocationWrapper implements Function<Object, Object>, Consumer<Object>, Supplier<Object>, Runnable {
+	public class FunctionInvocationWrapper implements Function<Object, Object>, Consumer<Object>, Supplier<Object>, Runnable {
 
 		private final Object target;
 
@@ -288,7 +314,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		private Function<Object, Message> enhancer;
 
-		private FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
+		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
+			this.target = function.target;
+			this.inputType = function.inputType;
+			this.outputType = function.outputType;
+			this.functionDefinition = function.functionDefinition;
+			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
+		}
+
+		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
 			this.outputType = this.normalizeType(outputType);
@@ -558,7 +592,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 *
 		 */
 		@SuppressWarnings("unchecked")
-		private Object doApply(Object input) {
+		Object doApply(Object input) {
 			Object result;
 
 			input = this.fluxifyInputIfNecessary(input);
