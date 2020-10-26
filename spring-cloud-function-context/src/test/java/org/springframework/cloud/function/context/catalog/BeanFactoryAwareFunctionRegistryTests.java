@@ -507,6 +507,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		f.run();
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testWrappedWithAroundAdviseConfiguration() {
+		FunctionCatalog catalog = this.configureCatalog(WrappedWithAroundAdviseConfiguration.class);
+		Function f = catalog.lookup("uppercase");
+		Message result = (Message) f.apply(new GenericMessage<String>("hello"));
+		assertThat(result.getHeaders().get("before")).isEqualTo("foo");
+		assertThat(result.getHeaders().get("after")).isEqualTo("bar");
+	}
+
 	@EnableAutoConfiguration
 	public static class PojoToMessageFunctionCompositionConfiguration {
 
@@ -654,6 +664,29 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			protected boolean supports(Class<?> clazz) {
 				throw new UnsupportedOperationException();
 			}
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class WrappedWithAroundAdviseConfiguration {
+		@Bean
+		public Function<Message<String>, Message<String>> uppercase() {
+			return v -> MessageBuilder.withPayload(v.getPayload().toUpperCase()).copyHeaders(v.getHeaders()).build();
+		}
+
+		@Bean
+		public FunctionAroundWrapper wrapper() {
+			return new FunctionAroundWrapper() {
+
+				@SuppressWarnings("unchecked")
+				@Override
+				protected Object doApply(Message<byte[]> input, FunctionInvocationWrapper targetFunction) {
+					MessageBuilder.fromMessage(input).setHeader("before", "foo").build();
+					Message<Object> result = (Message<Object>) targetFunction.apply(MessageBuilder.fromMessage(input).setHeader("before", "foo").build());
+					return MessageBuilder.fromMessage(result).setHeader("after", "bar").build();
+				}
+			};
 		}
 	}
 
