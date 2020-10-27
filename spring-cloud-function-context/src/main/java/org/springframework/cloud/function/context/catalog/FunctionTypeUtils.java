@@ -92,11 +92,16 @@ public final class FunctionTypeUtils {
 		if (isMessage(type)) {
 			type = getImmediateGenericType(type, 0);
 		}
-		return type;
+		return TypeResolver.reify(type);
 	}
 
+	/**
+	 * Effectively converts {@link Type} which could be {@link ParameterizedType} to raw Class (no generics).
+	 * @param type actual {@link Type} instance
+	 * @return instance of {@link Class} as raw representation of the provided {@link Type}
+	 */
 	public static Class<?> getRawType(Type type) {
-		return type != null ? TypeResolver.resolveRawClass(type, null) : null;
+		return type != null ? TypeResolver.resolveRawClass(TypeResolver.reify(type), null) : null;
 	}
 
 	/**
