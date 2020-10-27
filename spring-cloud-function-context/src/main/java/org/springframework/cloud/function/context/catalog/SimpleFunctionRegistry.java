@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -648,27 +647,19 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Object invokeFunctionAndEnrichResultIfNecessary(Object value) {
 			Object inputValue;
 			if (value instanceof Flux) {
-				inputValue = ((Flux) value).map(iv -> {
-					return iv instanceof OriginalMessageHolder
-							? ((OriginalMessageHolder) iv).getKey()
-							: iv;
-				});
+				inputValue = ((Flux) value).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
 			}
 			else if (value instanceof Mono) {
-				inputValue = ((Mono) value).map(iv -> {
-					return iv instanceof OriginalMessageHolder
-							? ((OriginalMessageHolder) iv).getKey()
-							: iv;
-				});
+				inputValue = ((Mono) value).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
 			}
 			else {
-				inputValue = value instanceof OriginalMessageHolder ? ((OriginalMessageHolder) value).getKey() : value;
+				inputValue = this.extractValueFromOriginalValueHolderIfNecessary(value);
 			}
 
 			Object result = ((Function) this.target).apply(inputValue);
 
 			return value instanceof OriginalMessageHolder
-					? this.enrichInvocationResultIfNecessary(((OriginalMessageHolder) value).getValue(), result)
+					? this.enrichInvocationResultIfNecessary(((OriginalMessageHolder) value).getOriginalMessage(), result)
 					: result;
 		}
 
@@ -682,6 +673,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				if (convertedInput instanceof Flux) {
 					result = ((Flux) convertedInput)
 							.transform(flux -> {
+								flux =  Flux.from((Publisher) flux).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
 								((Consumer) this.target).accept(flux);
 								return Mono.ignoreElements((Flux) flux);
 							}).then();
@@ -689,6 +681,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				else {
 					result = ((Mono) convertedInput)
 							.transform(mono -> {
+								mono =  Mono.from((Publisher) mono).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
 								((Consumer) this.target).accept(mono);
 								return Mono.ignoreElements((Flux) mono);
 							}).then();
@@ -696,13 +689,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			else if (convertedInput instanceof Publisher) {
 				result = convertedInput instanceof Mono
-						? Mono.from((Publisher) convertedInput).doOnNext((Consumer) this.target).then()
-						: Flux.from((Publisher) convertedInput).doOnNext((Consumer) this.target).then();
+						? Mono.from((Publisher) convertedInput)
+								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
+								.doOnNext((Consumer) this.target).then()
+						: Flux.from((Publisher) convertedInput)
+								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
+								.doOnNext((Consumer) this.target).then();
 			}
 			else {
-				((Consumer) this.target).accept(convertedInput);
+				((Consumer) this.target).accept(this.extractValueFromOriginalValueHolderIfNecessary(convertedInput));
 			}
 			return result;
+		}
+
+		private Object extractValueFromOriginalValueHolderIfNecessary(Object input) {
+			if (input instanceof OriginalMessageHolder) {
+				input = ((OriginalMessageHolder) input).getValue();
+			}
+			return input;
 		}
 
 		/**
@@ -731,12 +735,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				input = null;
 			}
 			if (this.skipInputConversion && !(input instanceof Publisher)) {
-				if (!FunctionTypeUtils.isMessage(type)) {
-					input = this.isFunction()
-							? new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input)
-							: input;
-				}
-				return input;
+				return this.isInputTypeMessage()
+						? input
+						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
 
 			if (FunctionTypeUtils.isMultipleArgumentType(type)) {
@@ -760,8 +761,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			else if (input instanceof Message) {
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
-				if (!FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
-					convertedInput = this.isFunction() ? new OriginalMessageHolder(convertedInput, (Message<?>) input) : convertedInput;
+				if (convertedInput != null && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
+					convertedInput = !convertedInput.equals(input)
+							? new OriginalMessageHolder(convertedInput, (Message<?>) input)
+							: convertedInput;
 				}
 			}
 			else {
@@ -783,10 +786,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				return output;
 			}
 			if (output instanceof Message && !this.containsRetainMessageSignalInHeaders((Message) output)) {
-				if (!FunctionTypeUtils.isMessage(type)) {
-					output = ((Message) output).getPayload();
-				}
-				else if (FunctionTypeUtils.isMessage(type) && Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(type))) {
+				if (!FunctionTypeUtils.isMessage(type) ||
+					(FunctionTypeUtils.isMessage(type) && Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(type)))) {
 					output = ((Message) output).getPayload();
 				}
 			}
@@ -882,6 +883,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return type;
 		}
 
+		/*
+		 *
+		 */
 		private boolean isConversionHintRequired(Object actualType, Class<?> rawType) {
 			return rawType != actualType;
 		}
@@ -890,11 +894,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 *
 		 */
 		private Object convertInputMessageIfNecessary(Message message, Type type) {
-			if (message.getPayload() instanceof Optional) {
-				return message;
-			}
 			if (type == null) {
 				return null;
+			}
+			if (message.getPayload() instanceof Optional) {
+				return message;
 			}
 
 			Object convertedInput = message;
@@ -1009,29 +1013,22 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	/**
 	 *
 	 */
-	private static final class OriginalMessageHolder implements Entry<Object, Message<?>> {
-		private final Object key;
+	private static final class OriginalMessageHolder  {
+		private final Object value;
 
-		private final Message<?> value;
+		private final Message<?> originalMessage;
 
-		private OriginalMessageHolder(Object key, Message<?> value) {
-			this.key = key;
+		private OriginalMessageHolder(Object value, Message<?> originalMessage) {
 			this.value = value;
+			this.originalMessage = originalMessage;
 		}
 
-		@Override
-		public Object getKey() {
-			return this.key;
-		}
-
-		@Override
-		public Message<?> getValue() {
+		public Object getValue() {
 			return this.value;
 		}
 
-		@Override
-		public Message<?> setValue(Message<?> value) {
-			throw new UnsupportedOperationException();
+		public Message<?> getOriginalMessage() {
+			return this.originalMessage;
 		}
 	}
 }
