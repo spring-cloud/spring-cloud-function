@@ -92,7 +92,7 @@ public final class FunctionTypeUtils {
 		if (isMessage(type)) {
 			type = getImmediateGenericType(type, 0);
 		}
-		return TypeResolver.reify(type);
+		return TypeResolver.reify(type instanceof GenericArrayType ? type : TypeResolver.reify(type));
 	}
 
 	/**
@@ -101,7 +101,8 @@ public final class FunctionTypeUtils {
 	 * @return instance of {@link Class} as raw representation of the provided {@link Type}
 	 */
 	public static Class<?> getRawType(Type type) {
-		return type != null ? TypeResolver.resolveRawClass(TypeResolver.reify(type), null) : null;
+		return type != null ? TypeResolver
+				.resolveRawClass(type instanceof GenericArrayType ? type : TypeResolver.reify(type), null) : null;
 	}
 
 	/**
