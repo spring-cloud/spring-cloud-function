@@ -36,7 +36,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import net.jodah.typetools.TypeResolver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -372,11 +371,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		public Class<?> getRawOutputType() {
-			return this.outputType == null ? null : TypeResolver.resolveRawClass(this.outputType, null);
+			return this.outputType == null ? null : FunctionTypeUtils.getRawType(this.outputType);
 		}
 
 		public Class<?> getRawInputType() {
-			return this.inputType == null ? null : TypeResolver.resolveRawClass(this.inputType, null);
+			return this.inputType == null ? null : FunctionTypeUtils.getRawType(this.inputType);
 		}
 
 		/**
@@ -541,7 +540,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 *
 		 */
 		private Class<?> getRawClassFor(@Nullable Type type) {
-			return type instanceof TypeVariable || type instanceof WildcardType ? Object.class : TypeResolver.resolveRawClass(type, null);
+			return type instanceof TypeVariable || type instanceof WildcardType
+					? Object.class
+					: FunctionTypeUtils.getRawType(type);
 		}
 
 		/**
@@ -843,7 +844,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Object convertNonMessageInputIfNecessary(Type inputType, Object input) {
 			Object convertedInput = input;
 			Class<?> rawInputType = this.isTypePublisher(inputType) || this.isInputTypeMessage()
-					? TypeResolver.resolveRawClass(FunctionTypeUtils.getImmediateGenericType(inputType, 0), null)
+					? FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))
 					: this.getRawClassFor(inputType);
 
 			if (JsonMapper.isJsonString(input) && !Message.class.isAssignableFrom(rawInputType)) {
@@ -878,7 +879,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		private Type extractActualValueTypeIfNecessary(Type type) {
 			if (type  instanceof ParameterizedType && (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type))) {
-				return FunctionTypeUtils.getImmediateGenericType(type, 0);
+				return FunctionTypeUtils.getGenericType(type);
 			}
 			return type;
 		}
@@ -903,11 +904,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 			Object convertedInput = message;
 			type = this.extractActualValueTypeIfNecessary(type);
-			Class rawType = TypeResolver.resolveRawClass(type, null);
+			Class rawType = FunctionTypeUtils.getRawType(type);
 			convertedInput = this.isConversionHintRequired(type, rawType)
 					? SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType, type)
 					: SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType);
-
 
 			if (this.isInputTypeMessage()) {
 				if (convertedInput == null) {
