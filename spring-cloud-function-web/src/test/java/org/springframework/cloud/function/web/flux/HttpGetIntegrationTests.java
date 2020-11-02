@@ -46,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -57,6 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=reactive")
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
+@DirtiesContext
 public class HttpGetIntegrationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;

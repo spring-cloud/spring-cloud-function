@@ -40,6 +40,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.utils.PrimitiveTypesFromStringMessageConverter;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.AnnotationConfigUtils;
 import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
@@ -52,7 +53,6 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
-import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.util.Assert;
@@ -60,6 +60,7 @@ import org.springframework.util.ClassUtils;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  *
  */
 public class ContextFunctionCatalogInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
@@ -169,10 +170,8 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 					List<MessageConverter> messageConverters = new ArrayList<>();
 					JsonMapper jsonMapper = this.context.getBean(JsonMapper.class);
 
-//					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new JsonMessageConverter(jsonMapper)));
-//					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
-//					messageConverters.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
 					messageConverters.add(new StringMessageConverter());
+					messageConverters.add(new PrimitiveTypesFromStringMessageConverter(new DefaultConversionService()));
 					messageConverters.add(new JsonMessageConverter(jsonMapper));
 					messageConverters.add(new ByteArrayMessageConverter());
 

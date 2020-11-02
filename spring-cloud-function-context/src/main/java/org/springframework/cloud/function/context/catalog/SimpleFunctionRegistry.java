@@ -61,7 +61,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
-import org.springframework.util.MimeType;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -762,6 +761,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			else if (input instanceof Message) {
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
+				if (convertedInput == null) { // give ConversionService a chance
+					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload());
+				}
 				if (convertedInput != null && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
 					convertedInput = !convertedInput.equals(input)
 							? new OriginalMessageHolder(convertedInput, (Message<?>) input)
@@ -791,6 +793,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					(FunctionTypeUtils.isMessage(type) && Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(type)))) {
 					output = ((Message) output).getPayload();
 				}
+			}
+			if (ObjectUtils.isEmpty(contentType)) {
+				return output;
 			}
 
 			if (!(output instanceof Publisher) && this.enhancer != null) {
@@ -925,6 +930,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					convertedInput = MessageBuilder.withPayload(convertedInput).copyHeaders(message.getHeaders()).build();
 				}
 			}
+//			convertedInput = convertedInput == null ? message.getPayload() : convertedInput;
 			return convertedInput;
 		}
 

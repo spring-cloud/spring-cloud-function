@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFuncti
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.utils.PrimitiveTypesFromStringMessageConverter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -93,17 +94,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		mcList = mcList.stream()
 				.filter(c -> isConverterEligible(c))
-//				.map(converter -> {
-//					return converter instanceof AbstractMessageConverter
-//							? NegotiatingMessageConverterWrapper.wrap((AbstractMessageConverter) converter)
-//									: converter;
-//				})
 				.collect(Collectors.toList());
-//		mcList.add(NegotiatingMessageConverterWrapper.wrap(new JsonMessageConverter(jsonMapper)));
-//		mcList.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
-//		mcList.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
-
 		mcList.add(new StringMessageConverter());
+		mcList.add(new PrimitiveTypesFromStringMessageConverter(conversionService));
 		mcList.add(new JsonMessageConverter(jsonMapper));
 		mcList.add(new ByteArrayMessageConverter());
 

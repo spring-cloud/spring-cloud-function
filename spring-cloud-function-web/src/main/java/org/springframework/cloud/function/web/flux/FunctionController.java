@@ -16,14 +16,10 @@
 
 package org.springframework.cloud.function.web.flux;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
@@ -83,13 +79,6 @@ public class FunctionController {
 		return map;
 	}
 
-	@PostMapping(path = "/**", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-	@ResponseBody
-	public Mono<ResponseEntity<?>> post(ServerWebExchange request) {
-		FunctionWrapper wrapper = wrapper(request);
-		return this.processor.post(wrapper, request);
-	}
-
 	@PostMapping(path = "/**")
 	@ResponseBody
 	public Mono<ResponseEntity<?>> post(ServerWebExchange request,
@@ -120,16 +109,9 @@ public class FunctionController {
 	}
 
 	private FunctionWrapper wrapper(ServerWebExchange request) {
-		@SuppressWarnings("unchecked")
-		Function<Publisher<?>, Publisher<?>> function = (Function<Publisher<?>, Publisher<?>>) request
-				.getAttribute(WebRequestConstants.FUNCTION);
-		@SuppressWarnings("unchecked")
-		Consumer<Publisher<?>> consumer = (Consumer<Publisher<?>>) request
-				.getAttribute(WebRequestConstants.CONSUMER);
-		@SuppressWarnings("unchecked")
-		Supplier<Publisher<?>> supplier = (Supplier<Publisher<?>>) request
-				.getAttribute(WebRequestConstants.SUPPLIER);
-		FunctionWrapper wrapper = RequestProcessor.wrapper(function, consumer, supplier);
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) request
+				.getAttribute(WebRequestConstants.HANDLER);
+		FunctionWrapper wrapper = RequestProcessor.wrapper(function);
 		wrapper.headers(request.getRequest().getHeaders());
 		wrapper.params(request.getRequest().getQueryParams());
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT);

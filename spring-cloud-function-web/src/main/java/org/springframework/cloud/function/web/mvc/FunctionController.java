@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,11 @@ package org.springframework.cloud.function.web.mvc;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
@@ -93,16 +91,9 @@ public class FunctionController {
 	}
 
 	private FunctionWrapper wrapper(WebRequest request) {
-		@SuppressWarnings("unchecked")
-		Function<Publisher<?>, Publisher<?>> function = (Function<Publisher<?>, Publisher<?>>) request
-				.getAttribute(WebRequestConstants.FUNCTION, WebRequest.SCOPE_REQUEST);
-		@SuppressWarnings("unchecked")
-		Consumer<Publisher<?>> consumer = (Consumer<Publisher<?>>) request
-				.getAttribute(WebRequestConstants.CONSUMER, WebRequest.SCOPE_REQUEST);
-		@SuppressWarnings("unchecked")
-		Supplier<Publisher<?>> supplier = (Supplier<Publisher<?>>) request
-				.getAttribute(WebRequestConstants.SUPPLIER, WebRequest.SCOPE_REQUEST);
-		FunctionWrapper wrapper = RequestProcessor.wrapper(function, consumer, supplier);
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) request
+				.getAttribute(WebRequestConstants.HANDLER, WebRequest.SCOPE_REQUEST);
+		FunctionWrapper wrapper = RequestProcessor.wrapper(function);
 		for (String key : request.getParameterMap().keySet()) {
 			wrapper.params().addAll(key, Arrays.asList(request.getParameterValues(key)));
 		}

@@ -20,7 +20,6 @@ import java.lang.management.ManagementFactory;
 import java.time.Duration;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,10 +41,8 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.cloud.function.json.JsonMapper;
-import org.springframework.cloud.function.web.BasicStringConverter;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
-import org.springframework.cloud.function.web.StringConverter;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebUtils;
 import org.springframework.context.ApplicationContext;
@@ -103,12 +100,10 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 	}
 
 	private void registerEndpoint(GenericApplicationContext context) {
-		context.registerBean(StringConverter.class,
-				() -> new BasicStringConverter(context.getBeanFactory()));
 		context.registerBean(RequestProcessor.class,
 				() -> new RequestProcessor(
 						context.getBean(FunctionCatalog.class),
-						context.getBeanProvider(JsonMapper.class), context.getBean(StringConverter.class),
+						context.getBeanProvider(JsonMapper.class),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class), context.getBean(RequestProcessor.class),
@@ -198,8 +193,6 @@ class FunctionEndpointFactory {
 
 	private final String handler;
 
-//	private final FunctionInspector inspector;
-
 	private final RequestProcessor processor;
 
 	FunctionEndpointFactory(FunctionCatalog functionCatalog, RequestProcessor processor,
@@ -209,13 +202,12 @@ class FunctionEndpointFactory {
 			handler = null;
 		}
 		this.processor = processor;
-//		this.inspector = inspector;
 		this.functionCatalog = functionCatalog;
 		this.handler = handler;
 	}
 
-	private Object extract(ServerRequest request) {
-		Object function;
+	private FunctionInvocationWrapper extract(ServerRequest request) {
+		FunctionInvocationWrapper function;
 		if (handler != null) {
 			logger.info("Configured function: " + handler);
 			Set<String> names = this.functionCatalog.getNames(Function.class);
@@ -233,12 +225,11 @@ class FunctionEndpointFactory {
 	@SuppressWarnings({ "unchecked" })
 	public <T> RouterFunction<?> functionEndpoints() {
 		return route(POST("/**"), request -> {
-			Object function = extract(request);
-			FunctionInvocationWrapper funcWrapper = (FunctionInvocationWrapper) function;
+			FunctionInvocationWrapper funcWrapper = extract(request);
 			Class<?> outputType = funcWrapper == null
 					? Object.class
 					: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
-			FunctionWrapper wrapper = RequestProcessor.wrapper((Function<Flux<?>, Flux<?>>) function, null, null);
+			FunctionWrapper wrapper = RequestProcessor.wrapper(funcWrapper);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
 					.flatMap(content -> this.processor.post(wrapper, content, false));
 			return stream.flatMap(entity -> {
@@ -247,28 +238,21 @@ class FunctionEndpointFactory {
 			});
 		})
 		.andRoute(GET("/**"), request -> {
-			Object functionComponent = extract(request);
-			FunctionInvocationWrapper funcWrapper = (FunctionInvocationWrapper) functionComponent;
+			FunctionInvocationWrapper funcWrapper = extract(request);
 			Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
-			if (((FunctionInvocationWrapper) functionComponent).isSupplier()) {
-				Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
-				FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);
-				//Object result = wrapper.supplier().get();
-				Object func = wrapper.supplier();
-				Object result = FunctionWebUtils.invokeFunction((FunctionInvocationWrapper) func, null, ((FunctionInvocationWrapper) func).isInputTypeMessage());
+			if (funcWrapper.isSupplier()) {
+				Object result = FunctionWebUtils.invokeFunction(funcWrapper, null, funcWrapper.isInputTypeMessage());
 				if (!(result instanceof Publisher)) {
 					result = Mono.just(result);
 				}
 				return ServerResponse.ok().body(result, outputType);
 			}
 			else {
-				Function<Flux<?>, Flux<?>> function = (Function<Flux<?>, Flux<?>>) functionComponent;
-				FunctionWrapper wrapper = RequestProcessor.wrapper(function, null, null);
+				FunctionWrapper wrapper = RequestProcessor.wrapper(funcWrapper);
 				wrapper.headers(request.headers().asHttpHeaders());
 				String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
 				wrapper.argument(Flux.just(argument));
-				Object func = wrapper.function();
-				Object result = FunctionWebUtils.invokeFunction((FunctionInvocationWrapper) func, wrapper.argument(),  ((FunctionInvocationWrapper) func).isInputTypeMessage());
+				Object result = FunctionWebUtils.invokeFunction(funcWrapper, wrapper.argument(),  funcWrapper.isInputTypeMessage());
 				return ServerResponse.ok().body(result, outputType);
 			}
 		});
