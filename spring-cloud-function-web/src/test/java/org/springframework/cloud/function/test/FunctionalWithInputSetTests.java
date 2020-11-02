@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.test;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,10 +45,12 @@ public class FunctionalWithInputSetTests {
 
 	@Test
 	public void words() throws Exception {
-		String reply = this.client.post().uri("/")
-				.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"),
-						String.class)
-				.exchange().expectStatus().isOk().expectBody(String.class).returnResult()
+		this.client = this.client.mutate().responseTimeout(Duration.ofSeconds(300)).build();
+		String reply = this.client
+				.post().uri("/")
+				.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
+				.exchange()
+				.expectStatus().isOk().expectBody(String.class).returnResult()
 				.getResponseBody();
 		assertThat(reply.contains("FOO")).isTrue();
 		assertThat(reply.contains("BAR")).isTrue();

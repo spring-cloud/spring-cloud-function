@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package org.springframework.cloud.function.web.util;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
-import org.reactivestreams.Publisher;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -33,17 +33,17 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-
+/**
+ * @author Oleg Zhurakousky
+ *
+ */
 public final class FunctionWebUtils {
 
 	private FunctionWebUtils() {
 
 	}
 
-	public static Object findFunction(HttpMethod method, FunctionCatalog functionCatalog,
+	public static FunctionInvocationWrapper findFunction(HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
 		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST)) {
 			return doFindFunction(method, functionCatalog, attributes, path, acceptContentTypes);
@@ -63,15 +63,14 @@ public final class FunctionWebUtils {
 		}
 
 		acceptContentTypes = new String[] {StringUtils.arrayToCommaDelimitedString(acceptContentTypes)};
-//		return acceptContentTypes;
 		return new String[] {};
 	}
 
-	private static Object doFindFunction(HttpMethod method, FunctionCatalog functionCatalog,
+	private static FunctionInvocationWrapper doFindFunction(HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
 		path = path.startsWith("/") ? path.substring(1) : path;
 		if (method.equals(HttpMethod.GET)) {
-			Supplier<Publisher<?>> supplier = functionCatalog.lookup(path, acceptContentTypes);
+			FunctionInvocationWrapper supplier = functionCatalog.lookup(path, acceptContentTypes);
 			if (supplier != null) {
 				attributes.put(WebRequestConstants.SUPPLIER, supplier);
 				return supplier;
@@ -89,7 +88,7 @@ public final class FunctionWebUtils {
 			name = builder.toString();
 			value = path.length() > name.length() ? path.substring(name.length() + 1)
 					: null;
-			Function<Object, Object> function = functionCatalog.lookup(name, acceptContentTypes);
+			FunctionInvocationWrapper function = functionCatalog.lookup(name, acceptContentTypes);
 			if (function != null) {
 				attributes.put(WebRequestConstants.FUNCTION, function);
 				if (value != null) {
@@ -106,6 +105,7 @@ public final class FunctionWebUtils {
 		return postProcessResult(result, isMessage);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static Object postProcessResult(Object result, boolean isMessage) {
 		if (result instanceof Flux) {
 			result = ((Flux) result).map(v -> postProcessResult(v, isMessage));

@@ -16,19 +16,13 @@
 
 package org.springframework.cloud.function.web;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -45,33 +39,18 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.context.message.MessageUtils;
-import org.springframework.cloud.function.core.FluxConsumer;
-import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.util.FunctionWebUtils;
 import org.springframework.cloud.function.web.util.HeaderUtils;
-import org.springframework.core.MethodParameter;
-import org.springframework.core.ReactiveAdapter;
-import org.springframework.core.ReactiveAdapterRegistry;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.codec.DecodingException;
-import org.springframework.core.codec.Hints;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
-import org.springframework.http.codec.HttpMessageReader;
 import org.springframework.http.codec.ServerCodecConfigurer;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.messaging.Message;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.ServerWebInputException;
-import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 
 /**
  * @author Dave Syer
@@ -84,102 +63,125 @@ public class RequestProcessor {
 
 	private final FunctionCatalog functionCatalog;
 
-	private final StringConverter converter;
-
 	private final JsonMapper mapper;
 
-	private final List<HttpMessageReader<?>> messageReaders;
-
 	public RequestProcessor(FunctionCatalog functionCatalog,
-			ObjectProvider<JsonMapper> mapper, StringConverter converter,
+			ObjectProvider<JsonMapper> mapper,
 			ObjectProvider<ServerCodecConfigurer> codecs) {
 		this.mapper = mapper.getIfAvailable();
 		this.functionCatalog = functionCatalog;
-		this.converter = converter;
-		ServerCodecConfigurer source = codecs.getIfAvailable();
-		this.messageReaders = source == null ? null : source.getReaders();
 	}
 
-	public static FunctionWrapper wrapper(
-			Function<? extends Publisher<?>, ? extends Publisher<?>> function,
-			Consumer<? extends Publisher<?>> consumer,
-			Supplier<? extends Publisher<?>> supplier) {
-		return new FunctionWrapper(function, supplier);
-	}
-
-	public static FunctionWrapper wrapper(
-			Function<? extends Publisher<?>, ? extends Publisher<?>> function) {
-		return new FunctionWrapper(function, null);
+	public static FunctionWrapper wrapper(FunctionInvocationWrapper function) {
+		return new FunctionWrapper(function);
 	}
 
 	@SuppressWarnings("rawtypes")
 	public Mono<ResponseEntity<?>> get(FunctionWrapper wrapper) {
-		if (wrapper.function() != null) {
+		if (wrapper.function().isFunction()) {
 			return response(wrapper, wrapper.function(), value(wrapper), true, true);
 		}
 		else {
-			Object result = wrapper.supplier().get();
-			return response(wrapper, wrapper.supplier(), result instanceof Publisher ? (Publisher) result : Flux.just(result), null,
+			FunctionInvocationWrapper function = (wrapper.function);
+			Object result = FunctionWebUtils.invokeFunction(function, null, false);
+			return response(wrapper, wrapper.function(), result instanceof Publisher ? (Publisher) result : Flux.just(result), null,
 					true);
 		}
 
 	}
 
-	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper,
-			ServerWebExchange exchange) {
-		Mono<ResponseEntity<?>> responseEntity = Mono
-				.from(body(wrapper.handler(), exchange))
-				.doOnError(e -> logger.error("Failed to generate POST input for function: " + wrapper.function, e))
-				.flatMap(body -> response(wrapper, body, false));
-
-		return responseEntity;
-	}
-
 	public Mono<ResponseEntity<?>> post(FunctionWrapper wrapper, String body,
 			boolean stream) {
-		Object function = wrapper.handler();
-		Class<?> inputType = function == null
-				? Object.class
-				: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getInputType()));
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) wrapper.handler();
 		Type itemType = getItemType(function);
 
-		Object input = body == null && inputType.isAssignableFrom(String.class) ? "" : body;
+		Object input = body == null  ? "" : body;
 
-		if ((isInputMultiple(this.getTargetIfRouting(wrapper, function))  || !(function instanceof RoutingFunction))
-				&& input != null) { // TODO rework. . . pretty ugly
-			if (this.shouldUseJsonConversion((String) input, wrapper.headers.getContentType())) {
-				Type jsonType = body.startsWith("[")
-						&& Collection.class.isAssignableFrom(inputType)
-						|| body.startsWith("{") ? inputType : Collection.class;
-				if (body.startsWith("[") && itemType instanceof Class) {
-					jsonType = ResolvableType.forClassWithGenerics((Class<?>) jsonType,
-							(Class<?>) itemType).getType();
-				}
-				input = this.mapper.fromJson((String) input, jsonType);
-			}
-			else {
-				input = this.converter.convert(function, (String) input);
-			}
+		/*
+		 * We need this to ensure that imperative function which are sent array-like input
+		 * can be invoked with each item and then aggregated
+		 */
+		if (input != null && JsonMapper.isJsonStringRepresentsCollection(input)) {
+			Type type = FunctionTypeUtils.isTypeCollection(itemType)
+					? ResolvableType.forType(itemType).getType()
+					: ResolvableType.forClassWithGenerics(Collection.class, ResolvableType.forType(itemType)).asCollection().getType();
+			input = this.mapper.fromJson((String) input, type);
 		}
 
 		return response(wrapper, input, stream);
 	}
 
-	public Mono<ResponseEntity<?>> stream(FunctionWrapper request) {
-		Publisher<?> result = request.function() != null
-				? value(request)
-				: request.supplier().get();
-		return stream(request, result);
+	public Mono<ResponseEntity<?>> stream(FunctionWrapper functionWrapper) {
+		Publisher<?> result = functionWrapper.function.isFunction()
+				? value(functionWrapper)
+				: (Publisher<?>) functionWrapper.function.get();
+		return stream(functionWrapper, result);
 	}
 
-	private boolean shouldUseJsonConversion(String body, MediaType contentType) {
-		return (body.startsWith("[") || body.startsWith("{"))
-				&& (contentType == null || (contentType != null
-						&& !"text".equalsIgnoreCase(contentType.getType())));
-	}
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public Mono<ResponseEntity<?>> response(FunctionWrapper wrapper, Object body, boolean stream) {
 
-	private List<HttpMessageReader<?>> getMessageReaders() {
-		return this.messageReaders;
+		FunctionInvocationWrapper function = (wrapper.function());
+		Flux<?> flux;
+		Class<?> inputType = function == null
+				? Object.class
+				: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()));
+		if (MultiValueMap.class.isAssignableFrom(inputType)) {
+			body = null;
+			flux = Flux.just(wrapper.params());
+		}
+		else if (body != null) {
+			if (Collection.class.isAssignableFrom(inputType)) {
+				flux = Flux.just(body);
+			}
+			else if (body instanceof Flux) {
+				flux  = Flux.from((Flux) body);
+			}
+			else {
+				Iterable<?> iterable = body instanceof Collection
+						? (Collection<?>) body
+						: Collections.singletonList(body);
+				flux = Flux.fromIterable(iterable);
+			}
+		}
+		else {
+			throw new IllegalStateException(
+					"Failed to determine input for function call with parameters: '"
+							+ wrapper.params + "' and headers: `" + wrapper.headers
+							+ "`");
+		}
+
+		if (function != null) {
+			flux = messages(wrapper, function, flux);
+		}
+		Mono<ResponseEntity<?>> responseEntityMono = null;
+
+		if (function == null) {
+			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body("Function for provided path can not be found"));
+		}
+		else {
+			Publisher<?> result = (Publisher<?>) FunctionWebUtils.invokeFunction(function, flux, function.isInputTypeMessage());
+			if (function.isConsumer()) {
+				if (result != null) {
+					((Mono) result).subscribe();
+				}
+				logger.debug("Handled POST with consumer");
+				responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
+			}
+			else {
+				result = Flux.from((Publisher) result);
+				logger.debug("Handled POST with function: " + function);
+				if (stream) {
+					responseEntityMono = stream(wrapper, result);
+				}
+				else {
+					responseEntityMono = response(wrapper, getTargetIfRouting(wrapper, function), result,
+							body == null ? null : !(body instanceof Collection), false);
+				}
+			}
+		}
+		return responseEntityMono;
 	}
 
 	private Mono<ResponseEntity<?>> response(FunctionWrapper request, Object handler,
@@ -211,91 +213,6 @@ public class RequestProcessor {
 		return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public Mono<ResponseEntity<?>> response(FunctionWrapper wrapper, Object body,
-			boolean stream) {
-
-		Function function = wrapper.function();
-		Flux<?> flux;
-		Class<?> inputType = function == null ? Object.class : FunctionTypeUtils
-				.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) wrapper.handler()).getInputType()));
-		if (body != null) {
-			if (Collection.class.isAssignableFrom(inputType)) {
-				flux = Flux.just(body);
-			}
-			else if (body instanceof Flux) {
-				flux  = Flux.from((Flux) body);
-			}
-			else {
-				Iterable<?> iterable = body instanceof Collection ? (Collection<?>) body
-						: (body instanceof Set ? Collections.singleton(body)
-								: Collections.singletonList(body));
-				flux = Flux.fromIterable(iterable);
-			}
-		}
-		else if (MultiValueMap.class.isAssignableFrom(inputType)) {
-			flux = Flux.just(wrapper.params());
-		}
-		else {
-			throw new IllegalStateException(
-					"Failed to determine input for function call with parameters: '"
-							+ wrapper.params + "' and headers: `" + wrapper.headers
-							+ "`");
-		}
-
-
-		if (function != null && ((FunctionInvocationWrapper) function).isInputTypeMessage()) {
-			flux = messages(wrapper, function, flux);
-		}
-		Mono<ResponseEntity<?>> responseEntityMono = null;
-
-		if (function == null) {
-			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-					.body("Function for provided path can not be found"));
-		}
-		else if (function instanceof FluxedConsumer || function instanceof FluxConsumer) {
-			((Mono<?>) function.apply(flux)).subscribe();
-			logger.debug("Handled POST with consumer");
-			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
-		}
-		else if (function instanceof FunctionInvocationWrapper) {
-
-			Publisher<?> result = (Publisher<?>) FunctionWebUtils.invokeFunction((FunctionInvocationWrapper) function, flux,
-					((FunctionInvocationWrapper) function).isInputTypeMessage());
-			if (((FunctionInvocationWrapper) function).isConsumer()) {
-				if (result != null) {
-					((Mono) result).subscribe();
-				}
-				logger.debug("Handled POST with consumer");
-				responseEntityMono = Mono
-						.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
-			}
-			else {
-				result = Flux.from((Publisher) result);
-				logger.debug("Handled POST with function: " + function);
-				if (stream) {
-					responseEntityMono = stream(wrapper, result);
-				}
-				else {
-					responseEntityMono = response(wrapper, getTargetIfRouting(wrapper, function), result,
-							body == null ? null : !(body instanceof Collection), false);
-				}
-			}
-		}
-		else {
-			Flux<?> result = Flux.from((Publisher) function.apply(flux));
-			logger.debug("Handled POST with function");
-			if (stream) {
-				responseEntityMono = stream(wrapper, result);
-			}
-			else {
-				responseEntityMono = response(wrapper, getTargetIfRouting(wrapper, function), result,
-						body == null ? null : !(body instanceof Collection), false);
-			}
-		}
-		return responseEntityMono;
-	}
-
 	/*
 	 * Called when building response and returns the actual
 	 * target function in case the current function is RoutingFunction.
@@ -310,9 +227,9 @@ public class RequestProcessor {
 		return function;
 	}
 
+	// this seem to be very relevant to AWS container tests
 	private Flux<?> messages(FunctionWrapper request, Object function, Flux<?> flux) {
 		Map<String, Object> headers = new HashMap<>(HeaderUtils.fromHttp(request.headers()));
-
 		if (function instanceof FunctionInvocationWrapper) {
 			headers.put("scf-func-name", ((FunctionInvocationWrapper) function).getFunctionDefinition());
 		}
@@ -352,131 +269,25 @@ public class RequestProcessor {
 	private boolean isOutputSingle(Object handler) {
 		FunctionInvocationWrapper function = (FunctionInvocationWrapper) handler;
 		Type outputType = function.getOutputType();
-//		if (function.isOutputTypePublisher()) {
-//			outputType = FunctionTypeUtils.getGenericType(outputType);
-//		}
-//		if (function.isOutputTypeMessage()) {
-//			outputType = FunctionTypeUtils.getGenericType(outputType);
-//		}
 		Class<?> type =  FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(outputType));
-//		Class<?> type1 = this.inspector.getOutputType(handler);
-//		Class<?> wrapper1 = this.inspector.getOutputWrapper(handler);
 		Class<?> wrapper = function.isOutputTypePublisher() ? FunctionTypeUtils.getRawType(outputType) : type;
 		if (Stream.class.isAssignableFrom(type)) {
 			return false;
 		}
 		else {
-
 			return wrapper == type || Mono.class.equals(wrapper)
 					|| Optional.class.equals(wrapper);
 		}
 	}
 
-	private Publisher<?> body(Object handler, ServerWebExchange exchange) {
-		FunctionInvocationWrapper function = (FunctionInvocationWrapper) handler;
-		Class<?> inputType = FunctionTypeUtils
-				.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()));
-		ResolvableType elementType = ResolvableType.forClass(inputType);
-
-		// we effectively delegate type conversion to FunctionCatalog
-		elementType = ResolvableType.forClass(String.class);
-
-		ResolvableType actualType = elementType;
-
-		Class<?> resolvedType = elementType.resolve();
-		ReactiveAdapter adapter = (resolvedType != null
-				? getAdapterRegistry().getAdapter(resolvedType) : null);
-
-		ServerHttpRequest request = exchange.getRequest();
-		ServerHttpResponse response = exchange.getResponse();
-
-		MediaType contentType = request.getHeaders().getContentType();
-		MediaType mediaType = (contentType != null ? contentType
-				: MediaType.APPLICATION_OCTET_STREAM);
-
-		if (logger.isDebugEnabled()) {
-			logger.debug(exchange.getLogPrefix() + (contentType != null
-					? "Content-Type:" + contentType
-					: "No Content-Type, using " + MediaType.APPLICATION_OCTET_STREAM));
-		}
-		boolean isBodyRequired = (adapter != null && !adapter.supportsEmpty());
-
-		MethodParameter bodyParam = new MethodParameter(handlerMethod(handler), 0);
-		for (HttpMessageReader<?> reader : getMessageReaders()) {
-			if (reader.canRead(elementType, mediaType)) {
-				Map<String, Object> readHints = Hints.from(Hints.LOG_PREFIX_HINT,
-						exchange.getLogPrefix());
-				if (adapter != null && adapter.isMultiValue()) {
-					if (logger.isDebugEnabled()) {
-						logger.debug(
-								exchange.getLogPrefix() + "0..N [" + elementType + "]");
-					}
-					Flux<?> flux = reader.read(actualType, elementType, request, response,
-							readHints);
-					flux = flux.onErrorResume(
-							ex -> Flux.error(handleReadError(bodyParam, ex)));
-					if (isBodyRequired) {
-						flux = flux.switchIfEmpty(
-								Flux.error(() -> handleMissingBody(bodyParam)));
-					}
-					return Mono.just(adapter.fromPublisher(flux));
-				}
-				else {
-					// Single-value (with or without reactive type wrapper)
-					if (logger.isDebugEnabled()) {
-						logger.debug(exchange.getLogPrefix() + "0..1 [" + elementType + "]");
-					}
-					Mono<?> mono = reader.readMono(actualType, elementType, request,
-							response, readHints).doOnNext(v -> {
-								if (logger.isDebugEnabled()) {
-									logger.debug("received: " + v);
-								}
-							});
-					mono = mono.onErrorResume(
-							ex -> Mono.error(handleReadError(bodyParam, ex)));
-					if (isBodyRequired) {
-						mono = mono.switchIfEmpty(
-								Mono.error(() -> handleMissingBody(bodyParam)));
-					}
-					return (adapter != null ? Mono.just(adapter.fromPublisher(mono))
-							: Mono.from(mono));
-				}
-			}
-		}
-
-		return Mono.error(new UnsupportedMediaTypeStatusException(mediaType,
-				Arrays.asList(MediaType.APPLICATION_JSON), elementType));
-	}
-
-	private Method handlerMethod(Object handler) {
-		return ReflectionUtils.findMethod(handler.getClass(), "apply", (Class<?>[]) null);
-	}
-
-	private Throwable handleReadError(MethodParameter parameter, Throwable ex) {
-		return (ex instanceof DecodingException ? new ServerWebInputException(
-				"Failed to read HTTP message", parameter, ex) : ex);
-	}
-
-	private ServerWebInputException handleMissingBody(MethodParameter param) {
-		return new ServerWebInputException(
-				"Request body is missing: " + param.getExecutable().toGenericString());
-	}
-
-	private ReactiveAdapterRegistry getAdapterRegistry() {
-		return ReactiveAdapterRegistry.getSharedInstance();
-	}
-
 	private Publisher<?> value(FunctionWrapper wrapper) {
-		Flux<?> input = Flux.from(wrapper.argument)
-				.map(body -> this.converter.convert(wrapper.function, body));
-		if (((FunctionInvocationWrapper) (Object) wrapper.function).isInputTypeMessage()) {
-			input = messages(wrapper, wrapper.function, input);
-		}
-		return Mono.from(wrapper.function.apply(input));
+		Flux<?> input = Flux.from(wrapper.argument);
+		FunctionInvocationWrapper function = (wrapper.function);
+		Object result = FunctionWebUtils.invokeFunction(function, input, function.isInputTypeMessage());
+		return Mono.from((Publisher<?>) result);
 	}
 
 	private Type getItemType(Object function) {
-
 		if (function == null || ((FunctionInvocationWrapper) function).getInputType() == Object.class) {
 			return Object.class;
 		}
@@ -501,7 +312,6 @@ public class RequestProcessor {
 			return inputType;
 		}
 
-//		Type type = this.inspector.getRegistration(function).getType().getType();
 		Type type = ((FunctionInvocationWrapper) function).getInputType();
 		if (type instanceof ParameterizedType) {
 			type = ((ParameterizedType) type).getActualTypeArguments()[0];
@@ -528,9 +338,7 @@ public class RequestProcessor {
 	 */
 	public static class FunctionWrapper {
 
-		private final Function<Publisher<?>, Publisher<?>> function;
-
-		private final Supplier<Publisher<?>> supplier;
+		private final FunctionInvocationWrapper function;
 
 		private final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 
@@ -538,26 +346,21 @@ public class RequestProcessor {
 
 		private Publisher<String> argument;
 
-		@SuppressWarnings("unchecked")
-		public FunctionWrapper(
-				Function<? extends Publisher<?>, ? extends Publisher<?>> function,
-				Supplier<? extends Publisher<?>> supplier) {
-			this.function = (Function<Publisher<?>, Publisher<?>>) function;
-			this.supplier = (Supplier<Publisher<?>>) supplier;
+		public FunctionWrapper(FunctionInvocationWrapper function) {
+			this.function = function;
 		}
 
 		public Object handler() {
-			return this.function != null
-					? this.function
-					: this.supplier;
-		}
-
-		public Function<Publisher<?>, Publisher<?>> function() {
 			return this.function;
 		}
 
-		public Supplier<Publisher<?>> supplier() {
-			return this.supplier;
+		public FunctionInvocationWrapper function() {
+			return this.function;
+		}
+
+		@Deprecated
+		public Supplier<?> supplier() {
+			return this.function;
 		}
 
 		public MultiValueMap<String, String> params() {
@@ -591,7 +394,5 @@ public class RequestProcessor {
 		public Publisher<String> argument() {
 			return this.argument;
 		}
-
 	}
-
 }
