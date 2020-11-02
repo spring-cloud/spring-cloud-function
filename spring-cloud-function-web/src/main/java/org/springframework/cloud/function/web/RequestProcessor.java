@@ -48,6 +48,7 @@ import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FluxConsumer;
 import org.springframework.cloud.function.core.FluxedConsumer;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.web.util.FunctionWebUtils;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ReactiveAdapter;
@@ -258,7 +259,9 @@ public class RequestProcessor {
 			responseEntityMono = Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build());
 		}
 		else if (function instanceof FunctionInvocationWrapper) {
-			Publisher<?> result = (Publisher<?>) function.apply(flux);
+
+			Publisher<?> result = (Publisher<?>) FunctionWebUtils.invokeFunction((FunctionInvocationWrapper) function, flux,
+					((FunctionInvocationWrapper) function).isInputTypeMessage());
 			if (((FunctionInvocationWrapper) function).isConsumer()) {
 				if (result != null) {
 					((Mono) result).subscribe();

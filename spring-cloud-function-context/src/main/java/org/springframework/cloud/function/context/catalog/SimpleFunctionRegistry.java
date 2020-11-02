@@ -811,7 +811,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			else if (!ObjectUtils.isEmpty(contentType)) {
 				convertedOutput = messageConverter.toMessage(output,
-						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, MimeType.valueOf(contentType[0]))));
+						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType[0])));
 			}
 
 			return convertedOutput;

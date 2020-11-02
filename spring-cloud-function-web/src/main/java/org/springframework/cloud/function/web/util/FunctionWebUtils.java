@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.util;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -23,8 +24,17 @@ import java.util.function.Supplier;
 import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 public final class FunctionWebUtils {
@@ -34,20 +44,34 @@ public final class FunctionWebUtils {
 	}
 
 	public static Object findFunction(HttpMethod method, FunctionCatalog functionCatalog,
-											Map<String, Object> attributes, String path) {
+											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
 		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST)) {
-			return doFindFunction(method, functionCatalog, attributes, path);
+			return doFindFunction(method, functionCatalog, attributes, path, acceptContentTypes);
 		}
 		else {
 			throw new IllegalStateException("HTTP method '" + method + "' is not supported;");
 		}
 	}
 
+	public static String[] acceptContentTypes(List<MediaType> acceptHeaders) {
+		String[] acceptContentTypes = new String[] {};
+		if (!CollectionUtils.isEmpty(acceptHeaders)) {
+			acceptContentTypes = acceptHeaders.stream().map(mediaType -> mediaType.toString()).toArray(String[]::new);
+		}
+		else {
+			acceptContentTypes = new String[] {MediaType.APPLICATION_JSON.toString()};
+		}
+
+		acceptContentTypes = new String[] {StringUtils.arrayToCommaDelimitedString(acceptContentTypes)};
+//		return acceptContentTypes;
+		return new String[] {};
+	}
+
 	private static Object doFindFunction(HttpMethod method, FunctionCatalog functionCatalog,
-											Map<String, Object> attributes, String path) {
+											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
 		path = path.startsWith("/") ? path.substring(1) : path;
 		if (method.equals(HttpMethod.GET)) {
-			Supplier<Publisher<?>> supplier = functionCatalog.lookup(Supplier.class, path);
+			Supplier<Publisher<?>> supplier = functionCatalog.lookup(path, acceptContentTypes);
 			if (supplier != null) {
 				attributes.put(WebRequestConstants.SUPPLIER, supplier);
 				return supplier;
@@ -65,8 +89,7 @@ public final class FunctionWebUtils {
 			name = builder.toString();
 			value = path.length() > name.length() ? path.substring(name.length() + 1)
 					: null;
-			Function<Object, Object> function = functionCatalog.lookup(Function.class,
-					name);
+			Function<Object, Object> function = functionCatalog.lookup(name, acceptContentTypes);
 			if (function != null) {
 				attributes.put(WebRequestConstants.FUNCTION, function);
 				if (value != null) {
@@ -76,5 +99,33 @@ public final class FunctionWebUtils {
 			}
 		}
 		return null;
+	}
+
+	public static Object invokeFunction(FunctionInvocationWrapper function, Object input, boolean isMessage) {
+		Object result = function.apply(input);
+		return postProcessResult(result, isMessage);
+	}
+
+	private static Object postProcessResult(Object result, boolean isMessage) {
+		if (result instanceof Flux) {
+			result = ((Flux) result).map(v -> postProcessResult(v, isMessage));
+		}
+		else if (result instanceof Mono) {
+			result = ((Mono) result).map(v -> postProcessResult(v, isMessage));
+		}
+		else if (result instanceof Message) {
+			if (!isMessage) {
+				result = ((Message) result).getPayload();
+			}
+			else if (((Message) result).getPayload() instanceof byte[]) {
+				String str = new String((byte[]) ((Message) result).getPayload());
+				result = MessageBuilder.withPayload(str).copyHeaders(((Message) result).getHeaders()).build();
+			}
+		}
+
+		if (result instanceof byte[]) {
+			result = new String((byte[]) result);
+		}
+		return result;
 	}
 }

@@ -27,8 +27,8 @@ import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.support.MessageHeaderAccessor;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -67,26 +67,34 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	@Nullable
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers) {
 		for (MessageConverter converter : getConverters()) {
-			MessageHeaderAccessor accessor = new MessageHeaderAccessor();
-			accessor.copyHeaders(headers);
-			if (this.isNotConcreteContentType(accessor, converter)) {
-				List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter).getSupportedMimeTypes();
-				for (MimeType supportedMimeType : supportedMimeTypes) {
-					accessor.setHeader(MessageHeaders.CONTENT_TYPE, supportedMimeType);
-					Message<?> result = converter.toMessage(payload, accessor.getMessageHeaders());
+			Object value = headers.get(MessageHeaders.CONTENT_TYPE).toString();
+			String[] contentTypes = StringUtils.delimitedListToStringArray((String) value, ",");
+			for (String contentType : contentTypes) {
+				if (!MimeType.valueOf(contentType).isConcrete()) {
+					List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter).getSupportedMimeTypes();
+					for (MimeType supportedMimeType : supportedMimeTypes) {
+						MessageHeaderAccessor h = new MessageHeaderAccessor();
+						h.copyHeaders(headers);
+						h.setHeader(MessageHeaders.CONTENT_TYPE, supportedMimeType);
+						Message<?> result = converter.toMessage(payload, h.getMessageHeaders());
+						if (result != null) {
+							return result;
+						}
+					}
+				}
+				else {
+					MessageHeaderAccessor h = new MessageHeaderAccessor();
+					h.copyHeaders(headers);
+					h.setHeader(MessageHeaders.CONTENT_TYPE, contentType);
+					Message<?> result = converter.toMessage(payload, h.getMessageHeaders());
 					if (result != null) {
 						return result;
 					}
-				}
-			}
-			else {
-				Message<?> result = converter.toMessage(payload, headers);
-				if (result != null) {
-					return result;
 				}
 			}
 		}
@@ -96,32 +104,33 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Override
 	@Nullable
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
-
 		for (MessageConverter converter : getConverters()) {
-			MessageHeaderAccessor accessor = new MessageHeaderAccessor();
-			accessor.copyHeaders(headers);
-			if (this.isNotConcreteContentType(accessor, converter)) {
-				List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter).getSupportedMimeTypes();
-				for (MimeType supportedMimeType : supportedMimeTypes) {
-					accessor.setHeader(MessageHeaders.CONTENT_TYPE, supportedMimeType);
-					Message<?> result = ((AbstractMessageConverter) converter).toMessage(payload, accessor.getMessageHeaders(), conversionHint);
+			Object value = headers.get(MessageHeaders.CONTENT_TYPE).toString();
+			String[] contentTypes = StringUtils.delimitedListToStringArray((String) value, ",");
+			for (String contentType : contentTypes) {
+				if (!MimeType.valueOf(contentType).isConcrete()) {
+					List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter).getSupportedMimeTypes();
+					for (MimeType supportedMimeType : supportedMimeTypes) {
+						MessageHeaderAccessor h = new MessageHeaderAccessor();
+						h.copyHeaders(headers);
+						h.setHeader(MessageHeaders.CONTENT_TYPE, supportedMimeType);
+						Message<?> result = ((SmartMessageConverter) converter).toMessage(payload, h.getMessageHeaders(), conversionHint);
+						if (result != null) {
+							return result;
+						}
+					}
+				}
+				else {
+					MessageHeaderAccessor h = new MessageHeaderAccessor();
+					h.copyHeaders(headers);
+					h.setHeader(MessageHeaders.CONTENT_TYPE, contentType);
+					Message<?> result = ((SmartMessageConverter) converter).toMessage(payload, h.getMessageHeaders(), conversionHint);
 					if (result != null) {
 						return result;
 					}
 				}
 			}
-			else {
-				Message<?> result = ((AbstractMessageConverter) converter).toMessage(payload, headers, conversionHint);
-				if (result != null) {
-					return result;
-				}
-			}
 		}
 		return null;
-	}
-
-	private boolean isNotConcreteContentType(MessageHeaderAccessor accessor, MessageConverter converter) {
-		return !accessor.getContentType().isConcrete() && converter instanceof AbstractMessageConverter
-				&& !CollectionUtils.isEmpty(((AbstractMessageConverter) converter).getSupportedMimeTypes());
 	}
 }
