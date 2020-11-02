@@ -92,7 +92,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		}
 
 		Object function = FunctionWebUtils.findFunction(HttpMethod.resolve(request.getMethod()),
-				this.functions, new HttpRequestAttributeDelegate(request), path);
+				this.functions, new HttpRequestAttributeDelegate(request), path, new String[] {});
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {
 				this.logger.debug("Found function for GET: " + path);
@@ -110,6 +110,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			this.request = request;
 		}
 
+		@Override
 		public Object put(String key, Object value) {
 			this.request.setAttribute(key, value);
 			return value;

@@ -223,8 +223,9 @@ class FunctionEndpointFactory {
 			function = this.functionCatalog.lookup(Function.class, handler);
 		}
 		else {
+			String[] accept = FunctionWebUtils.acceptContentTypes(request.headers().accept());
 			function = FunctionWebUtils.findFunction(request.method(), functionCatalog,
-					request.attributes(), request.path());
+					request.attributes(), request.path(), accept);
 		}
 		return function;
 	}
@@ -252,7 +253,9 @@ class FunctionEndpointFactory {
 			if (((FunctionInvocationWrapper) functionComponent).isSupplier()) {
 				Supplier<? extends Flux<?>> supplier = (Supplier<Flux<?>>) functionComponent;
 				FunctionWrapper wrapper = RequestProcessor.wrapper(null, null, supplier);
-				Object result = wrapper.supplier().get();
+				//Object result = wrapper.supplier().get();
+				Object func = wrapper.supplier();
+				Object result = FunctionWebUtils.invokeFunction((FunctionInvocationWrapper) func, null, ((FunctionInvocationWrapper) func).isInputTypeMessage());
 				if (!(result instanceof Publisher)) {
 					result = Mono.just(result);
 				}
@@ -264,7 +267,9 @@ class FunctionEndpointFactory {
 				wrapper.headers(request.headers().asHttpHeaders());
 				String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
 				wrapper.argument(Flux.just(argument));
-				return ServerResponse.ok().body(wrapper.function().apply(wrapper.argument()), outputType);
+				Object func = wrapper.function();
+				Object result = FunctionWebUtils.invokeFunction((FunctionInvocationWrapper) func, wrapper.argument(),  ((FunctionInvocationWrapper) func).isInputTypeMessage());
+				return ServerResponse.ok().body(result, outputType);
 			}
 		});
 	}

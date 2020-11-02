@@ -80,7 +80,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			path = path.substring(this.prefix.length());
 		}
 		Object function = FunctionWebUtils
-				.findFunction(request.getRequest().getMethod(), this.functions, request.getAttributes(), path);
+				.findFunction(request.getRequest().getMethod(), this.functions, request.getAttributes(), path, new String[] {});
 
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {

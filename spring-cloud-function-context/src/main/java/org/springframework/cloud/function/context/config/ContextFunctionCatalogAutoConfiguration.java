@@ -103,9 +103,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 //		mcList.add(NegotiatingMessageConverterWrapper.wrap(new ByteArrayMessageConverter()));
 //		mcList.add(NegotiatingMessageConverterWrapper.wrap(new StringMessageConverter()));
 
+		mcList.add(new StringMessageConverter());
 		mcList.add(new JsonMessageConverter(jsonMapper));
 		mcList.add(new ByteArrayMessageConverter());
-		mcList.add(new StringMessageConverter());
+
 
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new SmartCompositeMessageConverter(mcList);
