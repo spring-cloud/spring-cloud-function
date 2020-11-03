@@ -729,6 +729,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 *
 		 */
 		private Object convertInputIfNecessary(Object input, Type type) {
+			if (type == null) {
+				return input;
+			}
 			if (this.getRawClassFor(type) == Void.class && !(input instanceof Publisher) && !(input instanceof Message)) {
 				logger.info("Input value '" + input + "' is ignored for function '"
 						+ this.functionDefinition + "' since it's input type is Void and as such it is treated as Supplier.");
