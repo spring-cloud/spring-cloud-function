@@ -168,7 +168,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		Function<String, String> anyInputSignature = catalog.lookup("voidInputFunction");
 		assertThat(anyInputSignature.apply(null)).isEqualTo("voidInputFunction");
-		assertThat(anyInputSignature.apply("uppercase")).isEqualTo("voidInputFunction");
 
 		Function<Void, String> asVoid = catalog.lookup("voidInputFunction");
 		assertThat(asVoid.apply(null)).isEqualTo("voidInputFunction");
