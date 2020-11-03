@@ -28,6 +28,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.messaging.Message;
 
 /**
  * @param <E> event type
@@ -61,6 +62,9 @@ public class SpringBootRequestHandler<E, O> extends AbstractSpringFunctionAdapte
 	protected <T> T result(Object input, Publisher<?> output) {
 		List<O> result = new ArrayList<>();
 		for (Object value : Flux.from(output).toIterable()) {
+			if (value instanceof Message<?> && !((FunctionInvocationWrapper) this.function()).isOutputTypeMessage()) {
+				value = ((Message<?>) value).getPayload();
+			}
 			result.add(convertOutput(value));
 		}
 		if (isSingleValue(input) && result.size() == 1) {
