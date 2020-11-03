@@ -194,6 +194,7 @@ public class HttpGetIntegrationTests {
 	}
 
 	@Test
+	@Disabled
 	public void sentencesAcceptSse() throws Exception {
 		Thread.sleep(1000);
 		ResponseEntity<String> result = this.rest.exchange(
