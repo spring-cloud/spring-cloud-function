@@ -428,7 +428,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		public boolean isInputTypeMessage() {
-			return this.message || this.isRoutingFunction();
+			boolean b = this.message || this.isRoutingFunction();
+			return b;
 		}
 
 		public boolean isOutputTypeMessage() {
@@ -521,6 +522,32 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		/*
 		 *
 		 */
+		@SuppressWarnings("unchecked")
+		Object doApply(Object input) {
+			Object result;
+
+			input = this.fluxifyInputIfNecessary(input);
+
+			Object convertedInput = this.convertInputIfNecessary(input, this.inputType);
+
+			if (this.isRoutingFunction() || this.isComposed()) {
+				result = ((Function) this.target).apply(convertedInput);
+			}
+			else if (this.isSupplier()) {
+				result = ((Supplier) this.target).get();
+			}
+			else if (this.isConsumer()) {
+				result = this.invokeConsumer(convertedInput);
+			}
+			else { // Function
+				result = this.invokeFunction(convertedInput);
+			}
+			return result;
+		}
+
+		/*
+		 *
+		 */
 		private boolean isTypePublisher(Type type) {
 			return type != null && FunctionTypeUtils.isPublisher(type);
 		}
@@ -585,32 +612,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						: FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
 			}
 			return input;
-		}
-
-		/*
-		 *
-		 */
-		@SuppressWarnings("unchecked")
-		Object doApply(Object input) {
-			Object result;
-
-			input = this.fluxifyInputIfNecessary(input);
-
-			Object convertedInput = this.convertInputIfNecessary(input, this.inputType);
-
-			if (this.isRoutingFunction() || this.isComposed()) {
-				result = ((Function) this.target).apply(convertedInput);
-			}
-			else if (this.isSupplier()) {
-				result = ((Supplier) this.target).get();
-			}
-			else if (this.isConsumer()) {
-				result = this.invokeConsumer(convertedInput);
-			}
-			else { // Function
-				result = this.invokeFunction(convertedInput);
-			}
-			return result;
 		}
 
 		/*
@@ -725,43 +726,62 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			throw new UnsupportedOperationException("At the moment only Tuple-based function are supporting multiple arguments");
 		}
 
+		@SuppressWarnings("unchecked")
+		private boolean isInputConversionNecessary(Object input, Type type) {
+			if (type == null || this.getRawClassFor(type) == Void.class || this.target instanceof RoutingFunction || this.isComposed()) {
+				if (this.getRawClassFor(type) == Void.class) {
+					if (input instanceof Message) {
+						input = ((Message) input).getPayload();
+						if (input instanceof Optional) {
+							input = ((Optional) input).orElseGet(() -> null);
+						}
+					}
+					Assert.isNull(input, "Can't have non-null input with Void input type.");
+				}
+				return false;
+			}
+			return true;
+		}
 		/*
 		 *
 		 */
 		private Object convertInputIfNecessary(Object input, Type type) {
-			if (type == null) {
+			if (!this.isInputConversionNecessary(input, type)) {
 				return input;
 			}
-			if (this.getRawClassFor(type) == Void.class && !(input instanceof Publisher) && !(input instanceof Message)) {
-				logger.info("Input value '" + input + "' is ignored for function '"
-						+ this.functionDefinition + "' since it's input type is Void and as such it is treated as Supplier.");
-				input = null;
-			}
-			if (this.skipInputConversion && !(input instanceof Publisher)) {
-				return this.isInputTypeMessage()
-						? input
-						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
-			}
 
-			if (FunctionTypeUtils.isMultipleArgumentType(type)) {
+			Object convertedInput = null;
+			if (input instanceof Publisher) {
+				convertedInput = this.convertInputPublisherIfNecessary((Publisher) input, type);
+			}
+			else if (FunctionTypeUtils.isMultipleArgumentType(type)) {
 				Type[] inputTypes = ((ParameterizedType) type).getActualTypeArguments();
 				Object[] multipleValueArguments = this.parseMultipleValueArguments(input, inputTypes.length);
 				Object[] convertedInputs = new Object[inputTypes.length];
 				for (int i = 0; i < multipleValueArguments.length; i++) {
-					Object convertedInput = this.convertInputIfNecessary(multipleValueArguments[i], inputTypes[i]);
-					convertedInputs[i] = convertedInput;
+					Object cInput = this.convertInputIfNecessary(multipleValueArguments[i], inputTypes[i]);
+					convertedInputs[i] = cInput;
 				}
-				return Tuples.fromArray(convertedInputs);
+				convertedInput = Tuples.fromArray(convertedInputs);
 			}
-
-			Object convertedInput = input;
-			if (input == null || this.target instanceof RoutingFunction || this.isComposed()) {
-				return input;
+			else if (this.skipInputConversion) {
+				convertedInput = this.isInputTypeMessage()
+						? input
+						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
-
-			if (input instanceof Publisher) {
-				convertedInput = this.convertInputPublisherIfNecessary((Publisher) input, type);
-			}
+//			else if (FunctionTypeUtils.isMultipleArgumentType(type)) {
+//				Type[] inputTypes = ((ParameterizedType) type).getActualTypeArguments();
+//				Object[] multipleValueArguments = this.parseMultipleValueArguments(input, inputTypes.length);
+//				Object[] convertedInputs = new Object[inputTypes.length];
+//				for (int i = 0; i < multipleValueArguments.length; i++) {
+//					Object cInput = this.convertInputIfNecessary(multipleValueArguments[i], inputTypes[i]);
+//					convertedInputs[i] = cInput;
+//				}
+//				convertedInput = Tuples.fromArray(convertedInputs);
+//			}
+//			else if (input instanceof Publisher) {
+//				convertedInput = this.convertInputPublisherIfNecessary((Publisher) input, type);
+//			}
 			else if (input instanceof Message) {
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
@@ -797,13 +817,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					output = ((Message) output).getPayload();
 				}
 			}
+			if (!(output instanceof Publisher) && this.enhancer != null) {
+				output = enhancer.apply(output);
+			}
+
 			if (ObjectUtils.isEmpty(contentType)) {
 				return output;
 			}
 
-			if (!(output instanceof Publisher) && this.enhancer != null) {
-				output = enhancer.apply(output);
-			}
+
 			Object convertedOutput = output;
 			if (FunctionTypeUtils.isMultipleArgumentType(type)) {
 				convertedOutput = this.convertMultipleOutputArgumentTypeIfNecesary(convertedOutput, type, contentType);
@@ -850,7 +872,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 *
 		 */
 		private Object convertNonMessageInputIfNecessary(Type inputType, Object input) {
-			Object convertedInput = input;
+			Object convertedInput = null;
 			Class<?> rawInputType = this.isTypePublisher(inputType) || this.isInputTypeMessage()
 					? FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))
 					: this.getRawClassFor(inputType);
@@ -867,6 +889,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					&& !rawInputType.equals(input.getClass())
 					&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
 				convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, rawInputType);
+			}
+			if (convertedInput == null && input.getClass().isAssignableFrom(rawInputType)) {
+				convertedInput = input;
 			}
 			return convertedInput;
 		}

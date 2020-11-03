@@ -143,7 +143,7 @@ public class SpringFunctionAdapterInitializerTests {
 
 		};
 		initializer.initialize(null);
-		Flux result = Flux.from(initializer.apply(Flux.empty()));
+		Flux result = Flux.from(initializer.apply(null));
 		assertThat(result.blockFirst()).isInstanceOf(Bar.class);
 	}
 
