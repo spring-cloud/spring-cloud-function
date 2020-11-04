@@ -348,6 +348,21 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		/**
+		 * Return the actual {@link Type} of the item of the provided type.
+		 * This method is context specific and is not a general purpose utility method. The context is that the provided
+		 * {@link Type} may represent the input/output of a function where such type could be wrapped in
+		 * {@link Message}, {@link Flux} or {@link Mono}, so this method returns generic value of such type or itself if not wrapped.
+		 * @param type typically input or output Type of the function (see {@link #getInputType()} or {@link #getOutputType()}.
+		 * @return the type of the item if wrapped otherwise the provided type.
+		 */
+		public Type getItemType(Type type) {
+			if (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type)) {
+				type = FunctionTypeUtils.getGenericType(type);
+			}
+			return type;
+		}
+
+		/**
 		 * Use individual {@link #getInputType()}, {@link #getOutputType()} and their variants as well as
 		 * other supporting operations instead.
 		 * @deprecated since 3.1
