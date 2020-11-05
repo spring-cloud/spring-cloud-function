@@ -46,7 +46,7 @@ public class GsonMapper extends JsonMapper {
 	}
 
 	@Override
-	public <T> T fromJson(Object json, Type type) {
+	protected <T> T doFromJson(Object json, Type type) {
 		T convertedValue = null;
 		if (json instanceof byte[]) {
 			convertedValue = this.gson.fromJson(new String(((byte[]) json), StandardCharsets.UTF_8), type);

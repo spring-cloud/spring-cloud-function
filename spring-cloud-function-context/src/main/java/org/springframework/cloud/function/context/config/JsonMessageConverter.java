@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.lang.Nullable;
@@ -73,12 +74,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-		if (targetClass.isInstance(message.getPayload())) {
+		if (targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
 			return message.getPayload();
 		}
-
-
-
 		Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
 		try {
 			return this.jsonMapper.fromJson(message.getPayload(), convertToType);

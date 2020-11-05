@@ -61,6 +61,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -356,7 +357,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * @return the type of the item if wrapped otherwise the provided type.
 		 */
 		public Type getItemType(Type type) {
-			if (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type)) {
+			if (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type) || FunctionTypeUtils.isTypeCollection(type)) {
 				type = FunctionTypeUtils.getGenericType(type);
 			}
 			return type;
@@ -784,19 +785,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						? input
 						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
-//			else if (FunctionTypeUtils.isMultipleArgumentType(type)) {
-//				Type[] inputTypes = ((ParameterizedType) type).getActualTypeArguments();
-//				Object[] multipleValueArguments = this.parseMultipleValueArguments(input, inputTypes.length);
-//				Object[] convertedInputs = new Object[inputTypes.length];
-//				for (int i = 0; i < multipleValueArguments.length; i++) {
-//					Object cInput = this.convertInputIfNecessary(multipleValueArguments[i], inputTypes[i]);
-//					convertedInputs[i] = cInput;
-//				}
-//				convertedInput = Tuples.fromArray(convertedInputs);
-//			}
-//			else if (input instanceof Publisher) {
-//				convertedInput = this.convertInputPublisherIfNecessary((Publisher) input, type);
-//			}
 			else if (input instanceof Message) {
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
@@ -949,6 +937,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (message.getPayload() instanceof Optional) {
 				return message;
 			}
+			if (message.getPayload() instanceof Collection<?>) {
+				Type itemType = FunctionTypeUtils.getImmediateGenericType(type, 0);
+				Type collectionType = CollectionUtils.findCommonElementType((Collection<?>) message.getPayload());
+				if (collectionType == itemType) {
+					return message.getPayload();
+				}
+			}
+			//if (message.getPayload().getClass().isAss) {
 
 			Object convertedInput = message;
 			type = this.extractActualValueTypeIfNecessary(type);
@@ -973,7 +969,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					convertedInput = MessageBuilder.withPayload(convertedInput).copyHeaders(message.getHeaders()).build();
 				}
 			}
-//			convertedInput = convertedInput == null ? message.getPayload() : convertedInput;
 			return convertedInput;
 		}
 
