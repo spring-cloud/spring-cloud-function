@@ -42,7 +42,7 @@ public class JacksonMapper extends JsonMapper {
 	}
 
 	@Override
-	public <T> T fromJson(Object json, Type type) {
+	protected <T> T doFromJson(Object json, Type type) {
 		T convertedValue = null;
 		JavaType constructType = TypeFactory.defaultInstance().constructType(type);
 

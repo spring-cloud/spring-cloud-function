@@ -19,11 +19,14 @@ package org.springframework.cloud.function.json;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -60,7 +63,25 @@ public abstract class JsonMapper {
 	@Deprecated
 	abstract <T> T toObject(String json, Type type);
 
-	public abstract <T> T fromJson(Object json, Type type);
+	@SuppressWarnings("unchecked")
+	public <T> T fromJson(Object json, Type type) {
+		if (json instanceof Collection<?>) {
+			Collection<?> inputs = (Collection<?>) json;
+			Type itemType = FunctionTypeUtils.getImmediateGenericType(type, 0);
+			Collection<?> results = FunctionTypeUtils.getRawType(type).isAssignableFrom(List.class)
+					? new ArrayList<>()
+					: new HashSet<>();
+			for (Object input : inputs) {
+				results.add(this.doFromJson(input, itemType));
+			}
+			return (T) results;
+		}
+		else {
+			return this.doFromJson(json, type);
+		}
+	}
+
+	protected abstract <T> T doFromJson(Object json, Type type);
 
 	public byte[] toJson(Object value) {
 		byte[] result = null;
