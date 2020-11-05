@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.userissues;
 
-
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.function.Function;
@@ -44,9 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class UserIssuesTests {
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
-		ApplicationContext context = new SpringApplicationBuilder(configClass)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true");
+		ApplicationContext context = new SpringApplicationBuilder(configClass).run(
+				"--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
@@ -60,7 +58,8 @@ public class UserIssuesTests {
 	public void testIssue602() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(Issue602Configuration.class);
 		Function<Message<String>, Integer> function = catalog.lookup("consumer");
-		int result = function.apply(new GenericMessage<String>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
+		int result = function.apply(
+				new GenericMessage<String>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
 		assertThat(result).isEqualTo(3);
 
 	}
@@ -105,7 +104,7 @@ public class UserIssuesTests {
 		}
 
 		@Override
-	    protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
+		protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
 			return true;
 		}
 
