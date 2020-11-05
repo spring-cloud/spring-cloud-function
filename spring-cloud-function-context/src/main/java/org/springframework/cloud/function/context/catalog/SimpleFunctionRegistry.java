@@ -789,9 +789,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.skipInputConversion && !(value instanceof Publisher)) {
 				if (!FunctionTypeUtils.isMessage(type) && value instanceof Message) {
 					value = ((Message) value).getPayload();
-//					input = this.isFunction()
-//							? new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input)
-//							: input;
 				}
 				return value;
 			}
@@ -834,13 +831,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 							convertWithHint = true;
 						}
 						else if (!rawType.equals(type)) {
-//							hint = FunctionTypeUtils.getGenericType(type);
 							convertWithHint = true;
 						}
-
-
-
-
 
 						convertedValue = convertWithHint
 							? this.fromMessage((Message<?>) value, (Class<?>) rawType, FunctionTypeUtils.getGenericType(type))
@@ -865,21 +857,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 				else { //if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
 					convertedValue = this.convertNonMessageInputIfNecessary(type, value);
-//					if (this.isJson(value)) {
-//						convertedValue = messageConverter
-//								.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
-//					}
-//					else {
-//						try {
-//							convertedValue = conversionService.convert(value, (Class<?>) rawType);
-//						}
-//						catch (Exception e) {
-//							if (value instanceof String || value instanceof byte[]) {
-//								convertedValue = messageConverter
-//									.fromMessage(new GenericMessage<Object>(value), (Class<?>) rawType);
-//							}
-//						}
-//					}
 				}
 			}
 			if (logger.isDebugEnabled()) {
