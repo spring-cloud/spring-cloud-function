@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
-
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -92,15 +91,15 @@ public class SimpleFunctionRegistryTests {
 
 		UpperCase function = new UpperCase();
 		FunctionRegistration<UpperCase> registration = new FunctionRegistration<>(
-				function, "foo").type(FunctionType.of(UppercaseFunction.class));
+			function, "foo").type(FunctionType.of(UppercaseFunction.class));
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(registration);
 
 		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("uppercase");
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader("lambda-runtime-aws-request-id", UUID.randomUUID())
-				.build();
+			.setHeader("lambda-runtime-aws-request-id", UUID.randomUUID())
+			.build();
 		Object result = lookedUpFunction.apply(message);
 		assertThat(result).isInstanceOf(Message.class);
 		assertThat(((Message<String>) result).getPayload()).isEqualTo("HELLO");
@@ -111,36 +110,35 @@ public class SimpleFunctionRegistryTests {
 
 		TestFunction function = new TestFunction();
 		FunctionRegistration<TestFunction> registration = new FunctionRegistration<>(
-				function, "foo").type(FunctionType.of(TestFunction.class));
+			function, "foo").type(FunctionType.of(TestFunction.class));
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(registration);
 
 		//FunctionInvocationWrapper lookedUpFunction = catalog.lookup("hello");
 		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("hello");
 		assertThat(lookedUpFunction).isNotNull(); // because we only have one and can look it up with any name
 		FunctionRegistration<TestFunction> registration2 = new FunctionRegistration<>(
-				function, "foo2").type(FunctionType.of(TestFunction.class));
+			function, "foo2").type(FunctionType.of(TestFunction.class));
 		catalog.register(registration2);
 		lookedUpFunction = catalog.lookup("hello");
 		assertThat(lookedUpFunction).isNull();
 	}
 
 
-
 	@Test
 	public void testFunctionComposition() {
 		FunctionRegistration<UpperCase> upperCaseRegistration = new FunctionRegistration<>(
-				new UpperCase(), "uppercase").type(FunctionType.of(UpperCase.class));
+			new UpperCase(), "uppercase").type(FunctionType.of(UpperCase.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
-				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+			new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
 
 		Function<Flux<String>, Flux<String>> lookedUpFunction = catalog
-				.lookup("uppercase|reverse");
+			.lookup("uppercase|reverse");
 		assertThat(lookedUpFunction).isNotNull();
 
 		Flux flux = lookedUpFunction.apply(Flux.just("star"));
@@ -156,11 +154,11 @@ public class SimpleFunctionRegistryTests {
 	@Disabled
 	public void testFunctionCompositionImplicit() {
 		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
-				new Words(), "words").type(FunctionType.of(Words.class));
+			new Words(), "words").type(FunctionType.of(Words.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
-				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+			new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
 		FunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(wordsRegistration);
 		catalog.register(reverseRegistration);
 
@@ -175,11 +173,11 @@ public class SimpleFunctionRegistryTests {
 	@Disabled
 	public void testFunctionCompletelyImplicitComposition() {
 		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
-				new Words(), "words").type(FunctionType.of(Words.class));
+			new Words(), "words").type(FunctionType.of(Words.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
-				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+			new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(wordsRegistration);
 		catalog.register(reverseRegistration);
 
@@ -193,11 +191,11 @@ public class SimpleFunctionRegistryTests {
 	@Test
 	public void testFunctionCompositionExplicit() {
 		FunctionRegistration<Words> wordsRegistration = new FunctionRegistration<>(
-				new Words(), "words").type(FunctionType.of(Words.class));
+			new Words(), "words").type(FunctionType.of(Words.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
-				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+			new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(wordsRegistration);
 		catalog.register(reverseRegistration);
 
@@ -210,53 +208,53 @@ public class SimpleFunctionRegistryTests {
 	@Test
 	public void testFunctionCompositionWithMessages() {
 		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
-				new UpperCaseMessage(), "uppercase")
-						.type(FunctionType.of(UpperCaseMessage.class));
+			new UpperCaseMessage(), "uppercase")
+			.type(FunctionType.of(UpperCaseMessage.class));
 		FunctionRegistration<ReverseMessage> reverseRegistration = new FunctionRegistration<>(
-				new ReverseMessage(), "reverse")
-						.type(FunctionType.of(ReverseMessage.class));
+			new ReverseMessage(), "reverse")
+			.type(FunctionType.of(ReverseMessage.class));
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
 
 		Function<Flux<Message<String>>, Flux<Message<String>>> lookedUpFunction = catalog
-				.lookup("uppercase|reverse");
+			.lookup("uppercase|reverse");
 
 		assertThat(lookedUpFunction).isNotNull();
 		assertThat(lookedUpFunction
-				.apply(Flux.just(MessageBuilder.withPayload("star").build())).blockFirst()
-				.getPayload()).isEqualTo("RATS");
+			.apply(Flux.just(MessageBuilder.withPayload("star").build())).blockFirst()
+			.getPayload()).isEqualTo("RATS");
 	}
 
 	@Test
 	public void testFunctionCompositionMixedMessages() {
 		FunctionRegistration<UpperCaseMessage> upperCaseRegistration = new FunctionRegistration<>(
-				new UpperCaseMessage(), "uppercase")
-						.type(FunctionType.of(UpperCaseMessage.class));
+			new UpperCaseMessage(), "uppercase")
+			.type(FunctionType.of(UpperCaseMessage.class));
 		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
-				new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
+			new Reverse(), "reverse").type(FunctionType.of(Reverse.class));
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(upperCaseRegistration);
 		catalog.register(reverseRegistration);
 
 		Function<Message<String>, String> lookedUpFunction = catalog
-				.lookup("uppercase|reverse");
+			.lookup("uppercase|reverse");
 
 		assertThat(lookedUpFunction).isNotNull();
 		String result = lookedUpFunction.apply(MessageBuilder.withPayload("star").setHeader("foo", "bar").build());
 		assertThat(result).isEqualTo("RATS");
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testReactiveFunctionMessages() {
 		FunctionRegistration<ReactiveFunction> registration = new FunctionRegistration<>(new ReactiveFunction(), "reactive")
 			.type(FunctionType.of(ReactiveFunction.class));
 
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		catalog.register(registration);
 
 		Function lookedUpFunction = catalog.lookup("reactive");
@@ -272,25 +270,42 @@ public class SimpleFunctionRegistryTests {
 		Assertions.assertIterableEquals(result.blockFirst(), Arrays.asList("item1", "item2"));
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testHeaderEnricherFunction() {
+		FunctionRegistration<HeaderEnricherFunction> registration =
+			new FunctionRegistration<>(new HeaderEnricherFunction(), "headerEnricher")
+				.type(FunctionType.of(HeaderEnricherFunction.class));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+			new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+		Function<Message<?>, Message<?>> function = catalog.lookup("headerEnricher");
+		Message<?> message =
+			function.apply(MessageBuilder.withPayload("hello").setHeader("original", "originalValue")
+				.build());
+		assertThat(message.getHeaders().get("original")).isEqualTo("newValue");
+	}
+
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	@Test
 	public void testWithCustomMessageConverter() {
 		FunctionCatalog catalog = this.configureCatalog(CustomConverterConfiguration.class);
 		Function function = catalog.lookup("func");
-		Object result = function.apply(MessageBuilder.withPayload("Jim Lahey").setHeader(MessageHeaders.CONTENT_TYPE, "text/person").build());
+		Object result = function
+			.apply(MessageBuilder.withPayload("Jim Lahey").setHeader(MessageHeaders.CONTENT_TYPE, "text/person")
+				.build());
 		assertThat(result).isEqualTo("Jim Lahey");
 	}
 
 	@Test
 	public void lookup() {
 		SimpleFunctionRegistry functionRegistry = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		FunctionInvocationWrapper function = functionRegistry.lookup("uppercase");
 		assertThat(function).isNull();
 
 		Function userFunction = uppercase();
 		FunctionRegistration functionRegistration = new FunctionRegistration(userFunction, "uppercase")
-				.type(FunctionType.from(String.class).to(String.class));
+			.type(FunctionType.from(String.class).to(String.class));
 		functionRegistry.register(functionRegistration);
 
 		function = functionRegistry.lookup("uppercase");
@@ -301,10 +316,10 @@ public class SimpleFunctionRegistryTests {
 	@Test
 	public void lookupDefaultName() {
 		SimpleFunctionRegistry functionRegistry = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 		Function userFunction = uppercase();
 		FunctionRegistration functionRegistration = new FunctionRegistration(userFunction, "uppercase")
-				.type(FunctionType.from(String.class).to(String.class));
+			.type(FunctionType.from(String.class).to(String.class));
 		functionRegistry.register(functionRegistration);
 
 		FunctionInvocationWrapper function = functionRegistry.lookup("");
@@ -314,16 +329,16 @@ public class SimpleFunctionRegistryTests {
 	@Test
 	public void lookupWithCompositionFunctionAndConsumer() {
 		SimpleFunctionRegistry functionRegistry = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 
 		Object userFunction = uppercase();
 		FunctionRegistration functionRegistration = new FunctionRegistration(userFunction, "uppercase")
-				.type(FunctionType.from(String.class).to(String.class));
+			.type(FunctionType.from(String.class).to(String.class));
 		functionRegistry.register(functionRegistration);
 
 		userFunction = consumer();
 		functionRegistration = new FunctionRegistration(userFunction, "consumer")
-				.type(ResolvableType.forClassWithGenerics(Consumer.class, Integer.class).getType());
+			.type(ResolvableType.forClassWithGenerics(Consumer.class, Integer.class).getType());
 		functionRegistry.register(functionRegistration);
 
 		FunctionInvocationWrapper functionWrapper = functionRegistry.lookup("uppercase|consumer");
@@ -334,12 +349,14 @@ public class SimpleFunctionRegistryTests {
 	@Test
 	public void lookupWithReactiveConsumer() {
 		SimpleFunctionRegistry functionRegistry = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
-				new JacksonMapper(new ObjectMapper()));
+			new JacksonMapper(new ObjectMapper()));
 
 		Object userFunction = reactiveConsumer();
 
 		FunctionRegistration functionRegistration = new FunctionRegistration(userFunction, "reactiveConsumer")
-				.type(ResolvableType.forClassWithGenerics(Consumer.class, ResolvableType.forClassWithGenerics(Flux.class, Integer.class)).getType());
+			.type(ResolvableType
+				.forClassWithGenerics(Consumer.class, ResolvableType.forClassWithGenerics(Flux.class, Integer.class))
+				.getType());
 		functionRegistry.register(functionRegistration);
 
 		FunctionInvocationWrapper functionWrapper = functionRegistry.lookup("reactiveConsumer");
@@ -373,8 +390,8 @@ public class SimpleFunctionRegistryTests {
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
 		ApplicationContext context = new SpringApplicationBuilder(configClass)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true");
+			.run("--logging.level.org.springframework.cloud.function=DEBUG",
+				"--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
@@ -386,7 +403,8 @@ public class SimpleFunctionRegistryTests {
 			return new AbstractMessageConverter(MimeType.valueOf("text/person")) {
 				@Override
 				protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-					String payload =  message.getPayload() instanceof byte[] ? new String((byte[]) message.getPayload()) : (String) message.getPayload();
+					String payload = message.getPayload() instanceof byte[] ? new String((byte[]) message
+						.getPayload()) : (String) message.getPayload();
 					Person person = new Person();
 					person.setName(payload);
 					return person;
@@ -395,7 +413,7 @@ public class SimpleFunctionRegistryTests {
 				@Override
 				protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
 					return supportsMimeType(message.getHeaders()) && Person.class.isAssignableFrom(targetClass) && (
-							message.getPayload() instanceof String || message.getPayload() instanceof byte[]);
+						message.getPayload() instanceof String || message.getPayload() instanceof byte[]);
 				}
 
 				@Override
@@ -452,12 +470,12 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	private static class UpperCaseMessage
-			implements Function<Message<String>, Message<String>> {
+		implements Function<Message<String>, Message<String>> {
 
 		@Override
 		public Message<String> apply(Message<String> t) {
 			return MessageBuilder.withPayload(t.getPayload().toUpperCase())
-					.copyHeaders(t.getHeaders()).build();
+				.copyHeaders(t.getHeaders()).build();
 		}
 
 	}
@@ -472,13 +490,13 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	private static class ReverseMessage
-			implements Function<Message<String>, Message<String>> {
+		implements Function<Message<String>, Message<String>> {
 
 		@Override
 		public Message<String> apply(Message<String> t) {
 			return MessageBuilder
-					.withPayload(new StringBuilder(t.getPayload()).reverse().toString())
-					.copyHeaders(t.getHeaders()).build();
+				.withPayload(new StringBuilder(t.getPayload()).reverse().toString())
+				.copyHeaders(t.getHeaders()).build();
 		}
 
 	}
@@ -490,6 +508,15 @@ public class SimpleFunctionRegistryTests {
 			return "i=" + t;
 		}
 
+	}
+
+	private static class HeaderEnricherFunction implements Function<Message<?>, Message<?>> {
+
+		@Override
+		public Message<?> apply(Message<?> message) {
+			return MessageBuilder.withPayload(message.getPayload()).setHeader("original", "newValue")
+				.build();
+		}
 	}
 
 	private static class ReactiveFunction implements Function<Flux<Message<List<Person>>>, Flux<List<String>>> {

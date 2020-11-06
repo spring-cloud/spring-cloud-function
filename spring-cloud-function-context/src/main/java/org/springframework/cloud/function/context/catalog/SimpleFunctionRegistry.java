@@ -126,8 +126,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	@Override
 	public FunctionRegistration<?> getRegistration(Object function) {
 		throw new UnsupportedOperationException("FunctionInspector is deprecated. There is no need "
-				+ "to access FunctionRegistration directly since you can interogate the actual "
-				+ "looked-up function (see FunctionInvocationWrapper.");
+			+ "to access FunctionRegistration directly since you can interogate the actual "
+			+ "looked-up function (see FunctionInvocationWrapper.");
 	}
 
 	@Override
@@ -186,16 +186,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 */
 	String normalizeFunctionDefinition(String functionDefinition) {
 		functionDefinition = StringUtils.hasText(functionDefinition)
-				? functionDefinition.replaceAll(",", "|")
-				: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
+			? functionDefinition.replaceAll(",", "|")
+			: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
 
 		if (!this.getNames(null).contains(functionDefinition)) {
 			List<String> eligibleFunction = this.getNames(null).stream()
-					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
-					.collect(Collectors.toList());
+				.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
+				.collect(Collectors.toList());
 			if (eligibleFunction.size() == 1
-					&& !eligibleFunction.get(0).equals(functionDefinition)
-					&& !functionDefinition.contains("|")) {
+				&& !eligibleFunction.get(0).equals(functionDefinition)
+				&& !functionDefinition.contains("|")) {
 				functionDefinition = eligibleFunction.get(0);
 			}
 		}
@@ -226,12 +226,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 */
 	private FunctionInvocationWrapper findFunctionInFunctionRegistrations(String functionName) {
 		FunctionRegistration<?> functionRegistration = this.functionRegistrations.stream()
-				.filter(fr -> fr.getNames().contains(functionName))
-				.findFirst()
-				.orElseGet(() -> null);
+			.filter(fr -> fr.getNames().contains(functionName))
+			.findFirst()
+			.orElseGet(() -> null);
 		return functionRegistration != null
-				? this.invocationWrapperInstance(functionName, functionRegistration.getTarget(), functionRegistration.getType().getType())
-				: null;
+			? this
+			.invocationWrapperInstance(functionName, functionRegistration.getTarget(), functionRegistration.getType()
+				.getType())
+			: null;
 
 	}
 
@@ -239,7 +241,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 *
 	 */
 	private FunctionInvocationWrapper compose(Class<?> type, String functionDefinition) {
-		String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+		String[] functionNames = StringUtils
+			.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 		FunctionInvocationWrapper composedFunction = null;
 
 		for (String functionName : functionNames) {
@@ -253,8 +256,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 				else {
 					FunctionInvocationWrapper andThenFunction =
-							invocationWrapperInstance(functionName, function.getTarget(), function.inputType, function.outputType);
-					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) andThenFunction);
+						invocationWrapperInstance(functionName, function
+							.getTarget(), function.inputType, function.outputType);
+					composedFunction = (FunctionInvocationWrapper) composedFunction
+						.andThen((Function<Object, Object>) andThenFunction);
 				}
 				this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
 			}
@@ -274,8 +279,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 */
 	private FunctionInvocationWrapper invocationWrapperInstance(String functionDefinition, Object target, Type functionType) {
 		return invocationWrapperInstance(functionDefinition, target,
-				FunctionTypeUtils.isSupplier(functionType) ? null : FunctionTypeUtils.getInputType(functionType),
-				FunctionTypeUtils.getOutputType(functionType));
+			FunctionTypeUtils.isSupplier(functionType) ? null : FunctionTypeUtils.getInputType(functionType),
+			FunctionTypeUtils.getOutputType(functionType));
 	}
 
 	/**
@@ -319,7 +324,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
 		}
 
-		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
+		FunctionInvocationWrapper(String functionDefinition, Object target, Type inputType, Type outputType) {
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
 			this.outputType = this.normalizeType(outputType);
@@ -462,11 +467,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		@SuppressWarnings("unchecked")
 		@Override
 		public <V> Function<Object, V> andThen(Function<? super Object, ? extends V> after) {
-			Assert.isTrue(after instanceof FunctionInvocationWrapper, "Composed function must be an instanceof FunctionInvocationWrapper.");
+			Assert
+				.isTrue(after instanceof FunctionInvocationWrapper, "Composed function must be an instanceof FunctionInvocationWrapper.");
 			if (FunctionTypeUtils.isMultipleArgumentType(this.inputType)
-					|| FunctionTypeUtils.isMultipleArgumentType(this.outputType)
-					|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).inputType)
-					|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).outputType)) {
+				|| FunctionTypeUtils.isMultipleArgumentType(this.outputType)
+				|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).inputType)
+				|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).outputType)) {
 				throw new UnsupportedOperationException("Composition of functions with multiple arguments is not supported at the moment");
 			}
 
@@ -477,30 +483,33 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			Type composedFunctionType;
 			if (afterWrapper.outputType == null) {
 				composedFunctionType = ResolvableType.forClassWithGenerics(Consumer.class, this.inputType == null
-						? null
-						: ResolvableType.forType(this.inputType)).getType();
+					? null
+					: ResolvableType.forType(this.inputType)).getType();
 			}
 			else if (this.inputType == null && afterWrapper.outputType != null) {
 				ResolvableType composedOutputType;
 				if (FunctionTypeUtils.isFlux(this.outputType)) {
-					composedOutputType = ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(afterWrapper.outputType));
+					composedOutputType = ResolvableType
+						.forClassWithGenerics(Flux.class, ResolvableType.forType(afterWrapper.outputType));
 				}
 				else if (FunctionTypeUtils.isMono(this.outputType)) {
-					composedOutputType = ResolvableType.forClassWithGenerics(Mono.class, ResolvableType.forType(afterWrapper.outputType));
+					composedOutputType = ResolvableType
+						.forClassWithGenerics(Mono.class, ResolvableType.forType(afterWrapper.outputType));
 				}
 				else {
 					composedOutputType = ResolvableType.forType(afterWrapper.outputType);
 				}
 
-				composedFunctionType = ResolvableType.forClassWithGenerics(Supplier.class, composedOutputType).getType();
+				composedFunctionType = ResolvableType.forClassWithGenerics(Supplier.class, composedOutputType)
+					.getType();
 			}
 			else if (this.outputType == null) {
 				throw new IllegalArgumentException("Can NOT compose anything with Consumer");
 			}
 			else {
 				composedFunctionType = ResolvableType.forClassWithGenerics(Function.class,
-						ResolvableType.forType(this.inputType),
-						ResolvableType.forType(((FunctionInvocationWrapper) after).outputType)).getType();
+					ResolvableType.forType(this.inputType),
+					ResolvableType.forType(((FunctionInvocationWrapper) after).outputType)).getType();
 			}
 
 			String composedName = this.functionDefinition + "|" + afterWrapper.functionDefinition;
@@ -523,7 +532,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		@Override
 		public String toString() {
-			return this.functionDefinition + (this.isComposed() ? "" : "<" + this.inputType + ", " + this.outputType + ">");
+			return this.functionDefinition + (this
+				.isComposed() ? "" : "<" + this.inputType + ", " + this.outputType + ">");
 		}
 
 		/**
@@ -582,8 +592,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		private Class<?> getRawClassFor(@Nullable Type type) {
 			return type instanceof TypeVariable || type instanceof WildcardType
-					? Object.class
-					: FunctionTypeUtils.getRawType(type);
+				? Object.class
+				: FunctionTypeUtils.getRawType(type);
 		}
 
 		/**
@@ -594,11 +604,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (result != null && !(result instanceof Publisher) && input instanceof Message) {
 				if (result instanceof Message) {
 					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-							.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
-					headersMap.putAll(this.sanitizeHeaders(((Message) input).getHeaders()));
+						.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
+					this.sanitizeHeaders(((Message) input).getHeaders())
+						.forEach((k, v) -> headersMap.putIfAbsent(k, v));
 				}
 				else {
-					result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
+					result = MessageBuilder.withPayload(result)
+						.copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
 				}
 			}
 			return result;
@@ -621,10 +633,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 *
 		 */
 		private Object fluxifyInputIfNecessary(Object input) {
-			if (!(input instanceof Publisher) && this.isTypePublisher(this.inputType) && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
+			if (!(input instanceof Publisher) && this.isTypePublisher(this.inputType) && !FunctionTypeUtils
+				.isMultipleArgumentType(this.inputType)) {
 				return input == null
-						? FunctionTypeUtils.isMono(this.inputType) ? Mono.empty() : Flux.empty()
-						: FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
+					? FunctionTypeUtils.isMono(this.inputType) ? Mono.empty() : Flux.empty()
+					: FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
 			}
 			return input;
 		}
@@ -637,20 +650,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			Object result;
 			if (!this.isTypePublisher(this.inputType) && convertedInput instanceof Publisher) {
 				result = convertedInput instanceof Mono
-						? Mono.from((Publisher) convertedInput).map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
-							.doOnError(ex -> logger.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex))
-						: Flux.from((Publisher) convertedInput).map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
-							.doOnError(ex -> logger.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex));
+					? Mono.from((Publisher) convertedInput)
+					.map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
+					.doOnError(ex -> logger
+						.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex))
+					: Flux.from((Publisher) convertedInput)
+					.map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
+					.doOnError(ex -> logger
+						.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex));
 			}
 			else {
 				result = this.invokeFunctionAndEnrichResultIfNecessary(convertedInput);
 				if (result instanceof Flux) {
 					result = ((Flux) result).doOnError(ex -> logger.error("Failed to invoke function '"
-							+ this.functionDefinition + "'", (Throwable) ex));
+						+ this.functionDefinition + "'", (Throwable) ex));
 				}
 				else if (result instanceof Mono) {
 					result = ((Mono) result).doOnError(ex -> logger.error("Failed to invoke function '"
-							+ this.functionDefinition + "'", (Throwable) ex));
+						+ this.functionDefinition + "'", (Throwable) ex));
 				}
 			}
 			return result;
@@ -675,8 +692,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			Object result = ((Function) this.target).apply(inputValue);
 
 			return value instanceof OriginalMessageHolder
-					? this.enrichInvocationResultIfNecessary(((OriginalMessageHolder) value).getOriginalMessage(), result)
-					: result;
+				? this.enrichInvocationResultIfNecessary(((OriginalMessageHolder) value).getOriginalMessage(), result)
+				: result;
 		}
 
 		/*
@@ -688,29 +705,31 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.isTypePublisher(this.inputType)) {
 				if (convertedInput instanceof Flux) {
 					result = ((Flux) convertedInput)
-							.transform(flux -> {
-								flux =  Flux.from((Publisher) flux).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
-								((Consumer) this.target).accept(flux);
-								return Mono.ignoreElements((Flux) flux);
-							}).then();
+						.transform(flux -> {
+							flux = Flux.from((Publisher) flux)
+								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
+							((Consumer) this.target).accept(flux);
+							return Mono.ignoreElements((Flux) flux);
+						}).then();
 				}
 				else {
 					result = ((Mono) convertedInput)
-							.transform(mono -> {
-								mono =  Mono.from((Publisher) mono).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
-								((Consumer) this.target).accept(mono);
-								return Mono.ignoreElements((Flux) mono);
-							}).then();
+						.transform(mono -> {
+							mono = Mono.from((Publisher) mono)
+								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
+							((Consumer) this.target).accept(mono);
+							return Mono.ignoreElements((Flux) mono);
+						}).then();
 				}
 			}
 			else if (convertedInput instanceof Publisher) {
 				result = convertedInput instanceof Mono
-						? Mono.from((Publisher) convertedInput)
-								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
-								.doOnNext((Consumer) this.target).then()
-						: Flux.from((Publisher) convertedInput)
-								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
-								.doOnNext((Consumer) this.target).then();
+					? Mono.from((Publisher) convertedInput)
+					.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
+					.doOnNext((Consumer) this.target).then()
+					: Flux.from((Publisher) convertedInput)
+					.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
+					.doOnNext((Consumer) this.target).then();
 			}
 			else {
 				((Consumer) this.target).accept(this.extractValueFromOriginalValueHolderIfNecessary(convertedInput));
@@ -743,7 +762,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		@SuppressWarnings("unchecked")
 		private boolean isInputConversionNecessary(Object input, Type type) {
-			if (type == null || this.getRawClassFor(type) == Void.class || this.target instanceof RoutingFunction || this.isComposed()) {
+			if (type == null || this
+				.getRawClassFor(type) == Void.class || this.target instanceof RoutingFunction || this.isComposed()) {
 				if (this.getRawClassFor(type) == Void.class) {
 					if (input instanceof Message) {
 						input = ((Message) input).getPayload();
@@ -757,6 +777,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			return true;
 		}
+
 		/*
 		 *
 		 */
@@ -781,8 +802,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			else if (this.skipInputConversion) {
 				convertedInput = this.isInputTypeMessage()
-						? input
-						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
+					? input
+					: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
 //			else if (FunctionTypeUtils.isMultipleArgumentType(type)) {
 //				Type[] inputTypes = ((ParameterizedType) type).getActualTypeArguments();
@@ -804,8 +825,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 				if (convertedInput != null && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
 					convertedInput = !convertedInput.equals(input)
-							? new OriginalMessageHolder(convertedInput, (Message<?>) input)
-							: convertedInput;
+						? new OriginalMessageHolder(convertedInput, (Message<?>) input)
+						: convertedInput;
 				}
 			}
 			else {
@@ -828,7 +849,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			if (output instanceof Message && !this.containsRetainMessageSignalInHeaders((Message) output)) {
 				if (!FunctionTypeUtils.isMessage(type) ||
-					(FunctionTypeUtils.isMessage(type) && Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(type)))) {
+					(FunctionTypeUtils.isMessage(type) && Collection.class
+						.isAssignableFrom(FunctionTypeUtils.getRawType(type)))) {
 					output = ((Message) output).getPayload();
 				}
 			}
@@ -849,14 +871,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				convertedOutput = this.convertOutputPublisherIfNecessary((Publisher) output, type, contentType);
 			}
 			else if (output instanceof Message) {
-				convertedOutput = this.convertOutputMessageIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
+				convertedOutput = this
+					.convertOutputMessageIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
 			}
 			else if (output instanceof Collection && this.isOutputTypeMessage()) {
-				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType);
+				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils
+					.isEmpty(contentType) ? null : contentType);
 			}
 			else if (!ObjectUtils.isEmpty(contentType)) {
 				convertedOutput = messageConverter.toMessage(output,
-						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType[0])));
+					new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType[0])));
 			}
 
 			return convertedOutput;
@@ -889,8 +913,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Object convertNonMessageInputIfNecessary(Type inputType, Object input) {
 			Object convertedInput = null;
 			Class<?> rawInputType = this.isTypePublisher(inputType) || this.isInputTypeMessage()
-					? FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))
-					: this.getRawClassFor(inputType);
+				? FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))
+				: this.getRawClassFor(inputType);
 
 			if (JsonMapper.isJsonString(input) && !Message.class.isAssignableFrom(rawInputType)) {
 				if (FunctionTypeUtils.isMessage(inputType)) {
@@ -901,8 +925,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 			}
 			else if (SimpleFunctionRegistry.this.conversionService != null
-					&& !rawInputType.equals(input.getClass())
-					&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
+				&& !rawInputType.equals(input.getClass())
+				&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
 				convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, rawInputType);
 			}
 			if (convertedInput == null && input.getClass().isAssignableFrom(rawInputType)) {
@@ -916,17 +940,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		private boolean isWrapConvertedInputInMessage(Object convertedInput) {
 			return this.inputType != null
-					&& FunctionTypeUtils.isMessage(this.inputType)
-					&& !(convertedInput instanceof Message)
-					&& !(convertedInput instanceof Publisher)
-					&& !(convertedInput instanceof OriginalMessageHolder);
+				&& FunctionTypeUtils.isMessage(this.inputType)
+				&& !(convertedInput instanceof Message)
+				&& !(convertedInput instanceof Publisher)
+				&& !(convertedInput instanceof OriginalMessageHolder);
 		}
 
 		/*
 		 *
 		 */
 		private Type extractActualValueTypeIfNecessary(Type type) {
-			if (type  instanceof ParameterizedType && (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type))) {
+			if (type instanceof ParameterizedType && (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils
+				.isMessage(type))) {
 				return FunctionTypeUtils.getGenericType(type);
 			}
 			return type;
@@ -954,8 +979,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			type = this.extractActualValueTypeIfNecessary(type);
 			Class rawType = FunctionTypeUtils.getRawType(type);
 			convertedInput = this.isConversionHintRequired(type, rawType)
-					? SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType, type)
-					: SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType);
+				? SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType, type)
+				: SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType);
 
 			if (this.isInputTypeMessage()) {
 				if (convertedInput == null) {
@@ -966,11 +991,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					 * additional message converter could be added to facilitate the conversion.
 					 */
 					logger.info("Input type conversion of payload " + message.getPayload() + " resulted in 'null'. "
-							+ "Will use the original message as input.");
+						+ "Will use the original message as input.");
 					convertedInput = message;
 				}
 				else {
-					convertedInput = MessageBuilder.withPayload(convertedInput).copyHeaders(message.getHeaders()).build();
+					convertedInput = MessageBuilder.withPayload(convertedInput).copyHeaders(message.getHeaders())
+						.build();
 				}
 			}
 //			convertedInput = convertedInput == null ? message.getPayload() : convertedInput;
@@ -986,9 +1012,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			Object[] convertedOutputs = new Object[outputTypes.length];
 			for (int i = 0; i < multipleValueArguments.length; i++) {
 				String[] ctToUse = !ObjectUtils.isEmpty(contentType)
-						? new String[]{contentType[i]}
-						: new String[] {"application/json"};
-				Object convertedInput = this.convertOutputIfNecessary(multipleValueArguments[i], outputTypes[i], ctToUse);
+					? new String[] {contentType[i]}
+					: new String[] {"application/json"};
+				Object convertedInput = this
+					.convertOutputIfNecessary(multipleValueArguments[i], outputTypes[i], ctToUse);
 				convertedOutputs[i] = convertedInput;
 			}
 			return Tuples.fromArray(convertedOutputs);
@@ -1000,16 +1027,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		@SuppressWarnings("unchecked")
 		private Object convertOutputMessageIfNecessary(Object output, String expectedOutputContetntType) {
 			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-					.getField(SimpleFunctionRegistry.this.headersField, ((Message) output).getHeaders());
-			String contentType = ((Message) output).getHeaders().containsKey(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
-					? (String) ((Message) output).getHeaders().get(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
-							: expectedOutputContetntType;
+				.getField(SimpleFunctionRegistry.this.headersField, ((Message) output).getHeaders());
+			String contentType = ((Message) output).getHeaders()
+				.containsKey(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
+				? (String) ((Message) output).getHeaders().get(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
+				: expectedOutputContetntType;
 
 			if (StringUtils.hasText(contentType)) {
 				String[] expectedContentTypes = StringUtils.delimitedListToStringArray(contentType, ",");
 				for (String expectedContentType : expectedContentTypes) {
 					headersMap.put(MessageHeaders.CONTENT_TYPE, expectedContentType);
-					Object result = messageConverter.toMessage(((Message) output).getPayload(), ((Message) output).getHeaders());
+					Object result = messageConverter
+						.toMessage(((Message) output).getPayload(), ((Message) output).getHeaders());
 					if (result != null) {
 						return result;
 					}
@@ -1040,10 +1069,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Object convertInputPublisherIfNecessary(Publisher publisher, Type type) {
 			Type actualType = type != null ? FunctionTypeUtils.getGenericType(type) : type;
 			return publisher instanceof Mono
-					? Mono.from(publisher).map(v -> this.convertInputIfNecessary(v, actualType))
-							.doOnError(ex -> logger.error("Failed to convert input", (Throwable) ex))
-					: Flux.from(publisher).map(v -> this.convertInputIfNecessary(v, actualType))
-							.doOnError(ex -> logger.error("Failed to convert input", (Throwable) ex));
+				? Mono.from(publisher).map(v -> this.convertInputIfNecessary(v, actualType))
+				.doOnError(ex -> logger.error("Failed to convert input", (Throwable) ex))
+				: Flux.from(publisher).map(v -> this.convertInputIfNecessary(v, actualType))
+				.doOnError(ex -> logger.error("Failed to convert input", (Throwable) ex));
 		}
 
 		/*
@@ -1052,17 +1081,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		@SuppressWarnings("unchecked")
 		private Object convertOutputPublisherIfNecessary(Publisher publisher, Type type, String[] expectedOutputContentType) {
 			return publisher instanceof Mono
-					? Mono.from(publisher).map(v -> this.convertOutputIfNecessary(v, type, expectedOutputContentType))
-							.doOnError(ex -> logger.error("Failed to convert output", (Throwable) ex))
-					: Flux.from(publisher).map(v -> this.convertOutputIfNecessary(v, type, expectedOutputContentType))
-							.doOnError(ex -> logger.error("Failed to convert output", (Throwable) ex));
+				? Mono.from(publisher).map(v -> this.convertOutputIfNecessary(v, type, expectedOutputContentType))
+				.doOnError(ex -> logger.error("Failed to convert output", (Throwable) ex))
+				: Flux.from(publisher).map(v -> this.convertOutputIfNecessary(v, type, expectedOutputContentType))
+				.doOnError(ex -> logger.error("Failed to convert output", (Throwable) ex));
 		}
 	}
 
 	/**
 	 *
 	 */
-	private static final class OriginalMessageHolder  {
+	private static final class OriginalMessageHolder {
 		private final Object value;
 
 		private final Message<?> originalMessage;
