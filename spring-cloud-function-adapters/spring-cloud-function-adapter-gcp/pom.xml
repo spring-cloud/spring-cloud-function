@@ -11,7 +11,7 @@
 	<parent>
 		<artifactId>spring-cloud-function-adapter-parent</artifactId>
 		<groupId>org.springframework.cloud</groupId>
-		<version>3.0.11.RELEASE</version>
+		<version>3.0.11.BUILD-SNAPSHOT</version>
 	</parent>
 
 	<properties>
