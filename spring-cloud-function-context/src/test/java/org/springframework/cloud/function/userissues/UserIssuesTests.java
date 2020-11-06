@@ -17,14 +17,17 @@
 package org.springframework.cloud.function.userissues;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -60,6 +63,37 @@ public class UserIssuesTests {
 		Function<Message<String>, Integer> function = catalog.lookup("consumer");
 		int result = function.apply(
 				new GenericMessage<String>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
+		assertThat(result).isEqualTo(3);
+	}
+
+	@Test
+	public void testIssue602asPOJO() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(Issue602Configuration.class);
+		Function<Message<List<Product>>, Integer> function = catalog.lookup("consumer");
+		ArrayList<Product> products = new ArrayList<>();
+		Product p = new Product();
+		p.setName("julien");
+		products.add(p);
+		p = new Product();
+		p.setName("ricky");
+		products.add(p);
+		p = new Product();
+		p.setName("bubbles");
+		products.add(p);
+		int result = function.apply(new GenericMessage<List<Product>>(products));
+		assertThat(result).isEqualTo(3);
+
+	}
+
+	@Test
+	public void testIssue602asCollectionOfUnconvertedItems() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(Issue602Configuration.class);
+		Function<Message<List<String>>, Integer> function = catalog.lookup("consumer");
+		ArrayList<String> products = new ArrayList<>();
+		products.add("{\"name\":\"julien\"}");
+		products.add("{\"name\":\"ricky\"}");
+		products.add("{\"name\":\"bubbles\"}");
+		int result = function.apply(new GenericMessage<List<String>>(products));
 		assertThat(result).isEqualTo(3);
 
 	}
@@ -105,6 +139,9 @@ public class UserIssuesTests {
 
 		@Override
 		protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
+			if (!FunctionTypeUtils.isTypeCollection(message.getPayload().getClass())) {
+				return false;
+			}
 			return true;
 		}
 

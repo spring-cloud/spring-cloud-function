@@ -822,7 +822,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					convertedValue = value;
 				}
 				if (value instanceof Message<?>) { // see AWS adapter with Optional payload
-					if (messageNeedsConversion(rawType, (Message<?>) value)) {
+					if (messageNeedsConversion(rawType, type, (Message<?>) value)) {
 
 						boolean convertWithHint = false;
 						Type hint = type;
@@ -956,13 +956,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return false;
 		}
 
-		private boolean messageNeedsConversion(Type rawType, Message<?> message) {
+		private boolean messageNeedsConversion(Type rawType, Type type, Message<?> message) {
 			Boolean skipConversion = message.getHeaders().containsKey(FunctionProperties.SKIP_CONVERSION_HEADER)
 				? message.getHeaders().get(FunctionProperties.SKIP_CONVERSION_HEADER, Boolean.class)
 				: false;
 			if (skipConversion) {
 				return false;
 			}
+
+			if (FunctionTypeUtils.isTypeCollection(message.getPayload().getClass())
+					&& !CollectionUtils.isEmpty((Collection<?>) message.getPayload())) {
+
+				Class<?> elementType = CollectionUtils.findCommonElementType((Collection<?>) message.getPayload());
+				Class<?> itemType = TypeResolver.resolveRawClass(FunctionTypeUtils.getImmediateGenericType(type, 0), null);
+				if (elementType == itemType) {
+					return false;
+				}
+			}
+
 			return rawType instanceof Class<?>
 				&& !(message.getPayload() instanceof Optional)
 				&& !this.payloadIsSpecialType(message.getPayload())
