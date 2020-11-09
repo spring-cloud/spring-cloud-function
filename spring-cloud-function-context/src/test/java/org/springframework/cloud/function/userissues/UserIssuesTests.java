@@ -26,11 +26,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
+
+import reactor.core.publisher.Flux;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -94,6 +98,23 @@ public class UserIssuesTests {
 
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testIssue601() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(Issue601Configuration.class);
+		FunctionInvocationWrapper function = catalog.lookup("uppercase");
+		assertThat(function.getInputType().getTypeName())
+			.isEqualTo(ResolvableType.forClassWithGenerics(Flux.class, String.class).getType().getTypeName());
+		assertThat(function.getOutputType().getTypeName())
+		.isEqualTo(ResolvableType.forClassWithGenerics(Flux.class, Integer.class).getType().getTypeName());
+		Flux<Integer> result = (Flux<Integer>) function.apply(Flux.just("julien", "ricky", "bubbles"));
+		List<Integer> results = result.collectList().block();
+		assertThat(results.get(0)).isEqualTo(6);
+		assertThat(results.get(1)).isEqualTo(5);
+		assertThat(results.get(2)).isEqualTo(7);
+	}
+
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class Issue602Configuration {
@@ -106,6 +127,23 @@ public class UserIssuesTests {
 				return v.size();
 			};
 		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class Issue601Configuration {
+		@Bean
+	    public Uppercase uppercase() {
+	        return new Uppercase();
+	    }
+	}
+
+	public static class Uppercase implements Function<Flux<String>, Flux<Integer>> {
+
+	    @Override
+	    public Flux<Integer> apply(Flux<String> s) {
+	        return s.map(v -> v.length());
+	    }
 	}
 
 	public static class Product {
