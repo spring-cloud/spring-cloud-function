@@ -133,6 +133,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
+		Assert.notNull(registration, "'registration' must not be null");
+		if (logger.isDebugEnabled()) {
+			logger.debug("Registering function " + registration.getNames());
+		}
 		this.functionRegistrations.add(registration);
 	}
 
@@ -169,7 +173,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		if (function != null) {
 			function.expectedOutputContentType = expectedOutputMimeTypes;
 		}
-		else {
+		else if (logger.isDebugEnabled()) {
 			logger.debug("Function '" + functionDefinition + "' is not found in cache");
 		}
 
@@ -260,6 +264,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
 			}
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("Composed function " + composedFunction);
+		}
 		return composedFunction;
 	}
 
@@ -329,10 +336,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		public void setSkipInputConversion(boolean skipInputConversion) {
+			if (logger.isDebugEnabled() && skipInputConversion) {
+				logger.debug("'skipInputConversion' was explicitely set to true. No input conversion will be attempted");
+			}
 			this.skipInputConversion = skipInputConversion;
 		}
 
 		public void setSkipOutputConversion(boolean skipOutputConversion) {
+			if (logger.isDebugEnabled() && skipOutputConversion) {
+				logger.debug("'skipOutputConversion' was explicitely set to true. No output conversion will be attempted");
+			}
 			this.skipOutputConversion = skipOutputConversion;
 		}
 
@@ -398,7 +411,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		@Override
 		public Object apply(Object input) {
-
+			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
+				logger.debug("Invoking function " + this);
+			}
 			Object result = this.doApply(input);
 
 			if (result != null && this.outputType != null) {
@@ -795,9 +810,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 							? new OriginalMessageHolder(convertedInput, (Message<?>) input)
 							: convertedInput;
 				}
+				if (convertedInput != null && logger.isDebugEnabled()) {
+					logger.debug("Converted Message: " + input + " to: " + convertedInput);
+				}
 			}
 			else {
 				convertedInput = this.convertNonMessageInputIfNecessary(type, input);
+				if (convertedInput != null && logger.isDebugEnabled()) {
+					logger.debug("Converted input: " + input + " to: " + convertedInput);
+				}
 			}
 			// wrap in Message if necessary
 			if (this.isWrapConvertedInputInMessage(convertedInput)) {
@@ -827,7 +848,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (ObjectUtils.isEmpty(contentType)) {
 				return output;
 			}
-
 
 			Object convertedOutput = output;
 			if (FunctionTypeUtils.isMultipleArgumentType(type)) {
@@ -944,7 +964,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					return message.getPayload();
 				}
 			}
-			//if (message.getPayload().getClass().isAss) {
 
 			Object convertedInput = message;
 			type = this.extractActualValueTypeIfNecessary(type);
