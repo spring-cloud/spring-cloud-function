@@ -16,29 +16,23 @@
 
 package org.springframework.cloud.function.userissues;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import org.junit.Before;
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.support.GenericMessage;
-
-import reactor.core.publisher.Flux;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -108,15 +102,14 @@ public class UserIssuesTests {
 		FunctionCatalog catalog = this.configureCatalog(Issue601Configuration.class);
 		FunctionInvocationWrapper function = catalog.lookup("uppercase");
 		System.out.println(function.getFunctionType().getTypeName());
-		assertThat(function.getFunctionType().getTypeName())
-			.isEqualTo("java.util.function.Function<reactor.core.publisher.Flux<java.lang.String>, reactor.core.publisher.Flux<java.lang.Integer>>");
+		assertThat(function.getFunctionType().getTypeName()).isEqualTo(
+				"java.util.function.Function<reactor.core.publisher.Flux<java.lang.String>, reactor.core.publisher.Flux<java.lang.Integer>>");
 		Flux<Integer> result = (Flux<Integer>) function.apply(Flux.just("julien", "ricky", "bubbles"));
 		List<Integer> results = result.collectList().block();
 		assertThat(results.get(0)).isEqualTo(6);
 		assertThat(results.get(1)).isEqualTo(5);
 		assertThat(results.get(2)).isEqualTo(7);
 	}
-
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -137,17 +130,17 @@ public class UserIssuesTests {
 	@Configuration
 	public static class Issue601Configuration {
 		@Bean
-	    public Uppercase uppercase() {
-	        return new Uppercase();
-	    }
+		public Uppercase uppercase() {
+			return new Uppercase();
+		}
 	}
 
 	public static class Uppercase implements Function<Flux<String>, Flux<Integer>> {
 
-	    @Override
-	    public Flux<Integer> apply(Flux<String> s) {
-	        return s.map(v -> v.length());
-	    }
+		@Override
+		public Flux<Integer> apply(Flux<String> s) {
+			return s.map(v -> v.length());
+		}
 	}
 
 	public static class Product {
