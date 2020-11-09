@@ -87,16 +87,6 @@ public class FunctionController {
 		return this.processor.post(wrapper, null, false);
 	}
 
-//	@PostMapping(path = "/**", consumes = { MediaType.APPLICATION_FORM_URLENCODED_VALUE,
-//			MediaType.MULTIPART_FORM_DATA_VALUE })
-//	public Mono<ResponseEntity<?>> handleFileUpload(@RequestParam("file") MultipartFile file, WebRequest request) {
-//		FunctionWrapper wrapper = wrapper(request);
-//
-//		Object result = wrapper.function().apply(file);
-//
-//		return Mono.just(ResponseEntity.status(HttpStatus.OK).body(result));
-//	}
-
 	@PostMapping(path = "/**")
 	@ResponseBody
 	public Mono<ResponseEntity<?>> post(WebRequest request,
