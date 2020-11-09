@@ -29,12 +29,16 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.support.GenericMessage;
+
+import reactor.core.publisher.Flux;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -98,6 +102,22 @@ public class UserIssuesTests {
 
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testIssue601() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(Issue601Configuration.class);
+		FunctionInvocationWrapper function = catalog.lookup("uppercase");
+		System.out.println(function.getFunctionType().getTypeName());
+		assertThat(function.getFunctionType().getTypeName())
+			.isEqualTo("java.util.function.Function<reactor.core.publisher.Flux<java.lang.String>, reactor.core.publisher.Flux<java.lang.Integer>>");
+		Flux<Integer> result = (Flux<Integer>) function.apply(Flux.just("julien", "ricky", "bubbles"));
+		List<Integer> results = result.collectList().block();
+		assertThat(results.get(0)).isEqualTo(6);
+		assertThat(results.get(1)).isEqualTo(5);
+		assertThat(results.get(2)).isEqualTo(7);
+	}
+
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class Issue602Configuration {
@@ -111,13 +131,26 @@ public class UserIssuesTests {
 			};
 		}
 
-		@Bean
-		public ProductMessageConverter productMessageConverter(JsonMapper mapper) {
-			return new ProductMessageConverter(mapper);
-		}
 	}
 
-	private static class Product {
+	@EnableAutoConfiguration
+	@Configuration
+	public static class Issue601Configuration {
+		@Bean
+	    public Uppercase uppercase() {
+	        return new Uppercase();
+	    }
+	}
+
+	public static class Uppercase implements Function<Flux<String>, Flux<Integer>> {
+
+	    @Override
+	    public Flux<Integer> apply(Flux<String> s) {
+	        return s.map(v -> v.length());
+	    }
+	}
+
+	public static class Product {
 		private String name;
 
 		public String getName() {
@@ -127,34 +160,5 @@ public class UserIssuesTests {
 		public void setName(String name) {
 			this.name = name;
 		}
-	}
-
-	public static class ProductMessageConverter extends AbstractMessageConverter {
-
-		private final JsonMapper mapper;
-
-		ProductMessageConverter(JsonMapper mapper) {
-			this.mapper = mapper;
-		}
-
-		@Override
-		protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
-			if (!FunctionTypeUtils.isTypeCollection(message.getPayload().getClass())) {
-				return false;
-			}
-			return true;
-		}
-
-		@Override
-		protected boolean supports(Class<?> clazz) {
-			return true;
-		}
-
-		@Override
-		protected Object convertFromInternal(Message<?> message, Class<?> targetClass, Object conversionHint) {
-			Object result = mapper.fromJson((String) message.getPayload(), (Type) conversionHint);
-			return result;
-		}
-
 	}
 }
