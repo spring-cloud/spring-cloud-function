@@ -311,6 +311,7 @@ public class SimpleFunctionRegistryTests {
 		assertThat(function).isNotNull();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void lookupWithCompositionFunctionAndConsumer() {
 		SimpleFunctionRegistry functionRegistry = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
@@ -345,6 +346,22 @@ public class SimpleFunctionRegistryTests {
 		FunctionInvocationWrapper functionWrapper = functionRegistry.lookup("reactiveConsumer");
 
 		functionWrapper.apply("123");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testHeaderEnricherFunction() {
+		FunctionRegistration<HeaderEnricherFunction> registration =
+			new FunctionRegistration<>(new HeaderEnricherFunction(), "headerEnricher")
+				.type(FunctionType.of(HeaderEnricherFunction.class));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+			new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+		Function<Message<?>, Message<?>> function = catalog.lookup("headerEnricher");
+		Message<?> message =
+			function.apply(MessageBuilder.withPayload("hello").setHeader("original", "originalValue")
+				.build());
+		assertThat(message.getHeaders().get("original")).isEqualTo("newValue");
 	}
 
 
@@ -499,6 +516,15 @@ public class SimpleFunctionRegistryTests {
 			return listFlux
 				.map(Message::getPayload)
 				.map(lst -> lst.stream().map(Person::getName).collect(Collectors.toList()));
+		}
+	}
+
+	private static class HeaderEnricherFunction implements Function<Message<?>, Message<?>> {
+
+		@Override
+		public Message<?> apply(Message<?> message) {
+			return MessageBuilder.withPayload(message.getPayload()).setHeader("original", "newValue")
+				.build();
 		}
 	}
 }

@@ -596,7 +596,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				if (result instanceof Message) {
 					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 							.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
-					headersMap.putAll(this.sanitizeHeaders(((Message) input).getHeaders()));
+					this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
 				}
 				else {
 					result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
