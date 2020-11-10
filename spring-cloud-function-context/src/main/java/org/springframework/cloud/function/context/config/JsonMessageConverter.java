@@ -78,14 +78,20 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 			return message.getPayload();
 		}
 		Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
-		try {
-			return this.jsonMapper.fromJson(message.getPayload(), convertToType);
+		if (targetClass == byte[].class && message.getPayload() instanceof String) {
+			return ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8);
 		}
-		catch (Exception e) {
-			if (message.getPayload() instanceof byte[] && targetClass.isAssignableFrom(String.class)) {
-				return new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
+		else {
+			try {
+				return this.jsonMapper.fromJson(message.getPayload(), convertToType);
+			}
+			catch (Exception e) {
+				if (message.getPayload() instanceof byte[] && targetClass.isAssignableFrom(String.class)) {
+					return new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
+				}
 			}
 		}
+
 		return null;
 	}
 
