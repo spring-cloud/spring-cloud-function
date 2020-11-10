@@ -24,6 +24,7 @@
 		<module>function-sample-spring-integration</module>
 		<module>function-sample-gcp-http</module>
  		<module>function-sample-gcp-background</module>
+ 		<module>function-sample-cloudevent</module>
 	</modules>
 
 	<build>
