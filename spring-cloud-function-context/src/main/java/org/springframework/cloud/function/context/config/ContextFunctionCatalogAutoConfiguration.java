@@ -97,10 +97,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 				.collect(Collectors.toList());
 
 		mcList.add(new JsonMessageConverter(jsonMapper));
+		mcList.add(new CloudEventJsonMessageConverter(jsonMapper));
 		mcList.add(new ByteArrayMessageConverter());
 		mcList.add(new StringMessageConverter());
 		mcList.add(new PrimitiveTypesFromStringMessageConverter(conversionService));
-
 
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new SmartCompositeMessageConverter(mcList);

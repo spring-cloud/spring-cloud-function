@@ -688,6 +688,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				inputValue = this.extractValueFromOriginalValueHolderIfNecessary(value);
 			}
 
+			if (inputValue instanceof Message && !this.isInputTypeMessage()) {
+				inputValue = ((Message) inputValue).getPayload();
+			}
 			Object result = ((Function) this.target).apply(inputValue);
 
 			return value instanceof OriginalMessageHolder
@@ -985,7 +988,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					convertedInput = message;
 				}
 				else {
-					convertedInput = MessageBuilder.withPayload(convertedInput).copyHeaders(message.getHeaders()).build();
+					if (!(convertedInput instanceof Message)) {
+						convertedInput = MessageBuilder.withPayload(convertedInput).copyHeaders(message.getHeaders()).build();
+					}
 				}
 			}
 			return convertedInput;
