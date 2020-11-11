@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Map;
 
 import org.springframework.cloud.function.json.JsonMapper;
@@ -50,6 +51,9 @@ public class CloudEventJsonMessageConverter extends JsonMessageConverter {
 			return super.convertFromInternal(message, targetClass, conversionHint);
 		}
 		else {
+			if (targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
+				return message.getPayload();
+			}
 			Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
 			String jsonString = (String) message.getPayload();
 			Map<String, Object> mapEvent = this.mapper.fromJson(jsonString, Map.class);

@@ -47,7 +47,7 @@ import org.springframework.util.SocketUtils;
  * @author Oleg Zhurakousky
  *
  */
-public class CloudeventDemoApplicationTests {
+public class CloudeventDemoApplicationRESTTests {
 
 	private TestRestTemplate testRestTemplate = new TestRestTemplate();
 
@@ -165,6 +165,37 @@ public class CloudeventDemoApplicationTests {
 		response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("releaseDate:24-03-2004; releaseName:Spring Framework; version:1.0");
+    }
+
+	@Test
+    public void testAsStracturalFormatToString() throws Exception {
+        SpringApplication.run(CloudeventDemoApplication.class);
+
+        String payload = "{\n" +
+                "    \"specversion\" : \"1.0\",\n" +
+                "    \"type\" : \"org.springframework\",\n" +
+                "    \"source\" : \"https://spring.io/\",\n" +
+                "    \"id\" : \"A234-1234-1234\",\n" +
+                "    \"datacontenttype\" : \"application/json\",\n" +
+                "    \"data\" : {\n" +
+                "        \"version\" : \"1.0\",\n" +
+                "        \"releaseName\" : \"Spring Framework\",\n" +
+                "        \"releaseDate\" : \"24-03-2004\"\n" +
+                "    }\n" +
+                "}";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("application/cloudevents+json;charset=utf-8"));
+
+        RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/asStringMessage"));
+        ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
+
+        assertThat(response.getBody()).isEqualTo(payload);
+
+        re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/asString"));
+		response = testRestTemplate.exchange(re, String.class);
+
+		assertThat(response.getBody()).isEqualTo(payload);
     }
 
 

@@ -43,59 +43,38 @@ public class CloudeventDemoApplication {
 	    SpringApplication.run(CloudeventDemoApplication.class, args);
 	}
 
-	/*
-	 * curl -w'\n' localhost:8080/asStringMessage \
- 	 * -H "Ce-Specversion: 1.0" \
- 	 * -H "Ce-Type: com.example.springevent" \
- 	 * -H "Ce-Source: spring.io/spring-event" \
- 	 * -H "Content-Type: application/json" \
- 	 * -H "Ce-Id: 0001" \
- 	 * -d '{"releaseDate":"2004-03-24", "releaseName":"Spring Framework", "version":"1.0"}'
-	 */
 	@Bean
 	public Function<Message<String>, String> asStringMessage() {
-		return v -> v.getPayload().toString();
+		return v -> {
+			System.out.println("Received Cloud Event with raw data: " + v);
+			return v.getPayload();
+		};
 	}
 
-	/*
-	 * curl -w'\n' localhost:8080/asString \
- 	 * -H "Ce-Specversion: 1.0" \
- 	 * -H "Ce-Type: com.example.springevent" \
- 	 * -H "Ce-Source: spring.io/spring-event" \
- 	 * -H "Content-Type: application/json" \
- 	 * -H "Ce-Id: 0001" \
- 	 * -d '{"releaseDate":"2004-03-24", "releaseName":"Spring Framework", "version":"1.0"}'
-	 */
+
 	@Bean
 	public Function<String, String> asString() {
-		return v -> v;
+		return v -> {
+			System.out.println("Received raw Cloud Event data: " + v);
+			return v;
+		};
 	}
 
-	/*
-	 * curl -w'\n' localhost:8080/asPOJOMessage \
- 	 * -H "Ce-Specversion: 1.0" \
- 	 * -H "Ce-Type: com.example.springevent" \
- 	 * -H "Ce-Source: spring.io/spring-event" \
- 	 * -H "Content-Type: application/json" \
- 	 * -H "Ce-Id: 0001" \
- 	 * -d '{"releaseDate":"2004-03-24", "releaseName":"Spring Framework", "version":"1.0"}'
-	 */
+
 	@Bean
 	public Function<Message<SpringReleaseEvent>, String> asPOJOMessage() {
-		return v -> v.getPayload().toString();
+		return v -> {
+			System.out.println("Received Cloud Event with POJO data: " + v);
+			return v.getPayload().toString();
+		};
 	}
 
-	/*
-	 * curl -w'\n' localhost:8080/asPOJO \
- 	 * -H "Ce-Specversion: 1.0" \
- 	 * -H "Ce-Type: com.example.springevent" \
- 	 * -H "Ce-Source: spring.io/spring-event" \
- 	 * -H "Content-Type: application/json" \
- 	 * -H "Ce-Id: 0001" \
- 	 * -d '{"releaseDate":"2004-03-24", "releaseName":"Spring Framework", "version":"1.0"}'
-	 */
+
 	@Bean
 	public Function<SpringReleaseEvent, String> asPOJO() {
-		return v -> v.toString();
+		return v -> {
+			System.out.println("Received POJO Cloud Event data: " + v);
+			return v.toString();
+		};
 	}
 }
