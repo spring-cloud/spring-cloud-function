@@ -91,7 +91,7 @@ http://localhost:15672/#/exchanges[RabbitMQ Dashboard]. Select `asPOJOMessage-in
 
 _...post a binary-mode message by filling all the required Cloud Events headers and posting `data` element as payload (see the screenshot below)._
 
-image::images\rabbit-send-binary.png[binary,700,625]
+image::images\rabbit-send-binary.png[binary,700,700]
 
 _...post a structured-mode message by filling `contentType` header to the value of `application/cloudevents+json` while providing the 
 entire structure of Cloud Event message as payload (see the screenshot below)._
@@ -112,7 +112,7 @@ entire structure of Cloud Event message as payload (see the screenshot below)._
 }
 ----
 
-image::images\rabbit-send-structured.png[structured,700,625]
+image::images\rabbit-send-structured.png[structured,700,700]
 
 ### Function invocation via RSocket
 
