@@ -15,7 +15,25 @@ The example provides dependencies and instructions to demonstrate several distin
 The POM file defines all the necessary dependency in a segregated way, so you can choose the one you're interested in.
  
 ### Direct function invocation
-TBD
+
+By looking up user declared functions in `FunctionCatalog` you can interact (i.e., for testing purposes) with functions directly 
+while enjoying all the features of _spring-cloud-function_ such as transparent type conversion, function composition and more. 
+
+[source, java]
+----
+Message<String> binaryCloudEventMessage = MessageBuilder
+	.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
+	.setHeader("ce-specversion", "1.0")
+	.setHeader("ce-type", "com.example.springevent")
+	.setHeader("ce-source", "spring.io/spring-event")
+	.setHeader("ce-id", "123-456-9876-09")
+	.build();
+Function<Message<String>, String> asPojoMessage = catalog.lookup("asPOJOMessage");
+System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
+----
+
+The test case link:src/test/java/io/spring/cloudevent/CloudeventDemoApplicationFunctionTests.java[CloudeventDemoApplicationFunctionTests]
+provides a good example on how to accomplish this.
 
 ### Function as a REST endpoint
 
@@ -113,6 +131,17 @@ entire structure of Cloud Event message as payload (see the screenshot below)._
 ----
 
 image::images\rabbit-send-structured.png[structured,700,700]
+
+You can follow similar approach with Apache Kafka or any other binder. All you need is bring a required binder dependency. 
+For example for Apache Kafka
+[source, xml]
+----
+<dependency>
+   <groupId>org.springframework.cloud</groupId>
+   <artifactId>spring-cloud-stream-binder-kafka</artifactId>
+   <version>3.1.0-SNAPSHOT</version>
+</dependency>
+----
 
 ### Function invocation via RSocket
 
