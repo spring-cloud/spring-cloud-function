@@ -23,22 +23,42 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
+		
+		<!-- REST - only needed if you intend to invoke via HTTP -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-        
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-function-web</artifactId>
             <version>3.1.0-SNAPSHOT</version>
         </dependency>
+        <!-- end REST -->
         
+        <!-- RSocket - only needed if you intend to invoke via RSocket -->
+<!--         <dependency> -->
+<!--             <groupId>org.springframework.cloud</groupId> -->
+<!--             <artifactId>spring-cloud-function-rsocket</artifactId> -->
+<!--             <version>3.1.0-SNAPSHOT</version> -->
+<!--         </dependency> -->
+        <!-- end RSocket -->
+        
+        <!-- RabbitMQ - only needed if you intend to invoke via RabbitMQ -->
 <!--         <dependency> -->
 <!--             <groupId>org.springframework.cloud</groupId> -->
 <!--             <artifactId>spring-cloud-stream-binder-rabbit</artifactId> -->
 <!--             <version>3.1.0-SNAPSHOT</version> -->
 <!--         </dependency> -->
+        <!-- end RabbitMQ -->
+        
+         <!-- Kafka - only needed if you intend to invoke via RabbitMQ -->
+<!--         <dependency> -->
+<!--             <groupId>org.springframework.cloud</groupId> -->
+<!--             <artifactId>spring-cloud-stream-binder-kafka</artifactId> -->
+<!--             <version>3.1.0-SNAPSHOT</version> -->
+<!--         </dependency> -->
+        <!-- end Kafka -->
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -806,7 +806,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			else if (input instanceof Message) {
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
-					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload());
+					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload(), false);
 				}
 				if (convertedInput != null && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
 					convertedInput = !convertedInput.equals(input)
@@ -818,7 +818,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 			}
 			else {
-				convertedInput = this.convertNonMessageInputIfNecessary(type, input);
+				convertedInput = this.convertNonMessageInputIfNecessary(type, input, JsonMapper.isJsonString(input));
 				if (convertedInput != null && logger.isDebugEnabled()) {
 					logger.debug("Converted input: " + input + " to: " + convertedInput);
 				}
@@ -827,6 +827,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.isWrapConvertedInputInMessage(convertedInput)) {
 				convertedInput = MessageBuilder.withPayload(convertedInput).build();
 			}
+			Assert.notNull(convertedInput, "Failed to convert input: " + input + " to " + type);
 			return convertedInput;
 		}
 
@@ -897,13 +898,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		/*
 		 *
 		 */
-		private Object convertNonMessageInputIfNecessary(Type inputType, Object input) {
+		private Object convertNonMessageInputIfNecessary(Type inputType, Object input, boolean maybeJson) {
 			Object convertedInput = null;
 			Class<?> rawInputType = this.isTypePublisher(inputType) || this.isInputTypeMessage()
 					? FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))
 					: this.getRawClassFor(inputType);
 
-			if (JsonMapper.isJsonString(input) && !Message.class.isAssignableFrom(rawInputType)) {
+			if (maybeJson && !Message.class.isAssignableFrom(rawInputType)) {
 				if (FunctionTypeUtils.isMessage(inputType)) {
 					inputType = FunctionTypeUtils.getGenericType(inputType);
 				}
