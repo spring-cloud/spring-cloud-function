@@ -89,12 +89,12 @@ See link:src/main/resources/application.properties[application.properties] for m
 Assuming RabbitMQ broker is running on localhost:default_port, start the application and navigate to 
 http://localhost:15672/#/exchanges[RabbitMQ Dashboard]. Select `asPOJOMessage-in-0` exchange and: 
 
-. . . post a binary-mode message by filling all the required Cloud Events headers and posting `data` element as _payload_ (see the screenshot below).
+_...post a binary-mode message by filling all the required Cloud Events headers and posting `data` element as _payload_ (see the screenshot below)._
 
-image::images\rabbit-send-binary.png[]
+image::images\rabbit-send-binary.png[binary,800,400]
 
-. . . post a structured-mode message by filling `contentType` header to the value of `application/cloudevents+json` while providing the 
-entire structure of Cloud Event message as _payload_ (see the screenshot below).
+_...post a structured-mode message by filling `contentType` header to the value of `application/cloudevents+json` while providing the 
+entire structure of Cloud Event message as _payload_ (see the screenshot below)._
 
 [source, json]
 ----
@@ -112,7 +112,7 @@ entire structure of Cloud Event message as _payload_ (see the screenshot below).
 }
 ----
 
-image::images\rabbit-send-structured.png[]
+image::images\rabbit-send-structured.png[structured,800,400]
 
 ### Function invocation via RSocket
 
