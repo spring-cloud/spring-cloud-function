@@ -152,7 +152,7 @@ public class CloudeventDemoApplicationRESTTests {
                 "        \"releaseDate\" : \"24-03-2004\"\n" +
                 "    }\n" +
                 "}";
-
+        System.out.println(payload);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf("application/cloudevents+json;charset=utf-8"));
 
