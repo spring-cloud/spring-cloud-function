@@ -16,12 +16,14 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -170,7 +172,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			function = this.compose(type, functionDefinition);
 		}
 
-		if (function != null) {
+		if (function != null   && !ObjectUtils.isEmpty(expectedOutputMimeTypes)) {
 			function.expectedOutputContentType = expectedOutputMimeTypes;
 		}
 		else if (logger.isDebugEnabled()) {
@@ -804,6 +806,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
 			else if (input instanceof Message) {
+				if (((Message) input).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")
+						&& !this.isInputTypeMessage()) { //TODO rework
+					return null;
+				}
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
 					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload(), false);
@@ -866,7 +872,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			else if (output instanceof Collection && this.isOutputTypeMessage()) {
 				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType);
 			}
-			else if (!ObjectUtils.isEmpty(contentType)) {
+			else if (ObjectUtils.isArray(output) && !(output instanceof byte[])) {
+				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType);
+			}
+			else {
 				convertedOutput = messageConverter.toMessage(output,
 						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType[0])));
 			}
@@ -1043,14 +1052,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		@SuppressWarnings("unchecked")
 		private Object convertMultipleOutputValuesIfNecessary(Object output, String[] contentType) {
-			Collection outputCollection = (Collection) output;
-			Collection convertedOutputCollection = output instanceof List ? new ArrayList<>() : new TreeSet<>();
+			Collection outputCollection = ObjectUtils.isArray(output) ? Arrays.asList(output) : (Collection) output;
+			Collection convertedOutputCollection = outputCollection instanceof List ? new ArrayList<>() : new TreeSet<>();
+			Type type = this.isOutputTypeMessage() ? FunctionTypeUtils.getGenericType(this.outputType) : this.outputType;
 			for (Object outToConvert : outputCollection) {
-				Object result = this.convertOutputIfNecessary(outToConvert, this.outputType, contentType);
-				Assert.notNull(result, () -> "Failed to convert output '" + output + "'");
+				Object result = this.convertOutputIfNecessary(outToConvert, type, contentType);
+				Assert.notNull(result, () -> "Failed to convert output '" + outToConvert + "'");
 				convertedOutputCollection.add(result);
 			}
-			return convertedOutputCollection;
+			return ObjectUtils.isArray(output) ? convertedOutputCollection.toArray() : convertedOutputCollection;
 		}
 
 		/*

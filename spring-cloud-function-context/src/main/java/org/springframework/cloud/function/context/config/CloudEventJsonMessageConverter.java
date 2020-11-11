@@ -17,13 +17,13 @@
 package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
@@ -55,18 +55,14 @@ public class CloudEventJsonMessageConverter extends JsonMessageConverter {
 				return message.getPayload();
 			}
 			Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
-			String jsonString = (String) message.getPayload();
+			String jsonString = message.getPayload() instanceof String
+					? (String) message.getPayload()
+					: new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
 			Map<String, Object> mapEvent = this.mapper.fromJson(jsonString, Map.class);
 			Object payload = this.mapper.fromJson(this.mapper.toJson(mapEvent.get("data")), convertToType);
 			mapEvent.remove("data");
 			return MessageBuilder.withPayload(payload).copyHeaders(mapEvent).build();
 		}
-	}
-
-	@Override
-	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
-			@Nullable Object conversionHint) {
-		throw new UnsupportedOperationException("Temporarily not supported as this converter is work in progress");
 	}
 
 	private boolean isBinary(Message<?> message) {
