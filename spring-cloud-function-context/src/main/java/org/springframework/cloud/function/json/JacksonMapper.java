@@ -18,6 +18,7 @@ package org.springframework.cloud.function.json;
 
 import java.io.Reader;
 import java.lang.reflect.Type;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
@@ -55,6 +56,9 @@ public class JacksonMapper extends JsonMapper {
 			}
 			else if (json instanceof Reader) {
 				convertedValue = this.mapper.readValue((Reader) json, constructType);
+			}
+			else if (json instanceof Map) {
+				convertedValue = this.mapper.convertValue(json, constructType);
 			}
 		}
 		catch (Exception e) {
