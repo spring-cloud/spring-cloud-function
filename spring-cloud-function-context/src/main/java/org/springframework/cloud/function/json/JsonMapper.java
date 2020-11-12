@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.json;
 
+import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -77,6 +78,15 @@ public abstract class JsonMapper {
 			return (T) results;
 		}
 		else {
+			if (!(json instanceof String) && !(json instanceof byte[]) && !(json instanceof Reader)) {
+				json = this.toJson(json);
+				if (FunctionTypeUtils.getRawType(type) == String.class) {
+					return (T) new String((byte[]) json, StandardCharsets.UTF_8);
+				}
+				else if (FunctionTypeUtils.getRawType(type) == byte[].class) {
+					return (T) json;
+				}
+			}
 			return this.doFromJson(json, type);
 		}
 	}

@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.context.catalog;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

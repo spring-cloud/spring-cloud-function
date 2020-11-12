@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.cloud.function.context.config.CloudEventJsonMessageConverter;
+import org.springframework.cloud.function.cloudevent.CloudEventJsonMessageConverter;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,7 +39,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.util.MimeType;
 import org.springframework.util.SocketUtils;
 
 /**
@@ -190,12 +192,12 @@ public class CloudeventDemoApplicationRESTTests {
         RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/asStringMessage"));
         ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
 
-        assertThat(response.getBody()).isEqualTo(payload);
+        assertThat(response.getBody()).isEqualTo("{\"version\":\"1.0\",\"releaseName\":\"Spring Framework\",\"releaseDate\":\"24-03-2004\"}");
 
         re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/asString"));
 		response = testRestTemplate.exchange(re, String.class);
 
-		assertThat(response.getBody()).isEqualTo(payload);
+		assertThat(response.getBody()).isEqualTo("{\"version\":\"1.0\",\"releaseName\":\"Spring Framework\",\"releaseDate\":\"24-03-2004\"}");
     }
 
 
@@ -207,10 +209,10 @@ public class CloudeventDemoApplicationRESTTests {
 		}
 	}
 
-	public static class FooBarToCloudEventMessageConverter extends CloudEventJsonMessageConverter {
+	public static class FooBarToCloudEventMessageConverter extends AbstractMessageConverter {
 
 		public FooBarToCloudEventMessageConverter(JsonMapper jsonMapper) {
-			super(jsonMapper);
+			super(new MimeType("foo", "bar"));
 		}
 
 		@Override

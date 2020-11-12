@@ -30,6 +30,8 @@ import com.google.gson.Gson;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.cloudevent.CloudEventDataContentTypeMessagePreProcessor;
+import org.springframework.cloud.function.cloudevent.CloudEventJsonMessageConverter;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -78,7 +80,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			conversionService.addConverter(converter);
 		}
 
-		CompositeMessageConverter messageConverter = null;
+		SmartCompositeMessageConverter messageConverter = null;
 		List<MessageConverter> mcList = new ArrayList<>();
 
 		if (!CollectionUtils.isEmpty(messageConverters)) {
@@ -104,6 +106,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new SmartCompositeMessageConverter(mcList);
+			CloudEventDataContentTypeMessagePreProcessor messagePreProcessor = new CloudEventDataContentTypeMessagePreProcessor(messageConverter);
+			messageConverter.setMessagePreProcessor(messagePreProcessor);
 		}
 
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper);
