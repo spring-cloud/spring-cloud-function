@@ -30,7 +30,7 @@ import com.google.gson.Gson;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.function.cloudevent.CloudEventAtttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
 import org.springframework.cloud.function.cloudevent.CloudEventDataContentTypeMessagePreProcessor;
 import org.springframework.cloud.function.cloudevent.CloudEventJsonMessageConverter;
 import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
@@ -76,7 +76,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public CloudEventAtttributesProvider cloudEventAttributesProvider() {
+	public CloudEventAttributesProvider cloudEventAttributesProvider() {
 		return new DefaultCloudEventAttributesProvider();
 	}
 

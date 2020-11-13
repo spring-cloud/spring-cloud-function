@@ -174,12 +174,12 @@ public class CloudeventDemoApplicationRESTTests {
         SpringApplication.run(CloudeventDemoApplication.class);
 
         String payload = "{\n" +
-                "    \"specversion\" : \"1.0\",\n" +
-                "    \"type\" : \"org.springframework\",\n" +
-                "    \"source\" : \"https://spring.io/\",\n" +
-                "    \"id\" : \"A234-1234-1234\",\n" +
-                "    \"datacontenttype\" : \"application/json\",\n" +
-                "    \"data\" : {\n" +
+                "    \"ce-specversion\" : \"1.0\",\n" +
+                "    \"ce-type\" : \"org.springframework\",\n" +
+                "    \"ce-source\" : \"https://spring.io/\",\n" +
+                "    \"ce-id\" : \"A234-1234-1234\",\n" +
+                "    \"ce-datacontenttype\" : \"application/json\",\n" +
+                "    \"ce-data\" : {\n" +
                 "        \"version\" : \"1.0\",\n" +
                 "        \"releaseName\" : \"Spring Framework\",\n" +
                 "        \"releaseDate\" : \"24-03-2004\"\n" +

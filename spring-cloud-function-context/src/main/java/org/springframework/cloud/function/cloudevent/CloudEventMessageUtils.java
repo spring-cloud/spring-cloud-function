@@ -49,7 +49,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Prefix for attributes.
 	 */
-	public static String ATTR_PREFIX = "ce_";
+	public static String ATTR_PREFIX = "ce-";
 
 	/**
 	 * Value for 'data' attribute.

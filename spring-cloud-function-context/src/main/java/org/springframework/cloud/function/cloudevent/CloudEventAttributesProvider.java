@@ -26,7 +26,7 @@ import org.springframework.messaging.MessageHeaders;
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-public interface CloudEventAtttributesProvider {
+public interface CloudEventAttributesProvider {
 
 	/**
 	 * Will construct instance of {@link CloudEventAttributes} setting its required attributes.

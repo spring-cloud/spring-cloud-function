@@ -37,7 +37,7 @@ import org.springframework.util.StringUtils;
  * @since 3.1
  *
  */
-public class DefaultCloudEventAttributesProvider implements CloudEventAtttributesProvider, ApplicationContextAware {
+public class DefaultCloudEventAttributesProvider implements CloudEventAttributesProvider, ApplicationContextAware {
 
 	private ConfigurableApplicationContext applicationContext;
 
