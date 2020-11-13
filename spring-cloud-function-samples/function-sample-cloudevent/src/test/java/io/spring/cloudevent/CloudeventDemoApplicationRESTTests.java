@@ -20,6 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +30,10 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
 import org.springframework.cloud.function.cloudevent.CloudEventJsonMessageConverter;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
+import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,6 +48,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.SocketUtils;
 
 /**
@@ -200,6 +207,53 @@ public class CloudeventDemoApplicationRESTTests {
 		assertThat(response.getBody()).isEqualTo("{\"version\":\"1.0\",\"releaseName\":\"Spring Framework\",\"releaseDate\":\"24-03-2004\"}");
     }
 
+	@Test
+	public void testAsBinaryMapToMap() throws Exception {
+		SpringApplication.run(new Class[] {CloudeventDemoApplication.class}, new String[] {});
+
+		HttpHeaders headers = this.buildHeaders(MediaType.APPLICATION_JSON);
+		String payload = "{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}";
+
+		RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/consumeAndProduceCloudEventAsMapToMap"));
+		ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
+
+		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2050\",\"releaseName\":\"Spring Framework\",\"version\":\"10.0\"}");
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.CE_SOURCE))
+			.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.CE_TYPE))
+			.isEqualTo(Collections.singletonList(LinkedHashMap.class.getName()));
+	}
+
+	@Test
+	public void testAsBinaryPojoToPojo() throws Exception {
+		SpringApplication.run(new Class[] {CloudeventDemoApplication.class}, new String[] {});
+
+		HttpHeaders headers = this.buildHeaders(MediaType.APPLICATION_JSON);
+		String payload = "{\"releaseDate\":\"01-10-2006\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}";
+
+		RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/consumeAndProduceCloudEventAsPojoToPojo"));
+		ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
+
+		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2006\",\"releaseName\":\"Spring Framework\",\"version\":\"2.0\"}");
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.CE_SOURCE))
+			.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.CE_TYPE))
+			.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
+	}
+
+	private URI constructURI(String path) throws Exception {
+		return new URI("http://localhost:" + System.getProperty("server.port") + path);
+	}
+
+	private HttpHeaders buildHeaders(MediaType contentType) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(contentType);
+		headers.set(CloudEventMessageUtils.CE_ID, UUID.randomUUID().toString());
+		headers.set(CloudEventMessageUtils.CE_SOURCE, "https://spring.io/");
+		headers.set(CloudEventMessageUtils.CE_SPECVERSION, "1.0");
+		headers.set(CloudEventMessageUtils.CE_TYPE, "org.springframework");
+		return headers;
+	}
 
 	@Configuration
 	public static class FooBarConverterConfiguration {
@@ -268,20 +322,6 @@ public class CloudeventDemoApplicationRESTTests {
 			return null;
 
 		}
-	}
-
-	private URI constructURI(String path) throws Exception {
-		return new URI("http://localhost:" + System.getProperty("server.port") + path);
-	}
-
-	private HttpHeaders buildHeaders(MediaType contentType) {
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(contentType);
-		headers.set("id", UUID.randomUUID().toString());
-		headers.set("source", "https://spring.io/");
-		headers.set("specversion", "1.0");
-		headers.set("type", "org.springframework");
-		return headers;
 	}
 
 }

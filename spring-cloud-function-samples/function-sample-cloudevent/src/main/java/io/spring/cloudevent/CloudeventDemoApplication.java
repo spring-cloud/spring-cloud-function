@@ -16,6 +16,8 @@
 
 package io.spring.cloudevent;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -102,19 +104,9 @@ public class CloudeventDemoApplication {
 		};
 	}
 
-	@Bean
-	public Function<Message<SpringReleaseEvent>, SpringReleaseEvent> consumeAndProduceCloudEventPojo() {
-		return ceMessage -> {
-			SpringReleaseEvent data = ceMessage.getPayload();
-			data.setVersion("2.0");
-			data.setReleaseDateAsString("01-10-2006");
-
-			return data;
-		};
-	}
 
 	@Bean
-	public Function<Map<String, Object>, Map<String, Object>> consumeAndProduceCloudEventAsPojoToPojo() {
+	public Function<Map<String, Object>, Map<String, Object>> consumeAndProduceCloudEventAsMapToMap() {
 		return ceMessage -> {
 			ceMessage.put("version", "10.0");
 			ceMessage.put("releaseDate", "01-10-2050");
@@ -123,22 +115,10 @@ public class CloudeventDemoApplication {
 	}
 
 	@Bean
-	public CloudEventAttributesProvider cloudEventAttributesProvider() {
-		return new CustomCloudEventAtttributesProvider();
-	}
-
-	public static class CustomCloudEventAtttributesProvider extends DefaultCloudEventAttributesProvider {
-
-		@Override
-		public Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result) {
-			if (inputMessage.getHeaders().containsKey(CloudEventMessageUtils.CE_ID)) { // input is a cloud event
-				String applicationName = "http://spring.io/fooBar";
-				return this.get(inputMessage.getHeaders())
-						.setId(UUID.randomUUID().toString())
-						.setType(result.getClass().getName())
-						.setSource(applicationName);
-			}
-			return Collections.emptyMap();
-		}
+	public Function<SpringReleaseEvent, SpringReleaseEvent> consumeAndProduceCloudEventAsPojoToPojo() {
+		return event -> {
+			event.setVersion("2.0");
+			return event;
+		};
 	}
 }
