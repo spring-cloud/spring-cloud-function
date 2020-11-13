@@ -99,7 +99,7 @@ public class CloudeventDemoApplicationFunctionTests {
 			 * is (see `asPOJOMessage` and `asPOJO` specifically). Type conversion will happen
 			 * inside spring-cloud-function.
 			 */
-			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("consumeAndProduceCloudEventPojo");
+			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("consumeAndProduceCloudEventAsPojoToPojo");
 			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
 		}
 	}
