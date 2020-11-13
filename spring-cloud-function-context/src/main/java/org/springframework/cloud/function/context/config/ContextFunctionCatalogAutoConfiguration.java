@@ -30,8 +30,10 @@ import com.google.gson.Gson;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.cloudevent.CloudEventAtttributesProvider;
 import org.springframework.cloud.function.cloudevent.CloudEventDataContentTypeMessagePreProcessor;
 import org.springframework.cloud.function.cloudevent.CloudEventJsonMessageConverter;
+import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -71,6 +73,11 @@ import org.springframework.util.StringUtils;
 public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
+
+	@Bean
+	public CloudEventAtttributesProvider cloudEventAttributesProvider() {
+		return new DefaultCloudEventAttributesProvider();
+	}
 
 	@Bean
 	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper, ConfigurableApplicationContext context) {

@@ -19,6 +19,8 @@ package org.springframework.cloud.function.cloudevent;
 import java.util.Map;
 
 import org.springframework.messaging.Message;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * Miscellaneous utility methods to deal with Cloud Events - https://cloudevents.io/.
@@ -28,11 +30,21 @@ import org.springframework.messaging.Message;
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-public final class CloudEventUtils {
+public final class CloudEventMessageUtils {
 
-	private CloudEventUtils() {
+	private CloudEventMessageUtils() {
 
 	}
+
+	/**
+	 * String value of 'application/cloudevents' mime type.
+	 */
+	public static String APPLICATION_CLOUDEVENTS_VALUE = "application/cloudevents";
+
+	/**
+	 * {@link MimeType} instance representing 'application/cloudevents' mime type.
+	 */
+	public static MimeType APPLICATION_CLOUDEVENTS = MimeTypeUtils.parseMimeType(APPLICATION_CLOUDEVENTS_VALUE);
 
 	/**
 	 * Prefix for attributes.
@@ -132,16 +144,15 @@ public final class CloudEventUtils {
 	/**
 	 * Checks if {@link Message} represents cloud event in binary-mode.
 	 */
-	public static boolean isBinary(Message<?> message) {
-		Map<String, Object> headers = message.getHeaders();
-		return (headers.containsKey("id")
-				&& headers.containsKey("source")
-				&& headers.containsKey("specversion")
-				&& headers.containsKey("type"))
+	public static boolean isBinary(Map<String, Object> headers) {
+		return (headers.containsKey(ID)
+				&& headers.containsKey(SOURCE)
+				&& headers.containsKey(SPECVERSION)
+				&& headers.containsKey(TYPE))
 				||
-				(headers.containsKey("ce_id")
-				&& headers.containsKey("ce_source")
-				&& headers.containsKey("ce_specversion")
-				&& headers.containsKey("ce_type"));
+				(headers.containsKey(CE_ID)
+				&& headers.containsKey(CE_SOURCE)
+				&& headers.containsKey(CE_SPECVERSION)
+				&& headers.containsKey(CE_TYPE));
 	}
 }
