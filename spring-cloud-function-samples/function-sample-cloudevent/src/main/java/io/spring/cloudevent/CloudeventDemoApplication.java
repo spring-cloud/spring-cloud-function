@@ -114,6 +114,15 @@ public class CloudeventDemoApplication {
 	}
 
 	@Bean
+	public Function<Map<String, Object>, Map<String, Object>> consumeAndProduceCloudEventAsPojoToPojo() {
+		return ceMessage -> {
+			ceMessage.put("version", "10.0");
+			ceMessage.put("releaseDate", "01-10-2050");
+			return ceMessage;
+		};
+	}
+
+	@Bean
 	public CloudEventAttributesProvider cloudEventAttributesProvider() {
 		return new CustomCloudEventAtttributesProvider();
 	}
