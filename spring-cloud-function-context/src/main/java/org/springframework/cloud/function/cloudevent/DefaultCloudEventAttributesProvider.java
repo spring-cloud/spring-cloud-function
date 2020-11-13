@@ -16,12 +16,20 @@
 
 package org.springframework.cloud.function.cloudevent;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -29,10 +37,9 @@ import org.springframework.util.Assert;
  * @since 3.1
  *
  */
-public class DefaultCloudEventAttributesProvider implements CloudEventAtttributesProvider {
-	/*
-	 * should i provide instance() method for convinience or should it be always injected into function
-	 */
+public class DefaultCloudEventAttributesProvider implements CloudEventAtttributesProvider, ApplicationContextAware {
+
+	private ConfigurableApplicationContext applicationContext;
 
 	@Override
 	public CloudEventAttributes get(String ce_id, String ce_specversion, String ce_source, String ce_type) {
@@ -61,4 +68,26 @@ public class DefaultCloudEventAttributesProvider implements CloudEventAtttribute
 		return new RequiredAttributeAccessor(headers);
 	}
 
+	@Override
+	public Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result) {
+		if (inputMessage.getHeaders().containsKey(CloudEventMessageUtils.CE_ID)) { // input is a cloud event
+			String applicationName = this.getApplicationName();
+			return this.get(inputMessage.getHeaders())
+					.setId(UUID.randomUUID().toString())
+					.setType(result.getClass().getName())
+					.setSource(applicationName);
+		}
+		return Collections.emptyMap();
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+	}
+
+	private String getApplicationName() {
+		ConfigurableEnvironment environment = this.applicationContext.getEnvironment();
+		String name = environment.getProperty("spring.application.name");
+		return "http://spring.io/" + (StringUtils.hasText(name) ? name : "application-" + this.applicationContext.getId());
+	}
 }

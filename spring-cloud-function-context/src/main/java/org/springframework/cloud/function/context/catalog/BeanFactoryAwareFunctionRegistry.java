@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,7 +31,9 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
+import org.springframework.cloud.function.cloudevent.CloudEventAtttributesProvider;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -39,7 +42,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StringUtils;
 
 /**
@@ -50,6 +55,9 @@ import org.springframework.util.StringUtils;
 public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry implements ApplicationContextAware {
 
 	private GenericApplicationContext applicationContext;
+
+	@Autowired(required = false)
+	private CloudEventAtttributesProvider cloudEventAtttributesProvider;
 
 
 	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
@@ -150,8 +158,25 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			function = super.doLookup(type, functionDefinition, expectedOutputMimeTypes);
 		}
 
+		if (function != null && this.cloudEventAtttributesProvider != null) {
+			BiFunction<Message<?>, Object, Message<?>> invocationResultHeaderEnricher = new BiFunction<Message<?>, Object, Message<?>>() {
+
+				@Override
+				public Message<?> apply(Message<?> inputMessage, Object invocationResult) {
+					Message message = MessageBuilder.withPayload(invocationResult).copyHeaders(
+							cloudEventAtttributesProvider.generateDefaultCloudEventHeaders(inputMessage, invocationResult))
+							.build();
+
+					return message;
+				}
+			};
+			function.setOutputMessageHeaderEnricher(invocationResultHeaderEnricher);
+		}
+
 		return (T) function;
 	}
+
+
 
 	private Object discoverFunctionInBeanFactory(String functionName) {
 		Object functionCandidate = null;

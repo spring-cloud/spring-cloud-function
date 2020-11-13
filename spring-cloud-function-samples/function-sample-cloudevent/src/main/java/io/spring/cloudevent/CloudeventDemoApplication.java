@@ -90,29 +90,21 @@ public class CloudeventDemoApplication {
 			data.setReleaseDateAsString("01-10-2006");
 
 			CloudEventAttributes ceAttributes = ceAttrProvider.get(ceMessage.getHeaders())
-				.setSource("https://interface21.icom/")
+				.setSource("https://interface21.com/")
 				.setType("com.interface21");
 
 			return MessageBuilder.withPayload(data).copyHeaders(ceAttributes).build();
 		};
 	}
 
-//	// spring.io/applicationName
-//
-//	@Bean
-//	public Function<Message<SpringReleaseEvent>, SpringReleaseEvent> consumeAndProduceCloudEvent() {
-//		return ceMessage -> {
-//			SpringReleaseEvent data = ceMessage.getPayload();
-//			data.setVersion("2.0");
-//			data.setReleaseDateAsString("01-10-2006");
-//
-//			CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
-//
-//			CloudEventAttributes ceAttributes = ceAttrProvider.get(ceMessage.getHeaders())
-//				.setSource("https://interface21.icom/")
-//				.setType("com.interface21");
-//
-//			return MessageBuilder.withPayload(data).copyHeaders(ceAttributes).build();
-//		};
-//	}
+	@Bean
+	public Function<Message<SpringReleaseEvent>, SpringReleaseEvent> consumeAndProduceCloudEventPojo() {
+		return ceMessage -> {
+			SpringReleaseEvent data = ceMessage.getPayload();
+			data.setVersion("2.0");
+			data.setReleaseDateAsString("01-10-2006");
+
+			return data;
+		};
+	}
 }
