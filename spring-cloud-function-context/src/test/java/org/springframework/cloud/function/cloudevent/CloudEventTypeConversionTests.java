@@ -41,13 +41,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-public class CloudEventJsonMessageConverterTests {
+public class CloudEventTypeConversionTests {
 	@Test
 	public void testFromMessageBinaryPayloadMatchesType() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
-		Message<String> message = MessageBuilder.withPayload("Hello Ricky").setHeader("ce_source", "https://spring.io/")
-				.setHeader("ce_id", UUID.randomUUID().toString()).setHeader("ce_type", "org.springframework")
-				.setHeader("ce_specversion", "1.0").setHeader("ce_datacontenttype", "text/plain").build();
+		CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+		CloudEventAttributes ceAttributes = ceAttrProvider
+				.get(UUID.randomUUID().toString(), "1.0", "https://spring.io/", "org.springframework");
+		ceAttributes.setDataContentType("text/plain");
+		Message<String> message = MessageBuilder.withPayload("Hello Ricky").copyHeaders(ceAttributes).build();
 
 		String converted = (String) messageConverter.fromMessage(message, String.class);
 		assertThat(converted).isEqualTo("Hello Ricky");
@@ -56,12 +58,14 @@ public class CloudEventJsonMessageConverterTests {
 	@Test
 	public void testFromMessageBinaryPayloadDoesNotMatchType() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
+		CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+		CloudEventAttributes ceAttributes = ceAttrProvider
+				.get(UUID.randomUUID().toString(), "1.0", "https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("Hello Ricky".getBytes())
+				.copyHeaders(ceAttributes)
 				.setHeader(MessageHeaders.CONTENT_TYPE,
 						MimeTypeUtils.parseMimeType("application/cloudevents+json;charset=utf-8"))
-				.setHeader("ce_source", "https://spring.io/").setHeader("ce_id", UUID.randomUUID().toString())
-				.setHeader("ce_type", "org.springframework").setHeader("ce_specversion", "1.0")
-				.setHeader("ce_datacontenttype", "text/plain").build();
+				.build();
 		String converted = (String) messageConverter.fromMessage(message, String.class);
 		assertThat(converted).isEqualTo("Hello Ricky");
 	}
@@ -70,11 +74,14 @@ public class CloudEventJsonMessageConverterTests {
 			// this works
 	public void testFromMessageBinaryPayloadNoDataContentTypeToString() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
+		CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+		CloudEventAttributes ceAttributes = ceAttrProvider
+				.get(UUID.randomUUID().toString(), "1.0", "https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("Hello Ricky".getBytes())
+				.copyHeaders(ceAttributes)
 				.setHeader(MessageHeaders.CONTENT_TYPE,
 						MimeTypeUtils.parseMimeType("application/cloudevents+json;charset=utf-8"))
-				.setHeader("ce_source", "https://spring.io/").setHeader("ce_id", UUID.randomUUID().toString())
-				.setHeader("ce_type", "org.springframework").setHeader("ce_specversion", "1.0").build();
+				.build();
 		String converted = (String) messageConverter.fromMessage(message, String.class);
 		assertThat(converted).isEqualTo("Hello Ricky");
 	}
@@ -82,11 +89,13 @@ public class CloudEventJsonMessageConverterTests {
 	@Test // Unlike the previous test the type here is POJO so no special treatement
 	public void testFromMessageBinaryPayloadNoDataContentTypeToPOJO() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
+		CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+		CloudEventAttributes ceAttributes = ceAttrProvider.get("https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("Hello Ricky".getBytes())
+				.copyHeaders(ceAttributes)
 				.setHeader(MessageHeaders.CONTENT_TYPE,
 						MimeTypeUtils.parseMimeType("application/cloudevents+json;charset=utf-8"))
-				.setHeader("ce_source", "https://spring.io/").setHeader("ce_id", UUID.randomUUID().toString())
-				.setHeader("ce_type", "org.springframework").setHeader("ce_specversion", "1.0").build();
+				.build();
 		String converted = (String) messageConverter.fromMessage(message, Person.class);
 		assertThat(converted).isNull();
 	}
@@ -94,28 +103,35 @@ public class CloudEventJsonMessageConverterTests {
 	@Test // will fall on default CT which is json
 	public void testFromMessageBinaryPayloadNoDataContentTypeToPOJOThatWorks() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
+		CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+		CloudEventAttributes ceAttributes = ceAttrProvider.get("https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("{\"name\":\"Ricky\"}".getBytes())
+				.copyHeaders(ceAttributes)
 				.setHeader(MessageHeaders.CONTENT_TYPE,
 						MimeTypeUtils.parseMimeType("application/cloudevents+json;charset=utf-8"))
-				.setHeader("ce_source", "https://spring.io/").setHeader("ce_id", UUID.randomUUID().toString())
-				.setHeader("ce_type", "org.springframework").setHeader("ce_specversion", "1.0").build();
+				.build();
 		Person converted = (Person) messageConverter.fromMessage(message, Person.class);
 		assertThat(converted.getName()).isEqualTo("Ricky");
 	}
 
 	@Test // will fall on default CT which is json
 	public void testFromMessageStructured() {
-		String cloudEventStructured = "{\n" + "	    \"specversion\" : \"1.0\",\n"
-				+ "	    \"type\" : \"org.springframework\",\n" + "	    \"source\" : \"https://spring.io/\",\n"
-				+ "	    \"id\" : \"A234-1234-1234\",\n" + "	    \"datacontenttype\" : \"application/json\",\n"
-				+ "	    \"data\" : {\n" + "	        \"version\" : \"1.0\",\n"
-				+ "	        \"releaseName\" : \"Spring Framework\",\n" + "	        \"releaseDate\" : \"24-03-2004\"\n"
-				+ "	    }\n" + "	}";
+		String cloudEventStructured = "{\n" +
+				"	    \"specversion\" : \"1.0\",\n" +
+				"	    \"type\" : \"org.springframework\",\n" +
+				"	    \"source\" : \"https://spring.io/\",\n" +
+				"	    \"id\" : \"A234-1234-1234\",\n" +
+				"	    \"datacontenttype\" : \"application/json\",\n" +
+				"	    \"data\" : {\n" +
+				"	        \"version\" : \"1.0\",\n" +
+				"	        \"releaseName\" : \"Spring Framework\",\n" +
+				"	        \"releaseDate\" : \"24-03-2004\"\n" +
+				"	    }\n" +
+				"	}";
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
 		Message<String> message = MessageBuilder.withPayload(cloudEventStructured)
-				.setHeader(MessageHeaders.CONTENT_TYPE,
-						MimeTypeUtils.parseMimeType("application/cloudevents+json;charset=utf-8"))
-				.setHeader("ce_datacontenttype", "application/json").build();
+				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
+				.setHeader(CloudEventMessageUtils.CE_DATACONTENTTYPE, MimeTypeUtils.APPLICATION_JSON_VALUE).build();
 		SpringReleaseEvent springReleaseEvent = (SpringReleaseEvent) messageConverter.fromMessage(message,
 				SpringReleaseEvent.class);
 		assertThat(springReleaseEvent.getReleaseName()).isEqualTo("Spring Framework");

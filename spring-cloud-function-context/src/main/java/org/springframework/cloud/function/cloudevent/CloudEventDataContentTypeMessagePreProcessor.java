@@ -50,7 +50,7 @@ public class CloudEventDataContentTypeMessagePreProcessor implements Function<Me
 
 	private final ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
 
-	private final MimeType cloudEventContentType = MimeTypeUtils.parseMimeType("application/cloudevents");
+	private final MimeType cloudEventContentType = CloudEventMessageUtils.APPLICATION_CLOUDEVENTS;
 
 	private final CompositeMessageConverter messageConverter;
 
@@ -62,7 +62,7 @@ public class CloudEventDataContentTypeMessagePreProcessor implements Function<Me
 	@SuppressWarnings("unchecked")
 	@Override
 	public Message<?> apply(Message<?> inputMessage) {
-		if (CloudEventUtils.isBinary(inputMessage)) {
+		if (CloudEventMessageUtils.isBinary(inputMessage.getHeaders())) {
 			String dataContentType = this.getDataContentType(inputMessage.getHeaders());
 			Message<?> message = MessageBuilder.fromMessage(inputMessage)
 					.setHeader(MessageHeaders.CONTENT_TYPE, dataContentType)
@@ -78,7 +78,7 @@ public class CloudEventDataContentTypeMessagePreProcessor implements Function<Me
 					.parseMimeType(contentType.getType() + "/" + suffix);
 			Message<?> cloudEventMessage = MessageBuilder.fromMessage(inputMessage)
 					.setHeader(MessageHeaders.CONTENT_TYPE, cloudEventDeserializationContentType)
-					.setHeader(CloudEventUtils.CE_DATACONTENTTYPE, dataContentType).build();
+					.setHeader(CloudEventMessageUtils.CE_DATACONTENTTYPE, dataContentType).build();
 			Map<String, Object> structuredCloudEvent = (Map<String, Object>) this.messageConverter
 					.fromMessage(cloudEventMessage, Map.class);
 			Message<?> binaryCeMessage = this.buildCeMessageFromStructured(structuredCloudEvent);
@@ -90,27 +90,27 @@ public class CloudEventDataContentTypeMessagePreProcessor implements Function<Me
 	}
 
 	private Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent) {
-		MessageBuilder<?> builder = MessageBuilder.withPayload(structuredCloudEvent.get(CloudEventUtils.DATA));
-		structuredCloudEvent.remove(CloudEventUtils.DATA);
+		MessageBuilder<?> builder = MessageBuilder.withPayload(structuredCloudEvent.get(CloudEventMessageUtils.DATA));
+		structuredCloudEvent.remove(CloudEventMessageUtils.DATA);
 		builder.copyHeaders(structuredCloudEvent);
 		return builder.build();
 	}
 
 	private String getDataContentType(MessageHeaders headers) {
-		if (headers.containsKey(CloudEventUtils.DATACONTENTTYPE)) {
-			return (String) headers.get(CloudEventUtils.DATACONTENTTYPE);
+		if (headers.containsKey(CloudEventMessageUtils.DATACONTENTTYPE)) {
+			return (String) headers.get(CloudEventMessageUtils.DATACONTENTTYPE);
 		}
-		else if (headers.containsKey(CloudEventUtils.CE_DATACONTENTTYPE)) {
-			return (String) headers.get(CloudEventUtils.CE_DATACONTENTTYPE);
+		else if (headers.containsKey(CloudEventMessageUtils.CE_DATACONTENTTYPE)) {
+			return (String) headers.get(CloudEventMessageUtils.CE_DATACONTENTTYPE);
 		}
 		else if (headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
 			return headers.get(MessageHeaders.CONTENT_TYPE).toString();
 		}
-		return "application/json";
+		return MimeTypeUtils.APPLICATION_JSON_VALUE;
 	}
 
 	private boolean isStructured(Message<?> message) {
-		if (!CloudEventUtils.isBinary(message)) {
+		if (!CloudEventMessageUtils.isBinary(message.getHeaders())) {
 			Map<String, Object> headers = message.getHeaders();
 
 			if (headers.containsKey(MessageHeaders.CONTENT_TYPE)) {

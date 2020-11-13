@@ -16,6 +16,7 @@
 
 package io.spring.cloudevent;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -42,6 +43,15 @@ public class SpringReleaseEvent {
 
 	public void setReleaseDate(Date releaseDate) {
 		this.releaseDate = releaseDate;
+	}
+
+	public void setReleaseDateAsString(String releaseDate) {
+		try {
+			this.releaseDate = new SimpleDateFormat("dd-MM-yyyy").parse(releaseDate);
+		}
+		catch (ParseException e) {
+			throw new IllegalArgumentException(e);
+		}
 	}
 
 	public String getReleaseName() {

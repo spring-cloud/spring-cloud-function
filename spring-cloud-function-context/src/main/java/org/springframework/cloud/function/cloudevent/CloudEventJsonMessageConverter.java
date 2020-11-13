@@ -32,7 +32,8 @@ import org.springframework.util.MimeType;
 public class CloudEventJsonMessageConverter extends JsonMessageConverter {
 
 	public CloudEventJsonMessageConverter(JsonMapper jsonMapper) {
-		super(jsonMapper, new MimeType("application", "cloudevents+json"));
+		super(jsonMapper, new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
+				CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype() + "+json"));
 		this.setStrictContentTypeMatch(true);
 	}
 }
