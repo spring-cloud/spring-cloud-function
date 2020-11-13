@@ -50,16 +50,16 @@ public class CloudeventDemoApplicationFunctionTests {
 			 * is (see `asPOJOMessage` and `asPOJO` specifically). Type conversion will happen
 			 * inside spring-cloud-function.
 			 */
-			Function<Message<String>, String> asPojoMessage = catalog.lookup("asPOJOMessage");
+			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("asPOJOMessage");
 			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
 
-			Function<Message<String>, String> asPojo = catalog.lookup("asPOJO");
+			Function<Message<String>, Message<String>> asPojo = catalog.lookup("asPOJO");
 			System.out.println(asPojo.apply(binaryCloudEventMessage));
 
-			Function<Message<String>, String> asString = catalog.lookup("asString");
+			Function<Message<String>, Message<String>> asString = catalog.lookup("asString");
 			System.out.println(asString.apply(binaryCloudEventMessage));
 
-			Function<Message<String>, String> asStringMessage = catalog.lookup("asStringMessage");
+			Function<Message<String>, Message<String>> asStringMessage = catalog.lookup("asStringMessage");
 			System.out.println(asStringMessage.apply(binaryCloudEventMessage));
 		}
 	}
@@ -80,6 +80,26 @@ public class CloudeventDemoApplicationFunctionTests {
 			 * inside spring-cloud-function.
 			 */
 			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("consumeAndProduceCloudEvent");
+			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
+		}
+	}
+
+	@Test
+	public void demoPureFunctionProduceConsumeCloudEventAsPojo() {
+		try(ConfigurableApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class)) {
+			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+			CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+			Message<String> binaryCloudEventMessage = MessageBuilder
+					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
+					.copyHeaders(ceAttrProvider.get("spring.io/spring-event", "com.example.springevent"))
+					.build();
+
+			/*
+			 * NOTE how it makes no difference what the actual function signature
+			 * is (see `asPOJOMessage` and `asPOJO` specifically). Type conversion will happen
+			 * inside spring-cloud-function.
+			 */
+			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("consumeAndProduceCloudEventPojo");
 			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
 		}
 	}

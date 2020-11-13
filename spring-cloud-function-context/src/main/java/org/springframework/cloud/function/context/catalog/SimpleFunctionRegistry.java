@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -319,6 +320,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * of stream will be refactored to address this.
 		 */
 		private Function<Object, Message> enhancer;
+
+		private BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher;
+
+		void setOutputMessageHeaderEnricher(BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher) {
+			this.outputMessageHeaderEnricher = outputMessageHeaderEnricher;
+		}
 
 		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
 			this.target = function.target;
@@ -615,7 +622,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
 				}
 				else {
-					result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
+					if (this.outputMessageHeaderEnricher != null) {
+						result = this.outputMessageHeaderEnricher.apply((Message<?>) input, result);
+					}
+					else {
+						result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
+					}
 				}
 			}
 			return result;

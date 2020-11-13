@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.function.cloudevent;
 
+import java.util.Collections;
+import java.util.Map;
+
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
 /**
@@ -57,4 +61,12 @@ public interface CloudEventAtttributesProvider {
 	 * @return modifiable instance of {@link CloudEventAttributes}
 	 */
 	RequiredAttributeAccessor get(MessageHeaders headers);
+
+	/**
+	 *
+	 * @param inputMessage input message used to invoke user functionality (e.g., function)
+	 * @param result result of the invocation of user functionality (e.g., function)
+	 * @return instance of {@link CloudEventAttributes}
+	 */
+	Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result);
 }
