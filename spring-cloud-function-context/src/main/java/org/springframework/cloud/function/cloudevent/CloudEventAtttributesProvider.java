@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.cloudevent;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.messaging.Message;
