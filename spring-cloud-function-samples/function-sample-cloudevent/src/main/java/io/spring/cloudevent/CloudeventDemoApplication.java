@@ -16,13 +16,18 @@
 
 package io.spring.cloudevent;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.cloudevent.CloudEventAttributes;
-import org.springframework.cloud.function.cloudevent.CloudEventAtttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -83,7 +88,7 @@ public class CloudeventDemoApplication {
 	}
 
 	@Bean
-	public Function<Message<SpringReleaseEvent>, Message<SpringReleaseEvent>> consumeAndProduceCloudEvent(CloudEventAtttributesProvider ceAttrProvider) {
+	public Function<Message<SpringReleaseEvent>, Message<SpringReleaseEvent>> consumeAndProduceCloudEvent(CloudEventAttributesProvider ceAttrProvider) {
 		return ceMessage -> {
 			SpringReleaseEvent data = ceMessage.getPayload();
 			data.setVersion("2.0");
@@ -106,5 +111,25 @@ public class CloudeventDemoApplication {
 
 			return data;
 		};
+	}
+
+	@Bean
+	public CloudEventAttributesProvider cloudEventAttributesProvider() {
+		return new CustomCloudEventAtttributesProvider();
+	}
+
+	public static class CustomCloudEventAtttributesProvider extends DefaultCloudEventAttributesProvider {
+
+		@Override
+		public Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result) {
+			if (inputMessage.getHeaders().containsKey(CloudEventMessageUtils.CE_ID)) { // input is a cloud event
+				String applicationName = "http://spring.io/fooBar";
+				return this.get(inputMessage.getHeaders())
+						.setId(UUID.randomUUID().toString())
+						.setType(result.getClass().getName())
+						.setSource(applicationName);
+			}
+			return Collections.emptyMap();
+		}
 	}
 }

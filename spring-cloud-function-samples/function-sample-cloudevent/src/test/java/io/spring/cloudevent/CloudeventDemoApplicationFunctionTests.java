@@ -20,7 +20,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
-import org.springframework.cloud.function.cloudevent.CloudEventAtttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
 import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -39,7 +39,7 @@ public class CloudeventDemoApplicationFunctionTests {
 
 		try(ConfigurableApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class)) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-			CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+			CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
 			Message<String> binaryCloudEventMessage = MessageBuilder
 					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
 					.copyHeaders(ceAttrProvider.get("spring.io/spring-event", "com.example.springevent"))
@@ -68,7 +68,7 @@ public class CloudeventDemoApplicationFunctionTests {
 	public void demoPureFunctionProduceConsumeCloudEvent() {
 		try(ConfigurableApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class)) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-			CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+			CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
 			Message<String> binaryCloudEventMessage = MessageBuilder
 					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
 					.copyHeaders(ceAttrProvider.get("spring.io/spring-event", "com.example.springevent"))
@@ -88,7 +88,7 @@ public class CloudeventDemoApplicationFunctionTests {
 	public void demoPureFunctionProduceConsumeCloudEventAsPojo() {
 		try(ConfigurableApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class)) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-			CloudEventAtttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
+			CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
 			Message<String> binaryCloudEventMessage = MessageBuilder
 					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
 					.copyHeaders(ceAttrProvider.get("spring.io/spring-event", "com.example.springevent"))

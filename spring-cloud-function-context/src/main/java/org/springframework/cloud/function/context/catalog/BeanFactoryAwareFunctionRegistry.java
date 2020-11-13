@@ -33,7 +33,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
-import org.springframework.cloud.function.cloudevent.CloudEventAtttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -57,7 +57,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	private GenericApplicationContext applicationContext;
 
 	@Autowired(required = false)
-	private CloudEventAtttributesProvider cloudEventAtttributesProvider;
+	private CloudEventAttributesProvider cloudEventAtttributesProvider;
 
 
 	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {

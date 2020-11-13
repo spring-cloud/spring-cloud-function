@@ -90,7 +90,11 @@ public class CloudEventDataContentTypeMessagePreProcessor implements Function<Me
 	}
 
 	private Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent) {
-		MessageBuilder<?> builder = MessageBuilder.withPayload(structuredCloudEvent.get(CloudEventMessageUtils.DATA));
+		MessageBuilder<?> builder = MessageBuilder.withPayload(
+				structuredCloudEvent.containsKey(CloudEventMessageUtils.CE_DATA)
+					? structuredCloudEvent.get(CloudEventMessageUtils.CE_DATA)
+					: structuredCloudEvent.get(CloudEventMessageUtils.DATA));
+		structuredCloudEvent.remove(CloudEventMessageUtils.CE_DATA);
 		structuredCloudEvent.remove(CloudEventMessageUtils.DATA);
 		builder.copyHeaders(structuredCloudEvent);
 		return builder.build();
