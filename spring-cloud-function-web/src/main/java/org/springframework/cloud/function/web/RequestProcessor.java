@@ -191,7 +191,24 @@ public class RequestProcessor {
 					.map(message -> message.getPayload());
 		}
 		else {
-			builder.headers(HeaderUtils.sanitize(request.headers()));
+			if (result instanceof Mono) {
+				result = Mono.from(result)
+				.map(message -> MessageUtils.unpack(handler, message))
+				.doOnNext(value -> {
+					builder.headers(HeaderUtils.sanitize(request.headers()));
+					addHeaders(builder, value);
+				})
+				.map(message -> message.getPayload());
+			}
+			else {
+				result = Flux.from(result)
+				.map(message -> MessageUtils.unpack(handler, message))
+				.doOnNext(value -> {
+					builder.headers(HeaderUtils.sanitize(request.headers()));
+					addHeaders(builder, value);
+				})
+				.map(message -> message.getPayload());
+			}
 		}
 
 		if (isOutputSingle(handler)

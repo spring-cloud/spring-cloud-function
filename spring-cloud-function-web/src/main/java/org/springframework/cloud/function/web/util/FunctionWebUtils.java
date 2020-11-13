@@ -115,7 +115,7 @@ public final class FunctionWebUtils {
 		}
 		else if (result instanceof Message) {
 			if (!isMessage) {
-				result = ((Message) result).getPayload();
+//				result = ((Message) result).getPayload();
 			}
 			else if (((Message) result).getPayload() instanceof byte[]) {
 				String str = new String((byte[]) ((Message) result).getPayload());
