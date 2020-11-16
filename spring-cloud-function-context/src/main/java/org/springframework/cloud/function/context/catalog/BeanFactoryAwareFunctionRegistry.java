@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -33,7 +34,9 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributes;
 import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -42,6 +45,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
@@ -158,13 +162,20 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			function = super.doLookup(type, functionDefinition, expectedOutputMimeTypes);
 		}
 
-		if (function != null && this.cloudEventAtttributesProvider != null) {
+		if (function != null) {
 			BiFunction<Message<?>, Object, Message<?>> invocationResultHeaderEnricher = new BiFunction<Message<?>, Object, Message<?>>() {
 
 				@Override
 				public Message<?> apply(Message<?> inputMessage, Object invocationResult) {
-					Message message = MessageBuilder.withPayload(invocationResult).copyHeaders(
-							cloudEventAtttributesProvider.generateDefaultCloudEventHeaders(inputMessage, invocationResult))
+					// TODO: Factor it out! Cloud Events specific code
+					Map<String, Object> generatedCeHeaders = CloudEventMessageUtils
+							.generateDefaultCloudEventHeaders(inputMessage, invocationResult, getApplicationName());
+					CloudEventAttributes attributes = new CloudEventAttributes(generatedCeHeaders);
+					if (cloudEventAtttributesProvider != null) {
+						cloudEventAtttributesProvider.generateDefaultCloudEventHeaders(attributes);
+					}
+					Message message = MessageBuilder.withPayload(invocationResult)
+							.copyHeaders(generatedCeHeaders)
 							.build();
 
 					return message;
@@ -176,7 +187,11 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		return (T) function;
 	}
 
-
+	private String getApplicationName() {
+		ConfigurableEnvironment environment = this.applicationContext.getEnvironment();
+		String name = environment.getProperty("spring.application.name");
+		return "http://spring.io/" + (StringUtils.hasText(name) ? name : "application-" + this.applicationContext.getId());
+	}
 
 	private Object discoverFunctionInBeanFactory(String functionName) {
 		Object functionCandidate = null;

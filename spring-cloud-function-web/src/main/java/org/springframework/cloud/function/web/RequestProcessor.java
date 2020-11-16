@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -32,6 +33,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -195,8 +197,10 @@ public class RequestProcessor {
 				result = Mono.from(result)
 				.map(message -> MessageUtils.unpack(handler, message))
 				.doOnNext(value -> {
-					builder.headers(HeaderUtils.sanitize(request.headers()));
 					addHeaders(builder, value);
+					if (!isValidCloudEvent(value.getHeaders().keySet())) {
+						builder.headers(HeaderUtils.sanitize(request.headers()));
+					}
 				})
 				.map(message -> message.getPayload());
 			}
@@ -204,8 +208,10 @@ public class RequestProcessor {
 				result = Flux.from(result)
 				.map(message -> MessageUtils.unpack(handler, message))
 				.doOnNext(value -> {
-					builder.headers(HeaderUtils.sanitize(request.headers()));
 					addHeaders(builder, value);
+					if (!isValidCloudEvent(value.getHeaders().keySet())) {
+						builder.headers(HeaderUtils.sanitize(request.headers()));
+					}
 				})
 				.map(message -> message.getPayload());
 			}
@@ -223,6 +229,13 @@ public class RequestProcessor {
 			.collectList();
 		}
 		return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
+	}
+
+	public boolean isValidCloudEvent(Set<String> headerKeys) {
+		return headerKeys.contains(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)
+			&& headerKeys.contains(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE)
+			&& headerKeys.contains(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE)
+			&& headerKeys.contains(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION);
 	}
 
 	// this seem to be very relevant to AWS container tests
