@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.cloudevent;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -286,21 +285,30 @@ public final class CloudEventMessageUtils {
 		}
 	}
 
-	public static CloudEventAttributes generateAttributesWithProvider(MessageHeaders headers, CloudEventAttributesProvider provider) {
-		CloudEventAttributes attributes = new CloudEventAttributes(headers);
+	/**
+	 * Typically called by Consumer.
+
+	 */
+	public static CloudEventAttributes generateAttributes(Message<?> message, CloudEventAttributesProvider provider) {
+		CloudEventAttributes attributes = generateDefaultAttributeValues(new CloudEventAttributes(message.getHeaders()),
+				message.getPayload().getClass().getName().getClass().getName(), message.getPayload().getClass().getName().getClass().getName());
 		provider.generateDefaultCloudEventHeaders(attributes);
 		return attributes;
 	}
 
 	public static CloudEventAttributes generateAttributes(Message<?> inputMessage, Object result, String applicationName) {
 		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage));
+		return generateDefaultAttributeValues(attributes, result.getClass().getName(), applicationName);
+	}
+
+	private static CloudEventAttributes generateDefaultAttributeValues(CloudEventAttributes attributes, String source, String type) {
 		if (attributes.isValidCloudEvent()) {
 			return attributes
 					.setSpecversion("1.0")
 					.setId(UUID.randomUUID().toString())
-					.setType(result.getClass().getName())
-					.setSource(applicationName);
+					.setType(type)
+					.setSource(source);
 		}
-		return new CloudEventAttributes(Collections.emptyMap());
+		return attributes;
 	}
 }

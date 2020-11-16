@@ -135,12 +135,16 @@ public class CloudeventDemoApplication {
 			return eventMessage -> {
 				RequestEntity<SpringReleaseEvent> entity = RequestEntity.post(URI.create("http://foo.com"))
 						.headers(HeaderUtils.fromMessage(
-								new MessageHeaders(CloudEventMessageUtils.generateAttributesWithProvider(eventMessage.getHeaders(), provider))))
+								new MessageHeaders(CloudEventMessageUtils.generateAttributes(eventMessage, provider))))
 						.body(eventMessage.getPayload());
 				List<String> sourceHeader = entity.getHeaders().get("ce-source");
-				List<String> typeHeader = entity.getHeaders().get("ce-type");
 				Assert.isTrue(sourceHeader.get(0).equals("https://interface21.com/"), "'source' must be https://interface21.com/");
+				List<String> typeHeader = entity.getHeaders().get("ce-type");
 				Assert.isTrue(typeHeader.get(0).equals("com.interface21"), "'source' must be com.interface21");
+				List<String> idHeader = entity.getHeaders().get("ce-id");
+				Assert.notEmpty(idHeader, "'id' must not be null");
+				List<String> specversionHeader = entity.getHeaders().get("ce-specversion");
+				Assert.notEmpty(specversionHeader, "'specversion' must not be null");
 			};
 	}
 
@@ -153,7 +157,7 @@ public class CloudeventDemoApplication {
 		return eventMessage -> {
 			RequestEntity<Map<String, Object>> entity = RequestEntity.post(URI.create("http://foo.com"))
 					.headers(HeaderUtils.fromMessage(
-							new MessageHeaders(CloudEventMessageUtils.generateAttributesWithProvider(eventMessage.getHeaders(), provider))))
+							new MessageHeaders(CloudEventMessageUtils.generateAttributes(eventMessage, provider, "io.spring"))))
 					.body(eventMessage.getPayload());
 			client.exchange(entity, byte[].class);
 		};
