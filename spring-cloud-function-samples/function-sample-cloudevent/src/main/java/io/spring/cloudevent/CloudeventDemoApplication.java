@@ -17,6 +17,7 @@
 package io.spring.cloudevent;
 
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -96,7 +97,9 @@ public class CloudeventDemoApplication {
 
 	@Bean
 	public CloudEventAttributesProvider cloudEventAttributesProvider() {
-		return attributes -> attributes.setSource("https://interface21.com/").setType("com.interface21");
+		return attributes -> {
+			attributes.setSource("https://interface21.com/").setType("com.interface21");
+		};
 	}
 
 
@@ -116,4 +119,12 @@ public class CloudeventDemoApplication {
 			return event;
 		};
 	}
+
+//	@Bean
+//	public Consumer<SpringReleaseEvent> pojoConsumer(CloudEventAttributesProvider provider) {
+//		return event -> {
+//
+//			provider.generateDefaultCloudEventHeaders(attributes);
+//		};
+//	}
 }

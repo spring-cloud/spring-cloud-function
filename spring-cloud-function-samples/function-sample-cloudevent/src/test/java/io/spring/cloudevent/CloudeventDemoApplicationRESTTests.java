@@ -215,9 +215,9 @@ public class CloudeventDemoApplicationRESTTests {
 
 		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2050\",\"releaseName\":\"Spring Framework\",\"version\":\"10.0\"}");
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
-			.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
+			.isEqualTo(Collections.singletonList("https://interface21.com/"));
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
-			.isEqualTo(Collections.singletonList(LinkedHashMap.class.getName()));
+			.isEqualTo(Collections.singletonList("com.interface21"));
 	}
 
 	@Test
@@ -232,9 +232,9 @@ public class CloudeventDemoApplicationRESTTests {
 
 		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2006\",\"releaseName\":\"Spring Framework\",\"version\":\"2.0\"}");
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
-			.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
+			.isEqualTo(Collections.singletonList("https://interface21.com/"));
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
-			.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
+			.isEqualTo(Collections.singletonList("com.interface21"));
 	}
 
 
@@ -259,9 +259,9 @@ public class CloudeventDemoApplicationRESTTests {
 
 		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2006\",\"releaseName\":\"Spring Framework\",\"version\":\"2.0\"}");
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
-			.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
+			.isEqualTo(Collections.singletonList("https://interface21.com/"));
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
-			.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
+			.isEqualTo(Collections.singletonList("com.interface21"));
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.TYPE)).isNull();
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.SOURCE)).isNull();
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.ID)).isNull();
