@@ -35,6 +35,7 @@ import org.springframework.cloud.function.cloudevent.CloudEventJsonMessageConver
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -240,6 +241,51 @@ public class CloudeventDemoApplicationRESTTests {
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.CE_TYPE))
 			.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
 	}
+
+	@Test
+    public void testAsStructuralPojoToPojo() throws Exception {
+        ApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class);
+        JsonMapper mapper = context.getBean(JsonMapper.class);
+
+        String payload = "{\n" +
+                "    \"specversion\" : \"1.0\",\n" +
+                "    \"type\" : \"org.springframework\",\n" +
+                "    \"source\" : \"https://spring.io/\",\n" +
+                "    \"id\" : \"A234-1234-1234\",\n" +
+//                "    \"ce-datacontenttype\" : \"application/json\",\n" +
+                "    \"data\" : {\n" +
+                "        \"version\" : \"1.0\",\n" +
+                "        \"releaseName\" : \"Spring Framework\",\n" +
+                "        \"releaseDate\" : \"24-03-2004\"\n" +
+                "    }\n" +
+                "}";
+
+        System.out.println(payload);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("application/cloudevents+json;charset=utf-8"));
+
+        RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/consumeAndProduceCloudEventAsPojoToPojo"));
+        ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
+
+        SpringReleaseEvent springReleaseEvent = mapper.fromJson(response.getBody(), SpringReleaseEvent.class);
+
+        assertThat(springReleaseEvent.getReleaseName()).isEqualTo("Spring Framework");
+        assertThat(springReleaseEvent.getVersion()).isEqualTo("2.0");
+
+        re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/consumeAndProduceCloudEventAsMapToMap"));
+        response = testRestTemplate.exchange(re, String.class);
+
+        springReleaseEvent = mapper.fromJson(response.getBody(), SpringReleaseEvent.class);
+
+        assertThat(springReleaseEvent.getReleaseName()).isEqualTo("Spring Framework");
+        assertThat(springReleaseEvent.getVersion()).isEqualTo("10.0");
+
+
+//        assertThat(response.getHeaders().get(CloudEventMessageUtils.CE_SOURCE))
+//		.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
+//        assertThat(response.getHeaders().get(CloudEventMessageUtils.CE_TYPE))
+//		.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
+    }
 
 	private URI constructURI(String path) throws Exception {
 		return new URI("http://localhost:" + System.getProperty("server.port") + path);

@@ -45,8 +45,7 @@ public class CloudEventTypeConversionTests {
 	@Test
 	public void testFromMessageBinaryPayloadMatchesType() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
-		CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
-		CloudEventAttributes ceAttributes = ceAttrProvider
+		CloudEventAttributes ceAttributes = CloudEventMessageUtils
 				.get(UUID.randomUUID().toString(), "1.0", "https://spring.io/", "org.springframework");
 		ceAttributes.setDataContentType("text/plain");
 		Message<String> message = MessageBuilder.withPayload("Hello Ricky").copyHeaders(ceAttributes).build();
@@ -58,8 +57,7 @@ public class CloudEventTypeConversionTests {
 	@Test
 	public void testFromMessageBinaryPayloadDoesNotMatchType() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
-		CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
-		CloudEventAttributes ceAttributes = ceAttrProvider
+		CloudEventAttributes ceAttributes = CloudEventMessageUtils
 				.get(UUID.randomUUID().toString(), "1.0", "https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("Hello Ricky".getBytes())
 				.copyHeaders(ceAttributes)
@@ -70,12 +68,10 @@ public class CloudEventTypeConversionTests {
 		assertThat(converted).isEqualTo("Hello Ricky");
 	}
 
-	@Test // JsonMessageConverter does some special things between byte[] and String so
-			// this works
+	@Test // JsonMessageConverter does some special things between byte[] and String so this works
 	public void testFromMessageBinaryPayloadNoDataContentTypeToString() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
-		CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
-		CloudEventAttributes ceAttributes = ceAttrProvider
+		CloudEventAttributes ceAttributes = CloudEventMessageUtils
 				.get(UUID.randomUUID().toString(), "1.0", "https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("Hello Ricky".getBytes())
 				.copyHeaders(ceAttributes)
@@ -89,8 +85,7 @@ public class CloudEventTypeConversionTests {
 	@Test // Unlike the previous test the type here is POJO so no special treatement
 	public void testFromMessageBinaryPayloadNoDataContentTypeToPOJO() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
-		CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
-		CloudEventAttributes ceAttributes = ceAttrProvider.get("https://spring.io/", "org.springframework");
+		CloudEventAttributes ceAttributes = CloudEventMessageUtils.get("https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("Hello Ricky".getBytes())
 				.copyHeaders(ceAttributes)
 				.setHeader(MessageHeaders.CONTENT_TYPE,
@@ -103,8 +98,7 @@ public class CloudEventTypeConversionTests {
 	@Test // will fall on default CT which is json
 	public void testFromMessageBinaryPayloadNoDataContentTypeToPOJOThatWorks() {
 		SmartCompositeMessageConverter messageConverter = this.configure(DummyConfiguration.class);
-		CloudEventAttributesProvider ceAttrProvider = new DefaultCloudEventAttributesProvider();
-		CloudEventAttributes ceAttributes = ceAttrProvider.get("https://spring.io/", "org.springframework");
+		CloudEventAttributes ceAttributes = CloudEventMessageUtils.get("https://spring.io/", "org.springframework");
 		Message<byte[]> message = MessageBuilder.withPayload("{\"name\":\"Ricky\"}".getBytes())
 				.copyHeaders(ceAttributes)
 				.setHeader(MessageHeaders.CONTENT_TYPE,
