@@ -34,12 +34,12 @@ public class RequiredAttributeAccessor extends CloudEventAttributesHelper {
 	 */
 	private static final long serialVersionUID = 859410409447601477L;
 
-	RequiredAttributeAccessor(Map<String, Object> headers, String prefixToUse) {
+	public RequiredAttributeAccessor(Map<String, Object> headers, String prefixToUse) {
 		super(headers);
 		this.prefixToUse = prefixToUse;
 	}
 
-	RequiredAttributeAccessor(Map<String, Object> headers) {
+	public RequiredAttributeAccessor(Map<String, Object> headers) {
 		this(headers, null);
 	}
 
