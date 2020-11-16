@@ -31,7 +31,7 @@ public interface CloudEventAttributesProvider {
 	 *
 	 * @param inputMessage input message used to invoke user functionality (e.g., function)
 	 * @param result result of the invocation of user functionality (e.g., function)
-	 * @return instance of {@link CloudEventAttributes}
+	 * @return instance of {@link CloudEventAttributesHelper}
 	 */
 	Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result);
 }

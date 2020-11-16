@@ -47,6 +47,7 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -821,6 +822,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						&& !this.isInputTypeMessage()) { //TODO rework
 					return null;
 				}
+
+				input = CloudEventMessageUtils.toBinary((Message<?>) input, messageConverter);
+
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
 					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload(), false);
