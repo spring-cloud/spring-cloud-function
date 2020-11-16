@@ -35,7 +35,7 @@ import org.springframework.util.StringUtils;
 /**
  * Miscellaneous utility methods to deal with Cloud Events - https://cloudevents.io/.
  * <br>
- * Mainly for internal use within the framework;
+ * Primarily intended for the internal use within the framework;
  *
  * @author Oleg Zhurakousky
  * @author Dave Syer
@@ -202,20 +202,6 @@ public final class CloudEventMessageUtils {
 		return get(UUID.randomUUID().toString(), "1.0", ce_source, ce_type);
 	}
 
-//	/**
-//	 * Will construct instance of {@link CloudEventAttributes} from {@link MessageHeaders}.
-//	 *
-//	 * Should copy Cloud Event related headers into an instance of {@link CloudEventAttributes}
-//	 * NOTE: Certain headers must not be copied.
-//	 *
-//	 * @param headers instance of {@link MessageHeaders}
-//	 * @return modifiable instance of {@link CloudEventAttributes}
-//	 */
-//	public static CloudEventAttributes get(MessageHeaders headers) {
-//		return new CloudEventAttributes(headers);
-//	}
-
-
 	@SuppressWarnings("unchecked")
 	public static Message<?> toBinary(Message<?> inputMessage, MessageConverter messageConverter) {
 
@@ -252,32 +238,6 @@ public final class CloudEventMessageUtils {
 		return inputMessage;
 	}
 
-	private static Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent, MessageHeaders originalHeaders) {
-		String prefixToUse = determinePrefixToUse(originalHeaders);
-		Object data = null;
-		if (structuredCloudEvent.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA)) {
-			data = structuredCloudEvent.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA);
-			structuredCloudEvent.remove(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA);
-		}
-		else if (structuredCloudEvent.containsKey(CloudEventMessageUtils.CANONICAL_DATA)) {
-			data = structuredCloudEvent.get(CloudEventMessageUtils.CANONICAL_DATA);
-			structuredCloudEvent.remove(CloudEventMessageUtils.CANONICAL_DATA);
-		}
-		else if (structuredCloudEvent.containsKey(CloudEventMessageUtils.DATA)) {
-			data = structuredCloudEvent.get(CloudEventMessageUtils.DATA);
-			structuredCloudEvent.remove(CloudEventMessageUtils.DATA);
-		}
-		Assert.notNull(data, "'data' must not be null");
-		MessageBuilder<?> builder = MessageBuilder.withPayload(data);
-		CloudEventAttributes attributes = new CloudEventAttributes(structuredCloudEvent);
-		builder.setHeader(prefixToUse + CloudEventMessageUtils.ID, attributes.getId());
-		builder.setHeader(prefixToUse + CloudEventMessageUtils.SOURCE, attributes.getSource());
-		builder.setHeader(prefixToUse + CloudEventMessageUtils.TYPE, attributes.getType());
-		builder.setHeader(prefixToUse + CloudEventMessageUtils.SPECVERSION, attributes.getSpecversion());
-		builder.copyHeaders(originalHeaders);
-		return builder.build();
-	}
-
 	public static String determinePrefixToUse(MessageHeaders messageHeaders) {
 		Set<String> keys = messageHeaders.keySet();
 		if (keys.contains("user-agent")) {
@@ -302,6 +262,32 @@ public final class CloudEventMessageUtils {
 	public static CloudEventAttributes generateAttributes(Message<?> inputMessage, String typeName, String sourceName) {
 		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage.getHeaders()));
 		return generateDefaultAttributeValues(attributes, typeName, sourceName);
+	}
+
+	private static Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent, MessageHeaders originalHeaders) {
+		String prefixToUse = determinePrefixToUse(originalHeaders);
+		Object data = null;
+		if (structuredCloudEvent.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA)) {
+			data = structuredCloudEvent.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA);
+			structuredCloudEvent.remove(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA);
+		}
+		else if (structuredCloudEvent.containsKey(CloudEventMessageUtils.CANONICAL_DATA)) {
+			data = structuredCloudEvent.get(CloudEventMessageUtils.CANONICAL_DATA);
+			structuredCloudEvent.remove(CloudEventMessageUtils.CANONICAL_DATA);
+		}
+		else if (structuredCloudEvent.containsKey(CloudEventMessageUtils.DATA)) {
+			data = structuredCloudEvent.get(CloudEventMessageUtils.DATA);
+			structuredCloudEvent.remove(CloudEventMessageUtils.DATA);
+		}
+		Assert.notNull(data, "'data' must not be null");
+		MessageBuilder<?> builder = MessageBuilder.withPayload(data);
+		CloudEventAttributes attributes = new CloudEventAttributes(structuredCloudEvent);
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.ID, attributes.getId());
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.SOURCE, attributes.getSource());
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.TYPE, attributes.getType());
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.SPECVERSION, attributes.getSpecversion());
+		builder.copyHeaders(originalHeaders);
+		return builder.build();
 	}
 
 	private static CloudEventAttributes generateDefaultAttributeValues(CloudEventAttributes attributes, String source, String type) {

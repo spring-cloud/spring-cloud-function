@@ -18,6 +18,20 @@ package org.springframework.cloud.function.cloudevent;
 
 
 /**
+ * Strategy that should be implemented by the user to help with outgoing Cloud Event attributes.
+ * <br><br>
+ * The provided `attributes` are already initialized with default values, so you can only set the ones that you need.
+ * <br>
+ * Once implemented, simply configure it as a bean and the framework will invoke it before the outbound Cloud Event Message is finalized.
+ *
+ * <pre>{@code
+ * @Bean
+ * public CloudEventAttributesProvider cloudEventAttributesProvider() {
+ * 	return attributes -> {
+ *		attributes.setSource("https://interface21.com/").setType("com.interface21");
+ *	};
+ * }}
+ * </pre>
  *
  * @author Oleg Zhurakousky
  * @author Dave Syer

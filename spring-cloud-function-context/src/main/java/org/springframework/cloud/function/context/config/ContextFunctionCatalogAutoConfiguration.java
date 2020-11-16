@@ -70,12 +70,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
-//	@Bean
-//	@ConditionalOnMissingBean
-//	public CloudEventAttributesProvider cloudEventAttributesProvider() {
-//		return new DefaultCloudEventAttributesProvider();
-//	}
-
 	@Bean
 	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper, ConfigurableApplicationContext context) {
 		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
