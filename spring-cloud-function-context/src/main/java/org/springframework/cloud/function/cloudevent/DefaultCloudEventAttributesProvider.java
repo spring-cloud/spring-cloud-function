@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2020-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.cloudevent;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,8 +26,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -41,38 +38,12 @@ public class DefaultCloudEventAttributesProvider implements CloudEventAttributes
 
 	private ConfigurableApplicationContext applicationContext;
 
-	@Override
-	public CloudEventAttributes get(String ce_id, String ce_specversion, String ce_source, String ce_type) {
-		Assert.hasText(ce_id, "'ce_id' must not be null or empty");
-		Assert.hasText(ce_specversion, "'ce_specversion' must not be null or empty");
-		Assert.hasText(ce_source, "'ce_source' must not be null or empty");
-		Assert.hasText(ce_type, "'ce_type' must not be null or empty");
-		Map<String, Object> requiredAttributes = new HashMap<>();
-		requiredAttributes.put(CloudEventMessageUtils.CE_ID, ce_id);
-		requiredAttributes.put(CloudEventMessageUtils.CE_SPECVERSION, ce_specversion);
-		requiredAttributes.put(CloudEventMessageUtils.CE_SOURCE, ce_source);
-		requiredAttributes.put(CloudEventMessageUtils.CE_TYPE, ce_type);
-		return new CloudEventAttributes(requiredAttributes);
-	}
-
-	@Override
-	public CloudEventAttributes get(String ce_source, String ce_type) {
-		return this.get(UUID.randomUUID().toString(), "1.0", ce_source, ce_type);
-	}
-
-	/**
-	 * By default it will copy all the headers while exposing accessor to allow user to modify any of them.
-	 */
-	@Override
-	public RequiredAttributeAccessor get(MessageHeaders headers) {
-		return new RequiredAttributeAccessor(headers);
-	}
 
 	@Override
 	public Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result) {
 		if (inputMessage.getHeaders().containsKey(CloudEventMessageUtils.CE_ID)) { // input is a cloud event
 			String applicationName = this.getApplicationName();
-			return this.get(inputMessage.getHeaders())
+			return CloudEventMessageUtils.get(inputMessage.getHeaders())
 					.setId(UUID.randomUUID().toString())
 					.setType(result.getClass().getName())
 					.setSource(applicationName);

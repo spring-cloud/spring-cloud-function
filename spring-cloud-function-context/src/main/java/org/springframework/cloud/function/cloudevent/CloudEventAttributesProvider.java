@@ -19,48 +19,14 @@ package org.springframework.cloud.function.cloudevent;
 import java.util.Map;
 
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 
 /**
  *
  * @author Oleg Zhurakousky
  * @since 3.1
  */
+@FunctionalInterface
 public interface CloudEventAttributesProvider {
-
-	/**
-	 * Will construct instance of {@link CloudEventAttributes} setting its required attributes.
-	 *
-	 * @param ce_id value for Cloud Event 'id' attribute
-	 * @param ce_specversion value for Cloud Event 'specversion' attribute
-	 * @param ce_source value for Cloud Event 'source' attribute
-	 * @param ce_type value for Cloud Event 'type' attribute
-	 * @return instance of {@link CloudEventAttributes}
-	 */
-	CloudEventAttributes get(String ce_id, String ce_specversion, String ce_source, String ce_type);
-
-	/**
-	 * Will construct instance of {@link CloudEventAttributes}
-	 * Should default/generate cloud event ID and SPECVERSION.
-	 *
-	 * @param ce_source value for Cloud Event 'source' attribute
-	 * @param ce_type value for Cloud Event 'type' attribute
-	 * @return instance of {@link CloudEventAttributes}
-	 */
-	CloudEventAttributes get(String ce_source, String ce_type);
-
-
-	/**
-	 * Will construct instance of {@link CloudEventAttributes} from {@link MessageHeaders}.
-	 *
-	 * Should copy Cloud Event related headers into an instance of {@link CloudEventAttributes}
-	 * NOTE: Certain headers must not be copied.
-	 *
-	 * @param headers instance of {@link MessageHeaders}
-	 * @return modifiable instance of {@link CloudEventAttributes}
-	 */
-	RequiredAttributeAccessor get(MessageHeaders headers);
-
 	/**
 	 *
 	 * @param inputMessage input message used to invoke user functionality (e.g., function)

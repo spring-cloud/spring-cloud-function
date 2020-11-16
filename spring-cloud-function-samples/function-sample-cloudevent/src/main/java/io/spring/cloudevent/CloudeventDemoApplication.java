@@ -16,11 +16,7 @@
 
 package io.spring.cloudevent;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -28,8 +24,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.cloudevent.CloudEventAttributes;
 import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
-import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -96,7 +90,7 @@ public class CloudeventDemoApplication {
 			data.setVersion("2.0");
 			data.setReleaseDateAsString("01-10-2006");
 
-			CloudEventAttributes ceAttributes = ceAttrProvider.get(ceMessage.getHeaders())
+			CloudEventAttributes ceAttributes = CloudEventMessageUtils.get(ceMessage.getHeaders())
 				.setSource("https://interface21.com/")
 				.setType("com.interface21");
 

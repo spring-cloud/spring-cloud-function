@@ -16,9 +16,13 @@
 
 package org.springframework.cloud.function.cloudevent;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
@@ -154,5 +158,53 @@ public final class CloudEventMessageUtils {
 				&& headers.containsKey(CE_SOURCE)
 				&& headers.containsKey(CE_SPECVERSION)
 				&& headers.containsKey(CE_TYPE));
+	}
+
+
+	/**
+	 * Will construct instance of {@link CloudEventAttributes} setting its required attributes.
+	 *
+	 * @param ce_id value for Cloud Event 'id' attribute
+	 * @param ce_specversion value for Cloud Event 'specversion' attribute
+	 * @param ce_source value for Cloud Event 'source' attribute
+	 * @param ce_type value for Cloud Event 'type' attribute
+	 * @return instance of {@link CloudEventAttributes}
+	 */
+	public static CloudEventAttributes get(String ce_id, String ce_specversion, String ce_source, String ce_type) {
+		Assert.hasText(ce_id, "'ce_id' must not be null or empty");
+		Assert.hasText(ce_specversion, "'ce_specversion' must not be null or empty");
+		Assert.hasText(ce_source, "'ce_source' must not be null or empty");
+		Assert.hasText(ce_type, "'ce_type' must not be null or empty");
+		Map<String, Object> requiredAttributes = new HashMap<>();
+		requiredAttributes.put(CloudEventMessageUtils.CE_ID, ce_id);
+		requiredAttributes.put(CloudEventMessageUtils.CE_SPECVERSION, ce_specversion);
+		requiredAttributes.put(CloudEventMessageUtils.CE_SOURCE, ce_source);
+		requiredAttributes.put(CloudEventMessageUtils.CE_TYPE, ce_type);
+		return new CloudEventAttributes(requiredAttributes);
+	}
+
+	/**
+	 * Will construct instance of {@link CloudEventAttributes}
+	 * Should default/generate cloud event ID and SPECVERSION.
+	 *
+	 * @param ce_source value for Cloud Event 'source' attribute
+	 * @param ce_type value for Cloud Event 'type' attribute
+	 * @return instance of {@link CloudEventAttributes}
+	 */
+	public static CloudEventAttributes get(String ce_source, String ce_type) {
+		return get(UUID.randomUUID().toString(), "1.0", ce_source, ce_type);
+	}
+
+	/**
+	 * Will construct instance of {@link CloudEventAttributes} from {@link MessageHeaders}.
+	 *
+	 * Should copy Cloud Event related headers into an instance of {@link CloudEventAttributes}
+	 * NOTE: Certain headers must not be copied.
+	 *
+	 * @param headers instance of {@link MessageHeaders}
+	 * @return modifiable instance of {@link CloudEventAttributes}
+	 */
+	public static RequiredAttributeAccessor get(MessageHeaders headers) {
+		return new RequiredAttributeAccessor(headers);
 	}
 }
