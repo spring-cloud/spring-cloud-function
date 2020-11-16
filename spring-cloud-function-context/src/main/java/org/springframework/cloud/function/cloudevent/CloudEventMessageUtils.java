@@ -286,6 +286,12 @@ public final class CloudEventMessageUtils {
 		}
 	}
 
+	public static CloudEventAttributes generateAttributesWithProvider(MessageHeaders headers, CloudEventAttributesProvider provider) {
+		CloudEventAttributes attributes = new CloudEventAttributes(headers);
+		provider.generateDefaultCloudEventHeaders(attributes);
+		return attributes;
+	}
+
 	public static CloudEventAttributes generateAttributes(Message<?> inputMessage, Object result, String applicationName) {
 		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage));
 		if (attributes.isValidCloudEvent()) {
