@@ -18,39 +18,68 @@ package org.springframework.cloud.function.cloudevent;
 
 import java.util.Map;
 
+import org.springframework.util.StringUtils;
+
 /**
  *
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-public class RequiredAttributeAccessor extends CloudEventAttributes {
+public class RequiredAttributeAccessor extends CloudEventAttributesHelper {
+
+	private final String prefixToUse;
 
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = 859410409447601477L;
 
-	RequiredAttributeAccessor(Map<String, Object> headers) {
+	RequiredAttributeAccessor(Map<String, Object> headers, String prefixToUse) {
 		super(headers);
+		this.prefixToUse = prefixToUse;
+	}
+
+	RequiredAttributeAccessor(Map<String, Object> headers) {
+		this(headers, null);
 	}
 
 	public RequiredAttributeAccessor setId(String id) {
-		this.put(CloudEventMessageUtils.CE_ID, id);
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.ID, id);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.ID), id);
+		}
 		return this;
 	}
 
 	public RequiredAttributeAccessor setSource(String source) {
-		this.put(CloudEventMessageUtils.CE_SOURCE, source);
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.SOURCE, source);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.SOURCE), source);
+		}
 		return this;
 	}
 
 	public RequiredAttributeAccessor setSpecversion(String specversion) {
-		this.put(CloudEventMessageUtils.CE_SPECVERSION, specversion);
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.SPECVERSION, specversion);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.SPECVERSION), specversion);
+		}
 		return this;
 	}
 
 	public RequiredAttributeAccessor setType(String type) {
-		this.put(CloudEventMessageUtils.CE_TYPE, type);
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.TYPE, type);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.TYPE), type);
+		}
 		return this;
 	}
 }

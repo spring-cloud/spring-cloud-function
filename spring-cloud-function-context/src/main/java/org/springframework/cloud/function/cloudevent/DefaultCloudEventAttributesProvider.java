@@ -41,9 +41,10 @@ public class DefaultCloudEventAttributesProvider implements CloudEventAttributes
 
 	@Override
 	public Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result) {
-		if (inputMessage.getHeaders().containsKey(CloudEventMessageUtils.CE_ID)) { // input is a cloud event
+		RequiredAttributeAccessor attributes = new RequiredAttributeAccessor(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage));
+		if (attributes.isValidCloudEvent()) {
 			String applicationName = this.getApplicationName();
-			return CloudEventMessageUtils.get(inputMessage.getHeaders())
+			return attributes
 					.setId(UUID.randomUUID().toString())
 					.setType(result.getClass().getName())
 					.setSource(applicationName);

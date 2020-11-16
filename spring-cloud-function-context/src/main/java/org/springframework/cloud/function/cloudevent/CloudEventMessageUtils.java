@@ -18,13 +18,19 @@ package org.springframework.cloud.function.cloudevent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.converter.ContentTypeResolver;
+import org.springframework.messaging.converter.DefaultContentTypeResolver;
+import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Miscellaneous utility methods to deal with Cloud Events - https://cloudevents.io/.
@@ -35,6 +41,8 @@ import org.springframework.util.MimeTypeUtils;
  * @since 3.1
  */
 public final class CloudEventMessageUtils {
+
+	private static final ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
 
 	private CloudEventMessageUtils() {
 
@@ -53,7 +61,12 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Prefix for attributes.
 	 */
-	public static String ATTR_PREFIX = "ce-";
+	public static String ATTR_PREFIX = "ce_";
+
+	/**
+	 * Prefix for attributes.
+	 */
+	public static String HTTP_ATTR_PREFIX = "ce-";
 
 	/**
 	 * Value for 'data' attribute.
@@ -63,7 +76,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'data' attribute with prefix.
 	 */
-	public static String CE_DATA = ATTR_PREFIX + DATA;
+	public static String CANONICAL_DATA = ATTR_PREFIX + DATA;
 
 	/**
 	 * Value for 'id' attribute.
@@ -73,7 +86,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'id' attribute with prefix.
 	 */
-	public static String CE_ID = ATTR_PREFIX + ID;
+	public static String CANONICAL_ID = ATTR_PREFIX + ID;
 
 	/**
 	 * Value for 'source' attribute.
@@ -83,7 +96,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'source' attribute with prefix.
 	 */
-	public static String CE_SOURCE = ATTR_PREFIX + SOURCE;
+	public static String CANONICAL_SOURCE = ATTR_PREFIX + SOURCE;
 
 	/**
 	 * Value for 'specversion' attribute.
@@ -93,7 +106,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'specversion' attribute with prefix.
 	 */
-	public static String CE_SPECVERSION = ATTR_PREFIX + SPECVERSION;
+	public static String CANONICAL_SPECVERSION = ATTR_PREFIX + SPECVERSION;
 
 	/**
 	 * Value for 'type' attribute.
@@ -103,7 +116,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'type' attribute with prefix.
 	 */
-	public static String CE_TYPE = ATTR_PREFIX + TYPE;
+	public static String CANONICAL_TYPE = ATTR_PREFIX + TYPE;
 
 	/**
 	 * Value for 'datacontenttype' attribute.
@@ -113,7 +126,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'datacontenttype' attribute with prefix.
 	 */
-	public static String CE_DATACONTENTTYPE = ATTR_PREFIX + DATACONTENTTYPE;
+	public static String CANONICAL_DATACONTENTTYPE = ATTR_PREFIX + DATACONTENTTYPE;
 
 	/**
 	 * Value for 'dataschema' attribute.
@@ -123,7 +136,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'dataschema' attribute with prefix.
 	 */
-	public static String CE_DATASCHEMA = ATTR_PREFIX + DATASCHEMA;
+	public static String CANONICAL_DATASCHEMA = ATTR_PREFIX + DATASCHEMA;
 
 	/**
 	 * Value for 'subject' attribute.
@@ -133,7 +146,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'subject' attribute with prefix.
 	 */
-	public static String CE_SUBJECT = ATTR_PREFIX + SUBJECT;
+	public static String CANONICAL_SUBJECT = ATTR_PREFIX + SUBJECT;
 
 	/**
 	 * Value for 'time' attribute.
@@ -143,68 +156,130 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Value for 'time' attribute with prefix.
 	 */
-	public static String CE_TIME = ATTR_PREFIX + TIME;
+	public static String CANONICAL_TIME = ATTR_PREFIX + TIME;
 
 	/**
 	 * Checks if {@link Message} represents cloud event in binary-mode.
 	 */
 	public static boolean isBinary(Map<String, Object> headers) {
-		return (headers.containsKey(ID)
-				&& headers.containsKey(SOURCE)
-				&& headers.containsKey(SPECVERSION)
-				&& headers.containsKey(TYPE))
-				||
-				(headers.containsKey(CE_ID)
-				&& headers.containsKey(CE_SOURCE)
-				&& headers.containsKey(CE_SPECVERSION)
-				&& headers.containsKey(CE_TYPE));
+		CloudEventAttributesHelper attributes = new CloudEventAttributesHelper(headers);
+		return attributes.isValidCloudEvent();
 	}
 
-
 	/**
-	 * Will construct instance of {@link CloudEventAttributes} setting its required attributes.
+	 * Will construct instance of {@link CloudEventAttributesHelper} setting its required attributes.
 	 *
 	 * @param ce_id value for Cloud Event 'id' attribute
 	 * @param ce_specversion value for Cloud Event 'specversion' attribute
 	 * @param ce_source value for Cloud Event 'source' attribute
 	 * @param ce_type value for Cloud Event 'type' attribute
-	 * @return instance of {@link CloudEventAttributes}
+	 * @return instance of {@link CloudEventAttributesHelper}
 	 */
-	public static CloudEventAttributes get(String ce_id, String ce_specversion, String ce_source, String ce_type) {
+	public static CloudEventAttributesHelper get(String ce_id, String ce_specversion, String ce_source, String ce_type) {
 		Assert.hasText(ce_id, "'ce_id' must not be null or empty");
 		Assert.hasText(ce_specversion, "'ce_specversion' must not be null or empty");
 		Assert.hasText(ce_source, "'ce_source' must not be null or empty");
 		Assert.hasText(ce_type, "'ce_type' must not be null or empty");
 		Map<String, Object> requiredAttributes = new HashMap<>();
-		requiredAttributes.put(CloudEventMessageUtils.CE_ID, ce_id);
-		requiredAttributes.put(CloudEventMessageUtils.CE_SPECVERSION, ce_specversion);
-		requiredAttributes.put(CloudEventMessageUtils.CE_SOURCE, ce_source);
-		requiredAttributes.put(CloudEventMessageUtils.CE_TYPE, ce_type);
-		return new CloudEventAttributes(requiredAttributes);
+		requiredAttributes.put(CloudEventMessageUtils.CANONICAL_ID, ce_id);
+		requiredAttributes.put(CloudEventMessageUtils.CANONICAL_SPECVERSION, ce_specversion);
+		requiredAttributes.put(CloudEventMessageUtils.CANONICAL_SOURCE, ce_source);
+		requiredAttributes.put(CloudEventMessageUtils.CANONICAL_TYPE, ce_type);
+		return new CloudEventAttributesHelper(requiredAttributes);
 	}
 
 	/**
-	 * Will construct instance of {@link CloudEventAttributes}
+	 * Will construct instance of {@link CloudEventAttributesHelper}
 	 * Should default/generate cloud event ID and SPECVERSION.
 	 *
 	 * @param ce_source value for Cloud Event 'source' attribute
 	 * @param ce_type value for Cloud Event 'type' attribute
-	 * @return instance of {@link CloudEventAttributes}
+	 * @return instance of {@link CloudEventAttributesHelper}
 	 */
-	public static CloudEventAttributes get(String ce_source, String ce_type) {
+	public static CloudEventAttributesHelper get(String ce_source, String ce_type) {
 		return get(UUID.randomUUID().toString(), "1.0", ce_source, ce_type);
 	}
 
 	/**
-	 * Will construct instance of {@link CloudEventAttributes} from {@link MessageHeaders}.
+	 * Will construct instance of {@link CloudEventAttributesHelper} from {@link MessageHeaders}.
 	 *
-	 * Should copy Cloud Event related headers into an instance of {@link CloudEventAttributes}
+	 * Should copy Cloud Event related headers into an instance of {@link CloudEventAttributesHelper}
 	 * NOTE: Certain headers must not be copied.
 	 *
 	 * @param headers instance of {@link MessageHeaders}
-	 * @return modifiable instance of {@link CloudEventAttributes}
+	 * @return modifiable instance of {@link CloudEventAttributesHelper}
 	 */
 	public static RequiredAttributeAccessor get(MessageHeaders headers) {
 		return new RequiredAttributeAccessor(headers);
+	}
+
+
+	@SuppressWarnings("unchecked")
+	public static Message<?> toBinary(Message<?> inputMessage, MessageConverter messageConverter) {
+
+		Map<String, Object> headers = inputMessage.getHeaders();
+		CloudEventAttributesHelper attributes = new CloudEventAttributesHelper(headers);
+
+		// first check the obvious and see if content-type is `cloudevents`
+		if (!attributes.isValidCloudEvent() && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+			MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
+			if (contentType.getType().equals(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType())
+					&& contentType.getSubtype().startsWith(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype())) {
+
+				String dataContentType = StringUtils.hasText(attributes.getDataContentType())
+						? attributes.getDataContentType()
+						: MimeTypeUtils.APPLICATION_JSON_VALUE;
+
+				String suffix = contentType.getSubtypeSuffix();
+				MimeType cloudEventDeserializationContentType = MimeTypeUtils
+						.parseMimeType(contentType.getType() + "/" + suffix);
+				Message<?> cloudEventMessage = MessageBuilder.fromMessage(inputMessage)
+						.setHeader(MessageHeaders.CONTENT_TYPE, cloudEventDeserializationContentType)
+						.setHeader(CloudEventMessageUtils.CANONICAL_DATACONTENTTYPE, dataContentType).build();
+				Map<String, Object> structuredCloudEvent = (Map<String, Object>) messageConverter.fromMessage(cloudEventMessage, Map.class);
+				Message<?> binaryCeMessage = buildCeMessageFromStructured(structuredCloudEvent, determinePrefixToUse(inputMessage));
+				return binaryCeMessage;
+			}
+		}
+		else if (StringUtils.hasText(attributes.getDataContentType())) {
+			return MessageBuilder.fromMessage(inputMessage)
+				.setHeader(MessageHeaders.CONTENT_TYPE, attributes.getDataContentType())
+				.build();
+		}
+		return inputMessage;
+	}
+
+	private static Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent, String prefixToUse) {
+		Object data = null;
+		if (structuredCloudEvent.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA)) {
+			data = structuredCloudEvent.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA);
+			structuredCloudEvent.remove(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA);
+		}
+		else if (structuredCloudEvent.containsKey(CloudEventMessageUtils.CANONICAL_DATA)) {
+			data = structuredCloudEvent.get(CloudEventMessageUtils.CANONICAL_DATA);
+			structuredCloudEvent.remove(CloudEventMessageUtils.CANONICAL_DATA);
+		}
+		else if (structuredCloudEvent.containsKey(CloudEventMessageUtils.DATA)) {
+			data = structuredCloudEvent.get(CloudEventMessageUtils.DATA);
+			structuredCloudEvent.remove(CloudEventMessageUtils.DATA);
+		}
+		Assert.notNull(data, "'data' must not be null");
+		MessageBuilder<?> builder = MessageBuilder.withPayload(data);
+		CloudEventAttributesHelper attributes = new CloudEventAttributesHelper(structuredCloudEvent);
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.ID, attributes.getId());
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.SOURCE, attributes.getSource());
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.TYPE, attributes.getType());
+		builder.setHeader(prefixToUse + CloudEventMessageUtils.SPECVERSION, attributes.getSpecversion());
+		return builder.build();
+	}
+
+	public static String determinePrefixToUse(Message<?> inputMessage) {
+		Set<String> keys = inputMessage.getHeaders().keySet();
+		if (keys.contains("user-agent")) {
+			return CloudEventMessageUtils.HTTP_ATTR_PREFIX;
+		}
+		else {
+			return CloudEventMessageUtils.ATTR_PREFIX;
+		}
 	}
 }

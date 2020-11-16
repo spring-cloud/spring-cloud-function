@@ -31,8 +31,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
-import org.springframework.cloud.function.cloudevent.CloudEventDataContentTypeMessagePreProcessor;
-import org.springframework.cloud.function.cloudevent.CloudEventJsonMessageConverter;
 import org.springframework.cloud.function.cloudevent.DefaultCloudEventAttributesProvider;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
@@ -107,15 +105,12 @@ public class ContextFunctionCatalogAutoConfiguration {
 				.collect(Collectors.toList());
 
 		mcList.add(new JsonMessageConverter(jsonMapper));
-		mcList.add(new CloudEventJsonMessageConverter(jsonMapper));
 		mcList.add(new ByteArrayMessageConverter());
 		mcList.add(new StringMessageConverter());
 		mcList.add(new PrimitiveTypesFromStringMessageConverter(conversionService));
 
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new SmartCompositeMessageConverter(mcList);
-			CloudEventDataContentTypeMessagePreProcessor messagePreProcessor = new CloudEventDataContentTypeMessagePreProcessor(messageConverter);
-			messageConverter.setMessagePreProcessor(messagePreProcessor);
 		}
 
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper);

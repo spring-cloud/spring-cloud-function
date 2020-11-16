@@ -18,7 +18,6 @@ package org.springframework.cloud.function.context.config;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -38,8 +37,6 @@ import org.springframework.util.StringUtils;
  */
 public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 
-	private Function<Message<?>, Message<?>> preProcessor;
-
 	public SmartCompositeMessageConverter(Collection<MessageConverter> converters) {
 		super(converters);
 	}
@@ -47,9 +44,6 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Override
 	@Nullable
 	public Object fromMessage(Message<?> message, Class<?> targetClass) {
-		if (this.preProcessor != null) {
-			message = this.preProcessor.apply(message);
-		}
 		for (MessageConverter converter : getConverters()) {
 			Object result = converter.fromMessage(message, targetClass);
 			if (result != null) {
@@ -62,9 +56,6 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Override
 	@Nullable
 	public Object fromMessage(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-		if (this.preProcessor != null) {
-			message = this.preProcessor.apply(message);
-		}
 		for (MessageConverter converter : getConverters()) {
 			Object result = (converter instanceof SmartMessageConverter ?
 					((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint) :
@@ -76,7 +67,6 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	@Nullable
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers) {
@@ -141,9 +131,5 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			}
 		}
 		return null;
-	}
-
-	public void setMessagePreProcessor(Function<Message<?>, Message<?>> preProcessor) {
-		this.preProcessor = preProcessor;
 	}
 }
