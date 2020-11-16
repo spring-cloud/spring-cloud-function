@@ -171,6 +171,11 @@ public class CloudeventDemoApplicationRESTTests {
 		response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("releaseDate:24-03-2004; releaseName:Spring Framework; version:1.0");
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+			.isEqualTo(Collections.singletonList("https://interface21.com/"));
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+			.isEqualTo(Collections.singletonList("com.interface21"));
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNotNull();
     }
 
 	@Test
@@ -202,6 +207,11 @@ public class CloudeventDemoApplicationRESTTests {
 		response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("{\"version\":\"1.0\",\"releaseName\":\"Spring Framework\",\"releaseDate\":\"24-03-2004\"}");
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+			.isEqualTo(Collections.singletonList("https://interface21.com/"));
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+			.isEqualTo(Collections.singletonList("com.interface21"));
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNotNull();
     }
 
 	@Test
@@ -271,7 +281,7 @@ public class CloudeventDemoApplicationRESTTests {
 
 
 	@Test
-    public void testAsStructuralPojoToPojo() throws Exception {
+    public void testAsStructuralPojoToPojoDefaultDataContentType() throws Exception {
         ApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class);
         JsonMapper mapper = context.getBean(JsonMapper.class);
 
@@ -280,7 +290,6 @@ public class CloudeventDemoApplicationRESTTests {
                 "    \"type\" : \"org.springframework\",\n" +
                 "    \"source\" : \"https://spring.io/\",\n" +
                 "    \"id\" : \"A234-1234-1234\",\n" +
-//                "    \"ce-datacontenttype\" : \"application/json\",\n" +
                 "    \"data\" : {\n" +
                 "        \"version\" : \"1.0\",\n" +
                 "        \"releaseName\" : \"Spring Framework\",\n" +
@@ -288,7 +297,7 @@ public class CloudeventDemoApplicationRESTTests {
                 "    }\n" +
                 "}";
 
-        System.out.println(payload);
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf("application/cloudevents+json;charset=utf-8"));
 
@@ -308,16 +317,16 @@ public class CloudeventDemoApplicationRESTTests {
         assertThat(springReleaseEvent.getReleaseName()).isEqualTo("Spring Framework");
         assertThat(springReleaseEvent.getVersion()).isEqualTo("10.0");
 
-
-//        assertThat(response.getHeaders().get(CloudEventMessageUtils.CANONICAL_SOURCE))
-//		.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
-//        assertThat(response.getHeaders().get(CloudEventMessageUtils.CANONICAL_TYPE))
-//		.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
+        assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+			.isEqualTo(Collections.singletonList("https://interface21.com/"));
+        assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+			.isEqualTo(Collections.singletonList("com.interface21"));
+        assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNotNull();
     }
 
 	@Test
 	public void testPojoConsumer() throws Exception {
-		SpringApplication.run(new Class[] {CloudeventDemoApplication.class}, new String[] {});
+		ApplicationContext context = SpringApplication.run(new Class[] {CloudeventDemoApplication.class}, new String[] {});
 
 		HttpHeaders headers = this.buildHeaders(MediaType.APPLICATION_JSON);
 		String payload = "{\"releaseDate\":\"01-10-2006\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}";
@@ -325,6 +334,8 @@ public class CloudeventDemoApplicationRESTTests {
 		RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/pojoConsumer"));
 		ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		CloudeventDemoApplication application = context.getBean(CloudeventDemoApplication.class);
+		assertThat(application.consumerSuccess).isTrue();
 	}
 
 	private URI constructURI(String path) throws Exception {

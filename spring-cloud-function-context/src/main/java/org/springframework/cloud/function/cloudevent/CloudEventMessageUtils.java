@@ -237,9 +237,10 @@ public final class CloudEventMessageUtils {
 						.parseMimeType(contentType.getType() + "/" + suffix);
 				Message<?> cloudEventMessage = MessageBuilder.fromMessage(inputMessage)
 						.setHeader(MessageHeaders.CONTENT_TYPE, cloudEventDeserializationContentType)
-						.setHeader(CloudEventMessageUtils.CANONICAL_DATACONTENTTYPE, dataContentType).build();
+						.setHeader(CloudEventMessageUtils.CANONICAL_DATACONTENTTYPE, dataContentType)
+						.build();
 				Map<String, Object> structuredCloudEvent = (Map<String, Object>) messageConverter.fromMessage(cloudEventMessage, Map.class);
-				Message<?> binaryCeMessage = buildCeMessageFromStructured(structuredCloudEvent, determinePrefixToUse(inputMessage));
+				Message<?> binaryCeMessage = buildCeMessageFromStructured(structuredCloudEvent, inputMessage.getHeaders());
 				return binaryCeMessage;
 			}
 		}
@@ -251,7 +252,8 @@ public final class CloudEventMessageUtils {
 		return inputMessage;
 	}
 
-	private static Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent, String prefixToUse) {
+	private static Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent, MessageHeaders originalHeaders) {
+		String prefixToUse = determinePrefixToUse(originalHeaders);
 		Object data = null;
 		if (structuredCloudEvent.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA)) {
 			data = structuredCloudEvent.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATA);
@@ -272,11 +274,12 @@ public final class CloudEventMessageUtils {
 		builder.setHeader(prefixToUse + CloudEventMessageUtils.SOURCE, attributes.getSource());
 		builder.setHeader(prefixToUse + CloudEventMessageUtils.TYPE, attributes.getType());
 		builder.setHeader(prefixToUse + CloudEventMessageUtils.SPECVERSION, attributes.getSpecversion());
+		builder.copyHeaders(originalHeaders);
 		return builder.build();
 	}
 
-	public static String determinePrefixToUse(Message<?> inputMessage) {
-		Set<String> keys = inputMessage.getHeaders().keySet();
+	public static String determinePrefixToUse(MessageHeaders messageHeaders) {
+		Set<String> keys = messageHeaders.keySet();
 		if (keys.contains("user-agent")) {
 			return CloudEventMessageUtils.HTTP_ATTR_PREFIX;
 		}
@@ -296,9 +299,9 @@ public final class CloudEventMessageUtils {
 		return attributes;
 	}
 
-	public static CloudEventAttributes generateAttributes(Message<?> inputMessage, Object result, String applicationName) {
-		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage));
-		return generateDefaultAttributeValues(attributes, result.getClass().getName(), applicationName);
+	public static CloudEventAttributes generateAttributes(Message<?> inputMessage, String typeName, String sourceName) {
+		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage.getHeaders()));
+		return generateDefaultAttributeValues(attributes, typeName, sourceName);
 	}
 
 	private static CloudEventAttributes generateDefaultAttributeValues(CloudEventAttributes attributes, String source, String type) {

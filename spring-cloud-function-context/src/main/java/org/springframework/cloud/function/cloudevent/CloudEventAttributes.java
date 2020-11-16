@@ -18,6 +18,7 @@ package org.springframework.cloud.function.cloudevent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.util.StringUtils;
 
@@ -100,6 +101,10 @@ public class CloudEventAttributes extends HashMap<String, Object> {
 		}
 		else if (this.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)) {
 			return (A) this.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID);
+		}
+		Object id = this.get(CloudEventMessageUtils.ID);
+		if (!(id instanceof UUID)) {
+			return (A) id;
 		}
 		return null;
 	}
