@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.function.cloudevent.CloudEventAttributesHelper;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributes;
 import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.context.annotation.Bean;
@@ -84,18 +84,19 @@ public class CloudeventDemoApplication {
 	}
 
 	@Bean
-	public Function<Message<SpringReleaseEvent>, Message<SpringReleaseEvent>> consumeAndProduceCloudEvent(CloudEventAttributesProvider ceAttrProvider) {
+	public Function<Message<SpringReleaseEvent>, Message<SpringReleaseEvent>> consumeAndProduceCloudEvent() {
 		return ceMessage -> {
 			SpringReleaseEvent data = ceMessage.getPayload();
 			data.setVersion("2.0");
 			data.setReleaseDateAsString("01-10-2006");
 
-			CloudEventAttributesHelper ceAttributes = CloudEventMessageUtils.get(ceMessage.getHeaders())
-				.setSource("https://interface21.com/")
-				.setType("com.interface21");
-
-			return MessageBuilder.withPayload(data).copyHeaders(ceAttributes).build();
+			return MessageBuilder.withPayload(data).build();
 		};
+	}
+
+	@Bean
+	public CloudEventAttributesProvider cloudEventAttributesProvider() {
+		return attributes -> attributes.setSource("https://interface21.com/").setType("com.interface21");
 	}
 
 

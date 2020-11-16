@@ -262,6 +262,10 @@ public class CloudeventDemoApplicationRESTTests {
 			.isEqualTo(Collections.singletonList("http://spring.io/application-application"));
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.TYPE)).isNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.SOURCE)).isNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.ID)).isNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION)).isNull();
 	}
 
 

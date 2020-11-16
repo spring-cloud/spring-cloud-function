@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.cloudevent;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,8 @@ import org.springframework.util.StringUtils;
  * Mainly for internal use within the framework;
  *
  * @author Oleg Zhurakousky
+ * @author Dave Syer
+ *
  * @since 3.1
  */
 public final class CloudEventMessageUtils {
@@ -162,20 +165,20 @@ public final class CloudEventMessageUtils {
 	 * Checks if {@link Message} represents cloud event in binary-mode.
 	 */
 	public static boolean isBinary(Map<String, Object> headers) {
-		CloudEventAttributesHelper attributes = new CloudEventAttributesHelper(headers);
+		CloudEventAttributes attributes = new CloudEventAttributes(headers);
 		return attributes.isValidCloudEvent();
 	}
 
 	/**
-	 * Will construct instance of {@link CloudEventAttributesHelper} setting its required attributes.
+	 * Will construct instance of {@link CloudEventAttributes} setting its required attributes.
 	 *
 	 * @param ce_id value for Cloud Event 'id' attribute
 	 * @param ce_specversion value for Cloud Event 'specversion' attribute
 	 * @param ce_source value for Cloud Event 'source' attribute
 	 * @param ce_type value for Cloud Event 'type' attribute
-	 * @return instance of {@link CloudEventAttributesHelper}
+	 * @return instance of {@link CloudEventAttributes}
 	 */
-	public static CloudEventAttributesHelper get(String ce_id, String ce_specversion, String ce_source, String ce_type) {
+	public static CloudEventAttributes get(String ce_id, String ce_specversion, String ce_source, String ce_type) {
 		Assert.hasText(ce_id, "'ce_id' must not be null or empty");
 		Assert.hasText(ce_specversion, "'ce_specversion' must not be null or empty");
 		Assert.hasText(ce_source, "'ce_source' must not be null or empty");
@@ -185,40 +188,40 @@ public final class CloudEventMessageUtils {
 		requiredAttributes.put(CloudEventMessageUtils.CANONICAL_SPECVERSION, ce_specversion);
 		requiredAttributes.put(CloudEventMessageUtils.CANONICAL_SOURCE, ce_source);
 		requiredAttributes.put(CloudEventMessageUtils.CANONICAL_TYPE, ce_type);
-		return new CloudEventAttributesHelper(requiredAttributes);
+		return new CloudEventAttributes(requiredAttributes);
 	}
 
 	/**
-	 * Will construct instance of {@link CloudEventAttributesHelper}
+	 * Will construct instance of {@link CloudEventAttributes}
 	 * Should default/generate cloud event ID and SPECVERSION.
 	 *
 	 * @param ce_source value for Cloud Event 'source' attribute
 	 * @param ce_type value for Cloud Event 'type' attribute
-	 * @return instance of {@link CloudEventAttributesHelper}
+	 * @return instance of {@link CloudEventAttributes}
 	 */
-	public static CloudEventAttributesHelper get(String ce_source, String ce_type) {
+	public static CloudEventAttributes get(String ce_source, String ce_type) {
 		return get(UUID.randomUUID().toString(), "1.0", ce_source, ce_type);
 	}
 
-	/**
-	 * Will construct instance of {@link CloudEventAttributesHelper} from {@link MessageHeaders}.
-	 *
-	 * Should copy Cloud Event related headers into an instance of {@link CloudEventAttributesHelper}
-	 * NOTE: Certain headers must not be copied.
-	 *
-	 * @param headers instance of {@link MessageHeaders}
-	 * @return modifiable instance of {@link CloudEventAttributesHelper}
-	 */
-	public static RequiredAttributeAccessor get(MessageHeaders headers) {
-		return new RequiredAttributeAccessor(headers);
-	}
+//	/**
+//	 * Will construct instance of {@link CloudEventAttributes} from {@link MessageHeaders}.
+//	 *
+//	 * Should copy Cloud Event related headers into an instance of {@link CloudEventAttributes}
+//	 * NOTE: Certain headers must not be copied.
+//	 *
+//	 * @param headers instance of {@link MessageHeaders}
+//	 * @return modifiable instance of {@link CloudEventAttributes}
+//	 */
+//	public static CloudEventAttributes get(MessageHeaders headers) {
+//		return new CloudEventAttributes(headers);
+//	}
 
 
 	@SuppressWarnings("unchecked")
 	public static Message<?> toBinary(Message<?> inputMessage, MessageConverter messageConverter) {
 
 		Map<String, Object> headers = inputMessage.getHeaders();
-		CloudEventAttributesHelper attributes = new CloudEventAttributesHelper(headers);
+		CloudEventAttributes attributes = new CloudEventAttributes(headers);
 
 		// first check the obvious and see if content-type is `cloudevents`
 		if (!attributes.isValidCloudEvent() && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
@@ -265,7 +268,7 @@ public final class CloudEventMessageUtils {
 		}
 		Assert.notNull(data, "'data' must not be null");
 		MessageBuilder<?> builder = MessageBuilder.withPayload(data);
-		CloudEventAttributesHelper attributes = new CloudEventAttributesHelper(structuredCloudEvent);
+		CloudEventAttributes attributes = new CloudEventAttributes(structuredCloudEvent);
 		builder.setHeader(prefixToUse + CloudEventMessageUtils.ID, attributes.getId());
 		builder.setHeader(prefixToUse + CloudEventMessageUtils.SOURCE, attributes.getSource());
 		builder.setHeader(prefixToUse + CloudEventMessageUtils.TYPE, attributes.getType());
@@ -281,5 +284,17 @@ public final class CloudEventMessageUtils {
 		else {
 			return CloudEventMessageUtils.ATTR_PREFIX;
 		}
+	}
+
+	public static Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result, String applicationName) {
+		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage));
+		if (attributes.isValidCloudEvent()) {
+			return attributes
+					.setSpecversion("1.0")
+					.setId(UUID.randomUUID().toString())
+					.setType(result.getClass().getName())
+					.setSource(applicationName);
+		}
+		return Collections.emptyMap();
 	}
 }
