@@ -286,7 +286,7 @@ public final class CloudEventMessageUtils {
 		}
 	}
 
-	public static Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result, String applicationName) {
+	public static CloudEventAttributes generateAttributes(Message<?> inputMessage, Object result, String applicationName) {
 		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage));
 		if (attributes.isValidCloudEvent()) {
 			return attributes
@@ -295,6 +295,6 @@ public final class CloudEventMessageUtils {
 					.setType(result.getClass().getName())
 					.setSource(applicationName);
 		}
-		return Collections.emptyMap();
+		return new CloudEventAttributes(Collections.emptyMap());
 	}
 }

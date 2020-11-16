@@ -19,7 +19,6 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -168,14 +167,14 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 				@Override
 				public Message<?> apply(Message<?> inputMessage, Object invocationResult) {
 					// TODO: Factor it out! Cloud Events specific code
-					Map<String, Object> generatedCeHeaders = CloudEventMessageUtils
-							.generateDefaultCloudEventHeaders(inputMessage, invocationResult, getApplicationName());
-					CloudEventAttributes attributes = new CloudEventAttributes(generatedCeHeaders);
+					CloudEventAttributes generatedCeHeaders = CloudEventMessageUtils
+							.generateAttributes(inputMessage, invocationResult, getApplicationName());
+					CloudEventAttributes attributes = new CloudEventAttributes(generatedCeHeaders, CloudEventMessageUtils.determinePrefixToUse(inputMessage));
 					if (cloudEventAtttributesProvider != null) {
 						cloudEventAtttributesProvider.generateDefaultCloudEventHeaders(attributes);
 					}
 					Message message = MessageBuilder.withPayload(invocationResult)
-							.copyHeaders(generatedCeHeaders)
+							.copyHeaders(attributes)
 							.build();
 
 					return message;
