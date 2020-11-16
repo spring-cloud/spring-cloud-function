@@ -36,6 +36,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -313,6 +314,18 @@ public class CloudeventDemoApplicationRESTTests {
 //        assertThat(response.getHeaders().get(CloudEventMessageUtils.CANONICAL_TYPE))
 //		.isEqualTo(Collections.singletonList(SpringReleaseEvent.class.getName()));
     }
+
+	@Test
+	public void testPojoConsumer() throws Exception {
+		SpringApplication.run(new Class[] {CloudeventDemoApplication.class}, new String[] {});
+
+		HttpHeaders headers = this.buildHeaders(MediaType.APPLICATION_JSON);
+		String payload = "{\"releaseDate\":\"01-10-2006\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}";
+
+		RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/pojoConsumer"));
+		ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+	}
 
 	private URI constructURI(String path) throws Exception {
 		return new URI("http://localhost:" + System.getProperty("server.port") + path);
