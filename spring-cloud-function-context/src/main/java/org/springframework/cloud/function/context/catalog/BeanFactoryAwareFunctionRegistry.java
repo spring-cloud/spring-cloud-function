@@ -164,7 +164,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 				@Override
 				public Message<?> apply(Message<?> inputMessage, Object invocationResult) {
 					Message message = MessageBuilder.withPayload(invocationResult).copyHeaders(
-							cloudEventAtttributesProvider.generateDefaultCloudEventHeaders(inputMessage, invocationResult))
+							cloudEventAtttributesProvider.generate(inputMessage, invocationResult))
 							.build();
 
 					return message;

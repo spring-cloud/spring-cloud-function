@@ -18,26 +18,34 @@ package org.springframework.cloud.function.cloudevent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.StringUtils;
 
-
 /**
- *
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-public class CloudEventAttributesHelper extends HashMap<String, Object> {
+public class CloudEventAttributes extends HashMap<String, Object> {
 
-	/**
-	 *
-	 */
 	private static final long serialVersionUID = 5393610770855366497L;
 
+	protected final String prefixToUse;
 
-
-	CloudEventAttributesHelper(Map<String, Object> headers) {
+	public CloudEventAttributes(Map<String, Object> headers, String prefixToUse) {
 		super(headers);
+		this.prefixToUse = prefixToUse;
+		if (headers.containsKey(MessageHeaders.ID)) {
+			setId(headers.get(MessageHeaders.ID).toString());
+		}
+		else {
+			setId(UUID.randomUUID().toString());
+		}
+	}
+
+	public CloudEventAttributes(Map<String, Object> headers) {
+		this(headers, CloudEventMessageUtils.determinePrefixToUse(headers));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -101,7 +109,8 @@ public class CloudEventAttributesHelper extends HashMap<String, Object> {
 			dataContentType = this.get(CloudEventMessageUtils.CANONICAL_DATACONTENTTYPE);
 		}
 		else if (this.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATACONTENTTYPE)) {
-			dataContentType = this.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATACONTENTTYPE);
+			dataContentType = this
+					.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.DATACONTENTTYPE);
 		}
 		dataContentType = this.get(CloudEventMessageUtils.DATACONTENTTYPE);
 		return (A) dataContentType;
@@ -117,9 +126,48 @@ public class CloudEventAttributesHelper extends HashMap<String, Object> {
 	}
 
 	public boolean isValidCloudEvent() {
-		return StringUtils.hasText(this.getId())
-				&& StringUtils.hasText(this.getSource())
-				&& StringUtils.hasText(this.getSpecversion())
-				&& StringUtils.hasText(this.getType());
+		return StringUtils.hasText(this.getId()) && StringUtils.hasText(this.getSource())
+				&& StringUtils.hasText(this.getSpecversion()) && StringUtils.hasText(this.getType());
 	}
+
+	public CloudEventAttributes setId(String id) {
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.ID, id);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.ID), id);
+		}
+		return this;
+	}
+
+	public CloudEventAttributes setSource(String source) {
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.SOURCE, source);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.SOURCE), source);
+		}
+		return this;
+	}
+
+	public CloudEventAttributes setSpecversion(String specversion) {
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.SPECVERSION, specversion);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.SPECVERSION), specversion);
+		}
+		return this;
+	}
+
+	public CloudEventAttributes setType(String type) {
+		if (StringUtils.hasText(this.prefixToUse)) {
+			this.put(this.prefixToUse + CloudEventMessageUtils.TYPE, type);
+		}
+		else {
+			this.put(this.getAttributeName(CloudEventMessageUtils.TYPE), type);
+		}
+		return this;
+	}
+
 }

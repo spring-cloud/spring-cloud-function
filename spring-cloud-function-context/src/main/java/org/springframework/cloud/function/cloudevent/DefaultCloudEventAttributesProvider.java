@@ -16,20 +16,14 @@
 
 package org.springframework.cloud.function.cloudevent;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.messaging.Message;
 import org.springframework.util.StringUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 3.1
  *
@@ -38,18 +32,9 @@ public class DefaultCloudEventAttributesProvider implements CloudEventAttributes
 
 	private ConfigurableApplicationContext applicationContext;
 
-
 	@Override
-	public Map<String, Object> generateDefaultCloudEventHeaders(Message<?> inputMessage, Object result) {
-		RequiredAttributeAccessor attributes = new RequiredAttributeAccessor(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage));
-		if (attributes.isValidCloudEvent()) {
-			String applicationName = this.getApplicationName();
-			return attributes
-					.setId(UUID.randomUUID().toString())
-					.setType(result.getClass().getName())
-					.setSource(applicationName);
-		}
-		return Collections.emptyMap();
+	public CloudEventAttributes update(CloudEventAttributes attributes) {
+		return attributes.setSource(this.getApplicationName());
 	}
 
 	@Override
@@ -60,6 +45,8 @@ public class DefaultCloudEventAttributesProvider implements CloudEventAttributes
 	private String getApplicationName() {
 		ConfigurableEnvironment environment = this.applicationContext.getEnvironment();
 		String name = environment.getProperty("spring.application.name");
-		return "http://spring.io/" + (StringUtils.hasText(name) ? name : "application-" + this.applicationContext.getId());
+		return "http://spring.io/"
+				+ (StringUtils.hasText(name) ? name : "application-" + this.applicationContext.getId());
 	}
+
 }
