@@ -163,13 +163,12 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 		if (function != null) {
 			BiFunction<Message<?>, Object, Message<?>> invocationResultHeaderEnricher = new BiFunction<Message<?>, Object, Message<?>>() {
-
 				@Override
 				public Message<?> apply(Message<?> inputMessage, Object invocationResult) {
 					// TODO: Factor it out! Cloud Events specific code
 					CloudEventAttributes generatedCeHeaders = CloudEventMessageUtils
-							.generateAttributes(inputMessage, invocationResult, getApplicationName());
-					CloudEventAttributes attributes = new CloudEventAttributes(generatedCeHeaders, CloudEventMessageUtils.determinePrefixToUse(inputMessage));
+							.generateAttributes(inputMessage, invocationResult.getClass().getName(), getApplicationName());
+					CloudEventAttributes attributes = new CloudEventAttributes(generatedCeHeaders, CloudEventMessageUtils.determinePrefixToUse(inputMessage.getHeaders()));
 					if (cloudEventAtttributesProvider != null) {
 						cloudEventAtttributesProvider.generateDefaultCloudEventHeaders(attributes);
 					}
