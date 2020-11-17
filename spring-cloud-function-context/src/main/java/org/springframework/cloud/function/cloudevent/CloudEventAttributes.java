@@ -62,12 +62,12 @@ public class CloudEventAttributes extends HashMap<String, Object> {
 	}
 
 	public CloudEventAttributes setId(String id) {
-		this.setAtttribute(CloudEventMessageUtils.ID, id);
+		this.setAttribute(CloudEventMessageUtils.ID, id);
 		return this;
 	}
 
 	public <A> A getId() {
-		A id = this.getAtttribute(CloudEventMessageUtils.ID);
+		A id = this.getAttribute(CloudEventMessageUtils.ID);
 		if (id instanceof UUID) {
 			id = null;
 		}
@@ -75,73 +75,73 @@ public class CloudEventAttributes extends HashMap<String, Object> {
 	}
 
 	public CloudEventAttributes setSource(String source) {
-		this.setAtttribute(CloudEventMessageUtils.SOURCE, source);
+		this.setAttribute(CloudEventMessageUtils.SOURCE, source);
 		return this;
 	}
 
 	public <A> A getSource() {
-		return this.getAtttribute(CloudEventMessageUtils.SOURCE);
+		return this.getAttribute(CloudEventMessageUtils.SOURCE);
 	}
 
 	public CloudEventAttributes setSpecversion(String specversion) {
-		this.setAtttribute(CloudEventMessageUtils.SPECVERSION, specversion);
+		this.setAttribute(CloudEventMessageUtils.SPECVERSION, specversion);
 		return this;
 	}
 
 	public <A> A getSpecversion() {
-		return this.getAtttribute(CloudEventMessageUtils.SPECVERSION);
+		return this.getAttribute(CloudEventMessageUtils.SPECVERSION);
 	}
 
 	public CloudEventAttributes setType(String type) {
-		this.setAtttribute(CloudEventMessageUtils.TYPE, type);
+		this.setAttribute(CloudEventMessageUtils.TYPE, type);
 		return this;
 	}
 
 	public <A> A getType() {
-		return this.getAtttribute(CloudEventMessageUtils.TYPE);
+		return this.getAttribute(CloudEventMessageUtils.TYPE);
 	}
 
 	public CloudEventAttributes setDataContentType(String datacontenttype) {
-		this.setAtttribute(CloudEventMessageUtils.DATACONTENTTYPE, datacontenttype);
+		this.setAttribute(CloudEventMessageUtils.DATACONTENTTYPE, datacontenttype);
 		return this;
 	}
 
 	public <A> A getDataContentType() {
-		return this.getAtttribute(CloudEventMessageUtils.DATACONTENTTYPE);
+		return this.getAttribute(CloudEventMessageUtils.DATACONTENTTYPE);
 	}
 
 	public CloudEventAttributes setDataSchema(String dataschema) {
-		this.setAtttribute(CloudEventMessageUtils.DATASCHEMA, dataschema);
+		this.setAttribute(CloudEventMessageUtils.DATASCHEMA, dataschema);
 		return this;
 	}
 
 	public <A> A getDataSchema() {
-		return this.getAtttribute(CloudEventMessageUtils.DATASCHEMA);
+		return this.getAttribute(CloudEventMessageUtils.DATASCHEMA);
 	}
 
 	public CloudEventAttributes setSubject(String subject) {
-		this.setAtttribute(CloudEventMessageUtils.SUBJECT, subject);
+		this.setAttribute(CloudEventMessageUtils.SUBJECT, subject);
 		return this;
 	}
 
 	public <A> A getSubect() {
-		return this.getAtttribute(CloudEventMessageUtils.SUBJECT);
+		return this.getAttribute(CloudEventMessageUtils.SUBJECT);
 	}
 
 	public CloudEventAttributes setTime(String time) {
-		this.setAtttribute(CloudEventMessageUtils.TIME, time);
+		this.setAttribute(CloudEventMessageUtils.TIME, time);
 		return this;
 	}
 
 	public <A> A getTime() {
-		return this.getAtttribute(CloudEventMessageUtils.TIME);
+		return this.getAttribute(CloudEventMessageUtils.TIME);
 	}
 
 	/**
 	 * Will delegate to the underlying {@link Map} returning the value for the requested attribute or null.
 	 */
 	@SuppressWarnings("unchecked")
-	public <A> A getAtttribute(String attrName) {
+	public <A> A getAttribute(String attrName) {
 		if (this.containsKey(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + attrName)) {
 			return (A) this.get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + attrName);
 		}
@@ -174,7 +174,7 @@ public class CloudEventAttributes extends HashMap<String, Object> {
 		return attributeName;
 	}
 
-	private CloudEventAttributes setAtttribute(String attrName, String attrValue) {
+	private CloudEventAttributes setAttribute(String attrName, String attrValue) {
 		if (StringUtils.hasText(this.prefixToUse)) {
 			this.remove(this.getAttributeName(attrName));
 			this.put(this.prefixToUse + attrName, attrValue);
