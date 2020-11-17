@@ -226,8 +226,8 @@ public final class CloudEventMessageUtils {
 
 		// first check the obvious and see if content-type is `cloudevents`
 		if (!attributes.isValidCloudEvent() && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
-			MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
-			if (contentType.getType().equals(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType())
+			MimeType contentType = resolveContentType(inputMessage.getHeaders());
+			if (contentType != null && contentType.getType().equals(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType())
 					&& contentType.getSubtype().startsWith(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype())) {
 
 				String dataContentType = StringUtils.hasText(attributes.getDataContentType())
@@ -253,6 +253,16 @@ public final class CloudEventMessageUtils {
 				.build();
 		}
 		return inputMessage;
+	}
+
+	private static MimeType resolveContentType(MessageHeaders headers) {
+		try {
+			return contentTypeResolver.resolve(headers);
+		}
+		catch (Exception e) {
+			// ignore
+		}
+		return null;
 	}
 
 	/**
