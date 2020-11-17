@@ -1,3 +1,3 @@
-*{spring-cloud-function-version}*
+*{project-version}*
 
 include::adapters/gcp-intro.adoc[]
