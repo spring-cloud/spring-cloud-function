@@ -5,14 +5,18 @@ The current example uses spring-cloud-function framework as its core which allow
 their requirement while taking care-off non-functional aspects. For more information on Spring Cloud Function please visit 
 our https://spring.io/projects/spring-cloud-function[project page].
 
-The example provides dependencies and instructions to demonstrate several distinct invocation models:
+The example consists of a class https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent/src/main/java/io/spring/cloudevent/CloudeventDemoApplication.java[CloudeventDemoApplication]
+which contains a set of function beans of different type signatures which you can interact with following instructions below. 
+
+It also provides necessary dependencies and instructions to demonstrate several distinct invocation models:
 
  - _Direct function invocation_
  - _Function as a REST endpoint_
  - _Function as message handler (e.g., Kafka, RabbitMQ etc)_
  - _Function invocation via RSocket_
  
-The POM file defines all the necessary dependency in a segregated way, so you can choose the one you're interested in.
+The POM file defines all the necessary dependency in a segregated way, so you can choose the one you're interested in by commenting in/out dependencies 
+that fit your scenario (e.g., Streaming vs. REST, ect_
  
 ### Direct function invocation
 
@@ -40,7 +44,7 @@ provides a good example on how to accomplish this.
 Given that SCF allows function to be exposed as REST endpoints, you can post cloud event to any of the 
 functions by using function name as path (e.g., `localhost:8080/<function_name>`).
 
-Just add this to your dependency
+Just add this to your dependency (or in your case simply un-comment)
 
 [source, xml]
 ----
@@ -89,6 +93,8 @@ curl -w'\n' localhost:8080/asString \
     }
 }'
 ----
+
+Feel free to change the function you're invoking by changing URI path (e.g., `localhost:8080/asString` to `localhost:8080/consumeAndProduceCloudEventAsPojoToPojo`).
 
 ### Function as message handler (e.g., Kafka, RabbitMQ etc)
 
