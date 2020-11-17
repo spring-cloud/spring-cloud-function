@@ -47,6 +47,7 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributes;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
@@ -910,13 +911,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * case that requires it since it may contain forwarding url
 		 */
 		private boolean containsRetainMessageSignalInHeaders(Message message) {
-			for (String headerName : message.getHeaders().keySet()) {
-				if (headerName.startsWith("lambda") ||
-					headerName.startsWith("scf-func-name")) {
-					return true;
-				}
+			if (new CloudEventAttributes(message.getHeaders()).isValidCloudEvent()) {
+				return true;
 			}
-			return false;
+			else {
+				for (String headerName : message.getHeaders().keySet()) {
+					if (headerName.startsWith("lambda") ||
+						headerName.startsWith("scf-func-name")) {
+						return true;
+					}
+				}
+				return false;
+			}
 		}
 
 		/*

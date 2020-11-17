@@ -114,10 +114,7 @@ public final class FunctionWebUtils {
 			result = ((Mono) result).map(v -> postProcessResult(v, isMessage));
 		}
 		else if (result instanceof Message) {
-			if (!isMessage) {
-//				result = ((Message) result).getPayload();
-			}
-			else if (((Message) result).getPayload() instanceof byte[]) {
+			if (((Message) result).getPayload() instanceof byte[]) {
 				String str = new String((byte[]) ((Message) result).getPayload());
 				result = MessageBuilder.withPayload(str).copyHeaders(((Message) result).getHeaders()).build();
 			}

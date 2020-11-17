@@ -202,6 +202,17 @@ public final class CloudEventMessageUtils {
 		return get(UUID.randomUUID().toString(), "1.0", ce_source, ce_type);
 	}
 
+	/**
+	 * Will attempt to convert 'inputMessage' to a binary-mode Cloud Event {@link Message}.
+	 * This typically happens when 'inputMessage' represents Cloud Event in structured-mode.
+	 * <br>
+	 * In the event the message already represents Cloud Event in binary-mode, or this
+	 * message does not represent Cloud Event at all, it will be returned unchanged.
+	 *
+	 * @param inputMessage instance of incoming {@link Message}
+	 * @param messageConverter instance of {@link MessageConverter} to assist with type conversion.
+	 * @return instance of {@link Message} representing Cloud Event in binary-mode or unchanged 'inputMessage'.
+	 */
 	@SuppressWarnings("unchecked")
 	public static Message<?> toBinary(Message<?> inputMessage, MessageConverter messageConverter) {
 
@@ -219,6 +230,7 @@ public final class CloudEventMessageUtils {
 						: MimeTypeUtils.APPLICATION_JSON_VALUE;
 
 				String suffix = contentType.getSubtypeSuffix();
+				Assert.hasText(suffix, "Content-type 'suffix' can not be determined from " + contentType);
 				MimeType cloudEventDeserializationContentType = MimeTypeUtils
 						.parseMimeType(contentType.getType() + "/" + suffix);
 				Message<?> cloudEventMessage = MessageBuilder.fromMessage(inputMessage)
@@ -238,6 +250,13 @@ public final class CloudEventMessageUtils {
 		return inputMessage;
 	}
 
+	/**
+	 * Will attempt to determine based on the headers the origin of Message (e.g., HTTP, Kafka etc)
+	 * and based on this designate prefix to be used for Cloud Events attributes (i.e., `ce-` or `ce_` etc).
+	 *
+	 * @param messageHeaders instance of {@link MessageHeaders}
+	 * @return prefix to be used for Cloud Events attributes
+	 */
 	public static String determinePrefixToUse(MessageHeaders messageHeaders) {
 		Set<String> keys = messageHeaders.keySet();
 		if (keys.contains("user-agent")) {
