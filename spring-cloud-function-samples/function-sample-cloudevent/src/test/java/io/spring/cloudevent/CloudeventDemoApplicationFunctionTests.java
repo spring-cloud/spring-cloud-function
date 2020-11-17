@@ -19,7 +19,8 @@ package io.spring.cloudevent;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -36,7 +37,8 @@ public class CloudeventDemoApplicationFunctionTests {
 	@Test
 	public void demoPureFunctionInvocation() {
 
-		try(ConfigurableApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class)) {
+		try(ConfigurableApplicationContext context = new SpringApplicationBuilder(CloudeventDemoApplication.class)
+				.web(WebApplicationType.NONE).run()) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 			Message<String> binaryCloudEventMessage = MessageBuilder
 					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
@@ -64,7 +66,8 @@ public class CloudeventDemoApplicationFunctionTests {
 
 	@Test
 	public void demoPureFunctionProduceConsumeCloudEvent() {
-		try(ConfigurableApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class)) {
+		try(ConfigurableApplicationContext context = new SpringApplicationBuilder(CloudeventDemoApplication.class)
+				.web(WebApplicationType.NONE).run()) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 			Message<String> binaryCloudEventMessage = MessageBuilder
 					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
@@ -83,7 +86,8 @@ public class CloudeventDemoApplicationFunctionTests {
 
 	@Test
 	public void demoPureFunctionProduceConsumeCloudEventAsPojo() {
-		try(ConfigurableApplicationContext context = SpringApplication.run(CloudeventDemoApplication.class)) {
+		try(ConfigurableApplicationContext context = new SpringApplicationBuilder(CloudeventDemoApplication.class)
+				.web(WebApplicationType.NONE).run()) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 			Message<String> binaryCloudEventMessage = MessageBuilder
 					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
