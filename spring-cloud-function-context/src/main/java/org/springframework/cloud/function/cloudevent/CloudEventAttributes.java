@@ -142,8 +142,8 @@ public class CloudEventAttributes extends HashMap<String, Object> {
 	 */
 	@SuppressWarnings("unchecked")
 	public <A> A getAtttribute(String attrName) {
-		if (this.containsKey(CloudEventMessageUtils.ATTR_PREFIX + attrName)) {
-			return (A) this.get(CloudEventMessageUtils.ATTR_PREFIX + attrName);
+		if (this.containsKey(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + attrName)) {
+			return (A) this.get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + attrName);
 		}
 		else if (this.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + attrName)) {
 			return (A) this.get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + attrName);
@@ -165,8 +165,8 @@ public class CloudEventAttributes extends HashMap<String, Object> {
 	}
 
 	String getAttributeName(String attributeName) {
-		if (this.containsKey(CloudEventMessageUtils.ATTR_PREFIX + attributeName)) {
-			return CloudEventMessageUtils.ATTR_PREFIX + attributeName;
+		if (this.containsKey(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + attributeName)) {
+			return CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + attributeName;
 		}
 		else if (this.containsKey(CloudEventMessageUtils.HTTP_ATTR_PREFIX + attributeName)) {
 			return CloudEventMessageUtils.HTTP_ATTR_PREFIX + attributeName;

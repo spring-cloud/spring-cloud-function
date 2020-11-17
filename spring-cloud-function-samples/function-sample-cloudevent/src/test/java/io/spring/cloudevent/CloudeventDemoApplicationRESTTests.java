@@ -259,10 +259,10 @@ public class CloudeventDemoApplicationRESTTests {
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.ID, UUID.randomUUID().toString());
-		headers.set(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.SOURCE, "https://spring.io/");
-		headers.set(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION, "1.0");
-		headers.set(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.TYPE, "org.springframework");
+		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.ID, UUID.randomUUID().toString());
+		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SOURCE, "https://spring.io/");
+		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION, "1.0");
+		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.TYPE, "org.springframework");
 		String payload = "{\"releaseDate\":\"01-10-2006\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}";
 
 		RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/consumeAndProduceCloudEventAsPojoToPojo"));
@@ -273,10 +273,10 @@ public class CloudeventDemoApplicationRESTTests {
 			.isEqualTo(Collections.singletonList("https://interface21.com/"));
 		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList("com.interface21"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.TYPE)).isNull();
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.SOURCE)).isNull();
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.ID)).isNull();
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION)).isNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.TYPE)).isNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SOURCE)).isNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION)).isNull();
 	}
 
 
