@@ -101,6 +101,11 @@ public class CloudeventDemoApplicationFunctionTests {
 			 */
 			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("consumeAndProduceCloudEventAsPojoToPojo");
 			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
+			//ce_source=https://interface21.com/
+//			ce_type=com.interface21
+			//ce_type=com.interface21, ce_source=https://interface21.com/
+			//{ce_type=http://spring.io/application-application, ce_source=io.spring.cloudevent.SpringReleaseEvent, ce_specversion=1.0, ce_id=eba0eda2-ab01-4f62-b369-6eb473106c4a, id=e31a2670-6000-4954-1b90-a864d2ac6fc6, timestamp=1605627860374}
+			//{ce_type=io.spring.cloudevent.SpringReleaseEvent, ce_source=http://spring.io/application-application, ce_specversion=1.0, ce_id=93980c85-c478-471f-8a00-69bf288fe22b, id=2ded0773-3a78-8e73-feb5-7274f5439d64, timestamp=1605627907645}
 		}
 	}
 }

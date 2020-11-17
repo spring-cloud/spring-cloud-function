@@ -58,8 +58,8 @@ public class CloudEventFunctionTests {
 		 */
 		CloudEventAttributes attributes = new CloudEventAttributes(resultMessage.getHeaders());
 		assertThat(attributes.isValidCloudEvent()).isTrue();
-		assertThat((String) attributes.getSource()).isEqualTo(Person.class.getName());
-		assertThat((String) attributes.getType()).isEqualTo("http://spring.io/application-application");
+		assertThat((String) attributes.getType()).isEqualTo(Person.class.getName());
+		assertThat((String) attributes.getSource()).isEqualTo("http://spring.io/application-application");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -95,8 +95,8 @@ public class CloudEventFunctionTests {
 		 */
 		CloudEventAttributes attributes = new CloudEventAttributes(resultMessage.getHeaders());
 		assertThat(attributes.isValidCloudEvent()).isTrue();
-		assertThat((String) attributes.getSource()).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat((String) attributes.getType()).isEqualTo("http://spring.io/application-application");
+		assertThat((String) attributes.getType()).isEqualTo(SpringReleaseEvent.class.getName());
+		assertThat((String) attributes.getSource()).isEqualTo("http://spring.io/application-application");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -131,8 +131,8 @@ public class CloudEventFunctionTests {
 		 */
 		CloudEventAttributes attributes = new CloudEventAttributes(resultMessage.getHeaders());
 		assertThat(attributes.isValidCloudEvent()).isTrue();
-		assertThat((String) attributes.getSource()).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat((String) attributes.getType()).isEqualTo("http://spring.io/application-application");
+		assertThat((String) attributes.getType()).isEqualTo(SpringReleaseEvent.class.getName());
+		assertThat((String) attributes.getSource()).isEqualTo("http://spring.io/application-application");
 	}
 
 	private Function<Object, Object> lookup(String functionDefinition, Class<?>... configClass) {

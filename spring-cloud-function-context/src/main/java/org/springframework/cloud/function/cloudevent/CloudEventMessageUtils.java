@@ -298,7 +298,7 @@ public final class CloudEventMessageUtils {
 
 	public static CloudEventAttributes generateAttributes(Message<?> inputMessage, String typeName, String sourceName) {
 		CloudEventAttributes attributes = new CloudEventAttributes(inputMessage.getHeaders(), CloudEventMessageUtils.determinePrefixToUse(inputMessage.getHeaders()));
-		return generateDefaultAttributeValues(attributes, typeName, sourceName);
+		return generateDefaultAttributeValues(attributes, sourceName, typeName);
 	}
 
 	private static Message<?> buildCeMessageFromStructured(Map<String, Object> structuredCloudEvent, MessageHeaders originalHeaders) {
