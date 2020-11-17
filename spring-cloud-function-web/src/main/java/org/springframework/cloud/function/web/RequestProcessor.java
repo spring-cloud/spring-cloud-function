@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2017-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
-import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -59,16 +58,11 @@ public class RequestProcessor {
 
 	private static Log logger = LogFactory.getLog(RequestProcessor.class);
 
-
-	private final FunctionCatalog functionCatalog;
-
 	private final JsonMapper mapper;
 
-	public RequestProcessor(FunctionCatalog functionCatalog,
-			ObjectProvider<JsonMapper> mapper,
+	public RequestProcessor(ObjectProvider<JsonMapper> mapper,
 			ObjectProvider<ServerCodecConfigurer> codecs) {
 		this.mapper = mapper.getIfAvailable();
-		this.functionCatalog = functionCatalog;
 	}
 
 	public static FunctionWrapper wrapper(FunctionInvocationWrapper function) {
@@ -186,35 +180,27 @@ public class RequestProcessor {
 	private Mono<ResponseEntity<?>> response(FunctionWrapper request, Object handler,
 			Publisher<?> result, Boolean single, boolean getter) {
 		BodyBuilder builder = ResponseEntity.ok();
-		if (((FunctionInvocationWrapper) handler).isInputTypeMessage()) {
-			result = Flux.from(result)
-					.map(message -> MessageUtils.unpack(handler, message))
-					.doOnNext(value -> addHeaders(builder, value))
-					.map(message -> message.getPayload());
+		if (result instanceof Mono) {
+			result = Mono.from(result)
+			.map(message -> MessageUtils.unpack(handler, message))
+			.doOnNext(value -> {
+				addHeaders(builder, value);
+				if (!isValidCloudEvent(value.getHeaders().keySet())) {
+					builder.headers(HeaderUtils.sanitize(request.headers()));
+				}
+			})
+			.map(message -> message.getPayload());
 		}
 		else {
-			if (result instanceof Mono) {
-				result = Mono.from(result)
-				.map(message -> MessageUtils.unpack(handler, message))
-				.doOnNext(value -> {
-					addHeaders(builder, value);
-					if (!isValidCloudEvent(value.getHeaders().keySet())) {
-						builder.headers(HeaderUtils.sanitize(request.headers()));
-					}
-				})
-				.map(message -> message.getPayload());
-			}
-			else {
-				result = Flux.from(result)
-				.map(message -> MessageUtils.unpack(handler, message))
-				.doOnNext(value -> {
-					addHeaders(builder, value);
-					if (!isValidCloudEvent(value.getHeaders().keySet())) {
-						builder.headers(HeaderUtils.sanitize(request.headers()));
-					}
-				})
-				.map(message -> message.getPayload());
-			}
+			result = Flux.from(result)
+			.map(message -> MessageUtils.unpack(handler, message))
+			.doOnNext(value -> {
+				addHeaders(builder, value);
+				if (!isValidCloudEvent(value.getHeaders().keySet())) {
+					builder.headers(HeaderUtils.sanitize(request.headers()));
+				}
+			})
+			.map(message -> message.getPayload());
 		}
 
 		if (isOutputSingle(handler)
@@ -231,7 +217,7 @@ public class RequestProcessor {
 		return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 	}
 
-	public boolean isValidCloudEvent(Set<String> headerKeys) {
+	private boolean isValidCloudEvent(Set<String> headerKeys) {
 		return headerKeys.contains(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)
 			&& headerKeys.contains(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE)
 			&& headerKeys.contains(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE)

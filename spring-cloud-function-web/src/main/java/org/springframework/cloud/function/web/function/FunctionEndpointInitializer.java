@@ -102,7 +102,6 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 	private void registerEndpoint(GenericApplicationContext context) {
 		context.registerBean(RequestProcessor.class,
 				() -> new RequestProcessor(
-						context.getBean(FunctionCatalog.class),
 						context.getBeanProvider(JsonMapper.class),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
