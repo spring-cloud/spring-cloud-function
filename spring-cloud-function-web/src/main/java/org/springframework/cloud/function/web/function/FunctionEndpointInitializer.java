@@ -80,13 +80,14 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
  */
 class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
+	private static boolean webflux = ClassUtils.isPresent("org.springframework.http.server.reactive.HttpHandler", null);
+
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		if (ContextFunctionCatalogInitializer.enabled
+		if (webflux && ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty(FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
 						WebApplicationType.class, WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
-				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)
-				&& ClassUtils.isPresent("org.springframework.http.server.reactive.HttpHandler", null)) {
+				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
 			registerEndpoint(context);
 			registerWebFluxAutoConfiguration(context);
 		}
@@ -101,12 +102,11 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 
 	private void registerEndpoint(GenericApplicationContext context) {
 		context.registerBean(RequestProcessor.class,
-				() -> new RequestProcessor(
-						context.getBeanProvider(JsonMapper.class),
+				() -> new RequestProcessor(context.getBeanProvider(JsonMapper.class),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
-				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class), context.getBean(RequestProcessor.class),
-						context.getEnvironment()));
+				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),
+						context.getBean(RequestProcessor.class), context.getEnvironment()));
 		context.registerBean(RouterFunction.class,
 				() -> context.getBean(FunctionEndpointFactory.class).functionEndpoints());
 	}
@@ -194,8 +194,7 @@ class FunctionEndpointFactory {
 
 	private final RequestProcessor processor;
 
-	FunctionEndpointFactory(FunctionCatalog functionCatalog, RequestProcessor processor,
-			Environment environment) {
+	FunctionEndpointFactory(FunctionCatalog functionCatalog, RequestProcessor processor, Environment environment) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
 			handler = null;
@@ -215,8 +214,8 @@ class FunctionEndpointFactory {
 		}
 		else {
 			String[] accept = FunctionWebUtils.acceptContentTypes(request.headers().accept());
-			function = FunctionWebUtils.findFunction(request.method(), functionCatalog,
-					request.attributes(), request.path(), accept);
+			function = FunctionWebUtils.findFunction(request.method(), functionCatalog, request.attributes(),
+					request.path(), accept);
 		}
 		return function;
 	}
@@ -225,8 +224,7 @@ class FunctionEndpointFactory {
 	public <T> RouterFunction<?> functionEndpoints() {
 		return route(POST("/**"), request -> {
 			FunctionInvocationWrapper funcWrapper = extract(request);
-			Class<?> outputType = funcWrapper == null
-					? Object.class
+			Class<?> outputType = funcWrapper == null ? Object.class
 					: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
 			FunctionWrapper wrapper = RequestProcessor.wrapper(funcWrapper);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
@@ -235,10 +233,10 @@ class FunctionEndpointFactory {
 				return status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()))
 						.body(entity.hasBody() ? Mono.just((T) entity.getBody()) : Mono.empty(), outputType);
 			});
-		})
-		.andRoute(GET("/**"), request -> {
+		}).andRoute(GET("/**"), request -> {
 			FunctionInvocationWrapper funcWrapper = extract(request);
-			Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
+			Class<?> outputType = FunctionTypeUtils
+					.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
 			if (funcWrapper.isSupplier()) {
 				Object result = FunctionWebUtils.invokeFunction(funcWrapper, null, funcWrapper.isInputTypeMessage());
 				if (!(result instanceof Publisher)) {
@@ -251,9 +249,11 @@ class FunctionEndpointFactory {
 				wrapper.headers(request.headers().asHttpHeaders());
 				String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
 				wrapper.argument(Flux.just(argument));
-				Object result = FunctionWebUtils.invokeFunction(funcWrapper, wrapper.argument(),  funcWrapper.isInputTypeMessage());
+				Object result = FunctionWebUtils.invokeFunction(funcWrapper, wrapper.argument(),
+						funcWrapper.isInputTypeMessage());
 				return ServerResponse.ok().body(result, outputType);
 			}
 		});
 	}
+
 }
