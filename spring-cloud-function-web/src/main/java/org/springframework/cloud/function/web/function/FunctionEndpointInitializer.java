@@ -80,7 +80,8 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
  */
 class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
-	private static boolean webflux = ClassUtils.isPresent("org.springframework.http.server.reactive.HttpHandler", null);
+	private static boolean webflux = ClassUtils
+			.isPresent("org.springframework.web.reactive.function.server.RouterFunction", null);
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
