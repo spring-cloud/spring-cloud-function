@@ -1088,6 +1088,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		@SuppressWarnings("unchecked")
 		private Object convertInputPublisherIfNecessary(Publisher publisher, Type type) {
+			if (FunctionTypeUtils.isMono(type) && publisher instanceof Flux) {
+				publisher = Mono.from(publisher);
+			}
+			else if (FunctionTypeUtils.isFlux(type) && publisher instanceof Mono) {
+				publisher = Flux.from(publisher);
+			}
 			Type actualType = type != null ? FunctionTypeUtils.getGenericType(type) : type;
 			return publisher instanceof Mono
 					? Mono.from(publisher).map(v -> this.convertInputIfNecessary(v, actualType))
