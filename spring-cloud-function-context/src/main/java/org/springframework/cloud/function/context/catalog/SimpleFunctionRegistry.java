@@ -735,23 +735,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			Message outputMessage = null;
 			if (value instanceof Message) {
 				MessageHeaders headers = ((Message) value).getHeaders();
-				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-					.getField(this.headersField, headers);
-				headersMap.put("accept", acceptedContentType);
-				// Set the contentType header to the value of accept for "legacy" reasons. But, do not set the
-				// contentType header to the value of accept if it is a wildcard type, as this doesn't make sense.
-				// This also applies to the else branch below.
-				if (acceptedContentType.isConcrete() && !headersMap.containsKey(MessageHeaders.CONTENT_TYPE)) {
-					headersMap.put(MessageHeaders.CONTENT_TYPE, acceptedContentType);
-				}
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils.getField(this.headersField, headers);
+				headersMap.putIfAbsent(MessageHeaders.CONTENT_TYPE, acceptedContentType);
 			}
 			else {
-				MessageBuilder<Object> builder = MessageBuilder.withPayload(value)
-					.setHeader("accept", acceptedContentType);
-				if (acceptedContentType.isConcrete()) {
-					builder.setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType);
-				}
-				value = builder.build();
+				value = MessageBuilder.withPayload(value).setHeader(MessageHeaders.CONTENT_TYPE, acceptedContentType).build();
 			}
 			if (enricher != null) {
 				value = enricher.apply((Message) value);

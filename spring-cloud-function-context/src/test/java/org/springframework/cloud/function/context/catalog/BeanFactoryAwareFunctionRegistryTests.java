@@ -59,6 +59,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static java.util.Collections.singletonList;
@@ -531,6 +532,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.block()).isEqualTo("hello");
 	}
 
+	@Test
+	public void testGH_611() {
+		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
+		Supplier<Message<Integer>> f = catalog.lookup("supplier", "text/*");
+		assertThat(f.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.parseMimeType("text/*"));
+	}
+
 	@EnableAutoConfiguration
 	public static class PojoToMessageFunctionCompositionConfiguration {
 
@@ -596,6 +604,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public static class NegotiatingMessageConverterConfiguration {
 
 		@Bean
+		public Supplier<Integer> supplier() {
+			return () -> 123;
+		}
+
+		@Bean
 		public Function<String, String> echo() {
 			return v -> v;
 		}
@@ -608,6 +621,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public MessageConverter messageConverterB() {
 			return new ConverterB();
+		}
+
+		@Bean
+		public MessageConverter messageConverterC() {
+			return new ConverterC();
 		}
 
 
@@ -636,6 +654,34 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			@Override
 			protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
 				return payload instanceof String;
+			}
+		}
+
+		public static class ConverterC extends ConverterA {
+			ConverterC() {
+				super("text/*");
+			}
+
+			@Override
+			protected Object convertFromInternal(
+					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+				return message.getPayload().toString();
+			}
+
+			@Override
+			public Object convertToInternal(Object rawPayload, MessageHeaders headers, Object conversionHint) {
+				return rawPayload;
+			}
+
+			@Override
+			protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
+				return supportsMimeType(message.getHeaders()) && Integer.class.isAssignableFrom(targetClass)
+						&& message.getPayload() instanceof Integer;
+			}
+
+			@Override
+			protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
+				return payload instanceof Integer;
 			}
 		}
 
