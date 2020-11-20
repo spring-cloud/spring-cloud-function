@@ -859,7 +859,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					}
 				}
 				else { //if (rawType instanceof Class<?>) { // see AWS adapter with WildardTypeImpl and Azure with Voids
-					convertedValue = this.convertNonMessageInputIfNecessary(type, value);
+					convertedValue = FunctionTypeUtils.isPublisher(type)
+							? this.convertNonMessageInputIfNecessary(rawType, value)
+							: this.convertNonMessageInputIfNecessary(type, value);
 				}
 			}
 			if (logger.isDebugEnabled()) {
