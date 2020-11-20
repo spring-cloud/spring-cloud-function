@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -517,6 +518,17 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		consumer.accept(Flux.just("{\"name\":\"Ricky\"}"));
 		SampleFunctionConfiguration config = context.getBean(SampleFunctionConfiguration.class);
 		assertThat(((Person) config.consumerInputRef.get()).getName()).isEqualTo("Ricky");
+	}
+
+	@Test
+	public void testGH_609() {
+		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
+		Function<Publisher<String>, Publisher<String>> f = catalog.lookup("monoToMono");
+		Mono<String> result = (Mono<String>) f.apply(Mono.just("hello"));
+		assertThat(result.block()).isEqualTo("hello");
+
+		result = (Mono<String>) f.apply(Flux.just("hello"));
+		assertThat(result.block()).isEqualTo("hello");
 	}
 
 	@EnableAutoConfiguration

@@ -544,6 +544,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 			Object invocationResult = null;
 			if (this.target instanceof Function) {
+				if (FunctionTypeUtils.isMono(FunctionTypeUtils.getInputType(this.getFunctionType(), 0)) && input instanceof Flux) {
+					input = Mono.from((Publisher) input);
+				}
+				else if (FunctionTypeUtils.isFlux(FunctionTypeUtils.getInputType(this.getFunctionType(), 0)) && input instanceof Mono) {
+					input = Flux.from((Publisher) input);
+				}
 				invocationResult = ((Function) target).apply(input);
 			}
 			else if (this.target instanceof Supplier) {
