@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -516,6 +517,19 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.getHeaders().get("after")).isEqualTo("bar");
 	}
 
+	@Test
+	public void testGH_608() {
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+				.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true");
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		Consumer<Flux<String>> consumer = catalog.lookup("reactivePojoConsumer");
+		consumer.accept(Flux.just("{\"name\":\"Ricky\"}"));
+		SampleFunctionConfiguration config = context.getBean(SampleFunctionConfiguration.class);
+		assertThat(((Person) config.consumerInputRef.get()).getName()).isEqualTo("Ricky");
+	}
+
 	@EnableAutoConfiguration
 	public static class PojoToMessageFunctionCompositionConfiguration {
 
@@ -693,6 +707,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Configuration
 	protected static class SampleFunctionConfiguration {
 
+		AtomicReference<Object> consumerInputRef = new AtomicReference<>();
+
 		@Bean
 		public Function<Person, Person> uppercasePerson() {
 			return person -> {
@@ -848,6 +864,12 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		// Perhaps it should not be allowed. Recommend Function<Flux, Mono<Void>>
 		public Consumer<Flux<String>> reactiveConsumer() {
 			return null;
+		}
+
+		@Bean
+		// Perhaps it should not be allowed. Recommend Function<Flux, Mono<Void>>
+		public Consumer<Flux<Person>> reactivePojoConsumer() {
+			return flux -> flux.subscribe(v -> consumerInputRef.set(v));
 		}
 	}
 
