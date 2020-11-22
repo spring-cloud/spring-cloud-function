@@ -78,8 +78,6 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-
-
 /**
  *
  * Basic implementation of FunctionRegistry which maintains the cache of registered functions while
@@ -834,17 +832,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					if (messageNeedsConversion(rawType, type, (Message<?>) value)) {
 
 						boolean convertWithHint = false;
-						Type hint = type;
-						if (FunctionTypeUtils.isTypeCollection(type)) {
-							hint = FunctionTypeUtils.getGenericType(type);
-							convertWithHint = true;
-						}
-						else if (!rawType.equals(type)) {
+						Type hint = FunctionTypeUtils.getGenericType(type);;
+						if (FunctionTypeUtils.isTypeCollection(type) || !rawType.equals(hint)) {
 							convertWithHint = true;
 						}
 
 						convertedValue = convertWithHint
-							? this.fromMessage((Message<?>) value, (Class<?>) rawType, FunctionTypeUtils.getGenericType(type))
+							? this.fromMessage((Message<?>) value, (Class<?>) rawType, hint)
 							: this.fromMessage((Message<?>) value, (Class<?>) rawType, null);
 						if (logger.isDebugEnabled()) {
 							logger.debug("Converted from Message: " + convertedValue);
