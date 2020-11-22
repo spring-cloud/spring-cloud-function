@@ -39,6 +39,7 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.HybridFunctionalRegistrationTests.UppercaseFunction;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.config.ApplicationJsonMessageMarshallingConverter;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
 import org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper;
 import org.springframework.cloud.function.json.GsonMapper;
@@ -54,7 +55,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
@@ -254,13 +254,13 @@ public class SimpleFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	@Ignore
+//	@Ignore
 	public void testReactiveFunctionWithListMessagesJackson() {
 		FunctionRegistration<ReactiveFunctionWithList> registration = new FunctionRegistration<>(new ReactiveFunctionWithList(), "reactiveWithList")
 			.type(FunctionType.of(ReactiveFunctionWithList.class));
 
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService,
-			new CompositeMessageConverter(Collections.singletonList(new MappingJackson2MessageConverter())));
+			new CompositeMessageConverter(Collections.singletonList(new ApplicationJsonMessageMarshallingConverter(null))));
 		catalog.register(registration);
 
 		Function lookedUpFunction = catalog.lookup("reactiveWithList");
@@ -303,7 +303,7 @@ public class SimpleFunctionRegistryTests {
 			.type(FunctionType.of(ReactiveFunction.class));
 
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService,
-			new CompositeMessageConverter(Collections.singletonList(new MappingJackson2MessageConverter())));
+			new CompositeMessageConverter(Collections.singletonList(new ApplicationJsonMessageMarshallingConverter(null))));
 		catalog.register(registration);
 
 		Function lookedUpFunction = catalog.lookup("reactive");
@@ -341,13 +341,12 @@ public class SimpleFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	@Ignore
 	public void testReactiveFunctionWithHolderMessageJackson() {
 		FunctionRegistration<ReactiveFunctionWithHolder> registration = new FunctionRegistration<>(new ReactiveFunctionWithHolder(), "reactive")
 			.type(FunctionType.of(ReactiveFunctionWithHolder.class));
 
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService,
-			new CompositeMessageConverter(Collections.singletonList(new MappingJackson2MessageConverter())));
+			new CompositeMessageConverter(Collections.singletonList(new ApplicationJsonMessageMarshallingConverter(null))));
 		catalog.register(registration);
 
 		Function lookedUpFunction = catalog.lookup("reactive");
