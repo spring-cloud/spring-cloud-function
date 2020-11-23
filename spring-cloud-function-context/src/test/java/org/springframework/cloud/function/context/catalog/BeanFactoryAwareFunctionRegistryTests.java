@@ -61,6 +61,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 
 import static java.util.Collections.singletonList;
@@ -532,14 +533,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		result = (Mono<String>) f.apply(Flux.just("hello"));
 		assertThat(result.block()).isEqualTo("hello");
 	}
-//
-//	@Test
-//<<<<<<< HEAD
-//	public void testGH_611() {
-//		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
-//		Supplier<Message<Integer>> f = catalog.lookup("supplier", "text/*");
-//		assertThat(f.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.parseMimeType("text/*"));
-//=======
+
+	@Test
+	public void testGH_611() {
+		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
+		Supplier<Message<Integer>> f = catalog.lookup("supplier", "text/*");
+		assertThat(f.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.parseMimeType("text/*"));
+	}
+
+	@Test
 	public void testGH_612() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 			.run("--logging.level.org.springframework.cloud.function=DEBUG",
@@ -553,7 +555,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			.build()));
 		SampleFunctionConfiguration config = context.getBean(SampleFunctionConfiguration.class);
 		assertThat(((Person) config.consumerInputRef.get()).getName()).isEqualTo("Ricky");
-//>>>>>>> GH-612: Better tests and implementation
 	}
 
 	@EnableAutoConfiguration
