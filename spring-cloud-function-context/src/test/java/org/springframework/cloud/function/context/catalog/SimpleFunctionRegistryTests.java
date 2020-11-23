@@ -39,7 +39,6 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.HybridFunctionalRegistrationTests.UppercaseFunction;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.function.context.config.ApplicationJsonMessageMarshallingConverter;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
 import org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper;
 import org.springframework.cloud.function.json.GsonMapper;
@@ -55,6 +54,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
@@ -254,29 +254,6 @@ public class SimpleFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-//	@Ignore
-	public void testReactiveFunctionWithListMessagesJackson() {
-		FunctionRegistration<ReactiveFunctionWithList> registration = new FunctionRegistration<>(new ReactiveFunctionWithList(), "reactiveWithList")
-			.type(FunctionType.of(ReactiveFunctionWithList.class));
-
-		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService,
-			new CompositeMessageConverter(Collections.singletonList(new ApplicationJsonMessageMarshallingConverter(null))));
-		catalog.register(registration);
-
-		Function lookedUpFunction = catalog.lookup("reactiveWithList");
-
-		assertThat(lookedUpFunction).isNotNull();
-		Flux<List<String>> result = (Flux<List<String>>) lookedUpFunction
-			.apply(Flux.just(MessageBuilder
-				.withPayload("[{\"name\":\"item1\"},{\"name\":\"item2\"}]")
-				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-				.build()
-			));
-		Assertions.assertIterableEquals(result.blockFirst(), Arrays.asList("item1", "item2"));
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@Test
 	public void testReactiveFunctionMessage() {
 		FunctionRegistration<ReactiveFunction> registration = new FunctionRegistration<>(new ReactiveFunction(), "reactive")
 			.type(FunctionType.of(ReactiveFunction.class));
@@ -303,7 +280,7 @@ public class SimpleFunctionRegistryTests {
 			.type(FunctionType.of(ReactiveFunction.class));
 
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService,
-			new CompositeMessageConverter(Collections.singletonList(new ApplicationJsonMessageMarshallingConverter(null))));
+			new CompositeMessageConverter(Collections.singletonList(new MappingJackson2MessageConverter())));
 		catalog.register(registration);
 
 		Function lookedUpFunction = catalog.lookup("reactive");
@@ -312,49 +289,6 @@ public class SimpleFunctionRegistryTests {
 		Flux<String> result = (Flux<String>) lookedUpFunction
 			.apply(Flux.just(MessageBuilder
 				.withPayload("{\"name\":\"item\"}")
-				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-				.build()
-			));
-		Assertions.assertEquals(result.blockFirst(), "item");
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@Test
-	public void testReactiveFunctionWithHolderMessage() {
-		FunctionRegistration<ReactiveFunctionWithHolder> registration = new FunctionRegistration<>(new ReactiveFunctionWithHolder(), "reactive")
-			.type(FunctionType.of(ReactiveFunctionWithHolder.class));
-
-		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter);
-		catalog.register(registration);
-
-		Function lookedUpFunction = catalog.lookup("reactive");
-
-		assertThat(lookedUpFunction).isNotNull();
-		Flux<String> result = (Flux<String>) lookedUpFunction
-			.apply(Flux.just(MessageBuilder
-				.withPayload("{\"data\":{\"name\":\"item\"}}")
-				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-				.build()
-			));
-		Assertions.assertEquals(result.blockFirst(), "item");
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@Test
-	public void testReactiveFunctionWithHolderMessageJackson() {
-		FunctionRegistration<ReactiveFunctionWithHolder> registration = new FunctionRegistration<>(new ReactiveFunctionWithHolder(), "reactive")
-			.type(FunctionType.of(ReactiveFunctionWithHolder.class));
-
-		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService,
-			new CompositeMessageConverter(Collections.singletonList(new ApplicationJsonMessageMarshallingConverter(null))));
-		catalog.register(registration);
-
-		Function lookedUpFunction = catalog.lookup("reactive");
-
-		assertThat(lookedUpFunction).isNotNull();
-		Flux<String> result = (Flux<String>) lookedUpFunction
-			.apply(Flux.just(MessageBuilder
-				.withPayload("{\"data\":{\"name\":\"item\"}}")
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
 				.build()
 			));
@@ -509,29 +443,6 @@ public class SimpleFunctionRegistryTests {
 			return flux
 				.map(Message::getPayload)
 				.map(Person::getName);
-		}
-	}
-
-	private static class ReactiveFunctionWithHolder implements Function<Flux<Message<GenericDataHolder<Person>>>, Flux<String>> {
-
-		@Override
-		public Flux<String> apply(Flux<Message<GenericDataHolder<Person>>> flux) {
-			return flux
-				.map(Message::getPayload)
-				.map(GenericDataHolder::getData)
-				.map(Person::getName);
-		}
-	}
-
-	public static class GenericDataHolder<T> {
-		private T data;
-
-		public T getData() {
-			return data;
-		}
-
-		public void setData(T data) {
-			this.data = data;
 		}
 	}
 }
