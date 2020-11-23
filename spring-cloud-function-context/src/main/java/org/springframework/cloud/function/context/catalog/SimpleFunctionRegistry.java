@@ -832,8 +832,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					if (messageNeedsConversion(rawType, type, (Message<?>) value)) {
 
 						boolean convertWithHint = false;
-						Type hint = FunctionTypeUtils.getGenericType(type);;
-						if (FunctionTypeUtils.isTypeCollection(type) || !rawType.equals(hint)) {
+						Type hint = FunctionTypeUtils.getGenericType(type);
+						if (FunctionTypeUtils.isTypeCollection(type)) {
+							convertWithHint = true;
+						}
+						else if (!FunctionTypeUtils.isPublisher(type) && !rawType.equals(type)) {
 							convertWithHint = true;
 						}
 

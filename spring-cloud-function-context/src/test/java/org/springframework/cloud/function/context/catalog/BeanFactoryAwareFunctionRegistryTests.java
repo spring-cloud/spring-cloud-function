@@ -46,6 +46,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,6 +54,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
@@ -531,6 +533,22 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.block()).isEqualTo("hello");
 	}
 
+	@Test
+	public void testGH_612() {
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG",
+				"--spring.main.lazy-initialization=true");
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		Consumer<Flux<Message<String>>> consumer = catalog.lookup("reactivePojoConsumer");
+		consumer.accept(Flux.just(MessageBuilder
+			.withPayload("{\"name\":\"Ricky\"}")
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("application/json"))
+			.build()));
+		SampleFunctionConfiguration config = context.getBean(SampleFunctionConfiguration.class);
+		assertThat(((Person) config.consumerInputRef.get()).getName()).isEqualTo("Ricky");
+	}
+
 	@EnableAutoConfiguration
 	public static class PojoToMessageFunctionCompositionConfiguration {
 
@@ -687,6 +705,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	protected static class SampleFunctionConfiguration {
 
 		AtomicReference<Object> consumerInputRef = new AtomicReference<>();
+
+		@Bean
+		public MessageConverter mappingJackson2MessageConverter() {
+			return NegotiatingMessageConverterWrapper.wrap(new MappingJackson2MessageConverter());
+		}
 
 		@Bean
 		public Function<Person, Person> uppercasePerson() {

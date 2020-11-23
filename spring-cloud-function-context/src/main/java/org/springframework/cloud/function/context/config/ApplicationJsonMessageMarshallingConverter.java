@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.assertj.core.util.VisibleForTesting;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
@@ -50,14 +49,13 @@ import org.springframework.util.ReflectionUtils;
  * @author Gary Russell
  * @since 2.0
  */
-public class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
+class ApplicationJsonMessageMarshallingConverter extends MappingJackson2MessageConverter {
 
 	private final Field headersField;
 
 	private final Map<Type, JavaType> typeCache = new ConcurrentHashMap<>();
 
-	@VisibleForTesting
-	public ApplicationJsonMessageMarshallingConverter(@Nullable ObjectMapper objectMapper) {
+	ApplicationJsonMessageMarshallingConverter(@Nullable ObjectMapper objectMapper) {
 		if (objectMapper != null) {
 			this.setObjectMapper(objectMapper);
 		}
