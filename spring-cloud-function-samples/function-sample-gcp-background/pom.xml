@@ -20,7 +20,7 @@
 	</parent>
 
 	<properties>
-		<spring-cloud-function.version>3.0.12.RELEASE</spring-cloud-function.version>
+		<spring-cloud-function.version>3.0.12.BUILD-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
