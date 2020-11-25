@@ -108,8 +108,7 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),
 						context.getBean(RequestProcessor.class), context.getEnvironment()));
-		context.registerBean(RouterFunction.class,
-				() -> context.getBean(FunctionEndpointFactory.class).functionEndpoints());
+		RouterFunctionRegister.register(context);
 	}
 
 	private HttpWebHandlerAdapter httpHandler(GenericApplicationContext context) {
@@ -129,6 +128,15 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 		handler.setMessageWriters(codecs.getWriters());
 		handler.setMessageReaders(codecs.getReaders());
 		return handler;
+	}
+
+	private static class RouterFunctionRegister {
+
+		private static void register(GenericApplicationContext context) {
+			context.registerBean(RouterFunction.class,
+					() -> context.getBean(FunctionEndpointFactory.class).functionEndpoints());
+		}
+
 	}
 
 	private static class ServerListener implements SmartApplicationListener {
