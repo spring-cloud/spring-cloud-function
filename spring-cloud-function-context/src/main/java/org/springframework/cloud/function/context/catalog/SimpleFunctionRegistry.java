@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -46,13 +45,12 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.function.cloudevent.CloudEventAttributes;
-import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
@@ -98,10 +96,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 	private final JsonMapper jsonMapper;
 
+	private final FunctionInvocationHelper<Message<?>> functionInvocationHelper;
+
 	@Autowired(required = false)
 	private FunctionAroundWrapper functionAroundWrapper;
 
-	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
+	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper,
+			@Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		Assert.notNull(messageConverter, "'messageConverter' must not be null");
 		Assert.notNull(jsonMapper, "'jsonMapper' must not be null");
 		this.conversionService = conversionService;
@@ -109,6 +110,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		this.messageConverter = messageConverter;
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 		this.headersField.setAccessible(true);
+		this.functionInvocationHelper = functionInvocationHelper;
+	}
+
+	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
+		this(conversionService, messageConverter, jsonMapper, null);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -322,11 +328,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		private Function<Object, Message> enhancer;
 
-		private BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher;
-
-		void setOutputMessageHeaderEnricher(BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher) {
-			this.outputMessageHeaderEnricher = outputMessageHeaderEnricher;
-		}
+//		private BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher;
+//
+//		void setOutputMessageHeaderEnricher(BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher) {
+//			this.outputMessageHeaderEnricher = outputMessageHeaderEnricher;
+//		}
 
 		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
 			this.target = function.target;
@@ -623,8 +629,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
 				}
 				else {
-					if (this.outputMessageHeaderEnricher != null) {
-						result = this.outputMessageHeaderEnricher.apply((Message<?>) input, result);
+					if (functionInvocationHelper != null) {
+						result = functionInvocationHelper.postProcessResult((Message<?>) input, result);
 					}
 					else {
 						result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
@@ -823,7 +829,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					return null;
 				}
 
-				input = CloudEventMessageUtils.toBinary((Message<?>) input, messageConverter);
+				if (functionInvocationHelper != null) {
+					input = functionInvocationHelper.preProcessInput((Message<?>) input, messageConverter);
+				}
 
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
@@ -910,7 +918,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * case that requires it since it may contain forwarding url
 		 */
 		private boolean containsRetainMessageSignalInHeaders(Message message) {
-			if (new CloudEventAttributes(message.getHeaders()).isValidCloudEvent()) {
+			if (functionInvocationHelper != null && functionInvocationHelper.isRetainOuputAsMessage(message)) {
 				return true;
 			}
 			else {
