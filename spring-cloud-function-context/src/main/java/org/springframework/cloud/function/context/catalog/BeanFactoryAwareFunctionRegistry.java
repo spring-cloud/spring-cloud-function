@@ -20,10 +20,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -32,17 +32,21 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributes;
+import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.message.CompositeOutputMessageHeaderEnricher;
-import org.springframework.cloud.function.context.message.OutputMessageHeaderEnricher;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StringUtils;
 
 /**
@@ -55,7 +59,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 	private GenericApplicationContext applicationContext;
 
-	private OutputMessageHeaderEnricher enricher;
+	private CloudEventAttributesProvider cloudEventAtttributesProvider;
 
 	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService,
 			CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
@@ -65,9 +69,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (GenericApplicationContext) applicationContext;
-		if (applicationContext.getBeanNamesForType(OutputMessageHeaderEnricher.class).length > 0) {
-			this.enricher = new CompositeOutputMessageHeaderEnricher(applicationContext
-					.getBeanProvider(OutputMessageHeaderEnricher.class).orderedStream().collect(Collectors.toList()));
+		if (applicationContext.getBeanNamesForType(CloudEventAttributesProvider.class).length > 0) {
+			this.cloudEventAtttributesProvider = applicationContext.getBean(CloudEventAttributesProvider.class);
 		}
 	}
 
@@ -161,11 +164,34 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			function = super.doLookup(type, functionDefinition, expectedOutputMimeTypes);
 		}
 
-		if (function != null && this.enricher != null) {
-			function.setOutputMessageHeaderEnricher(this.enricher);
+		if (function != null) {
+			BiFunction<Message<?>, Object, Message<?>> invocationResultHeaderEnricher = new BiFunction<Message<?>, Object, Message<?>>() {
+				@Override
+				public Message<?> apply(Message<?> inputMessage, Object invocationResult) {
+					// TODO: Factor it out! Cloud Events specific code
+					CloudEventAttributes generatedCeHeaders = CloudEventMessageUtils.generateAttributes(inputMessage,
+							invocationResult.getClass().getName(), getApplicationName());
+					CloudEventAttributes attributes = new CloudEventAttributes(generatedCeHeaders,
+							CloudEventMessageUtils.determinePrefixToUse(inputMessage.getHeaders()));
+					if (cloudEventAtttributesProvider != null) {
+						cloudEventAtttributesProvider.generateDefaultCloudEventHeaders(attributes);
+					}
+					Message message = MessageBuilder.withPayload(invocationResult).copyHeaders(attributes).build();
+
+					return message;
+				}
+			};
+			function.setOutputMessageHeaderEnricher(invocationResultHeaderEnricher);
 		}
 
 		return (T) function;
+	}
+
+	private String getApplicationName() {
+		ConfigurableEnvironment environment = this.applicationContext.getEnvironment();
+		String name = environment.getProperty("spring.application.name");
+		return "http://spring.io/"
+				+ (StringUtils.hasText(name) ? name : "application-" + this.applicationContext.getId());
 	}
 
 	private Object discoverFunctionInBeanFactory(String functionName) {
