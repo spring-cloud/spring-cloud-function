@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.function.cloudevent;
 
+import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -29,7 +31,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,12 +43,50 @@ public class CloudEventFunctionTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void testBinaryPojoToPojoDefaultOutputAttributeProvider() {
+	public void testBinaryPojoToPojoDefaultOutputHeaderProvider() {
 		Function<Object, Object> function = this.lookup("echo", TestConfiguration.class);
 
-		Message<String> inputMessage = MessageBuilder.withPayload("{\"name\":\"Ricky\"}")
-				.copyHeaders(CloudEventMessageUtils.get("https://spring.io/", "org.springframework")).build();
-		assertThat(CloudEventMessageUtils.isBinary(inputMessage.getHeaders())).isTrue();
+		String id = UUID.randomUUID().toString();
+
+		Message<String> inputMessage = CloudEventMessageBuilder
+			.withData("{\"name\":\"Ricky\"}")
+			.setId(id)
+			.setSource("https://spring.io/")
+			.setType("org.springframework")
+			.build();
+
+		assertThat(inputMessage.getHeaders().getId()).isEqualTo(UUID.fromString(id));
+		assertThat(CloudEventMessageUtils.isBinary(inputMessage)).isTrue();
+
+		Message<Person> resultMessage = (Message<Person>) function.apply(inputMessage);
+
+
+		/*
+		 * Validates that although user only deals with POJO, the framework recognizes
+		 * both on input and output that it is dealing with Cloud Event and generates
+		 * appropriate headers/attributes
+		 */
+		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
+	}
+
+	// this kind of emulates that message came from Kafka
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testBinaryPojoToPojoDefaultOutputHeaderProviderWithPrefix() {
+		Function<Object, Object> function = this.lookup("echo", TestConfiguration.class);
+
+		String id = UUID.randomUUID().toString();
+
+		Message<String> inputMessage = CloudEventMessageBuilder
+			.withData("{\"name\":\"Ricky\"}")
+			.setHeader("ce_id", id)
+			.setHeader("ce_source", "https://spring.io/")
+			.setHeader("ce_type", "org.springframework")
+			.build();
+
+//		assertThat(CloudEventMessageUtils.isBinary(inputMessage)).isTrue();
 
 		Message<Person> resultMessage = (Message<Person>) function.apply(inputMessage);
 
@@ -56,10 +95,9 @@ public class CloudEventFunctionTests {
 		 * both on input and output that it is dealing with Cloud Event and generates
 		 * appropriate headers/attributes
 		 */
-		CloudEventAttributes attributes = new CloudEventAttributes(resultMessage.getHeaders());
-		assertThat(attributes.isValidCloudEvent()).isTrue();
-		assertThat((String) attributes.getType()).isEqualTo(Person.class.getName());
-		assertThat((String) attributes.getSource()).isEqualTo("http://spring.io/application-application");
+		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -79,24 +117,25 @@ public class CloudEventFunctionTests {
 				"}";
 		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
 
-		Message<String> inputMessage = MessageBuilder.withPayload(payload)
+		Message<String> inputMessage = CloudEventMessageBuilder
+				.withData(payload)
 				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
 				.build();
-		assertThat(CloudEventMessageUtils.isBinary(inputMessage.getHeaders())).isFalse();
+
+		assertThat(CloudEventMessageUtils.isBinary(inputMessage)).isFalse();
 
 		Message<SpringReleaseEvent> resultMessage = (Message<SpringReleaseEvent>) function.apply(inputMessage);
 		assertThat(resultMessage.getPayload().getReleaseDate())
 				.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
 		assertThat(resultMessage.getPayload().getVersion()).isEqualTo("2.0");
-		/*
-		 * Validates that although user only deals with POJO, the framework recognizes
-		 * both on input and output that it is dealing with Cloud Event and generates
-		 * appropriate headers/attributes
-		 */
-		CloudEventAttributes attributes = new CloudEventAttributes(resultMessage.getHeaders());
-		assertThat(attributes.isValidCloudEvent()).isTrue();
-		assertThat((String) attributes.getType()).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat((String) attributes.getSource()).isEqualTo("http://spring.io/application-application");
+//		/*
+//		 * Validates that although user only deals with POJO, the framework recognizes
+//		 * both on input and output that it is dealing with Cloud Event and generates
+//		 * appropriate headers/attributes
+//		 */
+		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -115,10 +154,11 @@ public class CloudEventFunctionTests {
 				"}";
 		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
 
-		Message<String> inputMessage = MessageBuilder.withPayload(payload)
+		Message<String> inputMessage = CloudEventMessageBuilder
+				.withData(payload)
 				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
 				.build();
-		assertThat(CloudEventMessageUtils.isBinary(inputMessage.getHeaders())).isFalse();
+		assertThat(CloudEventMessageUtils.isBinary(inputMessage)).isFalse();
 
 		Message<SpringReleaseEvent> resultMessage = (Message<SpringReleaseEvent>) function.apply(inputMessage);
 		assertThat(resultMessage.getPayload().getReleaseDate())
@@ -129,10 +169,9 @@ public class CloudEventFunctionTests {
 		 * both on input and output that it is dealing with Cloud Event and generates
 		 * appropriate headers/attributes
 		 */
-		CloudEventAttributes attributes = new CloudEventAttributes(resultMessage.getHeaders());
-		assertThat(attributes.isValidCloudEvent()).isTrue();
-		assertThat((String) attributes.getType()).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat((String) attributes.getSource()).isEqualTo("http://spring.io/application-application");
+		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
 
 	private Function<Object, Object> lookup(String functionDefinition, Class<?>... configClass) {

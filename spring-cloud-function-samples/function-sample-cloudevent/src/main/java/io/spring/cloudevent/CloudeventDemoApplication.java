@@ -25,13 +25,13 @@ import java.util.function.Function;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.cloud.function.cloudevent.CloudEventAttributesProvider;
+import org.springframework.cloud.function.cloudevent.CloudEventHeaderEnricher;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.RequestEntity;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
@@ -104,9 +104,9 @@ public class CloudeventDemoApplication {
 	}
 
 	@Bean
-	public CloudEventAttributesProvider cloudEventAttributesProvider() {
-		return attributes -> {
-			attributes.setSource("https://interface21.com/").setType("com.interface21");
+	public CloudEventHeaderEnricher cloudEventHeaderEnricher() {
+		return headers -> {
+			return headers.setSource("https://interface21.com/").setType("com.interface21");
 		};
 	}
 
@@ -129,11 +129,11 @@ public class CloudeventDemoApplication {
 	}
 
 	@Bean
-	public Consumer<Message<SpringReleaseEvent>> pojoConsumer(CloudEventAttributesProvider provider, RestTemplateBuilder builder) {
+	public Consumer<Message<SpringReleaseEvent>> pojoConsumer(CloudEventHeaderEnricher enricher, RestTemplateBuilder builder) {
 			return eventMessage -> {
+				Message<?> newMessage = enricher.enrich(CloudEventMessageBuilder.fromMessage(eventMessage)).build(CloudEventMessageUtils.HTTP_ATTR_PREFIX);
 				RequestEntity<SpringReleaseEvent> entity = RequestEntity.post(URI.create("http://foo.com"))
-						.headers(HeaderUtils.fromMessage(
-								new MessageHeaders(CloudEventMessageUtils.generateAttributes(eventMessage, provider))))
+						.headers(HeaderUtils.fromMessage(newMessage.getHeaders()))
 						.body(eventMessage.getPayload());
 				List<String> sourceHeader = entity.getHeaders().get("ce-source");
 				Assert.isTrue(sourceHeader.get(0).equals("https://interface21.com/"), "'source' must be https://interface21.com/");

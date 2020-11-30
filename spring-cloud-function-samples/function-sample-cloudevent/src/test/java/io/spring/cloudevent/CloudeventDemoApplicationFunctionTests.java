@@ -21,6 +21,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageBuilder;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -40,9 +41,11 @@ public class CloudeventDemoApplicationFunctionTests {
 		try(ConfigurableApplicationContext context = new SpringApplicationBuilder(CloudeventDemoApplication.class)
 				.web(WebApplicationType.NONE).run()) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-			Message<String> binaryCloudEventMessage = MessageBuilder
-					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
-					.copyHeaders(CloudEventMessageUtils.get("spring.io/spring-event", "com.example.springevent"))
+
+			Message<String> inputMessage = CloudEventMessageBuilder
+					.withData("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
+					.setSource("https://spring.io/spring-event")
+					.setType("com.example.springevent")
 					.build();
 
 			/*
@@ -51,16 +54,16 @@ public class CloudeventDemoApplicationFunctionTests {
 			 * inside spring-cloud-function.
 			 */
 			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("asPOJOMessage");
-			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
+			System.out.println(asPojoMessage.apply(inputMessage));
 
 			Function<Message<String>, Message<String>> asPojo = catalog.lookup("asPOJO");
-			System.out.println(asPojo.apply(binaryCloudEventMessage));
+			System.out.println(asPojo.apply(inputMessage));
 
 			Function<Message<String>, Message<String>> asString = catalog.lookup("asString");
-			System.out.println(asString.apply(binaryCloudEventMessage));
+			System.out.println(asString.apply(inputMessage));
 
 			Function<Message<String>, Message<String>> asStringMessage = catalog.lookup("asStringMessage");
-			System.out.println(asStringMessage.apply(binaryCloudEventMessage));
+			System.out.println(asStringMessage.apply(inputMessage));
 		}
 	}
 
@@ -69,9 +72,11 @@ public class CloudeventDemoApplicationFunctionTests {
 		try(ConfigurableApplicationContext context = new SpringApplicationBuilder(CloudeventDemoApplication.class)
 				.web(WebApplicationType.NONE).run()) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-			Message<String> binaryCloudEventMessage = MessageBuilder
-					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
-					.copyHeaders(CloudEventMessageUtils.get("spring.io/spring-event", "com.example.springevent"))
+
+			Message<String> inputMessage = CloudEventMessageBuilder
+					.withData("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
+					.setSource("https://spring.io/spring-event")
+					.setType("com.example.springevent")
 					.build();
 
 			/*
@@ -80,7 +85,7 @@ public class CloudeventDemoApplicationFunctionTests {
 			 * inside spring-cloud-function.
 			 */
 			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("consumeAndProduceCloudEvent");
-			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
+			System.out.println(asPojoMessage.apply(inputMessage));
 		}
 	}
 
@@ -89,9 +94,11 @@ public class CloudeventDemoApplicationFunctionTests {
 		try(ConfigurableApplicationContext context = new SpringApplicationBuilder(CloudeventDemoApplication.class)
 				.web(WebApplicationType.NONE).run()) {
 			FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-			Message<String> binaryCloudEventMessage = MessageBuilder
-					.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
-					.copyHeaders(CloudEventMessageUtils.get("spring.io/spring-event", "com.example.springevent"))
+
+			Message<String> inputMessage = CloudEventMessageBuilder
+					.withData("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
+					.setSource("https://spring.io/spring-event")
+					.setType("com.example.springevent")
 					.build();
 
 			/*
@@ -100,7 +107,7 @@ public class CloudeventDemoApplicationFunctionTests {
 			 * inside spring-cloud-function.
 			 */
 			Function<Message<String>, Message<String>> asPojoMessage = catalog.lookup("consumeAndProduceCloudEventAsPojoToPojo");
-			System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
+			System.out.println(asPojoMessage.apply(inputMessage));
 		}
 	}
 }
