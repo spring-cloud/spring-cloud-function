@@ -57,7 +57,6 @@ public final class CloudEventMessageBuilder<T> {
 		return builder;
 	}
 
-	@SuppressWarnings("unchecked")
 	public static <T> CloudEventMessageBuilder<T> fromMessage(Message<T> message) {
 		CloudEventMessageBuilder<T> builder = new CloudEventMessageBuilder<T>(new HashMap<>(message.getHeaders()));
 		builder.data = message.getPayload();
