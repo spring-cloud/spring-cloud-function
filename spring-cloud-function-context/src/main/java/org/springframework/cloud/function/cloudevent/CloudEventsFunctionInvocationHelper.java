@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import org.springframework.beans.BeansException;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -36,7 +37,7 @@ import org.springframework.util.StringUtils;
  * This is a primary (and the only) integration bridge with {@link FunctionInvocationHelper}.
  *
  * @author Oleg Zhurakousky
- * @since 2.0
+ * @since 3.1
  *
  */
 class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Message<?>>, ApplicationContextAware {
@@ -51,7 +52,8 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 	@Override
 	public boolean isRetainOuputAsMessage(Message<?> message) {
-		if (message.getHeaders().containsKey("message-type") && message.getHeaders().get("message-type").equals("cloudevent")) {
+		if (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
+				&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE)) {
 			return true;
 		}
 		return false;
@@ -64,13 +66,19 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 	@Override
 	public Message<?> postProcessResult(Message<?> input, Object result) {
-		Message<?> resultMessage = null;
+		Message<?> resultMessage = result instanceof Message ? (Message<?>) result : null;
 		if (CloudEventMessageUtils.isCloudEvent(input)) {
-			CloudEventMessageBuilder<?> messageBuilder = CloudEventMessageBuilder
-				.withData(result)
-				.setId(UUID.randomUUID().toString())
-				.setSource(URI.create("http://spring.io/" + getApplicationName()))
-				.setType(result.getClass().getName());
+			CloudEventMessageBuilder<?> messageBuilder;
+			if (result instanceof Message) {
+				messageBuilder = CloudEventMessageBuilder.fromMessage((Message<?>) result);
+			}
+			else {
+				messageBuilder = CloudEventMessageBuilder
+						.withData(result)
+						.setId(UUID.randomUUID().toString())
+						.setSource(URI.create("http://spring.io/" + getApplicationName()))
+						.setType(result.getClass().getName());
+			}
 
 			if (this.cloudEventAttributesProvider != null) {
 				messageBuilder = this.cloudEventAttributesProvider.enrich(messageBuilder);
@@ -80,9 +88,10 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 			resultMessage = messageBuilder.build(prefix);
 		}
-		else {
+		else if (!(result instanceof Message<?>)) {
 			resultMessage = MessageBuilder.withPayload(result).build();
 		}
+
 		return resultMessage;
 	}
 

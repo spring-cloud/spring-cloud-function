@@ -34,6 +34,8 @@ import org.springframework.messaging.Message;
 @Configuration(proxyBeanMethods = false)
 class CloudEventsFunctionExtensionConfiguration {
 
+	// The following two beans are intended to be mutually exclusive. Only one should be activated based
+	// on the presence of Cloud Event SDK API
 	@Bean
 	@ConditionalOnMissingClass("io.cloudevents.CloudEvent")
 	@ConditionalOnMissingBean
@@ -48,4 +50,5 @@ class CloudEventsFunctionExtensionConfiguration {
 		// TODO you may need SDKs header provider
 		return null;
 	}
+	// ========================================================
 }

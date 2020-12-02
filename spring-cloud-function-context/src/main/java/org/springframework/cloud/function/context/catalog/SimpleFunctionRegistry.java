@@ -621,6 +621,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 							.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
 					this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
+					if (functionInvocationHelper != null) {
+						result = functionInvocationHelper.postProcessResult((Message<?>) input, result);
+					}
 				}
 				else {
 					if (functionInvocationHelper != null) {
