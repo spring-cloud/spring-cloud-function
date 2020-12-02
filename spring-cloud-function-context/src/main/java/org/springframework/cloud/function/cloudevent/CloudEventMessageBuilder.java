@@ -58,9 +58,9 @@ public final class CloudEventMessageBuilder<T> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> CloudEventMessageBuilder<T> fromMessage(Message<?> message) {
+	public static <T> CloudEventMessageBuilder<T> fromMessage(Message<T> message) {
 		CloudEventMessageBuilder<T> builder = new CloudEventMessageBuilder<T>(new HashMap<>(message.getHeaders()));
-		builder.data = (T) message.getPayload();
+		builder.data = message.getPayload();
 		return builder;
 	}
 
@@ -169,8 +169,9 @@ public final class CloudEventMessageBuilder<T> {
 			}
 		}
 
-		if (!this.headers.containsKey(attributePrefixToUse + CloudEventMessageUtils.SPECVERSION)) {
-			this.headers.put(attributePrefixToUse + CloudEventMessageUtils.SPECVERSION, "1.0");
+		if (!this.headers.containsKey(attributePrefixToUse + "specversion")) {
+			String prefix = StringUtils.hasText(attributePrefixToUse) ? attributePrefixToUse : CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
+			this.headers.put(prefix + CloudEventMessageUtils._SPECVERSION, "1.0");
 		}
 		return doBuild();
 	}

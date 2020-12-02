@@ -32,6 +32,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StringUtils;
 
 /**
+ * Implementation of {@link FunctionInvocationHelper} to support Cloud Events.
+ * This is a primary (and the only) integration bridge with {@link FunctionInvocationHelper}.
  *
  * @author Oleg Zhurakousky
  * @since 2.0
