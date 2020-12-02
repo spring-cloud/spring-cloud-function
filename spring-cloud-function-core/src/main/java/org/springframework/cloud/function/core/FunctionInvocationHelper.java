@@ -21,6 +21,7 @@ package org.springframework.cloud.function.core;
 /**
  *
  * @author Oleg Zhurakousky
+ * @since 3.1
  *
  */
 public interface FunctionInvocationHelper<I> {

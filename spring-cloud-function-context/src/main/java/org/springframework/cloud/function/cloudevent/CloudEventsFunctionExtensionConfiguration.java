@@ -17,12 +17,16 @@
 package org.springframework.cloud.function.cloudevent;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.Message;
 
 /**
+ * Configuration class with components relevant to Cloud Events support.
  *
  * @author Oleg Zhurakousky
  * @since 3.1
@@ -32,13 +36,15 @@ class CloudEventsFunctionExtensionConfiguration {
 
 	@Bean
 	@ConditionalOnMissingClass("io.cloudevents.CloudEvent")
-	public CloudEventsFunctionInvocationHelper nativeFunctionInvocationHelper(@Nullable CloudEventHeaderEnricher cloudEventHeadersProvider) {
+	@ConditionalOnMissingBean
+	public FunctionInvocationHelper<Message<?>> nativeFunctionInvocationHelper(@Nullable CloudEventHeaderEnricher cloudEventHeadersProvider) {
 		return new CloudEventsFunctionInvocationHelper(cloudEventHeadersProvider);
 	}
 
 	@Bean
 	@ConditionalOnClass(name = "io.cloudevents.CloudEvent")
-	public CloudEventsFunctionInvocationHelper sdkFunctionInvocationHelper() {
+	@ConditionalOnMissingBean
+	public FunctionInvocationHelper<Message<?>> sdkFunctionInvocationHelper() {
 		// TODO you may need SDKs header provider
 		return null;
 	}

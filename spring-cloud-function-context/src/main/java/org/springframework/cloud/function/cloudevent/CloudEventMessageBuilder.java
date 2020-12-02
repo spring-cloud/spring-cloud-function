@@ -32,6 +32,8 @@ import org.springframework.messaging.support.GenericMessage;
 
 /**
  * Message builder which is aware of Cloud Event semantics.
+ * It provides type-safe setters for v1.0 Cloud Event attributes while
+ * supporting any version by exposing a convenient {@link #setHeader(String, Object)} method.
  *
  * @author Oleg Zhurakousky
  * @since 3.1
@@ -106,11 +108,6 @@ public final class CloudEventMessageBuilder<T> {
 		return this;
 	}
 
-	public CloudEventMessageBuilder<T> copyHeaders(Map<String, Object> headers) {
-		this.headers.putAll(headers);
-		return this;
-	}
-
 	public CloudEventMessageBuilder<T> setTime(OffsetTime time) {
 		this.headers.put(CloudEventMessageUtils.TIME, time);
 		return this;
@@ -123,6 +120,11 @@ public final class CloudEventMessageBuilder<T> {
 
 	public CloudEventMessageBuilder<T> setHeader(String key, Object value) {
 		this.headers.put(key, value);
+		return this;
+	}
+
+	public CloudEventMessageBuilder<T> copyHeaders(Map<String, Object> headers) {
+		this.headers.putAll(headers);
 		return this;
 	}
 
@@ -168,8 +170,6 @@ public final class CloudEventMessageBuilder<T> {
 			String stringId = this.headers.get(CloudEventMessageUtils.ID).toString();
 			try {
 				id = UUID.fromString(stringId);
-				System.out.println(stringId);
-				System.out.println(id.toString());
 			}
 			catch (Exception e) {
 				logger.info("Provided Cloud Event 'id' is not compatible with Message 'id' which is UUID, "
