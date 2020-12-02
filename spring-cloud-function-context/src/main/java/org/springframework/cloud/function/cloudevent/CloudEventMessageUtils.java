@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ContentTypeResolver;
@@ -78,6 +79,11 @@ public final class CloudEventMessageUtils {
 
 	static String _TIME = "time";
 	// ================================
+
+	/**
+	 * String value of 'cloudevent'. Typically used as {@link MessageUtils#MESSAGE_TYPE}
+	 */
+	public static String CLOUDEVENT_VALUE = "cloudevent";
 
 	/**
 	 * String value of 'application/cloudevents' mime type.
@@ -156,9 +162,9 @@ public final class CloudEventMessageUtils {
 
 
 	public static String getId(Message<?> message) {
-		if (message.getHeaders().containsKey("_id")) {
-			return (String) message.getHeaders().get("_id");
-		}
+//		if (message.getHeaders().containsKey("_id")) {
+//			return (String) message.getHeaders().get("_id");
+//		}
 		String prefix = determinePrefixToUse(message.getHeaders());
 		return (String) message.getHeaders().get(prefix + MessageHeaders.ID);
 	}

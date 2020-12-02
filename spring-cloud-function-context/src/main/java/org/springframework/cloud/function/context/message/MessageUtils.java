@@ -30,9 +30,19 @@ import org.springframework.util.ReflectionUtils;
 
 /**
  * @author Dave Syer
- *
+ * @author Oleg Zhurakousky
  */
 public abstract class MessageUtils {
+
+	/**
+	 * Value for 'message-type' typically use as header key.
+	 */
+	public static String MESSAGE_TYPE = "message-type";
+
+	/**
+	 * Value for 'target-protocol' typically use as header key.
+	 */
+	public static String TARGET_PROTOCOL = "target-protocol";
 
 	/**
 	 * Create a message for the handler. If the handler is a wrapper for a function in an

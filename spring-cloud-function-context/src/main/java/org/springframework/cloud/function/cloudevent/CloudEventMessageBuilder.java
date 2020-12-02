@@ -26,15 +26,18 @@ import java.util.UUID;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
  * Message builder which is aware of Cloud Event semantics.
  * It provides type-safe setters for v1.0 Cloud Event attributes while
- * supporting any version by exposing a convenient {@link #setHeader(String, Object)} method.
+ * supporting any version by exposing a convenient
+ * {@link #setHeader(String, Object)} method.
  *
  * @author Oleg Zhurakousky
  * @since 3.1
@@ -139,12 +142,8 @@ public final class CloudEventMessageBuilder<T> {
 	}
 
 	public Message<T> build() {
-		if (!this.headers.containsKey(CloudEventMessageUtils.SPECVERSION)) {
-			this.headers.put(CloudEventMessageUtils.SPECVERSION, "1.0");
-		}
-		return this.doBuild();
+		return this.doBuild(CloudEventMessageUtils.determinePrefixToUse(this.headers));
 	}
-
 
 	public Message<T> build(String attributePrefixToUse) {
 		if (StringUtils.hasText(attributePrefixToUse)) {
@@ -153,62 +152,50 @@ public final class CloudEventMessageBuilder<T> {
 				if (key.startsWith(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX)) {
 					Object value = headers.remove(key);
 					key = key.substring(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX.length());
-					headers.put(attributePrefixToUse + key, value);
+					this.headers.put(attributePrefixToUse + key, value);
 				}
 				else if (key.startsWith(CloudEventMessageUtils.AMQP_ATTR_PREFIX)) {
 					Object value = headers.remove(key);
 					key = key.substring(CloudEventMessageUtils.AMQP_ATTR_PREFIX.length());
-					headers.put(attributePrefixToUse + key, value);
+					this.headers.put(attributePrefixToUse + key, value);
 				}
 				else if (key.startsWith(CloudEventMessageUtils.KAFKA_ATTR_PREFIX)) {
 					Object value = headers.remove(key);
 					key = key.substring(CloudEventMessageUtils.KAFKA_ATTR_PREFIX.length());
-					headers.put(attributePrefixToUse + key, value);
+					this.headers.put(attributePrefixToUse + key, value);
 				}
 			}
 		}
 
-		if (!this.headers.containsKey(attributePrefixToUse + "specversion")) {
-			String prefix = StringUtils.hasText(attributePrefixToUse) ? attributePrefixToUse : CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
+		String prefix = StringUtils.hasText(attributePrefixToUse)
+				? attributePrefixToUse
+				: CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
+		return doBuild(prefix);
+	}
+
+	private Message<T> doBuild(String prefix) {
+		if (!this.headers.containsKey(prefix + CloudEventMessageUtils._SPECVERSION)) {
 			this.headers.put(prefix + CloudEventMessageUtils._SPECVERSION, "1.0");
 		}
-		return doBuild();
-	}
-
-	private Message<T> doBuild() {
-		this.headers.put("message-type", "cloudevent");
-		CloudEventMessageHeaders headers = new CloudEventMessageHeaders(this.headers, this.getUUID(), null);
-		GenericMessage<T> message = new GenericMessage<T>(data, headers);
-		return message;
-	}
-
-	private UUID getUUID() {
-		UUID id = null;
-		if (this.headers.containsKey(CloudEventMessageUtils.ID)) {
-			String stringId = this.headers.get(CloudEventMessageUtils.ID).toString();
-			try {
-				id = UUID.fromString(stringId);
-			}
-			catch (Exception e) {
-				logger.info("Provided Cloud Event 'id' is not compatible with Message 'id' which is UUID, "
-						+ "therefore Cloud Event 'id' will be written as '_id' message header");
-				this.headers.put("_" + CloudEventMessageUtils.ID, stringId);
-				this.headers.remove(CloudEventMessageUtils.ID);
-			}
+		if (!this.headers.containsKey(prefix + CloudEventMessageUtils._ID)) {
+			this.headers.put(prefix + CloudEventMessageUtils._ID, UUID.randomUUID().toString());
 		}
-		return id;
+		this.headers.put(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
+		CloudEventMessageHeaders headers = new CloudEventMessageHeaders(this.headers,  null, null);
+		GenericMessage<T> message = new GenericMessage<T>(this.data, headers);
+		Assert.hasText(CloudEventMessageUtils.getSpecVersion(message), "'specversion' must not be null or empty");
+		Assert.notNull(CloudEventMessageUtils.getSource(message), "'source' must not be null");
+		Assert.hasText(CloudEventMessageUtils.getType(message), "'type' must not be null or empty");
+		Assert.hasText(CloudEventMessageUtils.getId(message), "'id' must not be null or empty");
+		return message;
 	}
 
 	private static class CloudEventMessageHeaders extends MessageHeaders {
 
-		/**
-		 *
-		 */
 		private static final long serialVersionUID = -6424866731588545945L;
 
 		protected CloudEventMessageHeaders(Map<String, Object> headers, UUID id, Long timestamp) {
 			super(headers, id, timestamp);
 		}
-
 	}
 }
