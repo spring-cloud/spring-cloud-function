@@ -89,7 +89,10 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 	}
 
 	private String determineOutputPrefix(Message<?> input) {
-		//TODO rework to actually figure out where output goes instead of relying on input
+		/*
+		 * TODO rework to actually figure out where output goes instead of relying on input
+		 * In streams we can overrode and access output binding, ect.
+		 */
 		return CloudEventMessageUtils.determinePrefixToUse(input.getHeaders());
 	}
 

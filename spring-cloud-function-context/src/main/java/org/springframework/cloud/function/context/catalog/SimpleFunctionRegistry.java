@@ -328,12 +328,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		private Function<Object, Message> enhancer;
 
-//		private BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher;
-//
-//		void setOutputMessageHeaderEnricher(BiFunction<Message<?>, Object, Message<?>> outputMessageHeaderEnricher) {
-//			this.outputMessageHeaderEnricher = outputMessageHeaderEnricher;
-//		}
-
 		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
 			this.target = function.target;
 			this.inputType = function.inputType;
