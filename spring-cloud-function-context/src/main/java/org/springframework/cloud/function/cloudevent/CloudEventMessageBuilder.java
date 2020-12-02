@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.StringUtils;
 
 /**
  * Message builder which is aware of Cloud Event semantics.
@@ -145,16 +146,33 @@ public final class CloudEventMessageBuilder<T> {
 		return this.doBuild();
 	}
 
+
 	public Message<T> build(String attributePrefixToUse) {
-		String[] keys = this.headers.keySet().toArray(new String[] {});
-		for (String key : keys) {
-			Object value = this.headers.remove(key);
-			this.headers.put(attributePrefixToUse + key, value);
+		if (StringUtils.hasText(attributePrefixToUse)) {
+			String[] keys = this.headers.keySet().toArray(new String[] {});
+			for (String key : keys) {
+				if (key.startsWith(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX)) {
+					Object value = headers.remove(key);
+					key = key.substring(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX.length());
+					headers.put(attributePrefixToUse + key, value);
+				}
+				else if (key.startsWith(CloudEventMessageUtils.AMQP_ATTR_PREFIX)) {
+					Object value = headers.remove(key);
+					key = key.substring(CloudEventMessageUtils.AMQP_ATTR_PREFIX.length());
+					headers.put(attributePrefixToUse + key, value);
+				}
+				else if (key.startsWith(CloudEventMessageUtils.KAFKA_ATTR_PREFIX)) {
+					Object value = headers.remove(key);
+					key = key.substring(CloudEventMessageUtils.KAFKA_ATTR_PREFIX.length());
+					headers.put(attributePrefixToUse + key, value);
+				}
+			}
 		}
+
 		if (!this.headers.containsKey(attributePrefixToUse + CloudEventMessageUtils.SPECVERSION)) {
 			this.headers.put(attributePrefixToUse + CloudEventMessageUtils.SPECVERSION, "1.0");
 		}
-		return build();
+		return doBuild();
 	}
 
 	private Message<T> doBuild() {

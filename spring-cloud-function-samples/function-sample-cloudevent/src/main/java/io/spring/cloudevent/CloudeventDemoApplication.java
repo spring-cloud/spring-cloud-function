@@ -131,7 +131,7 @@ public class CloudeventDemoApplication {
 	@Bean
 	public Consumer<Message<SpringReleaseEvent>> pojoConsumer(CloudEventHeaderEnricher enricher, RestTemplateBuilder builder) {
 			return eventMessage -> {
-				Message<?> newMessage = enricher.enrich(CloudEventMessageBuilder.fromMessage(eventMessage)).build(CloudEventMessageUtils.HTTP_ATTR_PREFIX);
+				Message<?> newMessage = enricher.enrich(CloudEventMessageBuilder.fromMessage(eventMessage)).build(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX);
 				RequestEntity<SpringReleaseEvent> entity = RequestEntity.post(URI.create("http://foo.com"))
 						.headers(HeaderUtils.fromMessage(newMessage.getHeaders()))
 						.body(eventMessage.getPayload());
