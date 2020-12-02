@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.cloudevent;
 
-
-
 /**
  * Strategy that should be implemented by the user to help with outgoing Cloud Event
  * headers. <br>
@@ -32,15 +30,16 @@ package org.springframework.cloud.function.cloudevent;
  *
  * <pre>
  * &#64;Bean
- * public CloudEventHeadersProvider cloudEventHeadersProvider() {
- * 	return attributes -&gt;
- *		CloudEventHeaderUtils.fromAttributes(attributes).withSource("https://interface21.com/").withType("com.interface21").build();
+ * public CloudEventHeaderEnricher cloudEventHeaderEnricher() {
+ *  return headers -> {
+ *   return headers.setSource("https://interface21.com/").setType("com.interface21");
+ *  };
  * }
  * </pre>
  *
  * @author Oleg Zhurakousky
  * @author Dave Syer
- * @since 2.0
+ * @since 3.1
  */
 @FunctionalInterface
 public interface CloudEventHeaderEnricher {
@@ -48,6 +47,12 @@ public interface CloudEventHeaderEnricher {
 	/**
 	 * @param attributes instance of {@link CloudEventContext}
 	 * @return modified {@link CloudEventContext}
+	 */
+	/**
+	 * Will provide access to an open instance of {@link CloudEventMessageBuilder} so you
+	 * can add additional attributes and headers.
+	 * @param messageBuilder open instance of {@link CloudEventMessageBuilder}
+	 * @return instance of {@link CloudEventMessageBuilder}
 	 */
 	CloudEventMessageBuilder<?> enrich(CloudEventMessageBuilder<?> messageBuilder);
 
