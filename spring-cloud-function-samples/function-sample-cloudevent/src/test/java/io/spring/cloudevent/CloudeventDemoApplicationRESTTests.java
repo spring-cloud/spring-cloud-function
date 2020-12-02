@@ -130,7 +130,7 @@ public class CloudeventDemoApplicationRESTTests {
 		SpringApplication.run(new Class[] {CloudeventDemoApplication.class, FooBarConverterConfiguration.class}, new String[] {});
 
 		HttpHeaders headers = this.buildHeaders(MediaType.valueOf("application/cloudevents+json;charset=utf-8"));
-		headers.set("datacontenttype", "foo/bar");
+		headers.set(CloudEventMessageUtils.DATACONTENTTYPE, "foo/bar");
 		String payload = "24-03-2004:Spring Framework:1.0";
 
 		RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/asPOJOMessage"));
@@ -171,11 +171,11 @@ public class CloudeventDemoApplicationRESTTests {
 		response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("releaseDate:24-03-2004; releaseName:Spring Framework; version:1.0");
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.SOURCE))
 			.isEqualTo(Collections.singletonList("https://interface21.com/"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList("com.interface21"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNotNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.ID)).isNotNull();
     }
 
 	@Test
@@ -207,11 +207,11 @@ public class CloudeventDemoApplicationRESTTests {
 		response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("{\"version\":\"1.0\",\"releaseName\":\"Spring Framework\",\"releaseDate\":\"24-03-2004\"}");
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.SOURCE))
 			.isEqualTo(Collections.singletonList("https://interface21.com/"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList("com.interface21"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNotNull();
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.ID)).isNotNull();
     }
 
 	@Test
@@ -225,9 +225,9 @@ public class CloudeventDemoApplicationRESTTests {
 		ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2050\",\"releaseName\":\"Spring Framework\",\"version\":\"10.0\"}");
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.SOURCE))
 			.isEqualTo(Collections.singletonList("https://interface21.com/"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList("com.interface21"));
 	}
 
@@ -242,9 +242,9 @@ public class CloudeventDemoApplicationRESTTests {
 		ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2006\",\"releaseName\":\"Spring Framework\",\"version\":\"2.0\"}");
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.SOURCE))
 			.isEqualTo(Collections.singletonList("https://interface21.com/"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList("com.interface21"));
 	}
 
@@ -259,24 +259,20 @@ public class CloudeventDemoApplicationRESTTests {
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.ID, UUID.randomUUID().toString());
-		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SOURCE, "https://spring.io/");
-		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION, "1.0");
-		headers.set(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.TYPE, "org.springframework");
+		headers.set(CloudEventMessageUtils.ID, UUID.randomUUID().toString());
+		headers.set(CloudEventMessageUtils.SOURCE, "https://spring.io/");
+		headers.set(CloudEventMessageUtils.SPECVERSION, "1.0");
+		headers.set(CloudEventMessageUtils.TYPE, "org.springframework");
 		String payload = "{\"releaseDate\":\"01-10-2006\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}";
 
 		RequestEntity<String> re = new RequestEntity<>(payload, headers, HttpMethod.POST, this.constructURI("/consumeAndProduceCloudEventAsPojoToPojo"));
 		ResponseEntity<String> response = testRestTemplate.exchange(re, String.class);
 
 		assertThat(response.getBody()).isEqualTo("{\"releaseDate\":\"01-10-2006\",\"releaseName\":\"Spring Framework\",\"version\":\"2.0\"}");
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.SOURCE))
 			.isEqualTo(Collections.singletonList("https://interface21.com/"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+		assertThat(response.getHeaders().get(CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList("com.interface21"));
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.TYPE)).isNull();
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SOURCE)).isNull();
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNull();
-		assertThat(response.getHeaders().get(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION)).isNull();
 	}
 
 
@@ -317,11 +313,11 @@ public class CloudeventDemoApplicationRESTTests {
         assertThat(springReleaseEvent.getReleaseName()).isEqualTo("Spring Framework");
         assertThat(springReleaseEvent.getVersion()).isEqualTo("10.0");
 
-        assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE))
+        assertThat(response.getHeaders().get(CloudEventMessageUtils.SOURCE))
 			.isEqualTo(Collections.singletonList("https://interface21.com/"));
-        assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE))
+        assertThat(response.getHeaders().get(CloudEventMessageUtils.TYPE))
 			.isEqualTo(Collections.singletonList("com.interface21"));
-        assertThat(response.getHeaders().get(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID)).isNotNull();
+        assertThat(response.getHeaders().get(CloudEventMessageUtils.ID)).isNotNull();
     }
 
 	@Test
@@ -345,10 +341,10 @@ public class CloudeventDemoApplicationRESTTests {
 	private HttpHeaders buildHeaders(MediaType contentType) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(contentType);
-		headers.set(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.ID, UUID.randomUUID().toString());
-		headers.set(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SOURCE, "https://spring.io/");
-		headers.set(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.SPECVERSION, "1.0");
-		headers.set(CloudEventMessageUtils.HTTP_ATTR_PREFIX + CloudEventMessageUtils.TYPE, "org.springframework");
+		headers.set(CloudEventMessageUtils.ID, UUID.randomUUID().toString());
+		headers.set(CloudEventMessageUtils.SOURCE, "https://spring.io/");
+		headers.set(CloudEventMessageUtils.SPECVERSION, "1.0");
+		headers.set(CloudEventMessageUtils.TYPE, "org.springframework");
 		return headers;
 	}
 
@@ -383,7 +379,8 @@ public class CloudeventDemoApplicationRESTTests {
 			if (targetClass == null || !supportsMimeType(message.getHeaders())) {
 				return false;
 			}
-			else if (message.getHeaders().containsKey("datacontenttype") && message.getHeaders().get("datacontenttype").equals("foo/bar")) {
+			else if (message.getHeaders().containsKey(CloudEventMessageUtils.DATACONTENTTYPE)
+					&& message.getHeaders().get(CloudEventMessageUtils.DATACONTENTTYPE).equals("foo/bar")) {
 				return true;
 			}
 			return false;
@@ -391,8 +388,8 @@ public class CloudeventDemoApplicationRESTTests {
 
 		@Override
 		protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-			if (message.getHeaders().containsKey("datacontenttype")
-					&& message.getHeaders().get("datacontenttype").equals("foo/bar")
+			if (message.getHeaders().containsKey(CloudEventMessageUtils.DATACONTENTTYPE)
+					&& message.getHeaders().get(CloudEventMessageUtils.DATACONTENTTYPE).equals("foo/bar")
 					&& SpringReleaseEvent.class == targetClass) {
 				SpringReleaseEvent event = new SpringReleaseEvent();
 				String[] data = ((String) message.getPayload()).split(":");

@@ -57,13 +57,13 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 	@Override
 	public Message<?> preProcessInput(Message<?> input, Object inputConverter) {
-		return CloudEventMessageUtils.toCannonical(input, (MessageConverter) inputConverter);
+		return CloudEventMessageUtils.toCanonical(input, (MessageConverter) inputConverter);
 	}
 
 	@Override
 	public Message<?> postProcessResult(Message<?> input, Object result) {
 		Message<?> resultMessage = null;
-		if (CloudEventMessageUtils.isBinary(input)) {
+		if (CloudEventMessageUtils.isCloudEvent(input)) {
 			CloudEventMessageBuilder<?> messageBuilder = CloudEventMessageBuilder
 				.withData(result)
 				.setId(UUID.randomUUID().toString())
@@ -75,6 +75,7 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 			}
 
 			String prefix = this.determineOutputPrefix(input);
+
 			resultMessage = messageBuilder.build(prefix);
 		}
 		else {

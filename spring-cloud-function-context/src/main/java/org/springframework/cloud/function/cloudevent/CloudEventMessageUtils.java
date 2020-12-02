@@ -21,7 +21,6 @@ import java.net.URI;
 import java.time.OffsetTime;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -48,8 +47,13 @@ public final class CloudEventMessageUtils {
 
 	private static final ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
 
-	private CloudEventMessageUtils() {
+	private static Field MESSAGE_HEADERS = ReflectionUtils.findField(MessageHeaders.class, "headers");
 
+	static {
+		MESSAGE_HEADERS.setAccessible(true);
+	}
+
+	private CloudEventMessageUtils() {
 	}
 
 	/**
@@ -65,7 +69,7 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Prefix for attributes.
 	 */
-	public static String DEFAULT_ATTR_PREFIX = "ce_";
+	public static String DEFAULT_ATTR_PREFIX = "ce-";
 
 	/**
 	 * AMQP attributes prefix.
@@ -75,57 +79,57 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Prefix for attributes.
 	 */
-	public static String HTTP_ATTR_PREFIX = "ce-";
+	public static String KAFKA_ATTR_PREFIX = "ce_";
 
 	/**
 	 * Value for 'data' attribute.
 	 */
-	public static String DATA = "data";
+	public static String DATA = DEFAULT_ATTR_PREFIX + "data";
 
 	/**
 	 * Value for 'id' attribute.
 	 */
-	public static String ID = "id";
+	public static String ID = DEFAULT_ATTR_PREFIX + "id";
 
 	/**
 	 * Value for 'source' attribute.
 	 */
-	public static String SOURCE = "source";
+	public static String SOURCE = DEFAULT_ATTR_PREFIX + "source";
 
 	/**
 	 * Value for 'specversion' attribute.
 	 */
-	public static String SPECVERSION = "specversion";
+	public static String SPECVERSION = DEFAULT_ATTR_PREFIX + "specversion";
 
 	/**
 	 * Value for 'type' attribute.
 	 */
-	public static String TYPE = "type";
+	public static String TYPE = DEFAULT_ATTR_PREFIX + "type";
 
 	/**
 	 * Value for 'datacontenttype' attribute.
 	 */
-	public static String DATACONTENTTYPE = "datacontenttype";
+	public static String DATACONTENTTYPE = DEFAULT_ATTR_PREFIX + "datacontenttype";
 
 	/**
 	 * Value for 'dataschema' attribute.
 	 */
-	public static String DATASCHEMA = "dataschema";
+	public static String DATASCHEMA = DEFAULT_ATTR_PREFIX + "dataschema";
 
 	/**
 	 * V03 name for 'dataschema' attribute.
 	 */
-	public static final String SCHEMAURL = "schemaurl";
+	public static final String SCHEMAURL = DEFAULT_ATTR_PREFIX + "schemaurl";
 
 	/**
 	 * Value for 'subject' attribute.
 	 */
-	public static String SUBJECT = "subject";
+	public static String SUBJECT = DEFAULT_ATTR_PREFIX + "subject";
 
 	/**
 	 * Value for 'time' attribute.
 	 */
-	public static String TIME = "time";
+	public static String TIME = DEFAULT_ATTR_PREFIX + "time";
 
 	public static String getId(Message<?> message) {
 		if (message.getHeaders().containsKey("_id")) {
@@ -171,16 +175,13 @@ public final class CloudEventMessageUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected static Message<?> toCannonical(Message<?> inputMessage, MessageConverter messageConverter) {
-
-		Field headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
-		headersField.setAccessible(true);
-		Map<String, Object> headers = (Map<String, Object>) ReflectionUtils.getField(headersField, inputMessage.getHeaders());
-		canonicalizeHeaders(headers);
+	protected static Message<?> toCanonical(Message<?> inputMessage, MessageConverter messageConverter) {
+		Map<String, Object> headers = (Map<String, Object>) ReflectionUtils.getField(MESSAGE_HEADERS, inputMessage.getHeaders());
+		canonicalizeHeaders(headers, false);
 
 		String inputContentType = (String) inputMessage.getHeaders().get(DATACONTENTTYPE);
 		// first check the obvious and see if content-type is `cloudevents`
-		if (!isBinary(inputMessage) && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+		if (!isCloudEvent(inputMessage) && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
 			MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
 			if (contentType.getType().equals(APPLICATION_CLOUDEVENTS.getType()) && contentType
 					.getSubtype().startsWith(APPLICATION_CLOUDEVENTS.getSubtype())) {
@@ -197,7 +198,7 @@ public final class CloudEventMessageUtils {
 				Map<String, Object> structuredCloudEvent = (Map<String, Object>) messageConverter
 						.fromMessage(cloudEventMessage, Map.class);
 
-				canonicalizeHeaders(structuredCloudEvent);
+				canonicalizeHeaders(structuredCloudEvent, true);
 				Message<?> binaryCeMessage = buildBinaryMessageFromStructuredMap(structuredCloudEvent,
 						inputMessage.getHeaders());
 
@@ -221,30 +222,14 @@ public final class CloudEventMessageUtils {
 	 * @return prefix (e.g., 'ce_' or 'ce-' etc.)
 	 */
 	protected static String determinePrefixToUse(Map<String, Object> messageHeaders) {
-		Set<String> keys = messageHeaders.keySet();
-		if (keys.contains("user-agent")) {
-			return HTTP_ATTR_PREFIX;
-		}
-		else {
-			for (String key : messageHeaders.keySet()) {
-				if (key.startsWith("kafka_")) {
-					return DEFAULT_ATTR_PREFIX;
-				}
-				else if (key.startsWith("amqp_")) {
-					return AMQP_ATTR_PREFIX;
-				}
-				else if (key.startsWith(DEFAULT_ATTR_PREFIX)) {
-					return DEFAULT_ATTR_PREFIX;
-				}
-				else if (key.startsWith(HTTP_ATTR_PREFIX)) {
-					return HTTP_ATTR_PREFIX;
-				}
-				else if (key.startsWith(AMQP_ATTR_PREFIX)) {
-					return AMQP_ATTR_PREFIX;
-				}
+		for (String key : messageHeaders.keySet()) {
+			if (key.startsWith(KAFKA_ATTR_PREFIX)) {
+				return KAFKA_ATTR_PREFIX;
+			}
+			else if (key.startsWith(AMQP_ATTR_PREFIX)) {
+				return AMQP_ATTR_PREFIX;
 			}
 		}
-
 		return "";
 	}
 
@@ -254,7 +239,7 @@ public final class CloudEventMessageUtils {
 	 * @param message input {@link Message}
 	 * @return true if this Message represents Cloud Event in binary-mode
 	 */
-	protected static boolean isBinary(Message<?> message) {
+	protected static boolean isCloudEvent(Message<?> message) {
 		return message.getHeaders().containsKey(SPECVERSION)
 				&& message.getHeaders().containsKey(TYPE)
 				&& message.getHeaders().containsKey(SOURCE);
@@ -265,23 +250,27 @@ public final class CloudEventMessageUtils {
 	 * So, for example 'ce_source' will become 'source'.
 	 * @param headers message headers
 	 */
-	private static void canonicalizeHeaders(Map<String, Object> headers) {
+	private static void canonicalizeHeaders(Map<String, Object> headers, boolean structured) {
 		String[] keys = headers.keySet().toArray(new String[] {});
 		for (String key : keys) {
-			if (key.startsWith(HTTP_ATTR_PREFIX)) {
-				Object value = headers.remove(key);
-				key = key.substring(HTTP_ATTR_PREFIX.length());
-				headers.put(key, value);
-			}
-			else if (key.startsWith(DEFAULT_ATTR_PREFIX)) {
+			if (key.startsWith(DEFAULT_ATTR_PREFIX)) {
 				Object value = headers.remove(key);
 				key = key.substring(DEFAULT_ATTR_PREFIX.length());
-				headers.put(key, value);
+				headers.put(DEFAULT_ATTR_PREFIX + key, value);
+			}
+			else if (key.startsWith(KAFKA_ATTR_PREFIX)) {
+				Object value = headers.remove(key);
+				key = key.substring(KAFKA_ATTR_PREFIX.length());
+				headers.put(DEFAULT_ATTR_PREFIX + key, value);
 			}
 			else if (key.startsWith(AMQP_ATTR_PREFIX)) {
 				Object value = headers.remove(key);
 				key = key.substring(AMQP_ATTR_PREFIX.length());
-				headers.put(key, value);
+				headers.put(DEFAULT_ATTR_PREFIX + key, value);
+			}
+			else if (structured) {
+				Object value = headers.remove(key);
+				headers.put(DEFAULT_ATTR_PREFIX + key, value);
 			}
 		}
 	}

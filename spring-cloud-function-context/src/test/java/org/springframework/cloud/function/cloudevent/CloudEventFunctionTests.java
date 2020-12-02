@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,7 +57,7 @@ public class CloudEventFunctionTests {
 			.build();
 
 		assertThat(inputMessage.getHeaders().getId()).isEqualTo(UUID.fromString(id));
-		assertThat(CloudEventMessageUtils.isBinary(inputMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();
 
 		Message<Person> resultMessage = (Message<Person>) function.apply(inputMessage);
 
@@ -66,7 +67,7 @@ public class CloudEventFunctionTests {
 		 * both on input and output that it is dealing with Cloud Event and generates
 		 * appropriate headers/attributes
 		 */
-		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
@@ -95,7 +96,7 @@ public class CloudEventFunctionTests {
 		 * both on input and output that it is dealing with Cloud Event and generates
 		 * appropriate headers/attributes
 		 */
-		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
@@ -117,12 +118,12 @@ public class CloudEventFunctionTests {
 				"}";
 		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
 
-		Message<String> inputMessage = CloudEventMessageBuilder
-				.withData(payload)
+		Message<String> inputMessage = MessageBuilder
+				.withPayload(payload)
 				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
 				.build();
 
-		assertThat(CloudEventMessageUtils.isBinary(inputMessage)).isFalse();
+		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isFalse();
 
 		Message<SpringReleaseEvent> resultMessage = (Message<SpringReleaseEvent>) function.apply(inputMessage);
 		assertThat(resultMessage.getPayload().getReleaseDate())
@@ -133,7 +134,7 @@ public class CloudEventFunctionTests {
 //		 * both on input and output that it is dealing with Cloud Event and generates
 //		 * appropriate headers/attributes
 //		 */
-		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
@@ -158,7 +159,7 @@ public class CloudEventFunctionTests {
 				.withData(payload)
 				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
 				.build();
-		assertThat(CloudEventMessageUtils.isBinary(inputMessage)).isFalse();
+		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isFalse();
 
 		Message<SpringReleaseEvent> resultMessage = (Message<SpringReleaseEvent>) function.apply(inputMessage);
 		assertThat(resultMessage.getPayload().getReleaseDate())
@@ -169,7 +170,7 @@ public class CloudEventFunctionTests {
 		 * both on input and output that it is dealing with Cloud Event and generates
 		 * appropriate headers/attributes
 		 */
-		assertThat(CloudEventMessageUtils.isBinary(resultMessage)).isTrue();
+		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
