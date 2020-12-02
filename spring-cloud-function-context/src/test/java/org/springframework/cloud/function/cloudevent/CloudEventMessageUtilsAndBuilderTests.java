@@ -16,14 +16,15 @@
 
 package org.springframework.cloud.function.cloudevent;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.net.URI;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky
@@ -52,5 +53,15 @@ public class CloudEventMessageUtilsAndBuilderTests {
 		assertThat(CloudEventMessageUtils.getType(kafkaMessage)).isEqualTo("blah");
 		assertThat(kafkaMessage.getHeaders().get("ce_specversion")).isNotNull();
 		assertThat(CloudEventMessageUtils.getSpecVersion(kafkaMessage)).isEqualTo("1.0");
+
+		httpMessage = CloudEventMessageBuilder.fromMessage(kafkaMessage).build(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX);
+		attributes = CloudEventMessageUtils.getAttributes(httpMessage);
+		assertThat(attributes.size()).isEqualTo(3);
+		assertThat(httpMessage.getHeaders().get("ce-source")).isNotNull();
+		assertThat(CloudEventMessageUtils.getSource(httpMessage)).isEqualTo(URI.create("https://foo.bar"));
+		assertThat(httpMessage.getHeaders().get("ce-type")).isNotNull();
+		assertThat(CloudEventMessageUtils.getType(httpMessage)).isEqualTo("blah");
+		assertThat(httpMessage.getHeaders().get("ce-specversion")).isNotNull();
+		assertThat(CloudEventMessageUtils.getSpecVersion(httpMessage)).isEqualTo("1.0");
 	}
 }

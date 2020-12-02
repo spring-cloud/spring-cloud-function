@@ -57,8 +57,7 @@ public final class CloudEventMessageUtils {
 	private CloudEventMessageUtils() {
 	}
 
-	//=====
-
+	//=========== INTERNAL USE ONLY ==
 	static String _DATA = "data";
 
 	static String _ID = "id";
@@ -78,6 +77,7 @@ public final class CloudEventMessageUtils {
 	static String _SUBJECT = "subject";
 
 	static String _TIME = "time";
+	// ================================
 
 	/**
 	 * String value of 'application/cloudevents' mime type.
@@ -288,9 +288,15 @@ public final class CloudEventMessageUtils {
 	}
 
 	/**
-	 * Will canonicalize Cloud Event attributes (headers) by removing well known prefixes.
-	 * So, for example 'ce_source' will become 'source'.
+	 * Will canonicalize Cloud Event attributes (headers) by ensuring canonical
+	 * prefix for all attributes and extensions regardless of where they came from.
+	 * The canonical prefix is 'ce-'.
+	 *
+	 * So, for example 'ce_source' will become 'ce-source'.
 	 * @param headers message headers
+	 * @param structured boolean signifying that headers map represents structured Cloud Event
+	 * at which point attributes without any prefix will still be treated as
+	 * Cloud Event attributes.
 	 */
 	private static void canonicalizeHeaders(Map<String, Object> headers, boolean structured) {
 		String[] keys = headers.keySet().toArray(new String[] {});
