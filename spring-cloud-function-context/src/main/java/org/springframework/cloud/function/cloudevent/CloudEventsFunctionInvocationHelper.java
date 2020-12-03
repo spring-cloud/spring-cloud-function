@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import org.springframework.beans.BeansException;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.context.ApplicationContext;
@@ -34,7 +35,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * Implementation of {@link FunctionInvocationHelper} to support Cloud Events.
- * This is a primary (and the only) integration bridge with {@link FunctionInvocationHelper}.
+ * This is a primary (and the only) integration bridge with {@link FunctionInvocationWrapper}.
  *
  * @author Oleg Zhurakousky
  * @since 3.1
@@ -52,11 +53,8 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 	@Override
 	public boolean isRetainOuputAsMessage(Message<?> message) {
-		if (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
-				&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE)) {
-			return true;
-		}
-		return false;
+		return message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
+			&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE);
 	}
 
 	@Override
@@ -84,9 +82,7 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 				messageBuilder = this.cloudEventAttributesProvider.enrich(messageBuilder);
 			}
 
-			String prefix = this.determineOutputPrefix(input);
-
-			resultMessage = messageBuilder.build(prefix);
+			resultMessage = messageBuilder.build(CloudEventMessageUtils.determinePrefixToUse(input.getHeaders()));
 		}
 		else if (!(result instanceof Message<?>)) {
 			resultMessage = MessageBuilder.withPayload(result).build();
@@ -100,13 +96,6 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
-	private String determineOutputPrefix(Message<?> input) {
-		/*
-		 * TODO rework to actually figure out where output goes instead of relying on input
-		 * In streams we can overrode and access output binding, ect.
-		 */
-		return CloudEventMessageUtils.determinePrefixToUse(input.getHeaders());
-	}
 
 	private String getApplicationName() {
 		ConfigurableEnvironment environment = this.applicationContext.getEnvironment();
