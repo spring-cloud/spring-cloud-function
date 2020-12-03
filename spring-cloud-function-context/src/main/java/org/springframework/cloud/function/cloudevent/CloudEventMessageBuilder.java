@@ -180,11 +180,7 @@ public final class CloudEventMessageBuilder<T> {
 				}
 			}
 		}
-
-		String prefix = StringUtils.hasText(attributePrefixToUse)
-				? attributePrefixToUse
-				: CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
-		return doBuild(prefix);
+		return doBuild(attributePrefixToUse);
 	}
 
 	private void swapPrefix(String key, String currentPrefix, String newPrefix) {
@@ -201,21 +197,12 @@ public final class CloudEventMessageBuilder<T> {
 			this.headers.put(prefix + CloudEventMessageUtils._ID, UUID.randomUUID().toString());
 		}
 		this.headers.put(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
-		CloudEventMessageHeaders headers = new CloudEventMessageHeaders(this.headers,  null, null);
+		MessageHeaders headers = new MessageHeaders(this.headers);
 		GenericMessage<T> message = new GenericMessage<T>(this.data, headers);
 		Assert.hasText(CloudEventMessageUtils.getSpecVersion(message), "'specversion' must not be null or empty");
 		Assert.notNull(CloudEventMessageUtils.getSource(message), "'source' must not be null");
 		Assert.hasText(CloudEventMessageUtils.getType(message), "'type' must not be null or empty");
 		Assert.hasText(CloudEventMessageUtils.getId(message), "'id' must not be null or empty");
 		return message;
-	}
-
-	private static class CloudEventMessageHeaders extends MessageHeaders {
-
-		private static final long serialVersionUID = -6424866731588545945L;
-
-		protected CloudEventMessageHeaders(Map<String, Object> headers, UUID id, Long timestamp) {
-			super(headers, id, timestamp);
-		}
 	}
 }

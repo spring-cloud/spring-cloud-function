@@ -162,9 +162,6 @@ public final class CloudEventMessageUtils {
 
 
 	public static String getId(Message<?> message) {
-//		if (message.getHeaders().containsKey("_id")) {
-//			return (String) message.getHeaders().get("_id");
-//		}
 		String prefix = determinePrefixToUse(message.getHeaders());
 		return (String) message.getHeaders().get(prefix + MessageHeaders.ID);
 	}
@@ -215,6 +212,13 @@ public final class CloudEventMessageUtils {
 				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 	}
 
+	/**
+	 * This method does several things.
+	 * First in canonicalizes Cloud Events attributes ensuring that they all prefixed
+	 * with 'ce-' prefix regardless where they came from.
+	 * It also transforms structured-mode Cloud Event to binary-mode and then it canonicalizes attributes
+	 * as well as described in the previous sentence.
+	 */
 	@SuppressWarnings("unchecked")
 	static Message<?> toCanonical(Message<?> inputMessage, MessageConverter messageConverter) {
 		Map<String, Object> headers = (Map<String, Object>) ReflectionUtils.getField(MESSAGE_HEADERS, inputMessage.getHeaders());
@@ -223,6 +227,7 @@ public final class CloudEventMessageUtils {
 		String inputContentType = (String) inputMessage.getHeaders().get(DATACONTENTTYPE);
 		// first check the obvious and see if content-type is `cloudevents`
 		if (!isCloudEvent(inputMessage) && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+			// structured-mode
 			MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
 			if (contentType.getType().equals(APPLICATION_CLOUDEVENTS.getType()) && contentType
 					.getSubtype().startsWith(APPLICATION_CLOUDEVENTS.getSubtype())) {
@@ -240,13 +245,12 @@ public final class CloudEventMessageUtils {
 						.fromMessage(cloudEventMessage, Map.class);
 
 				canonicalizeHeaders(structuredCloudEvent, true);
-				Message<?> binaryCeMessage = buildBinaryMessageFromStructuredMap(structuredCloudEvent,
+				return buildBinaryMessageFromStructuredMap(structuredCloudEvent,
 						inputMessage.getHeaders());
-
-				return binaryCeMessage;
 			}
 		}
-		else if (StringUtils.hasText(inputContentType)) { // this needs thinking since . .
+		else if (StringUtils.hasText(inputContentType)) {
+			// binary-mode, but DATACONTENTTYPE was specified explicitly so we set it as CT to ensure proper message converters are used.
 			return MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, inputContentType)
 					.build();
 		}
@@ -256,24 +260,40 @@ public final class CloudEventMessageUtils {
 
 	/**
 	 * Determines attribute prefix based on the presence of certain well defined headers.
-	 *
-	 * TODO work in progress as it needs to be refined
-	 *
 	 * @param messageHeaders map of message headers
 	 * @return prefix (e.g., 'ce_' or 'ce-' etc.)
 	 */
 	static String determinePrefixToUse(Map<String, Object> messageHeaders) {
-		for (String key : messageHeaders.keySet()) {
-			if (key.startsWith(DEFAULT_ATTR_PREFIX)) {
-				return DEFAULT_ATTR_PREFIX;
+		String targetProtocol = (String) messageHeaders.get(MessageUtils.TARGET_PROTOCOL);
+		if (StringUtils.hasText(targetProtocol)) {
+			if ("kafka".equals(targetProtocol)) {
+				return CloudEventMessageUtils.KAFKA_ATTR_PREFIX;
 			}
-			else if (key.startsWith(KAFKA_ATTR_PREFIX)) {
-				return KAFKA_ATTR_PREFIX;
+			else if ("amqp".equals(targetProtocol)) {
+				return CloudEventMessageUtils.AMQP_ATTR_PREFIX;
 			}
-			else if (key.startsWith(AMQP_ATTR_PREFIX)) {
-				return AMQP_ATTR_PREFIX;
+			else if ("http".equals(targetProtocol)) {
+				return CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
+			}
+			else {
+				throw new IllegalArgumentException("Provided TARGET_PROTOCOL is not suported: " + targetProtocol + ". "
+						+ "Supported protoclos are, 'kafka', 'amqp' and 'http'");
 			}
 		}
+		else {
+			for (String key : messageHeaders.keySet()) {
+				if (key.startsWith(DEFAULT_ATTR_PREFIX)) {
+					return DEFAULT_ATTR_PREFIX;
+				}
+				else if (key.startsWith(KAFKA_ATTR_PREFIX)) {
+					return KAFKA_ATTR_PREFIX;
+				}
+				else if (key.startsWith(AMQP_ATTR_PREFIX)) {
+					return AMQP_ATTR_PREFIX;
+				}
+			}
+		}
+
 		return "";
 	}
 
