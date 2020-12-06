@@ -43,7 +43,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
@@ -55,7 +54,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
-import org.springframework.util.StringUtils;
 
 /**
  *
@@ -131,15 +129,6 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 		this.function = functionCatalog.lookup(functionName, "application/json");
 		Assert.notNull(this.function, "Failed to lookup function " + functionName);
-
-		if (!StringUtils.hasText(functionName)) {
-			FunctionInspector inspector = context.getBean(FunctionInspector.class);
-			functionName = inspector.getRegistration(this.function).getNames().toString();
-		}
-
-		if (logger.isInfoEnabled()) {
-			logger.info("Located function: '" + functionName + "'");
-		}
 
 		mapper.registerModule(new JodaModule());
 	}
