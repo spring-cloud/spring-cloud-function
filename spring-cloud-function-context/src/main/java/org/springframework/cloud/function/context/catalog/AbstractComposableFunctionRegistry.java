@@ -63,7 +63,7 @@ import org.springframework.util.StringUtils;
  *
  */
 public abstract class AbstractComposableFunctionRegistry implements FunctionRegistry,
-		FunctionInspector, ApplicationEventPublisherAware, EnvironmentAware {
+		ApplicationEventPublisherAware, EnvironmentAware {
 
 	private final Map<String, Object> functions = new ConcurrentHashMap<>();
 
@@ -170,7 +170,7 @@ public abstract class AbstractComposableFunctionRegistry implements FunctionRegi
 		this.environment = environment;
 	}
 
-	@Override
+
 	public FunctionRegistration<?> getRegistration(Object function) {
 		String functionName = function == null ? null
 				: this.lookupFunctionName(function);
