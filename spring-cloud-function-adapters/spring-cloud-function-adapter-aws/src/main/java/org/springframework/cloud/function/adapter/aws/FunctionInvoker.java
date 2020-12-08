@@ -43,7 +43,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
@@ -133,8 +132,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 		Assert.notNull(this.function, "Failed to lookup function " + functionName);
 
 		if (!StringUtils.hasText(functionName)) {
-			FunctionInspector inspector = context.getBean(FunctionInspector.class);
-			functionName = inspector.getRegistration(this.function).getNames().toString();
+			functionName = this.function.getFunctionDefinition();
 		}
 
 		if (logger.isInfoEnabled()) {
