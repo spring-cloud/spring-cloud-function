@@ -59,7 +59,12 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 	@Override
 	public Message<?> preProcessInput(Message<?> input, Object inputConverter) {
-		return CloudEventMessageUtils.toCanonical(input, (MessageConverter) inputConverter);
+		try {
+			return CloudEventMessageUtils.toCanonical(input, (MessageConverter) inputConverter);
+		}
+		catch (Exception e) {
+			return input;
+		}
 	}
 
 	@Override
