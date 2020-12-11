@@ -30,7 +30,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.MessageConverter;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StringUtils;
 
 /**
@@ -59,6 +58,7 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 	@Override
 	public Message<?> preProcessInput(Message<?> input, Object inputConverter) {
+		// TODO find a way to invoke it conditionally. May be check for certain headers with all known prefixes as well as content type
 		try {
 			return CloudEventMessageUtils.toCanonical(input, (MessageConverter) inputConverter);
 		}
@@ -68,32 +68,15 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 	}
 
 	@Override
-	public Message<?> postProcessResult(Message<?> input, Object result) {
-		Message<?> resultMessage = result instanceof Message ? (Message<?>) result : null;
-		if (CloudEventMessageUtils.isCloudEvent(input)) {
-			CloudEventMessageBuilder<?> messageBuilder;
-			if (result instanceof Message) {
-				messageBuilder = CloudEventMessageBuilder.fromMessage((Message<?>) result);
-			}
-			else {
-				messageBuilder = CloudEventMessageBuilder
-						.withData(result)
-						.setId(UUID.randomUUID().toString())
-						.setSource(URI.create("http://spring.io/" + getApplicationName()))
-						.setType(result.getClass().getName());
-			}
+	public Message<?> postProcessResult(Object result, Message<?> input) {
+		String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders());
+		return this.doPostProcessResult(result, targetPrefix);
+	}
 
-			if (this.cloudEventAttributesProvider != null) {
-				messageBuilder = this.cloudEventAttributesProvider.enrich(messageBuilder);
-			}
-
-			resultMessage = messageBuilder.build(CloudEventMessageUtils.determinePrefixToUse(input.getHeaders()));
-		}
-		else if (!(result instanceof Message<?>)) {
-			resultMessage = MessageBuilder.withPayload(result).build();
-		}
-
-		return resultMessage;
+	@Override
+	public Message<?> postProcessResult(Object result, String targetProtocol) {
+		String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(targetProtocol);
+		return this.doPostProcessResult(result, targetPrefix);
 	}
 
 	@Override
@@ -101,6 +84,27 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
+	private Message<?> doPostProcessResult(Object result, String targetPrefix) {
+		Message<?> resultMessage = null; //result instanceof Message ? (Message<?>) result : null;
+		CloudEventMessageBuilder<?> messageBuilder;
+		if (result instanceof Message) {
+			messageBuilder = CloudEventMessageBuilder.fromMessage((Message<?>) result);
+		}
+		else {
+			messageBuilder = CloudEventMessageBuilder
+					.withData(result)
+					.setId(UUID.randomUUID().toString())
+					.setSource(URI.create("http://spring.io/" + getApplicationName()))
+					.setType(result.getClass().getName());
+		}
+
+		if (this.cloudEventAttributesProvider != null) {
+			messageBuilder = this.cloudEventAttributesProvider.enrich(messageBuilder);
+		}
+
+		resultMessage = messageBuilder.build(targetPrefix);
+		return resultMessage;
+	}
 
 	private String getApplicationName() {
 		ConfigurableEnvironment environment = this.applicationContext.getEnvironment();

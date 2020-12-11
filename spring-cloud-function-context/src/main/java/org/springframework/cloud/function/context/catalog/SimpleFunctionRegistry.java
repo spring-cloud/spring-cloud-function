@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -45,6 +46,7 @@ import reactor.util.function.Tuples;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -621,13 +623,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 							.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
 					this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
-					if (functionInvocationHelper != null) {
-						result = functionInvocationHelper.postProcessResult((Message<?>) input, result);
+					if (functionInvocationHelper != null && CloudEventMessageUtils.isCloudEvent(((Message) input))) {
+						result = functionInvocationHelper.postProcessResult(result, (Message) input);
 					}
 				}
 				else {
-					if (functionInvocationHelper != null) {
-						result = functionInvocationHelper.postProcessResult((Message<?>) input, result);
+					if (functionInvocationHelper != null && CloudEventMessageUtils.isCloudEvent(((Message) input))) {
+						result = functionInvocationHelper.postProcessResult(result, (Message) input);
 					}
 					else {
 						result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
@@ -694,12 +696,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		@SuppressWarnings("unchecked")
 		private Object invokeFunctionAndEnrichResultIfNecessary(Object value) {
+			AtomicReference<Message<?>> firstInputMessage = new AtomicReference<>();
+
 			Object inputValue;
 			if (value instanceof Flux) {
-				inputValue = ((Flux) value).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
+				inputValue = ((Flux) value).map(v -> {
+					if (v instanceof OriginalMessageHolder && firstInputMessage.get() == null) {
+						firstInputMessage.set(((OriginalMessageHolder) v).getOriginalMessage());
+					}
+					return this.extractValueFromOriginalValueHolderIfNecessary(v);
+				});
 			}
 			else if (value instanceof Mono) {
-				inputValue = ((Mono) value).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
+				inputValue = ((Mono) value).map(v -> {
+					if (v instanceof OriginalMessageHolder) {
+						firstInputMessage.set(((OriginalMessageHolder) v).getOriginalMessage());
+					}
+					return this.extractValueFromOriginalValueHolderIfNecessary(v);
+				});
 			}
 			else {
 				inputValue = this.extractValueFromOriginalValueHolderIfNecessary(value);
@@ -709,6 +723,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				inputValue = ((Message) inputValue).getPayload();
 			}
 			Object result = ((Function) this.target).apply(inputValue);
+
+			if (result instanceof Flux && functionInvocationHelper != null) {
+				result = ((Flux) result).map(v -> {
+					if (firstInputMessage.get() != null && CloudEventMessageUtils.isCloudEvent(firstInputMessage.get())) {
+						return functionInvocationHelper.postProcessResult(v, firstInputMessage.get());
+					}
+					return v;
+				});
+			}
 
 			return value instanceof OriginalMessageHolder
 					? this.enrichInvocationResultIfNecessary(((OriginalMessageHolder) value).getOriginalMessage(), result)

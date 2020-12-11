@@ -30,5 +30,7 @@ public interface FunctionInvocationHelper<I> {
 
 	I preProcessInput(I input, Object inputConverter);
 
-	I postProcessResult(I input, Object result);
+	I postProcessResult(Object result, String hint);
+
+	I postProcessResult(Object result, I input);
 }

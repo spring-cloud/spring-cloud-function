@@ -265,20 +265,9 @@ public final class CloudEventMessageUtils {
 	 */
 	static String determinePrefixToUse(Map<String, Object> messageHeaders) {
 		String targetProtocol = (String) messageHeaders.get(MessageUtils.TARGET_PROTOCOL);
-		if (StringUtils.hasText(targetProtocol)) {
-			if ("kafka".equals(targetProtocol)) {
-				return CloudEventMessageUtils.KAFKA_ATTR_PREFIX;
-			}
-			else if ("amqp".equals(targetProtocol)) {
-				return CloudEventMessageUtils.AMQP_ATTR_PREFIX;
-			}
-			else if ("http".equals(targetProtocol)) {
-				return CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
-			}
-			else {
-				throw new IllegalArgumentException("Provided TARGET_PROTOCOL is not suported: " + targetProtocol + ". "
-						+ "Supported protoclos are, 'kafka', 'amqp' and 'http'");
-			}
+		String prefix = determinePrefixToUse(targetProtocol);
+		if (StringUtils.hasText(prefix)) {
+			return prefix;
 		}
 		else {
 			for (String key : messageHeaders.keySet()) {
@@ -298,15 +287,43 @@ public final class CloudEventMessageUtils {
 	}
 
 	/**
+	 * Determines attribute prefix based on the provided target protocol.
+	 * @param targetProtocol target protocol (see {@link MessageUtils#TARGET_PROTOCOL}
+	 * @return prefix (e.g., 'ce_' or 'ce-' etc.)
+	 */
+	static String determinePrefixToUse(String targetProtocol) {
+		if (StringUtils.hasText(targetProtocol)) {
+			if (Protocols.KAFKA.equals(targetProtocol)) {
+				return CloudEventMessageUtils.KAFKA_ATTR_PREFIX;
+			}
+			else if (Protocols.AMQP.equals(targetProtocol)) {
+				return CloudEventMessageUtils.AMQP_ATTR_PREFIX;
+			}
+			else if (Protocols.HTTP.equals(targetProtocol)) {
+				return CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
+			}
+		}
+		return "";
+	}
+
+	/**
 	 * Will check for the existence of required attributes. Assumes attributes (headers)
 	 * are in canonical form.
 	 * @param message input {@link Message}
 	 * @return true if this Message represents Cloud Event in binary-mode
 	 */
-	static boolean isCloudEvent(Message<?> message) {
-		return message.getHeaders().containsKey(SPECVERSION)
-				&& message.getHeaders().containsKey(TYPE)
-				&& message.getHeaders().containsKey(SOURCE);
+	public static boolean isCloudEvent(Message<?> message) {
+		return (message.getHeaders().containsKey(SPECVERSION)
+					&& message.getHeaders().containsKey(TYPE)
+					&& message.getHeaders().containsKey(SOURCE))
+				||
+				(message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SPECVERSION)
+					&& message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _TYPE)
+					&& message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SOURCE))
+				||
+				(message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SPECVERSION)
+					&& message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _TYPE)
+					&& message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SOURCE));
 	}
 
 	private static boolean isAttribute(String key) {
@@ -376,4 +393,13 @@ public final class CloudEventMessageUtils {
 		}
 		return (URI) uri;
 	}
+
+	public static class Protocols {
+		static String AMQP = "amqp";
+		static String AVRO = "avro";
+		static String HTTP = "http";
+		static String JSON = "json";
+		static String KAFKA = "kafka";
+	}
+
 }

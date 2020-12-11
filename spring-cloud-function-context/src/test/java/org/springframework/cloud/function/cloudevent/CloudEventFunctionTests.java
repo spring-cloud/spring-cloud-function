@@ -22,16 +22,20 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
+
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -70,6 +74,86 @@ public class CloudEventFunctionTests {
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
 	}
+
+	/*
+	 * Aside from the properly processing and recognizing CE, the following tow tests (imperative and reactive)
+	 * also emulate message coming from one protocol going to another via MessageUtils.TARGET_PROTOCOL header that
+	 * is set here explicitly but for instance in s-c-stream is set by the framework
+	 */
+	@Test
+	public void testBinaryPojoToPojoDefaultOutputHeaderProviderImperative() {
+		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
+
+		String id = UUID.randomUUID().toString();
+
+		String payload = "{\n" +
+				"        \"version\" : \"1.0\",\n" +
+				"        \"releaseName\" : \"Spring Framework\",\n" +
+				"        \"releaseDate\" : \"24-03-2004\"\n" +
+				"    }";
+
+		Message<String> inputMessage = CloudEventMessageBuilder
+			.withData(payload)
+			.setId(id)
+			.setSource("https://spring.io/")
+			.setType("org.springframework")
+			.setHeader(MessageUtils.TARGET_PROTOCOL, CloudEventMessageUtils.Protocols.KAFKA)
+			.build(CloudEventMessageUtils.AMQP_ATTR_PREFIX);
+
+		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();
+
+		Message<?> message = (Message<?>) function.apply(inputMessage);
+
+		/*
+		 * Validates that although user only deals with POJO, the framework recognizes
+		 * both on input and output that it is dealing with Cloud Event and generates
+		 * appropriate headers/attributes
+		 */
+
+		assertThat(CloudEventMessageUtils.isCloudEvent(message)).isTrue();
+		assertThat(CloudEventMessageUtils.getType(message)).isEqualTo(SpringReleaseEvent.class.getName());
+		assertThat(CloudEventMessageUtils.getSource(message)).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(message.getHeaders().get("ce_source")).isEqualTo(URI.create("http://spring.io/application-application"));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testBinaryPojoToPojoDefaultOutputHeaderProviderReactive() {
+		Function<Object, Object> function = this.lookup("springReleaseReactive", TestConfiguration.class);
+
+		String id = UUID.randomUUID().toString();
+
+		String payload = "{\n" +
+				"        \"version\" : \"1.0\",\n" +
+				"        \"releaseName\" : \"Spring Framework\",\n" +
+				"        \"releaseDate\" : \"24-03-2004\"\n" +
+				"    }";
+
+		Message<String> inputMessage = CloudEventMessageBuilder
+			.withData(payload)
+			.setId(id)
+			.setSource("https://spring.io/")
+			.setType("org.springframework")
+			.setHeader(MessageUtils.TARGET_PROTOCOL, CloudEventMessageUtils.Protocols.KAFKA)
+			.build(CloudEventMessageUtils.AMQP_ATTR_PREFIX);
+
+		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();
+
+		Message<?> message = ((Flux<Message<?>>) function.apply(Flux.just(inputMessage))).blockFirst();
+
+		/*
+		 * Validates that although user only deals with POJO, the framework recognizes
+		 * both on input and output that it is dealing with Cloud Event and generates
+		 * appropriate headers/attributes
+		 */
+
+		assertThat(CloudEventMessageUtils.isCloudEvent(message)).isTrue();
+		assertThat(CloudEventMessageUtils.getType(message)).isEqualTo(SpringReleaseEvent.class.getName());
+		assertThat(CloudEventMessageUtils.getSource(message)).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(message.getHeaders().get("ce_source")).isEqualTo(URI.create("http://spring.io/application-application"));
+	}
+
+
 
 	// this kind of emulates that message came from Kafka
 	@SuppressWarnings("unchecked")
@@ -236,6 +320,20 @@ public class CloudEventFunctionTests {
 					throw new IllegalArgumentException(e);
 				}
 			};
+		}
+
+		@Bean
+		Function<Flux<SpringReleaseEvent>, Flux<SpringReleaseEvent>> springReleaseReactive() {
+			return flux -> flux.map(event -> {
+				try {
+					event.setReleaseDate(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
+					event.setVersion("2.0");
+					return event;
+				}
+				catch (Exception e) {
+					throw new IllegalArgumentException(e);
+				}
+			});
 		}
 
 		@Bean

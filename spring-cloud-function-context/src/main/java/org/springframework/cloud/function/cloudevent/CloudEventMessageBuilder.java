@@ -199,10 +199,8 @@ public final class CloudEventMessageBuilder<T> {
 		this.headers.put(MessageUtils.MESSAGE_TYPE, CloudEventMessageUtils.CLOUDEVENT_VALUE);
 		MessageHeaders headers = new MessageHeaders(this.headers);
 		GenericMessage<T> message = new GenericMessage<T>(this.data, headers);
-		Assert.hasText(CloudEventMessageUtils.getSpecVersion(message), "'specversion' must not be null or empty");
-		Assert.notNull(CloudEventMessageUtils.getSource(message), "'source' must not be null");
-		Assert.hasText(CloudEventMessageUtils.getType(message), "'type' must not be null or empty");
-		Assert.hasText(CloudEventMessageUtils.getId(message), "'id' must not be null or empty");
+		Assert.isTrue(CloudEventMessageUtils.isCloudEvent(message), "The message does not appear to be a valid Cloud Event, "
+				+ "since one of the required attributes (id, specversion, type, source) is missing");
 		return message;
 	}
 }
