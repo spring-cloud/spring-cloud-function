@@ -52,8 +52,8 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 
 	@Override
 	public boolean isRetainOuputAsMessage(Message<?> message) {
-		return message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
-			&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE);
+		return message.getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL) || (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
+			&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE));
 	}
 
 	@Override
