@@ -880,6 +880,28 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return convertedInput;
 		}
 
+		private boolean isExtractPayload(Message<?> message, Type type) {
+			if (FunctionTypeUtils.isCollectionOfMessage(type)) {
+				return true;
+			}
+			if (FunctionTypeUtils.isMessage(type)) {
+				return false;
+			}
+
+			Object payload = message.getPayload();
+			if (ObjectUtils.isArray(payload)) {
+				payload = CollectionUtils.arrayToList(payload);
+			}
+			if (payload instanceof Collection
+					&& Message.class.isAssignableFrom(CollectionUtils.findCommonElementType((Collection<?>) payload))) {
+				return true;
+			}
+			if (this.containsRetainMessageSignalInHeaders(message)) {
+				return false;
+			}
+			return true;
+		}
+
 		/**
 		 * This is an optional conversion which would only happen if `expected-content-type` is
 		 * set as a header in a message or explicitly provided as part of the lookup.
@@ -888,11 +910,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.skipOutputConversion) {
 				return output;
 			}
-			if (output instanceof Message && !this.containsRetainMessageSignalInHeaders((Message) output)) {
-				if (!FunctionTypeUtils.isMessage(type) ||
-					(FunctionTypeUtils.isMessage(type) && Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(type)))) {
-					output = ((Message) output).getPayload();
-				}
+			if (output instanceof Message && isExtractPayload((Message<?>) output, type)) {
+				output = ((Message) output).getPayload();
 			}
 			if (!(output instanceof Publisher) && this.enhancer != null) {
 				output = enhancer.apply(output);

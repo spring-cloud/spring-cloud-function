@@ -72,10 +72,12 @@ public final class FunctionTypeUtils {
 	 * @return 'true' if this type represents a {@link Collection}. Otherwise 'false'.
 	 */
 	public static boolean isTypeCollection(Type type) {
+		if (Collection.class.isAssignableFrom(getRawType(type))) {
+			return true;
+		}
 		type = getGenericType(type);
-		Type rawType = type instanceof ParameterizedType ? ((ParameterizedType) type).getRawType() : type;
-
-		return rawType instanceof Class<?> && Collection.class.isAssignableFrom((Class<?>) rawType);
+		Class<?> rawType = type instanceof ParameterizedType ? getRawType(type) : (Class<?>) type;
+		return Collection.class.isAssignableFrom(rawType);
 	}
 
 	/**
@@ -298,8 +300,8 @@ public final class FunctionTypeUtils {
 	}
 
 	public static boolean isCollectionOfMessage(Type type) {
-		if (isMessage(type)) {
-			return isTypeCollection(type);
+		if (isMessage(type) && isTypeCollection(type)) {
+			return isMessage(getImmediateGenericType(type, 0));
 		}
 		return false;
 	}
