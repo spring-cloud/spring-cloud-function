@@ -317,6 +317,10 @@ public final class CloudEventMessageUtils {
 					&& message.getHeaders().containsKey(TYPE)
 					&& message.getHeaders().containsKey(SOURCE))
 				||
+				(message.getHeaders().containsKey(_SPECVERSION)
+						&& message.getHeaders().containsKey(_TYPE)
+						&& message.getHeaders().containsKey(_SOURCE))
+				||
 				(message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SPECVERSION)
 					&& message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _TYPE)
 					&& message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SOURCE))

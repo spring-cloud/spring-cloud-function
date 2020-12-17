@@ -620,11 +620,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Object enrichInvocationResultIfNecessary(Object input, Object result) {
 			if (result != null && !(result instanceof Publisher) && input instanceof Message) {
 				if (result instanceof Message) {
-					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-							.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
-					this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
 					if (functionInvocationHelper != null && CloudEventMessageUtils.isCloudEvent(((Message) input))) {
 						result = functionInvocationHelper.postProcessResult(result, (Message) input);
+					}
+					else {
+						Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+								.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
+						this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
 					}
 				}
 				else {
