@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.cloud.function.context.message.MessageUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ContentTypeResolver;
@@ -47,7 +48,17 @@ import org.springframework.util.StringUtils;
  */
 public final class CloudEventMessageUtils {
 
-	private static final ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver();
+	private static final ContentTypeResolver contentTypeResolver = new DefaultContentTypeResolver() {
+
+		@Override
+		public MimeType resolve(@Nullable MessageHeaders headers) {
+			if (headers.containsKey("content-type")) { // this is temporary workaround for RSocket
+				return MimeType.valueOf(headers.get("content-type").toString());
+			}
+			return super.resolve(headers);
+		}
+
+	};
 
 	private static Field MESSAGE_HEADERS = ReflectionUtils.findField(MessageHeaders.class, "headers");
 
@@ -235,7 +246,7 @@ public final class CloudEventMessageUtils {
 				String dataContentType = StringUtils.hasText(inputContentType) ? inputContentType
 						: MimeTypeUtils.APPLICATION_JSON_VALUE;
 
-				String suffix = contentType.getSubtypeSuffix();
+				String suffix = contentType.getSubtypeSuffix() == null ? "json" : contentType.getSubtypeSuffix();
 				MimeType cloudEventDeserializationContentType = MimeTypeUtils
 						.parseMimeType(contentType.getType() + "/" + suffix);
 				Message<?> cloudEventMessage = MessageBuilder.fromMessage(inputMessage)

@@ -88,7 +88,12 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 		Message<?> resultMessage = null; //result instanceof Message ? (Message<?>) result : null;
 		CloudEventMessageBuilder<?> messageBuilder;
 		if (result instanceof Message) {
-			messageBuilder = CloudEventMessageBuilder.fromMessage((Message<?>) result);
+			if (CloudEventMessageUtils.isCloudEvent((Message<?>) result)) {
+				messageBuilder = CloudEventMessageBuilder.fromMessage((Message<?>) result);
+			}
+			else {
+				return (Message<?>) result;
+			}
 		}
 		else {
 			messageBuilder = CloudEventMessageBuilder
@@ -109,6 +114,6 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 	private String getApplicationName() {
 		ConfigurableEnvironment environment = this.applicationContext.getEnvironment();
 		String name = environment.getProperty("spring.application.name");
-		return (StringUtils.hasText(name) ? name : "application-" + this.applicationContext.getId());
+		return (StringUtils.hasText(name) ? name : "");
 	}
 }

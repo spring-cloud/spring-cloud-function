@@ -185,7 +185,7 @@ public class RequestProcessor {
 			.doOnNext(value -> {
 				addHeaders(builder, value);
 				if (!isValidCloudEvent(value.getHeaders().keySet())) {
-					builder.headers(HeaderUtils.sanitize(request.headers()));
+//					builder.headers(HeaderUtils.sanitize(request.headers()));
 				}
 			})
 			.map(message -> message.getPayload());
@@ -196,7 +196,7 @@ public class RequestProcessor {
 			.doOnNext(value -> {
 				addHeaders(builder, value);
 				if (!isValidCloudEvent(value.getHeaders().keySet())) {
-					builder.headers(HeaderUtils.sanitize(request.headers()));
+//					builder.headers(HeaderUtils.sanitize(request.headers()));
 				}
 			})
 			.map(message -> message.getPayload());
