@@ -6,28 +6,14 @@ their requirement while taking care-off non-functional aspects. For more informa
 our https://spring.io/projects/spring-cloud-function[project page].
 
 The example consists of a Spring boot configuration class 
-https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent/src/main/java/io/spring/cloudevent/DemoApplication.java[DemoApplication]
+https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent-stream/src/main/java/io/spring/cloudevent/DemoApplication.java[DemoApplication]
 which contains a sample function which you can interact with following via AMQP and Apache Kafka.
 
-### Function as message handler (From RabbitMQ to Apache Kafka)
+### From RabbitMQ to Apache Kafka
 
-Assuming you have RabbitMQ and Kafka running, start the application and send a Message to RabbitMQ. You can use RabbitMQ dashboard (if you have it installed)
-and send message to `hire-in-0` exchange.
-To stay compliant with Cloud Event specification you should provide attributes with AMQP appropriate prefixes (i.e., cloudEvents:). For example:
+Assuming you have RabbitMQ and Kafka running, start the application and send a Message to RabbitMQ. 
 
-```
-cloudEvents:specversion=1.0
-cloudEvents:type=hire
-cloudEvents:source:spring.io/spring-event
-cloudEvents:id=0001
-```
-
-And your data:
-```
-{"firstName":"John", "lastName":"Doe"}
-```
-
-To simplify this demo part we included a test case which effectively automates this demo by sending Cloud Event to RabbitMQ and receives one from Apache Kafka.
+We included a https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent-stream/src/test/java/io/spring/cloudevent/DemoApplicationTests.java[demo test case] which effectively automates this demo by sending Cloud Event to RabbitMQ and receives one from Apache Kafka.
 
 ```
 Message<byte[]> messageToAMQP = CloudEventMessageBuilder
@@ -51,3 +37,18 @@ This last point is worth elaborating a bit. We already established that setting 
 of it we’ve exposed a mechanism for you to deal with it outside of your business logic. But what about attribute prefixes? Note that we are running the 
 same code in different execution contexts. This means that the attribute prefixes actually depend on the execution context. So by being aware of the execution 
 context, the framework ensures the correctness of the Cloud Event attribute prefixes.
+
+You can also use http://localhost:15672/[RabbitMQ dashboard] (if you have it installed) and send message to `hire-in-0` exchange.
+To stay compliant with Cloud Event specification you should provide attributes with AMQP appropriate prefixes (i.e., `cloudEvents:`). For example:
+
+```
+cloudEvents:specversion=1.0
+cloudEvents:type=hire
+cloudEvents:source:spring.io/spring-event
+cloudEvents:id=0001
+```
+
+And your data:
+```
+{"firstName":"John", "lastName":"Doe"}
+```
