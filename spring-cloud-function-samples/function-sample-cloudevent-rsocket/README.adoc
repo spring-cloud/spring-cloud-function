@@ -6,12 +6,13 @@ their requirement while taking care-off non-functional aspects. For more informa
 our https://spring.io/projects/spring-cloud-function[project page].
 
 The example consists of a Spring boot configuration class 
-https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent/src/main/java/io/spring/cloudevent/DemoApplication.java[DemoApplication]
+https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent-rsocket/src/main/java/io/spring/cloudevent/DemoApplication.java[DemoApplication]
 which contains a sample function which you can interact with following via RSocket and Apache Kafka.
 
-### Function as message handler (From RSocket to Apache Kafka)
+### From RSocket to Apache Kafka
 
-While very similar to spring-cloud-function-stream example there are few interesting variants here worth discussing.
+While very similar to https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-cloudevent-stream[spring-cloud-function-stream] example 
+there are few interesting variants here worth discussing.
 Here we’re introducing a different delivery mechanism. But what really makes it even more interesting is the fact that unlike Apache Kafka or AMQP there is no protocol 
 binding defined for RSocket. So we will communicate Cloud Event in a structured-mode where the entire event is encoded into some type of structure (e.g., JSON).
 
@@ -19,7 +20,7 @@ Few implementation details are also defer in this example from the others. Howev
 demonstration of other mechanisms you may chose to write your code. For example we’ll be using `Consumer` instead of a `Function` and will be manually 
 sending an output message using `StreamBridge` component provided by Spring Cloud Stream framework.
 
-So without further ado, here is our application code
+So, here is our application code
 
 ```
 @Bean
@@ -57,3 +58,4 @@ rsocketRequesterBuilder.tcp("localhost", 55555)
 	.data(payload).       // data we're sending
 	.send()
 ```
+You can run the demo using https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent-rsocket/src/test/java/io/spring/cloudevent/DemoApplicationTests.java[DemoApplicationTests]
