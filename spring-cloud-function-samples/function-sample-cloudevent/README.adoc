@@ -1,77 +1,29 @@
-## Examples of Cloud Events with Spring
+## Examples of Cloud Events with Spring via HTTP
 
 ### Introduction
 The current example uses spring-cloud-function framework as its core which allows users to only worry about functional aspects of 
 their requirement while taking care-off non-functional aspects. For more information on Spring Cloud Function please visit 
 our https://spring.io/projects/spring-cloud-function[project page].
 
-The example consists of a class https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent/src/main/java/io/spring/cloudevent/CloudeventDemoApplication.java[CloudeventDemoApplication]
-which contains a set of function beans of different type signatures which you can interact with following instructions below. 
-
-It also provides necessary dependencies and instructions to demonstrate several distinct invocation models:
-
- - _Direct function invocation_
- - _Function as a REST endpoint_
- - _Function as message handler (e.g., Kafka, RabbitMQ etc)_
- - _Function invocation via RSocket_
- 
-The POM file defines all the necessary dependency in a segregated way, so you can choose the one you're interested in by commenting in/out dependencies 
-that fit your scenario (e.g., Streaming vs. REST, ect_
- 
-### Direct function invocation
-
-By looking up user declared functions in `FunctionCatalog` you can interact (i.e., for testing purposes) with functions directly 
-while enjoying all the features of _spring-cloud-function_ such as transparent type conversion, function composition and more. 
-
-[source, java]
-----
-Message<String> binaryCloudEventMessage = MessageBuilder
-	.withPayload("{\"releaseDate\":\"24-03-2004\", \"releaseName\":\"Spring Framework\", \"version\":\"1.0\"}")
-	.setHeader("ce-specversion", "1.0")
-	.setHeader("ce-type", "com.example.springevent")
-	.setHeader("ce-source", "spring.io/spring-event")
-	.setHeader("ce-id", "123-456-9876-09")
-	.build();
-Function<Message<String>, String> asPojoMessage = catalog.lookup("asPOJOMessage");
-System.out.println(asPojoMessage.apply(binaryCloudEventMessage));
-----
-
-The test case link:src/test/java/io/spring/cloudevent/CloudeventDemoApplicationFunctionTests.java[CloudeventDemoApplicationFunctionTests]
-provides a good example on how to accomplish this.
-
-### Function as a REST endpoint
+The example consists of a Spring boot configuration class 
+https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent/src/main/java/io/spring/cloudevent/DemoApplication.java[DemoApplication]
+which contains a sample function which you can interact with following via HTTP.
 
 Given that SCF allows function to be exposed as REST endpoints, you can post cloud event to any of the 
 functions by using function name as path (e.g., `localhost:8080/<function_name>`).
 
-Just add this to your dependency (or in your case simply un-comment)
-
-[source, xml]
-----
-<!-- REST - only needed if you intend to invoke via HTTP -->
-<dependency>
-	<groupId>org.springframework.boot</groupId>
-	<artifactId>spring-boot-starter-web</artifactId>
-</dependency>
-<dependency>
-  	<groupId>org.springframework.cloud</groupId>
-  	<artifactId>spring-cloud-function-web</artifactId>
-  	<version>3.1.0-SNAPSHOT</version>
-</dependency>
-<!-- end REST -->
-----
 
 Here is an example of curl command posting a cloud event in binary-mode:
 
 [source, text]
 ----
-curl -w'\n' localhost:8080/asPOJO \
+curl -w'\n' localhost:8080/hire \
+ -H "ce-id: 0001" \
  -H "ce-specversion: 1.0" \
- -H "ce-type: com.example.springevent" \
+ -H "ce-type: hire" \
  -H "ce-source: spring.io/spring-event" \
  -H "Content-Type: application/json" \
- -H "ce-id: 0001" \
- -d '{"releaseDate":"24-03-2004", "releaseName":"Spring Framework", "version":"1.0"}'
+ -d '{"firstName":"John", "lastName":"Doe"}' -i
 ----
 
 And here is an example of curl command posting a cloud event in structured-mode:
@@ -87,85 +39,9 @@ curl -w'\n' localhost:8080/asString \
     "id" : "A234-1234-1234",
     "datacontenttype" : "application/json",
     "data" : {
-        "version" : "1.0",
-        "releaseName" : "Spring Framework",
-        "releaseDate" : "24-03-2004"
+        "firstName" : "John",
+        "lastName" : "Doe"
     }
 }'
 ----
 
-Feel free to change the function you're invoking by changing URI path (e.g., `localhost:8080/asString` to `localhost:8080/consumeAndProduceCloudEventAsPojoToPojo`).
-
-### Function as message handler (e.g., Kafka, RabbitMQ etc)
-
-Streaming support for Apache Kafka and RabbitMQ is provided via https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream] framework. 
-In fact we're only mentioning Apache Kafka and RabbitMQ here as an example.
-Streaming support is automatically provided for any existing binders (e.g., Solace, Google PubSub, Amazon Kinesis and many more). 
-Please see project page for for additional details on available binders.
-
-Binders are components of Spring Cloud Stream responsible to bind user code (e.g., java function) to message broker destinations, so execution 
-is triggered by messages posted to the broker destination and results of execution are sent back to the broker destinations. Binders also provide 
-support for _consumer groups_, _partitioning_ and many other features. For more information on Spring Cloud Stream, Binders and available features
-please visit our https://docs.spring.io/spring-cloud-stream/docs/3.1.0-SNAPSHOT/reference/html/[documentation page].
-
-*RabbitMQ*
-By simply declaring the following dependency
-[source, xml]
-----
-<dependency>
-   <groupId>org.springframework.cloud</groupId>
-   <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-   <version>3.1.0-SNAPSHOT</version>
-</dependency>
-----
-. . . any function can now act as message handler bound to RabitMQ message broker. All you need to do is identify which function you intend to bind
-by identifying it via `spring.cloud.function.definition` property. 
-[source, text]
-----
---spring.cloud.function.definition=asPOJOMessage
-----
-
-See link:src/main/resources/application.properties[application.properties] for more details.
-
-Assuming RabbitMQ broker is running on localhost:default_port, start the application and navigate to 
-http://localhost:15672/#/exchanges[RabbitMQ Dashboard]. Select `asPOJOMessage-in-0` exchange and: 
-
-_...post a binary-mode message by filling all the required Cloud Events headers and posting `data` element as payload (see the screenshot below)._
-
-image::images\rabbit-send-binary.png[binary,700,700]
-
-_...post a structured-mode message by filling `contentType` header to the value of `application/cloudevents+json` while providing the 
-entire structure of Cloud Event message as payload (see the screenshot below)._
-
-[source, json]
-----
-{
-    "specversion" : "1.0",
-    "type" : "org.springframework",
-    "source" : "https://spring.io/",
-    "id" : "A234-1234-1234",
-    "datacontenttype" : "application/json",
-    "data" : {
-        "version" : "1.0",
-        "releaseName" : "Spring Framework",
-        "releaseDate" : "24-03-2004"
-    }
-}
-----
-
-image::images\rabbit-send-structured.png[structured,700,700]
-
-You can follow similar approach with Apache Kafka or any other binder. All you need is bring a required binder dependency. 
-For example for Apache Kafka
-[source, xml]
-----
-<dependency>
-   <groupId>org.springframework.cloud</groupId>
-   <artifactId>spring-cloud-stream-binder-kafka</artifactId>
-   <version>3.1.0-SNAPSHOT</version>
-</dependency>
-----
-
-### Function invocation via RSocket
-
-TBD

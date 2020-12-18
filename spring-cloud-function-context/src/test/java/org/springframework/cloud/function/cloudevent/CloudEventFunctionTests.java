@@ -72,7 +72,7 @@ public class CloudEventFunctionTests {
 		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
 	}
 
 	/*
@@ -112,8 +112,8 @@ public class CloudEventFunctionTests {
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(message)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(message)).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(message)).isEqualTo(URI.create("http://spring.io/application-application"));
-		assertThat(message.getHeaders().get("ce_source")).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(CloudEventMessageUtils.getSource(message)).isEqualTo(URI.create("http://spring.io/"));
+		assertThat(message.getHeaders().get("ce_source")).isEqualTo(URI.create("http://spring.io/"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -149,8 +149,8 @@ public class CloudEventFunctionTests {
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(message)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(message)).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(message)).isEqualTo(URI.create("http://spring.io/application-application"));
-		assertThat(message.getHeaders().get("ce_source")).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(CloudEventMessageUtils.getSource(message)).isEqualTo(URI.create("http://spring.io/"));
+		assertThat(message.getHeaders().get("ce_source")).isEqualTo(URI.create("http://spring.io/"));
 	}
 
 
@@ -179,7 +179,7 @@ public class CloudEventFunctionTests {
 		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -217,7 +217,7 @@ public class CloudEventFunctionTests {
 //		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -291,7 +291,7 @@ public class CloudEventFunctionTests {
 		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/application-application"));
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
 	}
 
 	private Function<Object, Object> lookup(String functionDefinition, Class<?>... configClass) {

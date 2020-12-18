@@ -178,13 +178,13 @@ public final class CloudEventMessageBuilder<T> {
 				else if (key.startsWith(CloudEventMessageUtils.KAFKA_ATTR_PREFIX)) {
 					this.swapPrefix(key, CloudEventMessageUtils.KAFKA_ATTR_PREFIX, attributePrefixToUse);
 				}
-				else if (key.equals(CloudEventMessageUtils._ID) || key.equals(CloudEventMessageUtils._SPECVERSION) ||
-						key.equals(CloudEventMessageUtils._SOURCE) || key.equals(CloudEventMessageUtils._TYPE) ||
-						key.equals(CloudEventMessageUtils._DATASCHEMA) || key.equals(CloudEventMessageUtils._SCHEMAURL) ||
-						key.equals(CloudEventMessageUtils._SUBJECT) || key.equals(CloudEventMessageUtils._TIME) ||
-						key.equals(CloudEventMessageUtils._DATACONTENTTYPE)) {
-					this.swapPrefix(key, "", attributePrefixToUse);
-				}
+//				else if (key.equals(CloudEventMessageUtils._SPECVERSION) ||
+//						key.equals(CloudEventMessageUtils._SOURCE) || key.equals(CloudEventMessageUtils._TYPE) ||
+//						key.equals(CloudEventMessageUtils._DATASCHEMA) || key.equals(CloudEventMessageUtils._SCHEMAURL) ||
+//						key.equals(CloudEventMessageUtils._SUBJECT) || key.equals(CloudEventMessageUtils._TIME) ||
+//						key.equals(CloudEventMessageUtils._DATACONTENTTYPE)) {
+//					this.swapPrefix(key, "", attributePrefixToUse);
+//				}
 			}
 		}
 		return doBuild(attributePrefixToUse);
@@ -209,7 +209,7 @@ public final class CloudEventMessageBuilder<T> {
 			this.headers.put(prefix + CloudEventMessageUtils._TYPE, this.data.getClass().getName());
 		}
 		if (!this.headers.containsKey(prefix + CloudEventMessageUtils._SOURCE)) {
-			this.headers.put(prefix + CloudEventMessageUtils._SOURCE, URI.create("https://spring.io/" + this.data.getClass().getName()));
+			this.headers.put(prefix + CloudEventMessageUtils._SOURCE, URI.create("https://spring.io/"));
 		}
 		MessageHeaders headers = new MessageHeaders(this.headers);
 		GenericMessage<T> message = new GenericMessage<T>(this.data, headers);
