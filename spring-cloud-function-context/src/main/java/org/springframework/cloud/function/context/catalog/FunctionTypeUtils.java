@@ -91,9 +91,7 @@ public final class FunctionTypeUtils {
 		if (isPublisher(type) || isMessage(type)) {
 			type = getImmediateGenericType(type, 0);
 		}
-		if (isMessage(type)) {
-			type = getImmediateGenericType(type, 0);
-		}
+
 		return TypeResolver.reify(type instanceof GenericArrayType ? type : TypeResolver.reify(type));
 	}
 
