@@ -206,9 +206,11 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(function).isInstanceOf(Function.class);
 		assertThat(function.isInputTypeMessage()).isTrue();
 
-		Type inputType = function.getInputType();
+		final Type inputType = function.getInputType();
 
-		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Flux.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Message.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(FunctionTypeUtils.getGenericType(inputType)))).isAssignableFrom(String.class);
 	}
 
 	@Test
@@ -219,9 +221,12 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(function).isInstanceOf(Function.class);
 		assertThat(function.isInputTypeMessage()).isTrue();
 
-		Type inputType = function.getInputType();
-		assertThat((Class<?>) FunctionTypeUtils.getGenericType(inputType)).isAssignableFrom(String.class);
+		final Type inputType = function.getInputType();
+
 		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Publisher.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Message.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(FunctionTypeUtils.getGenericType(inputType)))).isAssignableFrom(String.class);
+
 	}
 
 	@Test
