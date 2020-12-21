@@ -469,9 +469,7 @@ public class RSocketAutoConfigurationTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> {
-				return v.toUpperCase();
-			};
+			return v -> v.toUpperCase();
 		}
 
 		@Bean
