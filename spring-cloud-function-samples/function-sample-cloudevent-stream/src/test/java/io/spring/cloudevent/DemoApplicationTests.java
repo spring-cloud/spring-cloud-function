@@ -1,5 +1,7 @@
 package io.spring.cloudevent;
 
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.Collections;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -60,11 +62,13 @@ public class DemoApplicationTests {
 			try {
 				new CachingConnectionFactory("localhost").createConnection();
 				try {
-					KafkaAdminClient.create(Collections.singletonMap("bootstrap.servers", "localhost:9092"));
+					Socket socket = new Socket();
+					socket.connect(new InetSocketAddress("localhost", 9092));
+					socket.close();
 				}
 				catch (Exception e) {
 					System.out.println("Kafka is not available on localhost:9092");
-					return ConditionEvaluationResult.enabled("Kafka is not available on localhost, default port");
+					return ConditionEvaluationResult.disabled("Kafka is not available on localhost, default port");
 				}
 			}
 			catch (Exception e) {
