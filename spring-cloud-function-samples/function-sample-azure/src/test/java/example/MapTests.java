@@ -16,11 +16,12 @@
 
 package example;
 
+import com.microsoft.azure.functions.ExecutionContext;
 import org.junit.jupiter.api.Test;
+import java.util.logging.Logger;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHandler;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
@@ -32,9 +33,25 @@ public class MapTests {
 	public void start() throws Exception {
 		AzureSpringBootRequestHandler<String, String> handler = new AzureSpringBootRequestHandler<>(
 			Config.class);
-		String result = handler.handleRequest("foo", null);
-		handler.close();
-		assertThat(result).isEqualTo("FOO");
-	}
+		ExecutionContext ec = new ExecutionContext() {
+			@Override
+			public Logger getLogger() {
+				return Logger.getAnonymousLogger();
+			}
 
+			@Override
+			public String getInvocationId() {
+				return "id1";
+			}
+
+			@Override
+			public String getFunctionName() {
+				return "uppercase";
+			}
+		};
+
+		String result = handler.handleRequest("{\"greeting\": \"hello\",\"name\": \"your_name\"}", ec);
+		handler.close();
+		assertThat(result).isEqualTo("{\"greeting\":\"HELLO\",\"name\":\"YOUR_NAME\"}");
+	}
 }
