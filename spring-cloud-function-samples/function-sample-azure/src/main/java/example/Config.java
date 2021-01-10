@@ -16,8 +16,11 @@
 
 package example;
 
+import java.io.IOException;
+import java.util.Map;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -34,8 +37,24 @@ public class Config {
 	@Bean
 	public Function<String, String> uppercase(ExecutionContext context) {
 		return value -> {
-			context.getLogger().info("Uppercasing " + value);
-			return value.toUpperCase();
+			ObjectMapper mapper = new ObjectMapper();
+
+			try {
+				Map<String, String> map = mapper.readValue(value, Map.class);
+
+				if(map != null)
+					map.forEach((k, v) -> map.put(k, v != null ? v.toUpperCase() : null));
+
+				if(context != null)
+					context.getLogger().info(new StringBuilder().append("Function: ").append(context.getFunctionName()).append(" is uppercasing ").append(value.toString()).toString());
+
+				return mapper.writeValueAsString(map);
+			} catch (IOException e) {
+				if(context != null)
+					context.getLogger().severe("Function could not parse incoming request");
+
+				return ("Function error: - bad request");
+			}
 		};
 	}
 
