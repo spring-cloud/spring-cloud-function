@@ -77,6 +77,7 @@ import org.springframework.util.StringUtils;
  * such as type conversion, composition, POJO etc.
  *
  * @author Oleg Zhurakousky
+ * @author Heiko Henning
  *
  */
 public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspector {
@@ -571,7 +572,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			input = this.fluxifyInputIfNecessary(input);
 
 			Object convertedInput = this.convertInputIfNecessary(input, this.inputType);
-
 			if (this.isRoutingFunction() || this.isComposed()) {
 				result = ((Function) this.target).apply(convertedInput);
 			}
@@ -651,6 +651,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					sanitizedHeaders.put(k, v);
 				}
 			});
+			// Dont put HTTP request header into response for GCP.
+			sanitizedHeaders.remove("Content-Length");
+			sanitizedHeaders.remove("User-Agent");
+			sanitizedHeaders.remove("Accept");
+			sanitizedHeaders.remove("Connection");
 			return sanitizedHeaders;
 		}
 
@@ -912,7 +917,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.skipOutputConversion) {
 				return output;
 			}
+			MessageHeaders headers = null;
 			if (output instanceof Message && isExtractPayload((Message<?>) output, type)) {
+				headers = ((Message) output).getHeaders();
 				output = ((Message) output).getPayload();
 			}
 			if (!(output instanceof Publisher) && this.enhancer != null) {
@@ -940,8 +947,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType);
 			}
 			else {
-				convertedOutput = messageConverter.toMessage(output,
-						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType[0])));
+				if (headers == null) {
+					headers = new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType[0]));
+				}
+				else if (!ObjectUtils.isEmpty(contentType)) {
+					Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+						.getField(SimpleFunctionRegistry.this.headersField, headers);
+					headersMap.put(MessageHeaders.CONTENT_TYPE, contentType[0]);
+				}
+				convertedOutput = messageConverter.toMessage(output, headers);
 			}
 
 			return convertedOutput;

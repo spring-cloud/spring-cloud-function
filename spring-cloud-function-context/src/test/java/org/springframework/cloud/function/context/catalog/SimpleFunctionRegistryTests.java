@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.catalog;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -66,6 +67,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky
+ * @author Heiko Henning
  *
  */
 public class SimpleFunctionRegistryTests {
@@ -74,10 +76,11 @@ public class SimpleFunctionRegistryTests {
 
 	private ConversionService conversionService;
 
+	private JsonMapper jsonMapper = new GsonMapper(new Gson());
+
 	@BeforeEach
 	public void before() {
 		List<MessageConverter> messageConverters = new ArrayList<>();
-		JsonMapper jsonMapper = new GsonMapper(new Gson());
 		messageConverters.add(new JsonMessageConverter(jsonMapper));
 		messageConverters.add(new ByteArrayMessageConverter());
 		messageConverters.add(new StringMessageConverter());
@@ -247,6 +250,45 @@ public class SimpleFunctionRegistryTests {
 		assertThat(lookedUpFunction).isNotNull();
 		String result = lookedUpFunction.apply(MessageBuilder.withPayload("star").setHeader("foo", "bar").build());
 		assertThat(result).isEqualTo("RATS");
+	}
+
+	@Test
+	public void testFunctionCompositionMultiMixedMessages() {
+
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+			new JacksonMapper(new ObjectMapper()));
+
+		FunctionRegistration<DuplicateMessage> duplicateRegistration = new FunctionRegistration<>(
+			new DuplicateMessage(), "duplicate")
+			.type(FunctionType.of(DuplicateMessage.class));
+		catalog.register(duplicateRegistration);
+
+		// expectedOutputMimeTypes and return byte[] is required to otherwiese the test is false positive.
+		Function<Message<Person>, List<Message<byte[]>>> lookedUpFunction = catalog
+			.lookup("duplicate", "application/json");
+
+
+		Person person = new Person();
+		person.setName("Joe");
+
+		assertThat(lookedUpFunction).isNotNull();
+		List<Message<byte[]>> result = lookedUpFunction.apply(
+			MessageBuilder
+				.withPayload(person)
+				.setHeader("foo", "bar")
+				.build());
+
+
+		assertThat(result).isNotNull();
+		assertThat(result.size()).isEqualTo(2);
+
+		Person p1 = jsonMapper.fromJson(result.get(0).getPayload(), Person.class);
+		assertThat(p1.getName()).isEqualTo("Joe Miller");
+		assertThat(result.get(0).getHeaders().get("foo")).isEqualTo("bar");
+
+		Person p2 = jsonMapper.fromJson(result.get(1).getPayload(), Person.class);
+		assertThat(p2.getName()).isEqualTo("Joe Heinz");
+		assertThat(result.get(1).getHeaders().get("foo")).isEqualTo("bar");
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -496,6 +538,25 @@ public class SimpleFunctionRegistryTests {
 			return MessageBuilder
 					.withPayload(new StringBuilder(t.getPayload()).reverse().toString())
 					.copyHeaders(t.getHeaders()).build();
+		}
+
+	}
+
+	private static class DuplicateMessage
+		implements Function<Message<Person>, Collection<Message<Person>>> {
+
+		@Override
+		public Collection<Message<Person>> apply(Message<Person> t) {
+			Person p1 = new Person();
+			p1.setName(t.getPayload().getName() + " Miller");
+
+			Person p2 = new Person();
+			p2.setName(t.getPayload().getName() + " Heinz");
+
+			return Arrays.asList(
+				MessageBuilder.withPayload(p1).copyHeaders(t.getHeaders()).build(),
+				MessageBuilder.withPayload(p2).copyHeaders(t.getHeaders()).build()
+			);
 		}
 
 	}
