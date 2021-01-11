@@ -229,7 +229,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			wrappedFunction = new FunctionInvocationWrapper(function) {
 				@Override
 				Object doApply(Object input) {
-					logger.info("Executing around advise(s)");
+					if (logger.isDebugEnabled()) {
+						logger.debug("Executing around advise(s): " + functionAroundWrapper);
+					}
+
 					return functionAroundWrapper.apply(input, function);
 				}
 			};
@@ -1063,14 +1066,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 			if (FunctionTypeUtils.isMessage(type)) {
 				if (convertedInput == null) {
-					/*
-					 * In the event conversion was unsuccessful we simply return the original un-converted message.
-					 * This will help to deal with issues like KafkaNull and others. However if this was not the intention
-					 * of the developer, this would be discovered early in the development process where the
-					 * additional message converter could be added to facilitate the conversion.
-					 */
-					logger.info("Input type conversion of payload " + message.getPayload() + " resulted in 'null'. "
-							+ "Will use the original message as input.");
+					if (logger.isDebugEnabled()) {
+						/*
+						 * In the event conversion was unsuccessful we simply return the original un-converted message.
+						 * This will help to deal with issues like KafkaNull and others. However if this was not the intention
+						 * of the developer, this would be discovered early in the development process where the
+						 * additional message converter could be added to facilitate the conversion.
+						 */
+						logger.debug("Input type conversion of payload " + message.getPayload() + " resulted in 'null'. "
+								+ "Will use the original message as input.");
+					}
+
 					convertedInput = message;
 				}
 				else {
