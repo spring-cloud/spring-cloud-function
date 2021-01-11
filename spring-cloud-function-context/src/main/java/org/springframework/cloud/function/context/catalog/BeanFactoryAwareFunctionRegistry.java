@@ -114,8 +114,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			Set<String> functionRegistratioinNames = super.getNames(null);
 			String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 			for (String functionName : functionNames) {
-				if (functionRegistratioinNames.contains(functionName)) {
-					logger.info("Skipping function '" + functionName + "' since it is already present");
+				if (functionRegistratioinNames.contains(functionName) && logger.isDebugEnabled()) {
+					logger.debug("Skipping function '" + functionName + "' since it is already present");
 				}
 				else {
 					Object functionCandidate = this.discoverFunctionInBeanFactory(functionName);
