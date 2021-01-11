@@ -245,7 +245,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	}
 
 	String determinImpliedDefinition(Set<String> fNames, String originalDefinition) {
-		if (fNames.size() == 2) {
+		if (!fNames.contains(RoutingFunction.FUNCTION_NAME) && fNames.size() == 2) {
 			Iterator<String> iter = fNames.iterator();
 			String n1 = iter.next();
 			String n2 = iter.next();
