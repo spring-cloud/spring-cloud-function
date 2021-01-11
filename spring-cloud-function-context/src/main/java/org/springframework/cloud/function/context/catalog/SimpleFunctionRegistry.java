@@ -387,6 +387,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type) || FunctionTypeUtils.isTypeCollection(type)) {
 				type = FunctionTypeUtils.getGenericType(type);
 			}
+			if (FunctionTypeUtils.isMessage(type)) {
+				type = FunctionTypeUtils.getGenericType(type);
+			}
 			return type;
 		}
 
