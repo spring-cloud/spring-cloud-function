@@ -43,12 +43,6 @@
 			<artifactId>spring-web</artifactId>
 		</dependency>
 		<dependency>
-			<!-- aws sdk depends on this transitively anyway, so this is here just
-				as a reminder that we need it -->
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
@@ -92,10 +86,6 @@
 				</exclusion>
 			</exclusions>
 			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.4.2-SNAPSHOT</version>
+		<relativePath /> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>io.spring.sample</groupId>
+	<artifactId>function-sample-aws-custom-bean</artifactId>
+	<version>3.0.0.RELEASE</version>
+	<name>AWS Custom Runtime - @Bean sample</name>
+	<description>Demo project for Spring Cloud Function with custom AWS Lambda runtime using @Bean style</description>
+
+	<properties>
+		<java.version>1.8</java.version>
+		<wrapper.version>1.0.22.RELEASE</wrapper.version>
+		<spring-cloud-function.version>3.1.1-SNAPSHOT</spring-cloud-function.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<!-- 
+			We don't need this dependency unless explicitly using APIGatewayProxyRequestEvent 
+			(as on of the function in this example)
+	 		-->
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-lambda-java-events</artifactId>
+			<version>2.2.6</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-adapter-aws</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-jdk14</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.awaitility</groupId>
+			<artifactId>awaitility</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>1.14.3</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-function-dependencies</artifactId>
+				<version>${spring-cloud-function.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
+	 <build>
+		<plugins>
+			<plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>com/example/ContainerTests.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.boot.experimental</groupId>
+						<artifactId>spring-boot-thin-layout</artifactId>
+						<version>${wrapper.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>zip</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<inherited>false</inherited>
+					</execution>
+				</executions>
+				<configuration>
+					<descriptors>
+						<descriptor>src/assembly/zip.xml</descriptor>
+					</descriptors>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	
+	<profiles>
+	  <profile>
+		 <id>integration</id>
+	    <build>
+	    	<plugins>
+			    <plugin>
+		            <artifactId>maven-surefire-plugin</artifactId>
+		            <version>2.22.0</version>
+		            <executions>
+		                <execution>
+		                    <phase>integration-test</phase>
+		                    <goals>
+		                        <goal>test</goal>
+		                    </goals>
+		                    <configuration>
+		                        <excludes>
+		                            <exclude>none</exclude>
+		                        </excludes>
+		                        <includes>
+		                            <include>com/example/ContainerTests.java</include>
+		                        </includes>
+		                    </configuration>
+		                </execution>
+		            </executions>
+		        </plugin>
+	        </plugins>
+        </build>
+	  </profile>
+	</profiles>
+	
+<!-- 	<repositories> -->
+<!-- 		<repository> -->
+<!-- 			<id>spring-snapshots</id> -->
+<!-- 			<name>Spring Snapshots</name> -->
+<!-- 			<url>https://repo.spring.io/libs-snapshot-local</url> -->
+<!-- 			<snapshots> -->
+<!-- 				<enabled>true</enabled> -->
+<!-- 			</snapshots> -->
+<!-- 			<releases> -->
+<!-- 				<enabled>false</enabled> -->
+<!-- 			</releases> -->
+<!-- 		</repository> -->
+<!-- 		<repository> -->
+<!-- 			<id>spring-milestones</id> -->
+<!-- 			<name>Spring Milestones</name> -->
+<!-- 			<url>https://repo.spring.io/libs-milestone-local</url> -->
+<!-- 			<snapshots> -->
+<!-- 				<enabled>false</enabled> -->
+<!-- 			</snapshots> -->
+<!-- 		</repository> -->
+<!-- 		<repository> -->
+<!-- 			<id>spring-releases</id> -->
+<!-- 			<name>Spring Releases</name> -->
+<!-- 			<url>https://repo.spring.io/release</url> -->
+<!-- 			<snapshots> -->
+<!-- 				<enabled>false</enabled> -->
+<!-- 			</snapshots> -->
+<!-- 		</repository> -->
+<!-- 	</repositories> -->
+<!-- 	<pluginRepositories> -->
+<!-- 		<pluginRepository> -->
+<!-- 			<id>spring-snapshots</id> -->
+<!-- 			<name>Spring Snapshots</name> -->
+<!-- 			<url>https://repo.spring.io/libs-snapshot-local</url> -->
+<!-- 			<snapshots> -->
+<!-- 				<enabled>true</enabled> -->
+<!-- 			</snapshots> -->
+<!-- 			<releases> -->
+<!-- 				<enabled>false</enabled> -->
+<!-- 			</releases> -->
+<!-- 		</pluginRepository> -->
+<!-- 		<pluginRepository> -->
+<!-- 			<id>spring-milestones</id> -->
+<!-- 			<name>Spring Milestones</name> -->
+<!-- 			<url>https://repo.spring.io/libs-milestone-local</url> -->
+<!-- 			<snapshots> -->
+<!-- 				<enabled>false</enabled> -->
+<!-- 			</snapshots> -->
+<!-- 		</pluginRepository> -->
+<!-- 		<pluginRepository> -->
+<!-- 			<id>spring-releases</id> -->
+<!-- 			<name>Spring Releases</name> -->
+<!-- 			<url>https://repo.spring.io/libs-release-local</url> -->
+<!-- 			<snapshots> -->
+<!-- 				<enabled>false</enabled> -->
+<!-- 			</snapshots> -->
+<!-- 		</pluginRepository> -->
+<!-- 	</pluginRepositories> -->
+</project>

@@ -26,6 +26,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  */
 @Order(0)
 public class CustomRuntimeInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
@@ -35,9 +36,14 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 		Boolean enabled = context.getEnvironment().getProperty("spring.cloud.function.web.export.enabled",
 				Boolean.class);
 		if (enabled == null || !enabled) {
-			return;
+			if (StringUtils.hasText(System.getenv("AWS_LAMBDA_RUNTIME_API"))) {
+				if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
+					context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
+							CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
+				}
+			}
 		}
-		if (ContextFunctionCatalogInitializer.enabled
+		else if (ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
 				context.registerBean(LambdaDestinationResolver.class, () -> new LambdaDestinationResolver());

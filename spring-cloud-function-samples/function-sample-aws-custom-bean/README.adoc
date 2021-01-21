@@ -1,0 +1,12 @@
+This sample uses the custom runtime type on AWS lambda using @Bean style configuration. 
+However, changing configuration to functional bean registration is supported as well and shown in `function-sample-aws-custom` example.
+
+To run the app in AWS choose the "Custom Runtime" runtime type, and upload the
+.zip file that gets built on the command line with `mvn package` (look
+in `target`).  
+There are several functions defined in the `com.example.LambdaApplication`, so identify the selected function in "Handler"
+You can also use function composition (e.g., `uppercase|reverse`)
+
+You can test any function in this example with any String as input, but the Lambda UI only allows valid JSON as
+test data, so you will have to escape the input with double quotes.
+

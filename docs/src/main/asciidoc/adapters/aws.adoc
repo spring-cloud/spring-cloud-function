@@ -57,10 +57,32 @@ For example, to deploy behind an API Gateway, use `--handler org.springframework
 
 == Custom Runtime
 
-An https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html[AWS Lambda custom runtime] can be created really easily using the HTTP export features in Spring Cloud Function Web. To make this work just add Spring Cloud Function AWS and Spring Cloud Function Web as dependencies in your project and set the following in your `application.properties`:
+You can also benefit from https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html[AWS Lambda custom runtime] feature of AWS Lambda 
+and Spring Cloud Function provides all the necessary components to make it easy.
 
-```
-spring.cloud.function.web.export.enabled=true
-```
+From the code perspective the application should look no different then any other Spring Cloud Function application.
+The only thing you need to do is to provide a `bootstrap` script in the root of your zip/jar that runs the Spring Boot application.
+and select "Custom Runtime" when creating a function in AWS.
+Here is an example 'bootstrap' file:
+```text
+#!/bin/sh
 
-Set the handler name in AWS to the name of your function. Then provide a `bootstrap` script in the root of your zip/jar that runs the Spring Boot application. The functional bean definition style works for custom runtimes too, and is faster than the `@Bean` style, so the example `FuncApplication` above would work. A custom runtime can start up much quicker even than a functional bean implementation of a Java lambda - it depends mostly on the number of classes you need to load at runtime. Spring doesn't do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance, and not doing any work in custom `@PostConstruct` initializers.
+cd ${LAMBDA_TASK_ROOT:-.}
+
+java -Dspring.main.web-application-type=none -Dspring.jmx.enabled=false \
+  -noverify -XX:TieredStopAtLevel=1 -Xss256K -XX:MaxMetaspaceSize=128M \
+  -Djava.security.egd=file:/dev/./urandom \
+  -cp .:`echo lib/*.jar | tr ' ' :` com.example.LambdaApplication
+```
+The `com.example.LambdaApplication` represents your application which contains function beans.
+
+Set the handler name in AWS to the name of your function. You can use function composition here as well (e.g., `uppecrase|reverse`).
+That is pretty much all. Once you upload your zip/jar to AWS your function will run in custom runtime.
+We provide a https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws-custom-new[sample project] 
+where you can also see how to configure yoru POM to properly generate the zip file.
+
+The functional bean definition style works for custom runtimes as well, and is 
+faster than the `@Bean` style. A custom runtime can start up much quicker even than a functional bean implementation 
+of a Java lambda - it depends mostly on the number of classes you need to load at runtime. 
+Spring doesn't do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance, 
+and not doing any work in custom `@PostConstruct` initializers.
