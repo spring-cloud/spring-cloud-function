@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2020 the original author or authors.
+ * Copyright 2016-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -46,6 +47,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.lang.Nullable;
@@ -113,8 +115,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
-	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties) {
-		return new RoutingFunction(functionCatalog, functionProperties);
+	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
+			BeanFactory beanFactory) {
+		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory));
 	}
 
 	private boolean isConverterEligible(Object messageConverter) {
