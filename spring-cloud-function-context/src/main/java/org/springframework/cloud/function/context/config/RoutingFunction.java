@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.expression.MapAccessor;
+import org.springframework.expression.BeanResolver;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -63,9 +64,15 @@ public class RoutingFunction implements Function<Object, Object> {
 	private final FunctionProperties functionProperties;
 
 	public RoutingFunction(FunctionCatalog functionCatalog, FunctionProperties functionProperties) {
+		this(functionCatalog, functionProperties, null);
+	}
+
+	public RoutingFunction(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
+			BeanResolver beanResolver) {
 		this.functionCatalog = functionCatalog;
 		this.functionProperties = functionProperties;
 		this.evalContext.addPropertyAccessor(new MapAccessor());
+		evalContext.setBeanResolver(beanResolver);
 	}
 
 	@Override
