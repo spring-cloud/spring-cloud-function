@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
- * Copyright 2016-2019 the original author or authors.
-=======
  * Copyright 2016-2021 the original author or authors.
->>>>>>> 3a3fd4a6... GH-620 Add BeanResolver support for RoutingFunction
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
