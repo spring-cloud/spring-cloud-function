@@ -129,6 +129,17 @@ public class RoutingFunctionTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testInvocationWithRoutingBeanExpression() {
+		System.setProperty(FunctionProperties.PREFIX + ".routing-expression", "@reverse.apply(#root.getHeaders().get('func'))");
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello").setHeader("func", "esacreppu").build();
+		assertThat(function.apply(message)).isEqualTo("HELLO");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testOtherExpectedFailures() {
 		FunctionCatalog functionCatalog = this.configureCatalog();
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
@@ -168,6 +179,11 @@ public class RoutingFunctionTests {
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class RoutingFunctionConfiguration {
+
+		@Bean
+		public String functionName() {
+			return "reverse";
+		}
 
 		@Bean
 		public Function<String, String> reverse() {

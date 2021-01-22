@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.FunctionInspector;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.expression.MapAccessor;
+import org.springframework.expression.BeanResolver;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -65,11 +66,20 @@ public class RoutingFunction implements Function<Object, Object> {
 
 	private final FunctionInspector functionInspector;
 
-	public RoutingFunction(FunctionCatalog functionCatalog, FunctionInspector functionInspector, FunctionProperties functionProperties) {
+	public RoutingFunction(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+			FunctionProperties functionProperties) {
+
+		this(functionCatalog, functionProperties, functionInspector, null);
+	}
+
+	public RoutingFunction(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
+			FunctionInspector functionInspector, BeanResolver beanResolver) {
 		this.functionCatalog = functionCatalog;
 		this.functionProperties = functionProperties;
 		this.functionInspector = functionInspector;
 		this.evalContext.addPropertyAccessor(new MapAccessor());
+		this.evalContext.setBeanResolver(beanResolver);
+		evalContext.setBeanResolver(beanResolver);
 	}
 
 	@Override
@@ -170,6 +180,7 @@ public class RoutingFunction implements Function<Object, Object> {
 	@SuppressWarnings("rawtypes")
 	private Function functionFromExpression(String routingExpression, Object input) {
 		Expression expression = spelParser.parseExpression(routingExpression);
+
 		String functionName = expression.getValue(this.evalContext, input, String.class);
 		Assert.hasText(functionName, "Failed to resolve function name based on routing expression '" + functionProperties.getRoutingExpression() + "'");
 		Function function = functionCatalog.lookup(functionName);

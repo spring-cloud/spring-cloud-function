@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright 2016-2019 the original author or authors.
+=======
+ * Copyright 2016-2021 the original author or authors.
+>>>>>>> 3a3fd4a6... GH-620 Add BeanResolver support for RoutingFunction
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +31,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -45,6 +50,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
@@ -119,8 +125,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
-	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionInspector functionInspector, FunctionProperties functionProperties) {
-		return new RoutingFunction(functionCatalog, functionInspector, functionProperties);
+	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionInspector functionInspector,
+			FunctionProperties functionProperties, BeanFactory beanFactory) {
+
+		return new RoutingFunction(functionCatalog, functionProperties, functionInspector, new BeanFactoryResolver(beanFactory));
 	}
 
 	private boolean isConverterEligible(Object messageConverter) {
