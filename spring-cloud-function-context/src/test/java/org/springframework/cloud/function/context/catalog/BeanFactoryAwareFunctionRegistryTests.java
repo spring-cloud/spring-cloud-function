@@ -20,6 +20,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.NegotiatingMessageConverterWrapper;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -75,12 +77,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class BeanFactoryAwareFunctionRegistryTests {
 
+	private ApplicationContext context;
+
 	private FunctionCatalog configureCatalog() {
 		return this.configureCatalog(SampleFunctionConfiguration.class);
 	}
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
-		ApplicationContext context = new SpringApplicationBuilder(configClass)
+		this.context = new SpringApplicationBuilder(configClass)
 				.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -555,6 +559,40 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			.build()));
 		SampleFunctionConfiguration config = context.getBean(SampleFunctionConfiguration.class);
 		assertThat(((Person) config.consumerInputRef.get()).getName()).isEqualTo("Ricky");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testGH_635() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(SCF_GH_635ConfigurationAsFunction.class);
+		Function lmFunction = catalog.lookup("emptyMessageList", "application/json");
+		List<Message<?>> emptyListOfMessages = (List<Message<?>>) lmFunction.apply(MessageBuilder.withPayload("hello").build());
+		assertThat(emptyListOfMessages).isEmpty();
+		emptyListOfMessages = (List<Message<?>>) lmFunction.apply("hello");
+		assertThat(emptyListOfMessages).isEmpty();
+
+		JsonMapper mapper = this.context.getBean(JsonMapper.class);
+		Function lsFunction = catalog.lookup("emptyStringList", "application/json");
+		Message<byte[]> emptyListOfString = (Message<byte[]>) lsFunction.apply(MessageBuilder.withPayload("hello").build());
+		List resultList = mapper.fromJson(emptyListOfString.getPayload(), List.class);
+		assertThat(resultList).isEmpty();
+		emptyListOfString = (Message<byte[]>) lsFunction.apply("hello");
+		resultList = mapper.fromJson(emptyListOfString.getPayload(), List.class);
+		assertThat(resultList).isEmpty();
+	}
+
+	@EnableAutoConfiguration
+	public static class SCF_GH_635ConfigurationAsFunction {
+
+		@Bean
+		public Function<String, List<Message<?>>> emptyMessageList() {
+			return input -> Collections.emptyList();
+		}
+
+		@Bean
+		public Function<String, List<String>> emptyStringList() {
+			return input -> Collections.emptyList();
+		}
 	}
 
 	@EnableAutoConfiguration
