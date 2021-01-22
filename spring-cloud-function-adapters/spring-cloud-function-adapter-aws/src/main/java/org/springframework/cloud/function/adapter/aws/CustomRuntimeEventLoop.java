@@ -95,7 +95,7 @@ public class CustomRuntimeEventLoop {
 			FunctionInvocationWrapper function = locateFunction(functionCatalog, response.getHeaders().getContentType());
 
 			Message<byte[]> eventMessage = AWSLambdaUtils.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8),
-					fromHttp(response.getHeaders()), function, mapper);
+					fromHttp(response.getHeaders()), function.getInputType(), mapper);
 			if (logger.isDebugEnabled()) {
 				logger.debug("Event message: " + eventMessage);
 			}

@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.cloud.function.web.source.DestinationResolver;
@@ -31,18 +34,33 @@ import org.springframework.util.StringUtils;
 @Order(0)
 public class CustomRuntimeInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
+	private static Log logger = LogFactory.getLog(CustomRuntimeInitializer.class);
+
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		Boolean enabled = context.getEnvironment().getProperty("spring.cloud.function.web.export.enabled",
-				Boolean.class);
-		if (enabled == null || !enabled) {
-			if (StringUtils.hasText(System.getenv("AWS_LAMBDA_RUNTIME_API"))) {
-				if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
-					context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
-							CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
-				}
+		if (logger.isDebugEnabled()) {
+			logger.debug("AWS Environment: " + System.getenv());
+		}
+
+		// the presence of AWS_LAMBDA_RUNTIME_API signifies Custom Runtime
+		if (!this.isWebExportEnabled(context) && StringUtils.hasText(System.getenv("AWS_LAMBDA_RUNTIME_API"))) {
+			if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
+				context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
+						CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
 			}
 		}
+
+
+//		Boolean enabled = context.getEnvironment()
+//				.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
+//		if (enabled == null || !enabled) {
+//			if (StringUtils.hasText(System.getenv("AWS_LAMBDA_RUNTIME_API"))) {
+//				if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
+//					context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
+//							CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
+//				}
+//			}
+//		}
 		else if (ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
@@ -51,6 +69,12 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 			context.registerBean(StringUtils.uncapitalize(CustomRuntimeAutoConfiguration.class.getSimpleName()),
 					CommandLineRunner.class, () -> args -> CustomRuntimeAutoConfiguration.background());
 		}
+	}
+
+	private boolean isWebExportEnabled(GenericApplicationContext context) {
+		Boolean enabled = context.getEnvironment()
+				.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
+		return enabled != null && enabled;
 	}
 
 }

@@ -18,6 +18,7 @@ package com.example;
 import java.util.concurrent.TimeUnit;
 
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.ToStringConsumer;
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ContainerTests {
 
 	@Test
+	@Disabled
 	void test() throws Exception {
 		ToStringConsumer consumer = new ToStringConsumer();
 		try (@SuppressWarnings("resource")

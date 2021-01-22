@@ -29,7 +29,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -37,6 +36,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  *
@@ -52,21 +52,20 @@ final class AWSLambdaUtils {
 	}
 
 	public static Message<byte[]> generateMessage(byte[] payload, MessageHeaders headers,
-			FunctionInvocationWrapper function, JsonMapper mapper) {
-		return generateMessage(payload, headers, function, mapper, null);
+			Type inputType, JsonMapper mapper) {
+		return generateMessage(payload, headers, inputType, mapper, null);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Message<byte[]> generateMessage(byte[] payload, MessageHeaders headers,
-			FunctionInvocationWrapper function, JsonMapper mapper, @Nullable Context awsContext) {
+			Type inputType, JsonMapper mapper, @Nullable Context awsContext) {
 
 		if (logger.isInfoEnabled()) {
-			logger.info("Incoming JSON for ApiGateway Event: " + new String(payload));
+			logger.info("Incoming JSON Event: " + new String(payload));
 		}
 
 		MessageBuilder messageBuilder = null;
 		Object request = mapper.fromJson(payload, Object.class);
-		Type inputType = function.getInputType();
 		if (FunctionTypeUtils.isMessage(inputType)) {
 			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
 		}
@@ -81,7 +80,7 @@ final class AWSLambdaUtils {
 			}
 			else if (requestMap.containsKey("httpMethod")) { // API Gateway
 				logger.info("Incoming request is API Gateway");
-				if (inputType.getTypeName().endsWith(APIGatewayProxyRequestEvent.class.getSimpleName())) {
+				if (isTypeAnApiGatewayRequest(inputType)) {
 					APIGatewayProxyRequestEvent gatewayEvent = mapper.fromJson(requestMap, APIGatewayProxyRequestEvent.class);
 					messageBuilder = MessageBuilder.withPayload(gatewayEvent);
 				}
@@ -108,7 +107,8 @@ final class AWSLambdaUtils {
 	public static byte[] generateOutput(Message requestMessage, Message<byte[]> responseMessage,
 			JsonMapper mapper) {
 		byte[] responseBytes = responseMessage.getPayload();
-		if (requestMessage.getHeaders().containsKey("httpMethod") || requestMessage.getPayload() instanceof APIGatewayProxyRequestEvent) { // API Gateway
+		if (requestMessage.getHeaders().containsKey("httpMethod")
+				|| isPayloadAnApiGatewayRequest(responseMessage.getPayload())) { // API Gateway
 			Map<String, Object> response = new HashMap<String, Object>();
 			response.put("isBase64Encoded", false);
 
@@ -134,6 +134,23 @@ final class AWSLambdaUtils {
 		}
 
 		return responseBytes;
+	}
+
+	private static boolean isPayloadAnApiGatewayRequest(Object payload) {
+		return isAPIGatewayProxyRequestEventPresent()
+				? payload instanceof APIGatewayProxyRequestEvent
+				: false;
+	}
+
+	private static boolean isTypeAnApiGatewayRequest(Type type) {
+		return isAPIGatewayProxyRequestEventPresent()
+				? type.getTypeName().endsWith(APIGatewayProxyRequestEvent.class.getSimpleName())
+				: false;
+	}
+
+	private static boolean isAPIGatewayProxyRequestEventPresent() {
+		return ClassUtils.isPresent("com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent",
+				ClassUtils.getDefaultClassLoader());
 	}
 
 	private static void logEvent(List<Map<String, ?>> records) {
