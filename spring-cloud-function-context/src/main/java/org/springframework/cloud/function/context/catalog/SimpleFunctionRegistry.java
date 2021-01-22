@@ -900,7 +900,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (ObjectUtils.isArray(payload)) {
 				payload = CollectionUtils.arrayToList(payload);
 			}
-			if (payload instanceof Collection
+			if (payload instanceof Collection && !CollectionUtils.isEmpty((Collection<?>) payload)
 					&& Message.class.isAssignableFrom(CollectionUtils.findCommonElementType((Collection<?>) payload))) {
 				return true;
 			}
