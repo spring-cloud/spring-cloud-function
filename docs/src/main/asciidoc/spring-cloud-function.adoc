@@ -124,7 +124,7 @@ Following the same logic composing Function with Consumer will result in Consume
 And of course you can't compose uncomposable such as Consumer and Function, Consumer and Supplier etc.
 
 
-=== Function Routing
+=== Function Routing and Filtering
 
 Since version 2.2 Spring Cloud Function provides routing feature allowing
 you to invoke a single function which acts as a router to an actual function you wish to invoke
@@ -169,6 +169,31 @@ Routing instruction can also be communicated via `spring.cloud.function.definiti
 or `spring.cloud.function.routing-expression` as application properties. The rules described in the
 previous section apply here as well. The only difference is you provide these instructions as
 application properties (e.g., `--spring.cloud.function.definition=foo`).
+
+*Function Filtering*
+Filtering is the type of routing where there are only tow paths - 'go' or 'discard'. In terms of functions it mean
+you only want to invoke a certain function if some condition returns 'true', otherwise you want to discard input.
+However, when it comes to discarding input there are many interpretation of what it could mean in the context of your application.
+For example, you may want to log it, or you may want to maintain the counter of discarded messages. you may also want to do nothing at all.
+Because of these different paths, we do not provide a general configuration option for how to deal with discarded messages. 
+Instead we simply recommend to define a simple Consumer which would signify the 'discard' path:
+
+[source, java]
+----
+@Bean
+public Consumer<?> devNull() {
+   // log, count or whatever
+}
+----
+Now you can have routing expression that really only has two paths effectively becoming a filter. For example:
+
+[source, text]
+----
+--spring.cloud.function.routing-expression=headers.contentType.toString().equals('text/plain') ? 'echo' : 'devNull' 
+----
+Every message that does not fit criteria to go to 'echo' function will go to 'devNull' where you can simply do nothing with it.
+The signature `Consumer<?>` will also ensure that no type conversion will be attempted resulting in almost no execution overhead.
+
 
 IMPORTANT: When dealing with reactive inputs (e.g., Publisher), routing instructions must only be provided via Function properties. This is
 due to the nature of the reactive functions which are invoked only once to pass a Publisher and the rest
