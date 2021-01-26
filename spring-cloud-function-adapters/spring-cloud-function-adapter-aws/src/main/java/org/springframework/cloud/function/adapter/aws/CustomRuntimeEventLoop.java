@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -31,7 +32,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,6 +45,8 @@ import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
 /**
+ * Event loop and necessary configurations to support AWS Lambda
+ * Custom Runtime - https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html.
  *
  * @author Oleg Zhurakousky
  * @since 3.1.1
@@ -82,7 +84,7 @@ public class CustomRuntimeEventLoop {
 		RequestEntity<Void> requestEntity = RequestEntity.get(URI.create(eventUri)).build();
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 		RestTemplate rest = new RestTemplate();
-		JsonMapper mapper = context.getBean(JsonMapper.class);
+		ObjectMapper mapper = context.getBean(ObjectMapper.class);
 
 		logger.info("Entering event loop");
 		while (true) {
@@ -93,7 +95,6 @@ public class CustomRuntimeEventLoop {
 			}
 
 			FunctionInvocationWrapper function = locateFunction(functionCatalog, response.getHeaders().getContentType());
-
 			Message<byte[]> eventMessage = AWSLambdaUtils.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8),
 					fromHttp(response.getHeaders()), function.getInputType(), mapper);
 			if (logger.isDebugEnabled()) {
@@ -106,9 +107,8 @@ public class CustomRuntimeEventLoop {
 
 			Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
 
-			String reply = new String(responseMessage.getPayload(), StandardCharsets.UTF_8);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Reply from function: " + reply);
+			if (responseMessage != null && logger.isDebugEnabled()) {
+				logger.debug("Reply from function: " + new String(responseMessage.getPayload(), StandardCharsets.UTF_8));
 			}
 
 			byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper);
