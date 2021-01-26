@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
@@ -656,6 +657,21 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testApiGatewayEventConsumer() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "consume");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("\"OK\"");
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class KinesisConfiguration {
@@ -823,6 +839,12 @@ public class FunctionInvokerTests {
 	@EnableAutoConfiguration
 	@Configuration
 	public static class ApiGatewayConfiguration {
+
+		@Bean
+		public Consumer<String> consume() {
+			return v -> System.out.println(v);
+		}
+
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();

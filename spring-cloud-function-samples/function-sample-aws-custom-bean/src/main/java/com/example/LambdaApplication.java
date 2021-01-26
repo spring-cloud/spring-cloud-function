@@ -1,6 +1,7 @@
 package com.example;
 
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -17,6 +18,13 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 public class LambdaApplication {
 
 	private static Log logger = LogFactory.getLog(LambdaApplication.class);
+
+	@Bean
+	public Consumer<String> consume() {
+		return value -> {
+			logger.info("Consuming: " + value);
+		};
+	}
 
 	@Bean
 	public Function<String, String> uppercase() {
@@ -53,8 +61,6 @@ public class LambdaApplication {
 
 
 	public static void main(String[] args) {
-		System.out.println("=====> ENVIRONMENT: " + System.getenv("AWS_LAMBDA_RUNTIME_API"));
-		//FunctionalSpringApplication.run(LambdaApplication.class, args);
 		logger.info("==> Starting: LambdaApplication");
 		if (!ObjectUtils.isEmpty(args)) {
 			logger.info("==>  args: " + Arrays.asList(args));
@@ -62,10 +68,4 @@ public class LambdaApplication {
 		SpringApplication.run(LambdaApplication.class, args);
 	}
 
-//	@Override
-//	public void initialize(GenericApplicationContext context) {
-//		context.registerBean("uppercase", FunctionRegistration.class,
-//				() -> new FunctionRegistration<>(uppercase()).type(
-//						FunctionType.from(String.class).to(String.class)));
-//	}
 }
