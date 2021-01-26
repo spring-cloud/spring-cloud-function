@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,6 +242,12 @@ public final class FunctionTypeUtils {
 		else if (function instanceof FunctionRegistration) {
 			return ((FunctionRegistration) function).getType().getType();
 		}
+		if (applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) { // for Kotlin primarily
+			FunctionRegistration fr = applicationContext
+					.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
+			return fr.getType().getType();
+		}
+
 		boolean beanDefinitionExists = false;
 		String functionBeanDefinitionName = discoverDefinitionName(functionName, applicationContext);
 		beanDefinitionExists = applicationContext.getBeanFactory().containsBeanDefinition(functionBeanDefinitionName);
