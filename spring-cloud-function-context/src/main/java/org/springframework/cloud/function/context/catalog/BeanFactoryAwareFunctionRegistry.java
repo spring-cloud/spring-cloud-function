@@ -105,7 +105,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 		functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		if (!StringUtils.hasText(functionDefinition)) {
-			logger.debug("Can't determine default function name");
+			logger.info("Can't determine default function definition. Please "
+					+ "use 'spring.cloud.function.definition' property to explicitly define it.");
 			return null;
 		}
 		FunctionInvocationWrapper function = this.doLookup(type, functionDefinition, expectedOutputMimeTypes);
