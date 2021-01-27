@@ -178,13 +178,6 @@ public final class CloudEventMessageBuilder<T> {
 				else if (key.startsWith(CloudEventMessageUtils.KAFKA_ATTR_PREFIX)) {
 					this.swapPrefix(key, CloudEventMessageUtils.KAFKA_ATTR_PREFIX, attributePrefixToUse);
 				}
-//				else if (key.equals(CloudEventMessageUtils._SPECVERSION) ||
-//						key.equals(CloudEventMessageUtils._SOURCE) || key.equals(CloudEventMessageUtils._TYPE) ||
-//						key.equals(CloudEventMessageUtils._DATASCHEMA) || key.equals(CloudEventMessageUtils._SCHEMAURL) ||
-//						key.equals(CloudEventMessageUtils._SUBJECT) || key.equals(CloudEventMessageUtils._TIME) ||
-//						key.equals(CloudEventMessageUtils._DATACONTENTTYPE)) {
-//					this.swapPrefix(key, "", attributePrefixToUse);
-//				}
 			}
 		}
 		return doBuild(attributePrefixToUse);

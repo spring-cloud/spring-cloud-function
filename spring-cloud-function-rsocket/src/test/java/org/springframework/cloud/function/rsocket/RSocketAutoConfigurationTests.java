@@ -389,14 +389,6 @@ public class RSocketAutoConfigurationTests {
 				.as(StepVerifier::create)
 				.expectComplete()
 				.verify();
-
-//			applicationContext.getBean(SampleFunctionConfiguration.class).consumerData
-//				.asMono()
-//				.map(String::new)
-//				.as(StepVerifier::create)
-//				.expectNext("\"hello\"")
-//				.expectComplete()
-//				.verify();
 		}
 	}
 
