@@ -18,6 +18,7 @@ import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.rsocket.RSocketRequester;
+import org.springframework.util.MimeTypeUtils;
 
 
 @SpringBootTest(properties = {"spring.rsocket.server.port=55555"})
@@ -45,6 +46,7 @@ public class DemoApplicationTests {
 
 		this.rsocketRequesterBuilder.tcp("localhost", 55555)
 			.route("hire")
+			.metadata("{\"content-type\":\"application/cloudevents+json\"}", MimeTypeUtils.APPLICATION_JSON)
 			.data(payload)
 			.send()
 			.subscribe();
