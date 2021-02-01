@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class FunctionDeployerConfiguration {
 	private static Log logger = LogFactory.getLog(FunctionDeployerConfiguration.class);
 
 	@Bean
-	SmartLifecycle functionArchiveDeployer(FunctionDeployerProperties functionProperties,
+	SmartLifecycle functionArchiveUnDeployer(FunctionDeployerProperties functionProperties,
 			FunctionRegistry functionRegistry, ApplicationArguments arguments, @Nullable MavenProperties mavenProperties) {
 
 		ApplicationArguments updatedArguments = this.updateArguments(arguments);
@@ -100,9 +100,17 @@ public class FunctionDeployerConfiguration {
 		}
 		FunctionArchiveDeployer deployer = new FunctionArchiveDeployer(archive);
 
+		if (logger.isInfoEnabled()) {
+			logger.info("Deploying archive: " + functionProperties.getLocation());
+		}
+		deployer.deploy(functionRegistry, functionProperties, updatedArguments.getSourceArgs());
+		if (logger.isInfoEnabled()) {
+			logger.info("Successfully deployed archive: " + functionProperties.getLocation());
+		}
+
 		return new SmartLifecycle() {
 
-			private boolean running;
+			private boolean running = true;
 
 			@Override
 			public void stop() {
@@ -118,14 +126,7 @@ public class FunctionDeployerConfiguration {
 
 			@Override
 			public void start() {
-				if (logger.isInfoEnabled()) {
-					logger.info("Deploying archive: " + functionProperties.getLocation());
-				}
-				deployer.deploy(functionRegistry, functionProperties, updatedArguments.getSourceArgs());
-				this.running = true;
-				if (logger.isInfoEnabled()) {
-					logger.info("Successfully deployed archive: " + functionProperties.getLocation());
-				}
+				// no op
 			}
 
 			@Override
