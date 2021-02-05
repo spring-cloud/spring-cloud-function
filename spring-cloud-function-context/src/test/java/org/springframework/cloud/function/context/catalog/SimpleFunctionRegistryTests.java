@@ -86,6 +86,21 @@ public class SimpleFunctionRegistryTests {
 		this.conversionService = new DefaultConversionService();
 	}
 
+	@Test
+	public void testSCF640() {
+		Echo function = new Echo();
+		FunctionRegistration<Echo> registration = new FunctionRegistration<>(
+				function, "echo").type(FunctionType.of(Echo.class));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("echo");
+		Object result = lookedUpFunction.apply("{\"HELLO\":\"WORLD\"}");
+		assertThat(result).isNotInstanceOf(Message.class);
+		assertThat(result).isEqualTo("{\"HELLO\":\"WORLD\"}");
+	}
+
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testSCF588() {
@@ -464,6 +479,15 @@ public class SimpleFunctionRegistryTests {
 		@Override
 		public String apply(String t) {
 			return t.toUpperCase();
+		}
+
+	}
+
+	private static class Echo implements Function<Object, Object> {
+
+		@Override
+		public Object apply(Object t) {
+			return t;
 		}
 
 	}

@@ -1001,10 +1001,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
 				convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, rawInputType);
 			}
-			if (convertedInput == null && input.getClass().isAssignableFrom(rawInputType)) {
-				convertedInput = input;
+			if (convertedInput == null && logger.isDebugEnabled()) {
+				logger.debug("Failed to convert input '" + input + "' to type " + inputType + ". Will use it as is.");
 			}
-			return convertedInput;
+			return convertedInput == null ? input : convertedInput;
 		}
 
 		/*
