@@ -182,7 +182,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 			}
 			else if (requestMap.containsKey("httpMethod")) { // API Gateway
 				logger.info("Incoming request is API Gateway");
-				if (inputType.getTypeName().endsWith(APIGatewayProxyRequestEvent.class.getSimpleName())) {
+				if (inputType != null && inputType.getTypeName().endsWith(APIGatewayProxyRequestEvent.class.getSimpleName())) {
 					APIGatewayProxyRequestEvent gatewayEvent = this.mapper.convertValue(requestMap, APIGatewayProxyRequestEvent.class);
 					messageBuilder = MessageBuilder.withPayload(gatewayEvent);
 				}
