@@ -202,7 +202,7 @@ final class AWSLambdaUtils {
 	}
 
 	private static boolean isTypeAnApiGatewayRequest(Type type) {
-		return isAPIGatewayProxyRequestEventPresent()
+		return type != null && isAPIGatewayProxyRequestEventPresent()
 				? type.getTypeName().endsWith(APIGatewayProxyRequestEvent.class.getSimpleName())
 				: false;
 	}
