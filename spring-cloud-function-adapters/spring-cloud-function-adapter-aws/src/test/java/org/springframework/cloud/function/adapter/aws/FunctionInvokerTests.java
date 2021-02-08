@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
@@ -627,6 +628,22 @@ public class FunctionInvokerTests {
 
 	@SuppressWarnings("rawtypes")
 	@Test
+	public void testApiGatewayAsSupplier() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "supply");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		System.out.println(result);
+		assertThat(result.get("body")).isEqualTo("\"boom\"");
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
 	public void testApiGatewayEventAsMessage() throws Exception {
 		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputApiEventAsMessage");
@@ -839,6 +856,12 @@ public class FunctionInvokerTests {
 	@EnableAutoConfiguration
 	@Configuration
 	public static class ApiGatewayConfiguration {
+
+		@Bean
+		public Supplier<String> supply() {
+			return () -> "boom";
+		}
+
 
 		@Bean
 		public Consumer<String> consume() {
