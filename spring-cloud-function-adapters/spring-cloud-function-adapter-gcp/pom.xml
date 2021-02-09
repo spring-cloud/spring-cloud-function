@@ -17,8 +17,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<google.cloud.functions.api.version>1.0.0-alpha-2-rc3</google.cloud.functions.api.version>
-		<google.cloud.functions.invoker.version>1.0.0-alpha-2-rc4</google.cloud.functions.invoker.version>
+		<google.cloud.functions.api.version>1.0.3</google.cloud.functions.api.version>
+		<google.cloud.functions.invoker.version>1.0.1</google.cloud.functions.invoker.version>
 	</properties>
 
 	<dependencies>
