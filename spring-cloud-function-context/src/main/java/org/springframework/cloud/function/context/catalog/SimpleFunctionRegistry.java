@@ -211,7 +211,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					.collect(Collectors.toList());
 			if (eligibleFunction.size() == 1
 					&& !eligibleFunction.get(0).equals(functionDefinition)
-					&& !functionDefinition.contains("|")) {
+					&& !functionDefinition.contains("|")
+					&& !eligibleFunction.get(0).startsWith("&")) {
 				functionDefinition = eligibleFunction.get(0);
 			}
 		}
