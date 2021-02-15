@@ -76,6 +76,13 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Supplier.class.getName());
 		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
 		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
+
+		function = this.context.getBean("kotlinPojoFunction");
+		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinPojoFunction", this.context);
+		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
+		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
+		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(Person.class.getName());
+		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
 	}
 
 	@Test
