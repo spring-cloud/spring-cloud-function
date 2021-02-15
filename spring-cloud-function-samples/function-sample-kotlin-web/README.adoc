@@ -1,0 +1,45 @@
+## Examples of Kotlin support in Spring Cloud Function
+
+### Introduction
+This example provides a configuration with a single Kotlin function
+
+[source, kotlin]
+----
+@Configuration
+class DemoKotlinConfiguration {
+	@Bean
+	fun uppercase(): (String) -> String {
+		return { it.toUpperCase() }
+	}
+}
+----
+
+It also adds web support 
+
+[source, xml]
+----
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-function-kotlin</artifactId>
+	<version>${spring-cloud-function.version}</version>
+</dependency>
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-function-web</artifactId>
+	<version>${spring-cloud-function.version}</version>
+</dependency>
+----
+
+Once you start the application, simply issue GET request either thru browser or curl:
+
+[source, text]
+----
+curl http://localhost:8080/uppercase/hello
+----
+
+you should see the output
+
+[source, text]
+----
+HELLO
+----
