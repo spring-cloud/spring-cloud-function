@@ -70,10 +70,10 @@ public final class FunctionWebUtils {
 											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
 		path = path.startsWith("/") ? path.substring(1) : path;
 		if (method.equals(HttpMethod.GET)) {
-			FunctionInvocationWrapper supplier = functionCatalog.lookup(path, acceptContentTypes);
-			if (supplier != null) {
-				attributes.put(WebRequestConstants.SUPPLIER, supplier);
-				return supplier;
+			FunctionInvocationWrapper function = functionCatalog.lookup(path, acceptContentTypes);
+			if (function != null && function.isSupplier()) {
+				attributes.put(WebRequestConstants.SUPPLIER, function);
+				return function;
 			}
 		}
 
