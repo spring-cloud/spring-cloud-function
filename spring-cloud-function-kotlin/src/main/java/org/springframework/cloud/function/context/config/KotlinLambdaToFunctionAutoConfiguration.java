@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -62,7 +63,6 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-
 	/**
 	 * Will transform all discovered Kotlin's Function lambdas to java
 	 * Supplier, Function and Consumer, retaining the original Kotlin type
@@ -71,7 +71,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 	 * @return the bean factory post processor
 	 */
 	@Bean
-	public BeanFactoryPostProcessor kotlinToFunctionTransformer() {
+	public BeanFactoryPostProcessor kotlinToFunctionTransformerOld() {
 		return new BeanFactoryPostProcessor() {
 
 			@Override
@@ -82,14 +82,17 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 				for (String beanDefinitionName : beanDefinitionNames) {
 					BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanDefinitionName);
 
-					ResolvableType rt = beanDefinition.getResolvableType();
-					if (rt.getType().getTypeName().startsWith("kotlin.jvm.functions.Function")) {
-						RootBeanDefinition cbd = new RootBeanDefinition(KotlinFunctionWrapper.class);
-						ConstructorArgumentValues ca = new ConstructorArgumentValues();
-						ca.addGenericArgumentValue(beanDefinition);
-						cbd.setConstructorArgumentValues(ca);
-						((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(beanDefinitionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, cbd);
+					if (beanDefinition instanceof AnnotatedBeanDefinition && ((AnnotatedBeanDefinition) beanDefinition).getFactoryMethodMetadata() != null) {
+						String typeName = ((AnnotatedBeanDefinition) beanDefinition).getFactoryMethodMetadata().getReturnTypeName();
+						if (typeName.startsWith("kotlin.jvm.functions.Function")) {
+							RootBeanDefinition cbd = new RootBeanDefinition(KotlinFunctionWrapper.class);
+							ConstructorArgumentValues ca = new ConstructorArgumentValues();
+							ca.addGenericArgumentValue(beanDefinition);
+							cbd.setConstructorArgumentValues(ca);
+							((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(beanDefinitionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, cbd);
+						}
 					}
+
 				}
 			}
 		};

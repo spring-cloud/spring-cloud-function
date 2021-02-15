@@ -93,6 +93,14 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 				.lookup(Function.class, "javaFunction");
 		assertThat(javaFunction.apply("Hello"))
 				.isEqualTo("Hello");
+
+		// Function f = (Function) this.context.getBean("kotlinPojoFunction");
+		assertThat(this.context.getBean("kotlinPojoFunction")).isInstanceOf(Function1.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "kotlinPojoFunction")).isInstanceOf(Function.class);
+		assertThat(this.inspector.getInputType(this.catalog.lookup(Function.class, "kotlinPojoFunction")))
+				.isAssignableFrom(Person.class);
+		assertThat(this.inspector
+				.getOutputType(this.catalog.lookup(Function.class, "kotlinFunction")))	.isAssignableFrom(String.class);
 	}
 
 	private void create(Class<?>[] types, String... props) {
