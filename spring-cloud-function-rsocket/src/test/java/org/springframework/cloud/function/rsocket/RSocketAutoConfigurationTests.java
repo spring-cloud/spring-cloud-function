@@ -123,6 +123,31 @@ public class RSocketAutoConfigurationTests {
 	}
 
 	@Test
+	public void testWithRouteAndDefinition() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+							"--spring.cloud.function.definition=echo",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercase")
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("HELLO")
+				.expectComplete()
+				.verify();
+		}
+	}
+
+	@Test
 	public void testImperativeFunctionAsRequestReplyWithComposition() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (

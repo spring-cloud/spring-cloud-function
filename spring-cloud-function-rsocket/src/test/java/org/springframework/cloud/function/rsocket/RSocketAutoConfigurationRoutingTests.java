@@ -58,7 +58,7 @@ public class RSocketAutoConfigurationRoutingTests {
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
 			rsocketRequesterBuilder.tcp("localhost", port)
-				.route(RoutingFunction.FUNCTION_NAME)
+				.route("")
 				.metadata("{\"func_name\":\"echo\"}", MimeTypeUtils.APPLICATION_JSON)
 				.data("hello")
 				.retrieveMono(String.class)
@@ -68,14 +68,14 @@ public class RSocketAutoConfigurationRoutingTests {
 				.verify();
 
 			rsocketRequesterBuilder.tcp("localhost", port)
-			.route(RoutingFunction.FUNCTION_NAME)
-			.metadata("{\"func_name\":\"uppercase\"}", MimeTypeUtils.APPLICATION_JSON)
-			.data("hello")
-			.retrieveMono(String.class)
-			.as(StepVerifier::create)
-			.expectNext("HELLO")
-			.expectComplete()
-			.verify();
+				.route(RoutingFunction.FUNCTION_NAME)
+				.metadata("{\"func_name\":\"uppercase\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("HELLO")
+				.expectComplete()
+				.verify();
 		}
 	}
 

@@ -32,6 +32,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ReactiveAdapterRegistry;
@@ -154,6 +155,9 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	@SuppressWarnings("unchecked")
 	private String discoverAndInjectDestinationHeader(Message<?> message) {
 		String destination = this.functionProperties.getDefinition();
+		if (!StringUtils.hasText(destination) && StringUtils.hasText(this.functionProperties.getRoutingExpression())) {
+			destination = RoutingFunction.FUNCTION_NAME;
+		}
 		Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 				.getField(this.headersField, message.getHeaders());
 
