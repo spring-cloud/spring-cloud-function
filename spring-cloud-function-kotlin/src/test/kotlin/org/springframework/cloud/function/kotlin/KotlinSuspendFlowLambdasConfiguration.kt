@@ -16,40 +16,48 @@
 
 package org.springframework.cloud.function.kotlin
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import reactor.core.publisher.Flux
 import java.util.function.Function
 
 /**
- * @author Oleg Zhurakousky
+ * @author Adrien Poupard
  *
  */
 @EnableAutoConfiguration
 @Configuration
-class KotlinLambdasConfiguration {
+class KotlinSuspendFlowLambdasConfiguration {
+
 	@Bean
-	fun kotlinFunction(): (String) -> String {
-		return { it.toUpperCase() }
+	fun kotlinFunction(): suspend (Flow<String>) -> Flow<String> =  { flow ->
+		flow.map { value -> value.toUpperCase() }
+	}
+	
+	@Bean
+	fun kotlinPojoFunction(): suspend (Flow<Person>) -> Flow<String> = { flow ->
+		flow.map(Person::toString)
 	}
 
 	@Bean
-	fun kotlinPojoFunction(): (Person) -> String {
-		return { it.name.toString()}
+	fun kotlinConsumer(): suspend (Flow<String>) -> Unit = { flow ->
+		flow.collect(::println)
 	}
 
 	@Bean
-	fun kotlinConsumer(): (String) -> Unit {
-		return { println(it) }
+	fun kotlinSupplier(): suspend () -> Flow<String>  = {
+		flow {
+			emit("Hello")
+		}
 	}
 
 	@Bean
-	fun kotlinSupplier(): () -> String {
-		return { "Hello" }
-	}
-
-	@Bean
-	fun javaFunction(): Function<String, String> {
+	fun javaFunction(): Function<Flux<String>, Flux<String>> {
 		return Function { x -> x }
 	}
 
