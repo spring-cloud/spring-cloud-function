@@ -19,38 +19,28 @@ package org.springframework.cloud.function.kotlin
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import java.util.function.Function
 
 /**
- * @author Oleg Zhurakousky
+ * @author Adrien Poupard
  *
  */
 @EnableAutoConfiguration
 @Configuration
-class KotlinLambdasConfiguration {
-	@Bean
-	fun kotlinFunction(): (String) -> String {
-		return { it.toUpperCase() }
-	}
+class KotlinSuspendLambdasConfiguration {
 
 	@Bean
-	fun kotlinPojoFunction(): (Person) -> String {
+	fun kotlinFunction(): suspend (Person) -> String {
 		return { it.name.toString()}
 	}
 
 	@Bean
-	fun kotlinConsumer(): (String) -> Unit {
+	fun kotlinConsumer(): suspend (String) -> Unit {
 		return { println(it) }
 	}
 
 	@Bean
-	fun kotlinSupplier(): () -> String {
+	fun kotlinSupplier(): suspend () -> String {
 		return { "Hello" }
-	}
-
-	@Bean
-	fun javaFunction(): Function<String, String> {
-		return Function { x -> x }
 	}
 
 }

@@ -25,9 +25,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.web.RestApplication;
-import org.springframework.cloud.function.web.flux.HeadersToMessageTests.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -41,12 +41,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author Adrien Poupard
  *
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
 		"spring.cloud.function.web.path=/functions",
 		"spring.main.web-application-type=reactive" })
-@ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
+@ContextConfiguration(classes = { RestApplication.class, HeadersToMessageTests.TestConfiguration.class })
 public class HeadersToMessageTests {
 
 	@Autowired
