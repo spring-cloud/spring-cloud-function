@@ -64,6 +64,13 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
 		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
 
+		function = this.context.getBean("suspendKotlinFunction");
+		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "suspendKotlinFunction", this.context);
+		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
+		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
+		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+
 		function = this.context.getBean("kotlinConsumer");
 		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinConsumer", this.context);
 		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
@@ -92,6 +99,12 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
 		FunctionInvocationWrapper function = this.catalog.lookup(Function.class, "kotlinFunction");
+		assertThat(function).isInstanceOf(Function.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getOutputType()))).isAssignableFrom(String.class);
+
+
+		function = this.catalog.lookup(Function.class, "suspendKotlinFunction");
 		assertThat(function).isInstanceOf(Function.class);
 		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
 		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getOutputType()))).isAssignableFrom(String.class);

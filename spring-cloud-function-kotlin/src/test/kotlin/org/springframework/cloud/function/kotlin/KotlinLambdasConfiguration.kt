@@ -32,6 +32,11 @@ class KotlinLambdasConfiguration {
 	fun kotlinFunction(): (String) -> String {
 		return { it.toUpperCase() }
 	}
+
+	@Bean
+	fun suspendKotlinFunction(): suspend (String) -> String {
+		return { it.toUpperCase() }
+	}
 	
 	@Bean
 	fun kotlinPojoFunction(): (Person) -> String {
@@ -52,4 +57,5 @@ class KotlinLambdasConfiguration {
 	fun javaFunction(): Function<String, String> {
 		return Function { x -> x }
 	}
+
 }

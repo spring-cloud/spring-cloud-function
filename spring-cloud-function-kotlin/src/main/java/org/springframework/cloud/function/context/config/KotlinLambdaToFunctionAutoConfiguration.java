@@ -16,21 +16,9 @@
 
 package org.springframework.cloud.function.context.config;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-
-import kotlin.jvm.functions.Function0;
-import kotlin.jvm.functions.Function1;
-import kotlin.jvm.functions.Function2;
-import kotlin.jvm.functions.Function3;
-import kotlin.jvm.functions.Function4;
+import kotlin.jvm.functions.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -49,6 +37,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
+import reactor.core.publisher.Flux;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 
 /**
  * Configuration class which defines the required infrastructure to bootstrap Kotlin
@@ -147,6 +143,9 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 		@Override
 		public Object invoke(Object arg0) {
+			if(	CoroutinesUtils.isValidSuspendingFunction(arg0, kotlinLambdaTarget)) {
+				return CoroutinesUtils.invokeSuspendingFunction(arg0, kotlinLambdaTarget);
+			}
 			return ((Function1) this.kotlinLambdaTarget).invoke(arg0);
 		}
 
@@ -168,19 +167,27 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 		@Override
 		public FunctionRegistration getObject() throws Exception {
 			String name = this.name.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX)
-					? this.name.replace(FunctionRegistration.REGISTRATION_NAME_SUFFIX, "")
-							: this.name;
+				? this.name.replace(FunctionRegistration.REGISTRATION_NAME_SUFFIX, "")
+				: this.name;
 			Type functionType = FunctionContextUtils.findType(name, this.beanFactory);
 			FunctionRegistration<?> registration = new FunctionRegistration<>(this, name);
 			Type[] types = ((ParameterizedType) functionType).getActualTypeArguments();
 
 			if (functionType.getTypeName().contains("Function0")) {
 				functionType = ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(types[0]))
-						.getType();
+					.getType();
 			}
 			else if (functionType.getTypeName().contains("Function1")) {
 				functionType = ResolvableType.forClassWithGenerics(Function.class, ResolvableType.forType(types[0]),
-						ResolvableType.forType(types[1])).getType();
+					ResolvableType.forType(types[1])).getType();
+			}
+			else if (functionType.getTypeName().contains("Function2") && types[1].getTypeName().startsWith("kotlin.coroutines.Continuation")) {
+				Type continuationReturnType = CoroutinesUtils.getSuspendingFunctionReturnType(types[1]);
+				functionType = ResolvableType.forClassWithGenerics(
+					Function.class,
+					ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(types[0])),
+					ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(continuationReturnType))
+				).getType();
 			}
 			else {
 				throw new UnsupportedOperationException("Multi argument Kotlin functions are not currently supported");
