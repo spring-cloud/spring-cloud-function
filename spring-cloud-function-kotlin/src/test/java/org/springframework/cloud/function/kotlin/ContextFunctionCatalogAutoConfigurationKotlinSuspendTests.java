@@ -16,30 +16,32 @@
 
 package org.springframework.cloud.function.kotlin;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import kotlin.jvm.functions.Function0;
-import kotlin.jvm.functions.Function1;
+import kotlin.jvm.functions.Function2;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.TestInstance;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 
+import java.lang.reflect.ParameterizedType;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * @author Oleg Zhurakousky
+ * @author Adrien Poupard
  */
-public class ContextFunctionCatalogAutoConfigurationKotlinTests {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class ContextFunctionCatalogAutoConfigurationKotlinSuspendTests {
 
 	private GenericApplicationContext context;
 
@@ -54,68 +56,54 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 	@Test
 	public void typeDiscoveryTests() {
-		create(new Class[] { KotlinLambdasConfiguration.class,
-				SimpleConfiguration.class });
+		create(new Class[] { KotlinSuspendFlowLambdasConfiguration.class,
+			ContextFunctionCatalogAutoConfigurationKotlinTests.SimpleConfiguration.class });
 
 		Object function = this.context.getBean("kotlinFunction");
 		ParameterizedType functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinFunction", this.context);
 		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
 		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
 		function = this.context.getBean("kotlinConsumer");
 		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinConsumer", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo("kotlin.Unit");
+		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Consumer.class.getName());
+		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
+		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
 		function = this.context.getBean("kotlinSupplier");
 		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinSupplier", this.context);
 		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Supplier.class.getName());
 		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
+		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
 		function = this.context.getBean("kotlinPojoFunction");
 		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinPojoFunction", this.context);
 		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
 		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(Person.class.getName());
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<org.springframework.cloud.function.kotlin.Person>");
+		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 	}
 
 	@Test
-	public void kotlinLambdas() {
-		create(new Class[] { KotlinLambdasConfiguration.class,
-				SimpleConfiguration.class });
+	public void shouldNotLoadKotlinSuspendLambasNotUsingFlow() {
+		create(new Class[] { KotlinSuspendLambdasConfiguration.class,
+			ContextFunctionCatalogAutoConfigurationKotlinTests.SimpleConfiguration.class });
 
-		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
-		FunctionInvocationWrapper function = this.catalog.lookup(Function.class, "kotlinFunction");
-		assertThat(function).isInstanceOf(Function.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getOutputType()))).isAssignableFrom(String.class);
+		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function2.class);
+		assertThatThrownBy(() -> {
+			this.catalog.lookup(Function.class, "kotlinFunction");
+		}).isInstanceOf(BeanCreationException.class);
 
+		assertThatThrownBy(() -> {
+			this.catalog.lookup(Function.class, "kotlinConsumer");
+		}).isInstanceOf(BeanCreationException.class);
 
-		function = this.catalog.lookup(Function.class, "kotlinConsumer");
-		assertThat(this.context.getBean("kotlinConsumer")).isInstanceOf(Function1.class);
-		assertThat(function).isInstanceOf(Function.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
+		assertThatThrownBy(() -> {
+			this.catalog.lookup(Supplier.class, "kotlinSupplier");
+		}).isInstanceOf(BeanCreationException.class);
 
-
-		assertThat(this.context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
-		FunctionInvocationWrapper supplier = this.catalog.lookup(Function.class, "kotlinSupplier");
-		assertThat(supplier).isInstanceOf(Supplier.class);
-		assertThat(supplier.get()).isEqualTo("Hello");
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(supplier.getOutputType()))).isAssignableFrom(String.class);
-
-		function = this.catalog.lookup(Function.class, "kotlinFunction|function2");
-		assertThat(function.apply("Hello")).isEqualTo("HELLOfunction2");
-
-		Function<String, String> javaFunction = this.catalog
-				.lookup(Function.class, "javaFunction");
-		assertThat(javaFunction.apply("Hello"))
-				.isEqualTo("Hello");
 	}
 
 	private void create(Class<?>[] types, String... props) {

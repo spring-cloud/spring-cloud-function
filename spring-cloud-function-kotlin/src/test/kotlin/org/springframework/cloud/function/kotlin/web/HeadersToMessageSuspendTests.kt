@@ -15,6 +15,8 @@
  */
 package org.springframework.cloud.function.kotlin.web
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -76,27 +78,29 @@ class HeadersToMessageSuspendTests {
 	@org.springframework.boot.test.context.TestConfiguration
 	class TestConfiguration {
 		@Bean("stringSuspend")
-		fun functiono():suspend (employee: Message<String>) -> Message<String> = { request: Message<String> ->
-			val message =
-				MessageBuilder.withPayload(request.payload)
-					.setHeader("X-Content-Type", "application/xml")
-					.setHeader("foo", "bar").build()
-			message
+		fun functiono():suspend (employee: Flow<Message<String>>) -> Flow<Message<String>> = { flow: Flow<Message<String>> ->
+			flow.map { request ->
+				val message =
+					MessageBuilder.withPayload(request.payload)
+						.setHeader("X-Content-Type", "application/xml")
+						.setHeader("foo", "bar").build()
+				message
+			}
 		}
 
 		@Bean("employeeSuspend")
-		fun function1(): suspend (employee: Message<Employee>) -> Message<Employee> = { request ->
-//			val age = request.payload.age
-			val message =
-				MessageBuilder
-					.withPayload(request.payload)
-					.setHeader("X-Content-Type", "application/xml")
-					.setHeader("foo", "bar")
-					.build()
-			message
+		fun function1(): suspend (employee: Flow<Message<Employee>>) -> Flow<Message<Employee>> = { flow ->
+			flow.map { request ->
+				val message =
+					MessageBuilder
+						.withPayload(request.payload)
+						.setHeader("X-Content-Type", "application/xml")
+						.setHeader("foo", "bar")
+						.build()
+				message
+			}
 		}
 	}
-
 
 	class Employee {
 		var name: String? = null

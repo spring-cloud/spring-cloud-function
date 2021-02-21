@@ -40,8 +40,8 @@ import java.net.URI
 	webEnvironment = WebEnvironment.RANDOM_PORT,
 	properties = ["spring.cloud.function.web.path=/functions", "spring.main.web-application-type=reactive"]
 )
-@ContextConfiguration(classes = [RestApplication::class, HeadersToMessageKotlinTests.TestConfiguration::class])
-class HeadersToMessageKotlinTests {
+@ContextConfiguration(classes = [RestApplication::class, HeadersToMessageTests.TestConfiguration::class])
+class HeadersToMessageTests {
 	@Autowired
 	private val rest: TestRestTemplate? = null
 	@Test
@@ -61,7 +61,7 @@ class HeadersToMessageKotlinTests {
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
 
 		// test simple type payload
-		postForEntity = rest!!.postForEntity(
+		postForEntity = rest.postForEntity(
 			URI("/functions/string"),
 			"{\"name\":\"Bob\",\"age\":25}", String::class.java
 		)
