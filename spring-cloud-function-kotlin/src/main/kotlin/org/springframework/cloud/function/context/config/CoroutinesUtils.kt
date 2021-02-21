@@ -7,10 +7,7 @@ import reactor.core.publisher.Flux
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
-import kotlin.coroutines.Continuation
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.callSuspend
-import kotlin.reflect.jvm.reflect
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 
 fun getSuspendingFunctionReturnType(type: Type): Type? {
@@ -25,16 +22,19 @@ fun isValidSuspendingFunction(arg0: Any, kotlinLambdaTarget: Any): Boolean {
 }
 
 fun invokeSuspendingFunction(arg0: Any, kotlinLambdaTarget: Any): Flux<Any> {
-	val function = (kotlinLambdaTarget as Function2<String, Continuation<String>, String>).reflect()!!
+	val function = kotlinLambdaTarget as SuspendFunction
 	val flux = arg0 as Flux<Any>
 	return fluxSuspendingFunction(flux, function)
-
 }
 
-fun fluxSuspendingFunction(flux: Flux<Any>, kotlinLambdaTarget: KFunction<Any>): Flux<Any> {
-	return flux.flatMap {
+fun fluxSuspendingFunction(flux: Flux<Any>, target: SuspendFunction): Flux<Any> {
+	return flux.flatMap { message ->
 		mono(Dispatchers.Unconfined) {
-			kotlinLambdaTarget.callSuspend(it)
+			suspendCoroutineUninterceptedOrReturn {
+				target.invoke(message, it)
+			}
 		}
 	}
 }
+
+typealias SuspendFunction = (Any?, Any?) -> Any?
