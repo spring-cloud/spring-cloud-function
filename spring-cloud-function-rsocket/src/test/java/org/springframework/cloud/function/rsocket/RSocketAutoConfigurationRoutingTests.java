@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2021-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import org.springframework.util.SocketUtils;
  */
 public class RSocketAutoConfigurationRoutingTests {
 	@Test
-	public void testImperativeFunctionAsRequestReplyWithDefinition() {
+	public void testRoutingWithRoute() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
@@ -87,17 +87,59 @@ public class RSocketAutoConfigurationRoutingTests {
 				.expectComplete()
 				.verify();
 
-//			rsocketRequesterBuilder.tcp("localhost", port)
-//				.route(RoutingFunction.FUNCTION_NAME)
-//				.metadata("{\"func_name\":\"uppercase\"}", MimeTypeUtils.APPLICATION_JSON)
-//				.data("hello")
-//				.retrieveMono(String.class)
-//				.as(StepVerifier::create)
-//				.expectNext("HELLO")
-//				.expectComplete()
-//				.verify();
 		}
 	}
+
+	@Test
+	public void testRoutingWithDefinition() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+							"--spring.cloud.function.definition=uppercase",
+							"--spring.cloud.function.routing-expression=headers.func_name",
+							"--spring.cloud.function.expected-content-type=text/plain",
+							"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercase")
+				.metadata("{\"func_name\":\"echo\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("hello")
+				.expectComplete()
+				.verify();
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("")
+				.metadata("{\"func_name\":\"echo\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("hello")
+				.expectComplete()
+				.verify();
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route(RoutingFunction.FUNCTION_NAME)
+				.metadata("{\"func_name\":\"echo\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("hello")
+				.expectComplete()
+				.verify();
+
+		}
+	}
+
+
 
 
 	@EnableAutoConfiguration
