@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
+
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,9 +33,13 @@ import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.SocketUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
@@ -139,6 +144,35 @@ public class RSocketAutoConfigurationRoutingTests {
 		}
 	}
 
+	@Test
+	public void testRoutingWithDefinitionMessageFunction() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+							"--spring.cloud.function.definition=uppercase",
+							"--spring.cloud.function.routing-expression=headers.func_name",
+							"--spring.cloud.function.expected-content-type=text/plain",
+							"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercase")
+				.metadata("{\"func_name\":\"uppercaseMessage\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("HELLO")
+				.expectComplete()
+				.verify();
+
+		}
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class SampleFunctionConfiguration {
@@ -148,6 +182,17 @@ public class RSocketAutoConfigurationRoutingTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<Message<String>, String> uppercaseMessage() {
+			return msg -> {
+				assertThat(msg.getHeaders()
+						.get(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER)).toString().equals("uppercase");
+				assertThat(msg.getHeaders()
+						.get(FunctionRSocketMessageHandler.RECONSILED_LOOKUP_DESTINATION_HEADER)).toString().equals(RoutingFunction.FUNCTION_NAME);
+				return msg.getPayload().toUpperCase();
+			};
 		}
 
 		@Bean

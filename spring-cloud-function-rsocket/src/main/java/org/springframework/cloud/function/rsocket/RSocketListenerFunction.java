@@ -96,7 +96,13 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 		}
 		else {
 			dataFlux = dataFlux.flatMap((data) -> {
-				Object result = this.targetFunction.isSupplier() ? this.targetFunction.apply(null) : this.targetFunction.apply(data);
+				Message<?> incoming = (Message<?>) data;
+				Message sanitizedMessage = MessageBuilder.withPayload(incoming.getPayload()).copyHeaders(incoming.getHeaders())
+					.removeHeader("dataBufferFactory")
+					.removeHeader("rsocketRequester")
+					.removeHeader("rsocketResponse")
+					.build();
+				Object result = this.targetFunction.isSupplier() ? this.targetFunction.apply(null) : this.targetFunction.apply(sanitizedMessage);
 				return result instanceof Publisher<?>
 					? (Publisher<Message<byte[]>>) result
 					: Mono.just((Message<byte[]>) result);
