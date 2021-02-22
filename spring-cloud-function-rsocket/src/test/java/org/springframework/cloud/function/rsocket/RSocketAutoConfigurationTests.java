@@ -47,6 +47,56 @@ import org.springframework.util.SocketUtils;
  * @since 3.1
  */
 public class RSocketAutoConfigurationTests {
+
+	@Test
+	public void testNonExistingFunctionInRoute() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("foo")
+				.data("\"hello\"")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectError()
+				.verify();
+		}
+	}
+
+	@Test
+	public void testNonExistingFunctionInRouteSingleFunctionInCatalog() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SingleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("blah")
+				.data("\"hello\"")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("hello")
+				.expectComplete()
+				.verify();
+		}
+	}
+
+
+
 	@Test
 	public void testImperativeFunctionAsRequestReplyWithDefinition() {
 		int port = SocketUtils.findAvailableTcpPort();
@@ -533,6 +583,15 @@ public class RSocketAutoConfigurationTests {
 			return v -> "(" + v + ")";
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class SingleFunctionConfiguration {
+		@Bean
+		public Function<String, String> echo() {
+			return v -> v;
+		}
 	}
 
 }

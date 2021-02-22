@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.RSocketRequester.Builder;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -60,14 +61,9 @@ final class FunctionRSocketUtils {
 		String acceptContentType = functionProperties.getExpectedContentType();
 		if (!StringUtils.hasText(acceptContentType)) {
 			FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
-			//Type functionType = function.getFunctionType();
 			Type outputType = function.getOutputType();
-			if (outputType instanceof Class && String.class.isAssignableFrom((Class<?>) outputType)) {
-				acceptContentType = "text/plain";
-			}
-			else {
-				acceptContentType = "application/json";
-			}
+			acceptContentType = (outputType instanceof Class && String.class.isAssignableFrom((Class<?>) outputType))
+					? MimeTypeUtils.TEXT_PLAIN_VALUE : MimeTypeUtils.APPLICATION_JSON_VALUE;
 		}
 
 		FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, acceptContentType);
@@ -78,13 +74,18 @@ final class FunctionRSocketUtils {
 			ApplicationContext applicationContext) {
 		String[] names = StringUtils.delimitedListToStringArray(definition.replaceAll(",", "|").trim(), "|");
 		for (String name : names) {
-			if (!applicationContext.containsBean(name)) { // this means RSocket
+
+			if (functionCatalog.lookup(name) == null) { // this means RSocket
+				String[] functionToRSocketDefinition = StringUtils.delimitedListToStringArray(name, ">");
+				if (functionToRSocketDefinition.length == 1) {
+					throw new IllegalArgumentException("Function definition '" + name + "' does not exist in Function Catalog");
+				}
 				if (LOGGER.isDebugEnabled()) {
 					LOGGER.debug("Registering RSocket forwarder for '" + name + "' function.");
 				}
-				String[] functionToRSocketDefinition = StringUtils.delimitedListToStringArray(name, ">");
-				Assert.isTrue(functionToRSocketDefinition.length == 2, "Must only contain one output redirect");
-				FunctionInvocationWrapper function = functionCatalog.lookup(functionToRSocketDefinition[0], "application/json");
+
+				Assert.isTrue(functionToRSocketDefinition.length == 2, "Must only contain one output redirect. Was '" + name + "'.");
+				FunctionInvocationWrapper function = functionCatalog.lookup(functionToRSocketDefinition[0], MimeTypeUtils.APPLICATION_JSON_VALUE);
 
 				String[] hostPort = StringUtils.delimitedListToStringArray(functionToRSocketDefinition[1], ":");
 
