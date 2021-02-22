@@ -58,6 +58,16 @@ public class RSocketAutoConfigurationRoutingTests {
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
 			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercase")
+				.metadata("{\"func_name\":\"echo\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("hello")
+				.expectComplete()
+				.verify();
+
+			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("")
 				.metadata("{\"func_name\":\"echo\"}", MimeTypeUtils.APPLICATION_JSON)
 				.data("hello")
@@ -69,13 +79,23 @@ public class RSocketAutoConfigurationRoutingTests {
 
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route(RoutingFunction.FUNCTION_NAME)
-				.metadata("{\"func_name\":\"uppercase\"}", MimeTypeUtils.APPLICATION_JSON)
+				.metadata("{\"func_name\":\"echo\"}", MimeTypeUtils.APPLICATION_JSON)
 				.data("hello")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("HELLO")
+				.expectNext("hello")
 				.expectComplete()
 				.verify();
+
+//			rsocketRequesterBuilder.tcp("localhost", port)
+//				.route(RoutingFunction.FUNCTION_NAME)
+//				.metadata("{\"func_name\":\"uppercase\"}", MimeTypeUtils.APPLICATION_JSON)
+//				.data("hello")
+//				.retrieveMono(String.class)
+//				.as(StepVerifier::create)
+//				.expectNext("HELLO")
+//				.expectComplete()
+//				.verify();
 		}
 	}
 

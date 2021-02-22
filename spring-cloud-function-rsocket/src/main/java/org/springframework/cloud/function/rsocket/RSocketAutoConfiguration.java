@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,14 +23,10 @@ import org.springframework.boot.autoconfigure.rsocket.RSocketMessageHandlerCusto
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
-import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.messaging.rsocket.RSocketStrategies;
-import org.springframework.util.StringUtils;
 
 /**
  * Main configuration class for components required to support RSocket integration with
@@ -45,14 +40,8 @@ import org.springframework.util.StringUtils;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ FunctionProperties.class, RSocketFunctionProperties.class })
 @ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
-class RSocketAutoConfiguration implements ApplicationContextAware {
+class RSocketAutoConfiguration {
 
-	private ApplicationContext applicationContext;
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
-	}
 
 	@Bean
 	@ConditionalOnMissingBean
@@ -64,18 +53,6 @@ class RSocketAutoConfiguration implements ApplicationContextAware {
 		FunctionRSocketMessageHandler rsocketMessageHandler = new FunctionRSocketMessageHandler(functionCatalog, functionProperties);
 		rsocketMessageHandler.setRSocketStrategies(rSocketStrategies);
 		customizers.orderedStream().forEach((customizer) -> customizer.customize(rsocketMessageHandler));
-		registerFunctionsWithRSocketHandler(rsocketMessageHandler, functionCatalog, functionProperties);
 		return rsocketMessageHandler;
 	}
-
-	private void registerFunctionsWithRSocketHandler(FunctionRSocketMessageHandler rsocketMessageHandler,
-			FunctionCatalog functionCatalog, FunctionProperties functionProperties) {
-		String definition = functionProperties.getDefinition();
-		if (StringUtils.hasText(definition)) {
-			FunctionInvocationWrapper function = FunctionRSocketUtils
-					.registerFunctionForDestination(definition, functionCatalog, this.applicationContext);
-			rsocketMessageHandler.registerFunctionHandler(new RSocketListenerFunction(function), definition);
-		}
-	}
-
 }
