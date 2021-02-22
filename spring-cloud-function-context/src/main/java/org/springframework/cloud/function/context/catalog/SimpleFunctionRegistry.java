@@ -855,7 +855,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			else if (input instanceof Message) {
 				if (((Message) input).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")
 						&& !this.isInputTypeMessage()) { //TODO rework
-					return null;
+					return ((Message) input).getPayload();
 				}
 
 				if (functionInvocationHelper != null) {
