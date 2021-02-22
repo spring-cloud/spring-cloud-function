@@ -150,36 +150,37 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 			getReactiveAdapterRegistry()));
 	}
 
-	@SuppressWarnings("unchecked")
 	private String discoverAndInjectDestinationHeader(Message<?> message) {
 
 		String destination;
 		if (StringUtils.hasText(this.functionProperties.getRoutingExpression())) {
 			destination = RoutingFunction.FUNCTION_NAME;
-			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-					.getField(this.headersField, message.getHeaders());
-			PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
-			headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+			this.updateMessageHeaders(message, destination);
 		}
 		else {
 			Route route = (Route) message.getHeaders().get(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER);
 			destination = route.value();
 			if (!StringUtils.hasText(destination)) {
 				destination = this.functionProperties.getDefinition();
-				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-						.getField(this.headersField, message.getHeaders());
-				PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
-				headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+				this.updateMessageHeaders(message, destination);
 			}
 		}
 
 		if (!StringUtils.hasText(destination) && logger.isDebugEnabled()) {
 			logger.debug("Failed to discover function definition. Neither "
 				+ "`spring.cloud.function.definition`, nor `.route(<function.definition>)`, nor "
-				+ "`spring.cloud.function.routing-expression` were provided. Wil use empty string "
+				+ "`spring.cloud.function.routing-expression` were provided. Will use empty string "
 				+ "for lookup, which will work only if there is one function in Function Catalog");
 		}
 		return destination;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void updateMessageHeaders(Message<?> message, String destination) {
+		Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+				.getField(this.headersField, message.getHeaders());
+		PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
+		headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
 	}
 
 	protected static final class MessageHandlerMethodArgumentResolver implements SyncHandlerMethodArgumentResolver {

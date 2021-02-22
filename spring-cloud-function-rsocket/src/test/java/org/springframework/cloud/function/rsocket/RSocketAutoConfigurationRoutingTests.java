@@ -139,9 +139,6 @@ public class RSocketAutoConfigurationRoutingTests {
 		}
 	}
 
-
-
-
 	@EnableAutoConfiguration
 	@Configuration
 	public static class SampleFunctionConfiguration {
