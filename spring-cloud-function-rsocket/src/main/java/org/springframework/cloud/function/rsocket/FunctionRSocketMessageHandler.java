@@ -76,7 +76,7 @@ import org.springframework.web.util.pattern.PathPatternRouteMatcher;
  */
 class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
-	public static final String RECONSILED_LOOKUP_DESTINATION_HEADER = "reconsiledLookupDestination";
+	public static final String RECONCILED_LOOKUP_DESTINATION_HEADER = "reconciledLookupDestination";
 
 	private final FunctionCatalog functionCatalog;
 
@@ -137,7 +137,7 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	@Override
 	protected RouteMatcher.Route getDestination(Message<?> message) {
-		RouteMatcher.Route reconsiledDestination = (RouteMatcher.Route) message.getHeaders().get(RECONSILED_LOOKUP_DESTINATION_HEADER);
+		RouteMatcher.Route reconsiledDestination = (RouteMatcher.Route) message.getHeaders().get(RECONCILED_LOOKUP_DESTINATION_HEADER);
 		return reconsiledDestination == null ? super.getDestination(message) : reconsiledDestination;
 	}
 
@@ -206,7 +206,7 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 		Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 				.getField(this.headersField, message.getHeaders());
 		PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
-		headersMap.put(RECONSILED_LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+		headersMap.put(RECONCILED_LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
 	}
 
 	protected static final class MessageHandlerMethodArgumentResolver implements SyncHandlerMethodArgumentResolver {

@@ -190,7 +190,7 @@ public class RSocketAutoConfigurationRoutingTests {
 				assertThat(msg.getHeaders()
 						.get(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER)).toString().equals("uppercase");
 				assertThat(msg.getHeaders()
-						.get(FunctionRSocketMessageHandler.RECONSILED_LOOKUP_DESTINATION_HEADER)).toString().equals(RoutingFunction.FUNCTION_NAME);
+						.get(FunctionRSocketMessageHandler.RECONCILED_LOOKUP_DESTINATION_HEADER)).toString().equals(RoutingFunction.FUNCTION_NAME);
 				return msg.getPayload().toUpperCase();
 			};
 		}
