@@ -29,6 +29,8 @@ import reactor.test.StepVerifier;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -173,6 +175,59 @@ public class RSocketAutoConfigurationRoutingTests {
 		}
 	}
 
+	@Test
+	public void testRoutingWithRoutingCallback() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(RoutingCallbackFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+							"--spring.cloud.function.expected-content-type=text/plain",
+							"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("foo")
+				.metadata("{\"func_name\":\"uppercase\"}", MimeTypeUtils.APPLICATION_JSON)
+				.data("hello")
+				.retrieveMono(String.class)
+				.as(StepVerifier::create)
+				.expectNext("HELLO")
+				.expectComplete()
+				.verify();
+
+		}
+	}
+
+
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class RoutingCallbackFunctionConfiguration {
+		@Bean
+		public MessageRoutingCallback customRouter() {
+			return new MessageRoutingCallback() {
+				@Override
+				public String route(Message<?> message, FunctionProperties functionProperties) {
+					return (String) message.getHeaders().get("func_name");
+				}
+			};
+		}
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<String, String> concat() {
+			return v -> v + v;
+		}
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class SampleFunctionConfiguration {
@@ -222,6 +277,7 @@ public class RSocketAutoConfigurationRoutingTests {
 		public Supplier<String> source() {
 			return () -> "test data";
 		}
+
 
 	}
 
