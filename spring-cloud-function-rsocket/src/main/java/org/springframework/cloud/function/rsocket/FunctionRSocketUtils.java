@@ -78,7 +78,8 @@ final class FunctionRSocketUtils {
 			if (functionCatalog.lookup(name) == null) { // this means RSocket
 				String[] functionToRSocketDefinition = StringUtils.delimitedListToStringArray(name, ">");
 				if (functionToRSocketDefinition.length == 1) {
-					throw new IllegalArgumentException("Function definition '" + name + "' does not exist in Function Catalog");
+					//throw new IllegalArgumentException("Function definition '" + name + "' does not exist in Function Catalog");
+					return;
 				}
 				if (LOGGER.isDebugEnabled()) {
 					LOGGER.debug("Registering RSocket forwarder for '" + name + "' function.");

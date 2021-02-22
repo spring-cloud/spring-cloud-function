@@ -34,6 +34,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.GsonMapper;
@@ -116,8 +117,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
 	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
-			BeanFactory beanFactory) {
-		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory));
+			BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
+		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory), routingCallback);
 	}
 
 	private boolean isConverterEligible(Object messageConverter) {

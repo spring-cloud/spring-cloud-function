@@ -32,6 +32,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.core.MethodParameter;
@@ -59,6 +60,7 @@ import org.springframework.messaging.rsocket.annotation.support.RSocketFrameType
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler;
 import org.springframework.messaging.rsocket.annotation.support.RSocketPayloadReturnValueHandler;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.RouteMatcher;
@@ -179,7 +181,10 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	private String discoverAndInjectDestinationHeader(Message<?> message) {
 
 		String destination;
-		if (StringUtils.hasText(this.functionProperties.getRoutingExpression())) {
+		if (!CollectionUtils.isEmpty(this.getApplicationContext().getBeansOfType(MessageRoutingCallback.class))) {
+			destination = RoutingFunction.FUNCTION_NAME;
+		}
+		else if (StringUtils.hasText(this.functionProperties.getRoutingExpression())) {
 			destination = RoutingFunction.FUNCTION_NAME;
 			this.updateMessageHeaders(message, destination);
 		}
