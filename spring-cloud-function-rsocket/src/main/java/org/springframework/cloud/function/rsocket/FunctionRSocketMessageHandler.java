@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import org.springframework.messaging.rsocket.annotation.support.RSocketPayloadRe
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.RouteMatcher.Route;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.pattern.PathPatternRouteMatcher;
 
@@ -116,10 +117,7 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	@Override
 	public Mono<Void> handleMessage(Message<?> message) throws MessagingException {
 		if (!FrameType.SETUP.equals(message.getHeaders().get("rsocketFrameType"))) {
-			String destination = this.getDestination(message).value();
-			if (!StringUtils.hasText(destination)) {
-				destination = this.discoverAndInjectDestinationHeader(message);
-			}
+			String destination = this.discoverAndInjectDestinationHeader(message);
 
 			Set<String> mappings = this.getDestinationLookup().keySet();
 			if (!mappings.contains(destination)) {
@@ -154,16 +152,33 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	@SuppressWarnings("unchecked")
 	private String discoverAndInjectDestinationHeader(Message<?> message) {
-		String destination = this.functionProperties.getDefinition();
-		if (!StringUtils.hasText(destination) && StringUtils.hasText(this.functionProperties.getRoutingExpression())) {
+
+		String destination;
+		if (StringUtils.hasText(this.functionProperties.getRoutingExpression())) {
 			destination = RoutingFunction.FUNCTION_NAME;
+			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+					.getField(this.headersField, message.getHeaders());
+			PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
+			headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
 		}
-		Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-				.getField(this.headersField, message.getHeaders());
+		else {
+			Route route = (Route) message.getHeaders().get(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER);
+			destination = route.value();
+			if (!StringUtils.hasText(destination)) {
+				destination = this.functionProperties.getDefinition();
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+						.getField(this.headersField, message.getHeaders());
+				PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
+				headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+			}
+		}
 
-		PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
-
-		headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+		if (!StringUtils.hasText(destination) && logger.isDebugEnabled()) {
+			logger.debug("Failed to discover function definition. Neither "
+				+ "`spring.cloud.function.definition`, nor `.route(<function.definition>)`, nor "
+				+ "`spring.cloud.function.routing-expression` were provided. Wil use empty string "
+				+ "for lookup, which will work only if there is one function in Function Catalog");
+		}
 		return destination;
 	}
 
