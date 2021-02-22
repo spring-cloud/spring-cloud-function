@@ -18,6 +18,7 @@ package org.springframework.cloud.function.rsocket;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.CompositeMessageCondition;
 import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
+import org.springframework.messaging.handler.MessageCondition;
 import org.springframework.messaging.handler.invocation.reactive.HandlerMethodArgumentResolver;
 import org.springframework.messaging.handler.invocation.reactive.HandlerMethodReturnValueHandler;
 import org.springframework.messaging.handler.invocation.reactive.SyncHandlerMethodArgumentResolver;
@@ -59,6 +61,7 @@ import org.springframework.messaging.rsocket.annotation.support.RSocketPayloadRe
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.RouteMatcher;
 import org.springframework.util.RouteMatcher.Route;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.pattern.PathPatternRouteMatcher;
@@ -72,6 +75,8 @@ import org.springframework.web.util.pattern.PathPatternRouteMatcher;
  * @since 3.1
  */
 class FunctionRSocketMessageHandler extends RSocketMessageHandler {
+
+	public static final String RECONSILED_LOOKUP_DESTINATION_HEADER = "reconsiledLookupDestination";
 
 	private final FunctionCatalog functionCatalog;
 
@@ -130,6 +135,27 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 		return super.handleMessage(message);
 	}
 
+	@Override
+	protected RouteMatcher.Route getDestination(Message<?> message) {
+		RouteMatcher.Route reconsiledDestination = (RouteMatcher.Route) message.getHeaders().get(RECONSILED_LOOKUP_DESTINATION_HEADER);
+		return reconsiledDestination == null ? super.getDestination(message) : reconsiledDestination;
+	}
+
+	@Override
+	protected CompositeMessageCondition getMatchingMapping(CompositeMessageCondition mapping, Message<?> message) {
+		List<MessageCondition<?>> result = new ArrayList<>(mapping.getMessageConditions().size());
+		for (MessageCondition<?> condition : mapping.getMessageConditions()) {
+			MessageCondition<?> matchingCondition = condition instanceof DestinationPatternsMessageCondition
+					? condition
+							: (MessageCondition<?>) condition.getMatchingCondition(message);
+			if (matchingCondition == null) {
+				return null;
+			}
+			result.add(matchingCondition);
+		}
+		return new CompositeMessageCondition(result.toArray(new MessageCondition[0]));
+	}
+
 	void registerFunctionHandler(Function<?, ?> function, String route) {
 		CompositeMessageCondition condition =
 			new CompositeMessageCondition(REQUEST_CONDITION,
@@ -180,7 +206,7 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 		Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
 				.getField(this.headersField, message.getHeaders());
 		PathPatternRouteMatcher matcher = new PathPatternRouteMatcher();
-		headersMap.put(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
+		headersMap.put(RECONSILED_LOOKUP_DESTINATION_HEADER, matcher.parseRoute(destination));
 	}
 
 	protected static final class MessageHandlerMethodArgumentResolver implements SyncHandlerMethodArgumentResolver {
