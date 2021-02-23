@@ -69,7 +69,12 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Mono<Void> handle(Message<Flux<byte[]>> messageToProcess) {
-		if (this.targetFunction.isConsumer()) {
+		if (this.targetFunction.isRoutingFunction()) {
+			Flux<?> dataFlux = messageToProcess.getPayload()
+						.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
+			return dataFlux.doOnNext(this.targetFunction).then();
+		}
+		else if (this.targetFunction.isConsumer()) {
 			Flux<?> dataFlux =
 				messageToProcess.getPayload()
 					.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
