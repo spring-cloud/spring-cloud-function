@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.context;
 
-import org.reactivestreams.Publisher;
-
 import org.springframework.messaging.Message;
 
 /**
@@ -27,13 +25,5 @@ import org.springframework.messaging.Message;
  */
 public interface MessageRoutingCallback {
 
-	default String route(Message<?> message, FunctionProperties functionProperties) {
-		// noop
-		return null;
-	}
-
-	default String route(Publisher<?> publisher, FunctionProperties functionProperties) {
-		//noop
-		return null;
-	}
+	String route(Message<?> message, FunctionProperties functionProperties);
 }

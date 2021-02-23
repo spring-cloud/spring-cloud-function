@@ -179,12 +179,6 @@ public class RoutingFunction implements Function<Object, Object> {
 				return this.functionFromDefinition(functionDefinition);
 			}
 		}
-		else {
-			String functionDefinition = this.routingCallback.route((Publisher<?>) input, this.functionProperties);
-			if (StringUtils.hasText(functionDefinition)) {
-				return this.functionFromDefinition(functionDefinition);
-			}
-		}
 		return null;
 	}
 
