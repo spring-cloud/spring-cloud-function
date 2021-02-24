@@ -113,6 +113,9 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 					: Mono.just((Message<byte[]>) result);
 			});
 		}
+		/*
+		 * THis is wrong as we're effectively not letting user to see any metadat that may have been comunicated
+		 */
 		return dataFlux.cast(Message.class).map(Message::getPayload);
 	}
 }

@@ -16,14 +16,29 @@
 
 package org.springframework.cloud.function.context;
 
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.messaging.Message;
 
 /**
+ * Java-based strategy to assist with determining the name of the route-to function definition.
+ * Once implementation is registered as a bean in application context
+ * it will be picked up by a {@link RoutingFunction} and used to determine the name of the
+ * route-to function definition.
+ *
+ * While {@link RoutingFunction} provides several mechanisms to determine the route-to function definition
+ * this callback takes precedence over all of them.
  *
  * @author Oleg Zhurakousky
  * @since 3.1
  */
 public interface MessageRoutingCallback {
 
-	String route(Message<?> message, FunctionProperties functionProperties);
+	/**
+	 * Determines the name of the function definition to route incoming {@link Message}.
+	 *
+	 * @param message instance of incoming {@link Message}
+	 * @param functionProperties instance of {@link FunctionProperties}
+	 * @return the name of the route-to function definition
+	 */
+	String functionDefinition(Message<?> message, FunctionProperties functionProperties);
 }
