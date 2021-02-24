@@ -16,10 +16,16 @@
 
 package org.springframework.cloud.function.kotlin;
 
+import java.lang.reflect.ParameterizedType;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import kotlin.jvm.functions.Function2;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -28,11 +34,6 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
-
-import java.lang.reflect.ParameterizedType;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

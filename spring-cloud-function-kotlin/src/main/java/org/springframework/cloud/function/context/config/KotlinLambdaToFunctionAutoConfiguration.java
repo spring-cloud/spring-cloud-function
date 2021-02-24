@@ -16,9 +16,21 @@
 
 package org.springframework.cloud.function.context.config;
 
-import kotlin.jvm.functions.*;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
+import kotlin.jvm.functions.Function2;
+import kotlin.jvm.functions.Function3;
+import kotlin.jvm.functions.Function4;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import reactor.core.publisher.Flux;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -37,13 +49,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
-import reactor.core.publisher.Flux;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 
 /**
@@ -51,6 +56,7 @@ import java.util.function.Supplier;
  * lambdas as invocable functions within the context of the framework.
  *
  * @author Oleg Zhurakousky
+ * @author Adrien Poupard
  * @since 2.0
  */
 @Configuration
@@ -143,7 +149,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 		@Override
 		public Object invoke(Object arg0) {
-			if(	CoroutinesUtils.isValidSuspendingFunction(kotlinLambdaTarget, arg0)) {
+			if (CoroutinesUtils.isValidSuspendingFunction(kotlinLambdaTarget, arg0)) {
 				return CoroutinesUtils.invokeSuspendingFunction(kotlinLambdaTarget, arg0);
 			}
 			return ((Function1) this.kotlinLambdaTarget).invoke(arg0);
@@ -151,7 +157,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 		@Override
 		public Object invoke() {
-			if(	CoroutinesUtils.isValidSuspendingSupplier(kotlinLambdaTarget)) {
+			if (CoroutinesUtils.isValidSuspendingSupplier(kotlinLambdaTarget)) {
 				return CoroutinesUtils.invokeSuspendingSupplier(kotlinLambdaTarget);
 			}
 			return ((Function0) this.kotlinLambdaTarget).invoke();
@@ -185,7 +191,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 				functionType = ResolvableType.forClassWithGenerics(Function.class, ResolvableType.forType(types[0]),
 					ResolvableType.forType(types[1])).getType();
 			}
-			else if(isValidKotlinSuspendSupplier(functionType, types)) {
+			else if (isValidKotlinSuspendSupplier(functionType, types)) {
 				Type continuationReturnType = CoroutinesUtils.getSuspendingFunctionReturnType(types[0]);
 				functionType = ResolvableType.forClassWithGenerics(
 					Supplier.class,

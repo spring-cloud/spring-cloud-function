@@ -41,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author Adrien Poupard
  *
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {

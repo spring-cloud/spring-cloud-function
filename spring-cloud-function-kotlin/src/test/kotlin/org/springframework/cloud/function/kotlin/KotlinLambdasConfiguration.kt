@@ -39,11 +39,6 @@ class KotlinLambdasConfiguration {
 	}
 
 	@Bean
-	fun suspendKotlinPojoFunction(): (Person) -> String {
-		return { it.name.toString()}
-	}
-
-	@Bean
 	fun kotlinConsumer(): (String) -> Unit {
 		return { println(it) }
 	}

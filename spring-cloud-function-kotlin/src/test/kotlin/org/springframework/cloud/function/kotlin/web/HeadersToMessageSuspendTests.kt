@@ -34,8 +34,7 @@ import org.springframework.test.context.ContextConfiguration
 import java.net.URI
 
 /**
- * @author Dave Syer
- * @author Oleg Zhurakousky
+ * @author Adrien Poupard
  */
 @SpringBootTest(
 	webEnvironment = WebEnvironment.RANDOM_PORT,
