@@ -86,19 +86,23 @@ public class RoutingFunction implements Function<Object, Object> {
 
 
 	/*
-	 * - Check if spring.cloud.function.definition is set in header and if it is use it.
+	 * - Check if `this.routingCallback` is present and if it is use it (only for Message input)
 	 * If NOT
-	 * - Check spring.cloud.function.routing-expression and if it is set use it
+	 * - Check if spring.cloud.function.definition is set in header and if it is use it.(only for Message input)
 	 * If NOT
-	 * - Check spring.cloud.function.definition is set in FunctionProperties and if it is use it
+	 * - Check if spring.cloud.function.routing-expression is set in header and if it is set use it (only for Message input)
+	 * If NOT
+	 * - Check `spring.cloud.function.definition` is set in FunctionProperties and if it is use it (Message and Publisher)
+	 * If NOT
+	 * - Check `spring.cloud.function.routing-expression` is set in FunctionProperties and if it is use it (Message and Publisher)
 	 * If NOT
 	 * - Fail
 	 */
 	private Object route(Object input, boolean originalInputIsPublisher) {
 		FunctionInvocationWrapper function = null;
+
 		if (input instanceof Message) {
 			Message<?> message = (Message<?>) input;
-
 			if (this.routingCallback != null) {
 				function = this.functionFromCallback(message);
 			}
@@ -129,16 +133,12 @@ public class RoutingFunction implements Function<Object, Object> {
 			}
 		}
 		else if (input instanceof Publisher) {
-			if (this.routingCallback != null) {
-				function = this.functionFromCallback(input);
-			}
 			if (function == null) {
-				if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
-					function = this.functionFromExpression(functionProperties.getRoutingExpression(), input);
-				}
-				else
 				if (StringUtils.hasText(functionProperties.getDefinition())) {
 					function = functionFromDefinition(functionProperties.getDefinition());
+				}
+				else if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
+					function = this.functionFromExpression(functionProperties.getRoutingExpression(), input);
 				}
 				else {
 					return input instanceof Mono
@@ -174,7 +174,7 @@ public class RoutingFunction implements Function<Object, Object> {
 
 	private FunctionInvocationWrapper functionFromCallback(Object input) {
 		if (input instanceof Message) {
-			String functionDefinition = this.routingCallback.route((Message<?>) input, this.functionProperties);
+			String functionDefinition = this.routingCallback.functionDefinition((Message<?>) input, this.functionProperties);
 			if (StringUtils.hasText(functionDefinition)) {
 				return this.functionFromDefinition(functionDefinition);
 			}
