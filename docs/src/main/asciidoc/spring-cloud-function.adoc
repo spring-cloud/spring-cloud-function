@@ -142,7 +142,47 @@ public class RoutingFunction implements Function<Object, Object> {
 . . .
 }
 ----
-The routing instructions could be communicated in several ways;
+The routing instructions could be communicated in several ways. We support providing instructions via Message headers, System 
+properties as well as pluggable strategy. So let's look at some of the details
+
+*MessageRoutingCallback*
+
+The `MessageRoutingCallback` is a strategy to assist with determining the name of the route-to function definition.
+
+[source, java]
+----
+public interface MessageRoutingCallback {
+
+	/**
+	 * Determines the name of the function definition to route incoming {@link Message}.
+	 *
+	 * @param message instance of incoming {@link Message}
+	 * @return the name of the route-to function definition
+	 */
+	String functionDefinition(Message<?> message);
+}
+----
+
+All you need to do is implement it and and register it as a bean. The framework will automatically 
+pick it up and use it for routing decisions.
+For example 
+
+[source, java]
+----
+@Bean
+public MessageRoutingCallback customRouter() {
+	return new MessageRoutingCallback() {
+		@Override
+		public String functionDefinition(Message<?> message) {
+			return (String) message.getHeaders().get("func_name");
+		}
+	};
+}
+----
+
+In the preceding example you can see a very simple implementation of `MessageRoutingCallback` which determines the function definition from 
+`func_name` header of the incoming Message.
+
 
 *Message Headers*
 
@@ -170,8 +210,26 @@ or `spring.cloud.function.routing-expression` as application properties. The rul
 previous section apply here as well. The only difference is you provide these instructions as
 application properties (e.g., `--spring.cloud.function.definition=foo`).
 
+NOTE: It is important to understand that providing `spring.cloud.function.definition` 
+or `spring.cloud.function.routing-expression` as Message headers will only work for imperative functions (e.g., `Function<Foo, Bar>`).
+That is to say that we can _only_ route ***per-message*** with imperative functions. With reactive functions we can not route 
+***per-message***. Therefore you can only provide your routing instructions as Application Properties.
+It's all about unit-of-work. In imperative function unit of work is Message so we can route based on such unit-of-work.
+With reactive function unit-of-work is the entire stream, so we'll act only on the instruction provided via application 
+properties and route the entire stream.
+
+*Order of priority for routing instructions*
+
+Given that we have several mechanisms of providing routing instructions it is important to understand the priorities for 
+conflict resolutions in the event multiple mechanisms are used at the same time, so here is the order:
+
+1. `MessageRoutingCallback` (If function is imperative will take over regardless if anything else is defined)
+2. Message Headers (If function is imperative and no `MessageRoutingCallback` provided)
+3. Application Properties (Any function) 
+
+
 *Function Filtering*
-Filtering is the type of routing where there are only tow paths - 'go' or 'discard'. In terms of functions it mean
+Filtering is the type of routing where there are only two paths - 'go' or 'discard'. In terms of functions it mean
 you only want to invoke a certain function if some condition returns 'true', otherwise you want to discard input.
 However, when it comes to discarding input there are many interpretation of what it could mean in the context of your application.
 For example, you may want to log it, or you may want to maintain the counter of discarded messages. you may also want to do nothing at all.
