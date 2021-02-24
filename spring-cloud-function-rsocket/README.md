@@ -55,19 +55,22 @@ rsocketRequesterBuilder.tcp("localhost", port)
 	.subscribe(System.out::println);
 ```
 
-### Function Definitions
+### Order of priority for routing instructions
 
 As you can see from the preceding example, we provide function definition as a value to `route(..)` operator of `RSocketRequester.Builder`.
-However that is not the only way. You can also use standard `spring.cloud.function.definition` property as well as `spring.cloud.function.routing-expression` property. 
+However that is not the only way. You can also use standard `spring.cloud.function.definition` property as well as `spring.cloud.function.routing-expression` or property or `MessageRoutingCallback` on the server side of the RSocket interaction (see "Function Routing and Filtering" section of reference manual). 
 This raises a question of _order_ and _priorities_ when it comes to reconsiling a conflict in the event several ways of providing definition are used. So it is a mater of clearly stating the rule whcih is:
 
-***1 - spring.cloud.function.routing-expression***
-The `spring.cloud.function.routing-expression` property takes precedence over all other ways of providing definition. So, in the event you may have also use `route(..)` operator or `spring.cloud.function.definition` property, they will be ignored if `spring.cloud.function.routing-expression` property is provided.
+***1 - MessageRoutingCallback***
+The `MessageRoutingCallback` takes precedence over all other ways of providing function definition resolution.
 
-***2 - route(..)***
+***2 - spring.cloud.function.routing-expression***
+The `spring.cloud.function.routing-expression` property takes next precedence. So, in the event you may have also use `route(..)` operator or `spring.cloud.function.definition` property, they will be ignored if `spring.cloud.function.routing-expression` property is provided.
+
+***3 - route(..)***
 The next in line is `route(..)` operator. So in the event there are no `spring.cloud.function.routing-expression` property but you defined `spring.cloud.function.definition` property, it will be ignored in favor of definition provided by the `route(..)` operator.
 
-***3 - spring.cloud.function.definition***
+***4 - spring.cloud.function.definition***
 The `spring.cloud.function.definition` property is the last in the list allowing you to simply `route("")` to empty string.
 
 
