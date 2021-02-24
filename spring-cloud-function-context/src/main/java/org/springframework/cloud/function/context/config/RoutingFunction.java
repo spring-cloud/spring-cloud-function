@@ -174,7 +174,7 @@ public class RoutingFunction implements Function<Object, Object> {
 
 	private FunctionInvocationWrapper functionFromCallback(Object input) {
 		if (input instanceof Message) {
-			String functionDefinition = this.routingCallback.functionDefinition((Message<?>) input, this.functionProperties);
+			String functionDefinition = this.routingCallback.functionDefinition((Message<?>) input);
 			if (StringUtils.hasText(functionDefinition)) {
 				return this.functionFromDefinition(functionDefinition);
 			}

@@ -37,8 +37,7 @@ public interface MessageRoutingCallback {
 	 * Determines the name of the function definition to route incoming {@link Message}.
 	 *
 	 * @param message instance of incoming {@link Message}
-	 * @param functionProperties instance of {@link FunctionProperties}
 	 * @return the name of the route-to function definition
 	 */
-	String functionDefinition(Message<?> message, FunctionProperties functionProperties);
+	String functionDefinition(Message<?> message);
 }

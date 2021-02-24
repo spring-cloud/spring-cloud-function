@@ -25,7 +25,6 @@ import reactor.test.StepVerifier;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -110,7 +109,7 @@ public class MessageRoutingCallbackRSocketTests {
 		public MessageRoutingCallback customRouter() {
 			return new MessageRoutingCallback() {
 				@Override
-				public String functionDefinition(Message<?> message, FunctionProperties functionProperties) {
+				public String functionDefinition(Message<?> message) {
 					return (String) message.getHeaders().get("func_name");
 				}
 			};
