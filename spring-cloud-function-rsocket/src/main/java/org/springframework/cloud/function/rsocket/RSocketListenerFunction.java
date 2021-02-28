@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import io.rsocket.frame.FrameType;
@@ -30,8 +31,6 @@ import org.springframework.messaging.rsocket.annotation.support.RSocketFrameType
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
-
-
 /**
  * A function wrapper which is bound onto an RSocket route.
  *
@@ -40,7 +39,7 @@ import org.springframework.util.Assert;
  *
  * @since 3.1
  */
-class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publisher<?>> {
+class RSocketListenerFunction implements Function<Message<Flux<Object>>, Publisher<?>> {
 
 	private final FunctionInvocationWrapper targetFunction;
 
@@ -49,7 +48,7 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 	}
 
 	@Override
-	public Publisher<?> apply(Message<Flux<byte[]>> input) {
+	public Publisher<?> apply(Message<Flux<Object>> input) {
 		Assert.isTrue(this.targetFunction != null, "Failed to discover target function. \n"
 				+ "To fix it you should either provide 'spring.cloud.function.definition' property "
 				+ "or if you are using RSocketRequester provide valid function definition via 'route' "
@@ -68,10 +67,12 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Mono<Void> handle(Message<Flux<byte[]>> messageToProcess) {
+	private Mono<Void> handle(Message<Flux<Object>> messageToProcess) {
 		if (this.targetFunction.isRoutingFunction()) {
 			Flux<?> dataFlux = messageToProcess.getPayload()
-						.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
+					.map((payload) -> {
+						return MessageBuilder.createMessage(payload, messageToProcess.getHeaders());
+					});
 			return dataFlux.doOnNext(this.targetFunction).then();
 		}
 		else if (this.targetFunction.isConsumer()) {
@@ -92,30 +93,30 @@ class RSocketListenerFunction implements Function<Message<Flux<byte[]>>, Publish
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Flux<?> handleAndReply(Message<Flux<byte[]>> messageToProcess) {
+	private Flux<?> handleAndReply(Message<Flux<Object>> messageToProcess) {
 		Flux<?> dataFlux =
 			messageToProcess.getPayload()
-				.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
+				.map((payload) -> {
+					if (!(payload instanceof Message)) {
+						payload = MessageBuilder.createMessage(payload, messageToProcess.getHeaders());
+					}
+					return payload;
+				});
 		if (this.targetFunction.getInputType() != null && FunctionTypeUtils.isPublisher(this.targetFunction.getInputType())) {
 			dataFlux = dataFlux.transform((Function) this.targetFunction);
 		}
 		else {
 			dataFlux = dataFlux.flatMap((data) -> {
-				Message<?> incoming = (Message<?>) data;
-				Message sanitizedMessage = MessageBuilder.withPayload(incoming.getPayload()).copyHeaders(incoming.getHeaders())
-					.removeHeader("dataBufferFactory")
-					.removeHeader("rsocketRequester")
-					.removeHeader("rsocketResponse")
-					.build();
+				Map<String, ?> messageMap = FunctionRSocketUtils.sanitizeMessageToMap((Message<?>) data);
+				Message sanitizedMessage = MessageBuilder.withPayload(messageMap.remove(FunctionRSocketUtils.PAYLOAD))
+						.copyHeaders((Map<String, ?>) messageMap.get(FunctionRSocketUtils.HEADERS))
+						.build();
 				Object result = this.targetFunction.isSupplier() ? this.targetFunction.apply(null) : this.targetFunction.apply(sanitizedMessage);
 				return result instanceof Publisher<?>
-					? (Publisher<Message<byte[]>>) result
-					: Mono.just((Message<byte[]>) result);
+					? (Publisher<?>) result
+					: Mono.just(result);
 			});
 		}
-		/*
-		 * THis is wrong as we're effectively not letting user to see any metadat that may have been comunicated
-		 */
-		return dataFlux.cast(Message.class).map(Message::getPayload);
+		return dataFlux;
 	}
 }

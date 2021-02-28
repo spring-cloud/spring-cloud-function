@@ -314,10 +314,11 @@ public final class FunctionTypeUtils {
 		if (isPublisher(type)) {
 			type = getImmediateGenericType(type, 0);
 		}
-		if (type instanceof ParameterizedType && TypeResolver.resolveRawClass(type, null) != Message.class) {
+
+		if (type instanceof ParameterizedType && !Message.class.isAssignableFrom(TypeResolver.resolveRawClass(type, null))) {
 			type = getImmediateGenericType(type, 0);
 		}
-		return TypeResolver.resolveRawClass(type, null) == Message.class;
+		return Message.class.isAssignableFrom(TypeResolver.resolveRawClass(type, null));
 	}
 
 	/**
