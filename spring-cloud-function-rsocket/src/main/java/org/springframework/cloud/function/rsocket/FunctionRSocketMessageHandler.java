@@ -35,12 +35,12 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ReactiveAdapterRegistry;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.codec.ByteArrayDecoder;
-import org.springframework.core.codec.ByteArrayEncoder;
 import org.springframework.core.codec.Decoder;
 import org.springframework.core.codec.Encoder;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -86,6 +86,8 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	private final Field headersField;
 
+	private final JsonMapper jsonMapper;
+
 	private static final Method FUNCTION_APPLY_METHOD =
 		ReflectionUtils.findMethod(Function.class, "apply", (Class<?>[]) null);
 
@@ -96,18 +98,19 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 			FrameType.REQUEST_STREAM,
 			FrameType.REQUEST_CHANNEL);
 
-	FunctionRSocketMessageHandler(FunctionCatalog functionCatalog, FunctionProperties functionProperties) {
+	FunctionRSocketMessageHandler(FunctionCatalog functionCatalog, FunctionProperties functionProperties, JsonMapper jsonMapper) {
 		setHandlerPredicate((clazz) -> false);
 		this.functionCatalog = functionCatalog;
 		this.functionProperties = functionProperties;
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 		this.headersField.setAccessible(true);
+		this.jsonMapper = jsonMapper;
 	}
 
 
 	@Override
 	public void afterPropertiesSet() {
-		setEncoders(Collections.singletonList(new ByteArrayEncoder()));
+		setEncoders(Collections.singletonList(new ServerMessageEncoder(this.jsonMapper)));
 		super.afterPropertiesSet();
 	}
 
@@ -168,7 +171,7 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	@Override
 	protected List<? extends HandlerMethodArgumentResolver> initArgumentResolvers() {
-		return Collections.singletonList(new MessageHandlerMethodArgumentResolver());
+		return Collections.singletonList(new MessageHandlerMethodArgumentResolver(this.jsonMapper));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -216,7 +219,14 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	protected static final class MessageHandlerMethodArgumentResolver implements SyncHandlerMethodArgumentResolver {
 
-		private final Decoder<byte[]> decoder = new ByteArrayDecoder();
+		private final Decoder<byte[]> decoder;
+
+		private final JsonMapper jsonMapper;
+
+		MessageHandlerMethodArgumentResolver(JsonMapper jsonMapper) {
+			this.decoder = new ByteArrayDecoder();
+			this.jsonMapper = jsonMapper;
+		}
 
 		@Override
 		public boolean supportsParameter(MethodParameter parameter) {
@@ -225,16 +235,26 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public Object resolveArgumentValue(MethodParameter parameter, Message<?> message) {
-			Flux<DataBuffer> data;
+		public Object resolveArgumentValue(MethodParameter parameter,
+				Message<?> message) {
 			Object payload = message.getPayload();
-			if (payload instanceof DataBuffer) {
-				data = Flux.just((DataBuffer) payload);
-			}
-			else {
-				data = Flux.from((Publisher<DataBuffer>) payload);
-			}
-			Flux<byte[]> decoded = this.decoder.decode(data, ResolvableType.forType(byte[].class), null, null);
+			Flux<DataBuffer> data = payload instanceof DataBuffer
+					? Flux.just((DataBuffer) payload)
+							: Flux.from((Publisher<DataBuffer>) payload);
+
+			Flux<Object> decoded = this.decoder.decode(data, ResolvableType.forType(Object.class), null, null)
+					.map(value -> {
+						if (JsonMapper.isJsonString(value)) {
+							// could be array, map or string
+							Object structure = this.jsonMapper.fromJson(value, Object.class);
+							if (structure instanceof Map) {
+								return MessageBuilder.withPayload(((Map<String, ?>) structure).remove(FunctionRSocketUtils.PAYLOAD))
+										.copyHeaders((Map<String, ?>) ((Map<String, ?>) structure).get(FunctionRSocketUtils.HEADERS))
+										.build();
+							}
+						}
+						return value;
+					});
 			return MessageBuilder.createMessage(decoded, message.getHeaders());
 		}
 

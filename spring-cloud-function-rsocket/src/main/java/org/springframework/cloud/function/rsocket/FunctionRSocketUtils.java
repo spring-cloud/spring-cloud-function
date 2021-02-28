@@ -18,6 +18,8 @@ package org.springframework.cloud.function.rsocket;
 
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
@@ -30,6 +32,8 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.RSocketRequester.Builder;
 import org.springframework.util.Assert;
@@ -46,6 +50,11 @@ import org.springframework.util.StringUtils;
 final class FunctionRSocketUtils {
 
 	private static final Log LOGGER = LogFactory.getLog(FunctionRSocketUtils.class);
+
+	public static String PAYLOAD = "payload";
+
+	public static String HEADERS = "headers";
+
 
 	private static final Pattern WS_URI_PATTERN = Pattern.compile("^(https?|wss?)://.+");
 
@@ -67,6 +76,7 @@ final class FunctionRSocketUtils {
 		}
 
 		FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, acceptContentType);
+		function.setSkipOutputConversion(true);
 		return function;
 	}
 
@@ -78,7 +88,6 @@ final class FunctionRSocketUtils {
 			if (functionCatalog.lookup(name) == null) { // this means RSocket
 				String[] functionToRSocketDefinition = StringUtils.delimitedListToStringArray(name, ">");
 				if (functionToRSocketDefinition.length == 1) {
-					//throw new IllegalArgumentException("Function definition '" + name + "' does not exist in Function Catalog");
 					return;
 				}
 				if (LOGGER.isDebugEnabled()) {
@@ -106,5 +115,26 @@ final class FunctionRSocketUtils {
 				((FunctionRegistry) functionCatalog).register(functionRegistration);
 			}
 		}
+	}
+
+	static Map<String, Object> sanitizeMessageToMap(Message<?> message) {
+		Map<String, Object> messageMap = new HashMap<>();
+		messageMap.put(PAYLOAD, message.getPayload());
+		Map<String, Object> headers = new HashMap<>();
+		for (String key : message.getHeaders().keySet()) {
+			if (key.equals("lookupDestination") ||
+					key.equals("reconciledLookupDestination") ||
+					key.equals(MessageHeaders.CONTENT_TYPE)) {
+				headers.put(key, message.getHeaders().get(key).toString());
+			}
+			else if (!key.equals("rsocketFrameType") &&
+					!key.equals("rsocketRequester") &&
+					!key.equals("rsocketResponse") &&
+					!key.equals("dataBufferFactory")) {
+				headers.put(key, message.getHeaders().get(key));
+			}
+		}
+		messageMap.put(HEADERS, headers);
+		return messageMap;
 	}
 }

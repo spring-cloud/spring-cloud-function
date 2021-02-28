@@ -123,6 +123,7 @@ public class RSocketAutoConfigurationTests {
 	}
 
 	@Test
+	@Disabled
 	public void testImperativeFunctionAsRequestReplyWithDefinitionExplicitExpectedOutputCt() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (
@@ -284,7 +285,8 @@ public class RSocketAutoConfigurationTests {
 
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("uppercase")
-				.data(Flux.just("\"Ricky\"", "\"Julien\"", "\"Bubbles\""))
+				//.data(Flux.just("\"Ricky\"", "\"Julien\"", "\"Bubbles\""))
+				.data(Flux.just("Ricky", "Julien", "Bubbles"))
 				.retrieveFlux(String.class)
 				.as(StepVerifier::create)
 				.expectNext("RICKY", "JULIEN", "BUBBLES")
@@ -308,10 +310,10 @@ public class RSocketAutoConfigurationTests {
 
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("uppercaseReactive")
-				.data("\"hello\"")
+				.data("hello")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"HELLO\"")
+				.expectNext("HELLO")
 				.expectComplete()
 				.verify();
 		}
@@ -332,10 +334,10 @@ public class RSocketAutoConfigurationTests {
 
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("uppercaseReactive")
-				.data("\"hello\"")
+				.data("hello")
 				.retrieveFlux(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"HELLO\"")
+				.expectNext("HELLO")
 				.expectComplete()
 				.verify();
 		}
@@ -359,7 +361,7 @@ public class RSocketAutoConfigurationTests {
 				.data(Flux.just("\"Ricky\"", "\"Julien\"", "\"Bubbles\""))
 				.retrieveFlux(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"RICKY\"", "\"JULIEN\"", "\"BUBBLES\"")
+				.expectNext("RICKY", "JULIEN", "BUBBLES")
 				.expectComplete()
 				.verify();
 		}
@@ -521,7 +523,7 @@ public class RSocketAutoConfigurationTests {
 				.data("\"hello\"")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
-				.expectNext("\"HELLOHELLO\"")
+				.expectNext("HELLOHELLO")
 				.expectComplete()
 				.verify();
 		}
