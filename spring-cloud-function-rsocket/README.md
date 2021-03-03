@@ -45,7 +45,7 @@ Once connected to RSocket we use `route` operation to specify which function we 
 payload via `data` operation. Then we use one of the `retrieve` operations that best suits our desired interaction 
 (RSocket supports multiple interaction models such as fire-and-forget, request-reply etc.)
 
-### Order of priority for routing instructions
+#### Order of priority for routing instructions
 
 As you can see from the preceding examples, we provide function definition as a value to `route(..)` operator of `RSocketRequester.Builder`.
 However that is not the only way. You can also use standard `spring.cloud.function.definition` property as well as `spring.cloud.function.routing-expression` or property or `MessageRoutingCallback` on the server side of the RSocket interaction (see "Function Routing and Filtering" section of reference manual). 
@@ -73,7 +73,7 @@ Person p = new Person();
 p.setName("Ricky");
 Message<Person> message = MessageBuilder.withPayload(p).setHeader("someHeader", "foo").build();
 
-Message<Person> result = rsocketRequesterBuilder.tcp("localhost", port)
+Message<Employee> result = rsocketRequesterBuilder.tcp("localhost", port)
 	.route("pojoMessageToPojo")
 	.data(message)
 	.retrieveMono(new ParameterizedTypeReference<Message<Employee>>() {})
