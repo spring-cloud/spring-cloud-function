@@ -45,15 +45,22 @@ Once connected to RSocket we use `route` operation to specify which function we 
 payload via `data` operation. Then we use one of the `retrieve` operations that best suits our desired interaction 
 (RSocket supports multiple interaction models such as fire-and-forget, request-reply etc.)
 
-If you want to provide additional information that you would normally communicate via Message headers, you can use `metadata` operation for that.
+### Messaging
+
+If you want to provide and/or receive additional information that you would normally communicate via Message headers you can send and receive Spring `Message`.
+For example, the following tests case demonstrates how you can accomplish that.
 ```
-rsocketRequesterBuilder.tcp("localhost", port)
-	.route(“uppercase”)
-	.metadata("{\”header_key\":\”header-value\"}", MimeTypeUtils.APPLICATION_JSON)		
-	.data("\"hello\"")
-	.retrieveMono(String.class)
-	.subscribe(System.out::println);
+Person p = new Person();
+p.setName("Ricky");
+Message<Person> message = MessageBuilder.withPayload(p).setHeader("someHeader", "foo").build();
+
+Message<Person> result = rsocketRequesterBuilder.tcp("localhost", port)
+	.route("pojoMessageToPojo")
+	.data(message)
+	.retrieveMono(new ParameterizedTypeReference<Message<Employee>>() {})
+	.block();
 ```
+Aside from sending `Message`, note the usage of `ParameterizedTypeReference` to specify that we want not only `Message` in return but also `Message` with specific payload type. 
 
 ### Order of priority for routing instructions
 
