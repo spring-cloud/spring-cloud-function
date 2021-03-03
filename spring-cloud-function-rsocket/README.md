@@ -45,6 +45,25 @@ Once connected to RSocket we use `route` operation to specify which function we 
 payload via `data` operation. Then we use one of the `retrieve` operations that best suits our desired interaction 
 (RSocket supports multiple interaction models such as fire-and-forget, request-reply etc.)
 
+### Order of priority for routing instructions
+
+As you can see from the preceding examples, we provide function definition as a value to `route(..)` operator of `RSocketRequester.Builder`.
+However that is not the only way. You can also use standard `spring.cloud.function.definition` property as well as `spring.cloud.function.routing-expression` or property or `MessageRoutingCallback` on the server side of the RSocket interaction (see "Function Routing and Filtering" section of reference manual). 
+This raises a question of _order_ and _priorities_ when it comes to reconsiling a conflict in the event several ways of providing definition are used. So it is a mater of clearly stating the rule whcih is:
+
+***1 - MessageRoutingCallback***
+The `MessageRoutingCallback` takes precedence over all other ways of providing function definition resolution.
+
+***2 - spring.cloud.function.routing-expression***
+The `spring.cloud.function.routing-expression` property takes next precedence. So, in the event you may have also use `route(..)` operator or `spring.cloud.function.definition` property, they will be ignored if `spring.cloud.function.routing-expression` property is provided.
+
+***3 - route(..)***
+The next in line is `route(..)` operator. So in the event there are no `spring.cloud.function.routing-expression` property but you defined `spring.cloud.function.definition` property, it will be ignored in favor of definition provided by the `route(..)` operator.
+
+***4 - spring.cloud.function.definition***
+The `spring.cloud.function.definition` property is the last in the list allowing you to simply `route("")` to empty string.
+
+
 ### Messaging
 
 If you want to provide and/or receive additional information that you would normally communicate via Message headers you can send and receive Spring `Message`.
@@ -75,25 +94,6 @@ The complete example is available in [this test case](https://github.com/spring-
 And as you can see it is a bit more complex to showcase this feature. In this test we are composing `reverse` function with `uppercase|concat` function running remotely and then with `wrap` function running locally as if `reverse|uppercase|concat|wrap`.
 So you can see `--spring.cloud.function.definition=reverse>localhost:" + portA + "|wrap"` where `localhost:" + portA` points to another application context instance with `--spring.cloud.function.definition=uppercase|concat`. The result of the `reverse` function are sent to `uppercase|concat` function via RSocket and the result of that are fed into `wrap` function.
 
-
-### Order of priority for routing instructions
-
-As you can see from the preceding example, we provide function definition as a value to `route(..)` operator of `RSocketRequester.Builder`.
-However that is not the only way. You can also use standard `spring.cloud.function.definition` property as well as `spring.cloud.function.routing-expression` or property or `MessageRoutingCallback` on the server side of the RSocket interaction (see "Function Routing and Filtering" section of reference manual). 
-This raises a question of _order_ and _priorities_ when it comes to reconsiling a conflict in the event several ways of providing definition are used. So it is a mater of clearly stating the rule whcih is:
-
-***1 - MessageRoutingCallback***
-The `MessageRoutingCallback` takes precedence over all other ways of providing function definition resolution.
-
-***2 - spring.cloud.function.routing-expression***
-The `spring.cloud.function.routing-expression` property takes next precedence. So, in the event you may have also use `route(..)` operator or `spring.cloud.function.definition` property, they will be ignored if `spring.cloud.function.routing-expression` property is provided.
-
-***3 - route(..)***
-The next in line is `route(..)` operator. So in the event there are no `spring.cloud.function.routing-expression` property but you defined `spring.cloud.function.definition` property, it will be ignored in favor of definition provided by the `route(..)` operator.
-
-***4 - spring.cloud.function.definition***
-The `spring.cloud.function.definition` property is the last in the list allowing you to simply `route("")` to empty string.
-
-
+### Samples
 
 You can also look at one of the [RSocket samples](https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-cloudevent-rsocket) that is also introduces you to Cloud Events 
