@@ -195,7 +195,7 @@ you to use Spring Expression Language (SpEL) and provide SpEL expression that sh
 into definition of a function (as described above).
 
 NOTE: SpEL evaluation context's root object is the
-actual input argument, so in he case of `Message<?>` you can construct expression that has access
+actual input argument, so in the case of `Message<?>` you can construct expression that has access
 to both `payload` and `headers` (e.g., `spring.cloud.function.routing-expression=headers.function_name`).
 
 In specific execution environments/models the adapters are responsible to translate and communicate
