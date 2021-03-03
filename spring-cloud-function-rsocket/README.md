@@ -62,6 +62,19 @@ Message<Person> result = rsocketRequesterBuilder.tcp("localhost", port)
 ```
 Aside from sending `Message`, note the usage of `ParameterizedTypeReference` to specify that we want not only `Message` in return but also `Message` with specific payload type. 
 
+### Function Composition over RSocket (Distributed Function Composition)
+
+By now you shoudl be familiar with the standard function composition feature (e.g., `functionA|functionB|functionC`). This feature allows you to compose several co-located functions into one. But what if these functions are not co-located and instead separated by the network?
+
+With RSocket and our _distributed function composition_ feature you can still do it. So let's look at the example.
+
+Let's say we have `uppercase` function available to you locally and `reverse` function exposed via separate RSocket and you wan to compose `uppercase` and `reverse` into a single function. Had they been both available locally it would have ben as simple as `uppercase|reverse`, but given that `reverse` function is not locally available we need a way to specify in our composition instruction the fact that we want to compose with a remote function. For that we're using _redirect_ operator to specify our composition instruction. So it woudl look ike this `uppercase>localhost:2222`, where `localhost:2222` is the host/port combination where `reverse` function is running. 
+What's interesting is that remote function can in itself be a result of function composition (local or remote), so effectively you are composing `uppercase` with function definition (which could be composition) that is running on `localhost:2222`. 
+
+The complete example is available in [this test case](https://github.com/spring-cloud/spring-cloud-function/blob/0e3a27a392f5c69727d909db26c2ba6aa0344cfd/spring-cloud-function-rsocket/src/test/java/org/springframework/cloud/function/rsocket/RSocketAutoConfigurationTests.java#L371). And as you can see it is a bit more complex to showcase thi feature. In this test we are composing `reverse` function with `uppercase|concat` running remotely and then with `wrap` function running locally as if `reverse|uppercase|concat|wrap`.
+So you can see `--spring.cloud.function.definition=reverse>localhost:" + portA + "|wrap"` where `localhost:" + portA` points to another application context instance with `--spring.cloud.function.definition=uppercase|concat`. The result of the `reverse` function are sent to `uppercase|concat` function via RSocket and the result of that are fed into `wrap` function.
+
+
 ### Order of priority for routing instructions
 
 As you can see from the preceding example, we provide function definition as a value to `route(..)` operator of `RSocketRequester.Builder`.
