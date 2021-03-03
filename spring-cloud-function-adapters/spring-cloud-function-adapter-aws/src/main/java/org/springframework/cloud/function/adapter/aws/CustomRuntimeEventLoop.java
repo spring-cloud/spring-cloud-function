@@ -122,7 +122,7 @@ public class CustomRuntimeEventLoop {
 	}
 
 	private static FunctionInvocationWrapper locateFunction(FunctionCatalog functionCatalog, MediaType contentType) {
-		String handlerName = System.getenv("_HANDLER");
+		String handlerName = System.getenv("DEFAULT_HANDLER");
 		FunctionInvocationWrapper function = functionCatalog.lookup(handlerName, contentType.toString());
 		if (function == null) {
 			handlerName = System.getenv("spring.cloud.function.definition");
