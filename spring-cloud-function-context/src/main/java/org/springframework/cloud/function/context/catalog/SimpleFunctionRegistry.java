@@ -842,7 +842,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					}
 					else if (!FunctionTypeUtils.isMessage(type)) {
 						if (this.payloadIsSpecialType(((Message<?>) value).getPayload())) {
-							return ((Message<?>) value).getPayload();
+							return FunctionTypeUtils.isMessage(type) ? value : null;
 						}
 						if (!((Message<?>) convertedValue).getHeaders().containsKey("scf-sink-url")) {
 							convertedValue = ((Message<?>) convertedValue).getPayload();
