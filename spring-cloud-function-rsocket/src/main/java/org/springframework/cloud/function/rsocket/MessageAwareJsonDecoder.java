@@ -16,19 +16,27 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+import org.reactivestreams.Publisher;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.codec.AbstractDecoder;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+
+import reactor.core.publisher.Flux;
 
 /**
  *
@@ -36,7 +44,7 @@ import org.springframework.util.MimeTypeUtils;
  * @since 3.1
  *
  */
-class MessageAwareJsonDecoder extends Jackson2JsonDecoder {
+class MessageAwareJsonDecoder extends AbstractDecoder<Object> {
 
 	private final JsonMapper jsonMapper;
 
@@ -49,22 +57,25 @@ class MessageAwareJsonDecoder extends Jackson2JsonDecoder {
 		return mimeType.isCompatibleWith(MimeTypeUtils.APPLICATION_JSON);
 	}
 
-
 	@SuppressWarnings("unchecked")
 	@Override
 	public Object decode(DataBuffer dataBuffer, ResolvableType targetType,
-			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints) throws DecodingException {
+			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints)
+			throws DecodingException {
 
-		ResolvableType type = ResolvableType.forClassWithGenerics(Map.class, String.class, Object.class);
-		Map<String, Object> messageMap = (Map<String, Object>) super.decode(dataBuffer, type, mimeType, hints);
+		ResolvableType type = ResolvableType.forClassWithGenerics(Map.class, String.class,
+				Object.class);
+		Map<String, Object> messageMap = (Map<String, Object>) doDecode(dataBuffer, type,
+				mimeType, hints);
 		if (messageMap.containsKey(FunctionRSocketUtils.PAYLOAD)) {
 			Type requestedType = FunctionTypeUtils.getGenericType(targetType.getType());
-			Object payload = this.jsonMapper.fromJson(messageMap.get(FunctionRSocketUtils.PAYLOAD), requestedType);
+			Object payload = this.jsonMapper.fromJson(
+					messageMap.get(FunctionRSocketUtils.PAYLOAD), requestedType);
 
 			if (FunctionTypeUtils.isMessage(targetType.getType())) {
-				return MessageBuilder.withPayload(payload)
-					.copyHeaders((Map<String, ?>) messageMap.get(FunctionRSocketUtils.HEADERS))
-					.build();
+				return MessageBuilder.withPayload(payload).copyHeaders(
+						(Map<String, ?>) messageMap.get(FunctionRSocketUtils.HEADERS))
+						.build();
 			}
 			else {
 				return payload;
@@ -73,6 +84,45 @@ class MessageAwareJsonDecoder extends Jackson2JsonDecoder {
 		else {
 			return messageMap;
 		}
+	}
 
+	private Object doDecode(DataBuffer dataBuffer, ResolvableType targetType,
+			@Nullable MimeType mimeType, @Nullable Map<String, Object> hints)
+			throws DecodingException {
+
+		try {
+			byte[] data = toByteArray(dataBuffer.asInputStream());
+			return this.jsonMapper.fromJson(data, targetType.getType());
+		}
+		catch (IOException ex) {
+			throw new IllegalStateException(ex);
+		}
+		finally {
+			DataBufferUtils.release(dataBuffer);
+		}
+	}
+
+	private byte[] toByteArray(final InputStream input) throws IOException {
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			copyLarge(input, output, new byte[2048]);
+			return output.toByteArray();
+		}
+	}
+
+	private long copyLarge(final InputStream input, final OutputStream output,
+			final byte[] buffer) throws IOException {
+		long count = 0;
+		int n;
+		while (-1 != (n = input.read(buffer))) {
+			output.write(buffer, 0, n);
+			count += n;
+		}
+		return count;
+	}
+
+	@Override
+	public Flux<Object> decode(Publisher<DataBuffer> inputStream,
+			ResolvableType elementType, MimeType mimeType, Map<String, Object> hints) {
+		return Flux.from(inputStream).map(buffer -> decode(buffer, elementType, mimeType, hints));
 	}
 }
