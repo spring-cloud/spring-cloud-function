@@ -20,28 +20,35 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.reactivestreams.Publisher;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.codec.AbstractEncoder;
+import org.springframework.core.codec.ByteArrayEncoder;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
+import reactor.core.publisher.Flux;
+
 /**
  *
+ * An extended implementation
  * @author Oleg Zhurakousky
  * @since 3.1
  *
  */
-class MessageAwareJsonEncoder extends Jackson2JsonEncoder {
+class MessageAwareJsonEncoder extends AbstractEncoder<Object> {
 
 	private final JsonMapper mapper;
 
 	private final boolean isClient;
+
+	private final ByteArrayEncoder byteArrayEncoder;
 
 	MessageAwareJsonEncoder(JsonMapper mapper) {
 		this(mapper, false);
@@ -50,6 +57,7 @@ class MessageAwareJsonEncoder extends Jackson2JsonEncoder {
 	MessageAwareJsonEncoder(JsonMapper mapper, boolean isClient) {
 		this.mapper = mapper;
 		this.isClient = isClient;
+		this.byteArrayEncoder = new ByteArrayEncoder();
 	}
 
 	@Override
@@ -81,6 +89,15 @@ class MessageAwareJsonEncoder extends Jackson2JsonEncoder {
 			}
 			value = Collections.singletonMap(FunctionRSocketUtils.PAYLOAD, value);
 		}
-		return super.encodeValue(value, bufferFactory, valueType, mimeType, hints);
+		byte[] data = this.mapper.toJson(value);
+		return this.byteArrayEncoder.encodeValue(data, bufferFactory, valueType, mimeType, hints);
+	}
+
+	@Override
+	public Flux<DataBuffer> encode(Publisher<? extends Object> inputStream,
+			DataBufferFactory bufferFactory, ResolvableType elementType,
+			MimeType mimeType, Map<String, Object> hints) {
+		return Flux.from(inputStream).map(value ->
+			encodeValue(value, bufferFactory, elementType, mimeType, hints));
 	}
 }
