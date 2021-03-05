@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -29,23 +30,36 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+
 /**
  *
  * @author Oleg Zhurakousky
  * @since 3.1
+ *
  */
-class ServerMessageEncoder extends Jackson2JsonEncoder {
+class MessageAwareJsonEncoder extends Jackson2JsonEncoder {
 
 	private final JsonMapper mapper;
 
+	private final boolean isClient;
 
-	ServerMessageEncoder(JsonMapper mapper) {
+	MessageAwareJsonEncoder(JsonMapper mapper) {
+		this(mapper, false);
+	}
+
+	MessageAwareJsonEncoder(JsonMapper mapper, boolean isClient) {
 		this.mapper = mapper;
+		this.isClient = isClient;
 	}
 
 	@Override
 	public boolean canEncode(ResolvableType elementType, MimeType mimeType) {
-		return mimeType.isCompatibleWith(MimeTypeUtils.APPLICATION_JSON);
+		boolean canEncode = mimeType.isCompatibleWith(MimeTypeUtils.APPLICATION_JSON);
+		if (canEncode && this.isClient) {
+			canEncode = (FunctionTypeUtils.isMessage(elementType.getType())
+					|| Map.class.isAssignableFrom(FunctionTypeUtils.getRawType(elementType.getType())));
+		}
+		return canEncode;
 	}
 
 
@@ -57,10 +71,11 @@ class ServerMessageEncoder extends Jackson2JsonEncoder {
 	@Override
 	public DataBuffer encodeValue(Object value, DataBufferFactory bufferFactory,
 			ResolvableType valueType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
+
 		if (value instanceof Message) {
 			value = FunctionRSocketUtils.sanitizeMessageToMap((Message<?>) value);
 		}
-		else {
+		else if (!(value instanceof Map)) {
 			if (JsonMapper.isJsonString(value)) {
 				value = this.mapper.fromJson(value, valueType.getType());
 			}

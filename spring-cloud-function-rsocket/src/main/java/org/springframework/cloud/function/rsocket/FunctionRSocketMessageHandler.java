@@ -108,9 +108,11 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 	}
 
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public void afterPropertiesSet() {
-		setEncoders(Collections.singletonList(new ServerMessageEncoder(this.jsonMapper)));
+		List encoders = this.getEncoders();
+		encoders.set(0, new MessageAwareJsonEncoder(this.jsonMapper));
 		super.afterPropertiesSet();
 	}
 
@@ -248,9 +250,14 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 							// could be array, map or string
 							Object structure = this.jsonMapper.fromJson(value, Object.class);
 							if (structure instanceof Map) {
-								return MessageBuilder.withPayload(((Map<String, ?>) structure).remove(FunctionRSocketUtils.PAYLOAD))
-										.copyHeaders((Map<String, ?>) ((Map<String, ?>) structure).get(FunctionRSocketUtils.HEADERS))
-										.build();
+								if (((Map<String, ?>) structure).containsKey(FunctionRSocketUtils.PAYLOAD)) {
+									return MessageBuilder.withPayload(((Map<String, ?>) structure).remove(FunctionRSocketUtils.PAYLOAD))
+											.copyHeaders((Map<String, ?>) ((Map<String, ?>) structure).get(FunctionRSocketUtils.HEADERS))
+											.build();
+								}
+								else {
+									return MessageBuilder.withPayload(structure).build();
+								}
 							}
 						}
 						return value;

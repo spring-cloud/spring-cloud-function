@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import org.springframework.boot.WebApplicationType;
@@ -226,6 +227,32 @@ public class MessagingTests {
 		}
 	}
 
+	@Test
+	public void testPojoToMessageMap() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(MessagingConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+			Person p = new Person();
+			p.setName("Ricky");
+
+			Message<Map<String, Object>> result = rsocketRequesterBuilder.tcp("localhost", port)
+				.route("echoMessageMap")
+				.data(p)
+				.retrieveMono(new ParameterizedTypeReference<Message<Map<String, Object>>>() {
+				})
+				.block();
+
+			assertThat(((Map) result.getPayload()).get("name")).isEqualTo("Ricky");
+		}
+	}
+
 
 
 	@EnableAutoConfiguration
@@ -236,6 +263,20 @@ public class MessagingTests {
 		public Function<Person, String> pojoToString() {
 			return v -> {
 				return v.getName().toUpperCase();
+			};
+		}
+
+		@Bean
+		public Function<Message<Map<String, Object>>, Message<Map<String, Object>>> echoMessageMap() {
+			return v -> {
+				return v;
+			};
+		}
+
+		@Bean
+		public Function<Flux<Message<Map<String, Object>>>, Flux<Message<Map<String, Object>>>> echoMessageMapReactive() {
+			return v -> {
+				return v;
 			};
 		}
 
