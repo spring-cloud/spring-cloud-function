@@ -127,10 +127,7 @@ final class FunctionRSocketUtils {
 					key.equals(MessageHeaders.CONTENT_TYPE)) {
 				headers.put(key, message.getHeaders().get(key).toString());
 			}
-			else if (!key.equals("rsocketFrameType") &&
-					!key.equals("rsocketRequester") &&
-					!key.equals("rsocketResponse") &&
-					!key.equals("dataBufferFactory")) {
+			else if (!key.equals("rsocketRequester")) {
 				headers.put(key, message.getHeaders().get(key));
 			}
 		}

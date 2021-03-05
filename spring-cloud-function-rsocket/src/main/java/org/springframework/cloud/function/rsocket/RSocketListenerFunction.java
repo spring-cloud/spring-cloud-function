@@ -97,10 +97,16 @@ class RSocketListenerFunction implements Function<Message<Flux<Object>>, Publish
 		Flux<?> dataFlux =
 			messageToProcess.getPayload()
 				.map((payload) -> {
-					if (!(payload instanceof Message)) {
-						payload = MessageBuilder.createMessage(payload, messageToProcess.getHeaders());
+					if (payload instanceof Message) {
+						return MessageBuilder.fromMessage((Message) payload).copyHeadersIfAbsent(messageToProcess.getHeaders()).build();
 					}
-					return payload;
+					else {
+						return MessageBuilder.withPayload(payload).copyHeadersIfAbsent(messageToProcess.getHeaders()).build();
+					}
+//					if (!(payload instanceof Message)) {
+//						payload = MessageBuilder.createMessage(payload, messageToProcess.getHeaders());
+//					}
+//					return payload;
 				});
 		if (this.targetFunction.getInputType() != null && FunctionTypeUtils.isPublisher(this.targetFunction.getInputType())) {
 			dataFlux = dataFlux.transform((Function) this.targetFunction);
