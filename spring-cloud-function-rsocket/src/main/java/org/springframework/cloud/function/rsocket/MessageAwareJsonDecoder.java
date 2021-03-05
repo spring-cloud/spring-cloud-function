@@ -28,6 +28,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  *
@@ -35,17 +36,17 @@ import org.springframework.util.MimeType;
  * @since 3.1
  *
  */
-class ClientMessageDecoder extends Jackson2JsonDecoder {
+class MessageAwareJsonDecoder extends Jackson2JsonDecoder {
 
 	private final JsonMapper jsonMapper;
 
-	ClientMessageDecoder(JsonMapper jsonMapper) {
+	MessageAwareJsonDecoder(JsonMapper jsonMapper) {
 		this.jsonMapper = jsonMapper;
 	}
 
 	@Override
 	public boolean canDecode(ResolvableType elementType, @Nullable MimeType mimeType) {
-		return true;
+		return mimeType.isCompatibleWith(MimeTypeUtils.APPLICATION_JSON);
 	}
 
 
@@ -56,17 +57,22 @@ class ClientMessageDecoder extends Jackson2JsonDecoder {
 
 		ResolvableType type = ResolvableType.forClassWithGenerics(Map.class, String.class, Object.class);
 		Map<String, Object> messageMap = (Map<String, Object>) super.decode(dataBuffer, type, mimeType, hints);
+		if (messageMap.containsKey(FunctionRSocketUtils.PAYLOAD)) {
+			Type requestedType = FunctionTypeUtils.getGenericType(targetType.getType());
+			Object payload = this.jsonMapper.fromJson(messageMap.get(FunctionRSocketUtils.PAYLOAD), requestedType);
 
-		Type requestedType = FunctionTypeUtils.getGenericType(targetType.getType());
-		Object payload = this.jsonMapper.fromJson(messageMap.get(FunctionRSocketUtils.PAYLOAD), requestedType);
-
-		if (FunctionTypeUtils.isMessage(targetType.getType())) {
-			return MessageBuilder.withPayload(payload)
-				.copyHeaders((Map<String, ?>) messageMap.get(FunctionRSocketUtils.HEADERS))
-				.build();
+			if (FunctionTypeUtils.isMessage(targetType.getType())) {
+				return MessageBuilder.withPayload(payload)
+					.copyHeaders((Map<String, ?>) messageMap.get(FunctionRSocketUtils.HEADERS))
+					.build();
+			}
+			else {
+				return payload;
+			}
 		}
 		else {
-			return payload;
+			return messageMap;
 		}
+
 	}
 }

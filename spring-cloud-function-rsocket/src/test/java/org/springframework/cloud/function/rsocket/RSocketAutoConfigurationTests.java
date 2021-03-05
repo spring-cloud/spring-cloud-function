@@ -340,6 +340,22 @@ public class RSocketAutoConfigurationTests {
 				.expectNext("HELLO")
 				.expectComplete()
 				.verify();
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercaseReactive")
+				.data("hello")
+				.retrieveFlux(String.class)
+				.as(StepVerifier::create)
+				.expectNext("HELLO")
+				.expectComplete()
+				.verify();
+			rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercaseReactive")
+				.data("hello")
+				.retrieveFlux(String.class)
+				.as(StepVerifier::create)
+				.expectNext("HELLO")
+				.expectComplete()
+				.verify();
 		}
 	}
 

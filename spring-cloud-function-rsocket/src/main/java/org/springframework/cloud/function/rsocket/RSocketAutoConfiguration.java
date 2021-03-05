@@ -16,22 +16,20 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.rsocket.RSocketMessageHandlerCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.rsocket.messaging.RSocketStrategiesCustomizer;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.json.JsonMapper;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.RSocketStrategies;
+import org.springframework.messaging.rsocket.RSocketStrategies.Builder;
 
 /**
  * Main configuration class for components required to support RSocket integration with
@@ -48,23 +46,17 @@ import org.springframework.messaging.rsocket.RSocketStrategies;
 class RSocketAutoConfiguration {
 
 	@Bean
-	public BeanPostProcessor rSocketBuilderPostProcessor(ApplicationContext applicationContext) {
-		return new BeanPostProcessor() {
+	RSocketStrategiesCustomizer rSocketStrategiesCustomizer(JsonMapper jsonMapper) {
+		return new RSocketStrategiesCustomizer() {
 			@Override
-			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-				if (bean instanceof RSocketRequester.Builder) {
-					JsonMapper mapper = applicationContext.getBean(JsonMapper.class);
-					RSocketStrategies strategies = RSocketStrategies.builder()
-							.encoders(encoders -> {
-								encoders.add(0, new ClientMessageEncoder(mapper));
-							})
-							.decoders(decoders -> {
-								decoders.add(0, new ClientMessageDecoder(mapper));
-							})
-							.build();
-					bean = ((RSocketRequester.Builder) bean).rsocketStrategies(strategies);
-				}
-				return bean;
+			public void customize(Builder strategies) {
+				strategies
+				.encoders(encoders -> {
+					encoders.add(0, new MessageAwareJsonEncoder(jsonMapper, true));
+				})
+				.decoders(decoders -> {
+					decoders.add(0, new MessageAwareJsonDecoder(jsonMapper));
+				});
 			}
 		};
 	}
@@ -72,7 +64,7 @@ class RSocketAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	@Primary
-	public FunctionRSocketMessageHandler functionRSocketMessageHandler(RSocketStrategies rSocketStrategies,
+	FunctionRSocketMessageHandler functionRSocketMessageHandler(RSocketStrategies rSocketStrategies,
 		ObjectProvider<RSocketMessageHandlerCustomizer> customizers, FunctionCatalog functionCatalog,
 		FunctionProperties functionProperties, JsonMapper jsonMapper) {
 
