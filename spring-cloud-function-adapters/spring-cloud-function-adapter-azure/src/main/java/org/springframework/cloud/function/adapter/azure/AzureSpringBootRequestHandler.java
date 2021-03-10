@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 import com.microsoft.azure.functions.ExecutionContext;
+import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.OutputBinding;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -29,6 +30,8 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * @param <I> input type
@@ -36,6 +39,7 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
  * @author Soby Chacko
  * @author Oleg Zhurakousky
  */
+@SuppressWarnings("deprecation")
 public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionAdapterInitializer<ExecutionContext> {
 
 	@SuppressWarnings("rawtypes")
@@ -86,6 +90,9 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 			}
 			else {
 				Publisher<?> events = input == null ? Mono.empty() : extract(convertEvent(input));
+				if (events instanceof Flux) {
+					events = Flux.from(events).map(v -> this.toMessage(v, context));
+				}
 				Publisher<?> output = thisInitializer.apply(events);
 				O result = result(input, output);
 				if (context != null) {
@@ -99,6 +106,23 @@ public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionA
 				context.getLogger().throwing(getClass().getName(), "handle", ex);
 			}
 			throw new RuntimeException(ex);
+		}
+	}
+
+	private Message<?> toMessage(Object value, ExecutionContext context) {
+		if (value instanceof Message) {
+			return (Message<?>) value;
+		}
+		else {
+			Object payload = value;
+			if (value instanceof HttpRequestMessage) {
+				payload = ((HttpRequestMessage) value).getBody();
+				if (payload == null) {
+					payload = ((HttpRequestMessage) value).getQueryParameters();
+				}
+			}
+			return MessageBuilder.withPayload(payload)
+					.setHeader(AbstractSpringFunctionAdapterInitializer.TARGET_EXECUTION_CTX_NAME, context).build();
 		}
 	}
 
