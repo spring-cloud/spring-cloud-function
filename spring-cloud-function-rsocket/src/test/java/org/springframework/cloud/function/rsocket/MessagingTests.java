@@ -269,6 +269,8 @@ public class MessagingTests {
 		@Bean
 		public Function<Message<Map<String, Object>>, Message<Map<String, Object>>> echoMessageMap() {
 			return v -> {
+				assertThat(v.getHeaders()).containsKey("rsocketFrameType");
+				assertThat(v.getHeaders()).containsKey("lookupDestination");
 				return v;
 			};
 		}
