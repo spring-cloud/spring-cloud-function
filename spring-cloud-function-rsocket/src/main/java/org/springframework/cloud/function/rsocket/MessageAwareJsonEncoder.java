@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.ResolvableType;
@@ -33,11 +35,9 @@ import org.springframework.messaging.Message;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
-import reactor.core.publisher.Flux;
+
 
 /**
- *
- * An extended implementation
  * @author Oleg Zhurakousky
  * @since 3.1
  *
