@@ -24,6 +24,8 @@ import java.lang.reflect.Type;
 import java.util.Map;
 
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.ResolvableType;
@@ -35,8 +37,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-
-import reactor.core.publisher.Flux;
 
 /**
  *
