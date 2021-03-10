@@ -87,12 +87,9 @@ public abstract class JsonMapper {
 					return (T) json;
 				}
 			}
-			if (json instanceof String && !isJsonString(json) && (String.class == type || byte[].class == type)) {
+			if (json instanceof String && (String.class == type || byte[].class == type)) {
 				return String.class == type ? (T) json : (T) ((String) json).getBytes(StandardCharsets.UTF_8);
 			}
-//			if (String.class == type && json instanceof String && !isJsonString(json)) {
-//				return (T) json;
-//			}
 			else {
 				return this.doFromJson(json, type);
 			}
