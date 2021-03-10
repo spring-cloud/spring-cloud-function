@@ -109,7 +109,9 @@ public class AzureSpringBootHttpRequestHandler<I> extends
 					.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.OK)
 					.body(message.getPayload());
 			for (Map.Entry<String, Object> entry : message.getHeaders().entrySet()) {
-				builder = builder.header(entry.getKey(), entry.getValue().toString());
+				if (entry.getValue() != null) {
+					builder = builder.header(entry.getKey(), entry.getValue().toString());
+				}
 			}
 			return builder.build();
 		}

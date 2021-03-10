@@ -32,6 +32,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -194,8 +195,10 @@ public class AzureSpringBootRequestHandlerTests {
 	protected static class AutoConfig {
 
 		@Bean
-		public Function<Foo, Bar> uppercase(ExecutionContext targetContext) {
-			return foo -> {
+		public Function<Message<Foo>, Bar> uppercase() {
+			return message -> {
+				Foo foo = message.getPayload();
+				ExecutionContext targetContext = (ExecutionContext) message.getHeaders().get("executionContext");
 				targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
 				return new Bar(foo.getValue().toUpperCase());
 			};
@@ -232,17 +235,21 @@ public class AzureSpringBootRequestHandlerTests {
 	protected static class MultiConfig {
 
 		@Bean
-		public Function<Foo, Bar> uppercase(ExecutionContext context) {
+		public Function<Message<Foo>, Bar> uppercase() {
 
-			return foo -> {
+			return message -> {
+				ExecutionContext context = (ExecutionContext) message.getHeaders().get("executionContext");
+				Foo foo = message.getPayload();
 				context.getLogger().info("Executing uppercase function");
 				return new Bar(foo.getValue().toUpperCase());
 			};
 		}
 
 		@Bean
-		public Function<Bar, Foo> lowercase(ExecutionContext context) {
-			return bar -> {
+		public Function<Message<Bar>, Foo> lowercase() {
+			return message -> {
+				ExecutionContext context = (ExecutionContext) message.getHeaders().get("executionContext");
+				Bar bar = message.getPayload();
 				context.getLogger().info("Executing lowercase function");
 				return new Foo(bar.getValue().toLowerCase());
 			};
