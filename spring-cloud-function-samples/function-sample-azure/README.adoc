@@ -1,4 +1,5 @@
-You can run this Azure function locally, similar to other Spring Cloud Function samples, however this time by using the Azure Maven plugin, as the Microsoft Azure functions execution context must be available.
+You can run this Azure function locally, similar to other Spring Cloud Function samples, however 
+this time by using the Azure Maven plugin, as the Microsoft Azure functions execution context must be available.
 
 ----
 # Build and package 
@@ -15,8 +16,9 @@ or
 $ mvn azure-functions:run
 ----
 
-The `uppercase` function takes `Function<String, String> uppercase()` and it's input is JSON, therefore we need to
-provide the appropriate content-type (in this case `application/json`). The function iterates then over each element and returns its `uppercase` mapped value.
+The `uppercase` function takes `Function<String, String> uppercase()` and its expected input is JSON map, therefore we need to
+provide the appropriate content-type (in this case `application/json`). The function iterates then over each element 
+and returns its `uppercase` mapped value.
 
 Test the function using cURL or HTTPie and notice that the URL is formed by concatenating `<function url>/api/<function name>`
 ----
@@ -32,6 +34,8 @@ $ http POST localhost:7071/api/uppercase greeting=hello name='your name'
   "name": "YOUR NAME"
 }
 ----
+
+The same is for `echo` function, however it will take any input since all it does is just echos it back. 
 
 To run locally on top of Azure Functions, and to deploy to your live Azure environment, you will need the Azure Functions Core Tools installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more details).
 

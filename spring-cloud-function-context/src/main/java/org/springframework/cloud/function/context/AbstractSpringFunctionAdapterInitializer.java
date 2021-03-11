@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import org.springframework.util.CollectionUtils;
  *
  * @deprecated since 3.1 in favor of individual implementations of invokers
  */
+@SuppressWarnings("rawtypes")
 @Deprecated
 public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Closeable {
 
@@ -74,11 +75,11 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 
 	private final Class<?> configurationClass;
 
-	private Function<Publisher<?>, Publisher<?>> function;
+	private Function function;
 
-	private Consumer<Publisher<?>> consumer;
+	private Consumer consumer;
 
-	private Supplier<Publisher<?>> supplier;
+	private Supplier supplier;
 
 	private FunctionRegistration<?> functionRegistration;
 
@@ -145,6 +146,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		return Object.class;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Function<Publisher<?>, Publisher<?>> getFunction() {
 		return function;
 	}
@@ -162,6 +164,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected Publisher<?> apply(Publisher<?> input) {
 		if (this.function != null) {
 			Object result = this.function.apply(input);
@@ -223,6 +226,19 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		return CollectionUtils.isEmpty(result) ? null : value;
 	}
 
+	protected void clear(String name) {
+		FunctionInvocationWrapper f = this.catalog.lookup(name);
+		if (f.isFunction()) {
+			this.function = f;
+		}
+		else if (f.isConsumer()) {
+			this.consumer = f;
+		}
+		else {
+			this.supplier = f;
+		}
+	}
+
 	private boolean isSingleInput(Function<?, ?> function, Object input) {
 		if (!(input instanceof Collection)) {
 			return true;
@@ -263,7 +279,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		throw new IllegalStateException("Unknown type " + type);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked" })
 	private <T> T getAndInstrumentFromContext(String name) {
 		this.functionRegistration =
 				new FunctionRegistration(context.getBean(name), name);
