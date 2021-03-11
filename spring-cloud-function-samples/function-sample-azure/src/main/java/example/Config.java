@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,11 @@ public class Config {
 	}
 
 	@Bean
+	public Function<Message<String>, String> echo() {
+		return message -> message.getPayload();
+	}
+
+	@Bean
 	public Function<Message<String>, String> uppercase(JsonMapper mapper) {
 		return message -> {
 			String value = message.getPayload();
@@ -46,7 +51,8 @@ public class Config {
 					map.forEach((k, v) -> map.put(k, v != null ? v.toUpperCase() : null));
 
 				if(context != null)
-					context.getLogger().info(new StringBuilder().append("Function: ").append(context.getFunctionName()).append(" is uppercasing ").append(value.toString()).toString());
+					context.getLogger().info(new StringBuilder().append("Function: ")
+							.append(context.getFunctionName()).append(" is uppercasing ").append(value.toString()).toString());
 
 				return mapper.toString(map);
 			} catch (Exception e) {
