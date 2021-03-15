@@ -2,18 +2,24 @@
 
 === Microsoft Azure
 
-The https://azure.microsoft.com[Azure] adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but invasive programming model, involving annotations in user code that are specific to the platform. The easiest way to use it with Spring Cloud is to extend a base class and write a method in it with the `@FunctionName` annotation which delegates to a base class method.
+The https://azure.microsoft.com[Azure] adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure 
+framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but 
+invasive programming model, involving annotations in user code that are specific to the platform. The easiest way to use it with 
+Spring Cloud is to extend a base class and write a method in it with the `@FunctionName` annotation which delegates to a base class method.
 
 
 This project provides an adapter layer for a Spring Cloud Function application onto Azure.
 You can write an app with a single `@Bean` of type `Function` and it will be deployable in Azure if you get the JAR file laid out right.
 
-There is an `AzureSpringBootRequestHandler` which you must extend, and provide the input and output types as annotated method parameters (enabling Azure to inspect the class and create JSON bindings). The base class has two useful methods (`handleRequest` and `handleOutput`) to which you can delegate the actual function call, so mostly the function will only ever have one line.
+There is an `org.springframework.cloud.function.adapter.azure.FunctionInvoker` which you must extend, and provide the 
+input and output types as annotated 
+method parameters (enabling Azure to inspect the class and create JSON bindings). The base class has two useful 
+methods (`handleRequest` and `handleOutput`) to which you can delegate the actual function call, so mostly the function will only ever have one line.
 
 Example:
 
 ```java
-public class FooHandler extends AzureSpringBootRequestHandler<Foo, Bar> {
+public class FooHandler extends FunctionInvoker<Foo, Bar> {
 	@FunctionName("uppercase")
 	public Bar execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
 			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<Foo>> request,
@@ -23,27 +29,38 @@ public class FooHandler extends AzureSpringBootRequestHandler<Foo, Bar> {
 }
 ```
 
-This Azure handler will delegate to a `Function<Foo,Bar>` bean (or a `Function<Publisher<Foo>,Publisher<Bar>>`). Some Azure triggers (e.g. `@CosmosDBTrigger`) result in a input type of `List` and in that case you can bind to `List` in the Azure handler, or `String` (the raw JSON). The `List` input delegates to a `Function` with input type `Map<String,Object>`, or `Publisher` or `List` of the same type. The output of the `Function` can be a `List` (one-for-one) or a single value (aggregation), and the output binding in the Azure declaration should match.
+This Azure handler will delegate to a `Function<Foo,Bar>` bean (or a `Function<Publisher<Foo>,Publisher<Bar>>`). Some Azure 
+triggers (e.g. `@CosmosDBTrigger`) result in a input type of `List` and in that case you can bind to `List` in the Azure handler, 
+or `String` (the raw JSON). The `List` input delegates to a `Function` with input type `Map<String,Object>`, or `Publisher` or `List` of 
+the same type. The output of the `Function` can be a `List` (one-for-one) or a single value (aggregation), and the output binding in the 
+Azure declaration should match.
 
-If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `function.name`. Or if you make the `@FunctionName` in the Azure handler method match the function name it should work that way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud `FunctionCatalog` so the default function names are the same as the bean names.
+If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring 
+`function.name`. Or if you make the `@FunctionName` in the Azure handler method match the function name it should work that 
+way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud `FunctionCatalog` so the default 
+function names are the same as the bean names.
 
 ==== Accessing Azure ExecutionContext
 
 Some time there is a need to access the target execution context provided by Azure runtime in the form of `com.microsoft.azure.functions.ExecutionContext`.
 For example one of such needs is logging, so it can appear in the Azure console.
 
-For that purpose Spring Cloud Function will register `ExecutionContext` as bean in the Application context, so it could be injected into your function.
+For that purpose we propagate `ExecutionContext` as Message header under `executionContext` name, so all you need is access it 
+is have your function accept a Message and access this header.
+
+Spring Cloud Function will register `ExecutionContext` as bean in the Application context, so it could be injected into your function.
 For example
 ```java
 @Bean
-public Function<Foo, Bar> uppercase(ExecutionContext targetContext) {
-	return foo -> {
+public Function<Message<Foo>, Bar> uppercase() {
+	return message -> {
+		ExecutionContext targetContext = message.getHeaders().get("executionContext");
 		targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
-		return new Bar(foo.getValue().toUpperCase());
+		return new Bar(message.getPayload().getValue().toUpperCase());
 	};
 }
 ```
-Normally type-based injection should suffice, however if need to you can also utilise the bean name under which it is registered which is `targetExecutionContext`.
+With Message you will also have access to additional Azure meta information as Message headers that come as part of your request.
 
 
 ==== Notes on JAR Layout

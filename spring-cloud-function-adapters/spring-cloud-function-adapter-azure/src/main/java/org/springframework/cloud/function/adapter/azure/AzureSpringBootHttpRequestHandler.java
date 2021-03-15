@@ -39,7 +39,9 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Markus Gulden
  *
  * @since 2.1
+ * @deprecated since 3.2 in favor of {@link FunctionInvoker}
  */
+@Deprecated
 public class AzureSpringBootHttpRequestHandler<I> extends
 		AzureSpringBootRequestHandler<HttpRequestMessage<I>, HttpResponseMessage> {
 

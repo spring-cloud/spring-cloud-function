@@ -25,12 +25,12 @@ import com.microsoft.azure.functions.annotation.HttpTrigger;
 
 import java.util.Optional;
 
-import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHandler;
+import org.springframework.cloud.function.adapter.azure.FunctionInvoker;
 
 /**
  * @author Soby Chacko
  */
-public class UppercaseHandler extends AzureSpringBootRequestHandler<String, String> {
+public class UppercaseHandler extends FunctionInvoker<String, String> {
 
 	@FunctionName("uppercase")
 	public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,

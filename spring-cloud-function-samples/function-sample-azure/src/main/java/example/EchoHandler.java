@@ -25,12 +25,12 @@ import com.microsoft.azure.functions.annotation.HttpTrigger;
 
 import java.util.Optional;
 
-import org.springframework.cloud.function.adapter.azure.AzureSpringBootRequestHandler;
+import org.springframework.cloud.function.adapter.azure.FunctionInvoker;
 
 /**
  * @author Soby Chacko
  */
-public class EchoHandler extends AzureSpringBootRequestHandler<String, String> {
+public class EchoHandler extends FunctionInvoker<String, String> {
 
 	@FunctionName("echo")
 	public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
