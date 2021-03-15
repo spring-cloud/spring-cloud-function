@@ -49,6 +49,7 @@ class MessageAwareJsonDecoder extends AbstractDecoder<Object> {
 	private final JsonMapper jsonMapper;
 
 	MessageAwareJsonDecoder(JsonMapper jsonMapper) {
+		super(MimeTypeUtils.APPLICATION_JSON);
 		this.jsonMapper = jsonMapper;
 	}
 

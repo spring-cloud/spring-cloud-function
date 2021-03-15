@@ -55,6 +55,7 @@ class MessageAwareJsonEncoder extends AbstractEncoder<Object> {
 	}
 
 	MessageAwareJsonEncoder(JsonMapper mapper, boolean isClient) {
+		super(MimeTypeUtils.APPLICATION_JSON);
 		this.mapper = mapper;
 		this.isClient = isClient;
 		this.byteArrayEncoder = new ByteArrayEncoder();
