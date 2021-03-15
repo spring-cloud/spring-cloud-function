@@ -39,8 +39,10 @@ import org.springframework.messaging.support.MessageBuilder;
  * @param <O> result type
  * @author Soby Chacko
  * @author Oleg Zhurakousky
+ *
+ * @deprecated since 3.2 in favor of {@link FunctionInvoker}
  */
-@SuppressWarnings("deprecation")
+@Deprecated
 public class AzureSpringBootRequestHandler<I, O> extends AbstractSpringFunctionAdapterInitializer<ExecutionContext> {
 
 	@SuppressWarnings("rawtypes")

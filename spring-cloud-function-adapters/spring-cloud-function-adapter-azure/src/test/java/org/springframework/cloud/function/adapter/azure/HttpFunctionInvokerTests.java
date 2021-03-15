@@ -46,12 +46,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Markus Gulden
  */
-public class AzureSpringBootHttpRequestHandlerTests {
+public class HttpFunctionInvokerTests {
 
-	private AzureSpringBootHttpRequestHandler<?> handler = null;
+	private HttpFunctionInvoker<?> handler = null;
 
-	<I> AzureSpringBootHttpRequestHandler<I> handler(Class<?> config) {
-		AzureSpringBootHttpRequestHandler<I> handler = new AzureSpringBootHttpRequestHandler<I>(
+	<I> HttpFunctionInvoker<I> handler(Class<?> config) {
+		HttpFunctionInvoker<I> handler = new HttpFunctionInvoker<I>(
 				config);
 		this.handler = handler;
 		return handler;
@@ -59,7 +59,7 @@ public class AzureSpringBootHttpRequestHandlerTests {
 
 	@Test
 	public void testWithBody() {
-		AzureSpringBootHttpRequestHandler<Foo> handler = handler(
+		HttpFunctionInvoker<Foo> handler = handler(
 				FunctionMessageBodyConfig.class);
 		HttpRequestMessageStub<Foo> request = new HttpRequestMessageStub<Foo>();
 		request.setBody(new Foo("foo"));
@@ -75,7 +75,7 @@ public class AzureSpringBootHttpRequestHandlerTests {
 
 	@Test
 	public void testWithRequestParameters() throws URISyntaxException {
-		AzureSpringBootHttpRequestHandler<Foo> handler = handler(
+		HttpFunctionInvoker<Foo> handler = handler(
 				FunctionMessageEchoReqParametersConfig.class);
 		HttpRequestMessageStub<Foo> request = new HttpRequestMessageStub<Foo>();
 		request.setUri(new URI("http://localhost:8080/pathValue"));
@@ -96,7 +96,7 @@ public class AzureSpringBootHttpRequestHandlerTests {
 
 	@Test
 	public void testWithEmptyBody() {
-		AzureSpringBootHttpRequestHandler<Foo> handler = handler(
+		HttpFunctionInvoker<Foo> handler = handler(
 				FunctionMessageConsumerConfig.class);
 		HttpRequestMessageStub<Foo> request = new HttpRequestMessageStub<Foo>();
 
