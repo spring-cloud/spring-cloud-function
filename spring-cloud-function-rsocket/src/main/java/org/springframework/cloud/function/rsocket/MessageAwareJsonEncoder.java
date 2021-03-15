@@ -42,6 +42,9 @@ import org.springframework.util.MimeTypeUtils;
  * @since 3.1
  *
  */
+/*
+ * We basically don't need it, but having it allows us not to depend on spring-web
+ */
 class MessageAwareJsonEncoder extends AbstractEncoder<Object> {
 
 	private final JsonMapper mapper;
