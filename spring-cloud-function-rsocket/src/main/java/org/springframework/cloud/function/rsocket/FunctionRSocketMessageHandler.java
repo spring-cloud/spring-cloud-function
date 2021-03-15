@@ -173,7 +173,8 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 	@Override
 	protected List<? extends HandlerMethodArgumentResolver> initArgumentResolvers() {
-		return Collections.singletonList(new MessageHandlerMethodArgumentResolver(this.jsonMapper));
+		List<? extends HandlerMethodArgumentResolver> resolvers = super.initArgumentResolvers();
+		return Collections.singletonList(new MessageHandlerMethodArgumentResolver(this.jsonMapper, resolvers));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -225,9 +226,12 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 
 		private final JsonMapper jsonMapper;
 
-		MessageHandlerMethodArgumentResolver(JsonMapper jsonMapper) {
+		private final List<? extends HandlerMethodArgumentResolver> resolvers;
+
+		MessageHandlerMethodArgumentResolver(JsonMapper jsonMapper, List<? extends HandlerMethodArgumentResolver> resolvers) {
 			this.decoder = new ByteArrayDecoder();
 			this.jsonMapper = jsonMapper;
+			this.resolvers = resolvers;
 		}
 
 		@Override
@@ -244,25 +248,37 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 					? Flux.just((DataBuffer) payload)
 							: Flux.from((Publisher<DataBuffer>) payload);
 
-			Flux<Object> decoded = this.decoder.decode(data, ResolvableType.forType(Object.class), null, null)
-					.map(value -> {
-						if (JsonMapper.isJsonString(value)) {
-							// could be array, map or string
-							Object structure = this.jsonMapper.fromJson(value, Object.class);
-							if (structure instanceof Map) {
-								if (((Map<String, ?>) structure).containsKey(FunctionRSocketUtils.PAYLOAD)) {
-									return MessageBuilder.withPayload(((Map<String, ?>) structure).remove(FunctionRSocketUtils.PAYLOAD))
-											.copyHeaders((Map<String, ?>) ((Map<String, ?>) structure).get(FunctionRSocketUtils.HEADERS))
-											.build();
-								}
-								else {
-									return MessageBuilder.withPayload(structure).build();
-								}
+			if (MimeTypeUtils.APPLICATION_JSON_VALUE.equals(message.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString())) {
+				Flux<Object> argument = data.map(buffer -> {
+					byte[] bytePayload = this.decoder.decode(buffer, ResolvableType.forType(byte[].class), null, null);
+					if (JsonMapper.isJsonString(bytePayload)) {
+//						// could be array, map or string
+						Object structure = this.jsonMapper.fromJson(bytePayload, Object.class);
+						if (structure instanceof Map) {
+							if (((Map<String, ?>) structure).containsKey(FunctionRSocketUtils.PAYLOAD)) {
+								return MessageBuilder.withPayload(((Map<String, ?>) structure).remove(FunctionRSocketUtils.PAYLOAD))
+										.copyHeaders((Map<String, ?>) ((Map<String, ?>) structure).get(FunctionRSocketUtils.HEADERS))
+										.build();
+							}
+							else {
+								return MessageBuilder.withPayload(structure).build();
 							}
 						}
-						return value;
-					});
-			return MessageBuilder.createMessage(decoded, message.getHeaders());
+					}
+					return MessageBuilder.withPayload(bytePayload).copyHeadersIfAbsent(message.getHeaders()).build();
+				});
+				return MessageBuilder.createMessage(argument, message.getHeaders());
+			}
+			else {
+				for (HandlerMethodArgumentResolver handlerMethodArgumentResolver : this.resolvers) {
+					if (handlerMethodArgumentResolver.supportsParameter(parameter)) {
+						Publisher<?> arg = handlerMethodArgumentResolver.resolveArgument(parameter, message);
+						return MessageBuilder.withPayload(arg).copyHeadersIfAbsent(message.getHeaders()).build();
+					}
+
+				}
+				return message;
+			}
 		}
 
 	}

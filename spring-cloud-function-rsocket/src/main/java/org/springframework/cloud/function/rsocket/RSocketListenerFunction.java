@@ -27,9 +27,11 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.rsocket.annotation.support.RSocketFrameTypeMessageCondition;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeTypeUtils;
 
 /**
  * A function wrapper which is bound onto an RSocket route.
@@ -39,7 +41,7 @@ import org.springframework.util.Assert;
  *
  * @since 3.1
  */
-class RSocketListenerFunction implements Function<Message<Flux<Object>>, Publisher<?>> {
+class RSocketListenerFunction implements Function<Object, Publisher<?>> {
 
 	private final FunctionInvocationWrapper targetFunction;
 
@@ -47,29 +49,38 @@ class RSocketListenerFunction implements Function<Message<Flux<Object>>, Publish
 		this.targetFunction = targetFunction;
 	}
 
+	/*
+	 * We need to maintain the input typeless to ensure that no encoder/decoders will attempt any conversion.
+	 * That said it will always be Message<Publisher<Object>>
+	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public Publisher<?> apply(Message<Flux<Object>> input) {
+	public Publisher<?> apply(Object input) {
 		Assert.isTrue(this.targetFunction != null, "Failed to discover target function. \n"
 				+ "To fix it you should either provide 'spring.cloud.function.definition' property "
 				+ "or if you are using RSocketRequester provide valid function definition via 'route' "
 				+ "operator (e.g., requester.route(\"echo\"))");
-		FrameType frameType = RSocketFrameTypeMessageCondition.getFrameType(input);
-		switch (frameType) {
-			case REQUEST_FNF:
-				return handle(input);
-			case REQUEST_RESPONSE:
-			case REQUEST_STREAM:
-			case REQUEST_CHANNEL:
-				return handleAndReply(input);
-			default:
-				throw new UnsupportedOperationException();
-		}
+//		if (input instanceof Message) {
+			Message<Publisher<Object>> inputMessage = (Message<Publisher<Object>>) input;
+			FrameType frameType = RSocketFrameTypeMessageCondition.getFrameType(inputMessage);
+			switch (frameType) {
+				case REQUEST_FNF:
+					return handle(inputMessage);
+				case REQUEST_RESPONSE:
+				case REQUEST_STREAM:
+				case REQUEST_CHANNEL:
+					return handleAndReply(inputMessage);
+				default:
+					throw new UnsupportedOperationException();
+			}
+//		}
+//		throw new UnsupportedOperationException("Expecting input to be of type Message<Publisher<Object>>");
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Mono<Void> handle(Message<Flux<Object>> messageToProcess) {
+	private Mono<Void> handle(Message<Publisher<Object>> messageToProcess) {
 		if (this.targetFunction.isRoutingFunction()) {
-			Flux<?> dataFlux = messageToProcess.getPayload()
+			Flux<?> dataFlux = Flux.from(messageToProcess.getPayload())
 					.map((payload) -> {
 						return MessageBuilder.createMessage(payload, messageToProcess.getHeaders());
 					});
@@ -77,7 +88,7 @@ class RSocketListenerFunction implements Function<Message<Flux<Object>>, Publish
 		}
 		else if (this.targetFunction.isConsumer()) {
 			Flux<?> dataFlux =
-				messageToProcess.getPayload()
+				Flux.from(messageToProcess.getPayload())
 					.map((payload) -> MessageBuilder.createMessage(payload, messageToProcess.getHeaders()));
 			if (FunctionTypeUtils.isPublisher(this.targetFunction.getInputType())) {
 				dataFlux = dataFlux.transform((Function) this.targetFunction);
@@ -93,9 +104,9 @@ class RSocketListenerFunction implements Function<Message<Flux<Object>>, Publish
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private Flux<?> handleAndReply(Message<Flux<Object>> messageToProcess) {
+	private Flux<?> handleAndReply(Message<Publisher<Object>> messageToProcess) {
 		Flux<?> dataFlux =
-			messageToProcess.getPayload()
+			Flux.from(messageToProcess.getPayload())
 				.map((payload) -> {
 					return payload instanceof Message
 							? MessageBuilder.fromMessage((Message<?>) payload).copyHeadersIfAbsent(messageToProcess.getHeaders()).build()
@@ -111,11 +122,31 @@ class RSocketListenerFunction implements Function<Message<Flux<Object>>, Publish
 						.copyHeaders((Map<String, ?>) messageMap.get(FunctionRSocketUtils.HEADERS))
 						.build();
 				Object result = this.targetFunction.isSupplier() ? this.targetFunction.apply(null) : this.targetFunction.apply(sanitizedMessage);
-				return result instanceof Publisher<?>
+
+				Publisher resultPublisher = result instanceof Publisher<?>
 					? (Publisher<?>) result
 					: Mono.just(result);
+				return Flux.from(resultPublisher).map(v -> extractPayloadIfNecessary(v));
 			});
 		}
 		return dataFlux;
+	}
+
+	/*
+	 * This will ensure that unless CT is application/json for which we provide Message aware encoder/decoder
+	 * the payload is extracted since no other available encoders/decoders understand Message.
+	 */
+	private Object extractPayloadIfNecessary(Object output) {
+		if (output instanceof Message) {
+			Message<?> resultMessage = (Message<?>) output;
+			Object contentType = resultMessage.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+			if (contentType != null && contentType.toString().equals(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
+				return output;
+			}
+			else {
+				return resultMessage.getPayload();
+			}
+		}
+		return output;
 	}
 }
