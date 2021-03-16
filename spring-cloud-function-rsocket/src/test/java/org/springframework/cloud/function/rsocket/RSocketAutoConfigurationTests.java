@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -38,8 +39,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.SocketUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
@@ -119,6 +123,35 @@ public class RSocketAutoConfigurationTests {
 				.expectNext("HELLO")
 				.expectComplete()
 				.verify();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testWithCborContentType() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.cloud.function.definition=uppercase",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			Person p = new Person();
+			p.setAge(23);
+			p.setName("Bob");
+			Map<String, Object> m = rsocketRequesterBuilder
+				.dataMimeType(MimeType.valueOf("application/cbor"))
+				.tcp("localhost", port)
+				.route("echoMap")
+				.data(p)
+				.retrieveMono(Map.class).block();
+			assertThat(m.get("name")).isEqualTo("Bob");
+			assertThat(m.get("age")).isEqualTo(23);
 		}
 	}
 
@@ -472,6 +505,10 @@ public class RSocketAutoConfigurationTests {
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.rsocket.server.port=" + port);
 		) {
+
+			SampleFunctionConfiguration config = applicationContext.getBean(SampleFunctionConfiguration.class);
+
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -482,6 +519,8 @@ public class RSocketAutoConfigurationTests {
 				.as(StepVerifier::create)
 				.expectComplete()
 				.verify();
+			String result = config.consumerData.asMono().block();
+			assertThat(result).isEqualTo("hello");
 		}
 	}
 
@@ -550,7 +589,7 @@ public class RSocketAutoConfigurationTests {
 	@Configuration
 	public static class SampleFunctionConfiguration {
 
-		final Sinks.One<byte[]> consumerData = Sinks.one();
+		final Sinks.One<String> consumerData = Sinks.one();
 
 		@Bean
 		public Function<String, String> uppercase() {
@@ -568,6 +607,11 @@ public class RSocketAutoConfigurationTests {
 		}
 
 		@Bean
+		public Function<Map<String, Object>, Map<String, Object>> echoMap() {
+			return v -> v;
+		}
+
+		@Bean
 		public Function<Flux<String>, Flux<String>> uppercaseReactive() {
 			return flux -> flux.map(v -> {
 				System.out.println("Uppercasing: " + v);
@@ -576,7 +620,7 @@ public class RSocketAutoConfigurationTests {
 		}
 
 		@Bean
-		public Consumer<byte[]> log() {
+		public Consumer<String> log() {
 			return this.consumerData::tryEmitValue;
 		}
 
@@ -609,6 +653,23 @@ public class RSocketAutoConfigurationTests {
 		@Bean
 		public Function<String, String> echo() {
 			return v -> v;
+		}
+	}
+
+	public static class Person {
+		private String name;
+		private int age;
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
+		}
+		public int getAge() {
+			return age;
+		}
+		public void setAge(int age) {
+			this.age = age;
 		}
 	}
 
