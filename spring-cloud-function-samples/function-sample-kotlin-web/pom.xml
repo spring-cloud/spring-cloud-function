@@ -18,7 +18,7 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<kotlin.version>1.4.21</kotlin.version>
-		<spring-cloud.version>2020.0.2-SNAPSHOT</spring-cloud.version>
+<!-- 		<spring-cloud.version>2020.0.2-SNAPSHOT</spring-cloud.version> -->
 	</properties>
 
 	<dependencies>
@@ -37,14 +37,17 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-kotlin</artifactId>
+			<version>3.1.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-web</artifactId>
+			<version>3.1.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-context</artifactId>
+			<version>3.1.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -57,17 +60,17 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
+<!-- 	<dependencyManagement> -->
+<!-- 		<dependencies> -->
+<!-- 			<dependency> -->
+<!-- 				<groupId>org.springframework.cloud</groupId> -->
+<!-- 				<artifactId>spring-cloud-dependencies</artifactId> -->
+<!-- 				<version>${spring-cloud.version}</version> -->
+<!-- 				<type>pom</type> -->
+<!-- 				<scope>import</scope> -->
+<!-- 			</dependency> -->
+<!-- 		</dependencies> -->
+<!-- 	</dependencyManagement> -->
 
 	<build>
 		<sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
