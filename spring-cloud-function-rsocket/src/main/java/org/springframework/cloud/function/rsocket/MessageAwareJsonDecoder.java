@@ -55,7 +55,7 @@ class MessageAwareJsonDecoder extends AbstractDecoder<Object> {
 
 	@Override
 	public boolean canDecode(ResolvableType elementType, @Nullable MimeType mimeType) {
-		return mimeType.isCompatibleWith(MimeTypeUtils.APPLICATION_JSON);
+		return mimeType != null && mimeType.isCompatibleWith(MimeTypeUtils.APPLICATION_JSON);
 	}
 
 	@SuppressWarnings("unchecked")

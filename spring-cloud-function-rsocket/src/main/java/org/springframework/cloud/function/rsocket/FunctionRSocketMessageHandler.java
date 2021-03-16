@@ -264,23 +264,24 @@ class FunctionRSocketMessageHandler extends RSocketMessageHandler {
 								return MessageBuilder.withPayload(structure).build();
 							}
 						}
+						else {
+							return MessageBuilder.withPayload(structure).build();
+						}
 					}
 					return MessageBuilder.withPayload(bytePayload).copyHeadersIfAbsent(message.getHeaders()).build();
 				});
 				return MessageBuilder.createMessage(argument, message.getHeaders());
 			}
-			else {
+			else { // delegate to the existing argument resolvers
 				for (HandlerMethodArgumentResolver handlerMethodArgumentResolver : this.resolvers) {
 					if (handlerMethodArgumentResolver.supportsParameter(parameter)) {
 						Publisher<?> arg = handlerMethodArgumentResolver.resolveArgument(parameter, message);
 						return MessageBuilder.withPayload(arg).copyHeadersIfAbsent(message.getHeaders()).build();
 					}
-
 				}
 				return message;
 			}
 		}
-
 	}
 
 	protected static final class FunctionRSocketPayloadReturnValueHandler extends RSocketPayloadReturnValueHandler {
