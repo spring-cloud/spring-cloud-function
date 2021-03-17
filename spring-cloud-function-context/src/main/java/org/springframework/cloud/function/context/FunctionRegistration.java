@@ -125,6 +125,9 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	public FunctionRegistration<T> type(FunctionType type) {
 
 		Type t = FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
+		if (t == null) { // only valid for Kafka Stream KStream[] return type.
+			return null;
+		}
 		FunctionType discoveredFunctionType = FunctionType.of(t);
 		Class<?> inputType = TypeResolver.resolveRawClass(discoveredFunctionType.getInputType(), null);
 		Class<?> outputType = TypeResolver.resolveRawClass(discoveredFunctionType.getOutputType(), null);
