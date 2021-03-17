@@ -149,6 +149,13 @@ public final class FunctionTypeUtils {
 		Assert.isTrue(isFunctional(functionalClass), "Type must be one of Supplier, Function or Consumer");
 
 		if (Function.class.isAssignableFrom(functionalClass)) {
+			for (Type superInterface : functionalClass.getGenericInterfaces()) {
+				if (superInterface != null && !superInterface.equals(Object.class)) {
+					if (superInterface.toString().contains("KStream") && ResolvableType.forType(superInterface).getGeneric(1).isArray()) {
+						return null;
+					}
+				}
+			}
 			return TypeResolver.reify(Function.class, (Class<Function<?, ?>>) functionalClass);
 		}
 		else if (Consumer.class.isAssignableFrom(functionalClass)) {
