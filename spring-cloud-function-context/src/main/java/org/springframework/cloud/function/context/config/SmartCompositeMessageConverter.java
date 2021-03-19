@@ -71,6 +71,9 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Nullable
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers) {
 		for (MessageConverter converter : getConverters()) {
+			if (headers.get(MessageHeaders.CONTENT_TYPE) == null) {
+				return null;
+			}
 			Object value = headers.get(MessageHeaders.CONTENT_TYPE).toString();
 			String[] contentTypes = StringUtils.delimitedListToStringArray((String) value, ",");
 			for (String contentType : contentTypes) {

@@ -31,6 +31,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.function.cloudevent.CloudEventsFunctionInvocationHelper;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
@@ -110,6 +111,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		if (!CollectionUtils.isEmpty(mcList)) {
 			messageConverter = new SmartCompositeMessageConverter(mcList);
+			if (functionInvocationHelper instanceof CloudEventsFunctionInvocationHelper) {
+				((CloudEventsFunctionInvocationHelper) functionInvocationHelper).setMessageConverter(messageConverter);
+			}
 		}
 
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionInvocationHelper);
