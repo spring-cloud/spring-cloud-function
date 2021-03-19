@@ -29,6 +29,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.StringUtils;
 
@@ -40,14 +41,26 @@ import org.springframework.util.StringUtils;
  * @since 3.1
  *
  */
-class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Message<?>>, ApplicationContextAware {
+public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Message<?>>, ApplicationContextAware {
 
 	private ConfigurableApplicationContext applicationContext;
 
 	private final CloudEventHeaderEnricher cloudEventAttributesProvider;
 
+	private CompositeMessageConverter messageConverter;
+
+	private final Class<?> CLOUD_EVENT_CLASS;
+
 	CloudEventsFunctionInvocationHelper(@Nullable CloudEventHeaderEnricher cloudEventHeadersProvider) {
 		this.cloudEventAttributesProvider = cloudEventHeadersProvider;
+		Class<?> clazz = null;
+		try {
+			clazz = Thread.currentThread().getContextClassLoader().loadClass("io.cloudevents.CloudEvent");
+		}
+		catch (Exception e) {
+			// ignore
+		}
+		CLOUD_EVENT_CLASS = clazz;
 	}
 
 	@Override
@@ -67,10 +80,21 @@ class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Me
 		}
 	}
 
+	public void setMessageConverter(CompositeMessageConverter messageConverter) {
+		this.messageConverter = messageConverter;
+	}
+
 	@Override
 	public Message<?> postProcessResult(Object result, Message<?> input) {
-		String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders());
-		return this.doPostProcessResult(result, targetPrefix);
+		Message<?> convertedResult = null;
+		if (this.messageConverter != null && CLOUD_EVENT_CLASS != null && CLOUD_EVENT_CLASS.isAssignableFrom(result.getClass())) {
+			convertedResult = this.messageConverter.toMessage(result, input.getHeaders());
+		}
+		if (convertedResult == null) {
+			String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders());
+			convertedResult = this.doPostProcessResult(result, targetPrefix);
+		}
+		return convertedResult;
 	}
 
 	@Override
