@@ -95,12 +95,6 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 	}
 
 	@Override
-	public Message<?> postProcessResult(Object result, String targetProtocol) {
-		String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(targetProtocol);
-		return this.doPostProcessResult(result, targetPrefix);
-	}
-
-	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}

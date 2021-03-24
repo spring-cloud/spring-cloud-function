@@ -26,11 +26,15 @@ package org.springframework.cloud.function.core;
  */
 public interface FunctionInvocationHelper<I> {
 
-	boolean isRetainOuputAsMessage(I input);
+	default boolean isRetainOuputAsMessage(I input) {
+		return true;
+	};
 
-	I preProcessInput(I input, Object inputConverter);
+	default I preProcessInput(I input, Object inputConverter) {
+		return input;
+	}
 
-	I postProcessResult(Object result, String hint);
-
-	I postProcessResult(Object result, I input);
+	default Object postProcessResult(Object result, I input) {
+		return result;
+	}
 }
