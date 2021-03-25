@@ -277,9 +277,14 @@ public class RequestProcessor {
 	}
 
 	private Publisher<?> invokeFunction(FunctionWrapper wrapper) {
-		Flux<?> input = Flux.from(wrapper.argument);
-		Object result = FunctionWebUtils.invokeFunction(wrapper.function, input, wrapper.function.isInputTypeMessage());
-		return Mono.from((Publisher<?>) result);
+		if (wrapper.argument != null) {
+			Flux<?> input = Flux.from(wrapper.argument);
+			Object result = FunctionWebUtils.invokeFunction(wrapper.function, input, wrapper.function.isInputTypeMessage());
+			return Mono.from((Publisher<?>) result);
+		}
+		else {
+			return Mono.empty();
+		}
 	}
 
 	/**
