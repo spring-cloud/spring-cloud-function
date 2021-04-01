@@ -52,6 +52,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
@@ -81,6 +82,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper,
 			ConfigurableApplicationContext context, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
+		if (conversionService == null) {
+			conversionService = new DefaultConversionService();
+		}
 		Map<String, GenericConverter> converters = context.getBeansOfType(GenericConverter.class);
 		for (GenericConverter converter : converters.values()) {
 			conversionService.addConverter(converter);
