@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -77,18 +76,16 @@ public class FunctionInvoker<I, O> {
 
 	private static ConfigurableApplicationContext APPLICATION_CONTEXT;
 
-	private static AtomicBoolean initialized = new AtomicBoolean();
+	private final static Object LOCK = new Object();
 
 	private static JsonMapper OBJECT_MAPPER;
 
 	public FunctionInvoker(Class<?> configurationClass) {
 		try {
-			if (initialized.compareAndSet(false, true)) {
-				initialize(configurationClass);
-			}
+			initialize(configurationClass);
 		}
 		catch (Exception e) {
-			initialized.set(false);
+			this.close();
 			throw new IllegalStateException("Failed to initialize", e);
 		}
 	}
@@ -102,7 +99,7 @@ public class FunctionInvoker<I, O> {
 	}
 
 	public void close() {
-		initialized.set(false);
+		FUNCTION_CATALOG = null;
 	}
 
 	public void handleOutput(I input, OutputBinding<O> binding,
@@ -248,23 +245,27 @@ public class FunctionInvoker<I, O> {
 	}
 
 	private static void initialize(Class<?> configurationClass) {
-		logger.info("Initializing: " + configurationClass);
-		SpringApplication builder = springApplication(configurationClass);
-		APPLICATION_CONTEXT = builder.run();
+		synchronized (LOCK) {
+			if (FUNCTION_CATALOG == null) {
+				logger.info("Initializing: " + configurationClass);
+				SpringApplication builder = springApplication(configurationClass);
+				APPLICATION_CONTEXT = builder.run();
 
-		Map<String, FunctionCatalog> mf = APPLICATION_CONTEXT.getBeansOfType(FunctionCatalog.class);
-		if (CollectionUtils.isEmpty(mf)) {
-			OBJECT_MAPPER = new JacksonMapper(new ObjectMapper());
-			JsonMessageConverter jsonConverter = new JsonMessageConverter(OBJECT_MAPPER);
-			SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(Collections.singletonList(jsonConverter));
-			FUNCTION_CATALOG = new SimpleFunctionRegistry(APPLICATION_CONTEXT.getBeanFactory().getConversionService(),
-					messageConverter, OBJECT_MAPPER);
+				Map<String, FunctionCatalog> mf = APPLICATION_CONTEXT.getBeansOfType(FunctionCatalog.class);
+				if (CollectionUtils.isEmpty(mf)) {
+					OBJECT_MAPPER = new JacksonMapper(new ObjectMapper());
+					JsonMessageConverter jsonConverter = new JsonMessageConverter(OBJECT_MAPPER);
+					SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(Collections.singletonList(jsonConverter));
+					FUNCTION_CATALOG = new SimpleFunctionRegistry(APPLICATION_CONTEXT.getBeanFactory().getConversionService(),
+							messageConverter, OBJECT_MAPPER);
+				}
+				else {
+					OBJECT_MAPPER = APPLICATION_CONTEXT.getBean(JsonMapper.class);
+					FUNCTION_CATALOG = mf.values().iterator().next();
+				}
+			}
+		}
 
-		}
-		else {
-			OBJECT_MAPPER = APPLICATION_CONTEXT.getBean(JsonMapper.class);
-			FUNCTION_CATALOG = mf.values().iterator().next();
-		}
 	}
 
 	private static SpringApplication springApplication(Class<?> configurationClass) {
