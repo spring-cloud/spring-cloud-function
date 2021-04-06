@@ -31,7 +31,7 @@ public class FunctionSampleGcpIntegrationTest {
 	@Test
 	public void testSample() throws IOException, InterruptedException {
 		try (LocalServerTestSupport.ServerProcess process = LocalServerTestSupport.startServer(CloudFunctionMain.class)) {
-			String result = rest.postForObject("http://localhost:8080/", "Hello", String.class);
+			String result = rest.postForObject("http://localhost:8080/", "\"Hello\"", String.class);
 			assertThat(result).isEqualTo("\"HELLO\"");
 		}
 	}

@@ -119,9 +119,20 @@ public class FunctionInvokerIntegrationTests {
 
 	}
 
-	private static class Foo {
+	public static class Foo {
 
 		String value;
+
+		public String getValue() {
+			return value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+
+		public Foo() {
+		}
 
 		Foo(String value) {
 			this.value = value;
@@ -129,7 +140,7 @@ public class FunctionInvokerIntegrationTests {
 
 	}
 
-	private static class Bar {
+	public static class Bar {
 
 		String value;
 
@@ -137,6 +148,16 @@ public class FunctionInvokerIntegrationTests {
 			this.value = value;
 		}
 
+		Bar() {
+		}
+
+		public String getValue() {
+			return value;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
 	}
 
 }
