@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,6 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 		if (System.getenv().containsKey("spring.cloud.function.definition")) {
 			this.functionName = System.getenv("spring.cloud.function.definition");
 		}
-		System.setProperty("spring.http.converters.preferred-json-mapper", "gson");
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
 				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 		initialize(null);
