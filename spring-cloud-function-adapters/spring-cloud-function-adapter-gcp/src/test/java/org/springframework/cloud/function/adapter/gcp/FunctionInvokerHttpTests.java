@@ -145,24 +145,46 @@ public class FunctionInvokerHttpTests {
 
 	}
 
-	private static class IncomingRequest {
+	public static class IncomingRequest {
 
 		String message;
 
-		IncomingRequest(String message) {
+		public IncomingRequest(String message) {
 			this.message = message;
 		}
 
+		public IncomingRequest() {
+		}
+
+		public String getMessage() {
+			return message;
+		}
+
+		public void setMessage(String message) {
+			this.message = message;
+		}
 	}
 
-	private static class OutgoingResponse {
+	public static class OutgoingResponse {
 
 		String message;
+
+		public String getMessage() {
+			return message;
+		}
+
+		public void setMessage(String message) {
+			this.message = message;
+		}
 
 		OutgoingResponse(String message) {
 			this.message = message;
 		}
 
+		public OutgoingResponse() {
+		}
+
 	}
+
 
 }
