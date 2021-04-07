@@ -277,7 +277,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return null;
 		}
 		Function<?, ?> resultFunction = null;
-		if (this.registrationsByName.containsKey(definition)) {
+		if (this.registrationsByName.containsKey(definition) && ObjectUtils.isEmpty(acceptedOutputTypes)) {
 			Object targetFunction = this.registrationsByName.get(definition).getTarget();
 			Type functionType = this.registrationsByName.get(definition).getType().getType();
 			if (targetFunction instanceof FunctionInvocationWrapper) {
@@ -343,7 +343,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					registrationsByName.putIfAbsent(name, registration);
 				}
 
-				function = new FunctionInvocationWrapper(function, currentFunctionType, name, names.length > 1 ? new String[] {} : acceptedOutputTypes);
+				function = new FunctionInvocationWrapper(function, currentFunctionType, name, !names[0].equals("origin") && name.equals(names[names.length - 1]) ? acceptedOutputTypes : new String[] {});
 
 				if (originFunctionType == null) {
 					originFunctionType = currentFunctionType;
@@ -723,7 +723,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 
 			if (convertedValue == null) {
-				throw new MessageConversionException(COULD_NOT_CONVERT_OUTPUT);
+				convertedValue = value;
 			}
 			return convertedValue;
 		}
