@@ -259,6 +259,25 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
+	public void testCompositionWithOutputConversion() {
+		FunctionCatalog catalog = this.configureCatalog();
+		Function<Flux<String>, Flux<Message<byte[]>>> fluxFunction = catalog.lookup("uppercase|reverseFlux", "application/json");
+		List<Message<byte[]>> result = fluxFunction.apply(Flux.just("hello", "bye")).collectList().block();
+		assertThat(result.get(0).getPayload()).isEqualTo("\"OLLEH\"".getBytes());
+		assertThat(result.get(1).getPayload()).isEqualTo("\"EYB\"".getBytes());
+
+		fluxFunction = catalog.lookup("uppercase|reverse|reverseFlux", "application/json");
+		result = fluxFunction.apply(Flux.just("hello", "bye")).collectList().block();
+		assertThat(result.get(0).getPayload()).isEqualTo("\"HELLO\"".getBytes());
+		assertThat(result.get(1).getPayload()).isEqualTo("\"BYE\"".getBytes());
+
+		fluxFunction = catalog.lookup("uppercase|reverseFlux|reverse", "application/json");
+		result = fluxFunction.apply(Flux.just("hello", "bye")).collectList().block();
+		assertThat(result.get(0).getPayload()).isEqualTo("\"HELLO\"".getBytes());
+		assertThat(result.get(1).getPayload()).isEqualTo("\"BYE\"".getBytes());
+	}
+
+	@Test
 	public void testReactiveFunctionWithImperativeInputReactiveOutput() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<String, Flux<String>> reverse = catalog.lookup("reverseFlux");
