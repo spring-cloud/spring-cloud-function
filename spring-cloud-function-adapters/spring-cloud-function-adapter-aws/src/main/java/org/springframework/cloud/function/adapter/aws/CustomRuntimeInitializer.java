@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.cloud.function.web.source.DestinationResolver;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-@Order(0)
 public class CustomRuntimeInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	private static Log logger = LogFactory.getLog(CustomRuntimeInitializer.class);
@@ -42,25 +41,12 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 			logger.debug("AWS Environment: " + System.getenv());
 		}
 
-		// the presence of AWS_LAMBDA_RUNTIME_API signifies Custom Runtime
-		if (!this.isWebExportEnabled(context) && StringUtils.hasText(System.getenv("AWS_LAMBDA_RUNTIME_API"))) {
+		if (!this.isWebExportEnabled(context) && isCustomRuntime()) {
 			if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
 				context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
 						CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
 			}
 		}
-
-
-//		Boolean enabled = context.getEnvironment()
-//				.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
-//		if (enabled == null || !enabled) {
-//			if (StringUtils.hasText(System.getenv("AWS_LAMBDA_RUNTIME_API"))) {
-//				if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
-//					context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
-//							CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
-//				}
-//			}
-//		}
 		else if (ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
@@ -70,6 +56,24 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 					CommandLineRunner.class, () -> args -> CustomRuntimeAutoConfiguration.background());
 		}
 	}
+
+	private boolean isCustomRuntime() {
+		String handler = System.getenv("_HANDLER");
+		if (StringUtils.hasText(handler)) {
+			try {
+				Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(handler);
+				if (FunctionInvoker.class.isAssignableFrom(clazz) || AbstractSpringFunctionAdapterInitializer.class.isAssignableFrom(clazz)) {
+					return false;
+				}
+			}
+			catch (Exception e) {
+				logger.debug("Will execute Lambda in Custom Runtime");
+				return true;
+			}
+		}
+		return false;
+	}
+
 
 	private boolean isWebExportEnabled(GenericApplicationContext context) {
 		Boolean enabled = context.getEnvironment()
