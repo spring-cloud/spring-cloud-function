@@ -19,21 +19,18 @@ package org.springframework.cloud.function.adapter.aws;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Calendar;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
+import java.util.List;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -43,6 +40,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
@@ -67,18 +65,53 @@ public class FunctionInvoker implements RequestStreamHandler {
 		this.start();
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 		final byte[] payload = StreamUtils.copyToByteArray(input);
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
+		}
+
 		Message requestMessage = AWSLambdaUtils
 				.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.objectMapper, context);
 
-		Message<byte[]> responseMessage = (Message<byte[]>) this.function.apply(requestMessage);
+		Object response = this.function.apply(requestMessage);
 
-		byte[] responseBytes = AWSLambdaUtils.generateOutput(requestMessage, responseMessage, this.objectMapper);
-
+		byte[] responseBytes = this.buildResult(requestMessage, response);
 		StreamUtils.copy(responseBytes, output);
+	}
+
+	@SuppressWarnings("unchecked")
+	private byte[] buildResult(Message<?> requestMessage, Object output) throws IOException {
+		Message<byte[]> responseMessage;
+		if (output instanceof Publisher<?>) {
+			List<Object> result = new ArrayList<>();
+			for (Object value : Flux.from((Publisher<?>) output).toIterable()) {
+				if (logger.isInfoEnabled()) {
+					logger.info("Response value: " + value);
+				}
+				result.add(value);
+			}
+			if (result.size() > 1) {
+				output = result;
+			}
+			else {
+				output = result.get(0);
+			}
+
+			if (logger.isInfoEnabled()) {
+				logger.info("OUTPUT: " + output + " - " + output.getClass().getName());
+			}
+
+			byte[] payload = this.objectMapper.writeValueAsBytes(output);
+			responseMessage = MessageBuilder.withPayload(payload).build();
+		}
+		else {
+			responseMessage = (Message<byte[]>) output;
+		}
+		return AWSLambdaUtils.generateOutput(requestMessage, responseMessage, this.objectMapper);
 	}
 
 	private void start() {
@@ -87,13 +120,15 @@ public class FunctionInvoker implements RequestStreamHandler {
 		String functionName = environment.getProperty("spring.cloud.function.definition");
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 		this.objectMapper = context.getBean(ObjectMapper.class);
-		//this.configureObjectMapper();
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Locating function: '" + functionName + "'");
 		}
 
 		this.function = functionCatalog.lookup(functionName, "application/json");
+		if (this.function.isOutputTypePublisher()) {
+			this.function.setSkipOutputConversion(true);
+		}
 		Assert.notNull(this.function, "Failed to lookup function " + functionName);
 
 		if (!StringUtils.hasText(functionName)) {
@@ -103,21 +138,5 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (logger.isInfoEnabled()) {
 			logger.info("Located function: '" + functionName + "'");
 		}
-	}
-
-	private void configureObjectMapper() {
-		SimpleModule module = new SimpleModule();
-		module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
-			@Override
-			public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-					throws IOException {
-				Calendar calendar = Calendar.getInstance();
-				calendar.setTimeInMillis(jsonParser.getValueAsLong());
-				return calendar.getTime();
-			}
-		});
-		this.objectMapper.registerModule(module);
-		this.objectMapper.registerModule(new JodaModule());
-		this.objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
 	}
 }

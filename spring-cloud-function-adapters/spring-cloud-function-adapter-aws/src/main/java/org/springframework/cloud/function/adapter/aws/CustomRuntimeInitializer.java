@@ -47,7 +47,8 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 						CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
 			}
 		}
-		else if (ContextFunctionCatalogInitializer.enabled
+		else
+		if (ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
 				context.registerBean(LambdaDestinationResolver.class, () -> new LambdaDestinationResolver());
@@ -60,6 +61,8 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 	private boolean isCustomRuntime() {
 		String handler = System.getenv("_HANDLER");
 		if (StringUtils.hasText(handler)) {
+			handler = handler.split(":")[0];
+			logger.info("AWS Handler: " + handler);
 			try {
 				Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(handler);
 				if (FunctionInvoker.class.isAssignableFrom(clazz) || AbstractSpringFunctionAdapterInitializer.class.isAssignableFrom(clazz)) {
