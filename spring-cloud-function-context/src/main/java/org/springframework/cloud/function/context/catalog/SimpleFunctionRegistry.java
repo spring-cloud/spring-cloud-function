@@ -188,7 +188,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			logger.debug("Function '" + functionDefinition + "' is not found in cache");
 		}
 
-		function = this.wrapInAroundAviceIfNecessary(function);
+		if (function != null) {
+			function = this.wrapInAroundAviceIfNecessary(function);
+		}
 
 		return (T) function;
 	}
