@@ -664,11 +664,27 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		/*
 		 *
 		 */
+		@SuppressWarnings("unchecked")
 		private Object fluxifyInputIfNecessary(Object input) {
 			if (!(input instanceof Publisher) && this.isTypePublisher(this.inputType) && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
-				return input == null
-						? FunctionTypeUtils.isMono(this.inputType) ? Mono.empty() : Flux.empty()
-						: FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
+				if (input == null) {
+					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.empty() : Flux.empty();
+				}
+				else if (input instanceof Message && ((Message) input).getPayload() instanceof Iterable) {
+					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input).flatMap(v -> {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Creating Flux from Iterable: " + ((Message) v).getPayload());
+						}
+						return Flux.fromIterable((Iterable) ((Message) v).getPayload());
+					});
+				}
+				else if (input instanceof Iterable) {
+					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.fromIterable((Iterable) input);
+
+				}
+				else {
+					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
+				}
 			}
 			return input;
 		}
@@ -1050,6 +1066,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			if (message.getPayload() instanceof Collection<?>) {
 				Type itemType = FunctionTypeUtils.getImmediateGenericType(type, 0);
+				if (itemType == null) {
+					itemType = type;
+				}
 				Type collectionType = CollectionUtils.findCommonElementType((Collection<?>) message.getPayload());
 				if (collectionType == itemType) {
 					return message.getPayload();

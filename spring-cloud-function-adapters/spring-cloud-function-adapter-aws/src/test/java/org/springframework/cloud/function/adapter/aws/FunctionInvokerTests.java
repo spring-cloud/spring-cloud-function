@@ -32,6 +32,7 @@ import com.amazonaws.services.lambda.runtime.events.SNSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -50,6 +51,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FunctionInvokerTests {
 
 	ObjectMapper mapper = new ObjectMapper();
+
+	String jsonCollection = "[\"Ricky\",\"Julien\",\"Bubbles\"]";
 
 	String sampleLBEvent = "{" +
 			"    \"requestContext\": {" +
@@ -359,6 +362,20 @@ public class FunctionInvokerTests {
 			"    \"body\":{\"name\":\"Jim Lahey\"},\n" +
 			"    \"isBase64Encoded\": false\n" +
 			"}";
+
+
+	@Test
+	public void testCollection() throws Exception {
+		System.setProperty("MAIN_CLASS", SampleConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoStringReactive");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.jsonCollection.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).isEqualTo(this.jsonCollection);
+	}
 
 	@Test
 	public void testKinesisStringEvent() throws Exception {
@@ -687,6 +704,20 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("\"OK\"");
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class SampleConfiguration {
+		@Bean
+		public Function<String, String> echoString() {
+			return v -> v;
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> echoStringReactive() {
+			return v -> v;
+		}
 	}
 
 	@EnableAutoConfiguration

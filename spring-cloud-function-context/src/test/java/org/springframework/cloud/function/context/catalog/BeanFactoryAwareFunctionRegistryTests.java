@@ -20,6 +20,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -591,6 +592,24 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		emptyListOfString = (Message<byte[]>) lsFunction.apply("hello");
 		resultList = mapper.fromJson(emptyListOfString.getPayload(), List.class);
 		assertThat(resultList).isEmpty();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testArrayPayloadOnFluxFunction() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
+		FunctionInvocationWrapper lmFunction = catalog.lookup("uppercaseFlux", "application/json");
+		lmFunction.setSkipOutputConversion(true);
+		List<String> list = new ArrayList<>();
+		list.add("Ricky");
+		list.add("Julien");
+		list.add("Bubbles");
+		Publisher p = (Publisher) lmFunction.apply(MessageBuilder.withPayload(list).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+		List<Object> result = new ArrayList<>();
+		for (Object value : Flux.from(p).toIterable()) {
+			result.add(value);
+		}
+		assertThat(result.size()).isEqualTo(3);
 	}
 
 

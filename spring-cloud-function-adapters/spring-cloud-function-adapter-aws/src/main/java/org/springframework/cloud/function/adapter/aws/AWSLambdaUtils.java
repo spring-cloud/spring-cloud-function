@@ -122,6 +122,9 @@ final class AWSLambdaUtils {
 				}
 			}
 		}
+		else if (request instanceof Iterable) {
+			messageBuilder = MessageBuilder.withPayload(request);
+		}
 		if (messageBuilder == null) {
 			messageBuilder = MessageBuilder.withPayload(payload);
 		}

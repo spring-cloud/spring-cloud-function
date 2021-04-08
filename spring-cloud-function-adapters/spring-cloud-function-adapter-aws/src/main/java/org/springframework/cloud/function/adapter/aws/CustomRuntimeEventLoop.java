@@ -28,13 +28,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -52,9 +48,7 @@ import org.springframework.web.client.RestTemplate;
  * @since 3.1.1
  *
  */
-@Configuration
-@ConditionalOnProperty("AWS_LAMBDA_RUNTIME_API")
-public class CustomRuntimeEventLoop {
+final class CustomRuntimeEventLoop {
 
 	private static Log logger = LogFactory.getLog(CustomRuntimeEventLoop.class);
 
@@ -62,10 +56,7 @@ public class CustomRuntimeEventLoop {
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
 
-	@Bean
-	@ConditionalOnProperty("AWS_LAMBDA_RUNTIME_API")
-	public CommandLineRunner backgrounder(ApplicationContext applicationContext) {
-		return args -> eventLoop(applicationContext);
+	private CustomRuntimeEventLoop() {
 	}
 
 	@SuppressWarnings("unchecked")
@@ -125,11 +116,15 @@ public class CustomRuntimeEventLoop {
 		String handlerName = System.getenv("DEFAULT_HANDLER");
 		FunctionInvocationWrapper function = functionCatalog.lookup(handlerName, contentType.toString());
 		if (function == null) {
+			handlerName = System.getenv("_HANDLER");
+		}
+		function = functionCatalog.lookup(handlerName, contentType.toString());
+		if (function == null) {
 			handlerName = System.getenv("spring.cloud.function.definition");
 		}
 		function = functionCatalog.lookup(handlerName, contentType.toString());
 		Assert.notNull(function, "Failed to locate function. Tried locating default function, "
-				+ "function by '_HANDLER' env variable as well as'spring.cloud.function.definition'.");
+				+ "function by 'DEFAULT_HANDLER', '_HANDLER' env variable as well as'spring.cloud.function.definition'.");
 		if (function != null && logger.isInfoEnabled()) {
 			logger.info("Located function " + function.getFunctionDefinition());
 		}
