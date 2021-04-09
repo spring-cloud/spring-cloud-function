@@ -547,6 +547,23 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
+	public void testGH_608_B() {
+		ApplicationContext context = new SpringApplicationBuilder(MessageFunctionConfiguration.class)
+				.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true");
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		String productJson = "{\"name\":\"bike\"}";
+		FunctionInvocationWrapper function = catalog.lookup("echo", "application/json");
+		Message<byte[]> result = (Message<byte[]>) function.apply(productJson);
+		assertThat(productJson).isEqualTo(new String(result.getPayload()));
+
+		function = catalog.lookup("echoFlux", "application/json");
+		result = ((Flux<Message<byte[]>>) function.apply("{\"name\":\"bike\"}")).blockFirst();
+		assertThat(productJson).isEqualTo(new String(result.getPayload()));
+	}
+
+	@Test
 	public void testGH_609() {
 		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
 		Function<Publisher<String>, Publisher<String>> f = catalog.lookup("monoToMono");
@@ -800,6 +817,21 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			protected boolean supports(Class<?> clazz) {
 				throw new UnsupportedOperationException();
 			}
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class MessageFunctionConfiguration {
+
+		@Bean
+		public Function<Message<Product>, Message<Product>> echo() {
+			return x -> x;
+		}
+
+		@Bean
+		public Function<Flux<Message<Product>>, Flux<Message<Product>>> echoFlux() {
+			return x -> x;
 		}
 	}
 

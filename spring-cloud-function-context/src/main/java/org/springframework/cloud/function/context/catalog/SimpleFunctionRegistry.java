@@ -821,12 +821,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 						boolean convertWithHint = false;
 						Type hint = FunctionTypeUtils.getGenericType(type);
-						if (FunctionTypeUtils.isTypeCollection(type)) {
-							convertWithHint = true;
-						}
-						else if (!FunctionTypeUtils.isPublisher(type) && !rawType.equals(type)) {
-							convertWithHint = true;
-						}
+
+						convertWithHint = this.useConversionHint(type, rawType);
+
+//						if (FunctionTypeUtils.isTypeCollection(type)) {
+//							convertWithHint = true;
+//						}
+//						else if (!FunctionTypeUtils.isPublisher(type) && !rawType.equals(type) && !FunctionTypeUtils.isMessage(type)) {
+//							convertWithHint = true;
+//						}
 
 						convertedValue = convertWithHint
 							? this.fromMessage((Message<?>) value, (Class<?>) rawType, hint)
@@ -862,6 +865,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				throw new MessageConversionException(COULD_NOT_CONVERT_INPUT);
 			}
 			return convertedValue;
+		}
+
+		private boolean useConversionHint(Type type, Type rawType) {
+			if (FunctionTypeUtils.isTypeCollection(type)) {
+				return true;
+			}
+			else if (!FunctionTypeUtils.isPublisher(type) && !rawType.equals(type) && !FunctionTypeUtils.isMessage(type)) {
+				return true;
+			}
+			return false;
 		}
 
 		private Object convertNonMessageInputIfNecessary(Type inputType, Object input) {
