@@ -564,6 +564,20 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
+	public void testGH_608_C() {
+		ApplicationContext context = new SpringApplicationBuilder(MessageFunctionConfiguration.class)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG",
+				"--spring.main.lazy-initialization=true");
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		String productJson = "{\"key\":\"someKey\",\"data\": {\"name\":\"bike\"}}";
+
+		FunctionInvocationWrapper function = catalog.lookup("echoGenericObjectFlux", "application/json");
+		Message<byte[]> result = ((Flux<Message<byte[]>>) function.apply(productJson)).blockFirst();
+		assertThat(new String(result.getPayload())).isEqualTo("\"bike\"");
+	}
+
+	@Test
 	public void testGH_609() {
 		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
 		Function<Publisher<String>, Publisher<String>> f = catalog.lookup("monoToMono");
@@ -821,6 +835,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 					return MessageBuilder.fromMessage(result).setHeader("after", "bar").build();
 				}
 			};
+		}
+
+		@Bean
+		public Function<Flux<Message<Event<String, Person>>>, Flux<String>> echoGenericObjectFlux() {
+			return x -> x.map(eventMessage -> eventMessage.getPayload().getData().getName());
 		}
 	}
 
