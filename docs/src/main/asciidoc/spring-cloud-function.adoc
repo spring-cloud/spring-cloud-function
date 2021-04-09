@@ -424,7 +424,19 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
 }
 ----
 
+==== Note on JSON options
 
+In Spring Cloud Function we support Jackson and Gson mechanisms to deal with JSON. 
+And for your benefit have abstracted it under `org.springframework.cloud.function.json.JsonMapper` which itself is aware of two mechanisms and will use the one selected 
+by you or following the default rule.
+The default rules are as follows:
+
+* Whichever library is on the classpath that is the mechanism that is going to be used. So if you have `com.fasterxml.jackson.*` to the classpath, Jackson is going to be used and if you have `com.google.code.gson`, then Gson will be used.
+* If you have both, then Gson will be the default, or you can set `spring.cloud.function.preferred-json-mapper` property with either of two values: `gson` or `jackson`.
+ 
+ 
+That said, the type conversion is usually transparent to the developer, however given that `org.springframework.cloud.function.json.JsonMapper` is also registered as a bean
+you can easily inject it into your code if needed.
 
 
 === Kotlin Lambda support
