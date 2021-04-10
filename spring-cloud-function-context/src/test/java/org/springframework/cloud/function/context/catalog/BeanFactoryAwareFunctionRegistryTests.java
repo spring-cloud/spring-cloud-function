@@ -565,7 +565,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@Test
 	public void testGH_608_C() {
-		ApplicationContext context = new SpringApplicationBuilder(MessageFunctionConfiguration.class)
+		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 			.run("--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
@@ -836,11 +836,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				}
 			};
 		}
-
-		@Bean
-		public Function<Flux<Message<Event<String, Person>>>, Flux<String>> echoGenericObjectFlux() {
-			return x -> x.map(eventMessage -> eventMessage.getPayload().getData().getName());
-		}
 	}
 
 	@EnableAutoConfiguration
@@ -848,6 +843,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	protected static class SampleFunctionConfiguration {
 
 		AtomicReference<Object> consumerInputRef = new AtomicReference<>();
+
+		@Bean
+		public Function<Flux<Message<Event<String, Person>>>, Flux<String>> echoGenericObjectFlux() {
+			return x -> x.map(eventMessage -> eventMessage.getPayload().getData().getName());
+		}
 
 		@Bean
 		public Function<Person, Person> uppercasePerson() {
