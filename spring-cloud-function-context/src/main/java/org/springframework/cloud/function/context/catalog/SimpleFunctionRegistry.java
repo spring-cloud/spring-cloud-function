@@ -822,14 +822,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						boolean convertWithHint = false;
 						Type hint = FunctionTypeUtils.getGenericType(type);
 
-						convertWithHint = this.useConversionHint(type, rawType);
-
-//						if (FunctionTypeUtils.isTypeCollection(type)) {
-//							convertWithHint = true;
-//						}
-//						else if (!FunctionTypeUtils.isPublisher(type) && !rawType.equals(type) && !FunctionTypeUtils.isMessage(type)) {
-//							convertWithHint = true;
-//						}
+						convertWithHint = this.useConversionHint(type, rawType, hint);
 
 						convertedValue = convertWithHint
 							? this.fromMessage((Message<?>) value, (Class<?>) rawType, hint)
@@ -867,8 +860,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return convertedValue;
 		}
 
-		private boolean useConversionHint(Type type, Type rawType) {
-			if (FunctionTypeUtils.isTypeCollection(type)) {
+		private boolean useConversionHint(Type type, Type rawType, Type hint) {
+			if (hint instanceof ParameterizedType) {
+				return true;
+			}
+			else if (FunctionTypeUtils.isTypeCollection(type)) {
 				return true;
 			}
 			else if (!FunctionTypeUtils.isPublisher(type) && !rawType.equals(type) && !FunctionTypeUtils.isMessage(type)) {
