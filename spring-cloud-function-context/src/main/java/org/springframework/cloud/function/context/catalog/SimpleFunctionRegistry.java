@@ -277,11 +277,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return null;
 		}
 		Function<?, ?> resultFunction = null;
-		if (this.registrationsByName.containsKey(definition) && ObjectUtils.isEmpty(acceptedOutputTypes)) {
+		if (this.registrationsByName.containsKey(definition) /*&& ObjectUtils.isEmpty(acceptedOutputTypes)*/) {
 			Object targetFunction = this.registrationsByName.get(definition).getTarget();
 			Type functionType = this.registrationsByName.get(definition).getType().getType();
 			if (targetFunction instanceof FunctionInvocationWrapper) {
-				resultFunction = new FunctionInvocationWrapper(((FunctionInvocationWrapper) targetFunction).getTarget(), functionType, definition, acceptedOutputTypes);
+				if (!ObjectUtils.isEmpty(acceptedOutputTypes)) {
+					((FunctionInvocationWrapper) targetFunction).acceptedOutputMimeTypes = acceptedOutputTypes;
+
+				}
+				resultFunction = (Function<?, ?>) targetFunction;
+				//resultFunction = new FunctionInvocationWrapper(((FunctionInvocationWrapper) targetFunction).getTarget(), functionType, definition, acceptedOutputTypes);
 			}
 			else {
 				resultFunction = new FunctionInvocationWrapper(targetFunction, functionType, definition, acceptedOutputTypes);
@@ -343,10 +348,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					registrationsByName.putIfAbsent(name, registration);
 				}
 
-				function = new FunctionInvocationWrapper(function, currentFunctionType, name, !names[0].equals("origin") && name.equals(names[names.length - 1]) ? acceptedOutputTypes : new String[] {});
+				function = new FunctionInvocationWrapper(function, currentFunctionType, name, acceptedOutputTypes);
+//				function = new FunctionInvocationWrapper(function, currentFunctionType, name, names.length > 1 ? new String[] {} : acceptedOutputTypes);
+				//function = new FunctionInvocationWrapper(function, currentFunctionType, name, !names[0].equals("origin") && name.equals(names[names.length - 1]) ? acceptedOutputTypes : new String[] {});
 
 				if (originFunctionType == null) {
 					originFunctionType = currentFunctionType;
+				}
+				if (name.equals(names[names.length - 1]) && !names[0].equals("origin")) {
+					((FunctionInvocationWrapper) function).setSkipOutputConversion(false);
+				}
+				else {
+					((FunctionInvocationWrapper) function).setSkipOutputConversion(true);
 				}
 
 				// composition
