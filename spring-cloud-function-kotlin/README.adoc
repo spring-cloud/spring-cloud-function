@@ -1,0 +1,4 @@
+!!! INTERNAL !!!
+
+Contains only Kotlin tests. 
+Since version 3.1.3, user's should not be declaring explicit dependency on this module.
