@@ -33,6 +33,7 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -83,6 +84,30 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
 		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(Person.class.getName());
 		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+
+
+		function = this.context.getBean("kotlinListPojoFunction");
+		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinListPojoFunction", this.context);
+		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
+		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
+		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
+		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+	}
+
+	@Test
+	public void testWithComplexTypesAndRouting() {
+		create(new Class[] { KotlinLambdasConfiguration.class,
+				SimpleConfiguration.class });
+
+		FunctionInvocationWrapper function = this.catalog.lookup("kotlinListPojoFunction");
+		String result = (String) function.apply("[{\"name\":\"Ricky\"}]");
+		assertThat(result).isEqualTo("List of: Ricky");
+
+		function = this.catalog.lookup(Function.class, "functionRouter");
+		result = (String) function.apply(MessageBuilder.withPayload("[{\"name\":\"Ricky\"}]")
+				.setHeader("spring.cloud.function.definition", "kotlinListPojoFunction").build());
+		assertThat(result).isEqualTo("List of: Ricky");
+
 	}
 
 	@Test

@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.util.function.Function
+import java.util.List
 
 /**
  * @author Oleg Zhurakousky
@@ -36,6 +37,13 @@ class KotlinLambdasConfiguration {
 	@Bean
 	fun kotlinPojoFunction(): (Person) -> String {
 		return { it.name.toString()}
+	}
+	
+	@Bean
+	fun kotlinListPojoFunction(): (List<Person>) -> String {
+		return {
+			"List of: " + it.get(0).name
+		}
 	}
 
 	@Bean

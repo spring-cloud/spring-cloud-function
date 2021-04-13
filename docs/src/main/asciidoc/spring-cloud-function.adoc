@@ -467,7 +467,7 @@ The above represents Kotlin lambdas configured as Spring beans. The signature of
 While mechanics of Kotlin-to-Java mapping are outside of the scope of this documentation, it is important to understand that the
 same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.
 
-To enable Kotlin support all you need is to add `spring-cloud-function-kotlin` module to your classpath which contains the appropriate
+To enable Kotlin support all you need is to add Kotlin SDK libraries on the classpath which will trigger appropriate
 autoconfiguration and supporting classes.
 
 === Function Component Scan
