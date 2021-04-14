@@ -247,6 +247,12 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Test
 	public void testCompositionWithOutputConversion() {
 		FunctionCatalog catalog = this.configureCatalog();
+
+		Function<Message<byte[]>, Message<byte[]>> composedFunction = catalog.lookup("mapfrompojo|uppercase|reverse", "application/json");
+		Message<byte[]> resultMessage = composedFunction.apply(MessageBuilder.withPayload("{\"name\":\"Ricky\"}".getBytes()).build());
+		assertThat(new String(resultMessage.getPayload())).isEqualTo("\"YKCIR\"");
+
+
 		Function<Flux<String>, Flux<Message<byte[]>>> fluxFunction = catalog.lookup("uppercase|reverseFlux", "application/json");
 		List<Message<byte[]>> result = fluxFunction.apply(Flux.just("hello", "bye")).collectList().block();
 		assertThat(result.get(0).getPayload()).isEqualTo("\"OLLEH\"".getBytes());
@@ -878,6 +884,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 
 		@Bean
+		public Function<Person, String> mapfrompojo() {
+			return person -> {
+				return person.getName();
+			};
+		}
+
+		@Bean
 		public Function<Map<String, Object>, Person> maptopojo() {
 			return map -> {
 				Person person = new Person((String) map.get("name"), Integer.parseInt((String) map.get("id")));
@@ -887,7 +900,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> {
+				return v.toUpperCase();
+			};
 		}
 
 		@Bean
@@ -920,7 +935,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<String, String> reverse() {
-			return value -> new StringBuilder(value).reverse().toString();
+			return value -> {
+				return new StringBuilder(value).reverse().toString();
+			};
 		}
 
 		@Bean

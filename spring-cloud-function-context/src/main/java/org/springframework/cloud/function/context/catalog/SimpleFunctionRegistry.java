@@ -285,8 +285,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					((FunctionInvocationWrapper) targetFunction).acceptedOutputMimeTypes = acceptedOutputTypes;
 
 				}
-				resultFunction = (Function<?, ?>) targetFunction;
-				//resultFunction = new FunctionInvocationWrapper(((FunctionInvocationWrapper) targetFunction).getTarget(), functionType, definition, acceptedOutputTypes);
+				resultFunction = new FunctionInvocationWrapper(((FunctionInvocationWrapper) targetFunction).getTarget(), functionType, definition, acceptedOutputTypes);
 			}
 			else {
 				resultFunction = new FunctionInvocationWrapper(targetFunction, functionType, definition, acceptedOutputTypes);
@@ -298,7 +297,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			String prefix = "";
 
 			Type originFunctionType = null;
-			for (String name : names) {
+			for (int i = 0; i < names.length; i++) {
+				String name = names[i];
 				Object function = this.locateFunction(name);
 				if (function == null) {
 					if (logger.isDebugEnabled()) {
@@ -349,13 +349,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 
 				function = new FunctionInvocationWrapper(function, currentFunctionType, name, acceptedOutputTypes);
-//				function = new FunctionInvocationWrapper(function, currentFunctionType, name, names.length > 1 ? new String[] {} : acceptedOutputTypes);
-				//function = new FunctionInvocationWrapper(function, currentFunctionType, name, !names[0].equals("origin") && name.equals(names[names.length - 1]) ? acceptedOutputTypes : new String[] {});
 
 				if (originFunctionType == null) {
 					originFunctionType = currentFunctionType;
 				}
-				if (name.equals(names[names.length - 1]) && !names[0].equals("origin")) {
+				if (name.equals(names[names.length - 1]) /*&& !names[0].equals("origin")*/) {
 					((FunctionInvocationWrapper) function).setSkipOutputConversion(false);
 				}
 				else {
@@ -370,6 +368,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					originFunctionType = FunctionTypeUtils.compose(originFunctionType, currentFunctionType);
 					resultFunction = new FunctionInvocationWrapper(resultFunction.andThen((Function) function),
 						originFunctionType, composedNameBuilder.toString(), acceptedOutputTypes);
+					if (((FunctionInvocationWrapper) resultFunction).composed) { //if (i < names.length - 1) {
+						((FunctionInvocationWrapper) resultFunction).setSkipOutputConversion(true);
+					}
 				}
 				prefix = "|";
 			}
@@ -377,7 +378,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			FunctionRegistration<Object> registration = new FunctionRegistration<Object>(resultFunction, definition)
 				.type(originFunctionType);
 			registrationsByFunction.putIfAbsent(resultFunction, registration);
-			registrationsByName.putIfAbsent(definition, registration);
 		}
 		return resultFunction;
 	}
@@ -1002,6 +1002,4 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return "org.springframework.kafka.support.KafkaNull".equals(payload.getClass().getName());
 		}
 	}
-
-
 }
