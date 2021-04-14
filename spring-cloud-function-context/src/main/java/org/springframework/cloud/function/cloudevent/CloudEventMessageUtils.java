@@ -275,9 +275,13 @@ public final class CloudEventMessageUtils {
 	 * @return prefix (e.g., 'ce_' or 'ce-' etc.)
 	 */
 	static String determinePrefixToUse(Map<String, Object> messageHeaders) {
+		return determinePrefixToUse(messageHeaders, false);
+	}
+
+	static String determinePrefixToUse(Map<String, Object> messageHeaders, boolean strict) {
 		String targetProtocol = (String) messageHeaders.get(MessageUtils.TARGET_PROTOCOL);
 		String prefix = determinePrefixToUse(targetProtocol);
-		if (StringUtils.hasText(prefix)) {
+		if (StringUtils.hasText(prefix) && (strict || StringUtils.hasText((String) messageHeaders.get(prefix + _SPECVERSION)))) {
 			return prefix;
 		}
 		else {
@@ -294,7 +298,7 @@ public final class CloudEventMessageUtils {
 			}
 		}
 
-		return "";
+		return DEFAULT_ATTR_PREFIX;
 	}
 
 	/**

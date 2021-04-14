@@ -31,6 +31,26 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class CloudEventMessageUtilsAndBuilderTests {
 
+	@Test// see https://github.com/spring-cloud/spring-cloud-function/issues/680
+	public void testProperAttributeExtractionRegardlessOfTargetProtocol() {
+		Message<String> ceMessage = CloudEventMessageBuilder.withData("foo").build();
+		ceMessage = MessageBuilder.fromMessage(ceMessage).setHeader("target-protocol", "kafka").build();
+
+		String prefix = CloudEventMessageUtils.determinePrefixToUse(ceMessage.getHeaders());
+		assertThat(prefix).isEqualTo("ce-");
+		prefix = CloudEventMessageUtils.determinePrefixToUse(ceMessage.getHeaders(), true);
+		assertThat(prefix).isEqualTo("ce_");
+
+		String specVersion = CloudEventMessageUtils.getSpecVersion(ceMessage);
+		assertThat(specVersion).isEqualTo("1.0");
+		String type = CloudEventMessageUtils.getType(ceMessage);
+		assertThat(type).isEqualTo("java.lang.String");
+		String id = CloudEventMessageUtils.getId(ceMessage);
+		assertThat(id).isNotNull();
+		URI source = CloudEventMessageUtils.getSource(ceMessage);
+		assertThat(source.toString()).isEqualTo("https://spring.io/");
+	}
+
 	@Test
 	public void testAttributeRecognitionAndCanonicalization() {
 		Message<String> httpMessage = MessageBuilder.withPayload("hello")

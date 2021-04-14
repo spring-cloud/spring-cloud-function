@@ -90,7 +90,7 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 		if (this.messageConverter != null && CLOUD_EVENT_CLASS != null && CLOUD_EVENT_CLASS.isAssignableFrom(result.getClass())) {
 			convertedResult = this.messageConverter.toMessage(result, input.getHeaders());
 		}
-		String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders());
+		String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders(), true);
 		return this.doPostProcessResult(convertedResult, targetPrefix);
 	}
 
