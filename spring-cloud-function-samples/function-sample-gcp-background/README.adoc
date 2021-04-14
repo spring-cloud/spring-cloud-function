@@ -34,10 +34,7 @@ Received Pub/Sub message with data: hello
 
 ===== Deploy to GCP
 
-As of March 2020, Google Cloud Functions for Java is in Alpha.
-You can get on the https://docs.google.com/forms/d/e/1FAIpQLScC98jGi7CfG0n3UYlj7Xad8XScvZC8-BBOg7Pk3uSZx_2cdQ/viewform[whitelist] to try it out.
-
-The next steps will demonstrate how to deploy your background function to GCP and have it be invoked by a Pub/Sub event.
+The steps below will demonstrate how to deploy your background function to GCP and have it be invoked by a Pub/Sub event.
 
 To complete the next steps, make sure that you have the https://cloud.google.com/sdk/install[Cloud SDK CLI] installed.
 
@@ -58,7 +55,7 @@ You should see the JAR to deploy in the `target/deploy` directory.
 3. Deploy the JAR that you created by running
 +
 ----
-gcloud alpha functions deploy function-sample-gcp-background \
+gcloud functions deploy function-sample-gcp-background \
 --entry-point org.springframework.cloud.function.adapter.gcp.GcfJarLauncher \
 --runtime java11 \
 --trigger-topic my-functions-topic \
