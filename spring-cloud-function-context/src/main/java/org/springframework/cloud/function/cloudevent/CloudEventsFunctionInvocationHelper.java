@@ -19,6 +19,8 @@ package org.springframework.cloud.function.cloudevent;
 import java.net.URI;
 import java.util.UUID;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -31,6 +33,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -42,6 +45,8 @@ import org.springframework.util.StringUtils;
  *
  */
 public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Message<?>>, ApplicationContextAware {
+
+	private Log logger = LogFactory.getLog(this.getClass());
 
 	private ConfigurableApplicationContext applicationContext;
 
@@ -91,6 +96,12 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 			convertedResult = this.messageConverter.toMessage(result, input.getHeaders());
 		}
 		String targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders(), true);
+		Assert.hasText(targetPrefix, "Unable to determine prefix for Cloud Event atttributes, "
+				+ "which they must have according to protocol specification. Consider adding 'target-protocol' "
+				+ "header with values of one of the supported protocols - [kafka, amqp, http]");
+		if (logger.isDebugEnabled()) {
+			logger.debug("Cloud event attributes will be prefixed with '" + targetPrefix + "'");
+		}
 		return this.doPostProcessResult(convertedResult, targetPrefix);
 	}
 
@@ -123,6 +134,9 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 		}
 
 		resultMessage = messageBuilder.build(targetPrefix);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Cloud Event result message: " + resultMessage);
+		}
 		return resultMessage;
 	}
 
