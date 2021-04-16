@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -297,6 +296,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			String prefix = "";
 
 			Type originFunctionType = null;
+			boolean isReactive = false;
 			for (int i = 0; i < names.length; i++) {
 				String name = names[i];
 				Object function = this.locateFunction(name);
@@ -353,7 +353,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				if (originFunctionType == null) {
 					originFunctionType = currentFunctionType;
 				}
-				if (name.equals(names[names.length - 1]) /*&& !names[0].equals("origin")*/) {
+
+				Type inputType = FunctionTypeUtils.getInputType(((FunctionInvocationWrapper) function).getFunctionType(), 0);
+				if (!isReactive) {
+					isReactive = FunctionTypeUtils.isReactive(inputType);
+				}
+				if (name.equals(names[names.length - 1]) && isReactive && !names[0].equals("origin")) {
 					((FunctionInvocationWrapper) function).setSkipOutputConversion(false);
 				}
 				else {
@@ -377,6 +382,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			((FunctionInvocationWrapper) resultFunction).acceptedOutputMimeTypes = acceptedOutputTypes;
 			FunctionRegistration<Object> registration = new FunctionRegistration<Object>(resultFunction, definition)
 				.type(originFunctionType);
+			if (((FunctionInvocationWrapper) resultFunction).composed || names.length == 1) {
+				((FunctionInvocationWrapper) resultFunction).setSkipOutputConversion(false);
+			}
 			registrationsByFunction.putIfAbsent(resultFunction, registration);
 		}
 		return resultFunction;
@@ -960,16 +968,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (ct != null) {
 				ct = ct.toString();
 				return ((String) ct).startsWith("application/json");
-			}
-			return false;
-		}
-
-		private boolean isJson(Object value) {
-			String v = value instanceof byte[]
-					? new String((byte[]) value, StandardCharsets.UTF_8)
-							: (value instanceof String ? (String) value : null);
-			if (v != null && JsonMapper.isJsonString(v)) {
-				return true;
 			}
 			return false;
 		}
