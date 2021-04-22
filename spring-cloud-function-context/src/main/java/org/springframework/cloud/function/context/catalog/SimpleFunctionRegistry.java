@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -330,7 +330,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		/*
 		 * This is primarily to support Stream's ability to access
 		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
-		 * It does not have a setter/getter and can only be set via reflection.
 		 * It is not intended to remain here and will be removed as soon as particular elements
 		 * of stream will be refactored to address this.
 		 */
@@ -364,6 +363,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				logger.debug("'skipOutputConversion' was explicitely set to true. No output conversion will be attempted");
 			}
 			this.skipOutputConversion = skipOutputConversion;
+		}
+
+		public Function<Object, Message> getEnhancer() {
+			return this.enhancer;
+		}
+
+		public void setEnhancer(Function<Object, Message> enhancer) {
+			this.enhancer = enhancer;
 		}
 
 		public Object getTarget() {
