@@ -365,10 +365,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.skipOutputConversion = skipOutputConversion;
 		}
 
+		/**
+		 * !!! INTERNAL USE ONLY !!!
+		 * This is primarily to support s-c-Stream's ability to access
+		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
+		 * It is not intended to remain here and will be removed as soon as particular elements
+		 * of stream will be refactored to address this.
+		 */
 		public Function<Object, Message> getEnhancer() {
 			return this.enhancer;
 		}
 
+		/**
+		 * !!! INTERNAL USE ONLY !!!
+		 * This is primarily to support s-c-Stream's ability to access
+		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
+		 * It is not intended to remain here and will be removed as soon as particular elements
+		 * of stream will be refactored to address this.
+		 */
 		public void setEnhancer(Function<Object, Message> enhancer) {
 			this.enhancer = enhancer;
 		}
