@@ -66,7 +66,12 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 		if (System.getenv().containsKey("spring.cloud.function.definition")) {
 			this.functionName = System.getenv("spring.cloud.function.definition");
 		}
-		System.setProperty("spring.http.converters.preferred-json-mapper", "gson");
+
+		// Default to GSON if implementation not specified.
+		if (!System.getenv().containsKey("spring.http.converters.preferred-json-mapper")) {
+			System.setProperty("spring.http.converters.preferred-json-mapper", "gson");
+		}
+
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
 				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 		initialize(null);
