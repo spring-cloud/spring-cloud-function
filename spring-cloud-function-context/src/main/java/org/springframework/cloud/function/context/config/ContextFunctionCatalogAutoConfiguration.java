@@ -79,7 +79,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Deprecated
 	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
 
-	static final String JSON_MAPPER_PROPERTY = "spring.cloud.function.preferred-json-mapper";
+	/**
+	 * The name of the property to specify desired JSON mapper. Available values are `jackson' and 'gson'.
+	 */
+	public static final String JSON_MAPPER_PROPERTY = "spring.cloud.function.preferred-json-mapper";
 
 	@Bean
 	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper,

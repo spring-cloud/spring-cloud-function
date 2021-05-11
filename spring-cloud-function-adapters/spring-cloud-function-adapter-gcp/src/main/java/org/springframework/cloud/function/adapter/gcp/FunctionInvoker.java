@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
+import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
@@ -68,8 +69,8 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 		}
 
 		// Default to GSON if implementation not specified.
-		if (!System.getenv().containsKey("spring.http.converters.preferred-json-mapper")) {
-			System.setProperty("spring.http.converters.preferred-json-mapper", "gson");
+		if (!System.getenv().containsKey(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY)) {
+			System.setProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY, "gson");
 		}
 
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
