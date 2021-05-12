@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,16 @@
 
 package org.springframework.cloud.function.context;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.springframework.beans.BeansException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 
 /**
  *
@@ -25,7 +34,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  */
 @ConfigurationProperties(prefix = FunctionProperties.PREFIX)
-public class FunctionProperties {
+public class FunctionProperties implements EnvironmentAware, ApplicationContextAware {
 
 	/**
 	 * The name prefix for properties defined by this properties class.
@@ -55,14 +64,52 @@ public class FunctionProperties {
 	 */
 	private String definition;
 
+	private Map<String, FunctionConfigurationProperties> configuration;
 
 	private String expectedContentType;
+
+	private Environment environment;
+
+	private ApplicationContext applicationContext;
+
+	public Map<String, FunctionConfigurationProperties> getConfiguration() {
+		return configuration;
+	}
 
 	/**
 	 * SpEL expression which should result in function definition (e.g., function name or composition instruction).
 	 * NOTE: SpEL evaluation context's root object is the input argument (e.g., Message).
 	 */
 	private String routingExpression;
+
+	public void setConfiguration(Map<String, FunctionConfigurationProperties> configuration) {
+		for (Entry<String, FunctionConfigurationProperties> entry : configuration.entrySet()) {
+			String propertyX = "spring.cloud.function.configuration." + entry.getKey() + ".input-header-mapping-expression.";
+			String propertyY = "spring.cloud.function.configuration." + entry.getKey() + ".inputHeaderMappingExpression.";
+			Map<String, Object>  headerMapping = entry.getValue().getInputHeaderMappingExpression();
+			for (Object k : headerMapping.keySet()) {
+				if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
+					Map<String, Object> originalMapping = entry.getValue().getInputHeaderMappingExpression();
+					entry.getValue().setInputHeaderMappingExpression(Collections.singletonMap("0", originalMapping));
+					break;
+				}
+				else {
+					break;
+				}
+			}
+		}
+		this.configuration = configuration;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext)
+			throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+
+	public ApplicationContext getApplicationContext() {
+		return this.applicationContext;
+	}
 
 	public String getDefinition() {
 		return definition;
@@ -86,5 +133,24 @@ public class FunctionProperties {
 
 	public void setExpectedContentType(String expectedContentType) {
 		this.expectedContentType = expectedContentType;
+	}
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = environment;
+	}
+
+	public static class FunctionConfigurationProperties {
+
+		private Map<String, Object> inputHeaderMappingExpression;
+
+		public Map<String, Object> getInputHeaderMappingExpression() {
+			return inputHeaderMappingExpression;
+		}
+
+		public void setInputHeaderMappingExpression(Map<String, Object> inputHeaderMappingExpression) {
+			this.inputHeaderMappingExpression = inputHeaderMappingExpression;
+		}
+
 	}
 }

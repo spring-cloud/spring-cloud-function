@@ -55,8 +55,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	private GenericApplicationContext applicationContext;
 
 	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter,
-			JsonMapper jsonMapper, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
-		super(conversionService, messageConverter, jsonMapper, functionInvocationHelper);
+			JsonMapper jsonMapper, @Nullable FunctionProperties functionProperties, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
+		super(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
 	}
 
 	@Override

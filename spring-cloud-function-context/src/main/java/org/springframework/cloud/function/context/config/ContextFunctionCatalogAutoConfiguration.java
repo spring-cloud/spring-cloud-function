@@ -125,8 +125,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 				((CloudEventsFunctionInvocationHelper) functionInvocationHelper).setMessageConverter(messageConverter);
 			}
 		}
-
-		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionInvocationHelper);
+		FunctionProperties functionProperties = context.getBean(FunctionProperties.class);
+		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)

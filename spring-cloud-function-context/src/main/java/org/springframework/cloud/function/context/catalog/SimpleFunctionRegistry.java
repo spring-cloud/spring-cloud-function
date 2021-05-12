@@ -49,11 +49,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.FunctionProperties.FunctionConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.expression.Expression;
@@ -100,10 +102,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 	private final FunctionInvocationHelper<Message<?>> functionInvocationHelper;
 
+	private final FunctionProperties functionProperties;
+
 	@Autowired(required = false)
 	private FunctionAroundWrapper functionAroundWrapper;
 
 	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper,
+			@Nullable FunctionProperties functionProperties,
 			@Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		Assert.notNull(messageConverter, "'messageConverter' must not be null");
 		Assert.notNull(jsonMapper, "'jsonMapper' must not be null");
@@ -113,6 +118,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
 		this.headersField.setAccessible(true);
 		this.functionInvocationHelper = functionInvocationHelper;
+		this.functionProperties = functionProperties;
 	}
 
 	@Override
@@ -123,7 +129,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	}
 
 	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
-		this(conversionService, messageConverter, jsonMapper, null);
+		this(conversionService, messageConverter, jsonMapper, null, null);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -277,6 +283,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					FunctionInvocationWrapper andThenFunction =
 							invocationWrapperInstance(functionName, function.getTarget(), function.inputType, function.outputType);
 					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) andThenFunction);
+					composedFunction = this.enrichInputIfNecessary(composedFunction);
+
 				}
 				this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
 			}
@@ -284,6 +292,29 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		if (logger.isDebugEnabled()) {
 			logger.debug("Composed function " + composedFunction);
 		}
+		return composedFunction;
+	}
+
+	private FunctionInvocationWrapper enrichInputIfNecessary(FunctionInvocationWrapper composedFunction) {
+		if (this.functionProperties == null) {
+			return composedFunction;
+		}
+		String functionDefinition = composedFunction.getFunctionDefinition();
+		Map<String, FunctionConfigurationProperties> configurationProperties = this.functionProperties.getConfiguration();
+		if (!CollectionUtils.isEmpty(configurationProperties)) {
+			FunctionConfigurationProperties configuration =  configurationProperties
+					.get(functionDefinition.replace("|", "").replace(",", ""));
+			if (!CollectionUtils.isEmpty(configuration.getInputHeaderMappingExpression())) {
+				BeanFactoryResolver beanResolver = this.functionProperties.getApplicationContext() != null
+						? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
+						: null;
+				InputEnricher enricher = new InputEnricher(configuration.getInputHeaderMappingExpression(), beanResolver);
+				FunctionInvocationWrapper w = new FunctionInvocationWrapper("headerEnricher", enricher, Message.class, Message.class);
+				composedFunction = (FunctionInvocationWrapper) w.andThen((Function<Object, Object>) composedFunction);
+				composedFunction.functionDefinition = functionDefinition;
+			}
+		}
+
 		return composedFunction;
 	}
 
@@ -315,7 +346,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		private final Type outputType;
 
-		private final String functionDefinition;
+		private String functionDefinition;
 
 		private boolean composed;
 
