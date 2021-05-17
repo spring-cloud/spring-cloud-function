@@ -115,7 +115,8 @@ public class FunctionInvoker implements RequestStreamHandler {
 	}
 
 	private void start() {
-		ConfigurableApplicationContext context = SpringApplication.run(FunctionClassUtils.getStartClass());
+		System.out.println(FunctionClassUtils.getStartClass().getName());
+		ConfigurableApplicationContext context = SpringApplication.run(FunctionClassUtils.getStartClass(), "--spring.main.web-application-type=none");
 		Environment environment = context.getEnvironment();
 		String functionName = environment.getProperty("spring.cloud.function.definition");
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);

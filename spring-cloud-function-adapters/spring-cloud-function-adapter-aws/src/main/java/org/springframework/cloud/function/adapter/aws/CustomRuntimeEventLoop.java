@@ -52,7 +52,7 @@ final class CustomRuntimeEventLoop {
 
 	private static Log logger = LogFactory.getLog(CustomRuntimeEventLoop.class);
 
-	private static final String LAMBDA_VERSION_DATE = "2018-06-01";
+	static final String LAMBDA_VERSION_DATE = "2018-06-01";
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
 
@@ -78,11 +78,11 @@ final class CustomRuntimeEventLoop {
 		ObjectMapper mapper = context.getBean(ObjectMapper.class);
 
 		logger.info("Entering event loop");
-		while (true) {
+		while (isContinue()) {
 			logger.debug("Attempting to get new event");
 			ResponseEntity<String> response = rest.exchange(requestEntity, String.class);
 			if (logger.isDebugEnabled()) {
-				logger.debug("New Event received: " + response.getBody());
+				logger.debug("New Event received: " + response);
 			}
 
 			FunctionInvocationWrapper function = locateFunction(functionCatalog, response.getHeaders().getContentType());
@@ -99,7 +99,7 @@ final class CustomRuntimeEventLoop {
 			Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
 
 			if (responseMessage != null && logger.isDebugEnabled()) {
-				logger.debug("Reply from function: " + new String(responseMessage.getPayload(), StandardCharsets.UTF_8));
+				logger.debug("Reply from function: " + responseMessage);
 			}
 
 			byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper);
@@ -112,19 +112,34 @@ final class CustomRuntimeEventLoop {
 		}
 	}
 
+	private static boolean isContinue() {
+		return Boolean.parseBoolean(System.getProperty("CustomRuntimeEventLoop.continue", "true"));
+	}
+
 	private static FunctionInvocationWrapper locateFunction(FunctionCatalog functionCatalog, MediaType contentType) {
 		String handlerName = System.getenv("DEFAULT_HANDLER");
 		FunctionInvocationWrapper function = functionCatalog.lookup(handlerName, contentType.toString());
 		if (function == null) {
 			handlerName = System.getenv("_HANDLER");
+			function = functionCatalog.lookup(handlerName, contentType.toString());
 		}
-		function = functionCatalog.lookup(handlerName, contentType.toString());
+
+		if (function == null) {
+			function = functionCatalog.lookup(null, contentType.toString());
+		}
+
 		if (function == null) {
 			handlerName = System.getenv("spring.cloud.function.definition");
+			function = functionCatalog.lookup(handlerName, contentType.toString());
 		}
-		function = functionCatalog.lookup(handlerName, contentType.toString());
+
+		if (function == null) {
+			function = functionCatalog.lookup(null, contentType.toString());
+		}
+
 		Assert.notNull(function, "Failed to locate function. Tried locating default function, "
-				+ "function by 'DEFAULT_HANDLER', '_HANDLER' env variable as well as'spring.cloud.function.definition'.");
+				+ "function by 'DEFAULT_HANDLER', '_HANDLER' env variable as well as'spring.cloud.function.definition'. "
+				+ "Functions available in catalog are: " + functionCatalog.getNames(null));
 		if (function != null && logger.isInfoEnabled()) {
 			logger.info("Located function " + function.getFunctionDefinition());
 		}
