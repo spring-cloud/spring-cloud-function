@@ -121,6 +121,12 @@ final class AWSLambdaUtils {
 					messageBuilder = MessageBuilder.withPayload(body).copyHeaders(requestMap);
 				}
 			}
+
+			Object providedHeaders = requestMap.remove("headers");
+			if (providedHeaders != null && providedHeaders instanceof Map) {
+				messageBuilder.removeHeader("headers");
+				messageBuilder.copyHeaders((Map<String, Object>) providedHeaders);
+			}
 		}
 		else if (request instanceof Iterable) {
 			messageBuilder = MessageBuilder.withPayload(request);
@@ -131,6 +137,8 @@ final class AWSLambdaUtils {
 		if (awsContext != null) {
 			messageBuilder.setHeader("aws-context", awsContext);
 		}
+		logger.info("Incoming request headers: " + headers);
+
 		return messageBuilder.copyHeaders(headers).build();
 	}
 
