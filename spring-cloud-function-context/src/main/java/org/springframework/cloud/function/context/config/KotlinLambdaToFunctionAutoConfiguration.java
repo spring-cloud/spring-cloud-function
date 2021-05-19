@@ -58,6 +58,7 @@ import org.springframework.util.ObjectUtils;
  *
  * @author Oleg Zhurakousky
  * @author Adrien Poupard
+ * @author Dmitriy Tsypov
  * @since 2.0
  */
 @Configuration
