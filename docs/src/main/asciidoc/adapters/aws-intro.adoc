@@ -69,6 +69,27 @@ property or environment variable. The functions are extracted from the Spring Cl
 the framework will attempt to find a default following the search order where it searches first for `Function` then `Consumer` and finally `Supplier`).
 
 
+==== AWS Function Routing
+
+One of the core features of Spring Cloud Function is https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[routing] 
+- an ability to have one special function to delegate to other functions based on the user provided routing instructions.
+
+In AWS Lambda environment this feature provides one additional benefit, as it allows you to bind a single function (Routing Function) 
+as AWS Lambda and thus a single HTTP endpoint for API Gateway. So in the end you only manage one function and one endpoint, while benefiting 
+from many function that can be part of your application.
+
+More details are available in the provided https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-routing[sample],
+yet few general things worth mentioning.
+
+Routing capabilities will be enabled by default whenever there is more then one function in your application as `org.springframework.cloud.function.adapter.aws.FunctionInvoker`
+can not determine which function to bind as AWS Lambda, so it defaults to `RoutingFunction`.
+This means that all you need to do is provide routing instructions which you can do https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[using several mechanisms] 
+(see https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-routing[sample] for more details).
+
+Also, note that since AWS does not allow dots `.` and/or hyphens`-` in the name of the environment variable, you can benefit from boot support and simply substitute
+dots with underscores and hyphens with camel case.  So for example `spring.cloud.function.definition` becomes `spring_cloud_function_definition`
+and `spring.cloud.function.routing-expression` becomes `spring_cloud_function_routingExpression`. 
+
 
 ==== Notes on JAR Layout
 
