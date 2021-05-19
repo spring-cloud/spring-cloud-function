@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.kotlin;
 
 import java.lang.reflect.ParameterizedType;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -67,10 +68,9 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 		function = this.context.getBean("kotlinConsumer");
 		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinConsumer", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
+		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Consumer.class.getName());
+		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
 		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo("kotlin.Unit");
 
 		function = this.context.getBean("kotlinSupplier");
 		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinSupplier", this.context);
