@@ -283,9 +283,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					FunctionInvocationWrapper andThenFunction =
 							invocationWrapperInstance(functionName, function.getTarget(), function.inputType, function.outputType);
 					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) andThenFunction);
-					composedFunction = this.enrichInputIfNecessary(composedFunction);
-
 				}
+				composedFunction = this.enrichInputIfNecessary(composedFunction);
 				this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
 			}
 		}
@@ -304,17 +303,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		if (!CollectionUtils.isEmpty(configurationProperties)) {
 			FunctionConfigurationProperties configuration =  configurationProperties
 					.get(functionDefinition.replace("|", "").replace(",", ""));
-			if (!CollectionUtils.isEmpty(configuration.getInputHeaderMappingExpression())) {
-				BeanFactoryResolver beanResolver = this.functionProperties.getApplicationContext() != null
-						? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
-						: null;
-				InputEnricher enricher = new InputEnricher(configuration.getInputHeaderMappingExpression(), beanResolver);
-				FunctionInvocationWrapper w = new FunctionInvocationWrapper("headerEnricher", enricher, Message.class, Message.class);
-				composedFunction = (FunctionInvocationWrapper) w.andThen((Function<Object, Object>) composedFunction);
-				composedFunction.functionDefinition = functionDefinition;
+			if (configuration != null) {
+				if (!CollectionUtils.isEmpty(configuration.getInputHeaderMappingExpression())) {
+					BeanFactoryResolver beanResolver = this.functionProperties.getApplicationContext() != null
+							? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
+							: null;
+					InputEnricher enricher = new InputEnricher(configuration.getInputHeaderMappingExpression(), beanResolver);
+					FunctionInvocationWrapper w = new FunctionInvocationWrapper("headerEnricher", enricher, Message.class, Message.class);
+					composedFunction = (FunctionInvocationWrapper) w.andThen((Function<Object, Object>) composedFunction);
+					composedFunction.functionDefinition = functionDefinition;
+				}
 			}
 		}
-
 		return composedFunction;
 	}
 

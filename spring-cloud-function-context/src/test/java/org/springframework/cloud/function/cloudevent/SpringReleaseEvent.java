@@ -22,7 +22,7 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * An example POJO that represents cloud event data
+ * An example POJO that represents cloud event data.
  *
  * @author Oleg Zhurakousky
  *
