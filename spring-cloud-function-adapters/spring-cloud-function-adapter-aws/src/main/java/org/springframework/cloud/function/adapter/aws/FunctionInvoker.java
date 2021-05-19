@@ -35,6 +35,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
@@ -42,6 +43,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
@@ -115,7 +117,6 @@ public class FunctionInvoker implements RequestStreamHandler {
 	}
 
 	private void start() {
-		System.out.println(FunctionClassUtils.getStartClass().getName());
 		ConfigurableApplicationContext context = SpringApplication.run(FunctionClassUtils.getStartClass(), "--spring.main.web-application-type=none");
 		Environment environment = context.getEnvironment();
 		String functionName = environment.getProperty("spring.cloud.function.definition");
@@ -127,6 +128,16 @@ public class FunctionInvoker implements RequestStreamHandler {
 		}
 
 		this.function = functionCatalog.lookup(functionName, "application/json");
+
+		if (this.function == null && !CollectionUtils.isEmpty(functionCatalog.getNames(null))) {
+			if (logger.isInfoEnabled()) {
+				logger.info("More then one function is available in FunctionCatalog. Will default to RoutingFunction, "
+						+ "expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
+						+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
+			}
+			this.function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+		}
+
 		if (this.function.isOutputTypePublisher()) {
 			this.function.setSkipOutputConversion(true);
 		}

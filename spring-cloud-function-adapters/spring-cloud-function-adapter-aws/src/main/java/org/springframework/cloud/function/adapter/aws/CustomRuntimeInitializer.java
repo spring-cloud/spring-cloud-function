@@ -47,8 +47,7 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 						CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
 			}
 		}
-		else
-		if (ContextFunctionCatalogInitializer.enabled
+		else if (ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
 				context.registerBean(LambdaDestinationResolver.class, () -> new LambdaDestinationResolver());

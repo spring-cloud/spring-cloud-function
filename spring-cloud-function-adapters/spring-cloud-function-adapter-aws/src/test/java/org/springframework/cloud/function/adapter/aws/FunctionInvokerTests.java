@@ -19,6 +19,7 @@ package org.springframework.cloud.function.adapter.aws;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -31,6 +32,7 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
@@ -42,6 +44,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -363,6 +366,13 @@ public class FunctionInvokerTests {
 			"    \"isBase64Encoded\": false\n" +
 			"}";
 
+	@BeforeEach
+	public void before() throws Exception {
+		System.clearProperty("MAIN_CLASS");
+		System.clearProperty("spring.cloud.function.routing-expression");
+		System.clearProperty("spring.cloud.function.definition");
+		this.getEnvironment().clear();
+	}
 
 	@Test
 	public void testCollection() throws Exception {
@@ -706,12 +716,77 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"OK\"");
 	}
 
+	@Test
+	public void testWithDefaultRoutingFailure() throws Exception {
+		System.setProperty("MAIN_CLASS", SampleConfiguration.class.getName());
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try {
+			invoker.handleRequest(targetStream, output, null);
+			fail();
+		}
+		catch (Exception e) {
+			// success, since no definition nor routing instructions are provided
+		}
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testWithDefaultRouting() throws Exception {
+		System.setProperty("MAIN_CLASS", SampleConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.routing-expression", "'reverse'");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("\"olleh\"");
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testWithDefinitionEnvVariable() throws Exception {
+
+		System.setProperty("MAIN_CLASS", SampleConfiguration.class.getName());
+		this.getEnvironment().put("SPRING_CLOUD_FUNCTION_DEFINITION", "reverse|uppercase");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("\"OLLEH\"");
+	}
+
+	@SuppressWarnings("unchecked")
+	private Map<String, String> getEnvironment() throws Exception {
+		Map<String, String> env = System.getenv();
+		Field field = env.getClass().getDeclaredField("m");
+		field.setAccessible(true);
+		return (Map<String, String>) field.get(env);
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class SampleConfiguration {
 		@Bean
 		public Function<String, String> echoString() {
 			return v -> v;
+		}
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<String, String> reverse() {
+			return v -> new StringBuilder(v).reverse().toString();
 		}
 
 		@Bean
