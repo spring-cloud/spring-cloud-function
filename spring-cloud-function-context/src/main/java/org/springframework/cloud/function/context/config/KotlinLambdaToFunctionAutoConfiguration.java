@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import kotlin.jvm.functions.Function2;
@@ -182,10 +183,13 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			FunctionRegistration<?> registration = new FunctionRegistration<>(this, name);
 			Type[] types = ((ParameterizedType) functionType).getActualTypeArguments();
 
-			if (functionType.getTypeName().contains("Function0")) {
+			if (isValidKotlinSupplier(functionType)) {
 				functionType = ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(types[0]))
 					.getType();
-
+			}
+			else if (isValidKotlinConsumer(functionType, types)) {
+				functionType = ResolvableType.forClassWithGenerics(Consumer.class, ResolvableType.forType(types[0]))
+					.getType();
 			}
 			else if (isValidKotlinFunction(functionType, types)) {
 				functionType = ResolvableType.forClassWithGenerics(Function.class, ResolvableType.forType(types[0]),
@@ -221,20 +225,45 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			return registration;
 		}
 
+		private boolean isValidKotlinSupplier(Type functionType) {
+			return isTypeRepresentedByClass(functionType, Function0.class);
+		}
+
+		private boolean isValidKotlinConsumer(Type functionType, Type[] type) {
+			return isTypeRepresentedByClass(functionType, Function1.class) &&
+				type.length == 2 &&
+				!CoroutinesUtils.isContinuationType(type[0]) &&
+				isTypeRepresentedByClass(type[1], Unit.class);
+		}
+
 		private boolean isValidKotlinFunction(Type functionType, Type[] type) {
-			return functionType.getTypeName().contains(Function1.class.getName()) && type.length == 2 && !CoroutinesUtils.isContinuationType(type[0]);
+			return isTypeRepresentedByClass(functionType, Function1.class) &&
+				type.length == 2 &&
+				!CoroutinesUtils.isContinuationType(type[0]) &&
+				!isTypeRepresentedByClass(type[1], Unit.class);
 		}
 
 		private boolean isValidKotlinSuspendSupplier(Type functionType, Type[] type) {
-			return functionType.getTypeName().contains(Function1.class.getName()) && type.length == 2 && CoroutinesUtils.isContinuationFlowType(type[0]);
+			return isTypeRepresentedByClass(functionType, Function1.class) &&
+				type.length == 2 &&
+				CoroutinesUtils.isContinuationFlowType(type[0]);
 		}
 
 		private boolean isValidKotlinSuspendConsumer(Type functionType, Type[] type) {
-			return functionType.getTypeName().contains(Function2.class.getName()) && type.length == 3 && CoroutinesUtils.isFlowType(type[0]) && CoroutinesUtils.isContinuationUnitType(type[1]);
+			return isTypeRepresentedByClass(functionType, Function2.class) &&
+				type.length == 3 &&
+				CoroutinesUtils.isFlowType(type[0]) &&
+				CoroutinesUtils.isContinuationUnitType(type[1]);
 		}
 
 		private boolean isValidKotlinSuspendFunction(Type functionType, Type[] type) {
-			return functionType.getTypeName().contains(Function2.class.getName()) && type.length == 3 && CoroutinesUtils.isContinuationFlowType(type[1]);
+			return isTypeRepresentedByClass(functionType, Function2.class) &&
+				type.length == 3 &&
+				CoroutinesUtils.isContinuationFlowType(type[1]);
+		}
+
+		private boolean isTypeRepresentedByClass(Type type, Class<?> clazz) {
+			return type.getTypeName().contains(clazz.getName());
 		}
 
 		@Override
