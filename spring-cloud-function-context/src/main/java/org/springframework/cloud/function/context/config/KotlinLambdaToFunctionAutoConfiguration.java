@@ -103,7 +103,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static final class KotlinFunctionWrapper implements Function<Object, Object>, Supplier<Object>, Consumer<Object[]>,
+	public static final class KotlinFunctionWrapper implements Function<Object, Object>, Supplier<Object>, Consumer<Object>,
 			Function0<Object>, Function1<Object, Object>, Function2<Object, Object, Object>,
 			Function3<Object, Object, Object, Object>, Function4<Object, Object, Object, Object, Object>,
 			FactoryBean<FunctionRegistration>,
@@ -165,7 +165,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 		}
 
 		@Override
-		public void accept(Object[] input) {
+		public void accept(Object input) {
 			this.apply(input);
 		}
 
