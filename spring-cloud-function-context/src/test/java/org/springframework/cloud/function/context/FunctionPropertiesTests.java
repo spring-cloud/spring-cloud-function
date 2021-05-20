@@ -106,22 +106,22 @@ public class FunctionPropertiesTests {
 		}
 	}
 
-//	@Test
-//	public void testInputHeaderMappingPropertyWithCompositionWithoutIndex() throws Exception {
-//		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-//				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-//						"--logging.level.org.springframework.cloud.function=DEBUG",
-//						"--spring.main.lazy-initialization=true",
-//						"--spring.cloud.function.definition=echo|foo",
-//						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.key1=hello1",
-//						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.key2=hello2")) {
-//			FunctionProperties functionProperties = context
-//					.getBean(FunctionProperties.class);
-//			FunctionConfigurationProperties configuration = functionProperties
-//					.getConfiguration().get("echofoo");
-//			assertThat(configuration.getInputHeaderMappingExpression()).containsKey("0");
-//		}
-//	}
+	@Test
+	public void testInputHeaderMappingPropertyWithSplitExpression() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+						"--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true",
+						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key1=headers.path.split('/')[0]",
+						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key2=headers.path.split('/')[1]",
+						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key3=headers.path")) {
+			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+			FunctionInvocationWrapper function = functionCatalog.lookup("split");
+			function.apply(MessageBuilder.withPayload("helo")
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+					.setHeader("path", "foo/bar/baz").build());
+		}
+	}
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -133,6 +133,16 @@ public class FunctionPropertiesTests {
 				assertThat(m.getHeaders().get("key1")).isEqualTo("hello1");
 				assertThat(m.getHeaders().get("key2")).isEqualTo("hello2");
 				assertThat(m.getHeaders().get("foo")).isEqualTo("application/json");
+				return m;
+			};
+		}
+
+		@Bean
+		public Function<Message<?>, Message<?>> split() {
+			return m -> {
+				assertThat(m.getHeaders().get("key1")).isEqualTo("foo");
+				assertThat(m.getHeaders().get("key2")).isEqualTo("bar");
+				assertThat(m.getHeaders().get("key3")).isEqualTo("foo/bar/baz");
 				return m;
 			};
 		}
