@@ -72,6 +72,7 @@
 					<compilerPlugins>
 						<plugin>spring</plugin>
 					</compilerPlugins>
+					<jvmTarget>1.8</jvmTarget>
 				</configuration>
 				<executions>
 					<execution>
@@ -84,6 +85,7 @@
 								<sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
 								<sourceDir>${project.basedir}/src/test/java</sourceDir>
 							</sourceDirs>
+							<jvmTarget>1.8</jvmTarget>
 						</configuration>
 					</execution>
 				</executions>
