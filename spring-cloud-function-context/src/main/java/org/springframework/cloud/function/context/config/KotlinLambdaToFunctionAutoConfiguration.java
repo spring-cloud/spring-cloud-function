@@ -167,6 +167,10 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 		@Override
 		public void accept(Object input) {
+			if (CoroutinesUtils.isValidSuspendingFunction(kotlinLambdaTarget, input)) {
+				CoroutinesUtils.invokeSuspendingConsumer(kotlinLambdaTarget, input);
+				return;
+			}
 			this.apply(input);
 		}
 
