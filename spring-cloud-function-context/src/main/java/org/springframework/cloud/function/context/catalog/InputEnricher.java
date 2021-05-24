@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.BeanResolver;
 import org.springframework.expression.Expression;
@@ -37,7 +39,9 @@ import org.springframework.util.Assert;
  * @since 3.1.3
  *
  */
-public class InputEnricher implements Function<Object, Object> {
+class InputEnricher implements Function<Object, Object> {
+
+	protected Log logger = LogFactory.getLog(InputEnricher.class);
 
 	private final Map<String, Map<String, String>> headerExpressions;
 
@@ -62,8 +66,19 @@ public class InputEnricher implements Function<Object, Object> {
 			Map<String, String> mappings = this.headerExpressions.get("0");
 			for (Entry<String, String> keyValueExpressionEntry : mappings.entrySet()) {
 				Expression expression = this.spelParser.parseExpression(keyValueExpressionEntry.getValue());
-				Object value = expression.getValue(this.evalContext, input, Object.class);
-				messageBuilder.setHeader(keyValueExpressionEntry.getKey(), value);
+				try {
+					Object value = expression.getValue(this.evalContext, input, Object.class);
+					messageBuilder.setHeader(keyValueExpressionEntry.getKey(), value);
+				}
+				catch (Exception e) {
+					String message = "Failed while evaluating expression \"" + keyValueExpressionEntry.getValue() + "\"  on incoming message";
+					if (logger.isDebugEnabled()) {
+						logger.warn(message + ": " + input, e);
+					}
+					else {
+						logger.warn(message);
+					}
+				}
 			}
 			input = messageBuilder.build();
 		}
