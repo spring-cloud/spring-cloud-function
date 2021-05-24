@@ -258,6 +258,78 @@ due to the nature of the reactive functions which are invoked only once to pass 
 is handled by the reactor, hence we can not access and/or rely on the routing instructions communicated via individual
 values (e.g., Message).
 
+=== Input Enrichment
+
+There are often times when you need to modify or refine an incoming Message and to keep your code clean of non-functional concerns, and you don’t want to 
+do it inside of your business logic.
+
+You can always accomplish it via <<Function Composition>>. Such approach provides several benefits:
+
+- It allows you to isolate this non-functional concern into a separate function which you can compose with the business function as function definition.
+- It provides you with complete freedom (and danger) as to what you can modify before incoming message reaches the actual business function.
+
+[source, java]
+----
+@Bean
+public Function<Message<?>, Message<?>> enrich() {
+    return message -> MessageBuilder.fromMessage(message).setHeader("foo", "bar").build();
+}
+
+@Bean
+public Function<Message<?>, Message<?>> myBusinessFunction() {
+    // do whatever
+}
+----
+
+And then compose your function by providing the following function definition `enrich|myBusinessFunction`.
+
+While the described approach is the most flexible, it is also the most involved as it requires you to write some code, make it a bean or 
+manually register it as a function before you can compose it with the business function as you can see from the preceding example. 
+
+But what if modifications (enrichments) you are trying to make are trivial as they are in the preceding example? Is there a simpler and more dynamic and configurable
+ mechanism to accomplish the same?
+
+Since version 3.1.3, the framework allows you to provide SpEL expression to enrich individual message headers. Let’s look at one of the tests as the example.
+
+[source, java]
+----
+@Test
+public void testInputHeaderMappingPropertyWithoutIndex() throws Exception {
+	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+			SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+				"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key1='hello1'",
+				"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key2='hello2'",
+				"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
+
+	FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+	FunctionInvocationWrapper function = functionCatalog.lookup("echo");
+	function.apply(MessageBuilder.withPayload("helo")
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+  }
+}
+----
+
+Here you see a property called `input-header-mapping-expression` preceded by the name of the function (i.e., `echo`) and followed by the name of the 
+message header key you want to set and the value as SpEL expression. The first two expressions (for 'key1' and 'key2') are literal SpEL expressions enclosed in 
+single quotes, effectively setting 'key1' to value `hello1` and 'key2' to value `hello2`. The third  one will map Message header ‘foo’ to the value of the 
+current ‘contentType’ header.
+
+NOTE: if for whatever reason the provided expression evaluation fails, the execution of the function will proceed as if nothing ever happen. 
+However you will see the WARN message in your logs informing you about it 
+
+[source, text]
+----
+o.s.c.f.context.catalog.InputEnricher    : Failed while evaluating expression "hello1"  on incoming message. . .
+----
+
+In the event you are dealing with functions that have multiple inputs (next section), you can use index immediately after `input-header-mapping-expression`
+
+[source, text]
+----
+--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key1=‘hello1'
+--spring.cloud.function.configuration.echo.input-header-mapping-expression[1].key2='hello2'
+----
+
 === Function Arity
 
 There are times when a stream of data needs to be categorized and organized. For example,
@@ -470,16 +542,6 @@ same rules for signature transformation outlined in "Java 8 function support" se
 To enable Kotlin support all you need is to add Kotlin SDK libraries on the classpath which will trigger appropriate
 autoconfiguration and supporting classes.
 
-=== Function Component Scan
-
-Spring Cloud Function will scan for implementations of `Function`,
-`Consumer` and `Supplier` in a package called `functions` if it
-exists. Using this feature you can write functions that have no
-dependencies on Spring - not even the `@Component` annotation is
-needed. If you want to use a different package, you can set
-`spring.cloud.function.scan.packages`. You can also use
-`spring.cloud.function.scan.enabled=false` to switch off the scan
-completely.
 
 == Standalone Web Applications
 

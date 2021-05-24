@@ -34,7 +34,23 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 //NOTE!!! assertions for all tests are in 'echo' function since we're validating what's coming into it.
-public class FunctionPropertiesTests {
+public class InputHeaderMappingTests {
+
+	@Test
+	public void testErrorWarnAndContinue() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+						"--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true",
+						"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].key1=hello1",
+						"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].key2='hello2'",
+						"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].foo=headers.contentType")) {
+
+			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+			FunctionInvocationWrapper function = functionCatalog.lookup("echoFail");
+			function.apply(MessageBuilder.withPayload("helo").build());
+		}
+	}
 
 	@Test
 	public void testInputHeaderMappingPropertyWithIndex() throws Exception {
@@ -133,6 +149,16 @@ public class FunctionPropertiesTests {
 				assertThat(m.getHeaders().get("key1")).isEqualTo("hello1");
 				assertThat(m.getHeaders().get("key2")).isEqualTo("hello2");
 				assertThat(m.getHeaders().get("foo")).isEqualTo("application/json");
+				return m;
+			};
+		}
+
+		@Bean
+		public Function<Message<?>, Message<?>> echoFail() {
+			return m -> {
+				assertThat(m.getHeaders().containsKey("key1")).isFalse();
+				assertThat(m.getHeaders().get("key2")).isEqualTo("hello2");
+				assertThat(m.getHeaders().containsKey("foo")).isFalse();
 				return m;
 			};
 		}
