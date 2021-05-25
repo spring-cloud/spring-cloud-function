@@ -27,6 +27,8 @@ import org.springframework.messaging.Message;
 
 import com.microsoft.azure.functions.ExecutionContext;
 
+import reactor.core.publisher.Mono;
+
 @SpringBootApplication
 public class Config {
 
@@ -63,6 +65,14 @@ public class Config {
 				return ("Function error: - bad request");
 			}
 		};
+	}
+
+
+	@Bean
+	public Function<Mono<String>, Mono<String>> uppercaseReactive() {
+		return mono -> mono.map(value -> {
+			return value.toUpperCase();
+		});
 	}
 
 }

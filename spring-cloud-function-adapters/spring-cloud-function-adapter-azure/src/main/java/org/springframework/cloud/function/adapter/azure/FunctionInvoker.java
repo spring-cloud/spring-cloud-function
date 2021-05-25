@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -119,23 +120,28 @@ public class FunctionInvoker<I, O> {
 		Object enhancedInput = enhanceInputIfNecessary(input, executionContext);
 
 		Object output = function.apply(enhancedInput);
-		if (output instanceof Publisher && !function.isOutputTypePublisher()) {
-			List resultList = new ArrayList<>();
-			for (Object resultItem : Flux.from((Publisher) output).toIterable()) {
-				if (resultItem instanceof Collection) {
-					resultList.addAll((Collection) resultItem);
-				}
-				else {
-					if (Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getInputType()))
-							&& !Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getOutputType()))) {
-						return (O) this.convertOutputIfNecessary(input, resultItem);
+		if (output instanceof Publisher) {
+			if (FunctionTypeUtils.isMono(function.getOutputType())) {
+				return (O) this.convertOutputIfNecessary(input, Mono.from((Publisher) output).blockOptional().get());
+			}
+			else {
+				List resultList = new ArrayList<>();
+				for (Object resultItem : Flux.from((Publisher) output).toIterable()) {
+					if (resultItem instanceof Collection) {
+						resultList.addAll((Collection) resultItem);
 					}
 					else {
-						resultList.add(resultItem);
+						if (Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getInputType()))
+								&& !Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getOutputType()))) {
+							return (O) this.convertOutputIfNecessary(input, resultItem);
+						}
+						else {
+							resultList.add(resultItem);
+						}
 					}
 				}
+				return (O) this.convertOutputIfNecessary(input, resultList);
 			}
-			return (O) this.convertOutputIfNecessary(input, resultList);
 		}
 		return (O) this.convertOutputIfNecessary(input, output);
 	}
