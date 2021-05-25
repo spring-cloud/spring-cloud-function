@@ -28,6 +28,7 @@ import com.microsoft.azure.functions.ExecutionContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -144,6 +145,17 @@ public class FunctionInvokerTests {
 		assertThat(consumerResult).isEqualTo("foo1");
 	}
 
+	@Test
+	public void testReactiveFunctions() {
+		FunctionInvoker<String, String> handler = handler(ReactiveFunctionConfiguration.class);
+		String result = handler.handleRequest("hello", new TestExecutionContext("uppercaseMono"));
+
+		System.out.println(result);
+
+//		assertThat(result).isNull();
+//		assertThat(consumerResult).isEqualTo("foo1");
+	}
+
 	@AfterEach
 	public void close() throws IOException {
 		if (this.handler != null) {
@@ -157,6 +169,22 @@ public class FunctionInvokerTests {
 		@Bean
 		public Function<Foo, Bar> function() {
 			return foo -> new Bar();
+		}
+
+	}
+
+	@Configuration
+	@EnableAutoConfiguration
+	protected static class ReactiveFunctionConfiguration {
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> echoStream() {
+			return f -> f;
+		}
+
+		@Bean
+		public Function<Mono<String>, Mono<String>> uppercaseMono() {
+			return f -> f.map(v -> v.toUpperCase());
 		}
 
 	}

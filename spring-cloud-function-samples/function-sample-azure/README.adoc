@@ -37,6 +37,9 @@ $ http POST localhost:7071/api/uppercase greeting=hello name='your name'
 
 The same is for `echo` function, however it will take any input since all it does is just echos it back. 
 
+There is also a reactive version of 'uppercase' - `uppercaseReactive` which will produce the same result, but 
+demonstrates and validates the ability to use reactive functions with Azure.
+
 To run locally on top of Azure Functions, and to deploy to your live Azure environment, you will need the Azure Functions Core Tools installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more details).
 
 To deploy the function to your live Azure environment, including an automatic provisioning of an HTTPTrigger for the function:
