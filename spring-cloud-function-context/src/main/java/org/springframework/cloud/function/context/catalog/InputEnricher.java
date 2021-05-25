@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.BeanResolver;
 import org.springframework.expression.Expression;
@@ -33,6 +34,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
 /**
+ * Class responsible for processing `input-header-mapping-expression`
+ * and modifying message headers accordingly.
  *
  * @author Oleg Zhurakousky
  *
@@ -50,7 +53,7 @@ class InputEnricher implements Function<Object, Object> {
 	private final StandardEvaluationContext evalContext = new StandardEvaluationContext();
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public InputEnricher(Map headerExpressions, @Nullable BeanResolver beanResolver) {
+	InputEnricher(Map headerExpressions, @Nullable BeanResolver beanResolver) {
 		Assert.notEmpty(headerExpressions, "'headerExpressions' must not be null or empty");
 		this.headerExpressions = headerExpressions;
 		this.evalContext.addPropertyAccessor(new MapAccessor());
