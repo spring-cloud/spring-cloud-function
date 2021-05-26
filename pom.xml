@@ -20,7 +20,8 @@
 		<java.version>1.8</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<wrapper.version>1.0.27.BUILD-SNAPSHOT</wrapper.version>
+<!-- 		<wrapper.version>1.0.27.BUILD-SNAPSHOT</wrapper.version> -->
+		<wrapper.version>1.0.26.RELEASE</wrapper.version>
 		<docs.main>spring-cloud-function</docs.main>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true

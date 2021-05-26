@@ -82,6 +82,7 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	 */
 	private String routingExpression;
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setConfiguration(Map<String, FunctionConfigurationProperties> configuration) {
 		for (Entry<String, FunctionConfigurationProperties> entry : configuration.entrySet()) {
 			String propertyX = "spring.cloud.function.configuration." + entry.getKey() + ".input-header-mapping-expression.";
@@ -90,14 +91,18 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 			for (Object k : headerMapping.keySet()) {
 				if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
 					Map<String, Object> originalMapping = entry.getValue().getInputHeaderMappingExpression();
-					entry.getValue().setInputHeaderMappingExpression(Collections.singletonMap("0", originalMapping));
-					break;
-				}
-				else {
-					break;
+					Map current = entry.getValue().getInputHeaderMappingExpression();
+					if (current.containsKey("0")) {
+						((Map) current.get("0")).put(k, headerMapping.get(k));
+					}
+					else {
+						entry.getValue().setInputHeaderMappingExpression(Collections.singletonMap("0", originalMapping));
+						break;
+					}
 				}
 			}
 		}
+
 		this.configuration = configuration;
 	}
 
