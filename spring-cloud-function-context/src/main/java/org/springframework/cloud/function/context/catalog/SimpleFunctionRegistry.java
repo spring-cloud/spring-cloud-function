@@ -923,6 +923,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
 			else if (input instanceof Message) {
+				input = this.filterOutHeaders((Message) input);
 				if (((Message) input).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
 					return FunctionTypeUtils.isMessage(type) ? input : null;
 				}
@@ -956,6 +957,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			Assert.notNull(convertedInput, "Failed to convert input: " + input + " to " + type);
 			return convertedInput;
+		}
+
+		// TODO temporary fix for https://github.com/spring-cloud/spring-cloud-stream/issues/2178
+		// need a cleaner solution
+		@SuppressWarnings("unchecked")
+		private Message filterOutHeaders(Message message) {
+			return MessageBuilder.fromMessage(message).removeHeader("spring.cloud.stream.sendto.destination").build();
 		}
 
 		private boolean isExtractPayload(Message<?> message, Type type) {
