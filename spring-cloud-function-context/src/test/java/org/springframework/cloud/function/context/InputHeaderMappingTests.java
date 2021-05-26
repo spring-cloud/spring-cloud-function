@@ -70,6 +70,40 @@ public class InputHeaderMappingTests {
 	}
 
 	@Test
+	public void testInputHeaderMappingPropertyWithIndexMix() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+						"--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true",
+						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key1='hello1'",
+						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
+						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
+
+			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+			FunctionInvocationWrapper function = functionCatalog.lookup("echo");
+			function.apply(MessageBuilder.withPayload("helo")
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+		}
+	}
+
+	@Test
+	public void testInputHeaderMappingPropertyWithIndexMixDeux() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+						"--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true",
+						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key1='hello1'",
+						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
+						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
+
+			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+			FunctionInvocationWrapper function = functionCatalog.lookup("echo");
+			function.apply(MessageBuilder.withPayload("helo")
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+		}
+	}
+
+	@Test
 	public void testInputHeaderMappingPropertyWithoutIndex() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
