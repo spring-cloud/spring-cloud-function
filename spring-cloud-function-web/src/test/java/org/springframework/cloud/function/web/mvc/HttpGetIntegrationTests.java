@@ -209,19 +209,19 @@ public class HttpGetIntegrationTests {
 	@Test
 	public void postMoreFoo() {
 		assertThat(this.rest.getForObject("/post/more/foo", String.class))
-				.isEqualTo("(FOO)");
+				.isEqualTo("[\"(FOO)\"]");
 	}
 
 	@Test
 	public void uppercaseGet() {
 		assertThat(this.rest.getForObject("/uppercase/foo", String.class))
-				.isEqualTo("(FOO)");
+				.isEqualTo("[\"(FOO)\"]");
 	}
 
 	@Test
 	public void convertGet() {
 		assertThat(this.rest.getForObject("/wrap/123", String.class))
-				.isEqualTo("..123..");
+				.isEqualTo("[\"..123..\"]");
 	}
 
 	@Test
@@ -235,10 +235,12 @@ public class HttpGetIntegrationTests {
 		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/entity/321"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("{\"value\":321}");
+				.getBody()).isEqualTo("[{\"value\":321}]");
 	}
 
 	@Test
+	@Disabled
+	// this test is wrong since it is returning Flux while setting CT to TEXT_PLAIN. We can't convert it
 	public void compose() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.get(new URI("/concat,reverse/foo")).accept(MediaType.TEXT_PLAIN).build(),
@@ -338,7 +340,7 @@ public class HttpGetIntegrationTests {
 		public Supplier<Flux<String>> timeout() {
 			return () -> Flux.defer(() -> Flux.<String>create(emitter -> {
 				emitter.next("foo");
-			}).timeout(Duration.ofMillis(100L), Flux.empty()));
+			}).timeout(Duration.ofMillis(1000L), Flux.empty()));
 		}
 
 		@Bean

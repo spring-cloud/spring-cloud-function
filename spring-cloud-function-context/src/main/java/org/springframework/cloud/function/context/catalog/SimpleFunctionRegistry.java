@@ -720,7 +720,25 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		@SuppressWarnings("unchecked")
 		private Object fluxifyInputIfNecessary(Object input) {
-			if (!(input instanceof Publisher) && this.isTypePublisher(this.inputType) && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
+			if (FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
+				return input;
+			}
+
+			if (!this.isRoutingFunction() && !(input instanceof Publisher)) {
+				Object payload = input;
+				if (input instanceof Message) {
+					payload = ((Message) input).getPayload();
+				}
+				if (JsonMapper.isJsonStringRepresentsCollection(payload) && !FunctionTypeUtils.isTypeCollection(this.inputType)) {
+					payload = jsonMapper.fromJson(payload, List.class);
+					MessageHeaders headers = ((Message) input).getHeaders();
+					input = ((List) payload).stream()
+							.map(p -> MessageBuilder.withPayload(p).copyHeaders(headers).build())
+							.collect(Collectors.toList());
+				}
+			}
+
+			if (this.isTypePublisher(this.inputType) && !(input instanceof Publisher)) {
 				if (input == null) {
 					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.empty() : Flux.empty();
 				}
@@ -739,6 +757,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				else {
 					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
 				}
+			}
+			else if (input instanceof Iterable && !FunctionTypeUtils.isTypeCollection(this.inputType)) {
+				input = Flux.fromIterable((Iterable) input);
 			}
 			return input;
 		}
@@ -946,7 +967,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 			}
 			else {
-				convertedInput = this.convertNonMessageInputIfNecessary(type, input, JsonMapper.isJsonString(input));
+				convertedInput = this.convertNonMessageInputIfNecessary(type, input, JsonMapper.isJsonString(input) || input instanceof Map);
 				if (convertedInput != null && logger.isDebugEnabled()) {
 					logger.debug("Converted input: " + input + " to: " + convertedInput);
 				}

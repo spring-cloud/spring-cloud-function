@@ -1,0 +1,6 @@
+If a function returns Flux, we must represent output as JSON Array/Collection since we never know how many elements such flux will contain per each invocation.
+For that same reason we can't use TEXT/PLAIN as CT
+
+NON-WEB
+When sendng collection of objects to function who's input is not collection, the inpt will be converted to flux and the result is alos going to be flux.
+That is to ensure that the function is invoked with idividual. . .
