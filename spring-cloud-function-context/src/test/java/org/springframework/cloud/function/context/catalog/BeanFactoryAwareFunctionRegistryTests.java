@@ -547,6 +547,29 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.getHeaders().get("after")).isEqualTo("bar");
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testEachElementInFluxIsProcessed() {
+		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
+		Function f = catalog.lookup("uppercasePerson");
+
+		Flux flux = Flux.just("{\"id\":1, \"name\":\"oleg\"}", "{\"id\":2, \"name\":\"seva\"}");
+		Flux result = (Flux) f.apply(flux);
+
+		List<Person> list = (List) result.collectList().block();
+		assertThat(list.size()).isEqualTo(2);
+		assertThat(list.get(0).name).isEqualTo("OLEG");
+		assertThat(list.get(1).name).isEqualTo("SEVA");
+
+
+
+		result = (Flux) f.apply(new GenericMessage<String>("[{\"id\":1, \"name\":\"oleg\"}, {\"id\":2, \"name\":\"seva\"}]"));
+		list = (List) result.collectList().block();
+		assertThat(list.size()).isEqualTo(2);
+		assertThat(list.get(0).name).isEqualTo("OLEG");
+		assertThat(list.get(1).name).isEqualTo("SEVA");
+	}
+
 	@Test
 	public void testGH_608() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)

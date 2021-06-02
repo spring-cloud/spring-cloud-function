@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +30,8 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
+import org.springframework.cloud.function.web.util.HeaderUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
@@ -37,6 +40,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -89,15 +93,6 @@ public class FunctionController {
 		return this.processor.post(wrapper, null, false);
 	}
 
-	@PostMapping(path = "/**")
-	@ResponseBody
-	public Mono<ResponseEntity<?>> post(WebRequest request,
-			@RequestBody(required = false) String body) {
-		FunctionWrapper wrapper = wrapper(request);
-		Mono<ResponseEntity<?>> result = this.processor.post(wrapper, body, false);
-		return result;
-	}
-
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<Publisher<?>>> postStream(WebRequest request,
@@ -108,19 +103,85 @@ public class FunctionController {
 						.body((Publisher<?>) response.getBody()));
 	}
 
-	@GetMapping(path = "/**")
-	@ResponseBody
-	public Mono<ResponseEntity<?>> get(WebRequest request) {
-		FunctionWrapper wrapper = wrapper(request);
-		return this.processor.get(wrapper);
-	}
-
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<Publisher<?>>> getStream(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
 		return this.processor.stream(wrapper).map(response -> ResponseEntity.ok()
 				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
+	}
+
+	@PostMapping(path = "/**")
+	@ResponseBody
+	public Object post(WebRequest request, @RequestBody(required = false) String body) {
+		String argument = StringUtils.hasText(body) ? body : "";
+		return this.doProcess(request, argument);
+	}
+
+	@GetMapping(path = "/**")
+	@ResponseBody
+	public Object get(WebRequest request) {
+		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT, WebRequest.SCOPE_REQUEST);
+		return this.doProcess(request, argument);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private Object doProcess(WebRequest request, String argument) {
+		FunctionWrapper wrapper = wrapper(request);
+
+		FunctionInvocationWrapper function = wrapper.function();
+
+		HttpHeaders headers = wrapper.headers();
+
+		Message<?> inputMessage = argument == null ? null : MessageBuilder.withPayload(argument).copyHeaders(headers.toSingleValueMap()).build();
+
+		if (function.isRoutingFunction()) {
+			function.setSkipOutputConversion(true);
+		}
+
+		Object result = function.apply(inputMessage);
+
+		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers));
+		if (result instanceof Publisher) {
+			if (result instanceof Flux) {
+				result = ((Flux) result).collectList();
+			}
+
+			if (function.isConsumer()) {
+				((Mono) result).subscribe();
+				return ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers)).build();
+			}
+			else {
+				result = Mono.from((Publisher) result).map(v -> {
+					if (v instanceof Iterable) {
+						List aggregatedResult = (List) ((Collection) v).stream().map(m -> {
+							return m instanceof Message ? this.doProcessMessage(responseOkBuilder, (Message<?>) m) : m;
+						}).collect(Collectors.toList());
+						return Mono.just(responseOkBuilder.body(aggregatedResult));
+					}
+					else if (v instanceof Message) {
+						return this.doProcessMessage(responseOkBuilder, (Message<?>) v);
+					}
+					else {
+						return Mono.just(v);
+					}
+				});
+				return result;
+			}
+		}
+		else if (function.isConsumer()) {
+			return ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers)).build();
+		}
+		else {
+			return result instanceof Message ?
+					responseOkBuilder.headers(HeaderUtils.fromMessage(((Message) result).getHeaders())).body(((Message) result).getPayload()) :
+					responseOkBuilder.body(result);
+		}
+	}
+
+	private Object doProcessMessage(BodyBuilder responseOkBuilder, Message<?> message) {
+		responseOkBuilder.headers(HeaderUtils.fromMessage(message.getHeaders()));
+		return message.getPayload();
 	}
 
 	private FunctionWrapper wrapper(WebRequest request) {
