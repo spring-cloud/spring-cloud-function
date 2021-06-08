@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -76,8 +77,6 @@ public class FunctionInvoker<I, O> {
 	private static FunctionCatalog FUNCTION_CATALOG;
 
 	private static ConfigurableApplicationContext APPLICATION_CONTEXT;
-
-	private final static Object LOCK = new Object();
 
 	private static JsonMapper OBJECT_MAPPER;
 
@@ -251,7 +250,7 @@ public class FunctionInvoker<I, O> {
 	}
 
 	private static void initialize(Class<?> configurationClass) {
-		synchronized (LOCK) {
+		synchronized (FunctionInvoker.class.getName()) {
 			if (FUNCTION_CATALOG == null) {
 				logger.info("Initializing: " + configurationClass);
 				SpringApplication builder = springApplication(configurationClass);
