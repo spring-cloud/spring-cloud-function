@@ -26,6 +26,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -626,7 +630,26 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.size()).isEqualTo(3);
 	}
 
+	@Test
+	// see GH-707
+	public void testConcurrencyOnLookup() throws Exception {
+		AtomicInteger counter = new AtomicInteger();
 
+		ExecutorService executor = Executors.newFixedThreadPool(10);
+		for (int i = 0; i < 10; i++) {
+			FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
+			for (int y = 0; y < 10; y++) {
+				executor.execute(() -> {
+					assertThat((FunctionInvocationWrapper) catalog.lookup("uppercase|reverse", "application/json")).isNotNull();
+					counter.incrementAndGet();
+				});
+			}
+		}
+
+		executor.shutdown();
+		executor.awaitTermination(10000, TimeUnit.MILLISECONDS);
+		assertThat(counter.get()).isEqualTo(100);
+	}
 
 	@EnableAutoConfiguration
 	public static class PojoToMessageFunctionCompositionConfiguration {
