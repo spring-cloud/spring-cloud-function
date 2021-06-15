@@ -28,7 +28,6 @@ import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.web.BasicStringConverter;
-import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.StringConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,7 +42,7 @@ import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandl
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
 @ConditionalOnWebApplication(type = Type.REACTIVE)
-@Import({ FunctionController.class, RequestProcessor.class })
+@Import(FunctionController.class)
 @AutoConfigureAfter({ JacksonAutoConfiguration.class, GsonAutoConfiguration.class })
 public class ReactorAutoConfiguration {
 

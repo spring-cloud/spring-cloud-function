@@ -101,11 +101,10 @@ public class SampleApplicationTests {
 			RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.APPLICATION_FORM_URLENCODED).body(map),
-			String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+			String.class).getBody()).isEqualTo("{\"A\":6,\"B\":11}");
 	}
 
 	@Test
-	// @Ignore
 	public void multipart() throws Exception {
 
 		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -117,7 +116,7 @@ public class SampleApplicationTests {
 			RequestEntity.post(new URI("http://localhost:" + this.port + "/sum"))
 				.accept(MediaType.APPLICATION_JSON)
 				.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
-			String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+			String.class).getBody()).isEqualTo("{\"A\":6,\"B\":11}");
 	}
 
 }

@@ -27,9 +27,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.function.web.RequestProcessor;
-import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
+import org.springframework.cloud.function.web.util.FunctionWrapper;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -69,9 +68,9 @@ public class FunctionController {
 														.getRequest()).getMultiFileMap();
 			if (!CollectionUtils.isEmpty(multiFileMap)) {
 				List<Message<MultipartFile>> files = multiFileMap.values().stream().flatMap(v -> v.stream())
-						.map(file -> MessageBuilder.withPayload(file).copyHeaders(wrapper.headers()).build())
+						.map(file -> MessageBuilder.withPayload(file).copyHeaders(wrapper.getHeaders()).build())
 						.collect(Collectors.toList());
-				FunctionInvocationWrapper function = wrapper.function();
+				FunctionInvocationWrapper function = wrapper.getFunction();
 
 				Publisher<?> result = (Publisher<?>) function.apply(Flux.fromIterable(files));
 				BodyBuilder builder = ResponseEntity.ok();
@@ -83,7 +82,7 @@ public class FunctionController {
 				return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 			}
 		}
-		return this.doProcess(request, wrapper.params(), false);
+		return this.doProcess(request, wrapper.getParams(), false);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -123,9 +122,9 @@ public class FunctionController {
 	private Object doProcess(WebRequest request, Object argument, boolean eventStream) {
 		FunctionWrapper wrapper = wrapper(request);
 
-		FunctionInvocationWrapper function = wrapper.function();
+		FunctionInvocationWrapper function = wrapper.getFunction();
 
-		HttpHeaders headers = wrapper.headers();
+		HttpHeaders headers = wrapper.getHeaders();
 
 		Message<?> inputMessage = argument == null ? null : MessageBuilder.withPayload(argument).copyHeaders(headers.toSingleValueMap()).build();
 
@@ -187,20 +186,19 @@ public class FunctionController {
 	private FunctionWrapper wrapper(WebRequest request) {
 		FunctionInvocationWrapper function = (FunctionInvocationWrapper) request
 				.getAttribute(WebRequestConstants.HANDLER, WebRequest.SCOPE_REQUEST);
-		FunctionWrapper wrapper = RequestProcessor.wrapper(function);
+		FunctionWrapper wrapper = new FunctionWrapper(function);
 		for (String key : request.getParameterMap().keySet()) {
-			wrapper.params().addAll(key, Arrays.asList(request.getParameterValues(key)));
+			wrapper.getParams().addAll(key, Arrays.asList(request.getParameterValues(key)));
 		}
 		for (Iterator<String> keys = request.getHeaderNames(); keys.hasNext();) {
 			String key = keys.next();
-			wrapper.headers().addAll(key, Arrays.asList(request.getHeaderValues(key)));
+			wrapper.getHeaders().addAll(key, Arrays.asList(request.getHeaderValues(key)));
 		}
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,
 				WebRequest.SCOPE_REQUEST);
 		if (argument != null) {
-			wrapper.argument(argument);
+			wrapper.setArgument(argument);
 		}
 		return wrapper;
 	}
-
 }
