@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,22 +53,15 @@ import org.springframework.web.multipart.support.StandardMultipartHttpServletReq
 /**
  * @author Dave Syer
  * @author Mark Fisher
+ * @author Oleg Zhurakousky
  */
 @Component
 public class FunctionController {
 
-	private RequestProcessor processor;
-
-	public FunctionController(RequestProcessor processor) {
-		this.processor = processor;
-	}
-
-
-
 	@PostMapping(path = "/**", consumes = { MediaType.APPLICATION_FORM_URLENCODED_VALUE,
 			MediaType.MULTIPART_FORM_DATA_VALUE })
 	@ResponseBody
-	public Mono<ResponseEntity<?>> form(WebRequest request) {
+	public Object form(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
 
 		if (((ServletWebRequest) request).getRequest() instanceof StandardMultipartHttpServletRequest) {
@@ -90,24 +83,25 @@ public class FunctionController {
 				return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 			}
 		}
-		return this.processor.post(wrapper, null, false);
+		return this.doProcess(request, wrapper.params(), false);
 	}
 
+	@SuppressWarnings("unchecked")
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<Publisher<?>>> postStream(WebRequest request,
 			@RequestBody(required = false) String body) {
-		FunctionWrapper wrapper = wrapper(request);
-		return this.processor.post(wrapper, body, true)
-				.map(response -> ResponseEntity.ok().headers(response.getHeaders())
-						.body((Publisher<?>) response.getBody()));
+		String argument = StringUtils.hasText(body) ? body : "";
+		return ((Mono<ResponseEntity<?>>) this.doProcess(request, argument, true)).map(response -> ResponseEntity.ok()
+				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
+	@SuppressWarnings("unchecked")
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<Publisher<?>>> getStream(WebRequest request) {
-		FunctionWrapper wrapper = wrapper(request);
-		return this.processor.stream(wrapper).map(response -> ResponseEntity.ok()
+		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT, WebRequest.SCOPE_REQUEST);
+		return ((Mono<ResponseEntity<?>>) this.doProcess(request, argument, true)).map(response -> ResponseEntity.ok()
 				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
@@ -115,18 +109,18 @@ public class FunctionController {
 	@ResponseBody
 	public Object post(WebRequest request, @RequestBody(required = false) String body) {
 		String argument = StringUtils.hasText(body) ? body : "";
-		return this.doProcess(request, argument);
+		return this.doProcess(request, argument, false);
 	}
 
 	@GetMapping(path = "/**")
 	@ResponseBody
 	public Object get(WebRequest request) {
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT, WebRequest.SCOPE_REQUEST);
-		return this.doProcess(request, argument);
+		return this.doProcess(request, argument, false);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Object doProcess(WebRequest request, String argument) {
+	private Object doProcess(WebRequest request, Object argument, boolean eventStream) {
 		FunctionWrapper wrapper = wrapper(request);
 
 		FunctionInvocationWrapper function = wrapper.function();
@@ -142,7 +136,13 @@ public class FunctionController {
 		Object result = function.apply(inputMessage);
 
 		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers));
+
 		if (result instanceof Publisher) {
+			Publisher p = (Publisher) result;
+			if (eventStream) {
+				return Flux.from(p).then(Mono.fromSupplier(() -> responseOkBuilder.body(p)));
+			}
+
 			if (result instanceof Flux) {
 				result = ((Flux) result).collectList();
 			}
