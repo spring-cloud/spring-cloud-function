@@ -307,7 +307,7 @@ public class HttpPostIntegrationTests {
 		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/sum")).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
-				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+				String.class).getBody()).isEqualTo("{\"A\":6,\"B\":11}");
 	}
 
 	@Test
@@ -321,7 +321,7 @@ public class HttpPostIntegrationTests {
 		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/sum")).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.MULTIPART_FORM_DATA).body(map),
-				String.class).getBody()).isEqualTo("[{\"A\":6,\"B\":11}]");
+				String.class).getBody()).isEqualTo("{\"A\":6,\"B\":11}");
 	}
 
 	@Test
