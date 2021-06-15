@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Dave Syer
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=reactive")
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {"spring.main.web-application-type=reactive", "debug=true"})
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 @DirtiesContext
 public class HttpGetIntegrationTests {
@@ -208,7 +208,7 @@ public class HttpGetIntegrationTests {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.get(new URI("/post/more/foo")).accept(MediaType.TEXT_PLAIN).build(),
 				String.class);
-		assertThat(result.getBody()).isEqualTo("(FOO)");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\"]");
 	}
 
 	@Test
@@ -216,7 +216,7 @@ public class HttpGetIntegrationTests {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.get(new URI("/uppercase/foo")).accept(MediaType.TEXT_PLAIN).build(),
 				String.class);
-		assertThat(result.getBody()).isEqualTo("(FOO)");
+		assertThat(result.getBody()).isEqualTo("[\"(FOO)\"]");
 	}
 
 	@Test
@@ -224,7 +224,7 @@ public class HttpGetIntegrationTests {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.get(new URI("/wrap/123")).accept(MediaType.TEXT_PLAIN).build(),
 				String.class);
-		assertThat(result.getBody()).isEqualTo("..123..");
+		assertThat(result.getBody()).isEqualTo("[\"..123..\"]");
 	}
 
 	@Test
@@ -238,7 +238,7 @@ public class HttpGetIntegrationTests {
 		assertThat(this.rest
 				.exchange(RequestEntity.get(new URI("/entity/321"))
 						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("{\"value\":321}");
+				.getBody()).isEqualTo("[{\"value\":321}]");
 	}
 
 	@Test
@@ -246,7 +246,7 @@ public class HttpGetIntegrationTests {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.get(new URI("/concat,reverse/foo")).accept(MediaType.TEXT_PLAIN).build(),
 				String.class);
-		assertThat(result.getBody()).isEqualTo("oofoof");
+		assertThat(result.getBody()).isEqualTo("[\"oofoof\"]");
 	}
 
 	private String sse(String... values) {

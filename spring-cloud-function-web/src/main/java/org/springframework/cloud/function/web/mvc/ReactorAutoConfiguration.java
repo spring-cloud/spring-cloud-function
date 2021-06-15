@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,12 @@ package org.springframework.cloud.function.web.mvc;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
-import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.web.BasicStringConverter;
-import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.StringConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,8 +39,7 @@ import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandl
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = Type.SERVLET)
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
-@Import({ FunctionController.class, RequestProcessor.class })
-@AutoConfigureAfter({ JacksonAutoConfiguration.class, GsonAutoConfiguration.class })
+@Import({ FunctionController.class})
 public class ReactorAutoConfiguration {
 
 	@Bean
