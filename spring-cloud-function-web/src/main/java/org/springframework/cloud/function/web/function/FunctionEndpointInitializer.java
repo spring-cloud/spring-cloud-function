@@ -44,7 +44,7 @@ import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.web.RequestProcessor;
 import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
-import org.springframework.cloud.function.web.util.FunctionWebUtils;
+import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
@@ -222,8 +222,8 @@ class FunctionEndpointFactory {
 			function = this.functionCatalog.lookup(Function.class, handler);
 		}
 		else {
-			String[] accept = FunctionWebUtils.acceptContentTypes(request.headers().accept());
-			function = FunctionWebUtils.findFunction(request.method(), functionCatalog, request.attributes(),
+			String[] accept = FunctionWebRequestProcessingHelper.acceptContentTypes(request.headers().accept());
+			function = FunctionWebRequestProcessingHelper.findFunction(request.method(), functionCatalog, request.attributes(),
 					request.path(), accept);
 		}
 		return function;
@@ -247,7 +247,7 @@ class FunctionEndpointFactory {
 			Class<?> outputType = FunctionTypeUtils
 					.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
 			if (funcWrapper.isSupplier()) {
-				Object result = FunctionWebUtils.invokeFunction(funcWrapper, null, funcWrapper.isInputTypeMessage());
+				Object result = FunctionWebRequestProcessingHelper.invokeFunction(funcWrapper, null, funcWrapper.isInputTypeMessage());
 				if (!(result instanceof Publisher)) {
 					result = Mono.just(result);
 				}
@@ -258,7 +258,7 @@ class FunctionEndpointFactory {
 				wrapper.headers(request.headers().asHttpHeaders());
 				String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
 				wrapper.argument(Flux.just(argument));
-				Object result = FunctionWebUtils.invokeFunction(funcWrapper, wrapper.argument(),
+				Object result = FunctionWebRequestProcessingHelper.invokeFunction(funcWrapper, wrapper.argument(),
 						funcWrapper.isInputTypeMessage());
 				return ServerResponse.ok().body(result, outputType);
 			}
