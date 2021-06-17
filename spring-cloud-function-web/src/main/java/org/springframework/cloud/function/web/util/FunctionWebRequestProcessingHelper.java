@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,41 @@
 
 package org.springframework.cloud.function.web.util;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
+ * !INTERNAL USE ONLY!
+ *
  * @author Oleg Zhurakousky
  *
  */
-public final class FunctionWebUtils {
+public final class FunctionWebRequestProcessingHelper {
 
-	private FunctionWebUtils() {
+	private static Log logger = LogFactory.getLog(FunctionWebRequestProcessingHelper.class);
+
+	private FunctionWebRequestProcessingHelper() {
 
 	}
 
@@ -64,6 +75,74 @@ public final class FunctionWebUtils {
 
 		acceptContentTypes = new String[] {StringUtils.arrayToCommaDelimitedString(acceptContentTypes)};
 		return new String[] {};
+	}
+
+	public static Object invokeFunction(FunctionInvocationWrapper function, Object input, boolean isMessage) {
+		Object result = function.apply(input);
+		return postProcessResult(result, isMessage);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static Object processRequest(FunctionWrapper wrapper, Object argument, boolean eventStream) {
+		FunctionInvocationWrapper function = wrapper.getFunction();
+
+		HttpHeaders headers = wrapper.getHeaders();
+
+		Message<?> inputMessage = argument == null ? null : MessageBuilder.withPayload(argument).copyHeaders(headers.toSingleValueMap()).build();
+
+		if (function.isRoutingFunction()) {
+			function.setSkipOutputConversion(true);
+		}
+
+		Object input = argument == null ? Flux.empty() : (argument instanceof Publisher ? Flux.from((Publisher) argument) : inputMessage);
+
+		Object result = function.apply(input);
+		if (function.isConsumer()) {
+			if (result instanceof Publisher) {
+				Mono.from((Publisher) result).subscribe();
+			}
+			return Mono.just(ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers)).build());
+		}
+
+		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers));
+
+		Publisher pResult;
+		if (result instanceof Publisher) {
+			pResult = (Publisher) result;
+			if (eventStream) {
+				return Flux.from(pResult).then(Mono.fromSupplier(() -> responseOkBuilder.body(result)));
+			}
+
+			if (pResult instanceof Flux) {
+				pResult = ((Flux) pResult).onErrorContinue((e, v) -> {
+					logger.error("Failed to process value: " + v, (Throwable) e);
+				}).collectList();
+			}
+			pResult = Mono.from(pResult);
+		}
+		else {
+			pResult = Mono.just(result);
+		}
+
+		return Mono.from(pResult).map(v -> {
+			if (v instanceof Iterable) {
+				List aggregatedResult = (List) ((Collection) v).stream().map(m -> {
+					return m instanceof Message ? processMessage(responseOkBuilder, (Message<?>) m) : m;
+				}).collect(Collectors.toList());
+				return responseOkBuilder.header("content-type", "application/json").body(aggregatedResult);
+			}
+			else if (v instanceof Message) {
+				return responseOkBuilder.body(processMessage(responseOkBuilder, (Message<?>) v));
+			}
+			else {
+				return responseOkBuilder.body(v);
+			}
+		});
+	}
+
+	private static Object processMessage(BodyBuilder responseOkBuilder, Message<?> message) {
+		responseOkBuilder.headers(HeaderUtils.fromMessage(message.getHeaders()));
+		return message.getPayload();
 	}
 
 	private static FunctionInvocationWrapper doFindFunction(HttpMethod method, FunctionCatalog functionCatalog,
@@ -100,11 +179,6 @@ public final class FunctionWebUtils {
 		return null;
 	}
 
-	public static Object invokeFunction(FunctionInvocationWrapper function, Object input, boolean isMessage) {
-		Object result = function.apply(input);
-		return postProcessResult(result, isMessage);
-	}
-
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static Object postProcessResult(Object result, boolean isMessage) {
 		if (result instanceof Flux) {
@@ -125,4 +199,5 @@ public final class FunctionWebUtils {
 		}
 		return result;
 	}
+
 }

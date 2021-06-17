@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,9 +27,8 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
+import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.cloud.function.web.util.FunctionWrapper;
-import org.springframework.cloud.function.web.util.HeaderUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
@@ -82,7 +80,7 @@ public class FunctionController {
 				return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 			}
 		}
-		return this.doProcess(request, wrapper.getParams(), false);
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getParams(), false);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -91,7 +89,7 @@ public class FunctionController {
 	public Mono<ResponseEntity<Publisher<?>>> postStream(WebRequest request,
 			@RequestBody(required = false) String body) {
 		String argument = StringUtils.hasText(body) ? body : "";
-		return ((Mono<ResponseEntity<?>>) this.doProcess(request, argument, true)).map(response -> ResponseEntity.ok()
+		return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper(request), argument, true)).map(response -> ResponseEntity.ok()
 				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
@@ -99,8 +97,9 @@ public class FunctionController {
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<Publisher<?>>> getStream(WebRequest request) {
-		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT, WebRequest.SCOPE_REQUEST);
-		return ((Mono<ResponseEntity<?>>) this.doProcess(request, argument, true)).map(response -> ResponseEntity.ok()
+		FunctionWrapper wrapper = wrapper(request);
+		return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
+				.processRequest(wrapper, wrapper.getArgument(), true)).map(response -> ResponseEntity.ok()
 				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
@@ -108,79 +107,14 @@ public class FunctionController {
 	@ResponseBody
 	public Object post(WebRequest request, @RequestBody(required = false) String body) {
 		String argument = StringUtils.hasText(body) ? body : "";
-		return this.doProcess(request, argument, false);
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper(request), argument, false);
 	}
 
 	@GetMapping(path = "/**")
 	@ResponseBody
 	public Object get(WebRequest request) {
-		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT, WebRequest.SCOPE_REQUEST);
-		return this.doProcess(request, argument, false);
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Object doProcess(WebRequest request, Object argument, boolean eventStream) {
 		FunctionWrapper wrapper = wrapper(request);
-
-		FunctionInvocationWrapper function = wrapper.getFunction();
-
-		HttpHeaders headers = wrapper.getHeaders();
-
-		Message<?> inputMessage = argument == null ? null : MessageBuilder.withPayload(argument).copyHeaders(headers.toSingleValueMap()).build();
-
-		if (function.isRoutingFunction()) {
-			function.setSkipOutputConversion(true);
-		}
-
-		Object result = function.apply(inputMessage);
-
-		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers));
-
-		if (result instanceof Publisher) {
-			Publisher p = (Publisher) result;
-			if (eventStream) {
-				return Flux.from(p).then(Mono.fromSupplier(() -> responseOkBuilder.body(p)));
-			}
-
-			if (result instanceof Flux) {
-				result = ((Flux) result).collectList();
-			}
-
-			if (function.isConsumer()) {
-				((Mono) result).subscribe();
-				return ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers)).build();
-			}
-			else {
-				result = Mono.from((Publisher) result).map(v -> {
-					if (v instanceof Iterable) {
-						List aggregatedResult = (List) ((Collection) v).stream().map(m -> {
-							return m instanceof Message ? this.doProcessMessage(responseOkBuilder, (Message<?>) m) : m;
-						}).collect(Collectors.toList());
-						return Mono.just(responseOkBuilder.body(aggregatedResult));
-					}
-					else if (v instanceof Message) {
-						return this.doProcessMessage(responseOkBuilder, (Message<?>) v);
-					}
-					else {
-						return Mono.just(v);
-					}
-				});
-				return result;
-			}
-		}
-		else if (function.isConsumer()) {
-			return ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers)).build();
-		}
-		else {
-			return result instanceof Message ?
-					responseOkBuilder.headers(HeaderUtils.fromMessage(((Message) result).getHeaders())).body(((Message) result).getPayload()) :
-					responseOkBuilder.body(result);
-		}
-	}
-
-	private Object doProcessMessage(BodyBuilder responseOkBuilder, Message<?> message) {
-		responseOkBuilder.headers(HeaderUtils.fromMessage(message.getHeaders()));
-		return message.getPayload();
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
 	}
 
 	private FunctionWrapper wrapper(WebRequest request) {

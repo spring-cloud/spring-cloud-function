@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
-import org.springframework.cloud.function.web.util.FunctionWebUtils;
+import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 import org.springframework.web.method.HandlerMethod;
@@ -79,7 +79,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		if (path.startsWith(this.prefix)) {
 			path = path.substring(this.prefix.length());
 		}
-		Object function = FunctionWebUtils
+		Object function = FunctionWebRequestProcessingHelper
 				.findFunction(request.getRequest().getMethod(), this.functions, request.getAttributes(), path, new String[] {});
 
 		if (function != null) {

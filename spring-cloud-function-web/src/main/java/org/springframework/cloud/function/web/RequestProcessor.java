@@ -37,7 +37,7 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.json.JsonMapper;
-import org.springframework.cloud.function.web.util.FunctionWebUtils;
+import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.http.HttpHeaders;
@@ -75,7 +75,7 @@ public class RequestProcessor {
 		}
 		else {
 			FunctionInvocationWrapper function = (wrapper.function);
-			Object result = FunctionWebUtils.invokeFunction(function, null, false);
+			Object result = FunctionWebRequestProcessingHelper.invokeFunction(function, null, false);
 			return response(wrapper, wrapper.function(), result instanceof Publisher ? (Publisher) result : Flux.just(result), null,
 					true);
 		}
@@ -153,7 +153,7 @@ public class RequestProcessor {
 					.body("Function for provided path can not be found"));
 		}
 		else {
-			Publisher<?> result = (Publisher<?>) FunctionWebUtils.invokeFunction(function, flux, function.isInputTypeMessage());
+			Publisher<?> result = (Publisher<?>) FunctionWebRequestProcessingHelper.invokeFunction(function, flux, function.isInputTypeMessage());
 			if (function.isConsumer()) {
 				if (result != null) {
 					((Mono) result).subscribe();
@@ -279,7 +279,7 @@ public class RequestProcessor {
 	private Publisher<?> invokeFunction(FunctionWrapper wrapper) {
 		if (wrapper.argument != null) {
 			Flux<?> input = Flux.from(wrapper.argument);
-			Object result = FunctionWebUtils.invokeFunction(wrapper.function, input, wrapper.function.isInputTypeMessage());
+			Object result = FunctionWebRequestProcessingHelper.invokeFunction(wrapper.function, input, wrapper.function.isInputTypeMessage());
 			return Mono.from((Publisher<?>) result);
 		}
 		else {
