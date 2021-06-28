@@ -377,9 +377,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
-			if (functionAroundWrapper != null) {
-				this.setSkipOutputConversion(true);
-			}
+//			if (functionAroundWrapper != null) {
+//				this.setSkipOutputConversion(true);
+//			}
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
 			this.outputType = this.normalizeType(outputType);
@@ -1022,14 +1022,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.skipOutputConversion) {
 				return output;
 			}
-			if (output instanceof Message && isExtractPayload((Message<?>) output, type)) {
+			if (functionAroundWrapper == null && output instanceof Message && isExtractPayload((Message<?>) output, type)) {
 				output = ((Message) output).getPayload();
 			}
 			if (!(output instanceof Publisher) && this.enhancer != null) {
 				output = enhancer.apply(output);
 			}
 
-			if (ObjectUtils.isEmpty(contentType) && !(output instanceof Publisher)) {
+			if (functionAroundWrapper == null && ObjectUtils.isEmpty(contentType) && !(output instanceof Publisher)) {
 				return output;
 			}
 
@@ -1051,7 +1051,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			else {
 				convertedOutput = messageConverter.toMessage(output,
-						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType[0])));
+						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType == null ? "application/json" : contentType[0])));
 			}
 
 			return convertedOutput;
