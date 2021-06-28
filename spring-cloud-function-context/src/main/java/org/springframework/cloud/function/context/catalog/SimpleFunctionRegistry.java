@@ -367,6 +367,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Function<Object, Message> enhancer;
 
 		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
+			this.skipOutputConversion = function.skipOutputConversion;
+			this.skipInputConversion = function.skipInputConversion;
 			this.target = function.target;
 			this.inputType = function.inputType;
 			this.outputType = function.outputType;
@@ -375,6 +377,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
+			if (functionAroundWrapper != null) {
+				this.setSkipOutputConversion(true);
+			}
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
 			this.outputType = this.normalizeType(outputType);
