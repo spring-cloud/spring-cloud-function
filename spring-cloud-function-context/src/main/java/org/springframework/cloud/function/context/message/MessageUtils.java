@@ -45,6 +45,11 @@ public abstract class MessageUtils {
 	public static String TARGET_PROTOCOL = "target-protocol";
 
 	/**
+	 * Value for 'target-protocol' typically use as header key.
+	 */
+	public static String SOURCE_TYPE = "source-type";
+
+	/**
 	 * Create a message for the handler. If the handler is a wrapper for a function in an
 	 * isolated class loader, then the message will be created with the target class
 	 * loader (therefore the {@link Message} class must be on the classpath of the target
