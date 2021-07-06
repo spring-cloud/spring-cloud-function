@@ -23,6 +23,7 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.cloud.function.web.util.FunctionWrapper;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FormFieldPart;
@@ -99,8 +100,10 @@ public class FunctionController {
 	private FunctionWrapper wrapper(ServerWebExchange request) {
 		FunctionInvocationWrapper function = (FunctionInvocationWrapper) request
 				.getAttribute(WebRequestConstants.HANDLER);
+		HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.getRequest().getHeaders());
+		headers.set("uri", request.getRequest().getURI().toString());
 		FunctionWrapper wrapper = new FunctionWrapper(function);
-		wrapper.setHeaders(request.getRequest().getHeaders());
+		wrapper.setHeaders(headers);
 		wrapper.getParams().addAll(request.getRequest().getQueryParams());
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT);
 		if (argument != null) {

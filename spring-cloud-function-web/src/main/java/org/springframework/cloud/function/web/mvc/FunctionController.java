@@ -29,6 +29,7 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.cloud.function.web.util.FunctionWrapper;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
@@ -128,6 +129,10 @@ public class FunctionController {
 			String key = keys.next();
 			wrapper.getHeaders().addAll(key, Arrays.asList(request.getHeaderValues(key)));
 		}
+
+		HttpHeaders headers = HttpHeaders.writableHttpHeaders(wrapper.getHeaders());
+		headers.set("uri", ((ServletWebRequest) request).getRequest().getRequestURI());
+
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,
 				WebRequest.SCOPE_REQUEST);
 		if (argument != null) {
