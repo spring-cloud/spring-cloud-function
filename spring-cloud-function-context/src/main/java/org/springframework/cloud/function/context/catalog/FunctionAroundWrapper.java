@@ -40,7 +40,7 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 		if (input instanceof Message) {
 			return this.doApply((Message<byte[]>) input, targetFunction);
 		}
-		else if (targetFunction.isSupplier()) {
+		else if (targetFunction.isSupplier() && !targetFunction.isOutputTypePublisher()) {
 			return this.doApply(null, targetFunction);
 		}
 		return targetFunction.apply(input);
