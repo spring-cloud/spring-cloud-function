@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.context.annotation.Configuration;
@@ -47,16 +48,19 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 
 	private final FunctionController controller;
 
+	private final FunctionProperties functionProperties;
+
 	@Value("${spring.cloud.function.web.path:}")
 	private String prefix = "";
 
 	@Autowired
-	public FunctionHandlerMapping(FunctionCatalog catalog,
+	public FunctionHandlerMapping(FunctionProperties functionProperties, FunctionCatalog catalog,
 			FunctionController controller) {
 		this.functions = catalog;
 		this.logger.info("FunctionCatalog: " + catalog);
 		setOrder(super.getOrder() - 5);
 		this.controller = controller;
+		this.functionProperties = functionProperties;
 	}
 
 	@Override
@@ -91,7 +95,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			path = path.substring(this.prefix.length());
 		}
 
-		Object function = FunctionWebRequestProcessingHelper.findFunction(HttpMethod.resolve(request.getMethod()),
+		Object function = FunctionWebRequestProcessingHelper.findFunction(this.functionProperties, HttpMethod.resolve(request.getMethod()),
 				this.functions, new HttpRequestAttributeDelegate(request), path, new String[] {});
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {

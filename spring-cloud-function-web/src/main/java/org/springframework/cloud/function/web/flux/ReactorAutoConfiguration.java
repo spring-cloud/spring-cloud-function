@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.web.BasicStringConverter;
 import org.springframework.cloud.function.web.StringConverter;
 import org.springframework.context.annotation.Bean;
@@ -47,8 +48,8 @@ import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandl
 public class ReactorAutoConfiguration {
 
 	@Bean
-	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog, FunctionController controller) {
-		return new FunctionHandlerMapping(catalog, controller);
+	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog, FunctionController controller, FunctionProperties functionProperties) {
+		return new FunctionHandlerMapping(catalog, controller, functionProperties);
 	}
 
 	@Bean

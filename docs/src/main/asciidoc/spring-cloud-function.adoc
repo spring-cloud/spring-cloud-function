@@ -604,6 +604,11 @@ For example,
 
 The above property will compose 'foo' and 'bar' function and map the composed function to the "/" path.
 
+The same property will also work for cases where function can not be resolved via URL. For example, your URL may be `localhost:8080/uppercase`, but there is no `uppercase` function.
+However there are function `foo` and `bar`. So, in this case `localhost:8080/uppercase` will resolve to `foo|bar`. 
+This could be useful especially for cases when URL is used to communicate certain information since there will be Message header called `uri` with the value 
+of the actual URL, giving user ability to use it for evaluation and computation.  
+
 === Function Filtering rules 
 
 In situations where there are more then one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
