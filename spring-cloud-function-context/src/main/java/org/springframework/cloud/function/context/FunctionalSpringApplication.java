@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.boot.ApplicationContextFactory;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
@@ -63,7 +64,7 @@ public class FunctionalSpringApplication
 
 	public FunctionalSpringApplication(Class<?>... primarySources) {
 		super(primarySources);
-		setApplicationContextClass(GenericApplicationContext.class);
+		setApplicationContextFactory(ApplicationContextFactory.ofContextClass(GenericApplicationContext.class));
 		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler",
 				null)) {
 			setWebApplicationType(WebApplicationType.REACTIVE);
