@@ -36,6 +36,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
@@ -185,6 +186,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 					ConversionService conversionService = new DefaultConversionService();
 					return new SimpleFunctionRegistry(conversionService, messageConverter, this.context.getBean(JsonMapper.class));
 				});
+				this.context.registerBean(FunctionProperties.class, () -> new FunctionProperties());
 				this.context.registerBean(FunctionRegistrationPostProcessor.class,
 						() -> new FunctionRegistrationPostProcessor(this.context.getAutowireCapableBeanFactory()
 								.getBeanProvider(FunctionRegistration.class)));

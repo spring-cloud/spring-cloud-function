@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.context.annotation.Configuration;
@@ -45,16 +46,19 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 
 	private final FunctionController controller;
 
+	private final FunctionProperties functionProperties;
+
 	@Value("${spring.cloud.function.web.path:}")
 	private String prefix = "";
 
 	@Autowired
 	public FunctionHandlerMapping(FunctionCatalog catalog,
-			FunctionController controller) {
+			FunctionController controller, FunctionProperties functionProperties) {
 		this.functions = catalog;
 		this.logger.info("FunctionCatalog: " + catalog);
 		setOrder(super.getOrder() - 5);
 		this.controller = controller;
+		this.functionProperties = functionProperties;
 	}
 
 	@Override
@@ -80,7 +84,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			path = path.substring(this.prefix.length());
 		}
 		Object function = FunctionWebRequestProcessingHelper
-				.findFunction(request.getRequest().getMethod(), this.functions, request.getAttributes(), path, new String[] {});
+				.findFunction(this.functionProperties, request.getRequest().getMethod(), this.functions, request.getAttributes(), path, new String[] {});
 
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {

@@ -31,11 +31,12 @@ import reactor.netty.http.server.HttpServer;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
-import org.springframework.boot.autoconfigure.web.ResourceProperties;
+import org.springframework.boot.autoconfigure.web.WebProperties.Resources;
 import org.springframework.boot.autoconfigure.web.reactive.error.DefaultErrorWebExceptionHandler;
 import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -106,7 +107,7 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 				() -> new RequestProcessor(context.getBeanProvider(JsonMapper.class),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
-				() -> new FunctionEndpointFactory(context.getBean(FunctionCatalog.class),
+				() -> new FunctionEndpointFactory(context.getBean(FunctionProperties.class), context.getBean(FunctionCatalog.class),
 						context.getBean(RequestProcessor.class), context.getEnvironment()));
 		RouterFunctionRegister.register(context);
 	}
@@ -120,9 +121,10 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 	private DefaultErrorWebExceptionHandler errorHandler(GenericApplicationContext context) {
 		context.registerBean(ErrorAttributes.class, () -> new DefaultErrorAttributes());
 		context.registerBean(ErrorProperties.class, () -> new ErrorProperties());
-		context.registerBean(ResourceProperties.class, () -> new ResourceProperties());
+
+		context.registerBean(Resources.class, () -> new Resources());
 		DefaultErrorWebExceptionHandler handler = new DefaultErrorWebExceptionHandler(
-				context.getBean(ErrorAttributes.class), context.getBean(ResourceProperties.class),
+				context.getBean(ErrorAttributes.class), context.getBean(Resources.class),
 				context.getBean(ErrorProperties.class), context);
 		ServerCodecConfigurer codecs = ServerCodecConfigurer.create();
 		handler.setMessageWriters(codecs.getWriters());
@@ -203,7 +205,9 @@ class FunctionEndpointFactory {
 
 	private final RequestProcessor processor;
 
-	FunctionEndpointFactory(FunctionCatalog functionCatalog, RequestProcessor processor, Environment environment) {
+	private final FunctionProperties functionProperties;
+
+	FunctionEndpointFactory(FunctionProperties functionProperties, FunctionCatalog functionCatalog, RequestProcessor processor, Environment environment) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
 			handler = null;
@@ -211,6 +215,7 @@ class FunctionEndpointFactory {
 		this.processor = processor;
 		this.functionCatalog = functionCatalog;
 		this.handler = handler;
+		this.functionProperties = functionProperties;
 	}
 
 	private FunctionInvocationWrapper extract(ServerRequest request) {
@@ -223,7 +228,7 @@ class FunctionEndpointFactory {
 		}
 		else {
 			String[] accept = FunctionWebRequestProcessingHelper.acceptContentTypes(request.headers().accept());
-			function = FunctionWebRequestProcessingHelper.findFunction(request.method(), functionCatalog, request.attributes(),
+			function = FunctionWebRequestProcessingHelper.findFunction(this.functionProperties, request.method(), functionCatalog, request.attributes(),
 					request.path(), accept);
 		}
 		return function;

@@ -28,6 +28,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.HttpHeaders;
@@ -54,10 +55,10 @@ public final class FunctionWebRequestProcessingHelper {
 
 	}
 
-	public static FunctionInvocationWrapper findFunction(HttpMethod method, FunctionCatalog functionCatalog,
+	public static FunctionInvocationWrapper findFunction(FunctionProperties functionProperties, HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
 		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST)) {
-			return doFindFunction(method, functionCatalog, attributes, path, acceptContentTypes);
+			return doFindFunction(functionProperties.getDefinition(), method, functionCatalog, attributes, path, acceptContentTypes);
 		}
 		else {
 			throw new IllegalStateException("HTTP method '" + method + "' is not supported;");
@@ -145,8 +146,9 @@ public final class FunctionWebRequestProcessingHelper {
 		return message.getPayload();
 	}
 
-	private static FunctionInvocationWrapper doFindFunction(HttpMethod method, FunctionCatalog functionCatalog,
+	private static FunctionInvocationWrapper doFindFunction(String functionDefinition, HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
+
 		path = path.startsWith("/") ? path.substring(1) : path;
 		if (method.equals(HttpMethod.GET)) {
 			FunctionInvocationWrapper function = functionCatalog.lookup(path, acceptContentTypes);
@@ -169,14 +171,25 @@ public final class FunctionWebRequestProcessingHelper {
 					: null;
 			FunctionInvocationWrapper function = functionCatalog.lookup(name, acceptContentTypes);
 			if (function != null) {
-				attributes.put(WebRequestConstants.FUNCTION, function);
-				if (value != null) {
-					attributes.put(WebRequestConstants.ARGUMENT, value);
-				}
-				return function;
+				return postProcessFunction(function, value, attributes);
+			}
+		}
+
+		if (StringUtils.hasText(functionDefinition)) {
+			FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, acceptContentTypes);
+			if (function != null) {
+				return postProcessFunction(function, value, attributes);
 			}
 		}
 		return null;
+	}
+
+	private static FunctionInvocationWrapper postProcessFunction(FunctionInvocationWrapper function, String argument,  Map<String, Object> attributes) {
+		attributes.put(WebRequestConstants.FUNCTION, function);
+		if (argument != null) {
+			attributes.put(WebRequestConstants.ARGUMENT, argument);
+		}
+		return function;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
