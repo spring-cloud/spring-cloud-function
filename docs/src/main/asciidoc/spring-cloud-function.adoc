@@ -542,6 +542,11 @@ same rules for signature transformation outlined in "Java 8 function support" se
 To enable Kotlin support all you need is to add Kotlin SDK libraries on the classpath which will trigger appropriate
 autoconfiguration and supporting classes.
 
+=== Function Component Scan
+
+Spring Cloud Function will scan for implementations of `Function`, `Consumer` and `Supplier` in a package called `functions` if it exists. Using this 
+feature you can write functions that have no dependencies on Spring - not even the `@Component` annotation is needed. If you want to use a different 
+package, you can set `spring.cloud.function.scan.packages`. You can also use `spring.cloud.function.scan.enabled=false` to switch off the scan completely.
 
 == Standalone Web Applications
 
@@ -746,6 +751,13 @@ Here we are identifying two functions to deploy, which we can now access in func
 
 For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/simplestjar[here].
 You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L70[FunctionDeployerTests].
+
+*** Component Scanning ***
+
+Since version 3.1.4 you can simplify your configuration thru component scanning feature described in <<Function Component Scan>>. If you place your functional class in  
+package named `functions`, you can omit `spring.cloud.function.function-class` property as framework will auto-discover functional classes loading them in function catalog. 
+Keep in mind the naming convention to follow when doing function lookup. For example function class `functions.UpperCaseFunction` will be available in `FunctionCatalog` 
+under the name `upperCaseFunction`.  
 
 ==== Spring Boot JAR
 
