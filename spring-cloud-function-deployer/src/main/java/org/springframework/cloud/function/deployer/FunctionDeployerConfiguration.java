@@ -37,6 +37,7 @@ import org.springframework.cloud.deployer.resource.maven.MavenProperties;
 import org.springframework.cloud.deployer.resource.maven.MavenResourceLoader;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -68,7 +69,7 @@ public class FunctionDeployerConfiguration {
 
 	@Bean
 	SmartLifecycle functionArchiveUnDeployer(FunctionDeployerProperties functionProperties,
-			FunctionRegistry functionRegistry, ApplicationArguments arguments, @Nullable MavenProperties mavenProperties) {
+			FunctionRegistry functionRegistry, ApplicationArguments arguments, @Nullable MavenProperties mavenProperties, ApplicationContext applicationContext) {
 
 		ApplicationArguments updatedArguments = this.updateArguments(arguments);
 
@@ -103,7 +104,7 @@ public class FunctionDeployerConfiguration {
 		if (logger.isInfoEnabled()) {
 			logger.info("Deploying archive: " + functionProperties.getLocation());
 		}
-		deployer.deploy(functionRegistry, functionProperties, updatedArguments.getSourceArgs());
+		deployer.deploy(functionRegistry, functionProperties, updatedArguments.getSourceArgs(), applicationContext);
 		if (logger.isInfoEnabled()) {
 			logger.info("Successfully deployed archive: " + functionProperties.getLocation());
 		}
@@ -180,4 +181,5 @@ public class FunctionDeployerConfiguration {
 			}
 		}
 	}
+
 }

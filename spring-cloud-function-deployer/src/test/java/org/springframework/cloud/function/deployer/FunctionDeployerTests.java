@@ -124,6 +124,25 @@ public class FunctionDeployerTests {
 	}
 
 	@Test
+	public void testWithSimplestJarComponentScanning() throws Exception {
+		String[] args = new String[] {
+				"--spring.cloud.function.location=target/it/simplestjarcs/target/simplestjarcs-1.0.0.RELEASE.jar"};
+
+		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+		Function<String, String> function = catalog.lookup("upperCaseFunction");
+
+		assertThat(function.apply("bob")).isEqualTo("BOB");
+		assertThat(function.apply("stacy")).isEqualTo("STACY");
+
+		Function<Flux<String>, Flux<String>> functionAsFlux = catalog.lookup("upperCaseFunction");
+
+		List<String> results = functionAsFlux.apply(Flux.just("bob", "stacy")).collectList().block();
+		assertThat(results.get(0)).isEqualTo("BOB");
+		assertThat(results.get(1)).isEqualTo("STACY");
+	}
+
+	@Test
 	public void testWithSimplestJarExploaded() throws Exception {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/simplestjar/target/classes",

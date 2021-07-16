@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.loader.JarLauncher;
 import org.springframework.boot.loader.LaunchedURLClassLoader;
@@ -40,6 +47,9 @@ import org.springframework.boot.loader.jar.JarFile;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
+import org.springframework.core.type.filter.RegexPatternTypeFilter;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -70,12 +80,15 @@ class FunctionArchiveDeployer extends JarLauncher {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	void deploy(FunctionRegistry functionRegistry, FunctionDeployerProperties functionProperties, String[] args) {
+	void deploy(FunctionRegistry functionRegistry, FunctionDeployerProperties functionProperties, String[] args, ApplicationContext applicationContext) {
 		ClassLoader currentLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
 			ClassLoader cl = createClassLoader(discoverClassPathAcrhives().iterator());
+
 			Thread.currentThread().setContextClassLoader(cl);
+
+
 			evalContext.setTypeLocator(new StandardTypeLocator(Thread.currentThread().getContextClassLoader()));
 
 			if (this.isBootApplicationWithMain()) {
@@ -98,11 +111,31 @@ class FunctionArchiveDeployer extends JarLauncher {
 			}
 
 			String[] functionClassNames = discoverFunctionClassName(functionProperties);
-			for (String functionClassName : functionClassNames) {
-				if (!StringUtils.isEmpty(functionClassName)) {
-					FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(functionClassName);
-					if (registration != null) {
-						functionRegistry.register(registration);
+
+			if (functionClassNames == null) {
+				ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner((BeanDefinitionRegistry) applicationContext, false);
+				scanner.addIncludeFilter(new RegexPatternTypeFilter(Pattern.compile(".*")));
+				Set<BeanDefinition> findCandidateComponents = scanner.findCandidateComponents("functions");
+
+				ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+				for (BeanDefinition beanDefinition : findCandidateComponents) {
+					String className = beanDefinition.getBeanClassName();
+					Class<?> functionClass = currentClassLoader.loadClass(className);
+					if (Function.class.isAssignableFrom(functionClass) || Supplier.class.isAssignableFrom(functionClass) || Consumer.class.isAssignableFrom(functionClass)) {
+						FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(className);
+						if (registration != null) {
+							functionRegistry.register(registration);
+						}
+					}
+				}
+			}
+			else {
+				for (String functionClassName : functionClassNames) {
+					if (StringUtils.hasText(functionClassName)) {
+						FunctionRegistration registration = this.discovereAndLoadFunctionFromClassName(functionClassName);
+						if (registration != null) {
+							functionRegistry.register(registration);
+						}
 					}
 				}
 			}
@@ -184,9 +217,18 @@ class FunctionArchiveDeployer extends JarLauncher {
 
 	private String[] discoverFunctionClassName(FunctionDeployerProperties functionProperties) {
 		try {
-			return StringUtils.hasText(functionProperties.getFunctionClass())
-					? functionProperties.getFunctionClass().split(";")
-							: new String[] {this.getArchive().getManifest().getMainAttributes().getValue("Function-Class")};
+			if (StringUtils.hasText(functionProperties.getFunctionClass())) {
+				return functionProperties.getFunctionClass().split(";");
+			}
+			else if (StringUtils.hasText(this.getArchive().getManifest().getMainAttributes().getValue("Function-Class"))) {
+				return new String[] {this.getArchive().getManifest().getMainAttributes().getValue("Function-Class")};
+			}
+			else {
+				return null;
+			}
+//			return StringUtils.hasText(functionProperties.getFunctionClass())
+//					? functionProperties.getFunctionClass().split(";")
+//							: new String[] {this.getArchive().getManifest().getMainAttributes().getValue("Function-Class")};
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Failed to discover function class name", e);
