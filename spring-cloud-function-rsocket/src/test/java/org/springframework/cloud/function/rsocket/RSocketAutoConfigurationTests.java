@@ -601,6 +601,7 @@ public class RSocketAutoConfigurationTests {
 			return v -> v + v;
 		}
 
+
 		@Bean
 		public Function<String, String> echo() {
 			return v -> v;

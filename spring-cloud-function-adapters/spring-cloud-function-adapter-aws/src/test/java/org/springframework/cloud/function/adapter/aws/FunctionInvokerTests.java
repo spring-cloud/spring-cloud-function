@@ -27,6 +27,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
@@ -169,6 +171,77 @@ public class FunctionInvokerTests {
 			"            \"eventSourceARN\": \"arn:aws:kinesis:us-east-2:123456789012:stream/lambda-stream\"" +
 			"        }" +
 			"    ]" +
+			"}";
+
+	//https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
+	String apiGatewayV2Event = "{\n" +
+			"  \"version\": \"2.0\",\n" +
+			"  \"routeKey\": \"$default\",\n" +
+			"  \"rawPath\": \"/my/path\",\n" +
+			"  \"rawQueryString\": \"parameter1=value1&parameter1=value2&parameter2=value\",\n" +
+			"  \"cookies\": [\n" +
+			"    \"cookie1\",\n" +
+			"    \"cookie2\"\n" +
+			"  ],\n" +
+			"  \"headers\": {\n" +
+			"    \"header1\": \"value1\",\n" +
+			"    \"header2\": \"value1,value2\"\n" +
+			"  },\n" +
+			"  \"queryStringParameters\": {\n" +
+			"    \"parameter1\": \"value1,value2\",\n" +
+			"    \"parameter2\": \"value\"\n" +
+			"  },\n" +
+			"  \"requestContext\": {\n" +
+			"    \"accountId\": \"123456789012\",\n" +
+			"    \"apiId\": \"api-id\",\n" +
+			"    \"authentication\": {\n" +
+			"      \"clientCert\": {\n" +
+			"        \"clientCertPem\": \"CERT_CONTENT\",\n" +
+			"        \"subjectDN\": \"www.example.com\",\n" +
+			"        \"issuerDN\": \"Example issuer\",\n" +
+			"        \"serialNumber\": \"a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1\",\n" +
+			"        \"validity\": {\n" +
+			"          \"notBefore\": \"May 28 12:30:02 2019 GMT\",\n" +
+			"          \"notAfter\": \"Aug  5 09:36:04 2021 GMT\"\n" +
+			"        }\n" +
+			"      }\n" +
+			"    },\n" +
+			"    \"authorizer\": {\n" +
+			"      \"jwt\": {\n" +
+			"        \"claims\": {\n" +
+			"          \"claim1\": \"value1\",\n" +
+			"          \"claim2\": \"value2\"\n" +
+			"        },\n" +
+			"        \"scopes\": [\n" +
+			"          \"scope1\",\n" +
+			"          \"scope2\"\n" +
+			"        ]\n" +
+			"      }\n" +
+			"    },\n" +
+			"    \"domainName\": \"id.execute-api.us-east-1.amazonaws.com\",\n" +
+			"    \"domainPrefix\": \"id\",\n" +
+			"    \"http\": {\n" +
+			"      \"method\": \"POST\",\n" +
+			"      \"path\": \"/my/path\",\n" +
+			"      \"protocol\": \"HTTP/1.1\",\n" +
+			"      \"sourceIp\": \"IP\",\n" +
+			"      \"userAgent\": \"agent\"\n" +
+			"    },\n" +
+			"    \"requestId\": \"id\",\n" +
+			"    \"routeKey\": \"$default\",\n" +
+			"    \"stage\": \"$default\",\n" +
+			"    \"time\": \"12/Mar/2020:19:03:58 +0000\",\n" +
+			"    \"timeEpoch\": 1583348638390\n" +
+			"  },\n" +
+			"  \"body\": \"Hello from Lambda\",\n" +
+			"  \"pathParameters\": {\n" +
+			"    \"parameter1\": \"value1\"\n" +
+			"  },\n" +
+			"  \"isBase64Encoded\": false,\n" +
+			"  \"stageVariables\": {\n" +
+			"    \"stageVariable1\": \"value1\",\n" +
+			"    \"stageVariable2\": \"value2\"\n" +
+			"  }\n" +
 			"}";
 
 	String apiGatewayEvent = "{\n" +
@@ -567,6 +640,12 @@ public class FunctionInvokerTests {
 
 	@Test
 	public void testS3Event() throws Exception {
+
+//		S3EventSerializer<S3Event> ser = new S3EventSerializer<S3Event>().withClass(S3Event.class).withClassLoader(S3Event.class.getClassLoader());
+//		InputStream targetStream = new ByteArrayInputStream(this.s3Event.getBytes());
+//		S3Event event = ser.fromJson(targetStream);
+//		System.out.println(event);
+
 		System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputS3Event");
 		FunctionInvoker invoker = new FunctionInvoker();
@@ -651,6 +730,22 @@ public class FunctionInvokerTests {
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
 		assertThat(result.get("body")).isEqualTo("\"hello\"");
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testApiGatewayV2Event() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputApiV2Event");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayV2Event.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		System.out.println(result);
+		assertThat(result.get("body")).isEqualTo("\"Hello from Lambda\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -935,18 +1030,18 @@ public class FunctionInvokerTests {
 		}
 
 		@Bean
-		public Function<S3Event, String> inputS3Event() {
+		public Function<S3Event, String> inputS3Event(JsonMapper jsonMapper) {
 			return v -> {
 				System.out.println("Received: " + v);
-				return v.toJson();
+				return jsonMapper.toString(v);
 			};
 		}
 
 		@Bean
-		public Function<Message<S3Event>, String> inputS3EventAsMessage() {
+		public Function<Message<S3Event>, String> inputS3EventAsMessage(JsonMapper jsonMapper) {
 			return v -> {
 				System.out.println("Received: " + v);
-				return v.getPayload().toJson();
+				return jsonMapper.toString(v);
 			};
 		}
 
@@ -986,6 +1081,13 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<APIGatewayProxyRequestEvent, String> inputApiEvent() {
+			return v -> {
+				return v.getBody();
+			};
+		}
+
+		@Bean
+		public Function<APIGatewayV2HTTPEvent, String> inputApiV2Event() {
 			return v -> {
 				return v.getBody();
 			};

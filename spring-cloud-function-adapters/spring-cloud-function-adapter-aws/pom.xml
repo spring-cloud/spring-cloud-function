@@ -20,13 +20,18 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<aws-lambda-events.version>2.2.6</aws-lambda-events.version>
-		<aws-java-sdk.version>1.11.825</aws-java-sdk.version>
+		<aws-lambda-events.version>3.9.0</aws-lambda-events.version>
+		<aws-java-sdk.version>1.12.29</aws-java-sdk.version>
 		<aws-kinesis-deaggregator.version>1.0.3</aws-kinesis-deaggregator.version>
 		<aws-kinesis-aggregator.version>1.0.3</aws-kinesis-aggregator.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+		    <groupId>com.amazonaws</groupId>
+		    <artifactId>amazon-kinesis-client</artifactId>
+		    <version>1.14.4</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-context</artifactId>
@@ -58,8 +63,14 @@
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-lambda-java-serialization</artifactId>
+			<version>1.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-core</artifactId>
-			<version>1.2.0</version>
+			<version>1.2.1</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>

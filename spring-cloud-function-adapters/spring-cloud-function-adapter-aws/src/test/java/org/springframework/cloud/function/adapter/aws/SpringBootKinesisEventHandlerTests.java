@@ -27,6 +27,7 @@ import com.amazonaws.kinesis.agg.RecordAggregator;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -44,6 +45,7 @@ import static org.assertj.core.api.Assertions.fail;
 /**
  * @author Halvdan Hoem Grelland
  */
+@Disabled
 public class SpringBootKinesisEventHandlerTests {
 
 	private static final ObjectMapper mapper = new ObjectMapper();
