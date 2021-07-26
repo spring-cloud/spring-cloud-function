@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.catalog;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -36,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Oleg Zhurakousky
  */
+@Disabled
 public class MarcinSleuthTests {
 
 	private ApplicationContext context;
