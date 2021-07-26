@@ -37,12 +37,12 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 	@SuppressWarnings("unchecked")
 	@Override
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
-		if (input instanceof Message) {
-			return this.doApply((Message<byte[]>) input, targetFunction);
-		}
-		else if (targetFunction.isSupplier() && !targetFunction.isOutputTypePublisher()) {
-			return this.doApply(null, targetFunction);
-		}
+//		if (input instanceof Message) {
+//			return this.doApply((Message<byte[]>) input, targetFunction);
+//		}
+//		else if (targetFunction.isSupplier() && !targetFunction.isOutputTypePublisher()) {
+//			return this.doApply(null, targetFunction);
+//		}
 		return targetFunction.apply(input);
 	}
 
