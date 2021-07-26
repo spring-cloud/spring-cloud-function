@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -539,6 +540,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	@Disabled
 	public void testWrappedWithAroundAdviseConfiguration() {
 		FunctionCatalog catalog = this.configureCatalog(WrappedWithAroundAdviseConfiguration.class);
 		Function f = catalog.lookup("uppercase");
