@@ -64,6 +64,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -119,6 +120,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		this.headersField.setAccessible(true);
 		this.functionInvocationHelper = functionInvocationHelper;
 		this.functionProperties = functionProperties;
+	}
+
+	/**
+	 * Will add provided {@link MessageConverter}s to the head of the stack of the existing MessageConverters.
+	 *
+	 * @param messageConverters list of {@link MessageConverter}s.
+	 */
+	public void addMessageConverters(List<MessageConverter> messageConverters) {
+		if (!CollectionUtils.isEmpty(messageConverters)) {
+			this.messageConverter.getConverters().addAll(0, messageConverters);
+		}
 	}
 
 	@Override
