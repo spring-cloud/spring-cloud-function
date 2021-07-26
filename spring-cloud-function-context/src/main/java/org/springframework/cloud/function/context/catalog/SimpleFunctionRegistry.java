@@ -127,7 +127,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 *
 	 * @param messageConverters list of {@link MessageConverter}s.
 	 */
-	public void addMessageConverters(List<MessageConverter> messageConverters) {
+	public void addMessageConverters(Collection<MessageConverter> messageConverters) {
 		if (!CollectionUtils.isEmpty(messageConverters)) {
 			this.messageConverter.getConverters().addAll(0, messageConverters);
 		}
