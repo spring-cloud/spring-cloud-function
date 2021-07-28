@@ -74,12 +74,13 @@ final class AWSLambdaUtils {
 	}
 
 	private static boolean isSupportedAWSType(Type inputType) {
-		return APIGatewayV2HTTPEvent.class.isAssignableFrom(FunctionTypeUtils.getRawType(inputType))
-				|| S3Event.class.isAssignableFrom(FunctionTypeUtils.getRawType(inputType))
-				|| APIGatewayProxyRequestEvent.class.isAssignableFrom(FunctionTypeUtils.getRawType(inputType))
-				|| SNSEvent.class.isAssignableFrom(FunctionTypeUtils.getRawType(inputType))
-				|| SQSEvent.class.isAssignableFrom(FunctionTypeUtils.getRawType(inputType))
-				|| KinesisEvent.class.isAssignableFrom(FunctionTypeUtils.getRawType(inputType));
+		Class<?> inputClass = FunctionTypeUtils.getRawType(inputType);
+		return APIGatewayV2HTTPEvent.class.isAssignableFrom(inputClass)
+				|| S3Event.class.isAssignableFrom(inputClass)
+				|| APIGatewayProxyRequestEvent.class.isAssignableFrom(inputClass)
+				|| SNSEvent.class.isAssignableFrom(inputClass)
+				|| SQSEvent.class.isAssignableFrom(inputClass)
+				|| KinesisEvent.class.isAssignableFrom(inputClass);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
