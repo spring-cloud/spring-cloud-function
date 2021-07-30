@@ -21,4 +21,14 @@ public class FunctionConfiguration {
 	public Function<String, String> uppercase() {
 		return value -> value.toUpperCase();
 	}
+
+	@Bean
+	public Function<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> uppercaseApiGateway() {
+		return value -> {
+			APIGatewayV2HTTPResponse response = new APIGatewayV2HTTPResponse();
+			response.setStatusCode(404);
+			response.setBody("Resource not found");
+			return response;
+		};
+	}
 }
