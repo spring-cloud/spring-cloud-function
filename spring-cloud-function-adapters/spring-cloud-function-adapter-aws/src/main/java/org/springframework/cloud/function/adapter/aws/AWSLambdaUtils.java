@@ -29,7 +29,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
@@ -163,7 +165,13 @@ final class AWSLambdaUtils {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static byte[] generateOutput(Message requestMessage, Message<byte[]> responseMessage,
-			ObjectMapper objectMapper) {
+			ObjectMapper objectMapper, Type functionOutputType) {
+
+		Class<?> outputClass = FunctionTypeUtils.getRawType(functionOutputType);
+		if (outputClass != null && (APIGatewayV2HTTPResponse.class.isAssignableFrom(outputClass)
+				|| APIGatewayProxyResponseEvent.class.isAssignableFrom(outputClass))) {
+			return responseMessage.getPayload();
+		}
 
 
 		if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
@@ -190,7 +198,7 @@ final class AWSLambdaUtils {
 			}
 
 			String body = responseMessage == null
-					? "\"OK\"" : new String(responseMessage.getPayload(), StandardCharsets.UTF_8).replaceAll("\\\"", "\"");
+					? "\"OK\"" : new String(responseMessage.getPayload(), StandardCharsets.UTF_8).replaceAll("\\\"", "");
 			response.put("body", body);
 
 			if (responseMessage != null) {

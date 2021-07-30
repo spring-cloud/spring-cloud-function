@@ -6,6 +6,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
+
 @SpringBootApplication
 public class FunctionConfiguration {
 
@@ -19,6 +22,13 @@ public class FunctionConfiguration {
 
 	@Bean
 	public Function<String, String> uppercase() {
-		return value -> value.toUpperCase();
+		return value -> {
+			if (value.equals("exception")) {
+				throw new RuntimeException("Intentional exception which should result in HTTP 417");
+			}
+			else {
+				return value.toUpperCase();
+			}
+		};
 	}
 }
