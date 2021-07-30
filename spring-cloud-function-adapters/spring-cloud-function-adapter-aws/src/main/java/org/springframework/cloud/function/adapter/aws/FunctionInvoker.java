@@ -26,6 +26,7 @@ import java.util.List;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,6 +40,7 @@ import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -79,10 +81,22 @@ public class FunctionInvoker implements RequestStreamHandler {
 		Message requestMessage = AWSLambdaUtils
 				.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.objectMapper, context);
 
-		Object response = this.function.apply(requestMessage);
+		try {
+			Object response = this.function.apply(requestMessage);
+			byte[] responseBytes = this.buildResult(requestMessage, response);
+			StreamUtils.copy(responseBytes, output);
+		}
+		catch (Exception e) {
+			logger.error(e);
+			StreamUtils.copy(this.buildExceptionResult(requestMessage, e), output);
+		}
+	}
 
-		byte[] responseBytes = this.buildResult(requestMessage, response);
-		StreamUtils.copy(responseBytes, output);
+	private byte[] buildExceptionResult(Message<?> requestMessage, Exception exception) throws IOException {
+		APIGatewayProxyResponseEvent event = new APIGatewayProxyResponseEvent();
+		event.setStatusCode(HttpStatus.EXPECTATION_FAILED.value());
+		event.setBody(exception.getMessage());
+		return this.objectMapper.writeValueAsBytes(event);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -113,7 +127,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 		else {
 			responseMessage = (Message<byte[]>) output;
 		}
-		return AWSLambdaUtils.generateOutput(requestMessage, responseMessage, this.objectMapper);
+		return AWSLambdaUtils.generateOutput(requestMessage, responseMessage, this.objectMapper, function.getOutputType());
 	}
 
 	private void start() {

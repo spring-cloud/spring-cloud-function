@@ -102,7 +102,7 @@ final class CustomRuntimeEventLoop {
 				logger.debug("Reply from function: " + responseMessage);
 			}
 
-			byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper);
+			byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper, function.getOutputType());
 			ResponseEntity<Object> result = rest
 					.exchange(RequestEntity.post(URI.create(invocationUrl)).body(outputBody), Object.class);
 

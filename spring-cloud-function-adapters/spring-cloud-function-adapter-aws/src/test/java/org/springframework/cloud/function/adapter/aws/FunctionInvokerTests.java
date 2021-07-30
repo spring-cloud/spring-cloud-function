@@ -21,13 +21,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
@@ -46,7 +49,6 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -698,7 +700,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 		ObjectMapper mapper = new ObjectMapper();
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("\"HELLO\"");
+		assertThat(result.get("body")).isEqualTo("HELLO");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -713,7 +715,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("\"JIM LAHEY\"");
+		assertThat(result.get("body")).isEqualTo("JIM LAHEY");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -729,7 +731,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("\"hello\"");
+		assertThat(result.get("body")).isEqualTo("hello");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -745,7 +747,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("\"Hello from Lambda\"");
+		assertThat(result.get("body")).isEqualTo("Hello from Lambda");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -761,8 +763,62 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("\"boom\"");
+		assertThat(result.get("body")).isEqualTo("boom");
 	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testApiGatewayInAndOut() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputOutputApiEvent");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("hello");
+		Map headers = (Map) result.get("headers");
+		assertThat(headers.get("foo")).isEqualTo("bar");
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testApiGatewayInAndOutV2() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputOutputApiEventV2");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("hello");
+		Map headers = (Map) result.get("headers");
+		assertThat(headers.get("foo")).isEqualTo("bar");
+	}
+
+//	@SuppressWarnings("rawtypes")
+//	@Test
+//	public void testApiGatewayInAndOutWithException() throws Exception {
+//		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+//		System.setProperty("spring.cloud.function.definition", "inputOutputApiEventException");
+//		FunctionInvoker invoker = new FunctionInvoker();
+//
+//		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+//		ByteArrayOutputStream output = new ByteArrayOutputStream();
+//		invoker.handleRequest(targetStream, output, null);
+//
+//		Map result = mapper.readValue(output.toByteArray(), Map.class);
+//		assertThat(result.get("body")).isEqualTo("Intentional");
+//
+//		Map headers = (Map) result.get("headers");
+//		assertThat(headers.get("foo")).isEqualTo("bar");
+//	}
+
+
 
 	@SuppressWarnings("rawtypes")
 	@Test
@@ -777,7 +833,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("\"hello\"");
+		assertThat(result.get("body")).isEqualTo("hello");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -793,7 +849,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("\"hello\"");
+		assertThat(result.get("body")).isEqualTo("hello");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -818,13 +874,9 @@ public class FunctionInvokerTests {
 
 		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		try {
-			invoker.handleRequest(targetStream, output, null);
-			fail();
-		}
-		catch (Exception e) {
-			// success, since no definition nor routing instructions are provided
-		}
+		invoker.handleRequest(targetStream, output, null);
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(((String) result.get("body"))).startsWith("Failed to establish route, since neither were provided:");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -839,7 +891,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("\"olleh\"");
+		assertThat(result.get("body")).isEqualTo("olleh");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -855,7 +907,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("\"OLLEH\"");
+		assertThat(result.get("body")).isEqualTo("OLLEH");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1083,6 +1135,35 @@ public class FunctionInvokerTests {
 		public Function<APIGatewayProxyRequestEvent, String> inputApiEvent() {
 			return v -> {
 				return v.getBody();
+			};
+		}
+
+		@Bean
+		public Function<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> inputOutputApiEvent() {
+			return v -> {
+				APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
+				response.setBody(v.getBody());
+				response.setStatusCode(200);
+				response.setHeaders(Collections.singletonMap("foo", "bar"));
+				return response;
+			};
+		}
+
+		@Bean
+		public Function<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> inputOutputApiEventV2() {
+			return v -> {
+				APIGatewayV2HTTPResponse response = new APIGatewayV2HTTPResponse();
+				response.setBody(v.getBody());
+				response.setStatusCode(200);
+				response.setHeaders(Collections.singletonMap("foo", "bar"));
+				return response;
+			};
+		}
+
+		@Bean
+		public Function<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> inputOutputApiEventException() {
+			return v -> {
+				throw new IllegalStateException("Intentional");
 			};
 		}
 
