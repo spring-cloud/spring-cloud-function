@@ -31,4 +31,14 @@ public class FunctionConfiguration {
 			}
 		};
 	}
+
+	@Bean
+	public Function<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> uppercaseApiGateway() {
+		return value -> {
+			APIGatewayV2HTTPResponse response = new APIGatewayV2HTTPResponse();
+			response.setStatusCode(404);
+			response.setBody("Resource not found");
+			return response;
+		};
+	}
 }
