@@ -2,22 +2,19 @@ package example;
 
 import java.util.function.Function;
 
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-
-import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 
 @SpringBootApplication
 public class FunctionConfiguration {
 
 	/*
-	 * You need this main method or explicit <start-class>example.FunctionConfiguration</start-class>
+	 * You need this main method (empty) or explicit <start-class>example.FunctionConfiguration</start-class>
 	 * in the POM to ensure boot plug-in makes the correct entry
 	 */
 	public static void main(String[] args) {
-		SpringApplication.run(FunctionConfiguration.class, args);
+		// empty unless using Custom runtime at which point it should include
+		// SpringApplication.run(FunctionConfiguration.class, args);
 	}
 
 	@Bean
@@ -29,16 +26,6 @@ public class FunctionConfiguration {
 			else {
 				return value.toUpperCase();
 			}
-		};
-	}
-
-	@Bean
-	public Function<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> uppercaseApiGateway() {
-		return value -> {
-			APIGatewayV2HTTPResponse response = new APIGatewayV2HTTPResponse();
-			response.setStatusCode(404);
-			response.setBody("Resource not found");
-			return response;
 		};
 	}
 }
