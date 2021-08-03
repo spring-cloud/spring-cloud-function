@@ -18,6 +18,7 @@
 		<module>function-sample-pof</module>
 		<module>function-sample-pojo</module>
 		<module>function-sample-aws</module>
+		<module>function-functional-sample-aws</module>
 		<module>function-sample-aws-routing</module>
 		<module>function-sample-aws-custom</module>
 		<module>function-sample-aws-custom-bean</module>

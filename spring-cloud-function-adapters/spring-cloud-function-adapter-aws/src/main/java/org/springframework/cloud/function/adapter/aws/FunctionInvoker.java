@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -34,9 +35,11 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
+import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.messaging.Message;
@@ -117,7 +120,12 @@ public class FunctionInvoker implements RequestStreamHandler {
 	}
 
 	private void start() {
-		ConfigurableApplicationContext context = SpringApplication.run(FunctionClassUtils.getStartClass(), "--spring.main.web-application-type=none");
+		Class<?> startClass = FunctionClassUtils.getStartClass();
+		String[] properties = new String[] {"--spring.cloud.function.web.export.enabled=false", "--spring.main.web-application-type=none"};
+		ConfigurableApplicationContext context = ApplicationContextInitializer.class.isAssignableFrom(startClass)
+				? FunctionalSpringApplication.run(startClass, properties)
+						: SpringApplication.run(FunctionClassUtils.getStartClass(), properties);
+
 		Environment environment = context.getEnvironment();
 		String functionName = environment.getProperty("spring.cloud.function.definition");
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
@@ -129,11 +137,21 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 		this.function = functionCatalog.lookup(functionName, "application/json");
 
-		if (this.function == null && !CollectionUtils.isEmpty(functionCatalog.getNames(null))) {
+		Set<String> names = functionCatalog.getNames(null);
+		if (this.function == null && !CollectionUtils.isEmpty(names)) {
+
 			if (logger.isInfoEnabled()) {
-				logger.info("More then one function is available in FunctionCatalog. Will default to RoutingFunction, "
-						+ "expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
-						+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
+				if (names.size() == 1) {
+					logger.info("Will default to RoutingFunction, since it is the only function available in FunctionCatalog."
+							+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
+							+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
+				}
+				else {
+					logger.info("More then one function is available in FunctionCatalog. " + names
+							+ " Will default to RoutingFunction, "
+							+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
+							+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
+				}
 			}
 			this.function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
 		}

@@ -52,8 +52,6 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
 				context.registerBean(LambdaDestinationResolver.class, () -> new LambdaDestinationResolver());
 			}
-			context.registerBean(StringUtils.uncapitalize(CustomRuntimeAutoConfiguration.class.getSimpleName()),
-					CommandLineRunner.class, () -> args -> CustomRuntimeAutoConfiguration.background());
 		}
 	}
 
