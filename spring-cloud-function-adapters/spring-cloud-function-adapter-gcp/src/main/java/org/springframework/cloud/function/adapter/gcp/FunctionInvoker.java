@@ -102,6 +102,7 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 			for (Entry<String, Object> header : result.getHeaders().entrySet()) {
 				httpResponse.appendHeader(header.getKey(), header.getValue().toString());
 			}
+			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
 		}
 	}
 
