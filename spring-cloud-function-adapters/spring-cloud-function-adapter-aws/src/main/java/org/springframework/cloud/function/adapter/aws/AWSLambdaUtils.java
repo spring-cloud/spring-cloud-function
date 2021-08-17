@@ -116,25 +116,21 @@ final class AWSLambdaUtils {
 			}
 
 			if (request instanceof Map) {
+				logger.info("Incoming MAP: " + request);
 				if (((Map) request).containsKey("httpMethod")) { //API Gateway
+					logger.info("Incoming request is API Gateway");
 					boolean mapInputType = (inputType instanceof ParameterizedType && ((Class<?>) ((ParameterizedType) inputType).getRawType()).isAssignableFrom(Map.class));
 					if (mapInputType) {
 						messageBuilder = MessageBuilder.withPayload(request).setHeader("httpMethod", ((Map) request).get("httpMethod"));
+						messageBuilder.setHeader(AWS_API_GATEWAY, true);
 					}
 					else {
-						Object body = ((Map) request).remove("body");
-						try {
-							body = body instanceof String
-									? String.valueOf(body).getBytes(StandardCharsets.UTF_8)
-											: objectMapper.writeValueAsBytes(body);
-						}
-						catch (Exception e) {
-							throw new IllegalStateException(e);
-						}
-
-						messageBuilder = MessageBuilder.withPayload(body).copyHeaders(((Map) request));
+						messageBuilder = createMessageBuilderForPOJOFunction(objectMapper, (Map) request);
 					}
-					messageBuilder.setHeader(AWS_API_GATEWAY, true);
+				}
+				else if ((((Map) request).containsKey("routeKey") && ((Map) request).containsKey("version"))) {
+					logger.info("Incoming request is API Gateway v2.0");
+					messageBuilder = createMessageBuilderForPOJOFunction(objectMapper, (Map) request);
 				}
 				Object providedHeaders = ((Map) request).remove("headers");
 				if (providedHeaders != null && providedHeaders instanceof Map) {
@@ -157,6 +153,24 @@ final class AWSLambdaUtils {
 		logger.info("Incoming request headers: " + headers);
 
 		return messageBuilder.copyHeaders(headers).build();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private static MessageBuilder createMessageBuilderForPOJOFunction(ObjectMapper objectMapper, Map request) {
+		Object body = request.remove("body");
+		try {
+			body = body instanceof String
+					? String.valueOf(body).getBytes(StandardCharsets.UTF_8)
+							: objectMapper.writeValueAsBytes(body);
+		}
+		catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+		logger.info("Body is " + body);
+
+		MessageBuilder messageBuilder = MessageBuilder.withPayload(body).copyHeaders(request);
+		messageBuilder.setHeader(AWS_API_GATEWAY, true);
+		return messageBuilder;
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
