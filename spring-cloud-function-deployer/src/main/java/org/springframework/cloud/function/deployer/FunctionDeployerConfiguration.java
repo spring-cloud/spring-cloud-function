@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.loader.archive.Archive;
@@ -63,6 +64,7 @@ import org.springframework.util.StringUtils;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionDeployerProperties.class)
+@ConditionalOnProperty(name = FunctionProperties.PREFIX + ".location")
 public class FunctionDeployerConfiguration {
 
 	private static Log logger = LogFactory.getLog(FunctionDeployerConfiguration.class);
