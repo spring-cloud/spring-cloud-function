@@ -29,6 +29,7 @@ import com.google.gson.Gson;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -38,6 +39,8 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
+import org.springframework.cloud.function.context.converter.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
@@ -71,6 +74,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Artem Bilan
  * @author Anshul Mehra
+ * @author Soby Chacko
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(FunctionCatalog.class)
@@ -88,7 +92,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Bean
 	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper,
-			ConfigurableApplicationContext context, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
+											ConfigurableApplicationContext context, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
 		if (conversionService == null) {
 			conversionService = new DefaultConversionService();
@@ -113,8 +117,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		mcList = mcList.stream()
-				.filter(c -> isConverterEligible(c))
-				.collect(Collectors.toList());
+			.filter(c -> isConverterEligible(c))
+			.collect(Collectors.toList());
 
 		mcList.add(new JsonMessageConverter(jsonMapper));
 		mcList.add(new ByteArrayMessageConverter());
@@ -131,9 +135,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
 	}
 
+	@Bean
+	@ConditionalOnMissingBean
+	@ConditionalOnClass(name = "org.apache.avro.Schema")
+	public MessageConverter avroSchemaMessageConverter() {
+		return new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
+	}
+
 	@Bean(RoutingFunction.FUNCTION_NAME)
 	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
-			BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
+								BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
 		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory), routingCallback);
 	}
 
@@ -150,10 +161,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}", //
-			includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE,
-					classes = { Supplier.class, Function.class, Consumer.class }))
+		includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE,
+			classes = {Supplier.class, Function.class, Consumer.class}))
 	@ConditionalOnProperty(prefix = "spring.cloud.function.scan", name = "enabled", havingValue = "true",
-			matchIfMissing = true)
+		matchIfMissing = true)
 	protected static class PlainFunctionScanConfiguration {
 
 	}
@@ -163,8 +174,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@Bean
 		public JsonMapper jsonMapper(ApplicationContext context) {
 			String preferredMapper = context.getEnvironment().containsProperty(JSON_MAPPER_PROPERTY)
-					? context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY)
-					: context.getEnvironment().getProperty(PREFERRED_MAPPER_PROPERTY);
+				? context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY)
+				: context.getEnvironment().getProperty(PREFERRED_MAPPER_PROPERTY);
 			if (StringUtils.hasText(preferredMapper)) {
 				if ("gson".equals(preferredMapper) && ClassUtils.isPresent("com.google.gson.Gson", null)) {
 					return gson(context);
