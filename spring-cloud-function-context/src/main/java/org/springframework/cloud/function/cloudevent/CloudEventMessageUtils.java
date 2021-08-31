@@ -234,6 +234,9 @@ public final class CloudEventMessageUtils {
 	static Message<?> toCanonical(Message<?> inputMessage, MessageConverter messageConverter) {
 		Map<String, Object> headers = (Map<String, Object>) ReflectionUtils.getField(MESSAGE_HEADERS, inputMessage.getHeaders());
 		canonicalizeHeaders(headers, false);
+		if (isCloudEvent(inputMessage) && headers.containsKey("content-type")) {
+			inputMessage = MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, headers.get("content-type")).build();
+		}
 
 		String inputContentType = (String) inputMessage.getHeaders().get(DATACONTENTTYPE);
 		// first check the obvious and see if content-type is `cloudevents`

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import io.cloudevents.spring.messaging.CloudEventMessageConverter;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -127,6 +128,13 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 		FunctionProperties functionProperties = context.getBean(FunctionProperties.class);
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	@ConditionalOnClass(name = "io.cloudevents.spring.messaging.CloudEventMessageConverter")
+	public MessageConverter cloudEventMessageConverter() {
+		return new CloudEventMessageConverter();
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)

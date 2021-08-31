@@ -86,6 +86,12 @@
 			<artifactId>kotlinx-coroutines-reactor</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+		    <groupId>io.cloudevents</groupId>
+		    <artifactId>cloudevents-spring</artifactId>
+		    <version>2.2.0</version>
+		    <optional>true</optional>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
