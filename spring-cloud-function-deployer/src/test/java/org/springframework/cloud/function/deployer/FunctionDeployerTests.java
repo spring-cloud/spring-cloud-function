@@ -33,10 +33,12 @@ import reactor.util.function.Tuples;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.deployer.resource.maven.MavenProperties;
+import org.springframework.cloud.function.cloudevent.CloudEventMessageBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 
 
@@ -107,20 +109,22 @@ public class FunctionDeployerTests {
 	public void testWithSimplestJar() throws Exception {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/simplestjar/target/simplestjar-1.0.0.RELEASE.jar",
-				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
+				"--spring.cloud.function.function-class=function.example.EchoCloudEventFunction" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-		Function<String, String> function = catalog.lookup("upperCaseFunction");
+		Function<Message<String>, Message<byte[]>> function = catalog.lookup("echoCloudEventFunction");
 
-		assertThat(function.apply("bob")).isEqualTo("BOB");
-		assertThat(function.apply("stacy")).isEqualTo("STACY");
+		String data = "{\"name\":\"Ricky\"}";
+		Message<String> inputMessage = CloudEventMessageBuilder
+				.withData(data)
+				.setId("123")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.setSource("https://spring.io/")
+				.setType("org.springframework")
+				.build();
 
-		Function<Flux<String>, Flux<String>> functionAsFlux = catalog.lookup("upperCaseFunction");
-
-		List<String> results = functionAsFlux.apply(Flux.just("bob", "stacy")).collectList().block();
-		assertThat(results.get(0)).isEqualTo("BOB");
-		assertThat(results.get(1)).isEqualTo("STACY");
+		assertThat(new String(function.apply(inputMessage).getPayload())).isEqualTo(data);
 	}
 
 	@Test
@@ -146,20 +150,28 @@ public class FunctionDeployerTests {
 	public void testWithSimplestJarExploaded() throws Exception {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/simplestjar/target/classes",
-				"--spring.cloud.function.function-class=function.example.UpperCaseFunction" };
+				"--spring.cloud.function.function-class=function.example.EchoCloudEventFunction" };
 
 		ApplicationContext context = SpringApplication.run(DeployerApplication.class, args);
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
-		Function<String, String> function = catalog.lookup("upperCaseFunction");
+		Function<Message<String>, Message<byte[]>> function = catalog.lookup("echoCloudEventFunction");
 
-		assertThat(function.apply("bob")).isEqualTo("BOB");
-		assertThat(function.apply("stacy")).isEqualTo("STACY");
+		String data = "{\"name\":\"Ricky\"}";
+		Message<String> inputMessage = CloudEventMessageBuilder
+				.withData(data)
+				.setId("123")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.setSource("https://spring.io/")
+				.setType("org.springframework")
+				.build();
 
-		Function<Flux<String>, Flux<String>> functionAsFlux = catalog.lookup("upperCaseFunction");
+		assertThat(new String(function.apply(inputMessage).getPayload())).isEqualTo(data);
 
-		List<String> results = functionAsFlux.apply(Flux.just("bob", "stacy")).collectList().block();
-		assertThat(results.get(0)).isEqualTo("BOB");
-		assertThat(results.get(1)).isEqualTo("STACY");
+		Function<Flux<Message<String>>, Flux<Message<byte[]>>> functionAsFlux = catalog.lookup("echoCloudEventFunction");
+
+		List<Message<byte[]>> results = functionAsFlux.apply(Flux.just(inputMessage)).collectList().block();
+		assertThat(results.get(0).getPayload()).isEqualTo(data.getBytes());
+		//assertThat(results.get(1)).isEqualTo("STACY");
 	}
 
 	/*

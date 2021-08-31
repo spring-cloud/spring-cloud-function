@@ -209,6 +209,7 @@ class FunctionArchiveDeployer extends JarLauncher {
 	private boolean shouldLoadViaDeployerLoader(String name) {
 		return name.startsWith("org.reactivestreams")
 				|| name.startsWith("reactor.")
+				|| name.startsWith("io.cloudevents")
 				|| name.startsWith("org.springframework.messaging.Message")
 				|| name.startsWith("org.springframework.messaging.converter.MessageConverter");
 	}
@@ -226,9 +227,6 @@ class FunctionArchiveDeployer extends JarLauncher {
 			else {
 				return null;
 			}
-//			return StringUtils.hasText(functionProperties.getFunctionClass())
-//					? functionProperties.getFunctionClass().split(";")
-//							: new String[] {this.getArchive().getManifest().getMainAttributes().getValue("Function-Class")};
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Failed to discover function class name", e);
