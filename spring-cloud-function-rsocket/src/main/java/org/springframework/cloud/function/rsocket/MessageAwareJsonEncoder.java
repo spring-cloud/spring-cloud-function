@@ -45,7 +45,7 @@ import org.springframework.util.MimeTypeUtils;
 /*
  * We basically don't need it, but having it allows us not to depend on spring-web
  */
-class MessageAwareJsonEncoder extends AbstractEncoder<Object> {
+public class MessageAwareJsonEncoder extends AbstractEncoder<Object> {
 
 	private final JsonMapper mapper;
 
@@ -57,7 +57,7 @@ class MessageAwareJsonEncoder extends AbstractEncoder<Object> {
 		this(mapper, false);
 	}
 
-	MessageAwareJsonEncoder(JsonMapper mapper, boolean isClient) {
+	public MessageAwareJsonEncoder(JsonMapper mapper, boolean isClient) {
 		super(MimeTypeUtils.APPLICATION_JSON);
 		this.mapper = mapper;
 		this.isClient = isClient;

@@ -44,11 +44,11 @@ import org.springframework.util.MimeTypeUtils;
  * @since 3.1
  *
  */
-class MessageAwareJsonDecoder extends AbstractDecoder<Object> {
+public class MessageAwareJsonDecoder extends AbstractDecoder<Object> {
 
 	private final JsonMapper jsonMapper;
 
-	MessageAwareJsonDecoder(JsonMapper jsonMapper) {
+	public MessageAwareJsonDecoder(JsonMapper jsonMapper) {
 		super(MimeTypeUtils.APPLICATION_JSON);
 		this.jsonMapper = jsonMapper;
 	}
