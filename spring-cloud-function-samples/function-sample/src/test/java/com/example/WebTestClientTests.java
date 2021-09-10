@@ -44,25 +44,6 @@ public class WebTestClientTests {
 	}
 
 	@Test
-	public void testStream() {
-
-		List<String> asObjectExpect = new ArrayList<>();
-		asObjectExpect.add("foobar");
-
-		//as object
-		client.post().uri("/lowercase").accept(MediaType.TEXT_EVENT_STREAM).body(Flux.just("FOO", "BAR"), String.class)
-				.exchange().expectBodyList(String.class).isEqualTo(asObjectExpect);
-
-		List<String> asFluxExpect = new ArrayList<>();
-		asFluxExpect.add("foo");
-		asFluxExpect.add("bar");
-
-		//as flux
-		client.post().uri("/lowercase").accept(MediaType.TEXT_EVENT_STREAM).body(Flux.just("FOO\n", "BAR\n"), String.class)
-			.exchange().expectBodyList(String.class).isEqualTo(asFluxExpect);
-	}
-
-	@Test
 	public void testCollection() {
 		client.post().uri("/lowercase").contentType(MediaType.APPLICATION_JSON).body(Mono.just("[\"FOO\",  \"BAR\"]"), String.class)
 				.exchange().expectBody(String.class).isEqualTo("[\"foo\",\"bar\"]");
