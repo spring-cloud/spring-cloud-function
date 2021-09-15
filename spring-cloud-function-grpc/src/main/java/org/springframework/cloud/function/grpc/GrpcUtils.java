@@ -64,7 +64,7 @@ public final class GrpcUtils {
 	}
 
 	public static Message<byte[]> requestReply(String host, int port, Message<byte[]> inputMessage) {
-		ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 55555)
+		ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", port)
 				.usePlaintext().build();
 		MessagingServiceGrpc.MessagingServiceBlockingStub stub = MessagingServiceGrpc
 				.newBlockingStub(channel);
