@@ -41,21 +41,7 @@
 		</dependencies>
 	</dependencyManagement>
 
-	<modules>
-		<module>spring-cloud-function-dependencies</module>
-		<module>spring-cloud-function-core</module>
-		<module>spring-cloud-function-context</module>
-		<module>spring-cloud-function-web</module>
-		<module>spring-cloud-starter-function-web</module>
-		<module>spring-cloud-starter-function-webflux</module>
-		<module>spring-cloud-function-samples</module>
-		<module>spring-cloud-function-deployer</module>
-		<module>spring-cloud-function-adapters</module>
-		<module>spring-cloud-function-rsocket</module>
-		<module>spring-cloud-function-kotlin</module>
-		<module>docs</module>
-	</modules>
-
+	
 	<build>
 		<plugins>
 			<plugin>
@@ -154,6 +140,36 @@
 					<artifactId>javax.annotation-api</artifactId>
 				</dependency>
 			</dependencies>
+		</profile>
+		<profile>
+			<id>core</id>
+			<modules>
+				<module>spring-cloud-function-dependencies</module>
+				<module>spring-cloud-function-core</module>
+				<module>spring-cloud-function-context</module>
+				<module>spring-cloud-function-web</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>all</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>spring-cloud-function-dependencies</module>
+				<module>spring-cloud-function-core</module>
+				<module>spring-cloud-function-context</module>
+				<module>spring-cloud-function-web</module>
+				<module>spring-cloud-starter-function-web</module>
+				<module>spring-cloud-starter-function-webflux</module>
+				<module>spring-cloud-function-samples</module>
+				<module>spring-cloud-function-deployer</module>
+				<module>spring-cloud-function-adapters</module>
+				<module>spring-cloud-function-rsocket</module>
+				<module>spring-cloud-function-grpc</module>
+				<module>spring-cloud-function-kotlin</module>
+				<module>docs</module>
+			</modules>
 		</profile>
 	</profiles>
 	<repositories>
