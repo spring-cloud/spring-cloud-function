@@ -1,0 +1,18 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package org.springframework.cloud.function.grpc;
+
+message GrpcMessage {
+    bytes payload = 1;
+    map<string, string> headers = 2;
+}
+
+service MessagingService {
+    rpc biStream(stream GrpcMessage) returns (stream GrpcMessage);
+    
+    rpc clientStream(stream GrpcMessage) returns (GrpcMessage);
+    
+    rpc serverStream(GrpcMessage) returns (stream GrpcMessage);
+    
+    rpc requestReply(GrpcMessage) returns (GrpcMessage);
+}
