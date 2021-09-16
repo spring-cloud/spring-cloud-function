@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.springframework.core.env.MapPropertySource;
  * Adds default properties to the environment for running a custom runtime in AWS.
  *
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  */
 public class CustomRuntimeEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
@@ -38,12 +39,6 @@ public class CustomRuntimeEnvironmentPostProcessor implements EnvironmentPostPro
 			SpringApplication application) {
 		if (!environment.containsProperty(CUSTOM_RUNTIME)) {
 			Map<String, Object> defaults = getDefaultProperties(environment);
-			defaults.putIfAbsent("spring.cloud.function.web.export.source.url",
-					"http://${AWS_LAMBDA_RUNTIME_API:localhost}/2018-06-01/runtime/invocation/next");
-			defaults.putIfAbsent("spring.cloud.function.web.export.sink.url",
-					"http://${AWS_LAMBDA_RUNTIME_API:localhost}/2018-06-01/runtime/invocation/{{destination}}/response");
-			defaults.put("spring.cloud.function.web.export.sink.name",
-					"origin|${_HANDLER:}");
 			defaults.put(CUSTOM_RUNTIME, true);
 		}
 	}

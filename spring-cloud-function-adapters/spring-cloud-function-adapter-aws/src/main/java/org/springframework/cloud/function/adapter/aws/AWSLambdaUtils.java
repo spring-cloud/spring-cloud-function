@@ -29,13 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
-import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
-import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.amazonaws.services.lambda.runtime.events.SNSEvent;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.serialization.PojoSerializer;
 import com.amazonaws.services.lambda.runtime.serialization.events.LambdaEventSerializers;
 import com.fasterxml.jackson.core.JsonParser;
@@ -76,13 +70,13 @@ final class AWSLambdaUtils {
 	}
 
 	private static boolean isSupportedAWSType(Type inputType) {
-		Class<?> inputClass = FunctionTypeUtils.getRawType(inputType);
-		return APIGatewayV2HTTPEvent.class.isAssignableFrom(inputClass)
-				|| S3Event.class.isAssignableFrom(inputClass)
-				|| APIGatewayProxyRequestEvent.class.isAssignableFrom(inputClass)
-				|| SNSEvent.class.isAssignableFrom(inputClass)
-				|| SQSEvent.class.isAssignableFrom(inputClass)
-				|| KinesisEvent.class.isAssignableFrom(inputClass);
+		String typeName = inputType.getTypeName();
+		return typeName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent")
+				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.S3Event")
+				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent")
+				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.SNSEvent")
+				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.SQSEvent")
+				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.KinesisEvent");
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -182,11 +176,13 @@ final class AWSLambdaUtils {
 			ObjectMapper objectMapper, Type functionOutputType) {
 
 		Class<?> outputClass = FunctionTypeUtils.getRawType(functionOutputType);
-		if (outputClass != null && (APIGatewayV2HTTPResponse.class.isAssignableFrom(outputClass)
-				|| APIGatewayProxyResponseEvent.class.isAssignableFrom(outputClass))) {
-			return responseMessage.getPayload();
+		if (outputClass != null) {
+			String outputClassName = outputClass.getName();
+			if (outputClassName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse") ||
+				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent")) {
+				return responseMessage.getPayload();
+			}
 		}
-
 
 		if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
 			configureObjectMapper(objectMapper);
