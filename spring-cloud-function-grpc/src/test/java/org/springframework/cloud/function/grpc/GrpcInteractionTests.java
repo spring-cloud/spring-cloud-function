@@ -16,11 +16,13 @@
 
 package org.springframework.cloud.function.grpc;
 
-
-
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -34,18 +36,23 @@ import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ *
+ * @author Oleg Zhurakousky
+ *
+ */
 public class GrpcInteractionTests {
 
 	@Test
-	public void test() {
+	public void testRequestReply() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.cloud.function.grpc.port=55555",
+						"--spring.cloud.function.grpc.port=" + FunctionGrpcProperties.GRPC_PORT,
 						"--spring.cloud.function.grpc.mode=server")) {
 
-			Message<byte[]> message = MessageBuilder.withPayload("hello gRPC".getBytes())
+			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build();
@@ -53,6 +60,38 @@ public class GrpcInteractionTests {
 			Message<byte[]> reply = GrpcUtils.requestReply(message);
 
 			assertThat(reply.getPayload()).isEqualTo("\"HELLO GRPC\"".getBytes());
+		}
+	}
+
+	@Test
+	public void testBidirectionalStream() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleConfiguration.class).web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.function.definition=uppercase",
+						"--spring.cloud.function.grpc.port="
+								+ FunctionGrpcProperties.GRPC_PORT,
+						"--spring.cloud.function.grpc.mode=server")) {
+
+			List<Message<byte[]>> messages = new ArrayList<>();
+			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build());
+			messages.add(MessageBuilder.withPayload("\"Julien\"".getBytes()).setHeader("foo", "bar")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build());
+			messages.add(MessageBuilder.withPayload("\"Bubbles\"".getBytes()).setHeader("foo", "bar")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build());
+
+			Flux<Message<byte[]>> clientResponseObserver =
+					GrpcUtils.biStreaming("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+
+			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(1));
+			assertThat(results.size()).isEqualTo(3);
+			assertThat(results.get(0).getPayload()).isEqualTo("\"RICKY\"".getBytes());
+			assertThat(results.get(1).getPayload()).isEqualTo("\"JULIEN\"".getBytes());
+			assertThat(results.get(2).getPayload()).isEqualTo("\"BUBBLES\"".getBytes());
 		}
 	}
 
