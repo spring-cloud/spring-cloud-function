@@ -29,7 +29,7 @@ import org.springframework.context.SmartLifecycle;
 
 class GrpcServer implements SmartLifecycle {
 
-	protected Log logger = LogFactory.getLog(GrpcServer.class);
+	private Log logger = LogFactory.getLog(GrpcServer.class);
 
 	private final FunctionGrpcProperties grpcProperties;
 

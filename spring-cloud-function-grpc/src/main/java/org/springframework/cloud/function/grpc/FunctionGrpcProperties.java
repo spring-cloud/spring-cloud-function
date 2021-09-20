@@ -31,7 +31,7 @@ public class FunctionGrpcProperties {
 	/**
 	 * Default gRPC port.
 	 */
-	public final static int GRPC_PORT = 55555;
+	public final static int GRPC_PORT = 6048;
 
 	private int port = GRPC_PORT;
 
