@@ -228,6 +228,64 @@ public class MessagingTests {
 	}
 
 	@Test
+	public void testPojoMessageToPojoViaMessageExpectMessageRawPayload() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(MessagingConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			Message<byte[]> message = MessageBuilder.withPayload("{\"name\":\"bob\"}".getBytes())
+					.setHeader("someHeader", "foo")
+					.build();
+
+			Message<byte[]> result = rsocketRequesterBuilder.tcp("localhost", port)
+				.route("pojoMessageToPojo")
+				.data(message)
+				.retrieveMono(new ParameterizedTypeReference<Message<byte[]>>() {
+				})
+				.block();
+
+			assertThat(result.getPayload()).isEqualTo("{\"name\":\"BOB\"}".getBytes());
+			assertThat(result.getHeaders().get("someHeader")).isEqualTo("foo");
+		}
+	}
+
+	@Test
+	public void testPojoMessageToPojoViaMessageExpectMessageStringPayload() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(MessagingConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			Message<String> message = MessageBuilder.withPayload("{\"name\":\"bob\"}")
+					.setHeader("someHeader", "foo")
+					.build();
+
+			Message<String> result = rsocketRequesterBuilder.tcp("localhost", port)
+				.route("pojoMessageToPojo")
+				.data(message)
+				.retrieveMono(new ParameterizedTypeReference<Message<String>>() {
+				})
+				.block();
+
+			assertThat(result.getPayload()).isEqualTo("{\"name\":\"BOB\"}");
+			assertThat(result.getHeaders().get("someHeader")).isEqualTo("foo");
+		}
+	}
+
+	@Test
 	public void testPojoToMessageMap() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (
