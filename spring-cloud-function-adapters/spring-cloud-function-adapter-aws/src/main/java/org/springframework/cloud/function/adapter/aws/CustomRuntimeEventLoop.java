@@ -28,9 +28,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -48,7 +50,7 @@ import org.springframework.web.client.RestTemplate;
  * @since 3.1.1
  *
  */
-final class CustomRuntimeEventLoop {
+public final class CustomRuntimeEventLoop implements CommandLineRunner {
 
 	private static Log logger = LogFactory.getLog(CustomRuntimeEventLoop.class);
 
@@ -56,11 +58,19 @@ final class CustomRuntimeEventLoop {
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
 
-	private CustomRuntimeEventLoop() {
+	private final ConfigurableApplicationContext applicationContext;
+
+	public CustomRuntimeEventLoop(ConfigurableApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
+		CustomRuntimeEventLoop.eventLoop(this.applicationContext, args);
 	}
 
 	@SuppressWarnings("unchecked")
-	static void eventLoop(ApplicationContext context) {
+	private static void eventLoop(ApplicationContext context, String... args) {
 		logger.info("Starting spring-cloud-function CustomRuntimeEventLoop");
 		if (logger.isDebugEnabled()) {
 			logger.debug("AWS LAMBDA ENVIRONMENT: " + System.getenv());
