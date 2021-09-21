@@ -78,7 +78,7 @@ public class FunctionAutoConfigurationIntegrationTests {
 	public void copiesMessages() throws Exception {
 		int count = 0;
 		while (this.forwarder.isRunning() && count++ < 10) {
-			Thread.sleep(20);
+			Thread.sleep(200);
 		}
 		// It completed
 		assertThat(this.forwarder.isOk()).isTrue();
