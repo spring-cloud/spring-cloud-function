@@ -38,6 +38,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.grpc.Status;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
+import reactor.core.publisher.Sinks.Many;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,6 +50,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.grpc.MessagingServiceGrpc.MessagingServiceImplBase;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
 /**
@@ -54,13 +59,13 @@ import org.springframework.util.Assert;
  * @since 3.2
  *
  */
-class GrpcMessagingServiceImpl extends MessagingServiceImplBase {
+class GrpcServerMessageHandler extends MessagingServiceImplBase {
 
-	private Log logger = LogFactory.getLog(GrpcMessagingServiceImpl.class);
+	private Log logger = LogFactory.getLog(GrpcServerMessageHandler.class);
 
 	private final FunctionInvocationWrapper function;
 
-	GrpcMessagingServiceImpl(FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
+	GrpcServerMessageHandler(FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
 		this.function = functionCatalog.lookup(funcProperties.getDefinition(), "application/json");
 		Assert.notNull(this.function, "Failed to lookup function " + funcProperties.getDefinition());
 	}
@@ -91,7 +96,6 @@ class GrpcMessagingServiceImpl extends MessagingServiceImplBase {
 //	}
 //
 	@Override
-	@SuppressWarnings("unchecked")
 	public StreamObserver<GrpcMessage> biStream(StreamObserver<GrpcMessage> responseObserver) {
 		ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver = (ServerCallStreamObserver<GrpcMessage>) responseObserver;
 		serverCallStreamObserver.disableAutoInboundFlowControl();
@@ -104,15 +108,26 @@ class GrpcMessagingServiceImpl extends MessagingServiceImplBase {
 				serverCallStreamObserver.request(1);
 			}
 		});
+
+		if (function.isInputTypePublisher()) {
+			return this.biStreamReactive(responseObserver, serverCallStreamObserver);
+		}
+		else {
+			return this.biStreamImperative(responseObserver, serverCallStreamObserver, wasReady);
+		}
+	}
+
+	private StreamObserver<GrpcMessage> biStreamImperative(StreamObserver<GrpcMessage> responseObserver,
+			ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver, AtomicBoolean wasReady) {
 		return new StreamObserver<GrpcMessage>() {
 
+			@SuppressWarnings("unchecked")
 			@Override
 			public void onNext(GrpcMessage request) {
 				try {
 					Message<byte[]> message = GrpcUtils.fromGrpcMessage(request);
 
-					Message<byte[]> replyMessage = (Message<byte[]>) function
-							.apply(message);
+					Message<byte[]> replyMessage = (Message<byte[]>) function.apply(message);
 
 					GrpcMessage reply = GrpcUtils.toGrpcMessage(replyMessage);
 
@@ -143,6 +158,42 @@ class GrpcMessagingServiceImpl extends MessagingServiceImplBase {
 			@Override
 			public void onCompleted() {
 				logger.info("Server Stream is complete");
+				responseObserver.onCompleted();
+			}
+		};
+	}
+
+	@SuppressWarnings("unchecked")
+	private StreamObserver<GrpcMessage> biStreamReactive(StreamObserver<GrpcMessage> responseObserver,
+			ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver) {
+		Many<Message<byte[]>> sink = Sinks.many().unicast().onBackpressureBuffer();
+		Flux<Message<byte[]>> flux = sink.asFlux();
+
+		Flux<Message<byte[]>> connectedFlux = (Flux<Message<byte[]>>) function.apply(flux);
+
+		connectedFlux.subscribe(functionResult -> {
+			GrpcMessage reply = GrpcUtils.toGrpcMessage(functionResult);
+			responseObserver.onNext(reply);
+		});
+
+		return new StreamObserver<GrpcMessage>() {
+
+			@Override
+			public void onNext(GrpcMessage value) {
+				sink.tryEmitNext(GrpcUtils.fromGrpcMessage(value));
+				serverCallStreamObserver.request(1);
+			}
+
+			@Override
+			public void onError(Throwable t) {
+				t.printStackTrace();
+				responseObserver.onCompleted();
+			}
+
+			@Override
+			public void onCompleted() {
+				logger.info("Server stream is complete");
+				sink.tryEmitComplete();
 				responseObserver.onCompleted();
 			}
 		};

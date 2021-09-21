@@ -64,7 +64,7 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testBidirectionalStream() {
+	public void testBidirectionalStreamWithImperativeFunction() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
@@ -95,12 +95,49 @@ public class GrpcInteractionTests {
 		}
 	}
 
+	@Test
+	public void testBidirectionalStreamWithReactiveFunction() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleConfiguration.class).web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.function.definition=uppercaseReactive",
+						"--spring.cloud.function.grpc.port="
+								+ FunctionGrpcProperties.GRPC_PORT,
+						"--spring.cloud.function.grpc.mode=server")) {
+
+			List<Message<byte[]>> messages = new ArrayList<>();
+			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build());
+			messages.add(MessageBuilder.withPayload("\"Julien\"".getBytes()).setHeader("foo", "bar")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build());
+			messages.add(MessageBuilder.withPayload("\"Bubbles\"".getBytes()).setHeader("foo", "bar")
+					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
+					.build());
+
+			Flux<Message<byte[]>> clientResponseObserver =
+					GrpcUtils.biStreaming("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+
+			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(5));
+			assertThat(results.size()).isEqualTo(3);
+			assertThat(results.get(0).getPayload()).isEqualTo("\"RICKY\"".getBytes());
+			assertThat(results.get(1).getPayload()).isEqualTo("\"JULIEN\"".getBytes());
+			assertThat(results.get(2).getPayload()).isEqualTo("\"BUBBLES\"".getBytes());
+		}
+	}
+
 	@EnableAutoConfiguration
 	public static class SampleConfiguration {
 
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> uppercaseReactive() {
+			return flux -> flux.map(v -> v.toUpperCase());
 		}
 	}
 }

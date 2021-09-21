@@ -39,7 +39,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * @since 3.2
  *
  */
-public final class GrpcUtils {
+final class GrpcUtils {
 
 	private static Log logger = LogFactory.getLog(GrpcUtils.class);
 
@@ -155,6 +155,7 @@ public final class GrpcUtils {
 
 			@Override
 			public void onNext(GrpcMessage message) {
+				System.out.println("RECEIVED: " + message);
 				if (logger.isDebugEnabled()) {
 					logger.debug("Receiving message: " + message);
 				}

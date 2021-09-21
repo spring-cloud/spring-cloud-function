@@ -775,7 +775,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
 				}
 			}
-			else if (input instanceof Iterable && !FunctionTypeUtils.isTypeCollection(this.inputType)) {
+			else if (!(input instanceof Publisher) && input instanceof Iterable && !FunctionTypeUtils.isTypeCollection(this.inputType)) {
 				input = Flux.fromIterable((Iterable) input);
 			}
 			return input;
