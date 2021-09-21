@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.grpc.MessagingServiceGrpc.MessagingServiceImplBase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -31,16 +32,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionGrpcProperties.class)
 @ConditionalOnProperty(name = "spring.cloud.function.grpc.mode", havingValue = "server", matchIfMissing = false)
-public class GrpcAutoConfiguration {
+class GrpcAutoConfiguration {
 
 	@Bean
-	public GrpcServer grpcServer(FunctionGrpcProperties grpcProperties, GrpcMessagingServiceImpl grpcMessagingService) {
+	public GrpcServer grpcServer(FunctionGrpcProperties grpcProperties, MessagingServiceImplBase grpcMessagingService) {
 		return new GrpcServer(grpcProperties, grpcMessagingService);
 	}
 
 
 	@Bean
-	public GrpcMessagingServiceImpl grpcMessageService(FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
-		return new GrpcMessagingServiceImpl(funcProperties, functionCatalog);
+	public GrpcServerMessageHandler grpcMessageService(FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
+		return new GrpcServerMessageHandler(funcProperties, functionCatalog);
 	}
 }
