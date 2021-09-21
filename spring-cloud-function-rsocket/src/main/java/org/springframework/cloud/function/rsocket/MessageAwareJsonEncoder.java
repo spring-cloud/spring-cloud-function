@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -80,12 +81,18 @@ class MessageAwareJsonEncoder extends AbstractEncoder<Object> {
 		return Collections.singletonList(MimeTypeUtils.APPLICATION_JSON);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public DataBuffer encodeValue(Object value, DataBufferFactory bufferFactory,
 			ResolvableType valueType, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
 		if (value instanceof Message) {
+			Object payload = ((Message<?>) value).getPayload();
 			value = FunctionRSocketUtils.sanitizeMessageToMap((Message<?>) value);
+			if (payload instanceof byte[]) {
+				payload = new String((byte[]) payload, StandardCharsets.UTF_8); // safe for cases when we have JSON
+				((Map) value).put(FunctionRSocketUtils.PAYLOAD, payload);
+			}
 		}
 		else if (!(value instanceof Map)) {
 			if (JsonMapper.isJsonString(value)) {

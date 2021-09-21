@@ -541,7 +541,7 @@ public class RSocketAutoConfigurationTests {
 			RSocketRequester requester = rsocketRequesterBuilder.tcp("localhost", server.address().getPort());
 
 			requester.route("reverse")
-				.data("\"hello\"")
+				.data("hello")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
 				.expectNext("olleh")
@@ -575,7 +575,7 @@ public class RSocketAutoConfigurationTests {
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route(RoutingFunction.FUNCTION_NAME)
 				.metadata("{\"function_definition\":\"uppercase|concat\"}", MimeTypeUtils.APPLICATION_JSON)
-				.data("\"hello\"")
+				.data("hello")
 				.retrieveMono(String.class)
 				.as(StepVerifier::create)
 				.expectNext("HELLOHELLO")
@@ -584,6 +584,36 @@ public class RSocketAutoConfigurationTests {
 		}
 	}
 
+	@Test
+	public void testByteArrayInOut() {
+		int port = SocketUtils.findAvailableTcpPort();
+		try (
+			ConfigurableApplicationContext applicationContext =
+				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+					.web(WebApplicationType.NONE)
+					.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.rsocket.server.port=" + port);
+		) {
+			RSocketRequester.Builder rsocketRequesterBuilder =
+				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			String result = rsocketRequesterBuilder.tcp("localhost", port)
+				.route("uppercase")
+				.data("hello".getBytes())
+				.retrieveMono(String.class)
+				.block();
+
+			assertThat(result).isEqualTo("HELLO");
+
+			byte[] resultBytes = rsocketRequesterBuilder.tcp("localhost", port)
+					.route("uppercase")
+					.data("hello".getBytes())
+					.retrieveMono(byte[].class)
+					.block();
+
+			assertThat(resultBytes).isEqualTo("HELLO".getBytes());
+		}
+	}
 
 	@EnableAutoConfiguration
 	@Configuration
