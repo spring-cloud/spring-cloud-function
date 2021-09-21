@@ -1,5 +1,3 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.springframework.cloud.function.adapter.aws.CustomRuntimeEventLoop
 org.springframework.context.ApplicationContextInitializer=\
 org.springframework.cloud.function.adapter.aws.CustomRuntimeInitializer
 org.springframework.boot.env.EnvironmentPostProcessor=\

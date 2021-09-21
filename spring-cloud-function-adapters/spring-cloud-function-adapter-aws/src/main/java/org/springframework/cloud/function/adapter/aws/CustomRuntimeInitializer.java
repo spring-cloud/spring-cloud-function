@@ -44,7 +44,7 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 		if (!this.isWebExportEnabled(context) && isCustomRuntime()) {
 			if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
 				context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
-						CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
+						CommandLineRunner.class, () -> new CustomRuntimeEventLoop(context));
 			}
 		}
 		else if (ContextFunctionCatalogInitializer.enabled

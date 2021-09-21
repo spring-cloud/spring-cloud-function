@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -85,6 +83,8 @@ public class CustomRuntimeEventLoopTest {
 	@DirtiesContext
 	public void testDefaultFunctionLookup() throws Exception {
 		this.getEnvironment().put("AWS_LAMBDA_RUNTIME_API", "localhost:" + port);
+		this.getEnvironment().put("_HANDLER", "uppercase");
+
 
 		configuration.inputQueue.clear();
 		configuration.inputQueue.addAll(Arrays.asList("\"ricky\"", "\"julien\"", "\"bubbles\""));
@@ -93,13 +93,6 @@ public class CustomRuntimeEventLoopTest {
 					.web(WebApplicationType.NONE).run(
 						"--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.main.lazy-initialization=true")) {
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(() -> {
-				CustomRuntimeEventLoop.eventLoop(userContext);
-			});
-
-			executor.shutdown();
-			assertThat(executor.awaitTermination(2000, TimeUnit.MILLISECONDS)).isTrue();
 
 			assertThat(configuration.output).size().isEqualTo(3);
 			assertThat(configuration.output.get(0)).isEqualTo("\"RICKY\"");
@@ -112,6 +105,7 @@ public class CustomRuntimeEventLoopTest {
 	@DirtiesContext
 	public void testDefaultFunctionAsComponentLookup() throws Exception {
 		this.getEnvironment().put("AWS_LAMBDA_RUNTIME_API", "localhost:" + port);
+		this.getEnvironment().put("_HANDLER", "personFunction");
 
 		configuration.inputQueue.clear();
 		configuration.inputQueue.addAll(Arrays.asList("\"ricky\"", "\"julien\"", "\"bubbles\""));
@@ -120,13 +114,6 @@ public class CustomRuntimeEventLoopTest {
 					.web(WebApplicationType.NONE).run(
 						"--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.main.lazy-initialization=true")) {
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(() -> {
-				CustomRuntimeEventLoop.eventLoop(userContext);
-			});
-
-			executor.shutdown();
-			assertThat(executor.awaitTermination(2000, TimeUnit.MILLISECONDS)).isTrue();
 
 			assertThat(configuration.output).size().isEqualTo(3);
 			assertThat(configuration.output.get(0)).isEqualTo("{\"name\":\"RICKY\"}");
@@ -148,13 +135,6 @@ public class CustomRuntimeEventLoopTest {
 					.web(WebApplicationType.NONE).run(
 						"--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.main.lazy-initialization=true")) {
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(() -> {
-				CustomRuntimeEventLoop.eventLoop(userContext);
-			});
-
-			executor.shutdown();
-			assertThat(executor.awaitTermination(2000, TimeUnit.MILLISECONDS)).isTrue();
 
 			assertThat(configuration.output).size().isEqualTo(3);
 			assertThat(configuration.output.get(0)).isEqualTo("{\"name\":\"RICKY\"}");
@@ -176,13 +156,6 @@ public class CustomRuntimeEventLoopTest {
 					.web(WebApplicationType.NONE).run(
 						"--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.main.lazy-initialization=true")) {
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(() -> {
-				CustomRuntimeEventLoop.eventLoop(userContext);
-			});
-
-			executor.shutdown();
-			assertThat(executor.awaitTermination(2000, TimeUnit.MILLISECONDS)).isTrue();
 
 			assertThat(configuration.output).size().isEqualTo(3);
 			assertThat(configuration.output.get(0)).isEqualTo("{\"name\":\"RICKY\"}");
