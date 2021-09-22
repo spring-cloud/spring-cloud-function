@@ -158,4 +158,16 @@ public abstract class JsonMapper {
 		}
 		return isJson;
 	}
+
+	public static boolean isJsonStringRepresentsMap(Object value) {
+		boolean isJson = false;
+		if (value instanceof byte[]) {
+			value = new String((byte[]) value, StandardCharsets.UTF_8);
+		}
+		if (value instanceof String) {
+			String str = ((String) value).trim();
+			isJson = isJsonString(value) && str.startsWith("{") && str.endsWith("}");
+		}
+		return isJson;
+	}
 }
