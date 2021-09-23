@@ -73,7 +73,8 @@ class MessageAwareJsonDecoder extends AbstractDecoder<Object> {
 		if (messageMap.containsKey(FunctionRSocketUtils.PAYLOAD)) {
 			Type requestedType = FunctionTypeUtils.getGenericType(targetType.getType());
 			Object payload;
-			if (String.class.isAssignableFrom(FunctionTypeUtils.getRawType(targetType.getType()))) {
+			if (String.class.isAssignableFrom(FunctionTypeUtils.getRawType(targetType.getType()))
+					|| byte[].class.isAssignableFrom(FunctionTypeUtils.getRawType(targetType.getType()))) {
 				Object rawPayload = messageMap.get(FunctionRSocketUtils.PAYLOAD);
 				if (rawPayload instanceof byte[]) {
 					payload = new String((byte[]) rawPayload, StandardCharsets.UTF_8);
