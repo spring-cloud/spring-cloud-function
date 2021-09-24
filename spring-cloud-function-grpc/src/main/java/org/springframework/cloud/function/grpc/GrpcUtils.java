@@ -17,7 +17,10 @@
 package org.springframework.cloud.function.grpc;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -127,6 +130,33 @@ final class GrpcUtils {
 			channel.shutdown();
 		});
 	}
+
+	public static Flux<Message<byte[]>> serverStream(String host, int port, Message<byte[]> inputMessage) {
+		ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port)
+				.usePlaintext().build();
+		MessagingServiceGrpc.MessagingServiceBlockingStub stub = MessagingServiceGrpc
+				.newBlockingStub(channel);
+
+		Iterator<GrpcMessage> serverStream = stub.serverStream(toGrpcMessage(inputMessage));
+
+		Many<Message<byte[]>> sink = Sinks.many().unicast().onBackpressureBuffer();
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		executor.execute(() -> {
+			while (serverStream.hasNext()) {
+				GrpcMessage grpcMessage = serverStream.next();
+				sink.tryEmitNext(GrpcUtils.fromGrpcMessage(grpcMessage));
+			}
+			sink.tryEmitComplete();
+		});
+
+
+		return sink.asFlux()
+				.doOnComplete(() -> {
+					channel.shutdown();
+					executor.shutdownNow();
+				});
+	}
+
 
 	/**
 	 * Utility method to support client-side streaming interaction. Will connect to gRPC server using default host/port,
