@@ -107,11 +107,22 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 			}
 		});
 
-		if (function.isInputTypePublisher()) {
-			return this.biStreamReactive(responseObserver, serverCallStreamObserver);
+		if (this.function.isInputTypePublisher()) {
+			if (this.function.isOutputTypePublisher()) {
+				return this.biStreamReactive(responseObserver, serverCallStreamObserver);
+			}
+			throw new UnsupportedOperationException("The bi-directional streaming is "
+					+ "not supported for functions that accept Publisher but return non-Publisher: "
+					+ this.function);
 		}
 		else {
-			return this.biStreamImperative(responseObserver, serverCallStreamObserver, wasReady);
+			if (!this.function.isOutputTypePublisher()) {
+				return this.biStreamImperative(responseObserver, serverCallStreamObserver, wasReady);
+			}
+			throw new UnsupportedOperationException("The bidirection streaming is "
+					+ "not supported for functions that accept non-Publisher but return Publisher: "
+					+ this.function);
+
 		}
 	}
 
