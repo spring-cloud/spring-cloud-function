@@ -85,12 +85,18 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 		responseObserver.onNext(reply);
 		responseObserver.onCompleted();
 	}
-//
-//	@Override
-//	public void serverStream(GrpcMessage request,
-//			StreamObserver<GrpcMessage> responseObserver) {
-//
-//	}
+
+	@Override
+	public void serverStream(GrpcMessage request, StreamObserver<GrpcMessage> responseObserver) {
+		Message<byte[]> message = GrpcUtils.fromGrpcMessage(request);
+		Publisher<Message<byte[]>> replyStream = (Publisher<Message<byte[]>>) this.function.apply(message);
+		Flux.from(replyStream).doOnNext(replyMessage -> {
+			responseObserver.onNext(GrpcUtils.toGrpcMessage(replyMessage));
+		})
+		.doOnComplete(() -> responseObserver.onCompleted())
+		.subscribe();
+	}
+
 
 	@SuppressWarnings("unchecked")
 	@Override
