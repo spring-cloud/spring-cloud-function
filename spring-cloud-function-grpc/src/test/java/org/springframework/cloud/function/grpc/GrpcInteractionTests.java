@@ -19,6 +19,7 @@ package org.springframework.cloud.function.grpc;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -129,7 +130,32 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testStreamInStringOut() {
+	public void testClientStreaming() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleConfiguration.class).web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.function.definition=streamInStringOut",
+						"--spring.cloud.function.grpc.port="
+								+ FunctionGrpcProperties.GRPC_PORT,
+						"--spring.cloud.function.grpc.mode=server")) {
+
+			List<Message<byte[]>> messages = new ArrayList<>();
+			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
+					.build());
+			messages.add(MessageBuilder.withPayload("\"Julien\"".getBytes()).setHeader("foo", "bar")
+					.build());
+			messages.add(MessageBuilder.withPayload("\"Bubbles\"".getBytes()).setHeader("foo", "bar")
+					.build());
+
+			Message<byte[]> reply =
+					GrpcUtils.clientStream("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+
+			assertThat(reply.getPayload()).isEqualTo("[Ricky, Julien, Bubbles]".getBytes());
+		}
+	}
+
+	@Test
+	public void testBiStreamStreamInStringOutFailure() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
@@ -163,7 +189,7 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testStringInStreamOut() {
+	public void testBiStreamStringInStreamOutFailure() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
@@ -211,7 +237,14 @@ public class GrpcInteractionTests {
 
 		@Bean
 		public Function<Flux<String>, String> streamInStringOut() {
-			return flux -> "hello";
+			return flux -> flux.doOnNext(v -> {
+				try {
+					Thread.sleep(new Random().nextInt(2000)); // artificial delay
+				}
+				catch (Exception e) {
+					// ignore
+				}
+			}).collectList().block().toString();
 		}
 
 		@Bean

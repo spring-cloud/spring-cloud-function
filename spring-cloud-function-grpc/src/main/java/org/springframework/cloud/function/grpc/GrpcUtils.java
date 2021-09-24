@@ -18,12 +18,15 @@ package org.springframework.cloud.function.grpc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.ClientResponseObserver;
+import io.grpc.stub.StreamObserver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Flux;
@@ -91,7 +94,7 @@ final class GrpcUtils {
 	 * They are completely independent where one may end before the other.
 	 *
 	 * @param inputStream {@code FluxMessage<byte[]>>} representing input stream.
-	 * @return {@code FluxMessage<byte[]>>} representing output stream
+	 * @return {@code Flux<Message<byte[]>>} representing output stream
 	 */
 	public static Flux<Message<byte[]>> biStreaming(Flux<Message<byte[]>> inputStream) {
 		return biStreaming("localhost", FunctionGrpcProperties.GRPC_PORT, inputStream);
@@ -105,7 +108,7 @@ final class GrpcUtils {
 	 * @param host gRPC server host name
 	 * @param port gRPC server port
 	 * @param inputStream {@code FluxMessage<byte[]>>} representing input stream
-	 * @return {@code FluxMessage<byte[]>>} representing output stream
+	 * @return {@code Flux<Message<byte[]>>} representing output stream
 	 */
 	public static Flux<Message<byte[]>> biStreaming(String host, int port, Flux<Message<byte[]>> inputStream) {
 		ManagedChannel channel = ManagedChannelBuilder
@@ -123,6 +126,77 @@ final class GrpcUtils {
 			logger.debug("Shutting down channel");
 			channel.shutdown();
 		});
+	}
+
+	/**
+	 * Utility method to support client-side streaming interaction. Will connect to gRPC server using default host/port,
+	 * otherwise use {@link #clientStream(String, int, Flux)} method.
+	 *
+	 * @param inputStream {@code FluxMessage<byte[]>>} representing input stream.
+	 * @return {@code Message<byte[]>} representing output
+	 */
+	public static Message<byte[]> clientStream(Flux<Message<byte[]>> inputStream) {
+		return clientStream("localhost", FunctionGrpcProperties.GRPC_PORT, inputStream);
+	}
+
+	/**
+	 * Utility method to support client-side streaming interaction.
+	 *
+	 * @param host gRPC server host name
+	 * @param port gRPC server port
+	 * @param inputStream {@code FluxMessage<byte[]>>} representing input stream
+	 * @return {@code Message<byte[]>} representing output
+	 */
+	public static Message<byte[]> clientStream(String host, int port, Flux<Message<byte[]>> inputStream) {
+		ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port)
+				.usePlaintext().build();
+
+		LinkedBlockingQueue<Message<byte[]>> resultRef = new LinkedBlockingQueue<>(1);
+		StreamObserver<GrpcMessage> responseObserver = new StreamObserver<GrpcMessage>() {
+			@Override
+			public void onNext(GrpcMessage result) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Client received reply: " + result);
+				}
+				resultRef.offer(GrpcUtils.fromGrpcMessage(result));
+			}
+
+			@Override
+			public void onError(Throwable t) {
+				t.printStackTrace();
+			}
+
+			@Override
+			public void onCompleted() {
+				logger.info("Client completed");
+			}
+		};
+
+		MessagingServiceGrpc.MessagingServiceStub asyncStub = MessagingServiceGrpc.newStub(channel);
+
+		StreamObserver<GrpcMessage> requestObserver = asyncStub.clientStream(responseObserver);
+
+		inputStream.doOnNext(message -> {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Client sending: " + message);
+			}
+			try {
+				requestObserver.onNext(GrpcUtils.toGrpcMessage(message));
+			}
+			catch (Exception e) {
+				requestObserver.onError(e);
+			}
+		}).doOnComplete(() -> {
+			requestObserver.onCompleted();
+		}).subscribe();
+
+		try {
+			return resultRef.poll(5000, TimeUnit.MILLISECONDS);
+		}
+		catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException(ie);
+		}
 	}
 
 	private static ClientResponseObserver<GrpcMessage, GrpcMessage> clientResponseObserver(Flux<Message<byte[]>> inputStream, Many<Message<byte[]>> sink) {
@@ -155,7 +229,6 @@ final class GrpcUtils {
 
 			@Override
 			public void onNext(GrpcMessage message) {
-				System.out.println("RECEIVED: " + message);
 				if (logger.isDebugEnabled()) {
 					logger.debug("Receiving message: " + message);
 				}
