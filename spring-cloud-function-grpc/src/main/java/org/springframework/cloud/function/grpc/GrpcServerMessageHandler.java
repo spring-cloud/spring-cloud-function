@@ -153,7 +153,7 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 					logger.info("gRPC Server has finished receiving data.");
 					inputStream.tryEmitComplete();
 					try {
-						responseObserver.onNext(GrpcUtils.toGrpcMessage(resultRef.poll(5000, TimeUnit.MILLISECONDS)));
+						responseObserver.onNext(GrpcUtils.toGrpcMessage(resultRef.poll(Integer.MAX_VALUE, TimeUnit.MILLISECONDS)));
 					}
 					catch (InterruptedException e) {
 						Thread.currentThread().interrupt();

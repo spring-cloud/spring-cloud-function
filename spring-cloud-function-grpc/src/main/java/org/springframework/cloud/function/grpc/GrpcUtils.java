@@ -191,7 +191,7 @@ final class GrpcUtils {
 		}).subscribe();
 
 		try {
-			return resultRef.poll(5000, TimeUnit.MILLISECONDS);
+			return resultRef.poll(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException ie) {
 			Thread.currentThread().interrupt();
@@ -215,7 +215,7 @@ final class GrpcUtils {
 						inputStream
 						.doOnNext(request -> {
 							if (logger.isDebugEnabled()) {
-								logger.debug("Sending message: " + request);
+								logger.debug("Streaming message to function: " + request);
 							}
 							requestStreamObserver.onNext(GrpcUtils.toGrpcMessage(request));
 						})
@@ -230,7 +230,7 @@ final class GrpcUtils {
 			@Override
 			public void onNext(GrpcMessage message) {
 				if (logger.isDebugEnabled()) {
-					logger.debug("Receiving message: " + message);
+					logger.debug("Streaming message from function: " + message);
 				}
 				sink.tryEmitNext(fromGrpcMessage(message));
 				requestStreamObserver.request(1);
