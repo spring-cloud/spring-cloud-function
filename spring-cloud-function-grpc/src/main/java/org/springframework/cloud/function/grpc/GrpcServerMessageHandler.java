@@ -33,6 +33,10 @@
 package org.springframework.cloud.function.grpc;
 
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.grpc.Status;
@@ -40,6 +44,7 @@ import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
@@ -86,13 +91,79 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 //			StreamObserver<GrpcMessage> responseObserver) {
 //
 //	}
-//
-//	@Override
-//	public StreamObserver<GrpcMessage> clientStream(
-//			StreamObserver<GrpcMessage> responseObserver) {
-//		return null;
-//	}
-//
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public StreamObserver<GrpcMessage> clientStream(StreamObserver<GrpcMessage> responseObserver) {
+		ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver = (ServerCallStreamObserver<GrpcMessage>) responseObserver;
+		serverCallStreamObserver.disableAutoInboundFlowControl();
+
+		AtomicBoolean wasReady = new AtomicBoolean(false);
+		serverCallStreamObserver.setOnReadyHandler(() -> {
+			if (serverCallStreamObserver.isReady() && !wasReady.get()) {
+				wasReady.set(true);
+				logger.info("gRPC Server receiving stream is ready.");
+				serverCallStreamObserver.request(1);
+			}
+		});
+
+
+		if (!this.function.isInputTypePublisher()) {
+			throw new UnsupportedOperationException("The client streaming is "
+					+ "not supported for functions that accept non-Publisher: "
+					+ this.function);
+		}
+		else if (this.function.isOutputTypePublisher()) {
+			throw new UnsupportedOperationException("The client streaming is "
+					+ "not supported for functions that return Publisher: "
+					+ this.function);
+		}
+		else {
+			Many<Message<byte[]>> inputStream = Sinks.many().unicast().onBackpressureBuffer();
+			Flux<Message<byte[]>> inputStreamFlux = inputStream.asFlux();
+
+			LinkedBlockingQueue<Message<byte[]>> resultRef = new LinkedBlockingQueue<>(1);
+			ExecutorService executor = Executors.newSingleThreadExecutor();
+			executor.execute(() -> {
+				Message<byte[]> replyMessage = (Message<byte[]>) this.function.apply(inputStreamFlux);
+				System.out.println(replyMessage);
+				resultRef.offer(replyMessage);
+			});
+
+			return new StreamObserver<GrpcMessage>() {
+
+				@Override
+				public void onNext(GrpcMessage inputMessage) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("gRPC Server receiving: " + inputMessage);
+					}
+
+					inputStream.tryEmitNext(GrpcUtils.fromGrpcMessage(inputMessage));
+					serverCallStreamObserver.request(1);
+				}
+
+				@Override
+				public void onError(Throwable t) {
+					t.printStackTrace();
+					responseObserver.onCompleted();
+				}
+
+				@Override
+				public void onCompleted() {
+					logger.info("gRPC Server has finished receiving data.");
+					inputStream.tryEmitComplete();
+					try {
+						responseObserver.onNext(GrpcUtils.toGrpcMessage(resultRef.poll(5000, TimeUnit.MILLISECONDS)));
+					}
+					catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+					responseObserver.onCompleted();
+				}
+			};
+		}
+	}
+
 	@Override
 	public StreamObserver<GrpcMessage> biStream(StreamObserver<GrpcMessage> responseObserver) {
 		ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver = (ServerCallStreamObserver<GrpcMessage>) responseObserver;
@@ -102,7 +173,7 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 		serverCallStreamObserver.setOnReadyHandler(() -> {
 			if (serverCallStreamObserver.isReady() && !wasReady.get()) {
 				wasReady.set(true);
-				logger.info("Server stream is ready");
+				logger.info("gRPC Server receiving stream is ready.");
 				serverCallStreamObserver.request(1);
 			}
 		});
@@ -166,7 +237,7 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 
 			@Override
 			public void onCompleted() {
-				logger.info("Server Stream is complete");
+				logger.info("gRPC Server has finished receiving data.");
 				responseObserver.onCompleted();
 			}
 		};
@@ -175,21 +246,28 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 	@SuppressWarnings("unchecked")
 	private StreamObserver<GrpcMessage> biStreamReactive(StreamObserver<GrpcMessage> responseObserver,
 			ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver) {
-		Many<Message<byte[]>> sink = Sinks.many().unicast().onBackpressureBuffer();
-		Flux<Message<byte[]>> flux = sink.asFlux();
+		Many<Message<byte[]>> inputStream = Sinks.many().unicast().onBackpressureBuffer();
+		Flux<Message<byte[]>> inputStreamFlux = inputStream.asFlux();
 
-		Flux<Message<byte[]>> connectedFlux = (Flux<Message<byte[]>>) function.apply(flux);
+		Publisher<Message<byte[]>> outputPublisher = (Publisher<Message<byte[]>>) this.function.apply(inputStreamFlux);
 
-		connectedFlux.subscribe(functionResult -> {
-			GrpcMessage reply = GrpcUtils.toGrpcMessage(functionResult);
-			responseObserver.onNext(reply);
+		Flux.from(outputPublisher).subscribe(functionResult -> {
+			GrpcMessage outputMessage = GrpcUtils.toGrpcMessage(functionResult);
+			if (logger.isDebugEnabled()) {
+				logger.debug("gRPC Server replying: " + outputMessage);
+			}
+			responseObserver.onNext(outputMessage);
 		});
 
 		return new StreamObserver<GrpcMessage>() {
 
 			@Override
-			public void onNext(GrpcMessage value) {
-				sink.tryEmitNext(GrpcUtils.fromGrpcMessage(value));
+			public void onNext(GrpcMessage inputMessage) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("gRPC Server receiving: " + inputMessage);
+				}
+
+				inputStream.tryEmitNext(GrpcUtils.fromGrpcMessage(inputMessage));
 				serverCallStreamObserver.request(1);
 			}
 
@@ -201,8 +279,8 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 
 			@Override
 			public void onCompleted() {
-				logger.info("Server stream is complete");
-				sink.tryEmitComplete();
+				logger.info("gRPC Server has finished receiving data.");
+				inputStream.tryEmitComplete();
 				responseObserver.onCompleted();
 			}
 		};
