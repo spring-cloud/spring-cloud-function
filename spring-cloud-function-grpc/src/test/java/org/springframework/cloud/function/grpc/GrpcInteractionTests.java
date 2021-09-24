@@ -51,8 +51,7 @@ public class GrpcInteractionTests {
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.cloud.function.grpc.port=" + FunctionGrpcProperties.GRPC_PORT,
-						"--spring.cloud.function.grpc.mode=server")) {
+						"--spring.cloud.function.grpc.port=" + FunctionGrpcProperties.GRPC_PORT)) {
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
@@ -72,8 +71,7 @@ public class GrpcInteractionTests {
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercase",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT,
-						"--spring.cloud.function.grpc.mode=server")) {
+								+ FunctionGrpcProperties.GRPC_PORT)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -104,8 +102,7 @@ public class GrpcInteractionTests {
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercaseReactive",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT,
-						"--spring.cloud.function.grpc.mode=server")) {
+								+ FunctionGrpcProperties.GRPC_PORT)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -136,8 +133,7 @@ public class GrpcInteractionTests {
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=streamInStringOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT,
-						"--spring.cloud.function.grpc.mode=server")) {
+								+ FunctionGrpcProperties.GRPC_PORT)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -161,8 +157,7 @@ public class GrpcInteractionTests {
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=stringInStreamOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT,
-						"--spring.cloud.function.grpc.mode=server")) {
+								+ FunctionGrpcProperties.GRPC_PORT)) {
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar").build();
 
@@ -183,8 +178,7 @@ public class GrpcInteractionTests {
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=streamInStringOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT,
-						"--spring.cloud.function.grpc.mode=server")) {
+								+ FunctionGrpcProperties.GRPC_PORT)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -214,8 +208,7 @@ public class GrpcInteractionTests {
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=stringInStreamOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT,
-						"--spring.cloud.function.grpc.mode=server")) {
+								+ FunctionGrpcProperties.GRPC_PORT)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")

@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionGrpcProperties.class)
-@ConditionalOnProperty(name = "spring.cloud.function.grpc.mode", havingValue = "server", matchIfMissing = false)
+@ConditionalOnProperty(name = "spring.cloud.function.grpc.server", havingValue = "true", matchIfMissing = true)
 class GrpcAutoConfiguration {
 
 	@Bean
