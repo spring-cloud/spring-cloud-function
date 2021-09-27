@@ -19,6 +19,9 @@ only be interested in client-side utilities to invoke a function exposed via gRP
 To support these two modes Spring Cloud Function provides `spring.cloud.function.grpc.server` which defaults to `true`.
 This means that the default mode of operation is _server_, since the core intention of our current gRPC support is to expose user Functions via gRPC. However, if you're only inteersted in using client-side utilities (e.g., `GrpcUtils` to help to invoke a function or convert `GrpcMessage` to Spring `Message` and vice versa), you can set this property to `false`.
 
+In the server (default) mode, te gRPC server would be bound to te default port ***6048***. You can change it by providing 
+`spring.cloud.function.grpc.port` property.
+
 #### Core Data and Service
 At the center of gRPC and Spring Cloud Function integration is a canonical protobuff structure - `GrpcMessage`. It is modeled after Spring [Message](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/messaging/Message.html).
 
