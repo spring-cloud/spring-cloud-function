@@ -841,18 +841,47 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 			Object result = ((Function) this.target).apply(inputValue);
 
-			if (result instanceof Flux && functionInvocationHelper != null) {
-				result = ((Flux) result).map(v -> {
-					if (firstInputMessage.get() != null && CloudEventMessageUtils.isCloudEvent(firstInputMessage.get())) {
-						return functionInvocationHelper.postProcessResult(v, firstInputMessage.get());
-					}
-					return v;
-				});
+			if (result instanceof Publisher && functionInvocationHelper != null) {
+				result = this.postProcessFunction((Publisher) result, firstInputMessage);
 			}
 
 			return value instanceof OriginalMessageHolder
 					? this.enrichInvocationResultIfNecessary(((OriginalMessageHolder) value).getOriginalMessage(), result)
 					: result;
+		}
+
+		@SuppressWarnings("unchecked")
+		private Publisher postProcessFunction(Publisher result, AtomicReference<Message<?>> firstInputMessage) {
+			if (FunctionTypeUtils.isPublisher(this.inputType) && FunctionTypeUtils.isPublisher(this.outputType)) {
+				if (!FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.inputType, 0))
+						.isAssignableFrom(Void.class)
+					&& !FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.outputType, 0))
+						.isAssignableFrom(Void.class)) {
+
+					if (result instanceof Mono) {
+						return Mono.from((result)).map(v -> {
+							if (firstInputMessage.get() != null && CloudEventMessageUtils
+									.isCloudEvent(firstInputMessage.get())) {
+								return functionInvocationHelper.postProcessResult(v,
+										firstInputMessage.get());
+							}
+							return v;
+						});
+					}
+					else {
+						return Flux.from((result)).map(v -> {
+							if (firstInputMessage.get() != null && CloudEventMessageUtils
+									.isCloudEvent(firstInputMessage.get())) {
+								return functionInvocationHelper.postProcessResult(v,
+										firstInputMessage.get());
+							}
+							return v;
+						});
+					}
+				}
+			}
+
+			return result;
 		}
 
 		/*
