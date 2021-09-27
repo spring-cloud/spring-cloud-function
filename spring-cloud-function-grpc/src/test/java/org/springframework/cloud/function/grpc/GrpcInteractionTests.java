@@ -65,6 +65,24 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
+	public void testRequstReplyFunctionDefinitionInMessage() {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleConfiguration.class).web(WebApplicationType.NONE).run(
+						"--spring.jmx.enabled=false",
+						"--spring.cloud.function.grpc.port=" + FunctionGrpcProperties.GRPC_PORT)) {
+
+			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
+					.setHeader("foo", "bar")
+					.setHeader("spring.cloud.function.definition", "reverse")
+					.build();
+
+			Message<byte[]> reply = GrpcUtils.requestReply(message);
+
+			assertThat(reply.getPayload()).isEqualTo("\"CPRg olleh\"".getBytes());
+		}
+	}
+
+	@Test
 	public void testBidirectionalStreamWithImperativeFunction() {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
@@ -75,13 +93,10 @@ public class GrpcInteractionTests {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
-					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build());
 			messages.add(MessageBuilder.withPayload("\"Julien\"".getBytes()).setHeader("foo", "bar")
-					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build());
 			messages.add(MessageBuilder.withPayload("\"Bubbles\"".getBytes()).setHeader("foo", "bar")
-					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build());
 
 			Flux<Message<byte[]>> clientResponseObserver =
@@ -237,6 +252,11 @@ public class GrpcInteractionTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<String, String> reverse() {
+			return v -> new StringBuilder(v).reverse().toString();
 		}
 
 		@Bean

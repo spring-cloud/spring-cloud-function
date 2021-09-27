@@ -33,6 +33,7 @@
 package org.springframework.cloud.function.grpc;
 
 
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -53,8 +54,10 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.grpc.MessagingServiceGrpc.MessagingServiceImplBase;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 /**
  *
@@ -62,23 +65,32 @@ import org.springframework.util.Assert;
  * @since 3.2
  *
  */
-class GrpcServerMessageHandler extends MessagingServiceImplBase {
+class GrpcServerMessageHandler extends MessagingServiceImplBase implements SmartLifecycle {
 
 	private Log logger = LogFactory.getLog(GrpcServerMessageHandler.class);
 
-	private final FunctionInvocationWrapper function;
+	private final ExecutorService executor;
+
+	private final FunctionProperties funcProperties;
+
+	private final FunctionCatalog functionCatalog;
+
+	private boolean running;
+
 
 	GrpcServerMessageHandler(FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
-		this.function = functionCatalog.lookup(funcProperties.getDefinition(), "application/json");
-		Assert.notNull(this.function, "Failed to lookup function " + funcProperties.getDefinition());
+		this.functionCatalog = functionCatalog;
+		this.funcProperties = funcProperties;
+		this.executor = Executors.newCachedThreadPool();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public void requestReply(GrpcMessage request, StreamObserver<GrpcMessage> responseObserver) {
 		Message<byte[]> message = GrpcUtils.fromGrpcMessage(request);
+		FunctionInvocationWrapper function = this.resolveFunction(message.getHeaders());
 
-		Message<byte[]> replyMessage = (Message<byte[]>) this.function.apply(message);
+		Message<byte[]> replyMessage = (Message<byte[]>) function.apply(message);
 
 		GrpcMessage reply = GrpcUtils.toGrpcMessage(replyMessage);
 
@@ -86,10 +98,12 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 		responseObserver.onCompleted();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void serverStream(GrpcMessage request, StreamObserver<GrpcMessage> responseObserver) {
 		Message<byte[]> message = GrpcUtils.fromGrpcMessage(request);
-		Publisher<Message<byte[]>> replyStream = (Publisher<Message<byte[]>>) this.function.apply(message);
+		FunctionInvocationWrapper function = this.resolveFunction(message.getHeaders());
+		Publisher<Message<byte[]>> replyStream = (Publisher<Message<byte[]>>) function.apply(message);
 		Flux.from(replyStream).doOnNext(replyMessage -> {
 			responseObserver.onNext(GrpcUtils.toGrpcMessage(replyMessage));
 		})
@@ -104,6 +118,8 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 		ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver = (ServerCallStreamObserver<GrpcMessage>) responseObserver;
 		serverCallStreamObserver.disableAutoInboundFlowControl();
 
+		FunctionInvocationWrapper function = this.resolveFunction(null);
+
 		AtomicBoolean wasReady = new AtomicBoolean(false);
 		serverCallStreamObserver.setOnReadyHandler(() -> {
 			if (serverCallStreamObserver.isReady() && !wasReady.get()) {
@@ -113,26 +129,26 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 			}
 		});
 
-
-		if (!this.function.isInputTypePublisher()) {
+		if (!function.isInputTypePublisher()) {
 			throw new UnsupportedOperationException("The client streaming is "
 					+ "not supported for functions that accept non-Publisher: "
-					+ this.function);
+					+ function);
 		}
-		else if (this.function.isOutputTypePublisher()) {
+		else if (function.isOutputTypePublisher()) {
 			throw new UnsupportedOperationException("The client streaming is "
 					+ "not supported for functions that return Publisher: "
-					+ this.function);
+					+ function);
 		}
 		else {
 			Many<Message<byte[]>> inputStream = Sinks.many().unicast().onBackpressureBuffer();
 			Flux<Message<byte[]>> inputStreamFlux = inputStream.asFlux();
 
 			LinkedBlockingQueue<Message<byte[]>> resultRef = new LinkedBlockingQueue<>(1);
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(() -> {
-				Message<byte[]> replyMessage = (Message<byte[]>) this.function.apply(inputStreamFlux);
-				System.out.println(replyMessage);
+			this.executor.execute(() -> {
+				Message<byte[]> replyMessage = (Message<byte[]>) function.apply(inputStreamFlux);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Function invocation reply: " + replyMessage);
+				}
 				resultRef.offer(replyMessage);
 			});
 
@@ -175,6 +191,8 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 		ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver = (ServerCallStreamObserver<GrpcMessage>) responseObserver;
 		serverCallStreamObserver.disableAutoInboundFlowControl();
 
+		FunctionInvocationWrapper function = this.resolveFunction(null);
+
 		AtomicBoolean wasReady = new AtomicBoolean(false);
 		serverCallStreamObserver.setOnReadyHandler(() -> {
 			if (serverCallStreamObserver.isReady() && !wasReady.get()) {
@@ -184,21 +202,21 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 			}
 		});
 
-		if (this.function.isInputTypePublisher()) {
-			if (this.function.isOutputTypePublisher()) {
+		if (function.isInputTypePublisher()) {
+			if (function.isOutputTypePublisher()) {
 				return this.biStreamReactive(responseObserver, serverCallStreamObserver);
 			}
 			throw new UnsupportedOperationException("The bi-directional streaming is "
 					+ "not supported for functions that accept Publisher but return non-Publisher: "
-					+ this.function);
+					+ function);
 		}
 		else {
-			if (!this.function.isOutputTypePublisher()) {
+			if (!function.isOutputTypePublisher()) {
 				return this.biStreamImperative(responseObserver, serverCallStreamObserver, wasReady);
 			}
 			throw new UnsupportedOperationException("The bidirection streaming is "
 					+ "not supported for functions that accept non-Publisher but return Publisher: "
-					+ this.function);
+					+ function);
 
 		}
 	}
@@ -212,6 +230,7 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 			public void onNext(GrpcMessage request) {
 				try {
 					Message<byte[]> message = GrpcUtils.fromGrpcMessage(request);
+					FunctionInvocationWrapper function = resolveFunction(message.getHeaders());
 
 					Message<byte[]> replyMessage = (Message<byte[]>) function.apply(message);
 
@@ -249,13 +268,38 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 		};
 	}
 
+	@Override
+	public void start() {
+		this.running = true;
+	}
+
+	@Override
+	public void stop() {
+		this.executor.shutdown();
+		try {
+			Assert.isTrue(this.executor.awaitTermination(5000, TimeUnit.MILLISECONDS), "gRPC Server executor timed out while stopping, "
+					+ "since there are currently executing tasks");
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		this.running = false;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.running;
+	}
+
 	@SuppressWarnings("unchecked")
 	private StreamObserver<GrpcMessage> biStreamReactive(StreamObserver<GrpcMessage> responseObserver,
 			ServerCallStreamObserver<GrpcMessage> serverCallStreamObserver) {
 		Many<Message<byte[]>> inputStream = Sinks.many().unicast().onBackpressureBuffer();
 		Flux<Message<byte[]>> inputStreamFlux = inputStream.asFlux();
 
-		Publisher<Message<byte[]>> outputPublisher = (Publisher<Message<byte[]>>) this.function.apply(inputStreamFlux);
+		FunctionInvocationWrapper function = this.resolveFunction(null);
+
+		Publisher<Message<byte[]>> outputPublisher = (Publisher<Message<byte[]>>) function.apply(inputStreamFlux);
 
 		Flux.from(outputPublisher).subscribe(functionResult -> {
 			GrpcMessage outputMessage = GrpcUtils.toGrpcMessage(functionResult);
@@ -291,4 +335,16 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 			}
 		};
 	}
+
+	private FunctionInvocationWrapper resolveFunction(Map<String, Object> headers) {
+		String functionDefinition = funcProperties.getDefinition();
+		if (!CollectionUtils.isEmpty(headers) && headers.containsKey(FunctionProperties.FUNCTION_DEFINITION)) {
+			functionDefinition = (String) headers.get(FunctionProperties.FUNCTION_DEFINITION);
+		}
+		FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, "application/json");
+		Assert.notNull(function, "Failed to lookup function " + funcProperties.getDefinition());
+		return function;
+	}
 }
+
+
