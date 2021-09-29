@@ -59,9 +59,9 @@ public class RequestProcessor {
 
 	private final JsonMapper mapper;
 
-	public RequestProcessor(ObjectProvider<JsonMapper> mapper,
+	public RequestProcessor(JsonMapper mapper,
 			ObjectProvider<ServerCodecConfigurer> codecs) {
-		this.mapper = mapper.getIfAvailable();
+		this.mapper = mapper;
 	}
 
 	public static FunctionWrapper wrapper(FunctionInvocationWrapper function) {

@@ -79,7 +79,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
  * @since 2.0
  *
  */
-class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
+public class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	private static boolean webflux = ClassUtils
 			.isPresent("org.springframework.web.reactive.function.server.RouterFunction", null);
@@ -104,7 +104,7 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 
 	private void registerEndpoint(GenericApplicationContext context) {
 		context.registerBean(RequestProcessor.class,
-				() -> new RequestProcessor(context.getBeanProvider(JsonMapper.class),
+				() -> new RequestProcessor(context.getBeansOfType(JsonMapper.class).values().iterator().next(),
 						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionProperties.class), context.getBean(FunctionCatalog.class),
@@ -114,7 +114,7 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 
 	private HttpWebHandlerAdapter httpHandler(GenericApplicationContext context) {
 		return (HttpWebHandlerAdapter) RouterFunctions.toHttpHandler(context.getBean(RouterFunction.class),
-				HandlerStrategies.empty().exceptionHandler(context.getBean(WebExceptionHandler.class))
+				HandlerStrategies.empty().exceptionHandler(context.getBeansOfType(WebExceptionHandler.class).values().iterator().next())
 						.codecs(config -> config.registerDefaults(true)).build());
 	}
 
@@ -124,7 +124,7 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 
 		context.registerBean(Resources.class, () -> new Resources());
 		DefaultErrorWebExceptionHandler handler = new DefaultErrorWebExceptionHandler(
-				context.getBean(ErrorAttributes.class), context.getBean(Resources.class),
+				context.getBeansOfType(ErrorAttributes.class).values().iterator().next(), context.getBean(Resources.class),
 				context.getBean(ErrorProperties.class), context);
 		ServerCodecConfigurer codecs = ServerCodecConfigurer.create();
 		handler.setMessageWriters(codecs.getWriters());
@@ -164,7 +164,7 @@ class FunctionEndpointInitializer implements ApplicationContextInitializer<Gener
 			Integer port = Integer.valueOf(context.getEnvironment().resolvePlaceholders("${server.port:${PORT:8080}}"));
 			String address = context.getEnvironment().resolvePlaceholders("${server.address:0.0.0.0}");
 			if (port >= 0) {
-				HttpHandler handler = context.getBean(HttpHandler.class);
+				HttpHandler handler = context.getBeansOfType(HttpHandler.class).values().iterator().next();
 				ReactorHttpHandlerAdapter adapter = new ReactorHttpHandlerAdapter(handler);
 				HttpServer httpServer = HttpServer.create().host(address).port(port).handle(adapter);
 				Thread thread = new Thread(
