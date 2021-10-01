@@ -121,13 +121,13 @@ public final class FunctionClassUtils {
 								Resource resource = resources[i];
 								String className = packageName + "." + (resource.getFilename().replace("/", ".")).replace(".class", "");
 								startClass = ClassUtils.forName(className, classLoader);
-								if (isSpringBootApplication(startClass, classLoader)) {
+								if (isSpringBootApplication(startClass)) {
 									logger.info("Loaded Main Kotlin Class: " + startClass);
 									return startClass;
 								}
 							}
 						}
-						else if (isSpringBootApplication(startClass, classLoader)) {
+						else if (isSpringBootApplication(startClass)) {
 							logger.info("Loaded Start Class: " + startClass);
 							return startClass;
 						}
@@ -146,7 +146,7 @@ public final class FunctionClassUtils {
 		return null;
 	}
 
-	private static boolean isSpringBootApplication(Class<?> startClass, ClassLoader loader) {
+	private static boolean isSpringBootApplication(Class<?> startClass) {
 		return startClass.getDeclaredAnnotation(SpringBootApplication.class) != null
 				|| startClass.getDeclaredAnnotation(SpringBootConfiguration.class) != null;
 	}
