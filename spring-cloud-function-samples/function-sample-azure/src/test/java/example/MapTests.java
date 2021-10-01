@@ -17,6 +17,8 @@
 package example;
 
 import com.microsoft.azure.functions.ExecutionContext;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import java.util.logging.Logger;
 import static org.assertj.core.api.Assertions.assertThat;
