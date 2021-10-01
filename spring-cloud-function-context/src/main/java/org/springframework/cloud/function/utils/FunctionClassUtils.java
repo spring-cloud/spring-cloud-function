@@ -28,6 +28,9 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.core.KotlinDetector;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -109,7 +112,22 @@ public final class FunctionClassUtils {
 
 					if (StringUtils.hasText(startClassName)) {
 						Class<?> startClass = ClassUtils.forName(startClassName, classLoader);
-						if (isSpringBootApplication(startClass)) {
+
+						if (KotlinDetector.isKotlinType(startClass)) {
+							PathMatchingResourcePatternResolver r = new PathMatchingResourcePatternResolver(classLoader);
+							String packageName = startClass.getPackage().getName();
+							Resource[] resources = r.getResources("classpath:" + packageName.replace(".", "/") + "/*.class");
+							for (int i = 0; i < resources.length; i++) {
+								Resource resource = resources[i];
+								String className = packageName + "." + (resource.getFilename().replace("/", ".")).replace(".class", "");
+								startClass = ClassUtils.forName(className, classLoader);
+								if (isSpringBootApplication(startClass, classLoader)) {
+									logger.info("Loaded Main Kotlin Class: " + startClass);
+									return startClass;
+								}
+							}
+						}
+						else if (isSpringBootApplication(startClass, classLoader)) {
 							logger.info("Loaded Start Class: " + startClass);
 							return startClass;
 						}
@@ -128,7 +146,7 @@ public final class FunctionClassUtils {
 		return null;
 	}
 
-	private static boolean isSpringBootApplication(Class<?> startClass) {
+	private static boolean isSpringBootApplication(Class<?> startClass, ClassLoader loader) {
 		return startClass.getDeclaredAnnotation(SpringBootApplication.class) != null
 				|| startClass.getDeclaredAnnotation(SpringBootConfiguration.class) != null;
 	}
