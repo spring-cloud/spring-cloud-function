@@ -87,6 +87,39 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	@Test
+	public void testCachingOfFunction() {
+		Echo function = new Echo();
+		FunctionRegistration<Echo> registration = new FunctionRegistration<>(
+				function, "echo").type(FunctionType.of(Echo.class));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+
+		FunctionInvocationWrapper instanceA = catalog.lookup("echo", "application/json");
+		FunctionInvocationWrapper instanceb = catalog.lookup("echo", "text/plain");
+		FunctionInvocationWrapper instanceC = catalog.lookup("echo", "foo/bar");
+
+		assertThat(instanceA).isSameAs(instanceb).isSameAs(instanceC);
+	}
+
+	@Test
+	public void testNoCachingOfFunction() {
+		Echo function = new Echo();
+		FunctionRegistration<Echo> registration = new FunctionRegistration<>(
+				function, "echo").type(FunctionType.of(Echo.class));
+		registration.getProperties().put("singleton", "false");
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+
+		FunctionInvocationWrapper instanceA = catalog.lookup("echo", "application/json");
+		FunctionInvocationWrapper instanceb = catalog.lookup("echo", "text/plain");
+		FunctionInvocationWrapper instanceC = catalog.lookup("echo", "foo/bar");
+
+		assertThat(instanceA).isNotSameAs(instanceb).isNotSameAs(instanceC);
+	}
+
+	@Test
 	public void testSCF640() {
 		Echo function = new Echo();
 		FunctionRegistration<Echo> registration = new FunctionRegistration<>(

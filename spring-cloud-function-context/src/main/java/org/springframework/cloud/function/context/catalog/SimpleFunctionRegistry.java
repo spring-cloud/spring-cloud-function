@@ -194,7 +194,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	@SuppressWarnings("unchecked")
 	<T> T doLookup(Class<?> type, String functionDefinition, String[] expectedOutputMimeTypes) {
 		FunctionInvocationWrapper function = this.wrappedFunctionDefinitions.get(functionDefinition);
-
 		if (function == null) {
 			function = this.compose(type, functionDefinition);
 		}
@@ -269,10 +268,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				.filter(fr -> fr.getNames().contains(functionName))
 				.findFirst()
 				.orElseGet(() -> null);
-		return functionRegistration != null
+		FunctionInvocationWrapper function = functionRegistration != null
 				? this.invocationWrapperInstance(functionName, functionRegistration.getTarget(), functionRegistration.getType().getType())
 				: null;
-
+		if (functionRegistration != null && functionRegistration.getProperties().containsKey("singleton")) {
+			try {
+				function.isSingleton = Boolean.parseBoolean(functionRegistration.getProperties().get("singleton"));
+			}
+			catch (Exception e) {
+				// ignore
+			}
+		}
+		return function;
 	}
 
 	/*
@@ -297,7 +304,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) andThenFunction);
 				}
 				composedFunction = this.enrichInputIfNecessary(composedFunction);
-				this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
+				if (composedFunction.isSingleton) {
+					this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
+				}
 			}
 		}
 		if (logger.isDebugEnabled()) {
@@ -370,6 +379,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		private boolean skipOutputConversion;
 
+		private boolean isSingleton = true;
+
 		/*
 		 * This is primarily to support Stream's ability to access
 		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
@@ -389,14 +400,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
-//			if (functionAroundWrapper != null) {
-//				this.setSkipOutputConversion(true);
-//			}
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
 			this.outputType = this.normalizeType(outputType);
 			this.functionDefinition = functionDefinition;
 			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
+		}
+
+		public boolean isPrototype() {
+			return this.isPrototype();
 		}
 
 		public void setSkipInputConversion(boolean skipInputConversion) {
