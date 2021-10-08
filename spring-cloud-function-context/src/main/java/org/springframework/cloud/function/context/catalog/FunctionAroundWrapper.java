@@ -40,8 +40,9 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 		boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
 		targetFunction.setSkipOutputConversion(true);
 		Object result = null;
-		if (input instanceof Message) {
-			result = this.doApply((Message<byte[]>) input, targetFunction);
+
+		if (input instanceof Message || targetFunction.isOutputTypePublisher()) {
+			return this.doApply(input, targetFunction);
 		}
 		else if (targetFunction.isSupplier() && !targetFunction.isOutputTypePublisher()) {
 			result = this.doApply(null, targetFunction);
@@ -53,5 +54,5 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 		return result;
 	}
 
-	protected abstract Object doApply(Message<byte[]> input, FunctionInvocationWrapper targetFunction);
+	protected abstract Object doApply(Object input, FunctionInvocationWrapper targetFunction);
 }
