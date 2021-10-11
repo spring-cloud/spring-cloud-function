@@ -16,13 +16,19 @@
 
 package org.springframework.cloud.function.grpc;
 
+import java.util.List;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
-import org.springframework.cloud.function.grpc.MessagingServiceGrpc.MessagingServiceImplBase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.Assert;
+
+import com.google.protobuf.GeneratedMessageV3;
+
+import io.grpc.BindableService;
 
 /**
  *
@@ -35,13 +41,25 @@ import org.springframework.context.annotation.Configuration;
 class GrpcAutoConfiguration {
 
 	@Bean
-	public GrpcServer grpcServer(FunctionGrpcProperties grpcProperties, MessagingServiceImplBase grpcMessagingService) {
-		return new GrpcServer(grpcProperties, grpcMessagingService);
+	public GrpcServer grpcServer(FunctionGrpcProperties grpcProperties, BindableService[] grpcMessagingServices) {
+		Assert.notEmpty(grpcMessagingServices, "'grpcMessagingServices' must not be null or empty");
+		return new GrpcServer(grpcProperties, grpcMessagingServices);
 	}
 
 
 	@Bean
-	public GrpcServerMessageHandler grpcMessageService(FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
-		return new GrpcServerMessageHandler(funcProperties, functionCatalog);
+	public BindableService grpcSpringMessageHandler(MessageHandlingHelper helper) {
+		return new GrpcServerMessageHandler(helper);
+	}
+
+	@Bean
+	public MessageHandlingHelper grpcMessageHandlingHelper(List<GrpcMessageConverter<?>> grpcConverters,
+			FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
+		return new MessageHandlingHelper(grpcConverters, functionCatalog, funcProperties);
+	}
+
+	@Bean
+	public GrpcSpringMessageConverter grpcSpringMessageConverter() {
+		return new GrpcSpringMessageConverter();
 	}
 }

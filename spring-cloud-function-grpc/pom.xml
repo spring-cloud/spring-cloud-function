@@ -17,7 +17,7 @@
 
 	<properties>
 		<grpc.version>1.16.1</grpc.version>
-		 <checkstyle.skip>true</checkstyle.skip>
+		 <disable.checks>true</disable.checks>
 	</properties>
 
 	<dependencies>
@@ -65,12 +65,6 @@
 			<plugin>
 	            <groupId>org.apache.maven.plugins</groupId>
 	            <artifactId>maven-checkstyle-plugin</artifactId>
-<!-- 		            <executions> -->
-<!-- 		                <execution> -->
-<!-- 		                    <id>checkstyle-validation</id> -->
-<!-- 		                    <phase>none</phase> -->
-<!-- 		                </execution> -->
-<!-- 		            </executions> -->
 		        </plugin>
 			<plugin>
 		      <groupId>org.xolstice.maven.plugins</groupId>

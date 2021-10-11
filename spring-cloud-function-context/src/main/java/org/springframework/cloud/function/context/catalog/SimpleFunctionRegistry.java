@@ -1046,6 +1046,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		private boolean isExtractPayload(Message<?> message, Type type) {
+
 			if (FunctionTypeUtils.isCollectionOfMessage(type)) {
 				return true;
 			}
@@ -1054,6 +1055,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 
 			Object payload = message.getPayload();
+			if ((payload instanceof byte[])) {
+				return false;
+			}
 			if (ObjectUtils.isArray(payload)) {
 				payload = CollectionUtils.arrayToList(payload);
 			}
@@ -1072,6 +1076,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * set as a header in a message or explicitly provided as part of the lookup.
 		 */
 		private Object convertOutputIfNecessary(Object output, Type type, String[] contentType) {
+			if (output instanceof Message && ((Message) output).getPayload() instanceof byte[]) {
+				return output;
+			}
 			if (this.skipOutputConversion) {
 				return output;
 			}
@@ -1087,6 +1094,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			}
 
 			Object convertedOutput = output;
+
 			if (FunctionTypeUtils.isMultipleArgumentType(type)) {
 				convertedOutput = this.convertMultipleOutputArgumentTypeIfNecesary(convertedOutput, type, contentType);
 			}
