@@ -34,6 +34,7 @@ message GrpcMessage {
 As you can see it is a very generic structure which can support any type of data amd metadata you wish to exchange. 
 
 It alos defines a `MessagingService` allowing you to generate required stubs to support true plolyglot nature of gRPC. 
+
 ```
 service MessagingService {
     rpc biStream(stream GrpcMessage) returns (stream GrpcMessage);
@@ -73,6 +74,7 @@ public static class SampleConfiguration {
 ```
 After identifying this function via `spring.cloud.function.definition` property (see example [here](https://github.com/spring-cloud/spring-cloud-function/blob/ded02fec0a6d3d66b8ec00f99f28be2a4bbec668/spring-cloud-function-grpc/src/test/java/org/springframework/cloud/function/grpc/GrpcInteractionTests.java)), 
 you can invoke it using utility method(s) provided in `GrpcUtils` class
+
 ```java
 Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 			.setHeader("foo", "bar")
@@ -81,6 +83,7 @@ Message<byte[]> reply = GrpcUtils.requestReply(message);
 ```
 
 You can also provide `spring.cloud.function.definition` property via `Message` headers, to support more dynamic cases.
+
 ```java
 Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 			.setHeader("foo", "bar")
@@ -102,6 +105,7 @@ public static class SampleConfiguration {
 ```
 After identifying this function via `spring.cloud.function.definition` property (see example [here](https://github.com/spring-cloud/spring-cloud-function/blob/ded02fec0a6d3d66b8ec00f99f28be2a4bbec668/spring-cloud-function-grpc/src/test/java/org/springframework/cloud/function/grpc/GrpcInteractionTests.java)), 
 you can invoke it using utility method(s) provided in `GrpcUtils` class
+
 ```java
 Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes()).setHeader("foo", "bar").build();
 
@@ -114,6 +118,7 @@ List<Message<byte[]>> results = reply.collectList().block(Duration.ofSeconds(5))
 You can see that gRPC stream is mapped to instance of `Flux` from [project reactor](https://projectreactor.io/)
 
 Similarly to the _request/reply_ you can also provide `spring.cloud.function.definition` property via `Message` headers, to support more dynamic cases.
+
 ```java
 Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 			.setHeader("foo", "bar")
@@ -143,6 +148,7 @@ public static class SampleConfiguration {
 ```
 After identifying this function via `spring.cloud.function.definition` property (see example [here](https://github.com/spring-cloud/spring-cloud-function/blob/ded02fec0a6d3d66b8ec00f99f28be2a4bbec668/spring-cloud-function-grpc/src/test/java/org/springframework/cloud/function/grpc/GrpcInteractionTests.java)), 
 you can invoke it using utility method(s) provided in `GrpcUtils` class
+
 ```java
 List<Message<byte[]>> messages = new ArrayList<>();
 messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -175,6 +181,7 @@ public static class SampleConfiguration {
 ```
 After identifying this function via `spring.cloud.function.definition` property (see example [here](https://github.com/spring-cloud/spring-cloud-function/blob/ded02fec0a6d3d66b8ec00f99f28be2a4bbec668/spring-cloud-function-grpc/src/test/java/org/springframework/cloud/function/grpc/GrpcInteractionTests.java)), 
 you can invoke it using utility method(s) provided in `GrpcUtils` class
+
 ```java
 List<Message<byte[]>> messages = new ArrayList<>();
 messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -193,3 +200,34 @@ List<Message<byte[]>> results = clientResponseObserver.collectList().block(Durat
 You can see that gRPC stream is mapped to instance of `Flux` from [project reactor](https://projectreactor.io/)
 
 Unlike the _request/reply_ and _server-side streaming_, you can ONLY pass function definition via property or environment variable.
+
+#### Pluggable protobuf extension 
+
+While the core data object and its corresponding schema <<Core-Data-and-Service>> are modeled after Spring Message and can represent 
+virtually any object, there are times when you may want to plug-in your own protobuf services. 
+
+Spring Cloud Function provides such support by allowing you to develop extensions, which once exist could be enabled by simply 
+including its dependency in the POM. Such extensions are just another spring-boot project that has dependency on `spring-cloud-function-grpc`
+
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-function-grpc</artifactId>
+</dependency>
+```
+
+It must also contain 3 classes;  1) Its configuration class, 2) Type converter for the actual protobuf 'message'and 3) Service handler
+where you would normally implement your handling functionality. However instead of implementing full functionality you can model your service 
+after MessagingService provided by us and if you do you can rely on the existing implementation of the core interaction models provided by gRPC
+
+In fact Spring Cloud Function provides one of such extensions to support [Cloud Events](https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-grpc-cloudevent-ext) proto, so you can model yours after it.
+
+#### Multiple services on classpath
+
+With the protobuf extension mentioned in the previous section you may very well end up with several services on the classpath. 
+By default each available service will be enabled. However, if your intention is to only use one, you can specify which one by providing 
+its class name via `spring.cloud.function.grpc.service-class-name` property:
+
+```
+--spring.cloud.function.grpc.service-class-name=org.springframework.cloud.function.grpc.ce.CloudEventHandler
+```
