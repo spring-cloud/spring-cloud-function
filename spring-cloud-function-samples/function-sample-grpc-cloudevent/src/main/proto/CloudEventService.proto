@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package io.cloudevents.v1;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "CloudEvent.proto";
+
+service CloudEventService {
+    rpc biStream(stream io.cloudevents.v1.CloudEvent) returns (stream io.cloudevents.v1.CloudEvent);
+    
+    rpc clientStream(stream io.cloudevents.v1.CloudEvent) returns (io.cloudevents.v1.CloudEvent);
+    
+    rpc serverStream(io.cloudevents.v1.CloudEvent) returns (stream io.cloudevents.v1.CloudEvent);
+    
+    rpc requestReply(io.cloudevents.v1.CloudEvent) returns (io.cloudevents.v1.CloudEvent);
+}

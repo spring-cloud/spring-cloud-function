@@ -19,38 +19,46 @@ package org.springframework.cloud.function.grpc;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.function.grpc.MessagingServiceGrpc.MessagingServiceImplBase;
 import org.springframework.context.SmartLifecycle;
 
+/**
+ *
+ * @author Oleg Zhurakousky
+ *
+ */
 class GrpcServer implements SmartLifecycle {
 
 	private Log logger = LogFactory.getLog(GrpcServer.class);
 
 	private final FunctionGrpcProperties grpcProperties;
 
-	private final MessagingServiceImplBase grpcMessageService;
+	private final BindableService[] grpcMessageServices;
 
 	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
 	private Server server;
 
-	GrpcServer(FunctionGrpcProperties grpcProperties, MessagingServiceImplBase grpcMessageService) {
+	GrpcServer(FunctionGrpcProperties grpcProperties, BindableService[] grpcMessageServices) {
 		this.grpcProperties = grpcProperties;
-		this.grpcMessageService = grpcMessageService;
+		this.grpcMessageServices = grpcMessageServices;
 	}
 
 	@Override
 	public void start() {
 		this.executor.execute(() -> {
 			try {
-				this.server = ServerBuilder.forPort(this.grpcProperties.getPort())
-						.addService(this.grpcMessageService)
-						.build();
+				ServerBuilder<?> serverBuilder = ServerBuilder.forPort(this.grpcProperties.getPort());
+				for (int i = 0; i < this.grpcMessageServices.length; i++) {
+					BindableService bindableService = this.grpcMessageServices[i];
+					serverBuilder.addService(bindableService);
+				}
+				this.server = serverBuilder.build();
 
 				logger.info("Starting gRPC server");
 				this.server.start();

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.grpc;
 
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
 
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
@@ -53,22 +55,22 @@ final class GrpcUtils {
 
 	}
 
-	public static GrpcMessage toGrpcMessage(byte[] payload, Map<String, String> headers) {
-		return GrpcMessage.newBuilder()
+	public static GrpcSpringMessage toGrpcSpringMessage(byte[] payload, Map<String, String> headers) {
+		return GrpcSpringMessage.newBuilder()
 				.setPayload(ByteString.copyFrom(payload))
 				.putAllHeaders(headers)
 				.build();
 	}
 
-	public static GrpcMessage toGrpcMessage(Message<byte[]> message) {
+	public static GrpcSpringMessage toGrpcSpringMessage(Message<byte[]> message) {
 		Map<String, String> stringHeaders = new HashMap<>();
 		message.getHeaders().forEach((k, v) -> {
 			stringHeaders.put(k, v.toString());
 		});
-		return toGrpcMessage(message.getPayload(), stringHeaders);
+		return toGrpcSpringMessage(message.getPayload(), stringHeaders);
 	}
 
-	public static Message<byte[]> fromGrpcMessage(GrpcMessage message) {
+	public static Message<byte[]> fromGrpcSpringMessage(GrpcSpringMessage message) {
 		return MessageBuilder.withPayload(message.getPayload().toByteArray())
 				.copyHeaders(message.getHeadersMap())
 				.build();
@@ -84,9 +86,9 @@ final class GrpcUtils {
 		MessagingServiceGrpc.MessagingServiceBlockingStub stub = MessagingServiceGrpc
 				.newBlockingStub(channel);
 
-		GrpcMessage response = stub.requestReply(toGrpcMessage(inputMessage));
+		GrpcSpringMessage response = stub.requestReply(toGrpcSpringMessage(inputMessage));
 		channel.shutdown();
-		return fromGrpcMessage(response);
+		return fromGrpcSpringMessage(response);
 	}
 
 	/**
@@ -121,7 +123,7 @@ final class GrpcUtils {
 				.newStub(channel);
 		Many<Message<byte[]>> sink = Sinks.many().unicast().onBackpressureBuffer();
 
-		ClientResponseObserver<GrpcMessage, GrpcMessage> clientResponseObserver = clientResponseObserver(inputStream, sink);
+		ClientResponseObserver<GrpcSpringMessage, GrpcSpringMessage> clientResponseObserver = clientResponseObserver(inputStream, sink);
 
 		stub.biStream(clientResponseObserver);
 
@@ -137,14 +139,14 @@ final class GrpcUtils {
 		MessagingServiceGrpc.MessagingServiceBlockingStub stub = MessagingServiceGrpc
 				.newBlockingStub(channel);
 
-		Iterator<GrpcMessage> serverStream = stub.serverStream(toGrpcMessage(inputMessage));
+		Iterator<GrpcSpringMessage> serverStream = stub.serverStream(toGrpcSpringMessage(inputMessage));
 
 		Many<Message<byte[]>> sink = Sinks.many().unicast().onBackpressureBuffer();
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		executor.execute(() -> {
 			while (serverStream.hasNext()) {
-				GrpcMessage grpcMessage = serverStream.next();
-				sink.tryEmitNext(GrpcUtils.fromGrpcMessage(grpcMessage));
+				GrpcSpringMessage grpcMessage = serverStream.next();
+				sink.tryEmitNext(GrpcUtils.fromGrpcSpringMessage(grpcMessage));
 			}
 			sink.tryEmitComplete();
 		});
@@ -182,13 +184,13 @@ final class GrpcUtils {
 				.usePlaintext().build();
 
 		LinkedBlockingQueue<Message<byte[]>> resultRef = new LinkedBlockingQueue<>(1);
-		StreamObserver<GrpcMessage> responseObserver = new StreamObserver<GrpcMessage>() {
+		StreamObserver<GrpcSpringMessage> responseObserver = new StreamObserver<GrpcSpringMessage>() {
 			@Override
-			public void onNext(GrpcMessage result) {
+			public void onNext(GrpcSpringMessage result) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Client received reply: " + result);
 				}
-				resultRef.offer(GrpcUtils.fromGrpcMessage(result));
+				resultRef.offer(GrpcUtils.fromGrpcSpringMessage(result));
 			}
 
 			@Override
@@ -204,14 +206,14 @@ final class GrpcUtils {
 
 		MessagingServiceGrpc.MessagingServiceStub asyncStub = MessagingServiceGrpc.newStub(channel);
 
-		StreamObserver<GrpcMessage> requestObserver = asyncStub.clientStream(responseObserver);
+		StreamObserver<GrpcSpringMessage> requestObserver = asyncStub.clientStream(responseObserver);
 
 		inputStream.doOnNext(message -> {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Client sending: " + message);
 			}
 			try {
-				requestObserver.onNext(GrpcUtils.toGrpcMessage(message));
+				requestObserver.onNext(GrpcUtils.toGrpcSpringMessage(message));
 			}
 			catch (Exception e) {
 				requestObserver.onError(e);
@@ -229,13 +231,13 @@ final class GrpcUtils {
 		}
 	}
 
-	private static ClientResponseObserver<GrpcMessage, GrpcMessage> clientResponseObserver(Flux<Message<byte[]>> inputStream, Many<Message<byte[]>> sink) {
-		return new ClientResponseObserver<GrpcMessage, GrpcMessage>() {
+	private static ClientResponseObserver<GrpcSpringMessage, GrpcSpringMessage> clientResponseObserver(Flux<Message<byte[]>> inputStream, Many<Message<byte[]>> sink) {
+		return new ClientResponseObserver<GrpcSpringMessage, GrpcSpringMessage>() {
 
-			ClientCallStreamObserver<GrpcMessage> requestStreamObserver;
+			ClientCallStreamObserver<GrpcSpringMessage> requestStreamObserver;
 
 			@Override
-			public void beforeStart(ClientCallStreamObserver<GrpcMessage> requestStreamObserver) {
+			public void beforeStart(ClientCallStreamObserver<GrpcSpringMessage> requestStreamObserver) {
 				this.requestStreamObserver = requestStreamObserver;
 				requestStreamObserver.disableAutoInboundFlowControl();
 
@@ -247,7 +249,7 @@ final class GrpcUtils {
 							if (logger.isDebugEnabled()) {
 								logger.debug("Streaming message to function: " + request);
 							}
-							requestStreamObserver.onNext(GrpcUtils.toGrpcMessage(request));
+							requestStreamObserver.onNext(GrpcUtils.toGrpcSpringMessage(request));
 						})
 						.doOnComplete(() -> {
 							requestStreamObserver.onCompleted();
@@ -258,11 +260,11 @@ final class GrpcUtils {
 			}
 
 			@Override
-			public void onNext(GrpcMessage message) {
+			public void onNext(GrpcSpringMessage message) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Streaming message from function: " + message);
 				}
-				sink.tryEmitNext(fromGrpcMessage(message));
+				sink.tryEmitNext(fromGrpcSpringMessage(message));
 				requestStreamObserver.request(1);
 
 			}
