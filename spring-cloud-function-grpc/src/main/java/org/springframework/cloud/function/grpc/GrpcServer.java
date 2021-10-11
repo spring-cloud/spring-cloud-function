@@ -19,13 +19,15 @@ package org.springframework.cloud.function.grpc;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.SmartLifecycle;
+import org.springframework.util.ClassUtils;
+
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.springframework.context.SmartLifecycle;
+import io.grpc.protobuf.services.ProtoReflectionService;
 
 /**
  *
@@ -57,6 +59,9 @@ class GrpcServer implements SmartLifecycle {
 				for (int i = 0; i < this.grpcMessageServices.length; i++) {
 					BindableService bindableService = this.grpcMessageServices[i];
 					serverBuilder.addService(bindableService);
+				}
+				if (ClassUtils.isPresent("io.grpc.protobuf.services.ProtoReflectionService", null)) {
+					serverBuilder.addService(ProtoReflectionService.newInstance());
 				}
 				this.server = serverBuilder.build();
 
