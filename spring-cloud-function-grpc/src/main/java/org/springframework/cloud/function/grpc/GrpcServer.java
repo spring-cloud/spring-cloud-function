@@ -32,6 +32,9 @@ import io.grpc.protobuf.services.ProtoReflectionService;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Dave Syer
+ *
+ * @since 3.2
  *
  */
 class GrpcServer implements SmartLifecycle {
@@ -70,6 +73,7 @@ class GrpcServer implements SmartLifecycle {
 				logger.info("gRPC server is listening on port " + this.grpcProperties.getPort());
 			}
 			catch (Exception e) {
+				stop();
 				throw new IllegalStateException(e);
 			}
 		});

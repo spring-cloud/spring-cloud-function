@@ -28,12 +28,28 @@ import org.springframework.cloud.function.context.FunctionProperties;
 @ConfigurationProperties(prefix = FunctionProperties.PREFIX + ".grpc")
 public class FunctionGrpcProperties {
 
+	private final static String GRPC_PREFIX = FunctionProperties.PREFIX + ".grpc";
+	/**
+	 * The name of function definition property.
+	 */
+	public final static String SERVICE_CLASS_NAME = GRPC_PREFIX + ".service-class-name";
+
 	/**
 	 * Default gRPC port.
 	 */
 	public final static int GRPC_PORT = 6048;
 
+	/**
+	 * gRPC port server will bind to. Default 6048;
+	 */
 	private int port = GRPC_PORT;
+
+	/**
+	 * The fully qualified name of the service you wish to enable/expose.
+	 * Setting this property ensures that only a single service is enabled/exposed,
+	 * regardless of how many services are available on the classpath.
+	 */
+	private String serviceClassName;
 
 	/**
 	 * Grpc Server port.
@@ -44,5 +60,15 @@ public class FunctionGrpcProperties {
 
 	public void setPort(int port) {
 		this.port = port;
+	}
+
+
+	public String getServiceClassName() {
+		return serviceClassName;
+	}
+
+
+	public void setServiceClassName(String serviceClassName) {
+		this.serviceClassName = serviceClassName;
 	}
 }

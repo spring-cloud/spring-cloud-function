@@ -25,6 +25,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import com.google.protobuf.GeneratedMessageV3;
 
@@ -43,15 +44,24 @@ class GrpcAutoConfiguration {
 	@Bean
 	public GrpcServer grpcServer(FunctionGrpcProperties grpcProperties, BindableService[] grpcMessagingServices) {
 		Assert.notEmpty(grpcMessagingServices, "'grpcMessagingServices' must not be null or empty");
+		if (StringUtils.hasText(grpcProperties.getServiceClassName())) {
+			for (BindableService bindableService : grpcMessagingServices) {
+				if (bindableService.getClass().getName().equals(grpcProperties.getServiceClassName())) {
+					return new GrpcServer(grpcProperties, new BindableService[] {bindableService});
+				}
+			}
+		}
 		return new GrpcServer(grpcProperties, grpcMessagingServices);
 	}
 
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Bean
 	public BindableService grpcSpringMessageHandler(MessageHandlingHelper helper) {
 		return new GrpcServerMessageHandler(helper);
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Bean
 	public MessageHandlingHelper grpcMessageHandlingHelper(List<GrpcMessageConverter<?>> grpcConverters,
 			FunctionProperties funcProperties, FunctionCatalog functionCatalog) {

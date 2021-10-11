@@ -30,7 +30,8 @@ public class DemoGrpcApplication  {
 
 	public static void main(String[] args) throws Exception {
 
-		SpringApplication.run(DemoGrpcApplication.class, args);
+		SpringApplication.run(DemoGrpcApplication.class,
+				"--spring.cloud.function.grpc.service-class-name=org.springframework.cloud.function.grpc.ce.CloudEventHandler");
 
 		CloudEvent cloudEvent = CloudEvent.newBuilder()
 				.setTextData("{\"event_name\":\"SCF supports CloudEvent gRPC\"}")
