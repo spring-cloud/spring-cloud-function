@@ -34,14 +34,13 @@ import org.springframework.messaging.Message;
  */
 public abstract class FunctionAroundWrapper implements BiFunction<Object, FunctionInvocationWrapper, Object> {
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
 		boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
 		targetFunction.setSkipOutputConversion(true);
 		Object result = null;
 
-		if (input instanceof Message || targetFunction.isOutputTypePublisher()) {
+		if (input instanceof Message || targetFunction.isOutputTypePublisher() || targetFunction.isInputTypePublisher()) {
 			return this.doApply(input, targetFunction);
 		}
 		else if (targetFunction.isSupplier() && !targetFunction.isOutputTypePublisher()) {
