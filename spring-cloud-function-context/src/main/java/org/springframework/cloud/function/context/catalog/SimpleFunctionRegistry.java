@@ -387,7 +387,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * It is not intended to remain here and will be removed as soon as particular elements
 		 * of stream will be refactored to address this.
 		 */
-		private Function<Object, Message> enhancer;
+		private Function<Object, Object> enhancer;
 
 		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
 			this.skipOutputConversion = function.skipOutputConversion;
@@ -432,7 +432,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * It is not intended to remain here and will be removed as soon as particular elements
 		 * of stream will be refactored to address this.
 		 */
-		public Function<Object, Message> getEnhancer() {
+		public Function<Object, Object> getEnhancer() {
 			return this.enhancer;
 		}
 
@@ -443,7 +443,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * It is not intended to remain here and will be removed as soon as particular elements
 		 * of stream will be refactored to address this.
 		 */
-		public void setEnhancer(Function<Object, Message> enhancer) {
+		public void setEnhancer(Function<Object, Object> enhancer) {
 			this.enhancer = enhancer;
 		}
 
