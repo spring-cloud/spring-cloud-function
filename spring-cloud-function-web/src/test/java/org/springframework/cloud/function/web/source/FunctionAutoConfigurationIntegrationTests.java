@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 				"spring.cloud.function.web.export.sink.name=origin|uppercase"
 				// "spring.cloud.function.web.export.debug=true"
 				})
+@Disabled
 public class FunctionAutoConfigurationIntegrationTests {
 
 	@Autowired
