@@ -34,6 +34,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -47,18 +48,19 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testRequestReply() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.cloud.function.grpc.port=" + FunctionGrpcProperties.GRPC_PORT)) {
+						"--spring.cloud.function.grpc.port=" + port)) {
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
 					.build();
 
-			Message<byte[]> reply = GrpcUtils.requestReply(message);
+			Message<byte[]> reply = GrpcUtils.requestReply("localhost", port, message);
 
 			assertThat(reply.getPayload()).isEqualTo("\"HELLO GRPC\"".getBytes());
 		}
@@ -66,17 +68,18 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testRequstReplyFunctionDefinitionInMessage() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
-						"--spring.cloud.function.grpc.port=" + FunctionGrpcProperties.GRPC_PORT)) {
+						"--spring.cloud.function.grpc.port=" + port)) {
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
 					.setHeader("spring.cloud.function.definition", "reverse")
 					.build();
 
-			Message<byte[]> reply = GrpcUtils.requestReply(message);
+			Message<byte[]> reply = GrpcUtils.requestReply("localhost", port, message);
 
 			assertThat(reply.getPayload()).isEqualTo("\"CPRg olleh\"".getBytes());
 		}
@@ -84,12 +87,12 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testBidirectionalStreamWithImperativeFunction() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT)) {
+						"--spring.cloud.function.grpc.port=" + port)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -100,7 +103,7 @@ public class GrpcInteractionTests {
 					.build());
 
 			Flux<Message<byte[]>> clientResponseObserver =
-					GrpcUtils.biStreaming("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
 			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(5));
 			assertThat(results.size()).isEqualTo(3);
@@ -112,12 +115,13 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testBidirectionalStreamWithReactiveFunction() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercaseReactive",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT)) {
+								+ port)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -131,7 +135,7 @@ public class GrpcInteractionTests {
 					.build());
 
 			Flux<Message<byte[]>> resultStream =
-					GrpcUtils.biStreaming("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
 			List<Message<byte[]>> results = resultStream.collectList().block(Duration.ofSeconds(5));
 			assertThat(results.size()).isEqualTo(3);
@@ -143,12 +147,13 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testClientStreaming() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=streamInStringOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT)) {
+								+ port)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -159,7 +164,7 @@ public class GrpcInteractionTests {
 					.build());
 
 			Message<byte[]> reply =
-					GrpcUtils.clientStream("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+					GrpcUtils.clientStream("localhost", port, Flux.fromIterable(messages));
 
 			assertThat(reply.getPayload()).isEqualTo("[Ricky, Julien, Bubbles]".getBytes());
 		}
@@ -167,17 +172,18 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testServerStreaming() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=stringInStreamOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT)) {
+								+ port)) {
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar").build();
 
 			Flux<Message<byte[]>> reply =
-					GrpcUtils.serverStream("localhost", FunctionGrpcProperties.GRPC_PORT, message);
+					GrpcUtils.serverStream("localhost", port, message);
 
 			List<Message<byte[]>> results = reply.collectList().block(Duration.ofSeconds(5));
 			assertThat(results.size()).isEqualTo(2);
@@ -188,12 +194,13 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testBiStreamStreamInStringOutFailure() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=streamInStringOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT)) {
+								+ port)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -204,7 +211,7 @@ public class GrpcInteractionTests {
 					.build());
 
 			Flux<Message<byte[]>> clientResponseObserver =
-					GrpcUtils.biStreaming("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
 			try {
 				clientResponseObserver.collectList().block(Duration.ofSeconds(1));
@@ -218,12 +225,13 @@ public class GrpcInteractionTests {
 
 	@Test
 	public void testBiStreamStringInStreamOutFailure() {
+		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=stringInStreamOut",
 						"--spring.cloud.function.grpc.port="
-								+ FunctionGrpcProperties.GRPC_PORT)) {
+								+ port)) {
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -234,7 +242,7 @@ public class GrpcInteractionTests {
 					.build());
 
 			Flux<Message<byte[]>> clientResponseObserver =
-					GrpcUtils.biStreaming("localhost", FunctionGrpcProperties.GRPC_PORT, Flux.fromIterable(messages));
+					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
 			try {
 				clientResponseObserver.collectList().block(Duration.ofSeconds(1));
