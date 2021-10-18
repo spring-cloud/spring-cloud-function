@@ -117,7 +117,7 @@ public class GrpcInteractionTests {
 			Flux<Message<byte[]>> clientResponseObserver =
 					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
-			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(10));
+			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(100));
 			assertThat(results.size()).isEqualTo(3);
 			assertThat(results.get(0).getPayload()).isEqualTo("\"RICKY\"".getBytes());
 			assertThat(results.get(1).getPayload()).isEqualTo("\"JULIEN\"".getBytes());
@@ -226,7 +226,7 @@ public class GrpcInteractionTests {
 					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
 			try {
-				clientResponseObserver.collectList().block(Duration.ofSeconds(10));
+				clientResponseObserver.collectList().block(Duration.ofSeconds(1));
 				fail();
 			}
 			catch (Exception e) {
@@ -288,7 +288,7 @@ public class GrpcInteractionTests {
 		public Function<Flux<String>, String> streamInStringOut() {
 			return flux -> flux.doOnNext(v -> {
 				try {
-					Thread.sleep(new Random().nextInt(2000)); // artificial delay
+					Thread.sleep(new Random().nextInt(200)); // artificial delay
 				}
 				catch (Exception e) {
 					// ignore
