@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
@@ -45,6 +47,16 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  */
 public class GrpcInteractionTests {
+
+	@BeforeEach
+	public void before() {
+		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@AfterEach
+	public void after() {
+		System.clearProperty("spring.cloud.function.definition");
+	}
 
 	@Test
 	public void testRequestReply() {
