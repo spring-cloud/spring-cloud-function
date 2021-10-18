@@ -82,8 +82,8 @@ class GrpcServer implements SmartLifecycle {
 	@Override
 	public void stop() {
 		logger.info("Shutting down gRPC server");
-		this.server.shutdown();
-		this.executor.shutdown();
+		this.server.shutdownNow();
+		this.executor.shutdownNow();
 	}
 
 	@Override
