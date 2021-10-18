@@ -3,16 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.6.0-SNAPSHOT</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-function-adapter-parent</artifactId>
+		<version>3.2.0-SNAPSHOT</version>
 	</parent>
-	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-function-grpc-cloudevent-ext</artifactId>
-	<version>3.2.0-SNAPSHOT</version>
-	<name> </name>
-	<description>CloudEvent extansion for spring-cloud-function-grpc</description>
+	<name>spring-cloud-function-grpc-cloudevent-ext</name>
+	<description>CloudEvent extension for spring-cloud-function-grpc</description>
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>

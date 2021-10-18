@@ -31,7 +31,7 @@
  		<module>function-sample-cloudevent-stream</module>
  		<module>function-sample-cloudevent-rsocket</module>
  		<module>function-sample-kotlin-web</module>
-<!-- 		<module>function-sample-grpc-cloudevent</module> -->
+		<module>function-sample-grpc-cloudevent</module>
 	</modules>
 
 	<build>

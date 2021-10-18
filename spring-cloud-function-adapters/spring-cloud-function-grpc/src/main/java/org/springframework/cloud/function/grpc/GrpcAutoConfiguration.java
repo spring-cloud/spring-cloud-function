@@ -18,6 +18,8 @@ package org.springframework.cloud.function.grpc;
 
 import java.util.List;
 
+import io.grpc.BindableService;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -26,10 +28,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
-
-import com.google.protobuf.GeneratedMessageV3;
-
-import io.grpc.BindableService;
 
 /**
  *
