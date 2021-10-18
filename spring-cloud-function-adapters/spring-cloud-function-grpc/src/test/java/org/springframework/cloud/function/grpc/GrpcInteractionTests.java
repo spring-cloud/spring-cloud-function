@@ -105,7 +105,7 @@ public class GrpcInteractionTests {
 			Flux<Message<byte[]>> clientResponseObserver =
 					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
-			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(5));
+			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(10));
 			assertThat(results.size()).isEqualTo(3);
 			assertThat(results.get(0).getPayload()).isEqualTo("\"RICKY\"".getBytes());
 			assertThat(results.get(1).getPayload()).isEqualTo("\"JULIEN\"".getBytes());
@@ -185,7 +185,7 @@ public class GrpcInteractionTests {
 			Flux<Message<byte[]>> reply =
 					GrpcUtils.serverStream("localhost", port, message);
 
-			List<Message<byte[]>> results = reply.collectList().block(Duration.ofSeconds(5));
+			List<Message<byte[]>> results = reply.collectList().block(Duration.ofSeconds(10));
 			assertThat(results.size()).isEqualTo(2);
 			assertThat(results.get(0).getPayload()).isEqualTo("\"Ricky\"".getBytes());
 			assertThat(results.get(1).getPayload()).isEqualTo("\"RICKY\"".getBytes());
@@ -214,7 +214,7 @@ public class GrpcInteractionTests {
 					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
 			try {
-				clientResponseObserver.collectList().block(Duration.ofSeconds(1));
+				clientResponseObserver.collectList().block(Duration.ofSeconds(10));
 				fail();
 			}
 			catch (Exception e) {
