@@ -39,7 +39,6 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -225,13 +224,7 @@ public class GrpcInteractionTests {
 			Flux<Message<byte[]>> clientResponseObserver =
 					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
-			try {
-				clientResponseObserver.collectList().block(Duration.ofSeconds(1));
-				fail();
-			}
-			catch (Exception e) {
-				// TODO: handle exception
-			}
+			assertThat(clientResponseObserver.collectList().block(Duration.ofSeconds(2))).isEmpty();
 		}
 	}
 
@@ -256,13 +249,7 @@ public class GrpcInteractionTests {
 			Flux<Message<byte[]>> clientResponseObserver =
 					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
-			try {
-				clientResponseObserver.collectList().block(Duration.ofSeconds(1));
-				fail();
-			}
-			catch (Exception e) {
-				// TODO: handle exception
-			}
+			assertThat(clientResponseObserver.collectList().block(Duration.ofSeconds(2))).isEmpty();
 		}
 	}
 
