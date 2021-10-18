@@ -117,7 +117,7 @@ public class GrpcInteractionTests {
 			Flux<Message<byte[]>> clientResponseObserver =
 					GrpcUtils.biStreaming("localhost", port, Flux.fromIterable(messages));
 
-			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(100));
+			List<Message<byte[]>> results = clientResponseObserver.collectList().block(Duration.ofSeconds(10));
 			assertThat(results.size()).isEqualTo(3);
 			assertThat(results.get(0).getPayload()).isEqualTo("\"RICKY\"".getBytes());
 			assertThat(results.get(1).getPayload()).isEqualTo("\"JULIEN\"".getBytes());
