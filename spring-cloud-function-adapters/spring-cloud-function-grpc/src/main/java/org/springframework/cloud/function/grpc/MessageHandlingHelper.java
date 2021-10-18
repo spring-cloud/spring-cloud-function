@@ -185,18 +185,26 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 			if (function.isOutputTypePublisher()) {
 				return this.biStreamReactive(responseObserver, serverCallStreamObserver, grpcMessageType);
 			}
-			throw new UnsupportedOperationException("The bi-directional streaming is "
+			UnsupportedOperationException ex = new UnsupportedOperationException("The bi-directional streaming is "
 					+ "not supported for functions that accept Publisher but return non-Publisher: "
 					+ function);
+//			responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
+//					.withCause(ex).asException());
+			responseObserver.onCompleted();
+			throw ex;
 		}
 		else {
 			if (!function.isOutputTypePublisher()) {
 				return this.biStreamImperative(responseObserver, serverCallStreamObserver, wasReady);
 			}
-			throw new UnsupportedOperationException("The bidirection streaming is "
+
+			UnsupportedOperationException ex = new UnsupportedOperationException("The bidirection streaming is "
 					+ "not supported for functions that accept non-Publisher but return Publisher: "
 					+ function);
-
+//			responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
+//					.withCause(ex).asException());
+			responseObserver.onCompleted();
+			throw ex;
 		}
 	}
 

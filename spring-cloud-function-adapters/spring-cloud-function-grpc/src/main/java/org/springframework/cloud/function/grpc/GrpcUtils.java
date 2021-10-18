@@ -83,12 +83,16 @@ final class GrpcUtils {
 	public static Message<byte[]> requestReply(String host, int port, Message<byte[]> inputMessage) {
 		ManagedChannel channel = ManagedChannelBuilder.forAddress(host, port)
 				.usePlaintext().build();
-		MessagingServiceGrpc.MessagingServiceBlockingStub stub = MessagingServiceGrpc
-				.newBlockingStub(channel);
+		try {
+			MessagingServiceGrpc.MessagingServiceBlockingStub stub = MessagingServiceGrpc
+					.newBlockingStub(channel);
 
-		GrpcSpringMessage response = stub.requestReply(toGrpcSpringMessage(inputMessage));
-		channel.shutdown();
-		return fromGrpcSpringMessage(response);
+			GrpcSpringMessage response = stub.requestReply(toGrpcSpringMessage(inputMessage));
+			return fromGrpcSpringMessage(response);
+		}
+		finally {
+			channel.shutdownNow();
+		}
 	}
 
 	/**
@@ -129,7 +133,11 @@ final class GrpcUtils {
 
 		return sink.asFlux().doOnComplete(() -> {
 			logger.debug("Shutting down channel");
-			channel.shutdown();
+			channel.shutdownNow();
+		})
+		.doOnError(e -> {
+			e.printStackTrace();
+			channel.shutdownNow();
 		});
 	}
 
@@ -151,10 +159,14 @@ final class GrpcUtils {
 			sink.tryEmitComplete();
 		});
 
-
 		return sink.asFlux()
 				.doOnComplete(() -> {
-					channel.shutdown();
+					channel.shutdownNow();
+					executor.shutdownNow();
+				})
+				.doOnError(e -> {
+					e.printStackTrace();
+					channel.shutdownNow();
 					executor.shutdownNow();
 				});
 	}
@@ -196,11 +208,13 @@ final class GrpcUtils {
 			@Override
 			public void onError(Throwable t) {
 				t.printStackTrace();
+				channel.shutdownNow();
 			}
 
 			@Override
 			public void onCompleted() {
 				logger.info("Client completed");
+				channel.shutdownNow();
 			}
 		};
 
@@ -220,7 +234,11 @@ final class GrpcUtils {
 			}
 		}).doOnComplete(() -> {
 			requestObserver.onCompleted();
-		}).subscribe();
+		}).doOnError(e -> {
+			e.printStackTrace();
+			channel.shutdownNow();
+		})
+		.subscribe();
 
 		try {
 			return resultRef.poll(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -228,6 +246,9 @@ final class GrpcUtils {
 		catch (InterruptedException ie) {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException(ie);
+		}
+		finally {
+			channel.shutdownNow();
 		}
 	}
 
