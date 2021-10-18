@@ -16,14 +16,13 @@
 
 package org.springframework.cloud.function.grpc.ce;
 
+import io.grpc.BindableService;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.function.grpc.MessageHandlingHelper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import io.grpc.BindableService;
-
 
 /**
  *
@@ -34,6 +33,7 @@ import io.grpc.BindableService;
 @ConditionalOnProperty(name = "spring.cloud.function.grpc.server", havingValue = "true", matchIfMissing = true)
 public class CloudEventGrpcAutoConfiguration {
 
+	@SuppressWarnings("rawtypes")
 	@Bean
 	public BindableService cloudEventMessageHandler(MessageHandlingHelper helper) {
 		return new CloudEventHandler(helper);

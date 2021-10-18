@@ -18,18 +18,17 @@ package org.springframework.cloud.function.grpc.ce;
 
 import java.util.Map.Entry;
 
-import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
-import org.springframework.cloud.function.grpc.AbstractGrpcMessageConverter;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-
 import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessageV3;
-
 import io.cloudevents.v1.proto.CloudEvent;
 import io.cloudevents.v1.proto.CloudEvent.Builder;
 import io.cloudevents.v1.proto.CloudEvent.CloudEventAttributeValue;
 import io.cloudevents.v1.proto.CloudEvent.CloudEventAttributeValue.AttrCase;
+
+import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
+import org.springframework.cloud.function.grpc.AbstractGrpcMessageConverter;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  *
