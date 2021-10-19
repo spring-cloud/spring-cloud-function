@@ -47,7 +47,7 @@ import org.springframework.util.CollectionUtils;
 /**
  *
  * @author Oleg Zhurakousky
- *
+ * @since 3.2
  */
 public class MessageHandlingHelper<T extends GeneratedMessageV3> implements SmartLifecycle {
 
@@ -147,7 +147,6 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 				@Override
 				public void onError(Throwable t) {
 					t.printStackTrace();
-//					responseObserver.onCompleted();
 					responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
 							.withCause(t).asRuntimeException());
 				}
@@ -192,8 +191,6 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 			UnsupportedOperationException ex = new UnsupportedOperationException("The bi-directional streaming is "
 					+ "not supported for functions that accept Publisher but return non-Publisher: "
 					+ function);
-//			responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
-//					.withCause(ex).asException());
 			responseObserver.onCompleted();
 			throw ex;
 		}
@@ -205,8 +202,6 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 			UnsupportedOperationException ex = new UnsupportedOperationException("The bidirection streaming is "
 					+ "not supported for functions that accept non-Publisher but return Publisher: "
 					+ function);
-//			responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
-//					.withCause(ex).asException());
 			responseObserver.onCompleted();
 			throw ex;
 		}
@@ -243,7 +238,6 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 			@Override
 			public void onError(Throwable t) {
 				t.printStackTrace();
-				//responseObserver.onCompleted();
 				inputStream.tryEmitComplete();
 				responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
 						.withCause(t).asException());

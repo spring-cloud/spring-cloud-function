@@ -16,9 +16,6 @@
 
 package org.springframework.cloud.function.grpc;
 
-
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -241,7 +238,6 @@ final class GrpcUtils {
 			e.printStackTrace();
 			responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
 					.withCause(e).asRuntimeException());
-//			channel.shutdownNow();
 		})
 		.subscribe();
 
@@ -252,9 +248,6 @@ final class GrpcUtils {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException(ie);
 		}
-//		finally {
-//			channel.shutdownNow();
-//		}
 	}
 
 	private static ClientResponseObserver<GrpcSpringMessage, GrpcSpringMessage> clientResponseObserver(Flux<Message<byte[]>> inputStream, Many<Message<byte[]>> sink) {
