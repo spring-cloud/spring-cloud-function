@@ -17,6 +17,8 @@
 package org.springframework.cloud.function.grpc;
 
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
 import io.grpc.stub.ClientCallStreamObserver;
 import io.grpc.stub.ClientResponseObserver;
 import io.grpc.stub.StreamObserver;
@@ -236,7 +239,9 @@ final class GrpcUtils {
 			requestObserver.onCompleted();
 		}).doOnError(e -> {
 			e.printStackTrace();
-			channel.shutdownNow();
+			responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
+					.withCause(e).asRuntimeException());
+//			channel.shutdownNow();
 		})
 		.subscribe();
 
@@ -247,9 +252,9 @@ final class GrpcUtils {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException(ie);
 		}
-		finally {
-			channel.shutdownNow();
-		}
+//		finally {
+//			channel.shutdownNow();
+//		}
 	}
 
 	private static ClientResponseObserver<GrpcSpringMessage, GrpcSpringMessage> clientResponseObserver(Flux<Message<byte[]>> inputStream, Many<Message<byte[]>> sink) {

@@ -147,7 +147,9 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 				@Override
 				public void onError(Throwable t) {
 					t.printStackTrace();
-					responseObserver.onCompleted();
+//					responseObserver.onCompleted();
+					responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
+							.withCause(t).asRuntimeException());
 				}
 
 				@Override
@@ -160,7 +162,9 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 					catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
 					}
-					responseObserver.onCompleted();
+					finally {
+						responseObserver.onCompleted();
+					}
 				}
 			};
 		}
@@ -232,7 +236,6 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 				if (logger.isDebugEnabled()) {
 					logger.debug("gRPC Server receiving: " + inputMessage);
 				}
-				//GRPC_MESSAGE_TYPE = (Class<T>) inputMessage.getClass();
 				inputStream.tryEmitNext(toSpringMessage(inputMessage));
 				serverCallStreamObserver.request(1);
 			}
@@ -240,7 +243,10 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 			@Override
 			public void onError(Throwable t) {
 				t.printStackTrace();
-				responseObserver.onCompleted();
+				//responseObserver.onCompleted();
+				inputStream.tryEmitComplete();
+				responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
+						.withCause(t).asException());
 			}
 
 			@Override
