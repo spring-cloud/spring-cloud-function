@@ -390,6 +390,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		private Function<Object, Object> enhancer;
 
 		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
+			this.expectedOutputContentType = function.expectedOutputContentType;
 			this.skipOutputConversion = function.skipOutputConversion;
 			this.skipInputConversion = function.skipInputConversion;
 			this.target = function.target;
@@ -406,6 +407,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.functionDefinition = functionDefinition;
 			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
 		}
+
+		public boolean isSkipOutputConversion() {
+			return skipOutputConversion;
+		}
+
 
 		public boolean isPrototype() {
 			return this.isPrototype();
