@@ -37,13 +37,20 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 	@SuppressWarnings("unchecked")
 	@Override
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
+		boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
+		targetFunction.setSkipOutputConversion(true);
+		Object result = null;
 		if (input instanceof Message) {
-			return this.doApply((Message<byte[]>) input, targetFunction);
+			result = this.doApply((Message<byte[]>) input, targetFunction);
 		}
 		else if (targetFunction.isSupplier() && !targetFunction.isOutputTypePublisher()) {
-			return this.doApply(null, targetFunction);
+			result = this.doApply(null, targetFunction);
 		}
-		return targetFunction.apply(input);
+		else {
+			result = targetFunction.apply(input);
+		}
+		targetFunction.setSkipOutputConversion(isSkipOutputConversion);
+		return result;
 	}
 
 	protected abstract Object doApply(Message<byte[]> input, FunctionInvocationWrapper targetFunction);
