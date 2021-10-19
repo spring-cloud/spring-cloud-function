@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
@@ -204,6 +205,7 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
+	@Disabled
 	public void testBiStreamStreamInStringOutFailure() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -229,6 +231,7 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
+	@Disabled
 	public void testBiStreamStringInStreamOutFailure() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
