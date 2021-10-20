@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.net.SocketException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
@@ -23,16 +24,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.SmartLifecycle;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -50,7 +53,7 @@ import org.springframework.web.client.RestTemplate;
  * @since 3.1.1
  *
  */
-public final class CustomRuntimeEventLoop implements CommandLineRunner {
+public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 	private static Log logger = LogFactory.getLog(CustomRuntimeEventLoop.class);
 
@@ -60,23 +63,30 @@ public final class CustomRuntimeEventLoop implements CommandLineRunner {
 
 	private final ConfigurableApplicationContext applicationContext;
 
+	private volatile boolean running;
+
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
+
 	public CustomRuntimeEventLoop(ConfigurableApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
 
-	@Override
-	public void run(String... args) throws Exception {
-		CustomRuntimeEventLoop.eventLoop(this.applicationContext, args);
+	public void run() {
+		this.running = true;
+		this.executor.execute(() -> {
+			eventLoop(this.applicationContext);
+		});
 	}
 
 	@SuppressWarnings("unchecked")
-	private static void eventLoop(ApplicationContext context, String... args) {
+	private void eventLoop(ConfigurableApplicationContext context) {
+		Environment environment = context.getEnvironment();
 		logger.info("Starting spring-cloud-function CustomRuntimeEventLoop");
 		if (logger.isDebugEnabled()) {
 			logger.debug("AWS LAMBDA ENVIRONMENT: " + System.getenv());
 		}
 
-		String runtimeApi = System.getenv("AWS_LAMBDA_RUNTIME_API");
+		String runtimeApi = environment.getProperty("AWS_LAMBDA_RUNTIME_API");
 		String eventUri = MessageFormat.format(LAMBDA_RUNTIME_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE);
 		if (logger.isDebugEnabled()) {
 			logger.debug("Event URI: " + eventUri);
@@ -88,49 +98,61 @@ public final class CustomRuntimeEventLoop implements CommandLineRunner {
 		ObjectMapper mapper = context.getBean(ObjectMapper.class);
 
 		logger.info("Entering event loop");
-		while (isContinue()) {
+		while (this.isRunning()) {
 			logger.debug("Attempting to get new event");
-			ResponseEntity<String> response = rest.exchange(requestEntity, String.class);
+			ResponseEntity<String> response = this.pollForData(rest, requestEntity);
+
 			if (logger.isDebugEnabled()) {
 				logger.debug("New Event received: " + response);
 			}
 
-			FunctionInvocationWrapper function = locateFunction(functionCatalog, response.getHeaders().getContentType());
-			Message<byte[]> eventMessage = AWSLambdaUtils.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8),
-					fromHttp(response.getHeaders()), function.getInputType(), mapper);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Event message: " + eventMessage);
-			}
+			if (response != null) {
+				FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders().getContentType());
+				Message<byte[]> eventMessage = AWSLambdaUtils.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8),
+						fromHttp(response.getHeaders()), function.getInputType(), mapper);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Event message: " + eventMessage);
+				}
 
-			String requestId = response.getHeaders().getFirst("Lambda-Runtime-Aws-Request-Id");
-			String invocationUrl = MessageFormat
-					.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
+				String requestId = response.getHeaders().getFirst("Lambda-Runtime-Aws-Request-Id");
+				String invocationUrl = MessageFormat
+						.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
 
-			Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
+				Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
 
-			if (responseMessage != null && logger.isDebugEnabled()) {
-				logger.debug("Reply from function: " + responseMessage);
-			}
+				if (responseMessage != null && logger.isDebugEnabled()) {
+					logger.debug("Reply from function: " + responseMessage);
+				}
 
-			byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper, function.getOutputType());
-			ResponseEntity<Object> result = rest
-					.exchange(RequestEntity.post(URI.create(invocationUrl)).body(outputBody), Object.class);
+				byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper, function.getOutputType());
+				ResponseEntity<Object> result = rest
+						.exchange(RequestEntity.post(URI.create(invocationUrl)).body(outputBody), Object.class);
 
-			if (logger.isInfoEnabled()) {
-				logger.info("Result POST status: " + result.getStatusCode());
+				if (logger.isInfoEnabled()) {
+					logger.info("Result POST status: " + result.getStatusCode());
+				}
 			}
 		}
 	}
 
-	private static boolean isContinue() {
-		return Boolean.parseBoolean(System.getProperty("CustomRuntimeEventLoop.continue", "true"));
+	private ResponseEntity<String> pollForData(RestTemplate rest, RequestEntity<Void> requestEntity) {
+		try {
+			return rest.exchange(requestEntity, String.class);
+		}
+		catch (Exception e) {
+			if (e instanceof SocketException) {
+				this.stop();
+				// ignore
+			}
+		}
+		return null;
 	}
 
-	private static FunctionInvocationWrapper locateFunction(FunctionCatalog functionCatalog, MediaType contentType) {
-		String handlerName = System.getenv("DEFAULT_HANDLER");
+	private FunctionInvocationWrapper locateFunction(Environment environment, FunctionCatalog functionCatalog, MediaType contentType) {
+		String handlerName = environment.getProperty("DEFAULT_HANDLER");
 		FunctionInvocationWrapper function = functionCatalog.lookup(handlerName, contentType.toString());
 		if (function == null) {
-			handlerName = System.getenv("_HANDLER");
+			handlerName = environment.getProperty("_HANDLER");
 			function = functionCatalog.lookup(handlerName, contentType.toString());
 		}
 
@@ -139,7 +161,7 @@ public final class CustomRuntimeEventLoop implements CommandLineRunner {
 		}
 
 		if (function == null) {
-			handlerName = System.getenv("spring.cloud.function.definition");
+			handlerName = environment.getProperty("spring.cloud.function.definition");
 			function = functionCatalog.lookup(handlerName, contentType.toString());
 		}
 
@@ -156,7 +178,7 @@ public final class CustomRuntimeEventLoop implements CommandLineRunner {
 		return function;
 	}
 
-	private static MessageHeaders fromHttp(HttpHeaders headers) {
+	private MessageHeaders fromHttp(HttpHeaders headers) {
 		Map<String, Object> map = new LinkedHashMap<>();
 		for (String name : headers.keySet()) {
 			Collection<?> values = multi(headers.get(name));
@@ -171,7 +193,23 @@ public final class CustomRuntimeEventLoop implements CommandLineRunner {
 		return new MessageHeaders(map);
 	}
 
-	private static Collection<?> multi(Object value) {
+	private Collection<?> multi(Object value) {
 		return value instanceof Collection ? (Collection<?>) value : Arrays.asList(value);
+	}
+
+	@Override
+	public void start() {
+		this.run();
+	}
+
+	@Override
+	public void stop() {
+		this.executor.shutdownNow();
+		this.running = false;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.running;
 	}
 }
