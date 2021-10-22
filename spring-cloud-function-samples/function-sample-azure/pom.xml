@@ -27,7 +27,7 @@
 		<start-class>example.Config</start-class>
 		<azure.functions.maven.plugin.version>1.12.0</azure.functions.maven.plugin.version>
 		<azure.functions.java.library.version>1.3.0</azure.functions.java.library.version>
-		<wrapper.version>1.0.23.RELEASE</wrapper.version>
+		<wrapper.version>1.0.27.RELEASE</wrapper.version>
 	</properties>
 
 	<dependencies>
