@@ -120,7 +120,7 @@
 			<plugin>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<groupId>org.jetbrains.kotlin</groupId>
-				<version>1.4.21</version>
+				<version>1.6.0-RC</version>
 				<configuration>
 					<args>
 						<arg>-Xjsr305=strict</arg>
@@ -159,7 +159,7 @@
 					<dependency>
 						<groupId>org.jetbrains.kotlin</groupId>
 						<artifactId>kotlin-maven-allopen</artifactId>
-						<version>1.4.21</version>
+						<version>1.6.0-RC</version>
 					</dependency>
 				</dependencies>
 			</plugin>
