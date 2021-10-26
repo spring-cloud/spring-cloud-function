@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
+@Disabled
 public class GrpcInteractionTests {
 
 	@BeforeEach
