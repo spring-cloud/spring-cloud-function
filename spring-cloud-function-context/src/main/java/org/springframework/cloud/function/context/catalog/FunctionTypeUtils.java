@@ -281,18 +281,18 @@ public final class FunctionTypeUtils {
 			logger.debug("Consumer does not have output type, returning null as output type.");
 			return null;
 		}
-		Type inputType;
+		Type outputType;
 		if (functionType instanceof Class) {
 			functionType = Function.class.isAssignableFrom((Class<?>) functionType)
 					? TypeResolver.reify(Function.class, (Class<Function<?, ?>>) functionType)
-					: TypeResolver.reify(Function.class, (Class<Supplier<?>>) functionType);
+					: TypeResolver.reify(Supplier.class, (Class<Supplier<?>>) functionType);
 		}
 
-		inputType = functionType instanceof ParameterizedType
+		outputType = functionType instanceof ParameterizedType
 				? (isSupplier(functionType) ? ((ParameterizedType) functionType).getActualTypeArguments()[0] : ((ParameterizedType) functionType).getActualTypeArguments()[1])
 				: Object.class;
 
-		return inputType;
+		return outputType;
 	}
 
 	public static Type getImmediateGenericType(Type type, int index) {

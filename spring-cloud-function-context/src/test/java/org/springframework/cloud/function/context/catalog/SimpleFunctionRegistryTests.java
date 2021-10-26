@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
-
+import reactor.core.publisher.Mono;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -412,6 +412,17 @@ public class SimpleFunctionRegistryTests {
 		assertThat(message.getHeaders().get("original")).isEqualTo("newValue");
 	}
 
+	@Test
+	public void testReactiveMonoSupplier() {
+		FunctionRegistration<ReactiveMonoGreeter> registration = new FunctionRegistration<>(new ReactiveMonoGreeter(),
+				"greeter").type(FunctionType.of(ReactiveMonoGreeter.class));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+		FunctionInvocationWrapper function = catalog.lookup("greeter");
+		assertThat(FunctionTypeUtils.isMono(function.getOutputType()));
+	}
+
 
 	public Function<String, String> uppercase() {
 		return v -> v.toUpperCase();
@@ -574,6 +585,15 @@ public class SimpleFunctionRegistryTests {
 				.map(Message::getPayload)
 				.map(lst -> lst.stream().map(Person::getName).collect(Collectors.toList()));
 		}
+	}
+
+	private static class ReactiveMonoGreeter implements Supplier<Mono<Message<String>>> {
+
+		@Override
+		public Mono<Message<String>> get() {
+			return Mono.just(MessageBuilder.withPayload("hello").build());
+		}
+
 	}
 
 	private static class HeaderEnricherFunction implements Function<Message<?>, Message<?>> {
