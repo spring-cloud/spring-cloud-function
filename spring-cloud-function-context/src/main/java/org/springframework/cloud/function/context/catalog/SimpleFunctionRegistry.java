@@ -922,7 +922,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 							.transform(mono -> {
 								mono =  Mono.from((Publisher) mono).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
 								((Consumer) this.target).accept(mono);
-								return Mono.ignoreElements((Flux) mono);
+								return Mono.ignoreElements((Mono) mono);
 							}).then();
 				}
 			}
