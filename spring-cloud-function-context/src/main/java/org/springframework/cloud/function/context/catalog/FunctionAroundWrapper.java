@@ -20,6 +20,7 @@ import java.util.function.BiFunction;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
+import org.springframework.util.StringUtils;
 
 /**
  * Wrapper that acts as around advise over function invocation.
@@ -36,21 +37,22 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 
 	@Override
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
-		boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
-		targetFunction.setSkipOutputConversion(true);
-		Object result = null;
-
-		if (input instanceof Message || targetFunction.isOutputTypePublisher() || targetFunction.isInputTypePublisher()) {
-			return this.doApply(input, targetFunction);
-		}
-		else if (targetFunction.isSupplier() && !targetFunction.isOutputTypePublisher()) {
-			result = this.doApply(null, targetFunction);
+		String functionalTracingEnabledStr = System.getProperty("spring.sleuth.function.enabled");
+		boolean functionalTracingEnabled = StringUtils.hasText(functionalTracingEnabledStr)
+				? Boolean.parseBoolean(functionalTracingEnabledStr) : true;
+		if (functionalTracingEnabled) {
+			boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
+			targetFunction.setSkipOutputConversion(true);
+			try {
+				return this.doApply(input, targetFunction);
+			}
+			finally {
+				targetFunction.setSkipOutputConversion(isSkipOutputConversion);
+			}
 		}
 		else {
-			result = targetFunction.apply(input);
+			return targetFunction.apply(input);
 		}
-		targetFunction.setSkipOutputConversion(isSkipOutputConversion);
-		return result;
 	}
 
 	protected abstract Object doApply(Object input, FunctionInvocationWrapper targetFunction);
