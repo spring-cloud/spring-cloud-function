@@ -17,12 +17,9 @@
 package org.springframework.cloud.function.adapter.aws;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,17 +29,11 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.serialization.PojoSerializer;
 import com.amazonaws.services.lambda.runtime.serialization.events.LambdaEventSerializers;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -58,18 +49,18 @@ final class AWSLambdaUtils {
 
 	private static Log logger = LogFactory.getLog(AWSLambdaUtils.class);
 
-	private static final String AWS_API_GATEWAY = "aws-api-gateway";
+	static final String AWS_API_GATEWAY = "aws-api-gateway";
 
 	private AWSLambdaUtils() {
 
 	}
 
 	public static Message<byte[]> generateMessage(byte[] payload, MessageHeaders headers,
-			Type inputType, ObjectMapper objectMapper) {
+			Type inputType, JsonMapper objectMapper) {
 		return generateMessage(payload, headers, inputType, objectMapper, null);
 	}
 
-	private static boolean isSupportedAWSType(Type inputType) {
+	static boolean isSupportedAWSType(Type inputType) {
 		String typeName = inputType.getTypeName();
 		return typeName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent")
 				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.S3Event")
@@ -81,7 +72,7 @@ final class AWSLambdaUtils {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Message<byte[]> generateMessage(byte[] payload, MessageHeaders headers,
-			Type inputType, ObjectMapper objectMapper, @Nullable Context awsContext) {
+			Type inputType, JsonMapper objectMapper, @Nullable Context awsContext) {
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Incoming JSON Event: " + new String(payload));
@@ -102,12 +93,9 @@ final class AWSLambdaUtils {
 			}
 		}
 		else {
-			if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
-				configureObjectMapper(objectMapper);
-			}
 			Object request;
 			try {
-				request = objectMapper.readValue(payload, Object.class);
+				request = objectMapper.fromJson(payload, Object.class);
 			}
 			catch (Exception e) {
 				throw new IllegalStateException(e);
@@ -154,12 +142,12 @@ final class AWSLambdaUtils {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static MessageBuilder createMessageBuilderForPOJOFunction(ObjectMapper objectMapper, Map request) {
+	private static MessageBuilder createMessageBuilderForPOJOFunction(JsonMapper objectMapper, Map request) {
 		Object body = request.remove("body");
 		try {
 			body = body instanceof String
 					? String.valueOf(body).getBytes(StandardCharsets.UTF_8)
-							: objectMapper.writeValueAsBytes(body);
+							: objectMapper.toJson(body);
 		}
 		catch (Exception e) {
 			throw new IllegalStateException(e);
@@ -173,7 +161,7 @@ final class AWSLambdaUtils {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static byte[] generateOutput(Message requestMessage, Message<byte[]> responseMessage,
-			ObjectMapper objectMapper, Type functionOutputType) {
+			JsonMapper objectMapper, Type functionOutputType) {
 
 		Class<?> outputClass = FunctionTypeUtils.getRawType(functionOutputType);
 		if (outputClass != null) {
@@ -184,9 +172,6 @@ final class AWSLambdaUtils {
 			}
 		}
 
-		if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
-			configureObjectMapper(objectMapper);
-		}
 		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : responseMessage.getPayload();
 		if (requestMessage.getHeaders().containsKey(AWS_API_GATEWAY) && ((boolean) requestMessage.getHeaders().get(AWS_API_GATEWAY))) {
 			Map<String, Object> response = new HashMap<String, Object>();
@@ -218,7 +203,7 @@ final class AWSLambdaUtils {
 			}
 
 			try {
-				responseBytes = objectMapper.writeValueAsBytes(response);
+				responseBytes = objectMapper.toJson(response);
 			}
 			catch (Exception e) {
 				throw new IllegalStateException("Failed to serialize AWS Lambda output", e);
@@ -226,23 +211,6 @@ final class AWSLambdaUtils {
 		}
 		return responseBytes;
 	}
-
-	private static void configureObjectMapper(ObjectMapper objectMapper) {
-		SimpleModule module = new SimpleModule();
-		module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
-			@Override
-			public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-					throws IOException {
-				Calendar calendar = Calendar.getInstance();
-				calendar.setTimeInMillis(jsonParser.getValueAsLong());
-				return calendar.getTime();
-			}
-		});
-		objectMapper.registerModule(module);
-		objectMapper.registerModule(new JodaModule());
-		objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
-	}
-
 
 	private static boolean isRequestKinesis(Message<Object> requestMessage) {
 		return requestMessage.getHeaders().containsKey("Records");

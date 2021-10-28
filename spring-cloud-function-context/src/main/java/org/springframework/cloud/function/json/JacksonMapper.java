@@ -19,6 +19,7 @@ package org.springframework.cloud.function.json;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
@@ -40,6 +41,10 @@ public class JacksonMapper extends JsonMapper {
 	@Override
 	public <T> T toObject(String json, Type type) {
 		return this.fromJson(json, type);
+	}
+
+	public void configureObjectMapper(Consumer<ObjectMapper> configurer) {
+		configurer.accept(mapper);
 	}
 
 	@Override
