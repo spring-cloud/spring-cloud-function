@@ -27,12 +27,12 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.core.env.Environment;
@@ -95,7 +95,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		RequestEntity<Void> requestEntity = RequestEntity.get(URI.create(eventUri)).build();
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 		RestTemplate rest = new RestTemplate();
-		ObjectMapper mapper = context.getBean(ObjectMapper.class);
+		JsonMapper mapper = context.getBean(JsonMapper.class);
 
 		logger.info("Entering event loop");
 		while (this.isRunning()) {

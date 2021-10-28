@@ -206,7 +206,6 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	@Disabled
 	public void testBiStreamStreamInStringOutFailure() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
@@ -232,7 +231,6 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	@Disabled
 	public void testBiStreamStringInStreamOutFailure() {
 		int port = SocketUtils.findAvailableTcpPort();
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(

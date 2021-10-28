@@ -21,14 +21,22 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -39,6 +47,8 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.json.JacksonMapper;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -64,7 +74,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 	private static Log logger = LogFactory.getLog(FunctionInvoker.class);
 
-	private ObjectMapper objectMapper;
+	private JsonMapper jsonMapper;
 
 	private FunctionInvocationWrapper function;
 
@@ -81,8 +91,18 @@ public class FunctionInvoker implements RequestStreamHandler {
 			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
 		}
 
-		Message requestMessage = AWSLambdaUtils
-				.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.objectMapper, context);
+		Object structMessage = this.jsonMapper.fromJson(payload, Object.class);
+
+		boolean isApiGateway = structMessage instanceof Map
+				&& (((Map) structMessage).containsKey("httpMethod") ||
+						(((Map) structMessage).containsKey("routeKey") && ((Map) structMessage).containsKey("version")));
+
+
+		// TODO we should eventually completely delegate to message converter
+		//Message requestMessage = MessageBuilder.withPayload(payload).setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true).build();
+		Message requestMessage = isApiGateway
+				? MessageBuilder.withPayload(payload).setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true).build()
+				: AWSLambdaUtils.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.jsonMapper, context);
 
 		try {
 			Object response = this.function.apply(requestMessage);
@@ -99,7 +119,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 		APIGatewayProxyResponseEvent event = new APIGatewayProxyResponseEvent();
 		event.setStatusCode(HttpStatus.EXPECTATION_FAILED.value());
 		event.setBody(exception.getMessage());
-		return this.objectMapper.writeValueAsBytes(event);
+		return this.jsonMapper.toJson(event);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -124,26 +144,45 @@ public class FunctionInvoker implements RequestStreamHandler {
 				logger.info("OUTPUT: " + output + " - " + output.getClass().getName());
 			}
 
-			byte[] payload = this.objectMapper.writeValueAsBytes(output);
+			byte[] payload = this.jsonMapper.toJson(output);
 			responseMessage = MessageBuilder.withPayload(payload).build();
 		}
 		else {
 			responseMessage = (Message<byte[]>) output;
 		}
-		return AWSLambdaUtils.generateOutput(requestMessage, responseMessage, this.objectMapper, function.getOutputType());
+		return AWSLambdaUtils.generateOutput(requestMessage, responseMessage, this.jsonMapper, function.getOutputType());
 	}
 
 	private void start() {
 		Class<?> startClass = FunctionClassUtils.getStartClass();
 		String[] properties = new String[] {"--spring.cloud.function.web.export.enabled=false", "--spring.main.web-application-type=none"};
 		ConfigurableApplicationContext context = ApplicationContextInitializer.class.isAssignableFrom(startClass)
-				? FunctionalSpringApplication.run(startClass, properties)
-						: SpringApplication.run(FunctionClassUtils.getStartClass(), properties);
+				? FunctionalSpringApplication.run(new Class[] {startClass, AWSCompanionAutoConfiguration.class}, properties)
+						: SpringApplication.run(new Class[] {startClass, AWSCompanionAutoConfiguration.class}, properties);
 
 		Environment environment = context.getEnvironment();
 		String functionName = environment.getProperty("spring.cloud.function.definition");
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
-		this.objectMapper = context.getBean(ObjectMapper.class);
+		this.jsonMapper = context.getBean(JsonMapper.class);
+		if (this.jsonMapper instanceof JacksonMapper) {
+			((JacksonMapper) this.jsonMapper).configureObjectMapper(objectMapper -> {
+				if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
+					SimpleModule module = new SimpleModule();
+					module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
+						@Override
+						public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+								throws IOException {
+							Calendar calendar = Calendar.getInstance();
+							calendar.setTimeInMillis(jsonParser.getValueAsLong());
+							return calendar.getTime();
+						}
+					});
+					objectMapper.registerModule(module);
+					objectMapper.registerModule(new JodaModule());
+					objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+				}
+			});
+		}
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Locating function: '" + functionName + "'");
