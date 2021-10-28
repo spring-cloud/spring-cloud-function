@@ -37,9 +37,9 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -50,7 +50,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
-
 
 /**
  * Configuration class which defines the required infrastructure to bootstrap Kotlin
@@ -75,13 +74,11 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 	 * @return the bean factory post processor
 	 */
 	@Bean
-	public BeanFactoryPostProcessor kotlinToFunctionTransformerOld() {
-		return new BeanFactoryPostProcessor() {
+	public SmartInitializingSingleton kotlinToFunctionTransformer(ConfigurableListableBeanFactory beanFactory) {
+		return new SmartInitializingSingleton() {
 
 			@Override
-			public void postProcessBeanFactory(
-					ConfigurableListableBeanFactory beanFactory) throws BeansException {
-
+			public void afterSingletonsInstantiated() {
 				String[] beanDefinitionNames = beanFactory.getBeanDefinitionNames();
 				for (String beanDefinitionName : beanDefinitionNames) {
 					BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanDefinitionName);
@@ -96,9 +93,9 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 							((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(beanDefinitionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, cbd);
 						}
 					}
-
 				}
 			}
+
 		};
 	}
 
