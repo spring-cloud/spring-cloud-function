@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2021-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 
 	@Override
 	protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
-		//if (targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
 		if (message.getHeaders().containsKey(AWSLambdaUtils.AWS_API_GATEWAY) && ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_API_GATEWAY))) {
 			return true;
 		}
@@ -98,39 +97,6 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 			@Nullable Object conversionHint) {
-		if (headers.containsKey(AWSLambdaUtils.AWS_API_GATEWAY) && ((boolean) headers.get(AWSLambdaUtils.AWS_API_GATEWAY))) {
-//			AtomicReference<MessageHeaders> headersRef = new AtomicReference<>();
-//			int statusCode = HttpStatus.OK.value();
-//			if (responseMessage != null) {
-//				headers.set(responseMessage.getHeaders());
-//				statusCode = headers.get().containsKey("statusCode")
-//						? (int) headers.get().get("statusCode")
-//						: HttpStatus.OK.value();
-//			}
-//
-//			response.put("statusCode", statusCode);
-//			if (isRequestKinesis(requestMessage)) {
-//				HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
-//				response.put("statusDescription", httpStatus.toString());
-//			}
-//
-//			String body = responseMessage == null
-//					? "\"OK\"" : new String(responseMessage.getPayload(), StandardCharsets.UTF_8).replaceAll("\\\"", "");
-//			response.put("body", body);
-//
-//			if (responseMessage != null) {
-//				Map<String, String> responseHeaders = new HashMap<>();
-//				headers.get().keySet().forEach(key -> responseHeaders.put(key, headers.get().get(key).toString()));
-//				response.put("headers", responseHeaders);
-//			}
-//
-//			try {
-//				responseBytes = objectMapper.toJson(response);
-//			}
-//			catch (Exception e) {
-//				throw new IllegalStateException("Failed to serialize AWS Lambda output", e);
-//			}
-		}
 		return jsonMapper.toJson(payload);
 	}
 
