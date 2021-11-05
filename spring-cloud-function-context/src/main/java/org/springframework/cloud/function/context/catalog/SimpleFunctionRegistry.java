@@ -1040,7 +1040,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.isWrapConvertedInputInMessage(convertedInput)) {
 				convertedInput = MessageBuilder.withPayload(convertedInput).build();
 			}
-			Assert.notNull(convertedInput, "Failed to convert input: " + input + " to " + type);
+			Assert.notNull(convertedInput, () -> "Failed to convert input: " + input + " to " + type);
 			return convertedInput;
 		}
 
