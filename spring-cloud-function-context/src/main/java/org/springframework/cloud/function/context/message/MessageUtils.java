@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.cloud.function.core.FluxWrapper;
 import org.springframework.cloud.function.core.Isolated;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -61,9 +60,6 @@ public abstract class MessageUtils {
 	 */
 	public static Object create(Object handler, Object payload,
 			Map<String, Object> headers) {
-		if (handler instanceof FluxWrapper) {
-			handler = ((FluxWrapper<?>) handler).getTarget();
-		}
 		if (payload instanceof Message) {
 			headers = new HashMap<>(headers);
 			headers.putAll(((Message<?>) payload).getHeaders());
@@ -93,9 +89,6 @@ public abstract class MessageUtils {
 	 * @return a message with the correct class loader
 	 */
 	public static Message<?> unpack(Object handler, Object message) {
-		if (handler instanceof FluxWrapper) {
-			handler = ((FluxWrapper<?>) handler).getTarget();
-		}
 		if (!(handler instanceof Isolated)) {
 			if (message instanceof Message) {
 				return (Message<?>) message;
