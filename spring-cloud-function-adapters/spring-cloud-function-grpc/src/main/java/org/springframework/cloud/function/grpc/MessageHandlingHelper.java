@@ -354,7 +354,7 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 			functionDefinition = (String) headers.get(FunctionProperties.FUNCTION_DEFINITION);
 		}
 		FunctionInvocationWrapper function = this.functionCatalog.lookup(functionDefinition, "application/json");
-		Assert.notNull(function, "Failed to lookup function " + funcProperties.getDefinition());
+		Assert.notNull(function, () -> "Failed to lookup function " + funcProperties.getDefinition());
 		return function;
 	}
 }

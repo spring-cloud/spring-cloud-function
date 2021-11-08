@@ -92,7 +92,7 @@ public class FunctionProxyApplicationListener
 			String type = (properties.get("type") != null) ? properties.get("type")
 					: "function";
 			String lambda = properties.get("lambda");
-			Assert.notNull(lambda, String.format(
+			Assert.notNull(lambda, () -> String.format(
 					"The 'lambda' property is required for compiling Function: %s",
 					name));
 			String inputType = properties.get("inputType");
