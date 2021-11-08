@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2021-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-//NOTE!!! assertions for all tests are in 'echo' function since we're validating what's coming into it.
-public class InputHeaderMappingTests {
+//NOTE!!! assertions for input in all tests are in 'echo' function since we're validating what's coming into it.
+public class HeaderMappingTests {
 
 	@Test
 	public void testErrorWarnAndContinue() throws Exception {
@@ -170,6 +170,52 @@ public class InputHeaderMappingTests {
 			function.apply(MessageBuilder.withPayload("helo")
 					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
 					.setHeader("path", "foo/bar/baz").build());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testOutputHeaderMapping() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+						"--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true",
+						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.key1='hello1'",
+						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.key2=headers.contentType")) {
+
+			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+			FunctionInvocationWrapper function = functionCatalog.lookup("foo");
+			Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("helo")
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+			assertThat(result.getHeaders().containsKey("key1")).isTrue();
+			assertThat(result.getHeaders().get("key1")).isEqualTo("hello1");
+			assertThat(result.getHeaders().containsKey("key2")).isTrue();
+			assertThat(result.getHeaders().get("key2")).isEqualTo("application/json");
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testMixedInputOutputHeaderMapping() throws Exception {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
+				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
+						"--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true",
+						"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut1='hello1'",
+						"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut2=headers.contentType",
+						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key1=headers.path.split('/')[0]",
+						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key2=headers.path.split('/')[1]",
+						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key3=headers.path")) {
+
+			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+			FunctionInvocationWrapper function = functionCatalog.lookup("split");
+			Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("helo")
+					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+					.setHeader("path", "foo/bar/baz").build());
+			assertThat(result.getHeaders().containsKey("keyOut1")).isTrue();
+			assertThat(result.getHeaders().get("keyOut1")).isEqualTo("hello1");
+			assertThat(result.getHeaders().containsKey("keyOut2")).isTrue();
+			assertThat(result.getHeaders().get("keyOut2")).isEqualTo("application/json");
 		}
 	}
 

@@ -304,6 +304,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) andThenFunction);
 				}
 				composedFunction = this.enrichInputIfNecessary(composedFunction);
+				composedFunction = this.enrichOutputIfNecessary(composedFunction);
 				if (composedFunction.isSingleton) {
 					this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
 				}
@@ -329,8 +330,32 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					BeanFactoryResolver beanResolver = this.functionProperties.getApplicationContext() != null
 							? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
 							: null;
-					InputEnricher enricher = new InputEnricher(configuration.getInputHeaderMappingExpression(), beanResolver);
-					FunctionInvocationWrapper w = new FunctionInvocationWrapper("headerEnricher", enricher, Message.class, Message.class);
+					HeaderEnricher enricher = new HeaderEnricher(configuration.getInputHeaderMappingExpression(), beanResolver);
+					FunctionInvocationWrapper w = new FunctionInvocationWrapper("inputHeaderEnricher", enricher, Message.class, Message.class);
+					composedFunction = (FunctionInvocationWrapper) w.andThen((Function<Object, Object>) composedFunction);
+					composedFunction.functionDefinition = functionDefinition;
+				}
+			}
+		}
+		return composedFunction;
+	}
+
+	private FunctionInvocationWrapper enrichOutputIfNecessary(FunctionInvocationWrapper composedFunction) {
+		if (this.functionProperties == null) {
+			return composedFunction;
+		}
+		String functionDefinition = composedFunction.getFunctionDefinition();
+		Map<String, FunctionConfigurationProperties> configurationProperties = this.functionProperties.getConfiguration();
+		if (!CollectionUtils.isEmpty(configurationProperties)) {
+			FunctionConfigurationProperties configuration =  configurationProperties
+					.get(functionDefinition.replace("|", "").replace(",", ""));
+			if (configuration != null) {
+				if (!CollectionUtils.isEmpty(configuration.getOutputHeaderMappingExpression())) {
+					BeanFactoryResolver beanResolver = this.functionProperties.getApplicationContext() != null
+							? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
+							: null;
+					HeaderEnricher enricher = new HeaderEnricher(configuration.getOutputHeaderMappingExpression(), beanResolver);
+					FunctionInvocationWrapper w = new FunctionInvocationWrapper("outputHeaderEnricher", enricher, Message.class, Message.class);
 					composedFunction = (FunctionInvocationWrapper) w.andThen((Function<Object, Object>) composedFunction);
 					composedFunction.functionDefinition = functionDefinition;
 				}
@@ -1050,7 +1075,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (this.isWrapConvertedInputInMessage(convertedInput)) {
 				convertedInput = MessageBuilder.withPayload(convertedInput).build();
 			}
-			Assert.notNull(convertedInput, "Failed to convert input: " + input + " to " + type);
+
+			Object finalInput = input;
+			Assert.notNull(convertedInput, () -> "Failed to convert input: " + finalInput + " to " + type);
 			return convertedInput;
 		}
 
