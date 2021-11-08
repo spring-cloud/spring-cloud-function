@@ -764,12 +764,22 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				if (input instanceof Message) {
 					payload = ((Message) input).getPayload();
 				}
-				if (JsonMapper.isJsonStringRepresentsCollection(payload) && !FunctionTypeUtils.isTypeCollection(this.inputType)) {
-					payload = jsonMapper.fromJson(payload, List.class);
+				if (JsonMapper.isJsonStringRepresentsCollection(payload)
+						&& !FunctionTypeUtils.isTypeCollection(this.inputType) && !FunctionTypeUtils.isTypeArray(this.inputType)) {
 					MessageHeaders headers = ((Message) input).getHeaders();
-					input = ((List) payload).stream()
-							.map(p -> MessageBuilder.withPayload(p).copyHeaders(headers).build())
-							.collect(Collectors.toList());
+					Collection collectionPayload = jsonMapper.fromJson(payload, Collection.class);
+					Class inputClass = FunctionTypeUtils.getRawType(this.inputType);
+					if (this.isInputTypeMessage()) {
+						inputClass = FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.inputType, 0));
+					}
+
+					if (!inputClass.isAssignableFrom(Object.class) && !inputClass.isAssignableFrom(byte[].class)) {
+						logger.debug("Converting JSON string representing collection to a list of Messages. Function '"
+								+ this + "' will be invoked iteratively");
+						input = collectionPayload.stream()
+								.map(p -> MessageBuilder.withPayload(p).copyHeaders(headers).build())
+								.collect(Collectors.toList());
+					}
 				}
 			}
 
