@@ -47,7 +47,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * @since 3.2
  *
  */
-final class GrpcUtils {
+public final class GrpcUtils {
 
 	private static Log logger = LogFactory.getLog(GrpcUtils.class);
 
