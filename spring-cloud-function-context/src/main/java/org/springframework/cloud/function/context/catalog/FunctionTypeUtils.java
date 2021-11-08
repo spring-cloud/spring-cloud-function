@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -37,6 +38,8 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
@@ -45,7 +48,9 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Set of utility operations to interrogate function definitions.
@@ -78,6 +83,10 @@ public final class FunctionTypeUtils {
 		type = getGenericType(type);
 		Class<?> rawType = type instanceof ParameterizedType ? getRawType(type) : (Class<?>) type;
 		return Collection.class.isAssignableFrom(rawType);
+	}
+
+	public static boolean isTypeArray(Type type) {
+		return getRawType(type).isArray();
 	}
 
 	/**
@@ -271,7 +280,21 @@ public final class FunctionTypeUtils {
 				type = FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionBeanDefinitionName)).getType();
 			}
 		}
+		else if (!(type instanceof ParameterizedType)) {
+			String beanDefinitionName = discoverBeanDefinitionNameByQualifier(applicationContext.getBeanFactory(), functionName);
+			if (StringUtils.hasText(beanDefinitionName)) {
+				type = FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), beanDefinitionName)).getType();
+			}
+		}
 		return type;
+	}
+
+	public static String discoverBeanDefinitionNameByQualifier(ListableBeanFactory beanFactory, String qualifier) {
+		Map<String, Object> beanMap =  BeanFactoryAnnotationUtils.qualifiedBeansOfType(beanFactory, Object.class, qualifier);
+		if (!CollectionUtils.isEmpty(beanMap) && beanMap.size() == 1) {
+			return beanMap.keySet().iterator().next();
+		}
+		return null;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
 
@@ -132,6 +133,83 @@ public class SimpleFunctionRegistryTests {
 		Object result = lookedUpFunction.apply("{\"HELLO\":\"WORLD\"}");
 		assertThat(result).isNotInstanceOf(Message.class);
 		assertThat(result).isEqualTo("{\"HELLO\":\"WORLD\"}");
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testSCF762() {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+
+		FunctionRegistration<UpperCase> reg1 = new FunctionRegistration<>(
+				new UpperCase(), "uppercase").type(FunctionType.of(UpperCase.class));
+		catalog.register(reg1);
+		//
+		FunctionRegistration<UpperCaseMessage> reg2 = new FunctionRegistration<>(
+				new UpperCaseMessage(), "uppercaseMessage").type(FunctionType.of(UpperCaseMessage.class));
+		catalog.register(reg2);
+		//
+		FunctionRegistration<StringArrayFunction> reg3 = new FunctionRegistration<>(
+				new StringArrayFunction(), "stringArray").type(FunctionType.of(StringArrayFunction.class));
+		catalog.register(reg3);
+		//
+		FunctionRegistration<TypelessFunction> reg4 = new FunctionRegistration<>(
+				new TypelessFunction(), "typeless").type(FunctionType.of(TypelessFunction.class));
+		catalog.register(reg4);
+		//
+		FunctionRegistration<ByteArrayFunction> reg5 = new FunctionRegistration<>(
+				new ByteArrayFunction(), "typeless").type(FunctionType.of(ByteArrayFunction.class));
+		catalog.register(reg5);
+		//
+		FunctionRegistration<StringListFunction> reg6 = new FunctionRegistration<>(
+				new StringListFunction(), "stringList").type(FunctionType.of(StringListFunction.class));
+		catalog.register(reg6);
+
+		Message<String> collectionMessage = MessageBuilder.withPayload("[\"ricky\", \"julien\", \"bubbles\"]").build();
+		Message<String> singleValueMessage = MessageBuilder.withPayload("\"ricky\"").build();
+
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("uppercase", "application/json");
+		Object result = lookedUpFunction.apply(singleValueMessage);
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("\"RICKY\"".getBytes());
+
+		result = lookedUpFunction.apply(collectionMessage);
+		assertThat(result).isInstanceOf(Flux.class);
+		List<Message<byte[]>> collectionIfResults = Flux.from((Publisher<Message<byte[]>>) result).collectList().block();
+		assertThat(collectionIfResults.size()).isEqualTo(3);
+		assertThat(collectionIfResults.get(0).getPayload()).isEqualTo("\"RICKY\"".getBytes());
+		assertThat(collectionIfResults.get(1).getPayload()).isEqualTo("\"JULIEN\"".getBytes());
+
+		lookedUpFunction = catalog.lookup("typeless", "application/json");
+		result = lookedUpFunction.apply(singleValueMessage);
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("\"ricky\"".getBytes());
+
+		result = lookedUpFunction.apply(collectionMessage);
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("[\"ricky\", \"julien\", \"bubbles\"]".getBytes());
+
+
+		lookedUpFunction = catalog.lookup("stringArray", "application/json");
+		result = lookedUpFunction.apply(singleValueMessage);
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("[\"ricky\"]".getBytes());
+
+		result = lookedUpFunction.apply(collectionMessage);
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("[ricky, julien, bubbles]".getBytes());
+
+
+		lookedUpFunction = catalog.lookup("stringList", "application/json");
+		result = lookedUpFunction.apply(singleValueMessage);
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("[\"ricky\"]".getBytes());
+
+		result = lookedUpFunction.apply(collectionMessage);
+		assertThat(result).isInstanceOf(Message.class);
+		System.out.println(new String(((Message<byte[]>) result).getPayload()));
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("[ricky, julien, bubbles]".getBytes());
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -584,4 +662,33 @@ public class SimpleFunctionRegistryTests {
 				.build();
 		}
 	}
+
+	private static class StringArrayFunction implements Function<String[], String> {
+		@Override
+		public String apply(String[] t) {
+			return Arrays.asList(t).toString();
+		}
+	}
+
+	private static class StringListFunction implements Function<List<String>, String> {
+		@Override
+		public String apply(List<String> t) {
+			return t.toString();
+		}
+	}
+
+	private static class TypelessFunction implements Function<Object, String> {
+		@Override
+		public String apply(Object t) {
+			return t.toString();
+		}
+	}
+
+	private static class ByteArrayFunction implements Function<byte[], String> {
+		@Override
+		public String apply(byte[] t) {
+			return new String(t);
+		}
+	}
+
 }
