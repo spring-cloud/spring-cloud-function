@@ -35,14 +35,6 @@ import reactor.core.publisher.Mono;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.function.core.FluxConsumer;
-import org.springframework.cloud.function.core.FluxFunction;
-import org.springframework.cloud.function.core.FluxSupplier;
-import org.springframework.cloud.function.core.FluxToMonoFunction;
-import org.springframework.cloud.function.core.FluxedConsumer;
-import org.springframework.cloud.function.core.FluxedFunction;
-import org.springframework.cloud.function.core.MonoSupplier;
-import org.springframework.cloud.function.core.MonoToFluxFunction;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
@@ -193,28 +185,6 @@ public class FunctionRegistration<T> implements BeanNameAware {
 			S target = (S) this.target;
 			result = new FunctionRegistration<S>(target);
 			result.type(this.type.getType());
-
-			if (!this.type.isWrapper()) {
-				target = target instanceof Supplier
-						? (S) new FluxSupplier((Supplier<?>) target)
-						: target instanceof Function
-								? (S) new FluxFunction((Function<?, ?>) target)
-								: (S) new FluxConsumer((Consumer<?>) target);
-			}
-			else if (Mono.class.isAssignableFrom(this.type.getOutputWrapper())) {
-				target = target instanceof Supplier
-						? (S) new MonoSupplier((Supplier<?>) target)
-						: (S) new FluxToMonoFunction((Function<?, ?>) target);
-			}
-			else if (Mono.class.isAssignableFrom(this.type.getInputWrapper())) {
-				target = (S) new MonoToFluxFunction((Function) target);
-			}
-			else if (target instanceof Consumer) {
-				target = (S) new FluxedConsumer((Consumer<?>) target);
-			}
-			else if (target instanceof Function) {
-				target = (S) new FluxedFunction((Function<?, ?>) target);
-			}
 			result = result.target(target).names(this.names)
 					.type(result.type.wrap(Flux.class)).properties(this.properties);
 		}

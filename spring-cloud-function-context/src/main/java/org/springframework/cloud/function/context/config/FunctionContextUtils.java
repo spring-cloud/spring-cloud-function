@@ -29,7 +29,6 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.core.FunctionFactoryMetadata;
 import org.springframework.context.annotation.ScannedGenericBeanDefinition;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
@@ -83,20 +82,6 @@ public abstract class FunctionContextUtils {
 			ResolvableType type = (ResolvableType) getField(definition, "targetType");
 			if (type != null) {
 				param = type.getType();
-			}
-			else {
-				Class<?> beanClass = definition.hasBeanClass() ? definition.getBeanClass() : null;
-				if (beanClass != null
-						&& !FunctionFactoryMetadata.class.isAssignableFrom(beanClass)) {
-					param = beanClass;
-				}
-				else {
-					Object bean = registry.getBean(actualName);
-					// could be FunctionFactoryMetadata. . . TODO investigate and fix
-					if (bean instanceof FunctionFactoryMetadata) {
-						param = ((FunctionFactoryMetadata<?>) bean).getFactoryMethod().getGenericReturnType();
-					}
-				}
 			}
 		}
 		return param;
