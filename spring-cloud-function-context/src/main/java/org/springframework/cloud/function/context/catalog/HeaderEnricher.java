@@ -42,9 +42,9 @@ import org.springframework.util.Assert;
  * @since 3.1.3
  *
  */
-class InputEnricher implements Function<Object, Object> {
+class HeaderEnricher implements Function<Object, Object> {
 
-	protected Log logger = LogFactory.getLog(InputEnricher.class);
+	protected Log logger = LogFactory.getLog(HeaderEnricher.class);
 
 	private final Map<String, Map<String, String>> headerExpressions;
 
@@ -53,7 +53,7 @@ class InputEnricher implements Function<Object, Object> {
 	private final StandardEvaluationContext evalContext = new StandardEvaluationContext();
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	InputEnricher(Map headerExpressions, @Nullable BeanResolver beanResolver) {
+	HeaderEnricher(Map headerExpressions, @Nullable BeanResolver beanResolver) {
 		Assert.notEmpty(headerExpressions, "'headerExpressions' must not be null or empty");
 		this.headerExpressions = headerExpressions;
 		this.evalContext.addPropertyAccessor(new MapAccessor());

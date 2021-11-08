@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
+import org.springframework.util.CollectionUtils;
 
 /**
  *
@@ -88,16 +89,34 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 			String propertyX = "spring.cloud.function.configuration." + entry.getKey() + ".input-header-mapping-expression.";
 			String propertyY = "spring.cloud.function.configuration." + entry.getKey() + ".inputHeaderMappingExpression.";
 			Map<String, Object>  headerMapping = entry.getValue().getInputHeaderMappingExpression();
-			for (Object k : headerMapping.keySet()) {
-				if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
-					Map<String, Object> originalMapping = entry.getValue().getInputHeaderMappingExpression();
-					Map current = entry.getValue().getInputHeaderMappingExpression();
-					if (current.containsKey("0")) {
-						((Map) current.get("0")).put(k, headerMapping.get(k));
+			if (!CollectionUtils.isEmpty(headerMapping)) {
+				for (Object k : headerMapping.keySet()) {
+					if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
+						Map current = entry.getValue().getInputHeaderMappingExpression();
+						if (current.containsKey("0")) {
+							((Map) current.get("0")).put(k, headerMapping.get(k));
+						}
+						else {
+							entry.getValue().setInputHeaderMappingExpression(Collections.singletonMap("0", current));
+							break;
+						}
 					}
-					else {
-						entry.getValue().setInputHeaderMappingExpression(Collections.singletonMap("0", originalMapping));
-						break;
+				}
+			}
+			propertyX = "spring.cloud.function.configuration." + entry.getKey() + ".output-header-mapping-expression.";
+			propertyY = "spring.cloud.function.configuration." + entry.getKey() + ".outputHeaderMappingExpression.";
+			headerMapping = entry.getValue().getOutputHeaderMappingExpression();
+			if (!CollectionUtils.isEmpty(headerMapping)) {
+				for (Object k : headerMapping.keySet()) {
+					if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
+						Map current = entry.getValue().getOutputHeaderMappingExpression();
+						if (current.containsKey("0")) {
+							((Map) current.get("0")).put(k, headerMapping.get(k));
+						}
+						else {
+							entry.getValue().setOutputHeaderMappingExpression(Collections.singletonMap("0", current));
+							break;
+						}
 					}
 				}
 			}
@@ -149,12 +168,23 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 
 		private Map<String, Object> inputHeaderMappingExpression;
 
+		private Map<String, Object> outputHeaderMappingExpression;
+
 		public Map<String, Object> getInputHeaderMappingExpression() {
 			return inputHeaderMappingExpression;
 		}
 
 		public void setInputHeaderMappingExpression(Map<String, Object> inputHeaderMappingExpression) {
 			this.inputHeaderMappingExpression = inputHeaderMappingExpression;
+		}
+
+		public Map<String, Object> getOutputHeaderMappingExpression() {
+			return outputHeaderMappingExpression;
+		}
+
+		public void setOutputHeaderMappingExpression(
+				Map<String, Object> outputHeaderMappingExpression) {
+			this.outputHeaderMappingExpression = outputHeaderMappingExpression;
 		}
 
 	}
