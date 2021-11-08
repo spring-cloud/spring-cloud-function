@@ -258,10 +258,9 @@ due to the nature of the reactive functions which are invoked only once to pass 
 is handled by the reactor, hence we can not access and/or rely on the routing instructions communicated via individual
 values (e.g., Message).
 
-=== Input Enrichment
+=== Input/Output Enrichment
 
-There are often times when you need to modify or refine an incoming Message and to keep your code clean of non-functional concerns, and you don’t want to 
-do it inside of your business logic.
+There are often times when you need to modify or refine an incoming or outgoing Message and to keep your code clean of non-functional concerns. You don’t want to do it inside of your business logic.
 
 You can always accomplish it via <<Function Composition>>. Such approach provides several benefits:
 
@@ -289,30 +288,39 @@ manually register it as a function before you can compose it with the business f
 But what if modifications (enrichments) you are trying to make are trivial as they are in the preceding example? Is there a simpler and more dynamic and configurable
  mechanism to accomplish the same?
 
-Since version 3.1.3, the framework allows you to provide SpEL expression to enrich individual message headers. Let’s look at one of the tests as the example.
+Since version 3.1.3, the framework allows you to provide SpEL expression to enrich individual message headers for both input going into function and
+and output coming out of it. Let’s look at one of the tests as the example.
 
 [source, java]
 ----
 @Test
-public void testInputHeaderMappingPropertyWithoutIndex() throws Exception {
+public void testMixedInputOutputHeaderMapping() throws Exception {
 	try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 			SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-				"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key1='hello1'",
-				"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key2='hello2'",
-				"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
+					"--logging.level.org.springframework.cloud.function=DEBUG",
+					"--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut1='hello1'",
+					"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut2=headers.contentType",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key1=headers.path.split('/')[0]",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key2=headers.path.split('/')[1]",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key3=headers.path")) {
 
-	FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
-	FunctionInvocationWrapper function = functionCatalog.lookup("echo");
-	function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
-  }
+		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+		FunctionInvocationWrapper function = functionCatalog.lookup("split");
+		Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("helo")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.setHeader("path", "foo/bar/baz").build());
+		assertThat(result.getHeaders().containsKey("keyOut1")).isTrue();
+		assertThat(result.getHeaders().get("keyOut1")).isEqualTo("hello1");
+		assertThat(result.getHeaders().containsKey("keyOut2")).isTrue();
+		assertThat(result.getHeaders().get("keyOut2")).isEqualTo("application/json");
+	}
 }
 ----
 
-Here you see a property called `input-header-mapping-expression` preceded by the name of the function (i.e., `echo`) and followed by the name of the 
-message header key you want to set and the value as SpEL expression. The first two expressions (for 'key1' and 'key2') are literal SpEL expressions enclosed in 
-single quotes, effectively setting 'key1' to value `hello1` and 'key2' to value `hello2`. The third  one will map Message header ‘foo’ to the value of the 
-current ‘contentType’ header.
+Here you see a properties called `input-header-mapping-expression` and `output-header-mapping-expression` preceded by the name of the function (i.e., `split`) and followed by the name of the message header key you want to set and the value as SpEL expression. The first expression (for 'keyOut1') is literal SpEL expressions enclosed in single quotes, effectively setting 'keyOut1' to value `hello1`. The `keyOut2` is set to the value of existing 'contentType' header.
+ 
+You can also observe some interesting features in the input header mapping where we actually splitting a value of the existing header 'path', setting individual values of key1 and key2 to the values of split elements based on the index.
 
 NOTE: if for whatever reason the provided expression evaluation fails, the execution of the function will proceed as if nothing ever happen. 
 However you will see the WARN message in your logs informing you about it 
