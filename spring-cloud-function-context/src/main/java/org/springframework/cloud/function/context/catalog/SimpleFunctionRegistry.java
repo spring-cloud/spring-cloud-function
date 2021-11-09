@@ -355,8 +355,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 							? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
 							: null;
 					HeaderEnricher enricher = new HeaderEnricher(configuration.getOutputHeaderMappingExpression(), beanResolver);
-					FunctionInvocationWrapper w = new FunctionInvocationWrapper("outputHeaderEnricher", enricher, Message.class, Message.class);
-					composedFunction = (FunctionInvocationWrapper) w.andThen((Function<Object, Object>) composedFunction);
+					Type mesageType = ResolvableType.forClassWithGenerics(Message.class, Object.class).getType();
+					FunctionInvocationWrapper enricherWrapper = new FunctionInvocationWrapper("outputHeaderEnricher", enricher, mesageType, mesageType);
+					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) enricherWrapper);
 					composedFunction.functionDefinition = functionDefinition;
 				}
 			}
