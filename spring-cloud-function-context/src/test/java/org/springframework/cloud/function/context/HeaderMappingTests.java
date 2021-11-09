@@ -180,17 +180,17 @@ public class HeaderMappingTests {
 				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
 						"--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.key1='hello1'",
-						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.key2=headers.contentType")) {
+						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.keyOut1='hello1'",
+						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.keyOut2=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("foo");
 			Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("helo")
 					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
-			assertThat(result.getHeaders().containsKey("key1")).isTrue();
-			assertThat(result.getHeaders().get("key1")).isEqualTo("hello1");
-			assertThat(result.getHeaders().containsKey("key2")).isTrue();
-			assertThat(result.getHeaders().get("key2")).isEqualTo("application/json");
+			assertThat(result.getHeaders().containsKey("keyOut1")).isTrue();
+			assertThat(result.getHeaders().get("keyOut1")).isEqualTo("hello1");
+			assertThat(result.getHeaders().containsKey("keyOut2")).isTrue();
+			assertThat(result.getHeaders().get("keyOut2")).isEqualTo("application/json");
 		}
 	}
 
@@ -255,7 +255,10 @@ public class HeaderMappingTests {
 
 		@Bean
 		public Function<Message<?>, Message<?>> foo() {
-			return x -> x;
+			return x -> {
+				assertThat(x.getHeaders().containsKey("keyOut1")).isFalse();
+				return x;
+			};
 		}
 	}
 }
