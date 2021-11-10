@@ -82,7 +82,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  *
  */
-public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspector {
+public class SimpleFunctionRegistry implements FunctionRegistry {
 	protected Log logger = LogFactory.getLog(this.getClass());
 	/*
 	 * - do we care about FunctionRegistration after it's been registered? What additional value does it bring?
@@ -131,13 +131,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		if (!CollectionUtils.isEmpty(messageConverters)) {
 			this.messageConverter.getConverters().addAll(0, messageConverters);
 		}
-	}
-
-	@Override
-	public FunctionRegistration<?> getRegistration(Object function) {
-		throw new UnsupportedOperationException("FunctionInspector is deprecated. There is no need "
-				+ "to access FunctionRegistration directly since you can interogate the actual "
-				+ "looked-up function (see FunctionInvocationWrapper.");
 	}
 
 	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
