@@ -1079,6 +1079,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 			Object finalInput = input;
 			Assert.notNull(convertedInput, () -> "Failed to convert input: " + finalInput + " to " + type);
+
 			return convertedInput;
 		}
 
