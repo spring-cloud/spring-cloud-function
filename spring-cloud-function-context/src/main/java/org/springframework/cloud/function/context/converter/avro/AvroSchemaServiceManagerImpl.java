@@ -71,6 +71,7 @@ public class AvroSchemaServiceManagerImpl implements AvroSchemaServiceManager {
 	 * @param schema {@link Schema} of object which needs to be serialized
 	 * @return datum writer which can be used to write Avro payload
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public DatumWriter<Object> getDatumWriter(Class<?> type, Schema schema) {
 		DatumWriter<Object> writer;
