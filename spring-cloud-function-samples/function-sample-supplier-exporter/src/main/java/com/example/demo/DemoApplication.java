@@ -4,8 +4,8 @@ import java.util.function.Function;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 
@@ -21,7 +21,7 @@ public class DemoApplication
 	public void initialize(GenericApplicationContext context) {
 		context.registerBean("foobar", FunctionRegistration.class,
 				() -> new FunctionRegistration<>(new Foobar())
-						.type(FunctionType.from(Foo.class).to(Foo.class)));
+						.type(FunctionTypeUtils.functionType(Foo.class, Foo.class)));
 	}
 
 }

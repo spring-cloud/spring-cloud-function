@@ -30,7 +30,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.web.source.FunctionExporterAutoConfiguration.SourceActiveCondition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -70,10 +70,11 @@ public class FunctionExporterAutoConfiguration {
 		FunctionRegistration<Supplier<Flux<?>>> registration = new FunctionRegistration<>(supplier);
 		Type rawType = ResolvableType.forClassWithGenerics(Supplier.class, this.props.getSource().getType()).getType();
 //		FunctionType functionType = FunctionType.supplier(this.props.getSource().getType()).wrap(Flux.class);
-		FunctionType type = FunctionType.of(rawType);
-		if (this.props.getSource().isIncludeHeaders()) {
-//			type = type.message();
-		}
+//		FunctionType type = FunctionType.of(rawType);
+//		if (this.props.getSource().isIncludeHeaders()) {
+////			type = type.message();
+//		}
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(HttpSupplier.class);
 		registration = registration.type(type);
 		return registration;
 	}

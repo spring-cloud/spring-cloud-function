@@ -141,7 +141,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 			return FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) func).getInputType()));
 		}
 		if (functionRegistration != null) {
-			return functionRegistration.getType().getInputType();
+			return FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(functionRegistration.getType()));
 		}
 		return Object.class;
 	}
@@ -287,7 +287,7 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		Type type = FunctionContextUtils.
 				findType(name, this.context.getBeanFactory());
 
-		this.functionRegistration = functionRegistration.type(new FunctionType(type));
+		this.functionRegistration = functionRegistration.type(type);
 
 		((FunctionRegistry) this.catalog).register(functionRegistration);
 		return this.catalog.lookup(name);

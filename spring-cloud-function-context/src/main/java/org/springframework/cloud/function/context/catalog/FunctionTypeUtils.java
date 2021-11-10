@@ -41,7 +41,6 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.support.GenericApplicationContext;
@@ -66,6 +65,21 @@ public final class FunctionTypeUtils {
 
 	private FunctionTypeUtils() {
 
+	}
+
+	public static Type functionType(Type input, Type output) {
+		return ResolvableType.forClassWithGenerics(Function.class,
+				ResolvableType.forType(input), ResolvableType.forType(output)).getType();
+	}
+
+	public static Type consumerType(Type input) {
+		return ResolvableType.forClassWithGenerics(Consumer.class,
+				ResolvableType.forType(input)).getType();
+	}
+
+	public static Type supplierType(Type output) {
+		return ResolvableType.forClassWithGenerics(Supplier.class,
+				ResolvableType.forType(output)).getType();
 	}
 
 	/**
@@ -176,6 +190,37 @@ public final class FunctionTypeUtils {
 		return null;
 	}
 
+	/**
+	 * Discovers the function {@link Type} based on the signature of a factory method.
+	 * For example, given the following method {@code Function<Message<Person>, Message<String>> uppercase()} of
+	 * class Foo - {@code Type type = discoverFunctionTypeFromFunctionFactoryMethod(Foo.class, "uppercase");}
+	 *
+	 * @param clazz instance of Class containing the factory method
+	 * @param methodName factory method name
+	 * @return type of the function
+	 */
+	public static Type discoverFunctionTypeFromFunctionFactoryMethod(Class<?> clazz, String methodName) {
+		return discoverFunctionTypeFromFunctionFactoryMethod(ReflectionUtils.findMethod(clazz, methodName));
+	}
+
+	/**
+	 * Discovers the function {@link Type} based on the signature of a factory method.
+	 * For example, given the following method {@code Function<Message<Person>, Message<String>> uppercase()} of
+	 * class Foo - {@code Type type = discoverFunctionTypeFromFunctionFactoryMethod(Foo.class, "uppercase");}
+	 *
+	 * @param method factory method
+	 * @return type of the function
+	 */
+	public static Type discoverFunctionTypeFromFunctionFactoryMethod(Method method) {
+		return method.getGenericReturnType();
+	}
+
+	/**
+	 * Unlike {@link #discoverFunctionTypeFromFunctionFactoryMethod(Class, String)}, this method discovers function
+	 * type from the well known method of Function(apply), Supplier(get) or Consumer(accept).
+	 * @param functionMethod functional method
+	 * @return type of the function
+	 */
 	public static Type discoverFunctionTypeFromFunctionMethod(Method functionMethod) {
 		Assert.isTrue(
 				functionMethod.getName().equals("apply") ||
@@ -224,6 +269,26 @@ public final class FunctionTypeUtils {
 	}
 
 	/**
+	 * In the event the input type is {@link ParameterizedType} this method returns its generic type.
+	 * @param functionType instance of function type
+	 * @return generic type or input type
+	 */
+	public static Type getComponentTypeOfInputType(Type functionType) {
+		Type inputType = getInputType(functionType);
+		return getImmediateGenericType(inputType, 0);
+	}
+
+	/**
+	 * In the event the output type is {@link ParameterizedType} this method returns its generic type.
+	 * @param functionType instance of function type
+	 * @return generic type or output type
+	 */
+	public static Type getComponentTypeOfOutputType(Type functionType) {
+		Type inputType = getOutputType(functionType);
+		return getImmediateGenericType(inputType, 0);
+	}
+
+	/**
 	 * Returns input type of function type that represents Function or Consumer.
 	 * @param functionType  the Type of Function or Consumer
 	 * @return the input type as {@link Type}
@@ -253,15 +318,15 @@ public final class FunctionTypeUtils {
 	@SuppressWarnings("rawtypes")
 	public static Type discoverFunctionType(Object function, String functionName, GenericApplicationContext applicationContext) {
 		if (function instanceof RoutingFunction) {
-			return FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionName)).getType();
+			return FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionName);
 		}
 		else if (function instanceof FunctionRegistration) {
-			return ((FunctionRegistration) function).getType().getType();
+			return ((FunctionRegistration) function).getType();
 		}
 		if (applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) { // for Kotlin primarily
 			FunctionRegistration fr = applicationContext
 					.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
-			return fr.getType().getType();
+			return fr.getType();
 		}
 
 		boolean beanDefinitionExists = false;
@@ -277,13 +342,13 @@ public final class FunctionTypeUtils {
 		if (beanDefinitionExists) {
 			Type t = FunctionTypeUtils.getImmediateGenericType(type, 0);
 			if (t == null || t == Object.class) {
-				type = FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionBeanDefinitionName)).getType();
+				type = FunctionContextUtils.findType(applicationContext.getBeanFactory(), functionBeanDefinitionName);
 			}
 		}
 		else if (!(type instanceof ParameterizedType)) {
 			String beanDefinitionName = discoverBeanDefinitionNameByQualifier(applicationContext.getBeanFactory(), functionName);
 			if (StringUtils.hasText(beanDefinitionName)) {
-				type = FunctionType.of(FunctionContextUtils.findType(applicationContext.getBeanFactory(), beanDefinitionName)).getType();
+				type = FunctionContextUtils.findType(applicationContext.getBeanFactory(), beanDefinitionName);
 			}
 		}
 		return type;

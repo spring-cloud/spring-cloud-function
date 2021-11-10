@@ -7,8 +7,8 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 
@@ -32,7 +32,6 @@ public class LambdaApplication
 	@Override
 	public void initialize(GenericApplicationContext context) {
 		context.registerBean("uppercase", FunctionRegistration.class,
-				() -> new FunctionRegistration<>(uppercase()).type(
-						FunctionType.from(String.class).to(String.class)));
+				() -> new FunctionRegistration<>(uppercase()).type(FunctionTypeUtils.functionType(String.class, String.class)));
 	}
 }

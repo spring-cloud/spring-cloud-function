@@ -262,7 +262,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				.findFirst()
 				.orElseGet(() -> null);
 		FunctionInvocationWrapper function = functionRegistration != null
-				? this.invocationWrapperInstance(functionName, functionRegistration.getTarget(), functionRegistration.getType().getType())
+				? this.invocationWrapperInstance(functionName, functionRegistration.getTarget(), functionRegistration.getType())
 				: null;
 		if (functionRegistration != null && functionRegistration.getProperties().containsKey("singleton")) {
 			try {

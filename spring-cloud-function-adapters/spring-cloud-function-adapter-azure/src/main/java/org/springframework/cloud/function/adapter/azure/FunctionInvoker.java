@@ -44,7 +44,6 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -152,7 +151,7 @@ public class FunctionInvoker<I, O> {
 		Type type = FunctionContextUtils.
 				findType(functionDefinition, APPLICATION_CONTEXT.getBeanFactory());
 
-		functionRegistration = functionRegistration.type(new FunctionType(type));
+		functionRegistration = functionRegistration.type(type);
 
 		((FunctionRegistry) FUNCTION_CATALOG).register(functionRegistration);
 	}
