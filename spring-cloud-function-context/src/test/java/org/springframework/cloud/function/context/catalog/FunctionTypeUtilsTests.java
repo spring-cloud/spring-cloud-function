@@ -31,7 +31,6 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.messaging.Message;
 
@@ -114,29 +113,29 @@ public class FunctionTypeUtilsTests {
 
 	@Test
 	public void testFunctionTypeByClassDiscovery() {
-		FunctionType type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(Function.class));
-		assertThat(type.getInputType()).isAssignableFrom(Object.class);
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(Function.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(Object.class);
 
-		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MessageFunction.class));
-		assertThat(type.getInputType()).isAssignableFrom(String.class);
-		assertThat(type.getOutputType()).isAssignableFrom(String.class);
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MessageFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type))).isAssignableFrom(String.class);
 
-		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageFunction.class));
-		assertThat(type.getInputType()).isAssignableFrom(String.class);
-		assertThat(type.getOutputType()).isAssignableFrom(String.class);
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type))).isAssignableFrom(String.class);
 
-		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MessageConsumer.class));
-		assertThat(type.getInputType()).isAssignableFrom(String.class);
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MessageConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
 
-		type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageConsumer.class));
-		assertThat(type.getInputType()).isAssignableFrom(String.class);
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
 	}
 
 	@Test
 	public void testWithComplexHierarchy() {
-		FunctionType type = FunctionType.of(FunctionTypeUtils.discoverFunctionTypeFromClass(ReactiveFunctionImpl.class));
-		assertThat(String.class).isAssignableFrom(type.getInputType());
-		assertThat(Integer.class).isAssignableFrom(type.getOutputType());
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(ReactiveFunctionImpl.class);
+		assertThat(String.class).isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type)));
+		assertThat(Integer.class).isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type)));
 	}
 
 	@Test

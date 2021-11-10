@@ -71,12 +71,12 @@ class FunctionTypeConversionHelper {
 		this.conversionService = conversionService;
 		this.messageConverter = messageConverter;
 		this.functionRegistration = functionRegistration;
-		if ((this.functionRegistration.getType().getType()) instanceof ParameterizedType) {
-			this.functionArgumentTypes = ((ParameterizedType) this.functionRegistration.getType().getType())
+		if ((this.functionRegistration.getType()) instanceof ParameterizedType) {
+			this.functionArgumentTypes = ((ParameterizedType) this.functionRegistration.getType())
 					.getActualTypeArguments();
 		}
 		else {
-			this.functionArgumentTypes = new Type[] { this.functionRegistration.getType().getInputType() };
+			this.functionArgumentTypes = new Type[] { FunctionTypeUtils.getInputType(this.functionRegistration.getType()) };
 		}
 	}
 
@@ -227,7 +227,7 @@ class FunctionTypeConversionHelper {
 			}
 		}
 		else {
-			Assert.isTrue(!Publisher.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper()),
+			Assert.isTrue(!FunctionTypeUtils.isPublisher(FunctionTypeUtils.getInputType(this.functionRegistration.getType())),
 					"Invoking reactive function as imperative is not allowed. Function name(s): "
 							+ this.functionRegistration.getNames());
 			incoming = this.doConvertArgument(incoming, targetType, actualType);
@@ -244,7 +244,7 @@ class FunctionTypeConversionHelper {
 					: Flux.from((Publisher) incoming).map(value -> this.messageConverter.toMessage(value, headers));
 		}
 		else {
-			Assert.isTrue(!Publisher.class.isAssignableFrom(this.functionRegistration.getType().getInputWrapper()),
+			Assert.isTrue(!FunctionTypeUtils.isPublisher(FunctionTypeUtils.getInputType(this.functionRegistration.getType())),
 					"Invoking reactive function as imperative is not allowed. Function name(s): "
 							+ this.functionRegistration.getNames());
 			incoming = this.messageConverter.toMessage(incoming, headers);
@@ -296,7 +296,7 @@ class FunctionTypeConversionHelper {
 				incomingValue = incomingMessage;
 			}
 			else {
-				incomingValue = this.messageConverter.fromMessage((Message<?>) incomingMessage, targetType);
+				incomingValue = this.messageConverter.fromMessage(incomingMessage, targetType);
 			}
 		}
 		return incomingValue;

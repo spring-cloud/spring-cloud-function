@@ -52,7 +52,6 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
@@ -498,30 +497,35 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(func).isNull();
 		FunctionRegistry registry = (FunctionRegistry) catalog;
 		try {
-			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "a").type(FunctionType.from(Integer.class).to(String.class));
+			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "a")
+					.type(FunctionTypeUtils.functionType(Integer.class, String.class));
 			registry.register(registration);
 			fail();
 		}
-		catch (IllegalStateException e) {
+		catch (IllegalArgumentException e) {
 			// good as we expect it to fail
 		}
 		//
 		try {
-			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "b").type(FunctionType.from(String.class).to(Integer.class));
+			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "b")
+					.type(FunctionTypeUtils.functionType(String.class, Integer.class));
 			registry.register(registration);
 			fail();
 		}
-		catch (IllegalStateException e) {
+		catch (IllegalArgumentException e) {
 			// good as we expect it to fail
 		}
 		//
-		FunctionRegistration c = new FunctionRegistration(new MyFunction(), "c").type(FunctionType.from(String.class).to(String.class));
+		FunctionRegistration c = new FunctionRegistration(new MyFunction(), "c")
+				.type(FunctionTypeUtils.functionType(String.class, String.class));
 		registry.register(c);
 		//
-		FunctionRegistration d = new FunctionRegistration(new RawFunction(), "d").type(FunctionType.from(Person.class).to(String.class));
+		FunctionRegistration d = new FunctionRegistration(new RawFunction(), "d")
+				.type(FunctionTypeUtils.functionType(Person.class, String.class));
 		registry.register(d);
 		//
-		FunctionRegistration e = new FunctionRegistration(new RawFunction(), "e").type(FunctionType.from(Object.class).to(Object.class));
+		FunctionRegistration e = new FunctionRegistration(new RawFunction(), "e")
+				.type(FunctionTypeUtils.functionType(Object.class, Object.class));
 		registry.register(e);
 	}
 

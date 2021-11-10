@@ -153,7 +153,7 @@ public class FunctionalSpringApplication
 		context.registerBean("function", FunctionRegistration.class,
 				() -> new FunctionRegistration<>(
 						handler(context, function, functionType))
-								.type(FunctionType.of(functionType)));
+								.type(functionType));
 	}
 
 	private Object handler(GenericApplicationContext generic, Object handler,
