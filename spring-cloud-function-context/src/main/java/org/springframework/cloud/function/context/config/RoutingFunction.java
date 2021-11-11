@@ -181,20 +181,6 @@ public class RoutingFunction implements Function<Object, Object> {
 				+ "spring.cloud.function.routing-expression' as application properties.");
 	}
 
-//	private FunctionInvocationWrapper functionFromCallback(Object input) {
-//		if (input instanceof Message) {
-//			Object routingResult = this.routingCallback.functionDefinition((Message<?>) input);
-//			if (routingResult != null && routingResult instanceof String) {
-//
-//			}
-//			if (StringUtils.hasText(functionDefinition)) {
-//				return this.functionFromDefinition(functionDefinition);
-//			}
-//		}
-//		logger.info("Unable to determine route-to function from the provided MessageRoutingCallback");
-//		return null;
-//	}
-
 	private FunctionInvocationWrapper functionFromDefinition(String definition) {
 		FunctionInvocationWrapper function = functionCatalog.lookup(definition);
 		Assert.notNull(function, "Failed to lookup function to route based on the value of 'spring.cloud.function.definition' property '"
