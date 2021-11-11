@@ -45,11 +45,14 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
+import static org.apache.http.HttpHeaders.USER_AGENT;
+
 /**
  * Event loop and necessary configurations to support AWS Lambda
  * Custom Runtime - https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html.
  *
  * @author Oleg Zhurakousky
+ * @author Mark Sailes
  * @since 3.1.1
  *
  */
@@ -60,6 +63,10 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 	static final String LAMBDA_VERSION_DATE = "2018-06-01";
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
+	private static final String USER_AGENT_VALUE = String.format(
+		"spring-cloud-function/%s-%s",
+		System.getProperty("java.vendor.version"),
+		CustomRuntimeEventLoop.class.getPackage().getImplementationVersion());
 
 	private final ConfigurableApplicationContext applicationContext;
 
@@ -92,7 +99,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			logger.debug("Event URI: " + eventUri);
 		}
 
-		RequestEntity<Void> requestEntity = RequestEntity.get(URI.create(eventUri)).build();
+		RequestEntity<Void> requestEntity = RequestEntity.get(URI.create(eventUri)).header(USER_AGENT, USER_AGENT_VALUE).build();
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 		RestTemplate rest = new RestTemplate();
 		JsonMapper mapper = context.getBean(JsonMapper.class);
@@ -125,8 +132,9 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 				}
 
 				byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper, function.getOutputType());
-				ResponseEntity<Object> result = rest
-						.exchange(RequestEntity.post(URI.create(invocationUrl)).body(outputBody), Object.class);
+				ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(invocationUrl))
+					.header(USER_AGENT, USER_AGENT_VALUE)
+					.body(outputBody), Object.class);
 
 				if (logger.isInfoEnabled()) {
 					logger.info("Result POST status: " + result.getStatusCode());
