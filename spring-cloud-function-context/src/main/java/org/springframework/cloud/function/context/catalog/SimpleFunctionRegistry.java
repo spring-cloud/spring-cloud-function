@@ -1090,7 +1090,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		private boolean isExtractPayload(Message<?> message, Type type) {
-
+			if (this.isRoutingFunction()) {
+				return false;
+			}
 			if (FunctionTypeUtils.isCollectionOfMessage(type)) {
 				return true;
 			}
