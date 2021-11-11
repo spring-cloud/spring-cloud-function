@@ -52,6 +52,7 @@ import static org.apache.http.HttpHeaders.USER_AGENT;
  * Custom Runtime - https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html.
  *
  * @author Oleg Zhurakousky
+ * @author Mark Sailes
  * @since 3.1.1
  *
  */
