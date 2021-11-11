@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
+import org.springframework.cloud.function.context.MessageRoutingCallback.FunctionRoutingResult;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.BeanResolver;
@@ -104,7 +105,15 @@ public class RoutingFunction implements Function<Object, Object> {
 		if (input instanceof Message) {
 			Message<?> message = (Message<?>) input;
 			if (this.routingCallback != null) {
-				function = this.functionFromCallback(message);
+				FunctionRoutingResult routingResult = this.routingCallback.routingResult(message);
+				if (routingResult != null) {
+					if (StringUtils.hasText(routingResult.getFunctionDefinition())) {
+						function = this.functionFromDefinition(routingResult.getFunctionDefinition());
+					}
+					if (routingResult.getMessage() != null) {
+						message = routingResult.getMessage();
+					}
+				}
 			}
 			if (function == null) {
 				if (StringUtils.hasText((String) message.getHeaders().get("spring.cloud.function.definition"))) {
@@ -172,15 +181,19 @@ public class RoutingFunction implements Function<Object, Object> {
 				+ "spring.cloud.function.routing-expression' as application properties.");
 	}
 
-	private FunctionInvocationWrapper functionFromCallback(Object input) {
-		if (input instanceof Message) {
-			String functionDefinition = this.routingCallback.functionDefinition((Message<?>) input);
-			if (StringUtils.hasText(functionDefinition)) {
-				return this.functionFromDefinition(functionDefinition);
-			}
-		}
-		return null;
-	}
+//	private FunctionInvocationWrapper functionFromCallback(Object input) {
+//		if (input instanceof Message) {
+//			Object routingResult = this.routingCallback.functionDefinition((Message<?>) input);
+//			if (routingResult != null && routingResult instanceof String) {
+//
+//			}
+//			if (StringUtils.hasText(functionDefinition)) {
+//				return this.functionFromDefinition(functionDefinition);
+//			}
+//		}
+//		logger.info("Unable to determine route-to function from the provided MessageRoutingCallback");
+//		return null;
+//	}
 
 	private FunctionInvocationWrapper functionFromDefinition(String definition) {
 		FunctionInvocationWrapper function = functionCatalog.lookup(definition);
