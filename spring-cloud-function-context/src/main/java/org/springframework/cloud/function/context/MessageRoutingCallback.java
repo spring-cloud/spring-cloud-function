@@ -22,8 +22,7 @@ import org.springframework.messaging.Message;
 /**
  * Java-based strategy to assist with determining the name of the route-to function definition.
  * Once implementation is registered as a bean in application context
- * it will be picked up by a {@link RoutingFunction} and used to determine the name of the
- * route-to function definition.
+ * it will be picked up by the {@link RoutingFunction}.
  *
  * While {@link RoutingFunction} provides several mechanisms to determine the route-to function definition
  * this callback takes precedence over all of them.
@@ -34,10 +33,58 @@ import org.springframework.messaging.Message;
 public interface MessageRoutingCallback {
 
 	/**
-	 * Determines the name of the function definition to route incoming {@link Message}.
-	 *
-	 * @param message instance of incoming {@link Message}
-	 * @return the name of the route-to function definition
+	 * @deprecated in 3.1 in favor of {@link #routingResult(Message)}
 	 */
-	String functionDefinition(Message<?> message);
+	@Deprecated
+	default String functionDefinition(Message<?> message) {
+		return null;
+	}
+
+	/**
+	 * Computes and returns the instance of {@link FunctionRoutingResult} which encapsulates,
+	 * at the very minimum, function definition and optionally Message to be used downstream.
+	 * <br><br>
+	 * Providing such message is primarily an optimization feature. It could be useful for cases
+	 * where routing procedure is complex and results in, let's say, conversion of the payload to
+	 * the target type, which would effectively be thrown away if the ability to modify the target
+	 * message for downstream use didn't exist, resulting in repeated transformation, type conversion etc.
+	 *
+	 * @param message input message
+	 * @return instance of {@link FunctionRoutingResult} containing the result of the routing computation
+	 */
+	default FunctionRoutingResult routingResult(Message<?> message) {
+		return new FunctionRoutingResult(functionDefinition(message));
+	}
+
+	/**
+	 * Domain object that represents the result of the {@link MessageRoutingCallback#routingResult(Message)}
+	 * computation. It consists of function definition and optional Message to be used downstream
+	 * (see {@link MessageRoutingCallback#routingResult(Message)} for more details.
+	 *
+	 * @author Oleg Zhurakousky
+	 *
+	 */
+	final class FunctionRoutingResult {
+
+		private final String functionDefinition;
+
+		private final Message<?> message;
+
+		FunctionRoutingResult(String functionDefinition, Message<?> message) {
+			this.functionDefinition = functionDefinition;
+			this.message = message;
+		}
+
+		public FunctionRoutingResult(String functionDefinition) {
+			this(functionDefinition, null);
+		}
+
+		public String getFunctionDefinition() {
+			return functionDefinition;
+		}
+
+		public Message<?> getMessage() {
+			return message;
+		}
+	}
 }

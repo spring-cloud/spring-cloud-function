@@ -152,20 +152,13 @@ The `MessageRoutingCallback` is a strategy to assist with determining the name o
 [source, java]
 ----
 public interface MessageRoutingCallback {
-
-	/**
-	 * Determines the name of the function definition to route incoming {@link Message}.
-	 *
-	 * @param message instance of incoming {@link Message}
-	 * @return the name of the route-to function definition
-	 */
-	String functionDefinition(Message<?> message);
+	FunctionRoutingResult routingResult(Message<?> message);
+	. . .
 }
 ----
 
-All you need to do is implement it and and register it as a bean. The framework will automatically 
-pick it up and use it for routing decisions.
-For example 
+All you need to do is implement and register it as a bean to be picked up by the `RoutingFunction`.
+For example: 
 
 [source, java]
 ----
@@ -173,15 +166,25 @@ For example
 public MessageRoutingCallback customRouter() {
 	return new MessageRoutingCallback() {
 		@Override
-		public String functionDefinition(Message<?> message) {
-			return (String) message.getHeaders().get("func_name");
+		FunctionRoutingResult routingResult(Message<?> message) {
+			return new FunctionRoutingResult((String) message.getHeaders().get("func_name"));
 		}
 	};
 }
 ----
 
 In the preceding example you can see a very simple implementation of `MessageRoutingCallback` which determines the function definition from 
-`func_name` header of the incoming Message.
+`func_name` Message header of the incoming Message and returns the instance of `FunctionRoutingResult` containing the definition of function to invoke.
+
+Additionally, the `FunctionRoutingResult` provides another constructor allowing you to provide an instance of `Message` as second argument to be used down stream. 
+This is primarily for runtime optimizations. To better understand this case let's look at the following scenario. 
+You need to route based on the payoload type. However, an input Message typically comes in as let's say JSON payload (as `byte[]`) . In order 
+to determine the route-to function definition you need to first process such JSON and potentially create an instance of the target type.
+Once that determination is done you can pass it to `RoutingFunction` which still has a reference to the original Message with un-processed payload
+This means that somewhere downstream, type conversion/transformation would need to be repeated. 
+
+Allowing you to create a new `Message` with converted payload as part of the `FunctionRoutingResult` will instruct `RoutingFunction` to use such `Message` 
+downstream. So effectively you letting the framework to benefit from the work you already did. 
 
 
 *Message Headers*
