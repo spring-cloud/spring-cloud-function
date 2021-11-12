@@ -1,0 +1,7 @@
+This example demonstrates routing capabilities of spring-cloud-function when deployed as AWS Lambdas.
+It is almost identical to the `function-sample-aws-routing` , so most of what's described it its README applies to this example as well.
+
+The main difference though is that this example uses functional bean definition feature of Spring.
+
+It also uses `MessageRoutingCallback` in place of `spring_cloud_function_definition` and/or `spring_cloud_function_routingExpression`, effectively giving you more flexibility with your routing decisions.
+
