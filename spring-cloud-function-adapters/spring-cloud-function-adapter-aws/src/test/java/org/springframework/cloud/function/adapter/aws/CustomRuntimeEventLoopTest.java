@@ -49,7 +49,7 @@ public class CustomRuntimeEventLoopTest {
 			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
 			Message<String> replyMessage = aws.exchange("\"ricky\"");
 			assertThat(replyMessage.getHeaders()).containsKey("user-agent");
-			assertThat(((String) replyMessage.getHeaders().get("user-agent"))).startsWith("spring-cloud-function:");
+			assertThat(((String) replyMessage.getHeaders().get("user-agent"))).startsWith("spring-cloud-function");
 			assertThat(aws.exchange("\"ricky\"").getPayload()).isEqualTo("\"RICKY\"");
 			assertThat(aws.exchange("\"julien\"").getPayload()).isEqualTo("\"JULIEN\"");
 			assertThat(aws.exchange("\"bubbles\"").getPayload()).isEqualTo("\"BUBBLES\"");

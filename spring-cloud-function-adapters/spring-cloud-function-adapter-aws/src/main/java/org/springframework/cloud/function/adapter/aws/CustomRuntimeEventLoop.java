@@ -64,9 +64,9 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
 	private static final String USER_AGENT_VALUE = String.format(
-		"spring-cloud-function:%s/JAVA-%s",
-		extractVersion(),
-		System.getProperty("java.vm.name"));
+			"spring-cloud-function/%s-%s",
+			System.getProperty("java.runtime.version"),
+			extractVersion());
 
 	private final ConfigurableApplicationContext applicationContext;
 
