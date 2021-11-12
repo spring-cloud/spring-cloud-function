@@ -89,6 +89,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Supplier.class)));
 			registeredNames
 				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Consumer.class)));
+			registeredNames
+				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(FunctionRegistration.class)));
 		}
 		else {
 			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(type)));
