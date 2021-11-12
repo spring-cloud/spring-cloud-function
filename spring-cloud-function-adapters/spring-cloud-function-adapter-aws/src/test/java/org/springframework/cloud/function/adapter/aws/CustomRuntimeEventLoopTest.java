@@ -27,6 +27,7 @@ import org.springframework.cloud.function.adapter.test.aws.AWSCustomRuntime;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -46,6 +47,9 @@ public class CustomRuntimeEventLoopTest {
 					.run()) {
 
 			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
+			Message<String> replyMessage = aws.exchange("\"ricky\"");
+			assertThat(replyMessage.getHeaders()).containsKey("user-agent");
+			assertThat(((String) replyMessage.getHeaders().get("user-agent"))).startsWith("spring-cloud-function:");
 			assertThat(aws.exchange("\"ricky\"").getPayload()).isEqualTo("\"RICKY\"");
 			assertThat(aws.exchange("\"julien\"").getPayload()).isEqualTo("\"JULIEN\"");
 			assertThat(aws.exchange("\"bubbles\"").getPayload()).isEqualTo("\"BUBBLES\"");
