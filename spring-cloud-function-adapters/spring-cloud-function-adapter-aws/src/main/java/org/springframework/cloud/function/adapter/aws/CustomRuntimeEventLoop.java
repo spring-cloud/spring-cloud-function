@@ -64,9 +64,9 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
 	private static final String USER_AGENT_VALUE = String.format(
-		"spring-cloud-function/%s-%s",
-		System.getProperty("java.vendor.version"),
-		CustomRuntimeEventLoop.class.getPackage().getImplementationVersion());
+		"spring-cloud-function:%s/JAVA-%s",
+		extractVersion(),
+		System.getProperty("java.vm.name"));
 
 	private final ConfigurableApplicationContext applicationContext;
 
@@ -83,6 +83,22 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		this.executor.execute(() -> {
 			eventLoop(this.applicationContext);
 		});
+	}
+
+	@Override
+	public void start() {
+		this.run();
+	}
+
+	@Override
+	public void stop() {
+		this.executor.shutdownNow();
+		this.running = false;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.running;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -205,19 +221,13 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		return value instanceof Collection ? (Collection<?>) value : Arrays.asList(value);
 	}
 
-	@Override
-	public void start() {
-		this.run();
-	}
-
-	@Override
-	public void stop() {
-		this.executor.shutdownNow();
-		this.running = false;
-	}
-
-	@Override
-	public boolean isRunning() {
-		return this.running;
+	private static String extractVersion() {
+		String path = CustomRuntimeEventLoop.class.getProtectionDomain().getCodeSource().getLocation().toString();
+		int endIndex = path.lastIndexOf('.');
+		if (endIndex < 0) {
+			return "UNKNOWN-VERSION";
+		}
+		int startIndex = path.lastIndexOf("/") + 1;
+		return path.substring(startIndex, endIndex).replace("spring-cloud-function-adapter-aws-", "");
 	}
 }
