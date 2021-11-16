@@ -55,7 +55,11 @@ public abstract class FunctionContextUtils {
 						.getBeanDefinition(name);
 				actualName = name;
 			}
+			else if (registry.containsBean(name)) {
+				return FunctionTypeUtils.discoverFunctionTypeFromClass(registry.getBean(name).getClass());
+			}
 		}
+
 		if (definition == null) {
 			return null;
 		}
