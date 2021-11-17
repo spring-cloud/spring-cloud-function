@@ -187,7 +187,7 @@ public class FunctionInvoker<I, O> {
 
 	@SuppressWarnings("unchecked")
 	private Object convertOutputIfNecessary(Object input, Object output) {
-		if (input instanceof HttpRequestMessage) {
+		if (input != null && input instanceof HttpRequestMessage) {
 			HttpRequestMessage<I> requestMessage = (HttpRequestMessage<I>) input;
 			Map<String, Object> headers = null;
 			if (output instanceof Message) {
