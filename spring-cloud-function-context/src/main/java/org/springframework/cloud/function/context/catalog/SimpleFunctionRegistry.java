@@ -1135,7 +1135,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				output = enhancer.apply(output);
 			}
 
-			if (functionAroundWrapper == null && ObjectUtils.isEmpty(contentType) && !(output instanceof Publisher)) {
+			if (ObjectUtils.isEmpty(contentType) && !(output instanceof Publisher)) {
 				return output;
 			}
 
