@@ -42,5 +42,4 @@ public class UppercaseHandler extends FunctionInvoker<Message<String>, String> {
 		Message<String> message = MessageBuilder.withPayload(request.getBody().get()).copyHeaders(request.getHeaders()).build();
 		return handleRequest(message, context);
 	}
-
 }
