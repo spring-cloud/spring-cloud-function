@@ -134,6 +134,16 @@ public class FunctionInvokerTests {
 		assertThat(result.toString()).isEqualTo("[foo1, foo2]");
 	}
 
+	@Test
+	public void supplierPublisherBean() {
+		FunctionInvoker<Void, ?> handler = handler(ReactiveSupplierConfig.class);
+		Foo resultSingle = (Foo) handler.handleRequest(new TestExecutionContext("suppliermono"));
+		assertThat(resultSingle.getValue()).isEqualTo("hello");
+
+		List<Foo> resultList = (List<Foo>) handler.handleRequest(new TestExecutionContext("supplierflux"));
+		assertThat(resultList.size()).isEqualTo(2);
+	}
+
 	private static String consumerResult;
 
 	@Test
@@ -205,6 +215,22 @@ public class FunctionInvokerTests {
 		@Bean
 		public Consumer<String> consumer() {
 			return (v) -> consumerResult = v;
+		}
+
+	}
+
+	@Configuration
+//	@EnableAutoConfiguration
+	protected static class ReactiveSupplierConfig {
+
+		@Bean
+		public Supplier<Mono<Foo>> suppliermono() {
+			return () -> Mono.just(new Foo("hello"));
+		}
+
+		@Bean
+		public Supplier<Flux<Foo>> supplierflux() {
+			return () -> Flux.just(new Foo("hello"), new Foo("bye"));
 		}
 
 	}
