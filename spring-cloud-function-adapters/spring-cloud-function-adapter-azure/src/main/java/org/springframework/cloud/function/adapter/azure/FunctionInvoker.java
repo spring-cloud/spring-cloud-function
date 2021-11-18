@@ -111,7 +111,11 @@ public class FunctionInvoker<I, O> {
 	public O handleRequest(I input, ExecutionContext executionContext) {
 		String functionDefinition = executionContext.getFunctionName();
 		FunctionInvocationWrapper function = FUNCTION_CATALOG.lookup(functionDefinition);
-		if (function == null && StringUtils.hasText(functionDefinition) && APPLICATION_CONTEXT.containsBean(functionDefinition)) {
+		if (function != null && StringUtils.hasText(functionDefinition) && !function.getFunctionDefinition().equals(functionDefinition)) {
+			this.registerFunction(functionDefinition);
+			function = FUNCTION_CATALOG.lookup(functionDefinition);
+		}
+		else if (function == null && StringUtils.hasText(functionDefinition) && APPLICATION_CONTEXT.containsBean(functionDefinition)) {
 			this.registerFunction(functionDefinition);
 			function = FUNCTION_CATALOG.lookup(functionDefinition);
 		}
@@ -129,7 +133,7 @@ public class FunctionInvoker<I, O> {
 						resultList.addAll((Collection) resultItem);
 					}
 					else {
-						if (Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getInputType()))
+						if (!function.isSupplier() && Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getInputType()))
 								&& !Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getOutputType()))) {
 							return (O) this.convertOutputIfNecessary(input, resultItem);
 						}
@@ -146,15 +150,17 @@ public class FunctionInvoker<I, O> {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void registerFunction(String functionDefinition) {
-		FunctionRegistration functionRegistration =
-				new FunctionRegistration(APPLICATION_CONTEXT.getBean(functionDefinition), functionDefinition);
+		if (APPLICATION_CONTEXT.containsBean(functionDefinition)) {
+			FunctionRegistration functionRegistration =
+					new FunctionRegistration(APPLICATION_CONTEXT.getBean(functionDefinition), functionDefinition);
 
-		Type type = FunctionContextUtils.
-				findType(functionDefinition, APPLICATION_CONTEXT.getBeanFactory());
+			Type type = FunctionContextUtils.
+					findType(functionDefinition, APPLICATION_CONTEXT.getBeanFactory());
 
-		functionRegistration = functionRegistration.type(new FunctionType(type));
+			functionRegistration = functionRegistration.type(new FunctionType(type));
 
-		((FunctionRegistry) FUNCTION_CATALOG).register(functionRegistration);
+			((FunctionRegistry) FUNCTION_CATALOG).register(functionRegistration);
+		}
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -187,7 +193,7 @@ public class FunctionInvoker<I, O> {
 
 	@SuppressWarnings("unchecked")
 	private Object convertOutputIfNecessary(Object input, Object output) {
-		if (input != null && input instanceof HttpRequestMessage) {
+		if (input instanceof HttpRequestMessage) {
 			HttpRequestMessage<I> requestMessage = (HttpRequestMessage<I>) input;
 			Map<String, Object> headers = null;
 			if (output instanceof Message) {
