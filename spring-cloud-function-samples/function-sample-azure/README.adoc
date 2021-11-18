@@ -25,9 +25,11 @@ $ curl -H "Content-Type: application/json" localhost:7071/api/uppercase -d '{"gr
 The HTTP headers of the incoming request will be copied into input Message's MessageHeaders, so they become accessible if need to. 
 It is done in implementation of `UppercaseHandler` which extends `FunctionInvoker`. 
 
-NOTE: Implementation of FunctionInvoker, should contain the least amount of code. Everything should be delegated to the base FunctionInvoker.
-These implementations of FunctionInvoker are really a type-safe way to define and configure function to be recognized as Azure Function. 
-Look at it as _configuration with the callback_ (e.g., `this.handleRequest(..)`).
+NOTE: Implementation of `FunctionInvoker` (your handler), should contain the least amount of code. It is really a type-safe way to define 
+and configure function to be recognized as Azure Function. 
+Everything else should be delegated to the base `FunctionInvoker` via `handleRequest(..)` callback which will invoke your function, taking care of 
+necessary type conversion, transformation etc.
+
 ----
 @FunctionName("uppercase")
 public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
@@ -40,8 +42,7 @@ public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
 
 
 The `echo` function does the same as the `uppercase` less the actual uppercasing. However, the important difference to notice is that function itself 
-takes primitive `String` as its input while the actual handler passes instance of `Message` the same way as with `uppercase`. The framework recognizes that 
-you only care about the payload and extracts it from the message before calling the function. 
+takes primitive `String` as its input (i.e., `public Function<String, String> echo()`) while the actual handler passes instance of `Message` the same way as with `uppercase`. The framework recognizes that you only care about the payload and extracts it from the `Message` before calling the function. 
 
 
 There is also a reactive version of 'uppercase' - `uppercaseReactive` which will produce the same result, but 
