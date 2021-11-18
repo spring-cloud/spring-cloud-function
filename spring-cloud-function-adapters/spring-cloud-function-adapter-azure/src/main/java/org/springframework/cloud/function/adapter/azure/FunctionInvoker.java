@@ -106,9 +106,7 @@ public class FunctionInvoker<I, O> {
 		binding.setValue(result);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public O handleRequest(I input, ExecutionContext executionContext) {
-		String functionDefinition = executionContext.getFunctionName();
+	private FunctionInvocationWrapper discoverFunction(String functionDefinition) {
 		FunctionInvocationWrapper function = FUNCTION_CATALOG.lookup(functionDefinition);
 		if (function != null && StringUtils.hasText(functionDefinition) && !function.getFunctionDefinition().equals(functionDefinition)) {
 			this.registerFunction(functionDefinition);
@@ -118,6 +116,13 @@ public class FunctionInvoker<I, O> {
 			this.registerFunction(functionDefinition);
 			function = FUNCTION_CATALOG.lookup(functionDefinition);
 		}
+		return function;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public O handleRequest(I input, ExecutionContext executionContext) {
+		String functionDefinition = executionContext.getFunctionName();
+		FunctionInvocationWrapper function = this.discoverFunction(functionDefinition);
 		Object enhancedInput = enhanceInputIfNecessary(input, executionContext);
 
 		Object output = function.apply(enhancedInput);

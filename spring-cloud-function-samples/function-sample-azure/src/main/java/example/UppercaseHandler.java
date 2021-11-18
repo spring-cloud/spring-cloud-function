@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2018-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,17 +26,21 @@ import com.microsoft.azure.functions.annotation.HttpTrigger;
 import java.util.Optional;
 
 import org.springframework.cloud.function.adapter.azure.FunctionInvoker;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 /**
  * @author Soby Chacko
+ * @author Oleg Zhurakousky
  */
-public class UppercaseHandler extends FunctionInvoker<String, String> {
+public class UppercaseHandler extends FunctionInvoker<Message<String>, String> {
 
 	@FunctionName("uppercase")
 	public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
 			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 		ExecutionContext context) {
-		return handleRequest(request.getBody().get(), context);
+		Message<String> message = MessageBuilder.withPayload(request.getBody().get()).copyHeaders(request.getHeaders()).build();
+		return handleRequest(message, context);
 	}
 
 }

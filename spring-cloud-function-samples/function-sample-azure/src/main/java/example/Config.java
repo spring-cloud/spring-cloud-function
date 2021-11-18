@@ -37,8 +37,8 @@ public class Config {
 	}
 
 	@Bean
-	public Function<Message<String>, String> echo() {
-		return message -> message.getPayload();
+	public Function<String, String> echo() {
+		return payload -> payload;
 	}
 
 	@Bean
