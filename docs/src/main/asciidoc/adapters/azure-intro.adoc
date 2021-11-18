@@ -3,65 +3,71 @@
 === Microsoft Azure
 
 The https://azure.microsoft.com[Azure] adapter bootstraps a Spring Cloud Function context and channels function calls from the Azure 
-framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique, but 
-invasive programming model, involving annotations in user code that are specific to the platform. The easiest way to use it with 
-Spring Cloud is to extend a base class and write a method in it with the `@FunctionName` annotation which delegates to a base class method.
+framework into the user functions, using Spring Boot configuration where necessary. Azure Functions has quite a unique and 
+invasive programming model, involving annotations in user code that are specific to the Azure platform. 
+However, it is important to understand that because of the style of integration provided by Spring Cloud Function, specifically `org.springframework.cloud.function.adapter.azure.FunctionInvoker`, this annotation-based programming model is simply a type-safe way to configure 
+your simple java function (function that has no awareness of Azure) to be recognized as Azure function. 
+All you need to do is create a handler that extends `FunctionInvoker`, define and configure your function handler method and 
+make a callback to `handleRequest(..)` method. This handler method provides input and output types as annotated method parameters 
+(enabling Azure to inspect the class and create JSON bindings).
 
-
-This project provides an adapter layer for a Spring Cloud Function application onto Azure.
-You can write an app with a single `@Bean` of type `Function` and it will be deployable in Azure if you get the JAR file laid out right.
-
-There is an `org.springframework.cloud.function.adapter.azure.FunctionInvoker` which you must extend, and provide the 
-input and output types as annotated 
-method parameters (enabling Azure to inspect the class and create JSON bindings). The base class has two useful 
-methods (`handleRequest` and `handleOutput`) to which you can delegate the actual function call, so mostly the function will only ever have one line.
-
-Example:
 
 ```java
-public class FooHandler extends FunctionInvoker<Foo, Bar> {
+public class UppercaseHandler extends FunctionInvoker<Message<String>, String> {
+
 	@FunctionName("uppercase")
-	public Bar execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
-			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<Foo>> request,
+	public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
+			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 		ExecutionContext context) {
-		return handleRequest(request.getBody().get(), context);
+		Message<String> message = MessageBuilder.withPayload(request.getBody().get()).copyHeaders(request.getHeaders()).build();
+		return handleRequest(message, context);
 	}
 }
 ```
 
-This Azure handler will delegate to a `Function<Foo,Bar>` bean (or a `Function<Publisher<Foo>,Publisher<Bar>>`). Some Azure 
-triggers (e.g. `@CosmosDBTrigger`) result in a input type of `List` and in that case you can bind to `List` in the Azure handler, 
-or `String` (the raw JSON). The `List` input delegates to a `Function` with input type `Map<String,Object>`, or `Publisher` or `List` of 
-the same type. The output of the `Function` can be a `List` (one-for-one) or a single value (aggregation), and the output binding in the 
-Azure declaration should match.
+Note that aside form providing configuration via Azure annotation we create an instance of `Message` inside the body of this handler method and make a callback to `handleRequest(..)` method returning its result. 
 
-If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring 
-`function.name`. Or if you make the `@FunctionName` in the Azure handler method match the function name it should work that 
-way (also for function apps with multiple functions). The functions are extracted from the Spring Cloud `FunctionCatalog` so the default 
-function names are the same as the bean names.
+The actual user function you're delagating to looks like this
+
+```java
+@Bean
+public Function<String, String> uppercase() {
+		return payload -> payload.toUpperCase();
+}
+
+OR
+
+@Bean
+public Function<Message<String>, String> uppercase() {
+		return message -> message.getPayload().toUpperCase();
+}
+
+```
+
+Note that when creating a Message you can copy HTTP headers effectively making them available to you if necessary. 
+
+The `org.springframework.cloud.function.adapter.azure.FunctionInvoker` class has two useful 
+methods (`handleRequest` and `handleOutput`) to which you can delegate the actual function call, so mostly the function will only ever have one line.
+
+The function name (definition) will be retrieved from Azure's `ExecutionContext.getFunctionName()` method, effectively supporting multiple function in the application context.
 
 ==== Accessing Azure ExecutionContext
 
-Some time there is a need to access the target execution context provided by Azure runtime in the form of `com.microsoft.azure.functions.ExecutionContext`.
+Some time there is a need to access the target execution context provided by the Azure runtime in the form of `com.microsoft.azure.functions.ExecutionContext`.
 For example one of such needs is logging, so it can appear in the Azure console.
 
-For that purpose we propagate `ExecutionContext` as Message header under `executionContext` name, so all you need is access it 
-is have your function accept a Message and access this header.
+For that purpose the FunctionInvoker will add an instance of the `ExecutionContext` as a Message header so you can retrieve it via `executionContext` key.
 
-Spring Cloud Function will register `ExecutionContext` as bean in the Application context, so it could be injected into your function.
-For example
-```java
+```
 @Bean
-public Function<Message<Foo>, Bar> uppercase() {
+public Function<Message<String>, String> uppercase(JsonMapper mapper) {
 	return message -> {
-		ExecutionContext targetContext = message.getHeaders().get("executionContext");
-		targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
-		return new Bar(message.getPayload().getValue().toUpperCase());
-	};
+		String value = message.getPayload();
+		ExecutionContext context = (ExecutionContext) message.getHeaders().get("executionContext");
+		. . .
+	}
 }
 ```
-With Message you will also have access to additional Azure meta information as Message headers that come as part of your request.
-
 
 ==== Notes on JAR Layout
 
