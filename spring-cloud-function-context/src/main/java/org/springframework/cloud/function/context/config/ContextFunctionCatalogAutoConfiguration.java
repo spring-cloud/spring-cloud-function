@@ -105,7 +105,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			for (MessageConverter mc : messageConverters) {
 				if (mc instanceof CompositeMessageConverter) {
 					List<MessageConverter> conv = ((CompositeMessageConverter) mc).getConverters().stream()
-						.filter(c -> !c.getClass().getSimpleName().equals("ApplicationJsonMessageMarshallingConverter")).collect(Collectors.toList());
+						.collect(Collectors.toList());
 					mcList.addAll(conv);
 				}
 				else {
