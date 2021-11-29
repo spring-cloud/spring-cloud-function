@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
-import io.rsocket.routing.client.spring.RoutingClientAutoConfiguration;
+import io.rsocket.broker.client.spring.BrokerClientAutoConfiguration;
 
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -35,9 +35,9 @@ import org.springframework.messaging.rsocket.RSocketConnectorConfigurer;
  * @since 3.1
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(RoutingClientAutoConfiguration.class)
+@ConditionalOnClass(BrokerClientAutoConfiguration.class)
 @ConditionalOnProperty(name = FunctionProperties.PREFIX + ".rsocket.enabled", matchIfMissing = true)
-@AutoConfigureBefore(RoutingClientAutoConfiguration.class)
+@AutoConfigureBefore(BrokerClientAutoConfiguration.class)
 @AutoConfigureAfter(RSocketAutoConfiguration.class)
 class RSocketRoutingAutoConfiguration {
 
