@@ -16,7 +16,7 @@
 	</parent>
 
 	<properties>
-		<rsocket-routing.version>0.1.0</rsocket-routing.version>
+		<rsocket-broker.version>0.3.0-SNAPSHOT</rsocket-broker.version>
 	</properties>
 
 	<dependencies>
@@ -37,9 +37,9 @@
 			<artifactId>spring-cloud-function-context</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>io.rsocket.routing</groupId>
-			<artifactId>rsocket-routing-client-spring</artifactId>
-			<version>${rsocket-routing.version}</version>
+			<groupId>io.rsocket.broker</groupId>
+			<artifactId>rsocket-broker-client-spring</artifactId>
+			<version>${rsocket-broker.version}</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -58,9 +58,9 @@
 		    <scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.rsocket.routing</groupId>
-			<artifactId>rsocket-routing-broker-spring</artifactId>
-			<version>${rsocket-routing.version}</version>
+			<groupId>io.rsocket.broker</groupId>
+			<artifactId>rsocket-broker-spring</artifactId>
+			<version>${rsocket-broker.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

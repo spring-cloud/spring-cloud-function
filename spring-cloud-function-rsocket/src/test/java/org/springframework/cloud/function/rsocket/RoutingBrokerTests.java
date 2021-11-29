@@ -16,9 +16,10 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.time.Duration;
 import java.util.function.Function;
 
-import io.rsocket.routing.client.spring.RoutingMetadata;
+import io.rsocket.broker.client.spring.BrokerMetadata;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -64,7 +65,7 @@ public class RoutingBrokerTests {
 	public void testRoutingWithProperty() throws Exception {
 		this.setup(true);
 		RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
-		// route(uppercase) used to find function, must match io.rsocket.routing.client.address entry
+		// route(uppercase) used to find function, must match io.rsocket.broker.client.address entry
 		Mono<String> result = requester.route("uppercase")
 			// auto creates metadata
 			.data("\"hello\"")
@@ -74,14 +75,14 @@ public class RoutingBrokerTests {
 			.create(result)
 			.expectNext("HELLO")
 			.expectComplete()
-			.verify();
+			.verify(Duration.ofSeconds(15));
 	}
 
 	@Test
 	public void testRoutingWithMessage() throws Exception {
 		this.setup(false);
 		RSocketRequester requester = clientContext.getBean(RSocketRequester.class);
-		RoutingMetadata metadata = clientContext.getBean(RoutingMetadata.class);
+		BrokerMetadata metadata = clientContext.getBean(BrokerMetadata.class);
 		Mono<String> result = requester.route("uppercase") // used to find function
 			.metadata(metadata.address("samplefn"))
 			.data("\"hello\"")
@@ -91,41 +92,40 @@ public class RoutingBrokerTests {
 			.create(result)
 			.expectNext("HELLO")
 			.expectComplete()
-			.verify();
+			.verify(Duration.ofSeconds(15));
 	}
 
 	private void setup(boolean routingWithProperty) {
-		int routingBrokerProxyPort = SocketUtils.findAvailableTcpPort();
-		int routingBrokerClusterPort = SocketUtils.findAvailableTcpPort();
+		int brokerProxyPort = SocketUtils.findAvailableTcpPort();
+		int brokerClusterPort = SocketUtils.findAvailableTcpPort();
 		// start broker
 		brokerContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
-				"--logging.level.io.rsocket.routing.broker=TRACE",
+				"--logging.level.io.rsocket.broker=TRACE",
 				"--spring.cloud.function.rsocket.enabled=false",
-				"--io.rsocket.routing.client.enabled=false",
-				"--io.rsocket.routing.broker.enabled=true",
-				"--io.rsocket.routing.broker.tcp.port=" + routingBrokerProxyPort,
-				"--io.rsocket.routing.broker.cluster.port=" + routingBrokerClusterPort);
+				"--io.rsocket.broker.client.enabled=false",
+				"--io.rsocket.broker.enabled=true",
+				"--io.rsocket.broker.uri=tcp://localhost:" + brokerProxyPort,
+				"--io.rsocket.broker.cluster.uri=tcp://localhost:" + brokerClusterPort);
 
 		// start function connecting to broker, service-name=samplefn
 		functionContext = new SpringApplicationBuilder(SampleFunctionConfiguration.class).web(WebApplicationType.NONE)
 				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--io.rsocket.routing.client.enabled=true",
-						"--io.rsocket.routing.client.service-name=samplefn",
-						"--io.rsocket.routing.client.brokers[0].tcp.host=localhost",
-						"--io.rsocket.routing.client.brokers[0].tcp.port=" + routingBrokerProxyPort,
-						"--io.rsocket.routing.broker.enabled=false",
+						"--logging.level.io.rsocket.broker.client=TRACE",
+						"--io.rsocket.broker.client.enabled=true",
+						"--io.rsocket.broker.client.service-name=samplefn",
+						"--io.rsocket.broker.client.brokers[0]=tcp://localhost:" + brokerProxyPort,
+						"--io.rsocket.broker.enabled=false",
 						"--spring.cloud.function.definition=uppercase");
 
 		// start testclient connecting to broker, for RSocketRequester
 		clientContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
-				"--logging.level.io.rsocket.routing.client=TRACE",
+				"--logging.level.io.rsocket.broker.client=TRACE",
 				"--spring.cloud.function.rsocket.enabled=false",
-				"--io.rsocket.routing.client.enabled=true",
-				"--io.rsocket.routing.client.service-name=testclient",
-				routingWithProperty ? "--io.rsocket.routing.client.address.uppercase.service_name=samplefn" : "",
-				"--io.rsocket.routing.client.brokers[0].tcp.host=localhost",
-				"--io.rsocket.routing.client.brokers[0].tcp.port=" + routingBrokerProxyPort,
-				"--io.rsocket.routing.broker.enabled=false");
+				"--io.rsocket.broker.client.enabled=true",
+				"--io.rsocket.broker.client.service-name=testclient",
+				routingWithProperty ? "--io.rsocket.broker.client.address.uppercase.service_name=samplefn" : "",
+				"--io.rsocket.broker.client.brokers[0]=tcp://localhost:" + brokerProxyPort,
+				"--io.rsocket.broker.enabled=false");
 	}
 
 
@@ -140,9 +140,7 @@ public class RoutingBrokerTests {
 	public static class SampleFunctionConfiguration {
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> {
-				return v.toUpperCase();
-			};
+			return v -> v.toUpperCase();
 		}
 	}
 }
