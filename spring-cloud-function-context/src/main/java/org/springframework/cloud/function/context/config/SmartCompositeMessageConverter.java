@@ -74,18 +74,21 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			if (headers.get(MessageHeaders.CONTENT_TYPE) == null) {
 				return null;
 			}
+
 			Object value = headers.get(MessageHeaders.CONTENT_TYPE).toString();
 			String[] contentTypes = StringUtils.delimitedListToStringArray((String) value, ",");
 			for (String contentType : contentTypes) {
 				if (!MimeType.valueOf(contentType).isConcrete()) {
 					List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter).getSupportedMimeTypes();
 					for (MimeType supportedMimeType : supportedMimeTypes) {
-						MessageHeaderAccessor h = new MessageHeaderAccessor();
-						h.copyHeaders(headers);
-						h.setHeader(MessageHeaders.CONTENT_TYPE, supportedMimeType);
-						Message<?> result = converter.toMessage(payload, h.getMessageHeaders());
-						if (result != null) {
-							return result;
+						if (supportedMimeType.isCompatibleWith(MimeType.valueOf(contentType))) {
+							MessageHeaderAccessor h = new MessageHeaderAccessor();
+							h.copyHeaders(headers);
+							h.setHeader(MessageHeaders.CONTENT_TYPE, supportedMimeType);
+							Message<?> result = converter.toMessage(payload, h.getMessageHeaders());
+							if (result != null) {
+								return result;
+							}
 						}
 					}
 				}
