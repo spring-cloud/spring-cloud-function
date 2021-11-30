@@ -642,8 +642,10 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog(SCF_GH_768ConfigurationAsFunction.class);
 		Function function = catalog.lookup("echo");
 
-		String result = (String) function.apply("{\"ricky\":{\"name\":\"ricky\"}}");
-		assertThat(result).isEqualTo("{ricky=Person: ricky/0}");
+		JsonMapper mapper = this.context.getBean(JsonMapper.class);
+		String date = mapper.toString(new Date());
+		String result = (String) function.apply("{\"date\":" + date + "}");
+		assertThat(result).startsWith("{date=");
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -1124,12 +1126,12 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@EnableAutoConfiguration
 	public static class SCF_GH_768ConfigurationAsFunction {
 		@Bean
-		public Function<Map<String, Person>, String> echoToString() {
-			return persons -> {
-				for (Entry<String, Person> entry : persons.entrySet()) {
-					assertThat(entry.getValue().getName()).isNotEmpty(); // would fail if value would not be converted to Person
+		public Function<Map<String, Date>, String> echoToString() {
+			return data -> {
+				for (Entry<String, Date> dataEntry : data.entrySet()) {
+					assertThat(dataEntry.getValue()).isInstanceOf(Date.class); // would fail if value would not be converted to Person
 				}
-				return persons.toString();
+				return data.toString();
 			};
 		}
 	}
