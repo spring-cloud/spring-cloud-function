@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.endpoint;
+package org.springframework.cloud.function.actuator;
 
 import java.util.LinkedHashMap;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -26,11 +25,10 @@ import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
-import org.springframework.cloud.function.json.JsonMapper;
 
 /**
  *
- * Actuator endpoint to access {@link FunctionCatalog}
+ * Actuator endpoint to access {@link FunctionCatalog}.
  *
  * @author Oleg Zhurakousky
  * @since 3.2
