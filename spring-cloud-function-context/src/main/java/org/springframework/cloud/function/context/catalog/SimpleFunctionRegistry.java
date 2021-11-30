@@ -433,7 +433,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 
 		public boolean isPrototype() {
-			return this.isPrototype();
+			return !this.isSingleton;
 		}
 
 		public void setSkipInputConversion(boolean skipInputConversion) {
