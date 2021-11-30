@@ -16,7 +16,7 @@
 	</parent>
 
 	<properties>
-		<rsocket-broker.version>0.3.0-SNAPSHOT</rsocket-broker.version>
+		<rsocket-broker.version>0.3.0</rsocket-broker.version>
 	</properties>
 
 	<dependencies>
