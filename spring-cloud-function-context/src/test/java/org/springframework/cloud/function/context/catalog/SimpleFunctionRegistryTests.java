@@ -16,9 +16,12 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -118,6 +121,29 @@ public class SimpleFunctionRegistryTests {
 		FunctionInvocationWrapper instanceC = catalog.lookup("echo", "foo/bar");
 
 		assertThat(instanceA).isNotSameAs(instanceb).isNotSameAs(instanceC);
+	}
+
+	@Test
+	public void testSCF768() {
+		ResolvableType map = ResolvableType.forClassWithGenerics(Map.class, String.class, Person.class);
+		Type functionType = ResolvableType.forClassWithGenerics(Function.class, map, ResolvableType.forClass(String.class)).getType();
+
+		Function<Map<String, Person>, String> function = persons -> {
+			for (Entry<String, Person> entry : persons.entrySet()) {
+				assertThat(entry.getValue().getName()).isNotEmpty(); // would fail if value would not be converted to Person
+			}
+			return persons.toString();
+		};
+
+		FunctionRegistration<Function<Map<String, Person>, String>> registration = new FunctionRegistration<>(
+				function, "echo").type(FunctionType.of(functionType));
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("echo");
+		String result = (String) lookedUpFunction.apply("{\"ricky\":{\"name\":\"ricky\"}}");
+		assertThat(result).isEqualTo("{ricky=ricky}");
 	}
 
 	@Test
@@ -584,6 +610,11 @@ public class SimpleFunctionRegistryTests {
 
 		public void setName(String name) {
 			this.name = name;
+		}
+
+		@Override
+		public String toString() {
+			return this.name;
 		}
 	}
 
