@@ -1,7 +1,8 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration,\
 org.springframework.cloud.function.cloudevent.CloudEventsFunctionExtensionConfiguration,\
-org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration
+org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration,\
+org.springframework.cloud.function.context.config.FunctionsEndpointAutoConfiguration
 org.springframework.cloud.function.context.WrapperDetector=\
 org.springframework.cloud.function.context.config.FluxWrapperDetector
 org.springframework.context.ApplicationContextInitializer=\

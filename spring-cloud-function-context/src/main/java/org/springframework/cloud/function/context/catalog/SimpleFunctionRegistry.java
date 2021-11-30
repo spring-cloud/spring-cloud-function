@@ -440,7 +440,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 
 		public boolean isPrototype() {
-			return this.isPrototype();
+			return !this.isSingleton;
 		}
 
 		public void setSkipInputConversion(boolean skipInputConversion) {

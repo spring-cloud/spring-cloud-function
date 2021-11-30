@@ -24,18 +24,24 @@ import reactor.core.publisher.Flux;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.messaging.Message;
 
 // @checkstyle:off
 @SpringBootApplication
 public class SampleApplication {
 
 	public static void main(String[] args) throws Exception {
-		SpringApplication.run(SampleApplication.class, args);
+		SpringApplication.run(SampleApplication.class, "--management.endpoints.web.exposure.include=functions");
 	}
 
 	@Bean
 	public Function<String, String> uppercase() {
 		return value -> value.toUpperCase();
+	}
+
+	@Bean
+	public Function<Message<String>, String> uppercaseMessage() {
+		return value -> value.getPayload().toUpperCase();
 	}
 
 	@Bean
