@@ -40,8 +40,8 @@ public class SampleApplication {
 	}
 
 	@Bean
-	public Function<Message<String>, String> uppercaseMessage() {
-		return value -> value.getPayload().toUpperCase();
+	public Function<Message<String>, Integer> uppercaseMessage() {
+		return value -> value.getPayload().toUpperCase().length();
 	}
 
 	@Bean
