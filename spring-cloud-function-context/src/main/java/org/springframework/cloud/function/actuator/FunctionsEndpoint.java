@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 
 /**
@@ -51,20 +52,30 @@ public class FunctionsEndpoint {
 			Map<String, Object> functionMap = new LinkedHashMap<>();
 			if (function.isFunction()) {
 				functionMap.put("type", "FUNCTION");
-				functionMap.put("input-type", function.getInputType().toString());
-				functionMap.put("output-type", function.getOutputType().toString());
+				functionMap.put("input-type", this.toSimplePolyIn(function));
+				functionMap.put("output-type", this.toSimplePolyOut(function));
 			}
 			else if (function.isConsumer()) {
 				functionMap.put("type", "CONSUMER");
-				functionMap.put("input-type", function.getInputType().toString());
+				functionMap.put("input-type", this.toSimplePolyIn(function));
 			}
 			else {
 				functionMap.put("type", "SUPPLIER");
-				functionMap.put("output-type", function.getOutputType().toString());
+				functionMap.put("output-type", this.toSimplePolyOut(function));
 			}
 			allFunctions.put(name, functionMap);
 		}
+
+
 		return allFunctions;
 	}
 
+
+	private String toSimplePolyOut(FunctionInvocationWrapper function) {
+		return FunctionTypeUtils.getRawType(function.getItemType(function.getOutputType())).getSimpleName().toLowerCase();
+	}
+
+	private String toSimplePolyIn(FunctionInvocationWrapper function) {
+		return FunctionTypeUtils.getRawType(function.getItemType(function.getInputType())).getSimpleName().toLowerCase();
+	}
 }
