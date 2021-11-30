@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -637,6 +638,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testGH_768() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(SCF_GH_768ConfigurationAsFunction.class);
+		Function function = catalog.lookup("echo");
+
+		String result = (String) function.apply("{\"ricky\":{\"name\":\"ricky\"}}");
+		assertThat(result).isEqualTo("{ricky=Person: ricky/0}");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testArrayPayloadOnFluxFunction() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
 		FunctionInvocationWrapper lmFunction = catalog.lookup("uppercaseFlux", "application/json");
@@ -1107,6 +1118,19 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<String, List<String>> emptyStringList() {
 			return input -> Collections.emptyList();
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SCF_GH_768ConfigurationAsFunction {
+		@Bean
+		public Function<Map<String, Person>, String> echoToString() {
+			return persons -> {
+				for (Entry<String, Person> entry : persons.entrySet()) {
+					assertThat(entry.getValue().getName()).isNotEmpty(); // would fail if value would not be converted to Person
+				}
+				return persons.toString();
+			};
 		}
 	}
 
