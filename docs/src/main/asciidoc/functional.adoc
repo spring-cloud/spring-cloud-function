@@ -123,6 +123,80 @@ for example, you will need to use `@EnableAutoConfiguration`. Your functions can
 declarations if you want (i.e. the "hybrid" style), but in that case you will need to explicitly switch off the "full
 functional mode" using `spring.functional.enabled=false` so that Spring Boot can take back control.
 
+[[function_visualization]]
+= Function visualization and control
+
+Spring Cloud Function supports visualization of functions available in `FunctionCatalog` through Actuator endpoints as well as programmatic way.
+
+==== Programmatic way
+
+To see function available within your application context programmatically all you need is access to `FunctionCatalog`. There you can 
+finds methods to get the size of the catalog, lookup functions as well as list the names of all the available functions. 
+
+For example, 
+
+[source,java]
+----
+FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
+int size = functionCatalog.size(); // will tell you how many functions available in catalog
+Set<String> names = functionCatalog.getNames(null); will list the names of all the Function, Suppliers and Consumers available in catalog
+. . .
+----
+
+==== Actuator
+Since actuator and web are optional, you must first add one of the web dependencies as well as add the actuator dependency manually.
+The following example shows how to add the dependency for the Web framework:
+
+[source,xml]
+----
+<dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+----
+
+The following example shows how to add the dependency for the WebFlux framework:
+
+[source,xml]
+----
+<dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-webflux</artifactId>
+</dependency>
+----
+
+You can add the Actuator dependency as follows:
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+----
+
+You must also enable the `functions` actuator endpoints by setting the following property: `--management.endpoints.web.exposure.include=functions`.
+
+Access the following URL to see the functions in FunctionCatalog:
+`http://<host>:<port>/actuator/functions`
+
+For example,
+[source,text]
+----
+curl http://localhost:8080/actuator/functions
+----
+
+Your output should look something like this:
+[source,text]
+----
+{"charCounter":
+	{"type":"FUNCTION","input-type":"string","output-type":"integer"},
+ "logger":
+ 	{"type":"CONSUMER","input-type":"string"},
+ "functionRouter":
+ 	{"type":"FUNCTION","input-type":"object","output-type":"object"},
+ "words":
+ 	{"type":"SUPPLIER","output-type":"string"}. . .
+----
 
 = Testing Functional Applications
 
