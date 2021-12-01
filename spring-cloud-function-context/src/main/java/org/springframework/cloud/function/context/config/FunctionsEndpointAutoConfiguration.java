@@ -39,7 +39,7 @@ public class FunctionsEndpointAutoConfiguration {
 
 	@Bean
 	@ConditionalOnAvailableEndpoint
-	public FunctionsEndpoint bindingsEndpoint(FunctionCatalog functionCatalog) {
+	public FunctionsEndpoint functionsEndpoint(FunctionCatalog functionCatalog) {
 		return new FunctionsEndpoint(functionCatalog);
 	}
 
