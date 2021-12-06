@@ -26,24 +26,24 @@ In the server (default) mode, te gRPC server would be bound to te default port *
 At the center of gRPC and Spring Cloud Function integration is a canonical protobuff structure - `GrpcMessage`. It is modeled after Spring [Message](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/messaging/Message.html).
 
 ```
-message GrpcMessage {
+message GrpcSpringMessage {
     bytes payload = 1;
     map<string, string> headers = 2;
 }
 ```
 As you can see it is a very generic structure which can support any type of data amd metadata you wish to exchange. 
 
-It alos defines a `MessagingService` allowing you to generate required stubs to support true plolyglot nature of gRPC. 
+It also defines a `MessagingService` allowing you to generate required stubs to support true plolyglot nature of gRPC. 
 
 ```
 service MessagingService {
-    rpc biStream(stream GrpcMessage) returns (stream GrpcMessage);
+    rpc biStream(stream GrpcSpringMessage) returns (stream GrpcSpringMessage);
     
-    rpc clientStream(stream GrpcMessage) returns (GrpcMessage);
+    rpc clientStream(stream GrpcSpringMessage) returns (GrpcSpringMessage);
     
-    rpc serverStream(GrpcMessage) returns (stream GrpcMessage);
+    rpc serverStream(GrpcSpringMessage) returns (stream GrpcSpringMessage);
     
-    rpc requestReply(GrpcMessage) returns (GrpcMessage);
+    rpc requestReply(GrpcSpringMessage) returns (GrpcSpringMessage);
 }
 ```
 That said, when using Java, you do not need to generate anything, rather identify function definition and send and receive Spring `Messages`.
