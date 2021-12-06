@@ -174,23 +174,31 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 	private FunctionInvocationWrapper locateFunction(Environment environment, FunctionCatalog functionCatalog, MediaType contentType) {
 		String handlerName = environment.getProperty("DEFAULT_HANDLER");
+		if (logger.isDebugEnabled()) {
+			logger.debug("Value of DEFAULT_HANDLER env: " + handlerName);
+		}
 		FunctionInvocationWrapper function = functionCatalog.lookup(handlerName, contentType.toString());
 		if (function == null) {
+			logger.debug("Could not locate function under DEFAULT_HANDLER");
 			handlerName = environment.getProperty("_HANDLER");
+			if (logger.isDebugEnabled()) {
+				logger.debug("Value of _HANDLER env: " + handlerName);
+			}
 			function = functionCatalog.lookup(handlerName, contentType.toString());
 		}
 
 		if (function == null) {
-			function = functionCatalog.lookup(null, contentType.toString());
+			logger.debug("Could not locate function under _HANDLER");
+			function = functionCatalog.lookup((String) null, contentType.toString());
 		}
 
 		if (function == null) {
+			logger.info("Could not determine default function");
 			handlerName = environment.getProperty("spring.cloud.function.definition");
+			if (logger.isDebugEnabled()) {
+				logger.debug("Value of 'spring.cloud.function.definition' env: " + handlerName);
+			}
 			function = functionCatalog.lookup(handlerName, contentType.toString());
-		}
-
-		if (function == null) {
-			function = functionCatalog.lookup(null, contentType.toString());
 		}
 
 		Assert.notNull(function, "Failed to locate function. Tried locating default function, "
