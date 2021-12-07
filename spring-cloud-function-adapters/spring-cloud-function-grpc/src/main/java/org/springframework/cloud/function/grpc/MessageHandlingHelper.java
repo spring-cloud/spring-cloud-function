@@ -24,12 +24,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.GeneratedMessageV3;
 
 import io.grpc.Status;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.publisher.Sinks.Many;
 
@@ -38,6 +40,7 @@ import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.messaging.Message;
@@ -75,12 +78,29 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 	public void requestReply(T request, StreamObserver<T> responseObserver) {
 		Message<byte[]> message = this.toSpringMessage(request);
 		FunctionInvocationWrapper function = this.resolveFunction(message.getHeaders());
+		if (FunctionTypeUtils.isFlux(function.getOutputType())) {
+			String errorMessage = "Flux reply is not supported for `requestReply` mode";
+			responseObserver.onError(Status.UNKNOWN.withDescription(errorMessage)
+					.withCause(new UnsupportedOperationException(errorMessage)).asRuntimeException());
+			return;
+		}
 
-		Message<byte[]> replyMessage = (Message<byte[]>) function.apply(message);
-		GeneratedMessageV3 reply = this.toGrpcMessage(replyMessage, (Class<T>) request.getClass());
-
-		responseObserver.onNext((T) reply);
-		responseObserver.onCompleted();
+		Object replyMessage = function.apply(message);
+		if (replyMessage instanceof Message<?>) {
+			GeneratedMessageV3 reply = this.toGrpcMessage((Message<byte[]>) replyMessage, (Class<T>) request.getClass());
+			responseObserver.onNext((T) reply);
+			responseObserver.onCompleted();
+		}
+		else if (replyMessage instanceof Publisher<?>) {
+			if (replyMessage instanceof Mono<?>) {
+				Mono.from((Publisher<?>) replyMessage).doOnNext(reply -> {
+					GeneratedMessageV3 replyGrps = this.toGrpcMessage((Message<byte[]>) reply, (Class<T>) request.getClass());
+					responseObserver.onNext((T) replyGrps);
+					responseObserver.onCompleted();
+				})
+				.subscribe();
+			}
+		}
 	}
 
 	@SuppressWarnings("unchecked")
