@@ -87,8 +87,13 @@ public final class GrpcUtils {
 			MessagingServiceGrpc.MessagingServiceBlockingStub stub = MessagingServiceGrpc
 					.newBlockingStub(channel);
 
-			GrpcSpringMessage response = stub.requestReply(toGrpcSpringMessage(inputMessage));
-			return fromGrpcSpringMessage(response);
+			try {
+				GrpcSpringMessage response = stub.requestReply(toGrpcSpringMessage(inputMessage));
+				return fromGrpcSpringMessage(response);
+			}
+			catch (Exception e) {
+				throw new IllegalStateException(e);
+			}
 		}
 		finally {
 			channel.shutdownNow();
