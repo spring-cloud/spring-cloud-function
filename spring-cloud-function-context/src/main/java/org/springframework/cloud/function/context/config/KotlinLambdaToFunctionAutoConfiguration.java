@@ -38,9 +38,9 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -91,11 +91,12 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 	 * @return the bean factory post processor
 	 */
 	@Bean
-	public SmartInitializingSingleton kotlinToFunctionTransformer(ConfigurableListableBeanFactory beanFactory) {
-		return new SmartInitializingSingleton() {
+	public static BeanFactoryPostProcessor kotlinToFunctionTransformer(ConfigurableListableBeanFactory beanFactory) {
+		return new BeanFactoryPostProcessor() {
 
 			@Override
-			public void afterSingletonsInstantiated() {
+			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+					throws BeansException {
 				String[] beanDefinitionNames = beanFactory.getBeanDefinitionNames();
 				for (String beanDefinitionName : beanDefinitionNames) {
 					BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanDefinitionName);
@@ -112,10 +113,8 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 					}
 				}
 			}
-
 		};
 	}
-
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static final class KotlinFunctionWrapper implements Function<Object, Object>, Supplier<Object>, Consumer<Object>,
