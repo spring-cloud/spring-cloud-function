@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.function;
 
 import java.net.URI;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -68,6 +69,18 @@ public class FunctionEndpointInitializerTests {
 	}
 
 	@Test
+	public void testConsumerMapping() throws Exception {
+		FunctionalSpringApplication.run(ConsumerConfiguration.class);
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		String port = System.getProperty("server.port");
+		Thread.sleep(200);
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+		assertThat(response.getBody()).isNull();
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+	}
+
+	@Test
 	public void testSingleFunctionMapping() throws Exception {
 		FunctionalSpringApplication.run(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
@@ -112,6 +125,23 @@ public class FunctionEndpointInitializerTests {
 		ResponseEntity<String> response = testRestTemplate
 				.getForEntity(new URI("http://localhost:" + port + "/supplier"), String.class);
 		assertThat(response.getBody()).isEqualTo("Jim Lahey");
+	}
+
+	@SpringBootConfiguration
+	protected static class ConsumerConfiguration
+			implements ApplicationContextInitializer<GenericApplicationContext> {
+
+		public Consumer<String> consume() {
+			return v -> System.out.println(v);
+		}
+
+		@Override
+		public void initialize(GenericApplicationContext applicationContext) {
+			applicationContext.registerBean("consume", FunctionRegistration.class,
+					() -> new FunctionRegistration<>(consume())
+						.type(FunctionType.consumer(String.class)));
+		}
+
 	}
 
 
