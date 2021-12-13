@@ -64,6 +64,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.reactive.function.server.ServerResponse.BodyBuilder;
 import org.springframework.web.server.WebExceptionHandler;
 import org.springframework.web.server.adapter.HttpWebHandlerAdapter;
 import org.springframework.web.server.adapter.WebHttpHandlerBuilder;
@@ -244,8 +245,13 @@ class FunctionEndpointFactory {
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
 					.flatMap(content -> this.processor.post(wrapper, content, false));
 			return stream.flatMap(entity -> {
-				return status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()))
-						.body(entity.hasBody() ? Mono.just((T) entity.getBody()) : Mono.empty(), outputType);
+				BodyBuilder builder = status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()));
+				if (outputType == null) { // consumer
+					return builder.build();
+				}
+				else {
+					return builder.body(entity != null && entity.hasBody() ? Mono.just((T) entity.getBody()) : Mono.empty(), outputType);
+				}
 			});
 		}).andRoute(GET("/**"), request -> {
 			FunctionInvocationWrapper funcWrapper = extract(request);
