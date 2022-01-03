@@ -82,7 +82,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 		this.start();
 	}
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 		final byte[] payload = StreamUtils.copyToByteArray(input);
@@ -99,10 +99,18 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 
 		// TODO we should eventually completely delegate to message converter
-		//Message requestMessage = MessageBuilder.withPayload(payload).setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true).build();
-		Message requestMessage = isApiGateway
-				? MessageBuilder.withPayload(payload).setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true).build()
-				: AWSLambdaUtils.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.jsonMapper, context);
+		Message requestMessage;
+		if (isApiGateway) {
+			MessageBuilder builder = MessageBuilder.withPayload(payload).setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true);
+			if (structMessage instanceof Map && ((Map) structMessage).containsKey("headers")) {
+				builder.copyHeaders((Map) ((Map) structMessage).get("headers"));
+			}
+			requestMessage = builder.build();
+		}
+		else {
+			requestMessage = AWSLambdaUtils
+					.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.jsonMapper, context);
+		}
 
 		try {
 			Object response = this.function.apply(requestMessage);
@@ -111,15 +119,20 @@ public class FunctionInvoker implements RequestStreamHandler {
 		}
 		catch (Exception e) {
 			logger.error(e);
-			StreamUtils.copy(this.buildExceptionResult(requestMessage, e), output);
+			StreamUtils.copy(this.buildExceptionResult(requestMessage, e, isApiGateway), output);
 		}
 	}
 
-	private byte[] buildExceptionResult(Message<?> requestMessage, Exception exception) throws IOException {
-		APIGatewayProxyResponseEvent event = new APIGatewayProxyResponseEvent();
-		event.setStatusCode(HttpStatus.EXPECTATION_FAILED.value());
-		event.setBody(exception.getMessage());
-		return this.jsonMapper.toJson(event);
+	private byte[] buildExceptionResult(Message<?> requestMessage, Exception exception, boolean isApiGateway) throws IOException {
+		if (isApiGateway) {
+			APIGatewayProxyResponseEvent event = new APIGatewayProxyResponseEvent();
+			event.setStatusCode(HttpStatus.EXPECTATION_FAILED.value());
+			event.setBody(exception.getMessage());
+			return this.jsonMapper.toJson(event);
+		}
+		else {
+			throw new IllegalStateException(exception);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
