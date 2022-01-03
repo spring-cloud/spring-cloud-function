@@ -137,7 +137,7 @@ public class RoutingFunction implements Function<Object, Object> {
 				else {
 					throw new IllegalStateException("Failed to establish route, since neither were provided: "
 							+ "'spring.cloud.function.definition' as Message header or as application property or "
-							+ "'spring.cloud.function.routing-expression' as application property.");
+							+ "'spring.cloud.function.routing-expression' as application property. Incoming message: " + input);
 				}
 			}
 		}

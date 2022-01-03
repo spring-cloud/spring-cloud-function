@@ -10,17 +10,16 @@ You can do so in two different ways.
 1. You can provide `spring_cloud_function_definition` environment variable setting its value to the desired function definition, which could also be composition
 (e.g., `spring_cloud_function_definition=foo|bar`).
 
-2. A more dynamic and recommended approach would be to fallback on auto routing capabilities of spring-cloud function's in AWS environment. 
-Basically every time you have more then one function in your configuration, the framework will bind 
-[Routing Function](https://docs.spring.io/spring-cloud-function/docs/3.1.3/reference/html/spring-cloud-function.html#_function_routing_and_filtering) 
-as AWS Lambda, and all you need to to is provide a routing instruction via Message headers or environment variables. The instructions could themselves be very dynamic, 
-since we support both SpEL and registering a callback interface. For more details on routing mechanisms please refer to 
-[Function Routing and Filtering](https://docs.spring.io/spring-cloud-function/docs/3.1.3/reference/html/spring-cloud-function.html#_function_routing_and_filtering) section.
-
-
 NOTE: Keep in mind though that since AWS does not allow dots `.` and/or hyphens`-` in the name of the environment variable, you can benefit from boot support and simply substitute
 dots with underscores and hyphens with camel case.  So for example `spring.cloud.function.definition` becomes `spring_cloud_function_definition`
 and `spring.cloud.function.routing-expression` becomes `spring_cloud_function_routingExpression`.
+
+2. A more dynamic and recommended approach would be to fallback on auto routing capabilities of spring-cloud function's in AWS environment. 
+Basically every time you have more then one function in your configuration, the framework will bind 
+[Routing Function](https://docs.spring.io/spring-cloud-function/docs/3.1.3/reference/html/spring-cloud-function.html#_function_routing_and_filtering) 
+as AWS Lambda, and all you need to to is provide a routing instruction via Message headers or environment variables. The instructions could themselves be very dynamic, since we support both SpEL and registering a callback interface. For more details on routing mechanisms please refer to 
+[Function Routing and Filtering](https://docs.spring.io/spring-cloud-function/docs/3.1.3/reference/html/spring-cloud-function.html#_function_routing_and_filtering) section.
+
 
 In this example we have configuration with two functions; `uppercase` and `reverse`.
 When executing from AWS Lambda functions dashboard you can simply provide one of the mentioned properties as environment variables via Configuration tab.
