@@ -30,7 +30,6 @@ import java.util.Set;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -53,7 +52,6 @@ import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -112,27 +110,10 @@ public class FunctionInvoker implements RequestStreamHandler {
 					.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.jsonMapper, context);
 		}
 
-		try {
-			Object response = this.function.apply(requestMessage);
-			byte[] responseBytes = this.buildResult(requestMessage, response);
-			StreamUtils.copy(responseBytes, output);
-		}
-		catch (Exception e) {
-			logger.error(e);
-			StreamUtils.copy(this.buildExceptionResult(requestMessage, e, isApiGateway), output);
-		}
-	}
-
-	private byte[] buildExceptionResult(Message<?> requestMessage, Exception exception, boolean isApiGateway) throws IOException {
-		if (isApiGateway) {
-			APIGatewayProxyResponseEvent event = new APIGatewayProxyResponseEvent();
-			event.setStatusCode(HttpStatus.EXPECTATION_FAILED.value());
-			event.setBody(exception.getMessage());
-			return this.jsonMapper.toJson(event);
-		}
-		else {
-			throw new IllegalStateException(exception);
-		}
+		Object response = this.function.apply(requestMessage);
+		byte[] responseBytes = this.buildResult(requestMessage, response);
+		StreamUtils.copy(responseBytes, output);
+		// any exception should propagate
 	}
 
 	@SuppressWarnings("unchecked")
