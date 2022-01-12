@@ -49,6 +49,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -914,9 +915,14 @@ public class FunctionInvokerTests {
 
 		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		invoker.handleRequest(targetStream, output, null);
-		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(((String) result.get("body"))).startsWith("Failed to establish route, since neither were provided:");
+
+		try {
+			invoker.handleRequest(targetStream, output, null);
+			fail();
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+		}
 	}
 
 	@SuppressWarnings("rawtypes")
