@@ -135,7 +135,7 @@ public class SimpleFunctionRegistryTests {
 		};
 
 		FunctionRegistration<Function<Map<String, Person>, String>> registration = new FunctionRegistration<>(
-				function, "echo").type(FunctionType.of(functionType));
+				function, "echo").type(functionType);
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
 				new JacksonMapper(new ObjectMapper()));
 		catalog.register(registration);
