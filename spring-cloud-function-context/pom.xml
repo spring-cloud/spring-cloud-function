@@ -46,8 +46,6 @@
 			<groupId>com.fasterxml.jackson.module</groupId>
 			<artifactId>jackson-module-kotlin</artifactId>
 			<optional>true</optional>
-<<<<<<< HEAD
-=======
 		</dependency>
 		<dependency> 
 			<groupId>javax.annotation</groupId>
@@ -58,7 +56,6 @@
 		    <groupId>javax.activation</groupId>
 		    <artifactId>javax.activation-api</artifactId>
 		    <version>1.2.0</version>
->>>>>>> 4.x
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

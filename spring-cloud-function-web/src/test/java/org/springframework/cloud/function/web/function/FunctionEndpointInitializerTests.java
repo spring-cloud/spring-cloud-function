@@ -32,6 +32,7 @@ import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.ResolvableType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.SocketUtils;
@@ -137,9 +138,10 @@ public class FunctionEndpointInitializerTests {
 
 		@Override
 		public void initialize(GenericApplicationContext applicationContext) {
+
 			applicationContext.registerBean("consume", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(consume())
-						.type(FunctionType.consumer(String.class)));
+						.type(ResolvableType.forClassWithGenerics(Consumer.class, String.class).getType()));
 		}
 
 	}
