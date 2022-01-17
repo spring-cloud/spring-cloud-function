@@ -236,6 +236,12 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			return "UNKNOWN-VERSION";
 		}
 		int startIndex = path.lastIndexOf("/") + 1;
-		return path.substring(startIndex, endIndex).replace("spring-cloud-function-adapter-aws-", "");
+		try {
+			return path.substring(startIndex, endIndex).replace("spring-cloud-function-adapter-aws-", "");
+		}
+		catch (Throwable e) {
+			logger.info("Failed to deterimine framework version");
+			return "UNKNOWN-VERSION";
+		}
 	}
 }
