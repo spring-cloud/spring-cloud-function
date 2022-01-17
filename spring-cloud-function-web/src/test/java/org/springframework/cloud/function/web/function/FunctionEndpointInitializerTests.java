@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2019 the original author or authors.
+ * Copyright 2019-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.http.HttpStatus;
@@ -169,18 +169,19 @@ public class FunctionEndpointInitializerTests {
 
 		@Override
 		public void initialize(GenericApplicationContext applicationContext) {
+
 			applicationContext.registerBean("uppercase", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(uppercase())
-						.type(FunctionType.from(String.class).to(String.class)));
+						.type(FunctionTypeUtils.functionType(String.class, String.class)));
 			applicationContext.registerBean("reverse", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(reverse())
-						.type(FunctionType.from(String.class).to(String.class)));
+						.type(FunctionTypeUtils.functionType(String.class, String.class)));
 			applicationContext.registerBean("lowercase", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(lowercase())
-						.type(FunctionType.from(String.class).to(String.class)));
+						.type(FunctionTypeUtils.functionType(String.class, String.class)));
 			applicationContext.registerBean("supplier", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(supplier())
-						.type(FunctionType.supplier(String.class)));
+						.type(FunctionTypeUtils.supplierType(String.class)));
 		}
 
 	}

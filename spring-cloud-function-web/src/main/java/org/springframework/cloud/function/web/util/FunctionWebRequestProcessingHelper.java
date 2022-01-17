@@ -87,6 +87,10 @@ public final class FunctionWebRequestProcessingHelper {
 	public static Object processRequest(FunctionWrapper wrapper, Object argument, boolean eventStream) {
 		FunctionInvocationWrapper function = wrapper.getFunction();
 
+		if (function == null) {
+			return Mono.just(ResponseEntity.notFound().build());
+		}
+
 		HttpHeaders headers = wrapper.getHeaders();
 
 		Message<?> inputMessage = argument == null ? null : MessageBuilder.withPayload(argument).copyHeaders(headers.toSingleValueMap()).build();

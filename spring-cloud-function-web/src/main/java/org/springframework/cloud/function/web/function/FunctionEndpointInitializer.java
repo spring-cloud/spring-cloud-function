@@ -41,11 +41,9 @@ import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
-import org.springframework.cloud.function.json.JsonMapper;
-import org.springframework.cloud.function.web.RequestProcessor;
-import org.springframework.cloud.function.web.RequestProcessor.FunctionWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
+import org.springframework.cloud.function.web.util.FunctionWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
@@ -104,12 +102,9 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 	}
 
 	private void registerEndpoint(GenericApplicationContext context) {
-		context.registerBean(RequestProcessor.class,
-				() -> new RequestProcessor(context.getBeansOfType(JsonMapper.class).values().iterator().next(),
-						context.getBeanProvider(ServerCodecConfigurer.class)));
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionProperties.class), context.getBean(FunctionCatalog.class),
-						context.getBean(RequestProcessor.class), context.getEnvironment()));
+						context.getEnvironment()));
 		RouterFunctionRegister.register(context);
 	}
 
@@ -204,16 +199,13 @@ class FunctionEndpointFactory {
 
 	private final String handler;
 
-	private final RequestProcessor processor;
-
 	private final FunctionProperties functionProperties;
 
-	FunctionEndpointFactory(FunctionProperties functionProperties, FunctionCatalog functionCatalog, RequestProcessor processor, Environment environment) {
+	FunctionEndpointFactory(FunctionProperties functionProperties, FunctionCatalog functionCatalog, Environment environment) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
 			handler = null;
 		}
-		this.processor = processor;
 		this.functionCatalog = functionCatalog;
 		this.handler = handler;
 		this.functionProperties = functionProperties;
@@ -241,9 +233,10 @@ class FunctionEndpointFactory {
 			FunctionInvocationWrapper funcWrapper = extract(request);
 			Class<?> outputType = funcWrapper == null ? Object.class
 					: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
-			FunctionWrapper wrapper = RequestProcessor.wrapper(funcWrapper);
+			FunctionWrapper wrapper = new FunctionWrapper(funcWrapper);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
-					.flatMap(content -> this.processor.post(wrapper, content, false));
+					.flatMap(content -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, content, false));
+
 			return stream.flatMap(entity -> {
 				BodyBuilder builder = status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()));
 				if (outputType == null) { // consumer
@@ -265,11 +258,12 @@ class FunctionEndpointFactory {
 				return ServerResponse.ok().body(result, outputType);
 			}
 			else {
-				FunctionWrapper wrapper = RequestProcessor.wrapper(funcWrapper);
-				wrapper.headers(request.headers().asHttpHeaders());
+				FunctionWrapper wrapper = new FunctionWrapper(funcWrapper);
+
+				wrapper.setHeaders(request.headers().asHttpHeaders());
 				String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
-				wrapper.argument(Flux.just(argument));
-				Object result = FunctionWebRequestProcessingHelper.invokeFunction(funcWrapper, wrapper.argument(),
+				wrapper.setArgument(Flux.just(argument));
+				Object result = FunctionWebRequestProcessingHelper.invokeFunction(funcWrapper, wrapper.getArgument(),
 						funcWrapper.isInputTypeMessage());
 				return ServerResponse.ok().body(result, outputType);
 			}

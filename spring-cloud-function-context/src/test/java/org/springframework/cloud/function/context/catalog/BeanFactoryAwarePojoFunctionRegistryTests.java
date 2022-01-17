@@ -133,7 +133,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	}
 
 	// POJO Function
-	private static class MyFunctionLike {
+	public static class MyFunctionLike {
 		public String uppercase(String value) {
 			return value.toUpperCase();
 		}

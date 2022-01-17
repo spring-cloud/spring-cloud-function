@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 the original author or authors.
+ * Copyright 2016-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,26 +27,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import net.jodah.typetools.TypeResolver;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.function.core.FluxConsumer;
-import org.springframework.cloud.function.core.FluxFunction;
-import org.springframework.cloud.function.core.FluxSupplier;
-import org.springframework.cloud.function.core.FluxToMonoFunction;
-import org.springframework.cloud.function.core.FluxedConsumer;
-import org.springframework.cloud.function.core.FluxedFunction;
-import org.springframework.cloud.function.core.MonoSupplier;
-import org.springframework.cloud.function.core.MonoToFluxFunction;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-
-
 
 /**
  * @param <T> target type
@@ -71,7 +57,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 
 	private T target;
 
-	private FunctionType type;
+	private Type type;
 
 	/**
 	 * Creates instance of FunctionRegistration.
@@ -105,7 +91,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 		this.names.addAll(names);
 	}
 
-	public FunctionType getType() {
+	public Type getType() {
 		return this.type;
 	}
 
@@ -119,25 +105,33 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	}
 
 	public FunctionRegistration<T> type(Type type) {
-		return type(FunctionType.of(type));
-	}
-
-	public FunctionRegistration<T> type(FunctionType type) {
-
-		Type t = FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
-		if (t == null) { // only valid for Kafka Stream KStream[] return type.
+		Type discoveredFunctionType = FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
+		if (discoveredFunctionType == null) { // only valid for Kafka Stream KStream[] return type.
 			return null;
 		}
-		FunctionType discoveredFunctionType = FunctionType.of(t);
-		Class<?> inputType = TypeResolver.resolveRawClass(discoveredFunctionType.getInputType(), null);
-		Class<?> outputType = TypeResolver.resolveRawClass(discoveredFunctionType.getOutputType(), null);
-
-		if (!(inputType.isAssignableFrom(TypeResolver.resolveRawClass(type.getInputType(), null))
-				&& outputType.isAssignableFrom(TypeResolver.resolveRawClass(type.getOutputType(), null)))) {
-			throw new IllegalStateException("Discovered function type does not match provided function type. Discovered: "
-					+ discoveredFunctionType + "; Provided: " + type);
-		}
 		this.type = type;
+
+		Class<?> inputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(discoveredFunctionType));
+		Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(discoveredFunctionType));
+
+		if (inputType != null && inputType != Object.class && outputType != null && outputType != Object.class) {
+			Assert.isTrue((inputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+					&& outputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))),
+					"Discovered function type does not match provided function type. Discovered: "
+						+ discoveredFunctionType + "; Provided: " + type);
+		}
+		else if (inputType == null && outputType != Object.class) {
+			Assert.isTrue(outputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))),
+					"Discovered function type does not match provided function type. Discovered: "
+						+ discoveredFunctionType + "; Provided: " + type);
+		}
+		else if (outputType == null && inputType != Object.class) {
+			Assert.isTrue(inputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))),
+					"Discovered function type does not match provided function type. Discovered: "
+						+ discoveredFunctionType + "; Provided: " + type);
+		}
+
+
 		return this;
 	}
 
@@ -175,52 +169,30 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	 *
 	 */
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public <S> FunctionRegistration<S> wrap() {
-		this.isFunctionSignatureSupported();
-		FunctionRegistration<S> result;
-		if (this.type == null) {
-			result = (FunctionRegistration<S>) this;
-		}
-		else if (this.target instanceof RoutingFunction) {
-			S target = (S) this.target;
-			result = new FunctionRegistration<S>(target);
-			result.type(this.type.getType());
-			result = result.target(target).names(this.names)
-					.type(result.type.wrap(Flux.class)).properties(this.properties);
-		}
-		else {
-			S target = (S) this.target;
-			result = new FunctionRegistration<S>(target);
-			result.type(this.type.getType());
-
-			if (!this.type.isWrapper()) {
-				target = target instanceof Supplier
-						? (S) new FluxSupplier((Supplier<?>) target)
-						: target instanceof Function
-								? (S) new FluxFunction((Function<?, ?>) target)
-								: (S) new FluxConsumer((Consumer<?>) target);
-			}
-			else if (Mono.class.isAssignableFrom(this.type.getOutputWrapper())) {
-				target = target instanceof Supplier
-						? (S) new MonoSupplier((Supplier<?>) target)
-						: (S) new FluxToMonoFunction((Function<?, ?>) target);
-			}
-			else if (Mono.class.isAssignableFrom(this.type.getInputWrapper())) {
-				target = (S) new MonoToFluxFunction((Function) target);
-			}
-			else if (target instanceof Consumer) {
-				target = (S) new FluxedConsumer((Consumer<?>) target);
-			}
-			else if (target instanceof Function) {
-				target = (S) new FluxedFunction((Function<?, ?>) target);
-			}
-			result = result.target(target).names(this.names)
-					.type(result.type.wrap(Flux.class)).properties(this.properties);
-		}
-
-		return result;
-	}
+//	@SuppressWarnings({ "unchecked", "rawtypes" })
+//	public <S> FunctionRegistration<S> wrap() {
+//		this.isFunctionSignatureSupported();
+//		FunctionRegistration<S> result;
+//		if (this.type == null) {
+//			result = (FunctionRegistration<S>) this;
+//		}
+//		else if (this.target instanceof RoutingFunction) {
+//			S target = (S) this.target;
+//			result = new FunctionRegistration<S>(target);
+//			result.type(this.type.getType());
+//			result = result.target(target).names(this.names)
+//					.type(result.type.wrap(Flux.class)).properties(this.properties);
+//		}
+//		else {
+//			S target = (S) this.target;
+//			result = new FunctionRegistration<S>(target);
+//			result.type(this.type.getType());
+//			result = result.target(target).names(this.names)
+//					.type(result.type.wrap(Flux.class)).properties(this.properties);
+//		}
+//
+//		return result;
+//	}
 
 	@Override
 	public void setBeanName(String name) {
@@ -229,12 +201,12 @@ public class FunctionRegistration<T> implements BeanNameAware {
 		}
 	}
 
-	private void isFunctionSignatureSupported() {
-		if (type != null) {
-			Assert.isTrue(!(Mono.class.isAssignableFrom(this.type.getOutputWrapper())
-					&& Mono.class.isAssignableFrom(this.type.getInputWrapper())),
-					"Function<Mono, Mono> is not supported.");
-		}
-	}
+//	private void isFunctionSignatureSupported() {
+//		if (type != null) {
+//			Assert.isTrue(!(Mono.class.isAssignableFrom(this.type.getOutputWrapper())
+//					&& Mono.class.isAssignableFrom(this.type.getInputWrapper())),
+//					"Function<Mono, Mono> is not supported.");
+//		}
+//	}
 
 }
