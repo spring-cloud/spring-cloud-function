@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.test;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -29,7 +31,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.cloud.function.test.FunctionalExporterTests.ApplicationConfiguration;
 import org.springframework.cloud.function.web.source.SupplierExporter;
@@ -38,6 +40,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -114,8 +117,16 @@ public class FunctionalExporterTests {
 		@Override
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("uppercase", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(uppercase()).type(
-							FunctionType.from(Person.class).to(String.class).message()));
+					() -> new FunctionRegistration<>(uppercase())
+						.type(FunctionTypeUtils.discoverFunctionTypeFromFunctionFactoryMethod(this.getClass(), "uppercase")));
+		}
+
+		public static Type discoverFunctionTypeFromFunctionFactoryMethod(Class<?> clazz, String methodName) {
+			return discoverFunctionTypeFromFunctionFactoryMethod(ReflectionUtils.findMethod(clazz, methodName));
+		}
+
+		public static Type discoverFunctionTypeFromFunctionFactoryMethod(Method method) {
+			return method.getGenericReturnType();
 		}
 	}
 

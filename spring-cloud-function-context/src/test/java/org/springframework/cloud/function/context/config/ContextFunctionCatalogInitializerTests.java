@@ -39,7 +39,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.scan.TestFunction;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -245,17 +245,18 @@ public class ContextFunctionCatalogInitializerTests {
 
 		private List<String> list = new ArrayList<>();
 
+
 		@Override
 		public void initialize(GenericApplicationContext context) {
+
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(function()).type(
-							FunctionType.from(Person.class).to(Person.class).getType()));
+					() -> new FunctionRegistration<>(function()).type(FunctionTypeUtils.functionType(Person.class, Person.class)));
 			context.registerBean("supplier", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(supplier())
-							.type(FunctionType.supplier(String.class).getType()));
+							.type(FunctionTypeUtils.supplierType(String.class)));
 			context.registerBean("consumer", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(consumer())
-							.type(FunctionType.consumer(String.class).getType()));
+							.type(FunctionTypeUtils.consumerType(String.class)));
 			context.registerBean(SimpleConfiguration.class, () -> this);
 		}
 
@@ -296,8 +297,7 @@ public class ContextFunctionCatalogInitializerTests {
 		@Override
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(function()).type(
-							FunctionType.from(String.class).to(String.class).getType()));
+					() -> new FunctionRegistration<>(function()).type(FunctionTypeUtils.functionType(String.class, String.class)));
 			context.registerBean(PropertiesConfiguration.class, () -> this);
 		}
 
@@ -317,8 +317,7 @@ public class ContextFunctionCatalogInitializerTests {
 		@Override
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(function()).type(
-							FunctionType.from(String.class).to(String.class).getType()));
+					() -> new FunctionRegistration<>(function()).type(FunctionTypeUtils.functionType(String.class, String.class)));
 			context.registerBean(ValueConfiguration.class, () -> this);
 		}
 
@@ -355,8 +354,7 @@ public class ContextFunctionCatalogInitializerTests {
 			context.registerBean(String.class, () -> value());
 			context.registerBean("foos", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(foos(context.getBean(String.class)))
-							.type(FunctionType.from(String.class).to(Foo.class)
-									.getType()));
+							.type(FunctionTypeUtils.functionType(String.class, Foo.class)));
 		}
 
 		@Bean

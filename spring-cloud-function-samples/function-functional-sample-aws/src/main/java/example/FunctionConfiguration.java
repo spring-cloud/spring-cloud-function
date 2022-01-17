@@ -4,7 +4,7 @@ import java.util.function.Function;
 
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 
@@ -24,7 +24,6 @@ public class FunctionConfiguration implements ApplicationContextInitializer<Gene
     public void initialize(GenericApplicationContext context) {
     	Function<String, String> function = (str) -> str + str.toUpperCase();
     	context.registerBean("uppercase", FunctionRegistration.class,
-				() -> new FunctionRegistration<>(function).type(
-						FunctionType.from(String.class).to(String.class)));
+				() -> new FunctionRegistration<>(function).type(FunctionTypeUtils.functionType(String.class, String.class)));
     }
 }

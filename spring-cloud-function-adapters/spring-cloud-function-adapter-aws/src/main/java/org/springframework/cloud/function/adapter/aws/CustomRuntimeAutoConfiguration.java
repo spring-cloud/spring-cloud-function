@@ -29,6 +29,8 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author Dave Syer
  */
+//TODO - do we actually need it?????
+
 @Configuration
 @AutoConfigureBefore(FunctionExporterAutoConfiguration.class)
 @ConditionalOnClass(DestinationResolver.class)

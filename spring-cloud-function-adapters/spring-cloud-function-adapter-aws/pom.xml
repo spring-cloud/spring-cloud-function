@@ -13,13 +13,12 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-function-adapter-parent</artifactId>
-		<version>3.2.2-SNAPSHOT</version>
+		<version>4.0.0-SNAPSHOT</version>
 	</parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
 		<aws-lambda-events.version>3.9.0</aws-lambda-events.version>
 		<aws-java-sdk.version>1.12.29</aws-java-sdk.version>
 		<aws-kinesis-deaggregator.version>1.0.3</aws-kinesis-deaggregator.version>

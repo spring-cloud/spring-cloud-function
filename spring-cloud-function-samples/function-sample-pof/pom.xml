@@ -5,7 +5,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-pof</artifactId>
-	<version>2.0.0.RELEASE</version>
+	<version>4.0.0.RELEASE</version>
 	<packaging>jar</packaging>
 	<name>function-sample-pof</name>
 	<description>Spring Cloud Function Web Support</description>
@@ -13,16 +13,15 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.6.1</version>
+		<version>3.0.0-SNAPSHOT</version>
 		<relativePath/>
 	</parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
-		<spring-cloud-function.version>3.2.2-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>4.0.0-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>

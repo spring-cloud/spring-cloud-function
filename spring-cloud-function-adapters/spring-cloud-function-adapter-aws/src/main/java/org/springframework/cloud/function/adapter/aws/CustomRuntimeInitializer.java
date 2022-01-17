@@ -19,7 +19,6 @@ package org.springframework.cloud.function.adapter.aws;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
 import org.springframework.cloud.function.web.source.DestinationResolver;
 import org.springframework.context.ApplicationContextInitializer;
@@ -64,7 +63,7 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 			logger.info("AWS Handler: " + handler);
 			try {
 				Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(handler);
-				if (FunctionInvoker.class.isAssignableFrom(clazz) || AbstractSpringFunctionAdapterInitializer.class.isAssignableFrom(clazz)) {
+				if (FunctionInvoker.class.isAssignableFrom(clazz)) {
 					return false;
 				}
 			}
