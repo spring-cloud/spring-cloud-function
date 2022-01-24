@@ -26,6 +26,8 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class HybridFunctionalRegistrationTests {
 
 	// see https://github.com/spring-cloud/spring-cloud-function/issues/258
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testNoDoubleRegistrationInHybridMode() {
 		ConfigurableApplicationContext context = FunctionalSpringApplication
@@ -46,9 +49,26 @@ public class HybridFunctionalRegistrationTests {
 
 		assertThat(context.containsBean("function")).isTrue();
 		assertThat(context.getBeansOfType(UppercaseFunction.class).size()).isEqualTo(1);
-		assertThat((Object) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFunction")).isNotNull();
+		assertThat((Function) catalog.lookup("hybridFunctionalRegistrationTests.UppercaseFunction")).isNotNull();
 	}
 
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testMessageHeaderPropagationInFunctionalBeanRegistration() {
+		ConfigurableApplicationContext context = FunctionalSpringApplication
+				.run(UppercaseMessageFunction.class, "--spring.functional.enabled=false");
+
+		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
+
+		assertThat(context.containsBean("function")).isTrue();
+		assertThat(context.getBeansOfType(UppercaseMessageFunction.class).size()).isEqualTo(1);
+		Function f = catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseMessageFunction");
+		assertThat(f).isNotNull();
+		String result = (String) f.apply(MessageBuilder.withPayload("hello").setHeader("foo", "foo").setHeader("blah", "blah").build());
+		assertThat(result).isEqualTo("HELLO");
+	}
+
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void testNoDoubleRegistrationInHybridModeFluxedFunction() {
 		ConfigurableApplicationContext context = FunctionalSpringApplication
@@ -58,7 +78,7 @@ public class HybridFunctionalRegistrationTests {
 
 		assertThat(context.containsBean("function")).isTrue();
 		assertThat(context.getBeansOfType(UppercaseFluxFunction.class).size()).isEqualTo(1);
-		assertThat((Object) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFluxFunction")).isNotNull();
+		assertThat((Function) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFluxFunction")).isNotNull();
 	}
 
 	@SpringBootConfiguration
@@ -71,6 +91,21 @@ public class HybridFunctionalRegistrationTests {
 		@Override
 		public String apply(String t) {
 			return t.toUpperCase();
+		}
+	}
+
+	@SpringBootConfiguration
+	@ImportAutoConfiguration({
+		ContextFunctionCatalogAutoConfiguration.class,
+		JacksonAutoConfiguration.class }
+	)
+	public static class UppercaseMessageFunction implements Function<Message<String>, String> {
+
+		@Override
+		public String apply(Message<String> message) {
+			assertThat(message.getHeaders().get("foo")).isEqualTo("foo");
+			assertThat(message.getHeaders().get("blah")).isEqualTo("blah");
+			return message.getPayload().toUpperCase();
 		}
 	}
 
