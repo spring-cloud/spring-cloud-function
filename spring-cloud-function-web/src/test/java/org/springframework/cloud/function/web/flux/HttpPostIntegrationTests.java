@@ -333,6 +333,8 @@ public class HttpPostIntegrationTests {
 	@Test
 	@DirtiesContext
 	public void uppercaseSSE() throws Exception {
+		String s = this.rest.exchange(RequestEntity.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class).getBody();
 		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class).getBody())
 						.isEqualTo(sse("(FOO)", "(BAR)"));
