@@ -16,10 +16,12 @@
 
 package com.example;
 
+import java.time.Duration;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -55,9 +57,11 @@ public class SampleApplication {
 	}
 
 	@Bean
-	public Supplier<Flux<String>> words() {
-		return () -> Flux.fromArray(new String[] {"foo", "bar"});
+	public Supplier<Flux<String>> infinite() {
+	    return () -> Flux
+	            .interval(Duration.ofSeconds(1))
+	            .log()
+	            .map(counter -> String.format("Counter: %s", counter));
 	}
 
 }
-// @checkstyle:on

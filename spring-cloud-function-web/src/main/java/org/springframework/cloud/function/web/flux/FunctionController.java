@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.flux;
 
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -74,11 +75,17 @@ public class FunctionController {
 		return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper(request), body, false);
 	}
 
-	@SuppressWarnings("unchecked")
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
-	public Mono<ResponseEntity<?>> postStream(ServerWebExchange request, @RequestBody(required = false) Flux<String> body) {
-		return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper(request), body, false);
+	public Publisher<?> postStream(ServerWebExchange request, @RequestBody(required = false) Flux<String> body) {
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper(request), body, true);
+	}
+
+	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	@ResponseBody
+	public Publisher<?> getStream(ServerWebExchange request) {
+		FunctionWrapper wrapper = wrapper(request);
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -87,14 +94,6 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> get(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
 		return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
-	}
-
-	@SuppressWarnings("unchecked")
-	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-	@ResponseBody
-	public Mono<ResponseEntity<?>> getStream(ServerWebExchange request) {
-		FunctionWrapper wrapper = wrapper(request);
-		return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true);
 	}
 
 	private FunctionWrapper wrapper(ServerWebExchange request) {
