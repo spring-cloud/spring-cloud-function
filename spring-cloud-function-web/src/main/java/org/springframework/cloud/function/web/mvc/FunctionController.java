@@ -94,21 +94,18 @@ public class FunctionController {
 				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
-	@SuppressWarnings("unchecked")
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
-	public Mono<ResponseEntity<Publisher<?>>> getStream(WebRequest request) {
+	public Publisher<?> getStream(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
-				.processRequest(wrapper, wrapper.getArgument(), true)).map(response -> ResponseEntity.ok()
-				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
+		return FunctionWebRequestProcessingHelper
+				.processRequest(wrapper, wrapper.getArgument(), true);
 	}
 
 	@PostMapping(path = "/**")
 	@ResponseBody
 	public Object post(WebRequest request, @RequestBody(required = false) String body) {
-		String argument = StringUtils.hasText(body) ? body : "";
-		return FunctionWebRequestProcessingHelper.processRequest(wrapper(request), argument, false);
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper(request), body, false);
 	}
 
 	@GetMapping(path = "/**")
