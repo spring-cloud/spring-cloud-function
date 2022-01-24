@@ -52,15 +52,6 @@ public class FunctionTests {
 	}
 
 	@Test
-	public void testWords() {
-		Flux<String> output = this.functions.words().get();
-		List<String> results = output.collectList().block();
-		assertThat(results.size()).isEqualTo(2);
-		assertThat(results.get(0)).isEqualTo("foo");
-		assertThat(results.get(1)).isEqualTo("bar");
-	}
-
-	@Test
 	public void testGreeter() {
 		assertThat(new Greeter().apply("World")).isEqualTo("Hello World");
 	}

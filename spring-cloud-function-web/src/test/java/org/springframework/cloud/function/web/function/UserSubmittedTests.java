@@ -64,6 +64,18 @@ public class UserSubmittedTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
+	@Test
+	public void testIssue274WithData() throws Exception {
+		SpringApplication.run(Issue274Configuration.class);
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		String port = System.getProperty("server.port");
+		Thread.sleep(200);
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/echo"), "hello", String.class);
+		assertThat(response.getBody()).isEqualTo("HELLO");
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
+
 
 	@SpringBootApplication
 	protected static class Issue274Configuration {

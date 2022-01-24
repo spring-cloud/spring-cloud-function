@@ -84,7 +84,7 @@ public final class FunctionWebRequestProcessingHelper {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static Object processRequest(FunctionWrapper wrapper, Object argument, boolean eventStream) {
+	public static Publisher<?> processRequest(FunctionWrapper wrapper, Object argument, boolean eventStream) {
 		FunctionInvocationWrapper function = wrapper.getFunction();
 
 		if (function == null) {
@@ -99,7 +99,7 @@ public final class FunctionWebRequestProcessingHelper {
 			function.setSkipOutputConversion(true);
 		}
 
-		Object input = argument == null ? Flux.empty() : (argument instanceof Publisher ? Flux.from((Publisher) argument) : inputMessage);
+		Object input = argument == null ? "" : (argument instanceof Publisher ? Flux.from((Publisher) argument) : inputMessage);
 
 		Object result = function.apply(input);
 		if (function.isConsumer()) {
@@ -115,7 +115,7 @@ public final class FunctionWebRequestProcessingHelper {
 		if (result instanceof Publisher) {
 			pResult = (Publisher) result;
 			if (eventStream) {
-				return Flux.from(pResult).then(Mono.fromSupplier(() -> responseOkBuilder.body(result)));
+				return Flux.from(pResult);
 			}
 
 			if (pResult instanceof Flux) {
