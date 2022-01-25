@@ -193,7 +193,7 @@ final class AWSLambdaUtils {
 			}
 
 			String body = responseMessage == null
-					? "\"OK\"" : new String(responseMessage.getPayload(), StandardCharsets.UTF_8).replaceAll("\\\"", "");
+					? "\"OK\"" : new String(responseMessage.getPayload(), StandardCharsets.UTF_8);
 			response.put("body", body);
 
 			if (responseMessage != null) {
