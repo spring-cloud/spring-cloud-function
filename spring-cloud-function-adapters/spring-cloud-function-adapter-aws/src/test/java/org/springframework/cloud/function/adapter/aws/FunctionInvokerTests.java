@@ -701,7 +701,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("HELLO");
+		assertThat(result.get("body")).isEqualTo("\"HELLO\"");
 
 		System.clearProperty("spring.cloud.function.definition");
 		System.setProperty("spring.cloud.function.routing-expression", "'uppercase'");
@@ -711,7 +711,23 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		result = this.mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("HELLO");
+		assertThat(result.get("body")).isEqualTo("\"HELLO\"");
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testApiGatewayPojoReturninPojo() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "uppercasePojoReurnPojo");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEventWithStructuredBody.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map response = mapper.readValue(output.toByteArray(), Map.class);
+		Person person = mapper.readValue((String) response.get("body"), Person.class);
+		assertThat(person.getName()).isEqualTo("JIM LAHEY");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -726,7 +742,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("JIM LAHEY");
+		assertThat(result.get("body")).isEqualTo("\"JIM LAHEY\"");
 
 		System.clearProperty("spring.cloud.function.definition");
 		System.setProperty("spring.cloud.function.routing-expression", "'uppercasePojo'");
@@ -736,7 +752,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		result = this.mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("JIM LAHEY");
+		assertThat(result.get("body")).isEqualTo("\"JIM LAHEY\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -752,7 +768,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("hello");
+		assertThat(result.get("body")).isEqualTo("\"hello\"");
 
 		System.clearProperty("spring.cloud.function.definition");
 		System.setProperty("spring.cloud.function.routing-expression", "'inputApiEvent'");
@@ -762,7 +778,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		result = this.mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("hello");
+		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -778,7 +794,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("Hello from Lambda");
+		assertThat(result.get("body")).isEqualTo("\"Hello from Lambda\"");
 
 		System.clearProperty("spring.cloud.function.definition");
 		System.setProperty("spring.cloud.function.routing-expression", "'inputApiV2Event'");
@@ -788,7 +804,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		result = this.mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("Hello from Lambda");
+		assertThat(result.get("body")).isEqualTo("\"Hello from Lambda\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -804,7 +820,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("boom");
+		assertThat(result.get("body")).isEqualTo("\"boom\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -874,7 +890,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("hello");
+		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -890,7 +906,7 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
-		assertThat(result.get("body")).isEqualTo("hello");
+		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -937,7 +953,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("olleh");
+		assertThat(result.get("body")).isEqualTo("\"olleh\"");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -953,7 +969,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("OLLEH");
+		assertThat(result.get("body")).isEqualTo("\"OLLEH\"");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1176,6 +1192,15 @@ public class FunctionInvokerTests {
 		public Function<Person, String> uppercasePojo() {
 			return v -> {
 				return v.getName().toUpperCase();
+			};
+		}
+
+		@Bean
+		public Function<Person, Person> uppercasePojoReurnPojo() {
+			return v -> {
+				Person p = new Person();
+				p.setName(v.getName().toUpperCase());
+				return p;
 			};
 		}
 
