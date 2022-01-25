@@ -31,6 +31,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
+import com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerResponseEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
@@ -62,29 +64,32 @@ public class FunctionInvokerTests {
 
 	String jsonCollection = "[\"Ricky\",\"Julien\",\"Bubbles\"]";
 
-	String sampleLBEvent = "{" +
-			"    \"requestContext\": {" +
-			"        \"elb\": {" +
-			"            \"targetGroupArn\": \"arn:aws:elasticloadbalancing:region:123456789012:targetgroup/my-target-group/6d0ecf831eec9f09\"" +
-			"        }" +
-			"    }," +
-			"    \"httpMethod\": \"GET\"," +
-			"    \"path\": \"/\"," +
-			"    \"headers\": {" +
-			"        \"accept\": \"text/html,application/xhtml+xml\"," +
-			"        \"accept-language\": \"en-US,en;q=0.8\"," +
-			"        \"content-type\": \"text/plain\"," +
-			"        \"cookie\": \"cookies\"," +
-			"        \"host\": \"lambda-846800462-us-east-2.elb.amazonaws.com\"," +
-			"        \"user-agent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6)\"," +
-			"        \"x-amzn-trace-id\": \"Root=1-5bdb40ca-556d8b0c50dc66f0511bf520\"," +
-			"        \"x-forwarded-for\": \"72.21.198.66\"," +
-			"        \"x-forwarded-port\": \"443\"," +
-			"        \"x-forwarded-proto\": \"https\"" +
-			"    }," +
-			"    \"isBase64Encoded\": false," +
-			"    \"body\": \"request_body\"" +
-			"}";
+	String sampleLBEvent = "{\n"
+			+ "  \"requestContext\": {\n"
+			+ "    \"elb\": {\n"
+			+ "      \"targetGroupArn\": \"arn:aws:elasticloadbalancing:us-east-1:XXXXXXXXXXX:targetgroup/sample/6d0ecf831eec9f09\"\n"
+			+ "    }\n"
+			+ "  },\n"
+			+ "  \"httpMethod\": \"GET\",\n"
+			+ "  \"path\": \"/\",\n"
+			+ "  \"queryStringParameters\": {},\n"
+			+ "  \"headers\": {\n"
+			+ "    \"accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\",\n"
+			+ "    \"accept-encoding\": \"gzip\",\n"
+			+ "    \"accept-language\": \"en-US,en;q=0.5\",\n"
+			+ "    \"connection\": \"keep-alive\",\n"
+			+ "    \"cookie\": \"name=value\",\n"
+			+ "    \"host\": \"lambda-YYYYYYYY.elb.amazonaws.com\",\n"
+			+ "    \"upgrade-insecure-requests\": \"1\",\n"
+			+ "    \"user-agent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:60.0) Gecko/20100101 Firefox/60.0\",\n"
+			+ "    \"x-amzn-trace-id\": \"Root=1-5bdb40ca-556d8b0c50dc66f0511bf520\",\n"
+			+ "    \"x-forwarded-for\": \"192.0.2.1\",\n"
+			+ "    \"x-forwarded-port\": \"80\",\n"
+			+ "    \"x-forwarded-proto\": \"http\"\n"
+			+ "  },\n"
+			+ "  \"body\": \"Hello from ELB\",\n"
+			+ "  \"isBase64Encoded\": false\n"
+			+ "}";
 
 	String sampleSQSEvent = "{\n" +
 			"  \"Records\": [\n" +
@@ -689,6 +694,64 @@ public class FunctionInvokerTests {
 		assertThat(result).contains("s3SchemaVersion");
 	}
 
+
+	@Test
+	public void testLBEventStringInOut() throws Exception {
+		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoString");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleLBEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
+	}
+
+	@Test
+	public void testLBEvent() throws Exception {
+		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputLBEvent");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleLBEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
+	}
+
+	@Test
+	public void testLBEventAsMessage() throws Exception {
+		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputLBEventAsMessage");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleLBEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
+	}
+
+	@Test
+	public void testLBEventInOut() throws Exception {
+		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputOutputLBEvent");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleLBEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("Hello from ELB");
+	}
+
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayStringEventBody() throws Exception {
@@ -1161,6 +1224,48 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<Map<String, Object>, String> inputS3EventAsMap() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.toString();
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class LBConfiguration {
+		@Bean
+		public Function<String, String> echoString() {
+			return v -> v;
+		}
+
+		@Bean
+		public Function<ApplicationLoadBalancerRequestEvent, String> inputLBEvent() {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.getBody();
+			};
+		}
+
+		@Bean
+		public Function<ApplicationLoadBalancerRequestEvent, ApplicationLoadBalancerResponseEvent> inputOutputLBEvent() {
+			return v -> {
+				ApplicationLoadBalancerResponseEvent response = new ApplicationLoadBalancerResponseEvent();
+				response.setBody(v.getBody());
+				return response;
+			};
+		}
+
+		@Bean
+		public Function<Message<ApplicationLoadBalancerRequestEvent>, String> inputLBEventAsMessage(JsonMapper jsonMapper) {
+			return v -> {
+				System.out.println("Received: " + v);
+				return v.getPayload().getBody();
+			};
+		}
+
+		@Bean
+		public Function<Map<String, Object>, String> inputLBEventAsMap() {
 			return v -> {
 				System.out.println("Received: " + v);
 				return v.toString();
