@@ -21,8 +21,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
-import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
-import org.springframework.cloud.function.web.source.DestinationResolver;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.StringUtils;
@@ -45,12 +43,6 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 			if (context.getBeanFactory().getBeanNamesForType(CustomRuntimeEventLoop.class, false, false).length == 0) {
 				context.registerBean(StringUtils.uncapitalize(CustomRuntimeEventLoop.class.getSimpleName()),
 						CommandLineRunner.class, () -> args -> CustomRuntimeEventLoop.eventLoop(context));
-			}
-		}
-		else if (ContextFunctionCatalogInitializer.enabled
-				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
-			if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
-				context.registerBean(LambdaDestinationResolver.class, () -> new LambdaDestinationResolver());
 			}
 		}
 	}
