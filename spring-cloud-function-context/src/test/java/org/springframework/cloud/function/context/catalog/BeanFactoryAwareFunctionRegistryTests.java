@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -528,6 +529,18 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
+	public void testNoConversionOnInputMapIfInputIsMap() {
+		FunctionCatalog catalog = this.configureCatalog();
+		Function f = catalog.lookup("maptopojo");
+		Person p = new Person("John", 123);
+		Map<String, Object> map = new HashMap<>();
+		map.put("person", p);
+		map.put("foo", "foo");
+		assertThat(f.apply(map)).isInstanceOf(Person.class);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
 	public void testValueWrappedInMessageIfNecessary() {
 		FunctionCatalog catalog = this.configureCatalog(PojoToMessageFunctionCompositionConfiguration.class);
 		Function f = catalog.lookup("uppercase|echo");
@@ -930,7 +943,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<Map<String, Object>, Person> maptopojo() {
 			return map -> {
-				Person person = new Person((String) map.get("name"), Integer.parseInt((String) map.get("id")));
+				Person person = (Person) map.get("person");
 				return person;
 			};
 		}

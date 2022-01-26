@@ -1067,7 +1067,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				}
 			}
 			else {
-				convertedInput = this.convertNonMessageInputIfNecessary(type, input, JsonMapper.isJsonString(input) || input instanceof Map);
+				convertedInput = this.convertNonMessageInputIfNecessary(type, input, JsonMapper.isJsonString(input));
 				if (convertedInput != null && logger.isDebugEnabled()) {
 					logger.debug("Converted input: " + input + " to: " + convertedInput);
 				}
