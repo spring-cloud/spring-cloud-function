@@ -572,6 +572,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testWrappedWithAroundAdviseNotMessageReturnConfiguration() {
+		FunctionCatalog catalog = this.configureCatalog(WrappedWithAroundAdviseNotMessageReturnConfiguration.class);
+		Function f = catalog.lookup("uppercase");
+		Message result = (Message) f.apply(MessageBuilder.withPayload("hello").setHeader("myHeader", "myValue").build());
+		assertThat(result.getHeaders()).containsEntry("myHeader", "myValue").containsEntry("advised", "true");
+		assertThat(result.getPayload()).isEqualTo("HELLO");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testEachElementInFluxIsProcessed() {
 		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
 		Function f = catalog.lookup("uppercasePerson");
@@ -916,6 +926,32 @@ public class BeanFactoryAwareFunctionRegistryTests {
 					MessageBuilder.fromMessage(mInput).setHeader("before", "foo").build();
 					Message<Object> result = (Message<Object>) targetFunction.apply(MessageBuilder.fromMessage(mInput).setHeader("before", "foo").build());
 					return MessageBuilder.fromMessage(result).setHeader("after", "bar").build();
+				}
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class WrappedWithAroundAdviseNotMessageReturnConfiguration {
+
+		@Bean
+		public Function<Message<String>, String> uppercase() {
+			return v -> v.getPayload().toUpperCase();
+		}
+
+		@Bean
+		public FunctionAroundWrapper wrapper() {
+			return new FunctionAroundWrapper() {
+
+				@Override
+				protected Object doApply(Object input, FunctionInvocationWrapper targetFunction) {
+					// in this test we know input is a Message
+					Message<?> mInput = (Message<?>) input;
+					Message<?> advisedMessage = MessageBuilder.fromMessage(mInput).setHeader("advised", "true").build();
+					Object result = targetFunction.apply(advisedMessage);
+					assertThat(result).isInstanceOf(Message.class);
+					return result;
 				}
 			};
 		}
