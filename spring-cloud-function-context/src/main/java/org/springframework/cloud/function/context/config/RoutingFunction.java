@@ -197,7 +197,7 @@ public class RoutingFunction implements Function<Object, Object> {
 		Assert.hasText(functionName, "Failed to resolve function name based on routing expression '" + functionProperties.getRoutingExpression() + "'");
 		FunctionInvocationWrapper function = functionCatalog.lookup(functionName);
 		Assert.notNull(function, "Failed to lookup function to route to based on the expression '"
-				+ functionProperties.getRoutingExpression() + "' whcih resolved to '" + functionName + "' function name.");
+				+ functionProperties.getRoutingExpression() + "' which resolved to '" + functionName + "' function name.");
 		if (logger.isInfoEnabled()) {
 			logger.info("Resolved function from provided [routing-expression]  " + routingExpression);
 		}
