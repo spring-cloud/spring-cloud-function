@@ -20,7 +20,6 @@ import java.util.function.BiFunction;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
-import org.springframework.util.StringUtils;
 
 /**
  * Wrapper that acts as around advise over function invocation.
