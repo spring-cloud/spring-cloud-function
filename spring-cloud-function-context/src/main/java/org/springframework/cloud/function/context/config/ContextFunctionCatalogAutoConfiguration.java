@@ -64,6 +64,7 @@ import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
+import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -169,12 +170,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return false;
 	}
 
+	@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}",
+			includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = { Supplier.class, Function.class, Consumer.class }),
+			excludeFilters = @Filter(type = FilterType.ANNOTATION, classes = { Configuration.class, Component.class}))
 	@Configuration(proxyBeanMethods = false)
-	@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}", //
-		includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE,
-			classes = {Supplier.class, Function.class, Consumer.class}))
-	@ConditionalOnProperty(prefix = "spring.cloud.function.scan", name = "enabled", havingValue = "true",
-		matchIfMissing = true)
+	@ConditionalOnProperty(prefix = "spring.cloud.function.scan", name = "enabled", havingValue = "true", matchIfMissing = true)
 	protected static class PlainFunctionScanConfiguration {
 
 	}
