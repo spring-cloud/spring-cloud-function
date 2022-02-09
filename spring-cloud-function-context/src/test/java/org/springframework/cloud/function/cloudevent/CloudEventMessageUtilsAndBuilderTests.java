@@ -31,6 +31,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class CloudEventMessageUtilsAndBuilderTests {
 
+	@Test// see https://github.com/spring-cloud/spring-cloud-function/issues/805
+	public void testHeaderKeyInsensitivity() {
+		Message<String> httpMessage = MessageBuilder.withPayload("hello")
+				.setHeader("cE-SoUrCe", "https://foo.bar")
+				.setHeader("Ce-specVeRsion", "1.0")
+				.setHeader("Ce-Type", "blah")
+				.setHeader("x", "x")
+				.setHeader("zzz", "zzz")
+				.build();
+
+		assertThat(CloudEventMessageUtils.isCloudEvent(httpMessage)).isTrue();
+	}
+
 	@Test// see https://github.com/spring-cloud/spring-cloud-function/issues/680
 	public void testProperAttributeExtractionRegardlessOfTargetProtocol() {
 		Message<String> ceMessage = CloudEventMessageBuilder.withData("foo").build();
