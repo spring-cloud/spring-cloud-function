@@ -134,6 +134,20 @@ public class RoutingFunctionTests {
 		assertThat(function.apply(message)).isEqualTo("olleh");
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testInvocationWithMessageAndRoutingExpressionCaseInsensitive() {
+		System.setProperty(FunctionProperties.PREFIX + ".routing-expression", "headers.function_Name");
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello").setHeader("function_name", "reverse").build();
+		assertThat(function.apply(message)).isEqualTo("olleh");
+
+		System.setProperty(FunctionProperties.PREFIX + ".routing-expression", "headers.FunCtion_namE");
+		assertThat(function.apply(message)).isEqualTo("olleh");
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testInvocationWithRoutingBeanExpression() {
