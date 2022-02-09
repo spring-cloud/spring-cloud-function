@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.cloud.function.context.message.MessageUtils;
+import org.springframework.cloud.function.context.message.MessageUtils.MessageStructureWithCaseInsensitiveHeaderKeys;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -331,21 +332,22 @@ public final class CloudEventMessageUtils {
 	 * @return true if this Message represents Cloud Event in binary-mode
 	 */
 	public static boolean isCloudEvent(Message<?> message) {
-		return (message.getHeaders().containsKey(SPECVERSION)
-					&& message.getHeaders().containsKey(TYPE)
-					&& message.getHeaders().containsKey(SOURCE))
+		MessageStructureWithCaseInsensitiveHeaderKeys _message = MessageUtils.toCaseInsensitiveHeadersStructure(message);
+		return (_message.getHeaders().containsKey(SPECVERSION)
+					&& _message.getHeaders().containsKey(TYPE)
+					&& _message.getHeaders().containsKey(SOURCE))
 				||
-				(message.getHeaders().containsKey(_SPECVERSION)
-						&& message.getHeaders().containsKey(_TYPE)
-						&& message.getHeaders().containsKey(_SOURCE))
+				(_message.getHeaders().containsKey(_SPECVERSION)
+						&& _message.getHeaders().containsKey(_TYPE)
+						&& _message.getHeaders().containsKey(_SOURCE))
 				||
-				(message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SPECVERSION)
-					&& message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _TYPE)
-					&& message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SOURCE))
+				(_message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SPECVERSION)
+					&& _message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _TYPE)
+					&& _message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SOURCE))
 				||
-				(message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SPECVERSION)
-					&& message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _TYPE)
-					&& message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SOURCE));
+				(_message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SPECVERSION)
+					&& _message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _TYPE)
+					&& _message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SOURCE));
 	}
 
 	private static boolean isAttribute(String key) {

@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.context.config;
 
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -31,6 +29,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.MessageRoutingCallback.FunctionRoutingResult;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.BeanResolver;
 import org.springframework.expression.Expression;
@@ -196,7 +195,7 @@ public class RoutingFunction implements Function<Object, Object> {
 	private FunctionInvocationWrapper functionFromExpression(String routingExpression, Object input) {
 		Expression expression = spelParser.parseExpression(routingExpression);
 		if (input instanceof Message) {
-			input = new MessageStructureWithCaseInsensitiveHeaderKeys((Message<?>) input);
+			input = MessageUtils.toCaseInsensitiveHeadersStructure((Message<?>) input);
 		}
 
 		String functionName = expression.getValue(this.evalContext, input, String.class);
@@ -208,25 +207,5 @@ public class RoutingFunction implements Function<Object, Object> {
 			logger.info("Resolved function from provided [routing-expression]  " + routingExpression);
 		}
 		return function;
-	}
-
-	@SuppressWarnings({"rawtypes", "unused"})
-	private static class MessageStructureWithCaseInsensitiveHeaderKeys {
-		private final Object payload;
-		private final Map headers;
-
-		@SuppressWarnings("unchecked")
-		MessageStructureWithCaseInsensitiveHeaderKeys(Message message) {
-			this.payload = message.getPayload();
-			this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-			this.headers.putAll(message.getHeaders());
-		}
-		public Object getPayload() {
-			return payload;
-		}
-
-		public Map getHeaders() {
-			return headers;
-		}
 	}
 }
