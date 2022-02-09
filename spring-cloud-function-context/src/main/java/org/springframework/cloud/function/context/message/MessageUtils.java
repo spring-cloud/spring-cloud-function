@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.message;
 
+<<<<<<< HEAD
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,12 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+=======
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.springframework.messaging.Message;
+>>>>>>> 8f15b9ba... GH-804 Add support for case-insensitive Cloud Event determination
 
 /**
  * @author Dave Syer
@@ -50,6 +57,7 @@ public abstract class MessageUtils {
 	public static String SOURCE_TYPE = "source-type";
 
 	/**
+<<<<<<< HEAD
 	 * Create a message for the handler. If the handler is a wrapper for a function in an
 	 * isolated class loader, then the message will be created with the target class
 	 * loader (therefore the {@link Message} class must be on the classpath of the target
@@ -124,4 +132,33 @@ public abstract class MessageUtils {
 		return MessageBuilder.withPayload(payload).copyHeaders(headers).build();
 	}
 
+    /**
+	 * Returns (payload, headers) structure identical to `message` while substituting headers with case insensitive map.
+	 */
+	public static MessageStructureWithCaseInsensitiveHeaderKeys toCaseInsensitiveHeadersStructure(Message<?> message) {
+		return new MessageStructureWithCaseInsensitiveHeaderKeys(message);
+	}
+
+	/**
+	 * !!! INTERNAL USE ONLY, MAY CHANGE OR REMOVED WITHOUT NOTICE!!!
+	 */
+	@SuppressWarnings({"rawtypes"})
+	public static class MessageStructureWithCaseInsensitiveHeaderKeys {
+		private final Object payload;
+		private final Map headers;
+
+		@SuppressWarnings("unchecked")
+		MessageStructureWithCaseInsensitiveHeaderKeys(Message message) {
+			this.payload = message.getPayload();
+			this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+			this.headers.putAll(message.getHeaders());
+		}
+		public Object getPayload() {
+			return payload;
+		}
+
+		public Map getHeaders() {
+			return headers;
+		}
+	}
 }
