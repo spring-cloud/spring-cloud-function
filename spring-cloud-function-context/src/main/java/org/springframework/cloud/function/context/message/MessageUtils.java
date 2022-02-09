@@ -16,6 +16,11 @@
 
 package org.springframework.cloud.function.context.message;
 
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.springframework.messaging.Message;
+
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -36,4 +41,34 @@ public abstract class MessageUtils {
 	 * Value for 'target-protocol' typically use as header key.
 	 */
 	public static String SOURCE_TYPE = "source-type";
+
+	/**
+	 * Returns (payload, headers) structure identical to `message` while substituting headers with case insensitive map.
+	 */
+	public static MessageStructureWithCaseInsensitiveHeaderKeys toCaseInsensitiveHeadersStructure(Message<?> message) {
+		return new MessageStructureWithCaseInsensitiveHeaderKeys(message);
+	}
+
+	/**
+	 * !!! INTERNAL USE ONLY, MAY CHANGE OR REMOVED WITHOUT NOTICE!!!
+	 */
+	@SuppressWarnings({"rawtypes"})
+	public static class MessageStructureWithCaseInsensitiveHeaderKeys {
+		private final Object payload;
+		private final Map headers;
+
+		@SuppressWarnings("unchecked")
+		MessageStructureWithCaseInsensitiveHeaderKeys(Message message) {
+			this.payload = message.getPayload();
+			this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+			this.headers.putAll(message.getHeaders());
+		}
+		public Object getPayload() {
+			return payload;
+		}
+
+		public Map getHeaders() {
+			return headers;
+		}
+	}
 }
