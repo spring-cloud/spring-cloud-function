@@ -16,11 +16,11 @@
 
 package org.springframework.cloud.function.context.message;
 
-<<<<<<< HEAD
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.springframework.cloud.function.core.FluxWrapper;
 import org.springframework.cloud.function.core.Isolated;
@@ -28,12 +28,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-=======
-import java.util.Map;
-import java.util.TreeMap;
 
-import org.springframework.messaging.Message;
->>>>>>> 8f15b9ba... GH-804 Add support for case-insensitive Cloud Event determination
 
 /**
  * @author Dave Syer
@@ -132,8 +127,9 @@ public abstract class MessageUtils {
 		return MessageBuilder.withPayload(payload).copyHeaders(headers).build();
 	}
 
-    /**
-	 * Returns (payload, headers) structure identical to `message` while substituting headers with case insensitive map.
+	/**
+	 * Returns (payload, headers) structure identical to `message` while
+	 * substituting headers with case insensitive map.
 	 */
 	public static MessageStructureWithCaseInsensitiveHeaderKeys toCaseInsensitiveHeadersStructure(Message<?> message) {
 		return new MessageStructureWithCaseInsensitiveHeaderKeys(message);
