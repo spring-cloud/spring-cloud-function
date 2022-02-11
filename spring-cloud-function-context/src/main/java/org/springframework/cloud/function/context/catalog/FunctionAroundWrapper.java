@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2022 the original author or authors.
+ * Copyright 2020-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,10 @@ import org.springframework.util.StringUtils;
  * If registered as bean it will be autowired into {@link FunctionInvocationWrapper}.
  * Keep in mind that it only affects imperative invocations where input is {@link Message}
  *
- * NOTE: This API is experimental and could change without notice. It is
+ * NOTE: This API is experimental and and could change without notice. It is
  * intended for internal use only (e.g., spring-cloud-sleuth)
  *
  * @author Oleg Zhurakousky
- * @author Artem Bilan
  * @since 3.1
  */
 public abstract class FunctionAroundWrapper implements BiFunction<Object, FunctionInvocationWrapper, Object> {
@@ -39,10 +38,17 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 	@Override
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
 		String functionalTracingEnabledStr = System.getProperty("spring.sleuth.function.enabled");
-		boolean functionalTracingEnabled =
-			!StringUtils.hasText(functionalTracingEnabledStr) || Boolean.parseBoolean(functionalTracingEnabledStr);
+		boolean functionalTracingEnabled = StringUtils.hasText(functionalTracingEnabledStr)
+				? Boolean.parseBoolean(functionalTracingEnabledStr) : true;
 		if (functionalTracingEnabled) {
-			return this.doApply(input, targetFunction);
+			boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
+			targetFunction.setSkipOutputConversion(true);
+			try {
+				return this.doApply(input, targetFunction);
+			}
+			finally {
+				targetFunction.setSkipOutputConversion(isSkipOutputConversion);
+			}
 		}
 		else {
 			return targetFunction.apply(input);
@@ -50,5 +56,4 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 	}
 
 	protected abstract Object doApply(Object input, FunctionInvocationWrapper targetFunction);
-
 }
