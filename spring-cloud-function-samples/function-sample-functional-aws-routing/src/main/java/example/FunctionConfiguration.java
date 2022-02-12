@@ -5,12 +5,9 @@ import java.util.function.Function;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
-import org.springframework.cloud.function.context.MessageRoutingCallback.FunctionRoutingResult;
-import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.Message;
 
@@ -51,9 +48,9 @@ public class FunctionConfiguration implements ApplicationContextInitializer<Gene
 				() -> new RoutingCallback());
 		applicationContext.registerBean("uppercase", FunctionRegistration.class,
                 () -> new FunctionRegistration<>(uppercase()).type(
-                        FunctionType.from(String.class).to(String.class)));
+					FunctionTypeUtils.functionType(String.class, String.class)));
 		applicationContext.registerBean("reverse", FunctionRegistration.class,
                 () -> new FunctionRegistration<>(reverse()).type(
-                        FunctionType.from(String.class).to(String.class)));
+                        FunctionTypeUtils.functionType(String.class, String.class)));
 	}
 }

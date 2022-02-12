@@ -31,7 +31,7 @@ public class FuncApplication implements ApplicationContextInitializer<GenericApp
 	public void initialize(GenericApplicationContext context) {
 		context.registerBean("function", FunctionRegistration.class,
 			() -> new FunctionRegistration<Function<Foo, Bar>>(function())
-				.type(FunctionType.from(Foo.class).to(Bar.class).getType()));
+                .type(FunctionTypeUtils.functionType(Foo.class, Bar.class)));
 	}
 
 }
