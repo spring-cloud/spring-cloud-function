@@ -45,6 +45,5 @@ dependencyManagement {
 
 dependencies {
 	compile('org.springframework.cloud:spring-cloud-starter-function-web')
-	compile('org.springframework.cloud:spring-cloud-function-compiler')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
