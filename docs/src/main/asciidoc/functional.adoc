@@ -40,7 +40,7 @@ public class DemoApplication implements ApplicationContextInitializer<GenericApp
   public void initialize(GenericApplicationContext context) {
     context.registerBean("demo", FunctionRegistration.class,
         () -> new FunctionRegistration<>(uppercase())
-            .type(FunctionType.from(String.class).to(String.class)));
+            .type(FunctionTypeUtils.functionType(String.class, String.class)));
   }
 
 }
