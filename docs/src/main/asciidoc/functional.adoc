@@ -265,19 +265,19 @@ like the `@Autowired` `TestRestTemplate`, are standard Spring Boot features.
 
 And to help with correct dependencies here is the excerpt from POM
 
-[source, xml]
+[source, xml, subs=attributes+]
 ----
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.2.2.RELEASE</version>
+        <version>{spring-boot-version}</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     . . . .
     <dependency>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-function-web</artifactId>
-        <version>3.0.1.BUILD-SNAPSHOT</version>
+        <version>{project-version}</version>
     </dependency>
     <dependency>
         <groupId>org.springframework.boot</groupId>
@@ -292,12 +292,6 @@ And to help with correct dependencies here is the excerpt from POM
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-test</artifactId>
         <scope>test</scope>
-        <exclusions>
-            <exclusion>
-                <groupId>org.junit.vintage</groupId>
-                <artifactId>junit-vintage-engine</artifactId>
-            </exclusion>
-        </exclusions>
     </dependency>
 ----
 
@@ -305,7 +299,6 @@ Or you could write a test for a non-HTTP app using just the `FunctionCatalog`. F
 
 [source, java]
 ----
-@RunWith(SpringRunner.class)
 @FunctionalSpringBootTest
 public class FunctionalTests {
 
@@ -313,7 +306,7 @@ public class FunctionalTests {
 	private FunctionCatalog catalog;
 
 	@Test
-	public void words() throws Exception {
+	public void words() {
 		Function<String, String> function = catalog.lookup(Function.class,
 				"uppercase");
 		assertThat(function.apply("hello")).isEqualTo("HELLO");
