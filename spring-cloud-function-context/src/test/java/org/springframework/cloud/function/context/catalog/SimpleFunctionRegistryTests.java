@@ -23,10 +23,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -520,6 +522,30 @@ public class SimpleFunctionRegistryTests {
 		assertThat(FunctionTypeUtils.isMono(function.getOutputType()));
 	}
 
+	@Test
+	public void testFunctionCompositionWithReactiveSupplierAndConsumer() {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+			new JacksonMapper(new ObjectMapper()));
+
+		Object reactiveFunc = reactiveFluxSupplier();
+		FunctionRegistration functionRegistration = new FunctionRegistration(reactiveFunc, "reactiveFluxSupplier")
+			.type(ResolvableType.forClassWithGenerics(
+				Supplier.class, ResolvableType.forClassWithGenerics(Flux.class, String.class)).getType());
+		catalog.register(functionRegistration);
+
+		reactiveFunc = reactiveFluxConsumer();
+		functionRegistration = new FunctionRegistration(reactiveFunc, "reactiveFluxConsumer")
+			.type(ResolvableType.forClassWithGenerics(
+				Consumer.class, ResolvableType.forClassWithGenerics(Flux.class, String.class)).getType());
+		catalog.register(functionRegistration);
+
+		FunctionInvocationWrapper lookedUpFunction = catalog
+			.lookup("reactiveFluxSupplier|reactiveFluxConsumer");
+
+		assertThat(lookedUpFunction).isNotNull();
+		lookedUpFunction.apply(null);
+		assertThat(consumerDowncounter.get()).isZero();
+	}
 
 	public Function<String, String> uppercase() {
 		return v -> v.toUpperCase();
@@ -542,6 +568,18 @@ public class SimpleFunctionRegistryTests {
 		return flux -> flux.subscribe(v -> {
 			System.out.println(v);
 		});
+	}
+
+	private final AtomicInteger consumerDowncounter = new AtomicInteger(10);
+
+	public Supplier<Flux<String>> reactiveFluxSupplier() {
+		return () -> Flux.fromStream(
+			IntStream.range(0, consumerDowncounter.get()).boxed().map(i -> Integer.toString(i))
+		);
+	}
+
+	public Consumer<Flux<String>> reactiveFluxConsumer() {
+		return flux -> flux.subscribe(v -> consumerDowncounter.decrementAndGet());
 	}
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
