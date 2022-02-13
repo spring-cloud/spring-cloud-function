@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -157,13 +156,6 @@ class FunctionArchiveDeployer extends JarLauncher {
 		catch (IOException e) {
 			logger.error("Failed to closed archive class loader", e);
 		}
-	}
-
-	// TODO remove this method all together once https://github.com/spring-projects/spring-boot/pull/20851 is addressed
-	@Override
-	protected ClassLoader createClassLoader(Iterator<Archive> archives) throws Exception {
-		URLClassLoader cl = (URLClassLoader) super.createClassLoader(archives);
-		return this.createClassLoader(cl.getURLs());
 	}
 
 	@Override
