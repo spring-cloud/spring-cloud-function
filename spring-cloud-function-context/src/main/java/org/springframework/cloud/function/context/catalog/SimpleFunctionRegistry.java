@@ -80,6 +80,7 @@ import org.springframework.util.StringUtils;
  * such as type conversion, composition, POJO etc.
  *
  * @author Oleg Zhurakousky
+ * @author Roman Samarev
  *
  */
 public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspector {
