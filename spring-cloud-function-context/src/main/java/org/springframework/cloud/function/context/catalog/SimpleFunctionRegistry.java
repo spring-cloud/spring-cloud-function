@@ -80,6 +80,7 @@ import org.springframework.util.StringUtils;
  * such as type conversion, composition, POJO etc.
  *
  * @author Oleg Zhurakousky
+ * @author Roman Samarev
  *
  */
 public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspector {
@@ -625,9 +626,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 			Type composedFunctionType;
 			if (afterWrapper.outputType == null) {
-				composedFunctionType = ResolvableType.forClassWithGenerics(Consumer.class, this.inputType == null
-						? null
-						: ResolvableType.forType(this.inputType)).getType();
+				composedFunctionType = (this.inputType == null) ?
+					ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(Object.class)).getType() :
+					ResolvableType.forClassWithGenerics(Consumer.class, ResolvableType.forType(this.inputType)).getType();
 			}
 			else if (this.inputType == null && afterWrapper.outputType != null) {
 				ResolvableType composedOutputType;
