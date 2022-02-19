@@ -15,6 +15,7 @@
 	</parent>
 
 	<modules>
+		<module>function-sample</module>
 		<module>function-sample-pof</module>
 		<module>function-sample-pojo</module>
 		<module>function-sample-aws</module>
