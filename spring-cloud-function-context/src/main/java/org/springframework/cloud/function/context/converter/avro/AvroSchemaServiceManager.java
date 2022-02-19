@@ -28,8 +28,7 @@ import org.apache.avro.io.DatumWriter;
  * Helps to substitute the default implementation of {@link org.apache.avro.Schema}
  * Generation using Custom Avro schema generator
  *
- * Provide a custom bean definition of {@link AvroSchemaServiceManager} and mark
- * it as @Primary to override the default implementation
+ * Provide a custom bean definition of {@link AvroSchemaServiceManager} to override the default implementation.
  *
  * Migrating this interface from the original Spring Cloud Schema Registry project.
  *
