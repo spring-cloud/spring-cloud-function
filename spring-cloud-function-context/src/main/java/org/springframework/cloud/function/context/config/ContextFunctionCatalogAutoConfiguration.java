@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
 import org.springframework.cloud.function.context.converter.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManager;
 import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.GsonMapper;
@@ -69,7 +70,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-
 /**
  * @author Dave Syer
  * @author Mark Fisher
@@ -77,6 +77,7 @@ import org.springframework.util.StringUtils;
  * @author Artem Bilan
  * @author Anshul Mehra
  * @author Soby Chacko
+ * @author Chris Bono
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(FunctionCatalog.class)
@@ -110,8 +111,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		if (!CollectionUtils.isEmpty(messageConverters)) {
 			for (MessageConverter mc : messageConverters) {
 				if (mc instanceof CompositeMessageConverter) {
-					List<MessageConverter> conv = ((CompositeMessageConverter) mc).getConverters().stream()
-						.collect(Collectors.toList());
+					List<MessageConverter> conv = ((CompositeMessageConverter) mc).getConverters().stream().toList();
 					mcList.addAll(conv);
 				}
 				else {
@@ -121,7 +121,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		mcList = mcList.stream()
-			.filter(c -> isConverterEligible(c))
+			.filter(this::isConverterEligible)
 			.collect(Collectors.toList());
 
 		mcList.add(new JsonMessageConverter(jsonMapper));
@@ -139,20 +139,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
 	}
 
-	@Bean
-	@ConditionalOnMissingBean
-	@ConditionalOnClass(name = "org.apache.avro.Schema")
-	public MessageConverter avroSchemaMessageConverter() {
-		return new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	@ConditionalOnClass(name = "io.cloudevents.spring.messaging.CloudEventMessageConverter")
-	public MessageConverter cloudEventMessageConverter() {
-		return new CloudEventMessageConverter();
-	}
-
 	@Bean(RoutingFunction.FUNCTION_NAME)
 	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
 								BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
@@ -164,10 +150,35 @@ public class ContextFunctionCatalogAutoConfiguration {
 		if (messageConverterName.startsWith("org.springframework.cloud.")) {
 			return true;
 		}
-		else if (!messageConverterName.startsWith("org.springframework.")) {
-			return true;
+		return !messageConverterName.startsWith("org.springframework.");
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(name = "io.cloudevents.spring.messaging.CloudEventMessageConverter")
+	static class CloudEventsMessageConverterConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		public CloudEventMessageConverter cloudEventMessageConverter() {
+			return new CloudEventMessageConverter();
 		}
-		return false;
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(name = "org.apache.avro.Schema")
+	static class AvroSchemaMessageConverterConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		public AvroSchemaServiceManager avroSchemaServiceManager() {
+			return new AvroSchemaServiceManagerImpl();
+		}
+
+		@Bean
+		@ConditionalOnMissingBean
+		public AvroSchemaMessageConverter avroSchemaMessageConverter(AvroSchemaServiceManager avroSchemaServiceManager) {
+			return new AvroSchemaMessageConverter(avroSchemaServiceManager);
+		}
 	}
 
 	@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}",
