@@ -55,6 +55,7 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -429,6 +430,18 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(function).isNotNull();
 		result = function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
 		assertThat(result instanceof Message).isFalse();
+	}
+
+	@Test
+	public void testMultipleValuesInOutputHandlingWithTargetProtocol() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(CollectionOutConfiguration.class);
+		FunctionInvocationWrapper function = catalog.lookup("parseToList", "application/json");
+		assertThat(function).isNotNull();
+		Object result = function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes())
+				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+				.setHeader(MessageUtils.TARGET_PROTOCOL, "integration")
+				.build());
+		assertThat(result instanceof List).isTrue();
 	}
 
 	/**
