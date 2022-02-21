@@ -82,7 +82,7 @@ public final class FunctionTypeUtils {
 		}
 		type = getGenericType(type);
 		Class<?> rawType = type instanceof ParameterizedType ? getRawType(type) : (Class<?>) type;
-		return Collection.class.isAssignableFrom(rawType);
+		return Iterable.class.isAssignableFrom(rawType);
 	}
 
 	public static boolean isTypeArray(Type type) {
