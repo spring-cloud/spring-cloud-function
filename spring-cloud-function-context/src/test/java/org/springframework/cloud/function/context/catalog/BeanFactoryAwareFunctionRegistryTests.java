@@ -418,18 +418,25 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.getPayload()).isEqualTo("\"b2xsZWg=\"".getBytes());
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testMultipleValuesInOutputHandling() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(CollectionOutConfiguration.class);
 		FunctionInvocationWrapper function = catalog.lookup("parseToList", "application/json");
 		assertThat(function).isNotNull();
-		Object result = function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		Object result = function.apply(MessageBuilder.withPayload("1,2,3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
 		assertThat(result instanceof Message).isTrue();
+		byte[] payload = ((Message<byte[]>) result).getPayload();
+		JsonMapper mapper = this.context.getBean(JsonMapper.class);
+		List resultList = mapper.fromJson(payload, List.class);
+		assertThat(resultList.size()).isEqualTo(3);
+		assertThat(resultList.get(0)).isEqualTo("1");
+		assertThat(resultList.get(1)).isEqualTo("2");
 
 		function = catalog.lookup("parseToListOfMessages", "application/json");
 		assertThat(function).isNotNull();
-		result = function.apply(MessageBuilder.withPayload("1, 2, 3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
-		assertThat(result instanceof Message).isFalse();
+		result = function.apply(MessageBuilder.withPayload("1,2,3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		assertThat(result instanceof List).isTrue();
 	}
 
 	/**
