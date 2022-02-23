@@ -20,12 +20,6 @@ public class WebTestClientTests {
 	private WebTestClient client;
 
 	@Test
-	public void words() {
-		client.get().uri("/words").exchange()
-			.expectStatus().isOk().expectBody(String.class).isEqualTo("[\"foo\",\"bar\"]");
-	}
-
-	@Test
 	public void uppercase() {
 		client.post().uri("/uppercase").body(Mono.just("foo"), String.class).exchange()
 				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
