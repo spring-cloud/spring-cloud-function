@@ -53,7 +53,6 @@ import org.springframework.cloud.function.context.FunctionProperties.FunctionCon
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.expression.BeanFactoryResolver;
@@ -1143,13 +1142,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				convertedOutput = this.convertOutputPublisherIfNecessary((Publisher) output, type, contentType);
 			}
 			else if (output instanceof Message) {
-				Message m = (Message) output;
-				if (m.getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL) && FunctionTypeUtils.isTypeCollection(this.outputType)) {
-					convertedOutput = this.convertMultipleOutputValuesIfNecessary(m.getPayload(), ObjectUtils.isEmpty(contentType) ? null : contentType);
-				}
-				else {
-					convertedOutput = this.convertOutputMessageIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
-				}
+				convertedOutput = this.convertOutputMessageIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
 			}
 			else if (output instanceof Collection && this.isOutputTypeMessage()) {
 				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType);
