@@ -67,7 +67,7 @@ public class JacksonMapper extends JsonMapper {
 			}
 		}
 		catch (Exception e) {
-			throw new IllegalStateException("Failed to convert. Possible bug as the conversion probably shouldn't have been attampted here", e);
+			throw new IllegalStateException("Failed to convert. Possible bug as the conversion probably shouldn't have been attempted here", e);
 		}
 		return convertedValue;
 	}
