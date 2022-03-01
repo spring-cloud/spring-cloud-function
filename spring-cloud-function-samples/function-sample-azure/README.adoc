@@ -8,7 +8,7 @@ $ mvn azure-functions:run
 ----
 
 The `uppercase` function is of the following signature `Function<Message<String>, String> uppercase()`. Its expected input is JSON, 
-therefore we need t0 provide the appropriate content-type (in this case `application/json`). 
+therefore we need to provide the appropriate content-type (in this case `application/json`).
 
 Test the function using _curl_ and notice that the URL is formed by concatenating `<function url>/api/<function name>`
 ----
@@ -23,12 +23,12 @@ $ curl -H "Content-Type: application/json" localhost:7071/api/uppercase -d '{"gr
 ----
 
 The HTTP headers of the incoming request will be copied into input Message's MessageHeaders, so they become accessible if need to. 
-It is done in implementation of `UppercaseHandler` which extends `FunctionInvoker`. 
+It is done in implementation of `UppercaseHandler` which extends `FunctionInvoker`.
 
 NOTE: Implementation of `FunctionInvoker` (your handler), should contain the least amount of code. It is really a type-safe way to define 
 and configure function to be recognized as Azure Function. 
 Everything else should be delegated to the base `FunctionInvoker` via `handleRequest(..)` callback which will invoke your function, taking care of 
-necessary type conversion, transformation etc.
+necessary type conversion, transformation etc. One exception to this rule is when custom result handling is required. In that case, the proper post-process method can be overridden as well in order to take control of the results processing.
 
 ----
 @FunctionName("uppercase")
@@ -42,7 +42,7 @@ public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
 
 
 The `echo` function does the same as the `uppercase` less the actual uppercasing. However, the important difference to notice is that function itself 
-takes primitive `String` as its input (i.e., `public Function<String, String> echo()`) while the actual handler passes instance of `Message` the same way as with `uppercase`. The framework recognizes that you only care about the payload and extracts it from the `Message` before calling the function. 
+takes primitive `String` as its input (i.e., `public Function<String, String> echo()`) while the actual handler passes instance of `Message` the same way as with `uppercase`. The framework recognizes that you only care about the payload and extracts it from the `Message` before calling the function.
 
 
 There is also a reactive version of 'uppercase' - `uppercaseReactive` which will produce the same result, but 
@@ -74,7 +74,7 @@ $ mvn azure-functions:deploy
 # the function can be accessed at: https://function-sample-azure.azurewebsites.net/api/uppercase
 ----
 
-On another terminal try this: 
+On another terminal try this:
 ----
 # testing
 curl https://<azure-function-url-from-the-log>/api/uppercase -d '{"greeting": "hello", "name": "your name"}'
@@ -88,7 +88,7 @@ $ curl -H "Content-Type: application/json" https://function-sample-azure.azurewe
 }
 ----
 
-Please ensure that you use the right URL for the function above. 
+Please ensure that you use the right URL for the function above.
 
 Alternatively you can test the function in the Azure Dashboard UI:
 
@@ -111,3 +111,27 @@ Alternatively you can test the function in the Azure Dashboard UI:
 ----
 
 Please note that the Dashhboard provides by default information on Function Execution Count, Memory Consumption and Execution Time.
+
+==== Custom Result Handling
+
+As noted above, the implementation of `FunctionInvoker` (your handler), should contain the least amount of code possible. However, if custom result handling needs to occur there is a set of methods (named `postProcess**`) that can be overridden in link:../../spring-cloud-function-adapters/spring-cloud-function-adapter-azure/src/main/java/org/springframework/cloud/function/adapter/azure/FunctionInvoker.java[FunctionInvoker.java].
+
+One such example can be seen in link:src/main/java/example/ReactiveEchoCustomResultHandler.java[ReactiveEchoCustomResultHandler.java].
+
+Once the function is deployed it can be tested using _curl_
+----
+$ curl -H "Content-Type: application/json" localhost:7071/api/echoStream -d '["hello","peepz"]'
+
+# result
+Kicked off job for [hello, peepz]
+----
+The custom result handling takes the Flux returned from the `echoStream` function and adds logging, uppercase mapping, and then subscribes to the publisher. The Azure logs output the following:
+
+----
+[2022-03-01T01:36:57.439Z] 2022-02-28 19:36:57.439  INFO 20587 --- [pool-2-thread-2] o.s.boot.SpringApplication               : Started application in 0.466 seconds (JVM running for 57.906)
+[2022-03-01T01:36:57.462Z] BEGIN echo post-processing work ...
+[2022-03-01T01:36:57.462Z]    HELLO
+[2022-03-01T01:36:57.462Z]    PEEPZ
+[2022-03-01T01:36:57.463Z] END echo post-processing work
+[2022-03-01T01:36:57.463Z] Function "echoStream" (Id: 678cff0b-d958-4fab-967b-e19e0d5d67e8) invoked by Java Worker
+----
