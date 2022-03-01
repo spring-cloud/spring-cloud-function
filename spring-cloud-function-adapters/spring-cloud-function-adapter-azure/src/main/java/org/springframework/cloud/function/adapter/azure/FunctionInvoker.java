@@ -129,10 +129,10 @@ public class FunctionInvoker<I, O> {
 
 		Object functionResult = function.apply(enhancedInput);
 
-		if (!(functionResult instanceof Publisher)) {
-			return postProcessImperativeFunctionResult(input, enhancedInput, functionResult, function, executionContext);
+		if (functionResult instanceof Publisher) {
+			return postProcessReactiveFunctionResult(input, enhancedInput, (Publisher<?>) functionResult, function, executionContext);
 		}
-		return postProcessReactiveFunctionResult(input, enhancedInput, (Publisher<?>) functionResult, function, executionContext);
+		return postProcessImperativeFunctionResult(input, enhancedInput, functionResult, function, executionContext);
 	}
 
 	/**
