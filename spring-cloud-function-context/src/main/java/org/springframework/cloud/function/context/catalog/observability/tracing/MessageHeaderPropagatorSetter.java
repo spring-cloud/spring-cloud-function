@@ -32,27 +32,28 @@ import org.springframework.util.LinkedMultiValueMap;
 /**
  * Setter for Spring Integration based communication.
  *
- * This always sets native headers in defence of STOMP issues discussed <a href=
+ * This always sets native headers in defense of STOMP issues discussed <a href=
  * "https://github.com/spring-cloud/spring-cloud-sleuth/issues/716#issuecomment-337523705">here</a>.
  *
  * @author Marcin Grzejszczak
+ * @author Oleg Zhurakousky
  * @since 4.0.0
  */
 public class MessageHeaderPropagatorSetter implements Propagator.Setter<MessageHeaderAccessor> {
 
 	private static final Log log = LogFactory.getLog(MessageHeaderPropagatorSetter.class);
 
-	static Map<String, ?> propagationHeaders(Map<String, ?> headers, List<String> propagationHeaders) {
-		Map<String, Object> headersToCopy = new HashMap<>();
+	static Map<String, ?> copyHeaders(Map<String, ?> headers, List<String> headersToCopy) {
+		Map<String, Object> copiedHeaders = new HashMap<>();
 		for (Map.Entry<String, ?> entry : headers.entrySet()) {
-			if (propagationHeaders.contains(entry.getKey())) {
-				headersToCopy.put(entry.getKey(), entry.getValue());
+			if (headersToCopy.contains(entry.getKey())) {
+				copiedHeaders.put(entry.getKey(), entry.getValue());
 			}
 		}
-		return headersToCopy;
+		return copiedHeaders;
 	}
 
-	static void removeAnyTraceHeaders(MessageHeaderAccessor accessor, List<String> keysToRemove) {
+	static void removeHeaders(MessageHeaderAccessor accessor, List<String> keysToRemove) {
 		for (String keyToRemove : keysToRemove) {
 			accessor.removeHeader(keyToRemove);
 			if (accessor instanceof NativeMessageHeaderAccessor) {
@@ -85,7 +86,6 @@ public class MessageHeaderPropagatorSetter implements Propagator.Setter<MessageH
 		Map<String, List<String>> nativeHeaderMap = nativeAccessor.toNativeHeaderMap();
 		nativeHeaderMap = nativeHeaderMap instanceof LinkedMultiValueMap ? nativeHeaderMap
 				: new LinkedMultiValueMap<>(nativeHeaderMap);
-		nativeAccessor.removeHeader(NativeMessageHeaderAccessor.NATIVE_HEADERS);
 		nativeAccessor.setHeader(NativeMessageHeaderAccessor.NATIVE_HEADERS, nativeHeaderMap);
 		return nativeAccessor;
 	}

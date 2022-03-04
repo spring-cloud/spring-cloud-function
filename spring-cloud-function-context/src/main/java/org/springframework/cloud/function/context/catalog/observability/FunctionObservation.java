@@ -16,18 +16,22 @@
 
 package org.springframework.cloud.function.context.catalog.observability;
 
-import io.micrometer.api.instrument.docs.DocumentedObservation;
-import io.micrometer.api.instrument.docs.TagKey;
+import io.micrometer.core.instrument.docs.DocumentedObservation;
+import io.micrometer.core.instrument.docs.TagKey;
 
+/**
+ * @author Marcin Grzejszczak
+ * @author Oleg Zhurakousky
+ * @since 4.0.0
+ */
 enum FunctionObservation implements DocumentedObservation {
-
 	/**
-	 * Observation created around a function execution
+	 * Observation created around a function execution.
 	 */
 	FUNCTION_OBSERVATION {
 		@Override
 		public String getName() {
-			return "spring.function";
+			return "spring.cloud.function";
 		}
 
 		@Override
@@ -42,7 +46,7 @@ enum FunctionObservation implements DocumentedObservation {
 
 		@Override
 		public String getPrefix() {
-			return "spring.function";
+			return "spring.cloud.function";
 		}
 	};
 
@@ -54,7 +58,7 @@ enum FunctionObservation implements DocumentedObservation {
 		FUNCTION_NAME {
 			@Override
 			public String getKey() {
-				return "spring.function.name";
+				return "spring.cloud.function.name";
 			}
 		}
 

@@ -23,8 +23,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.api.instrument.observation.ObservationHandler;
-import io.micrometer.api.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.core.instrument.observation.ObservationHandler;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.TraceContext;
 import io.micrometer.tracing.Tracer;
