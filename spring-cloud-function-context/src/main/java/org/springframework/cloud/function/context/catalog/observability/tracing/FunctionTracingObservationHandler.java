@@ -16,11 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog.observability.tracing;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import io.micrometer.api.instrument.observation.Observation;
+import io.micrometer.core.instrument.observation.Observation;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.handler.TracingObservationHandler;
@@ -30,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.observability.FunctionContext;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
@@ -37,11 +34,13 @@ import org.springframework.messaging.support.ErrorMessage;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.util.StringUtils;
 
 /**
  * Function Tracing Observation Handler.
  *
  * @author Marcin Grzejszczak
+ * @author Oleg Zhurakousky
  * @since 4.0.0
  */
 public class FunctionTracingObservationHandler implements TracingObservationHandler<FunctionContext> {
@@ -208,7 +207,7 @@ public class FunctionTracingObservationHandler implements TracingObservationHand
 	}
 
 	private void clearTracingHeaders(MessageHeaderAccessor headers) {
-		MessageHeaderPropagatorSetter.removeAnyTraceHeaders(headers, this.propagator.fields());
+		MessageHeaderPropagatorSetter.removeHeaders(headers, this.propagator.fields());
 	}
 
 	/**
@@ -250,22 +249,26 @@ public class FunctionTracingObservationHandler implements TracingObservationHand
 	}
 
 	private String toRemoteServiceName(MessageHeaderAccessor headers) {
-		for (String key : headers.getMessageHeaders().keySet()) {
-			if (key.startsWith("kafka_")) {
-				return "kafka";
-			}
-			else if (key.startsWith("amqp_")) {
-				return "rabbitmq";
-			}
+//		for (String key : headers.getMessageHeaders().keySet()) {
+//			if (key.startsWith("kafka_")) {
+//				return "kafka";
+//			}
+//			else if (key.startsWith("amqp_")) {
+//				return "rabbitmq";
+//			}
+//		}
+		String serviceName = (String) headers.getHeader(MessageUtils.TARGET_PROTOCOL);
+		if (!StringUtils.hasLength(serviceName)) {
+			serviceName = REMOTE_SERVICE_NAME;
 		}
-		return REMOTE_SERVICE_NAME;
+		return serviceName;
 	}
 
 	private Message<?> outputMessage(Message<?> originalMessage, Message<?> retrievedMessage,
 		MessageHeaderAccessor additionalHeaders) {
 		MessageHeaderAccessor headers = mutableHeaderAccessor(originalMessage);
 		if (originalMessage instanceof ErrorMessage errorMessage) {
-			headers.copyHeaders(MessageHeaderPropagatorSetter.propagationHeaders(additionalHeaders.getMessageHeaders(),
+			headers.copyHeaders(MessageHeaderPropagatorSetter.copyHeaders(additionalHeaders.getMessageHeaders(),
 				this.propagator.fields()));
 			return new ErrorMessage(errorMessage.getPayload(), isWebSockets(headers) ? headers.getMessageHeaders()
 				: new MessageHeaders(headers.getMessageHeaders()), errorMessage.getOriginalMessage());

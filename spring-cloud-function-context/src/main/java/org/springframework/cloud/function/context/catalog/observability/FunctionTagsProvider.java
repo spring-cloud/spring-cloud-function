@@ -16,11 +16,11 @@
 
 package org.springframework.cloud.function.context.catalog.observability;
 
-import io.micrometer.api.instrument.observation.Observation;
+import io.micrometer.core.instrument.observation.Observation;
 
 /**
  * {@link Observation.TagsProvider} for {@link FunctionContext}.
- * 
+ *
  * @author Marcin Grzejszczak
  */
 public interface FunctionTagsProvider extends Observation.TagsProvider<FunctionContext> {
