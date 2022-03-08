@@ -111,7 +111,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 		if (!CollectionUtils.isEmpty(messageConverters)) {
 			for (MessageConverter mc : messageConverters) {
 				if (mc instanceof CompositeMessageConverter) {
-					List<MessageConverter> conv = ((CompositeMessageConverter) mc).getConverters().stream().toList();
+					List<MessageConverter> conv = ((CompositeMessageConverter) mc).getConverters().stream().collect(Collectors.toList());
 					mcList.addAll(conv);
 				}
 				else {

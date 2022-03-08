@@ -107,27 +107,27 @@ public class ContextFunctionCatalogAutoConfigurationConditionalLoadingTests {
 
 		@Test
 		void functionScanConfigEnabledByDefault() {
-			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackageName())
+			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackage().getName())
 				.run((context) -> assertThat(context).hasSingleBean(TestFunction.class));
 		}
 
 		@Test
 		void functionScanConfigEnabledWhenEnabledPropertySetToTrue() {
-			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackageName(),
+			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackage().getName(),
 					"spring.cloud.function.scan.enabled:true")
 				.run((context) -> assertThat(context).hasSingleBean(TestFunction.class));
 		}
 
 		@Test
 		void functionScanConfigEnabledWithScanPackagesPointingToNoFunctions() {
-			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackageName() + ".faux",
+			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackage().getName() + ".faux",
 					"spring.cloud.function.scan.enabled:true")
 				.run((context) -> assertThat(context).doesNotHaveBean(TestFunction.class));
 		}
 
 		@Test
 		void functionScanConfigDisabledWhenEnabledPropertySetToFalse() {
-			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackageName(),
+			contextRunner.withPropertyValues("spring.cloud.function.scan.packages:" + TestFunction.class.getPackage().getName(),
 					"spring.cloud.function.scan.enabled:false")
 				.run((context) -> assertThat(context).doesNotHaveBean(TestFunction.class));
 		}
