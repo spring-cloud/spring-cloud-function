@@ -120,7 +120,6 @@ public class FunctionInvoker<I, O> {
 		return function;
 	}
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
 	public O handleRequest(I input, ExecutionContext executionContext) {
 		String functionDefinition = executionContext.getFunctionName();
 		FunctionInvocationWrapper function = this.discoverFunction(functionDefinition);
@@ -148,6 +147,7 @@ public class FunctionInvoker<I, O> {
 	 * @param executionContext the Azure execution context
 	 * @return the possibly modified function results
 	 */
+	@SuppressWarnings("unchecked")
 	protected O postProcessImperativeFunctionResult(I rawInputs, Object functionInputs, Object functionResult,
 		FunctionInvocationWrapper function, ExecutionContext executionContext
 	) {
@@ -192,6 +192,7 @@ public class FunctionInvoker<I, O> {
 	 * @param executionContext the Azure execution context
 	 * @return the possibly modified function results
 	 */
+	@SuppressWarnings("unchecked")
 	protected O postProcessMonoFunctionResult(I rawInputs, Object functionInputs, Mono<?> functionResult,
 		FunctionInvocationWrapper function, ExecutionContext executionContext
 	) {
@@ -212,6 +213,7 @@ public class FunctionInvoker<I, O> {
 	 * @param executionContext the Azure execution context
 	 * @return the possibly modified function results
 	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	protected O postProcessFluxFunctionResult(I rawInputs, Object functionInputs, Flux<?> functionResult,
 		FunctionInvocationWrapper function, ExecutionContext executionContext
 	) {
