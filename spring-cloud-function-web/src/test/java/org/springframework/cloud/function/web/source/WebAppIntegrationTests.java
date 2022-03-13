@@ -36,6 +36,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.function.utils.SocketUtils;
 import org.springframework.cloud.function.web.RestApplication;
+import org.springframework.cloud.function.web.TestSocketUtils;
 import org.springframework.cloud.function.web.source.WebAppIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,7 +67,7 @@ public class WebAppIntegrationTests {
 
 	@BeforeAll
 	public static void init() {
-		System.setProperty("server.port", "" + SocketUtils.findAvailableTcpPort());
+		System.setProperty("server.port", "" + TestSocketUtils.findAvailableTcpPort());
 	}
 
 	@AfterAll

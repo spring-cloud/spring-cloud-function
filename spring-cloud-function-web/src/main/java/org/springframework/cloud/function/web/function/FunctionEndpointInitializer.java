@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.cloud.function.web.function;
 
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -47,10 +48,12 @@ import org.springframework.cloud.function.web.util.FunctionWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.SmartApplicationListener;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.server.reactive.HttpHandler;
@@ -75,8 +78,8 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author Chris Bono
  * @since 2.0
- *
  */
 public class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
@@ -164,15 +167,19 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 				ReactorHttpHandlerAdapter adapter = new ReactorHttpHandlerAdapter(handler);
 				HttpServer httpServer = HttpServer.create().host(address).port(port).handle(adapter);
 				Thread thread = new Thread(
-						() -> httpServer.bindUntilJavaShutdown(Duration.ofSeconds(60), this::callback),
+						() -> httpServer.bindUntilJavaShutdown(Duration.ofSeconds(60), (server) -> callback(server, context)),
 						"server-startup");
 				thread.setDaemon(false);
 				thread.start();
 			}
 		}
 
-		private void callback(DisposableServer server) {
+		private void callback(DisposableServer server, ApplicationContext context) {
 			logger.info("HTTP server started on port: " + server.port());
+			if (context instanceof ConfigurableApplicationContext) {
+				((ConfigurableApplicationContext) context).getEnvironment().getPropertySources().addFirst(
+					new MapPropertySource("functionalServerProps", Collections.singletonMap("local.server.port", server.port())));
+			}
 			try {
 				double uptime = ManagementFactory.getRuntimeMXBean().getUptime();
 				logger.info("JVM running for " + uptime + "ms");

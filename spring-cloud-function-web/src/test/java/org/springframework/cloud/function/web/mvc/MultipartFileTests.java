@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.function.Function;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
@@ -44,27 +42,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  * @author Oleg Zhurakousky
- *
+ * @author Chris Bono
  */
 public class MultipartFileTests {
 
-	@BeforeEach
-	public void init() throws Exception {
-		String port = "" + SocketUtils.findAvailableTcpPort();
-		System.setProperty("server.port", port);
-	}
-
-	@AfterEach
-	public void close() throws Exception {
-		System.clearProperty("server.port");
-	}
-
 	@Test
 	public void testMultipartFileUpload() throws Exception {
-		ApplicationContext context = SpringApplication.run(TestConfiguration.class);
+		ApplicationContext context = SpringApplication.run(TestConfiguration.class, "--server.port=0");
+		String port = context.getEnvironment().getProperty("local.server.port");
 		JsonMapper mapper = context.getBean(JsonMapper.class);
 		TestRestTemplate template = new TestRestTemplate();
-		String port = System.getProperty("server.port");
 
 		LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
 		map.add("file", new ClassPathResource("META-INF/spring.factories"));
@@ -81,10 +68,10 @@ public class MultipartFileTests {
 
 	@Test
 	public void testMultipartFilesUpload() throws Exception {
-		ApplicationContext context = SpringApplication.run(TestConfiguration.class);
+		ApplicationContext context = SpringApplication.run(TestConfiguration.class, "--server.port=0");
+		String port = context.getEnvironment().getProperty("local.server.port");
 		JsonMapper mapper = context.getBean(JsonMapper.class);
 		TestRestTemplate template = new TestRestTemplate();
-		String port = System.getProperty("server.port");
 
 		LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
 		map.add("fileA", new ClassPathResource("META-INF/spring.factories"));
