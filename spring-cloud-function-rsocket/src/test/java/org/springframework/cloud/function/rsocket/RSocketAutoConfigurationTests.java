@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,20 +48,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Chris Bono
  * @since 3.1
  */
 public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testNonExistingFunctionInRoute() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -77,14 +79,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testNonExistingFunctionInRouteSingleFunctionInCatalog() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SingleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -103,15 +106,16 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testImperativeFunctionAsRequestReplyWithDefinition() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -129,15 +133,16 @@ public class RSocketAutoConfigurationTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testWithCborContentType() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -158,7 +163,6 @@ public class RSocketAutoConfigurationTests {
 	@Test
 	@Disabled
 	public void testImperativeFunctionAsRequestReplyWithDefinitionExplicitExpectedOutputCt() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
@@ -166,8 +170,10 @@ public class RSocketAutoConfigurationTests {
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.cloud.function.definition=uppercase",
 						"--spring.cloud.function.expected-content-type=application/json",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -184,14 +190,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testImperativeFunctionAsRequestReply() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -208,15 +215,16 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testWithRouteAndDefinition() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 							"--spring.cloud.function.definition=echo",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -233,14 +241,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testImperativeFunctionAsRequestReplyWithComposition() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -257,14 +266,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testSupplierAsRequestReply() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -281,14 +291,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testImperativeFunctionAsRequestStream() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -305,14 +316,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testImperativeFunctionAsRequestChannel() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -330,14 +342,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testReactiveFunctionAsRequestReply() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -354,14 +367,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testReactiveFunctionAsRequestStream() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -394,14 +408,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testReactiveFunctionAsRequestChannel() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -418,16 +433,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testRequestReplyFunctionWithDistributedComposition() {
-		int portA = SocketUtils.findAvailableTcpPort();
-		int portB = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 						"--spring.cloud.function.definition=uppercase|concat",
-						"--spring.rsocket.server.port=" + portA);
+						"--spring.rsocket.server.port=0");
 		) {
+			int portA = getLocalRsocketPort(applicationContext);
 
 			try (
 				ConfigurableApplicationContext applicationContext2 =
@@ -435,8 +449,10 @@ public class RSocketAutoConfigurationTests {
 						.web(WebApplicationType.NONE)
 						.run("--logging.level.org.springframework.cloud.function=DEBUG",
 							"--spring.cloud.function.definition=reverse>localhost:" + portA + "|wrap",
-							"--spring.rsocket.server.port=" + portB);
+							"--spring.rsocket.server.port=0");
 			) {
+
+				int portB = getLocalRsocketPort(applicationContext2);
 
 				RSocketRequester.Builder rsocketRequesterBuilder =
 					applicationContext2.getBean(RSocketRequester.Builder.class);
@@ -497,17 +513,17 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testFireAndForgetConsumer() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
 
 			SampleFunctionConfiguration config = applicationContext.getBean(SampleFunctionConfiguration.class);
 
+			int port = getLocalRsocketPort(applicationContext);
 
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
@@ -560,15 +576,16 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testRoutingWithRoutingFunction() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 							"--spring.cloud.function.routing-expression=headers.function_definition",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -586,14 +603,15 @@ public class RSocketAutoConfigurationTests {
 
 	@Test
 	public void testByteArrayInOut() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(SampleFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -613,6 +631,10 @@ public class RSocketAutoConfigurationTests {
 
 			assertThat(resultBytes).isEqualTo("HELLO".getBytes());
 		}
+	}
+
+	private int getLocalRsocketPort(ConfigurableApplicationContext context) {
+		return context.getEnvironment().getProperty("local.rsocket.server.port", Integer.class);
 	}
 
 	@EnableAutoConfiguration

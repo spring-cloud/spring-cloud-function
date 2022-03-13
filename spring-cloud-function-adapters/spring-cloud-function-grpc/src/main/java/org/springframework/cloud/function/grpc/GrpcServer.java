@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,34 @@
 
 package org.springframework.cloud.function.grpc;
 
+import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.context.SmartLifecycle;
-import org.springframework.util.ClassUtils;
 
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.protobuf.services.ProtoReflectionService;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.context.EnvironmentAware;
+import org.springframework.context.SmartLifecycle;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.util.ClassUtils;
 
 /**
  *
  * @author Oleg Zhurakousky
  * @author Dave Syer
+ * @author Chris Bono
  *
  * @since 3.2
  *
  */
-class GrpcServer implements SmartLifecycle {
+class GrpcServer implements SmartLifecycle, EnvironmentAware {
 
 	private Log logger = LogFactory.getLog(GrpcServer.class);
 
@@ -48,6 +54,8 @@ class GrpcServer implements SmartLifecycle {
 	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
 	private Server server;
+
+	private Environment environment;
 
 	GrpcServer(FunctionGrpcProperties grpcProperties, BindableService[] grpcMessageServices) {
 		this.grpcProperties = grpcProperties;
@@ -70,7 +78,12 @@ class GrpcServer implements SmartLifecycle {
 
 				logger.info("Starting gRPC server");
 				this.server.start();
-				logger.info("gRPC server is listening on port " + this.grpcProperties.getPort());
+				logger.info("gRPC server is listening on port " + this.server.getPort());
+
+				if (environment instanceof ConfigurableEnvironment) {
+					((ConfigurableEnvironment) this.environment).getPropertySources().addFirst(
+						new MapPropertySource("grpcServerProps", Collections.singletonMap("local.grpc.server.port", server.getPort())));
+				}
 			}
 			catch (Exception e) {
 				stop();
@@ -89,5 +102,10 @@ class GrpcServer implements SmartLifecycle {
 	@Override
 	public boolean isRunning() {
 		return this.server != null && !this.server.isShutdown();
+	}
+
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.environment = environment;
 	}
 }

@@ -34,7 +34,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.cloud.function.utils.SocketUtils;
+import org.springframework.cloud.function.web.TestSocketUtils;
 import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIntegrationTests.ApplicationConfiguration;
 import org.springframework.cloud.function.web.source.FunctionAutoConfigurationIntegrationTests.RestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -68,7 +68,7 @@ public class FunctionAutoConfigurationIntegrationTests {
 
 	@BeforeAll
 	public static void init() {
-		System.setProperty("server.port", "" + SocketUtils.findAvailableTcpPort());
+		System.setProperty("server.port", "" + TestSocketUtils.findAvailableTcpPort());
 	}
 
 	@AfterAll

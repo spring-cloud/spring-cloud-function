@@ -29,7 +29,6 @@ import reactor.test.StepVerifier;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.function.utils.SocketUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -95,14 +94,14 @@ public class RoutingBrokerTests {
 	}
 
 	private void setup(boolean routingWithProperty) {
-		int brokerProxyPort = SocketUtils.findAvailableTcpPort();
-		int brokerClusterPort = SocketUtils.findAvailableTcpPort();
+		int brokerProxyPort = TestSocketUtils.findAvailableTcpPort();
+		int brokerClusterPort = TestSocketUtils.findAvailableTcpPort();
 		// start broker
 		brokerContext = new SpringApplicationBuilder(SimpleConfiguration.class).web(WebApplicationType.NONE).run(
 				"--logging.level.io.rsocket.broker=TRACE",
 				"--spring.cloud.function.rsocket.enabled=false",
 				"--io.rsocket.broker.client.enabled=false",
-				"--io.rsocket.broker.enabled=true",
+				"--io.rsocket.broker.enaFunctionEndpointInitializerbled=true",
 				"--io.rsocket.broker.uri=tcp://localhost:" + brokerProxyPort,
 				"--io.rsocket.broker.cluster.uri=tcp://localhost:" + brokerClusterPort);
 
