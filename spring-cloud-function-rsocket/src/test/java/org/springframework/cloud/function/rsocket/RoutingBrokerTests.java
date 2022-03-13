@@ -102,7 +102,7 @@ public class RoutingBrokerTests {
 				"--logging.level.io.rsocket.broker=TRACE",
 				"--spring.cloud.function.rsocket.enabled=false",
 				"--io.rsocket.broker.client.enabled=false",
-				"--io.rsocket.broker.enaFunctionEndpointInitializerbled=true",
+				"--io.rsocket.broker.enabled=true",
 				"--io.rsocket.broker.uri=tcp://localhost:" + brokerProxyPort,
 				"--io.rsocket.broker.cluster.uri=tcp://localhost:" + brokerClusterPort);
 
