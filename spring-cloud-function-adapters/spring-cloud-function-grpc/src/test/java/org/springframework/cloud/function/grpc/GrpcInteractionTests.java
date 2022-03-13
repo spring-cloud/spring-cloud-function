@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -46,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  *
  * @author Oleg Zhurakousky
- *
+ * @author Chris Bono
  */
 @Disabled
 public class GrpcInteractionTests {
@@ -62,13 +61,14 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testRequestReply() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testRequestReply() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.cloud.function.grpc.port=" + port)) {
+						"--spring.cloud.function.grpc.port=0")) {
+
+			int port = patientlyGetPort(context);
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
@@ -82,13 +82,14 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testRequestReplyWithMonoReturn() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testRequestReplyWithMonoReturn() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
-						"--spring.cloud.function.definition=uppercaseMonoReturn",
-						"--spring.cloud.function.grpc.port=" + port)) {
+						"--spring.cloud.function.definition=uppercaseMonoReturn", 
+						"--spring.cloud.function.grpc.port=0")) {
+
+			int port = patientlyGetPort(context);
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
@@ -102,14 +103,15 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testRequestReplyWithFluxReturn() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testRequestReplyWithFluxReturn() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercaseFluxReturn",
-						"--spring.cloud.function.grpc.port=" + port)) {
+						"--spring.cloud.function.grpc.port=0")) {
 
+			int port = patientlyGetPort(context);
+			
 			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
@@ -125,13 +127,14 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testRequstReplyFunctionDefinitionInMessage() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testRequstReplyFunctionDefinitionInMessage() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
-						"--spring.cloud.function.grpc.port=" + port)) {
+						"--spring.cloud.function.grpc.port=0")) {
 
+			int port = patientlyGetPort(context);
+			
 			Message<byte[]> message = MessageBuilder.withPayload("\"hello gRPC\"".getBytes())
 					.setHeader("foo", "bar")
 					.setHeader("spring.cloud.function.definition", "reverse")
@@ -144,14 +147,15 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testBidirectionalStreamWithImperativeFunction() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testBidirectionalStreamWithImperativeFunction() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercase",
-						"--spring.cloud.function.grpc.port=" + port)) {
+						"--spring.cloud.function.grpc.port=0")) {
 
+			int port = patientlyGetPort(context);
+			
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
 					.build());
@@ -172,15 +176,15 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testBidirectionalStreamWithReactiveFunction() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testBidirectionalStreamWithReactiveFunction() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=uppercaseReactive",
-						"--spring.cloud.function.grpc.port="
-								+ port)) {
+						"--spring.cloud.function.grpc.port=0")) {
 
+			int port = patientlyGetPort(context);
+			
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
 					.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.TEXT_PLAIN)
@@ -204,14 +208,14 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testClientStreaming() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testClientStreaming() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=streamInStringOut",
-						"--spring.cloud.function.grpc.port="
-								+ port)) {
+						"--spring.cloud.function.grpc.port=0")) {
+
+			int port = patientlyGetPort(context);
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -229,14 +233,14 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testServerStreaming() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testServerStreaming() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=stringInStreamOut",
-						"--spring.cloud.function.grpc.port="
-								+ port)) {
+						"--spring.cloud.function.grpc.port=0")) {
+
+			int port = patientlyGetPort(context);
 
 			Message<byte[]> message = MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar").build();
 
@@ -251,14 +255,14 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testBiStreamStreamInStringOutFailure() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testBiStreamStreamInStringOutFailure() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=streamInStringOut",
-						"--spring.cloud.function.grpc.port="
-								+ port)) {
+						"--spring.cloud.function.grpc.port=0")) {
+
+			int port = patientlyGetPort(context);
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -276,14 +280,14 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
-	public void testBiStreamStringInStreamOutFailure() {
-		int port = SocketUtils.findAvailableTcpPort();
+	public void testBiStreamStringInStreamOutFailure() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(
 						"--spring.jmx.enabled=false",
 						"--spring.cloud.function.definition=stringInStreamOut",
-						"--spring.cloud.function.grpc.port="
-								+ port)) {
+						"--spring.cloud.function.grpc.port=0")) {
+
+			int port = patientlyGetPort(context);
 
 			List<Message<byte[]>> messages = new ArrayList<>();
 			messages.add(MessageBuilder.withPayload("\"Ricky\"".getBytes()).setHeader("foo", "bar")
@@ -298,6 +302,17 @@ public class GrpcInteractionTests {
 
 			assertThat(clientResponseObserver.collectList().block(Duration.ofSeconds(2))).isEmpty();
 		}
+	}
+
+	private int patientlyGetPort(ConfigurableApplicationContext context) throws InterruptedException {
+		Thread.sleep(500);
+		String port = context.getEnvironment().getProperty("local.grpc.server.port");
+		if (port == null) {
+			Thread.sleep(500);
+			port = context.getEnvironment().getProperty("local.grpc.server.port");
+			assertThat(port).as("Unable to get 'local.grpc.server.port' - server may not have started up").isNotNull();
+		}
+		return Integer.valueOf(port);
 	}
 
 	@EnableAutoConfiguration

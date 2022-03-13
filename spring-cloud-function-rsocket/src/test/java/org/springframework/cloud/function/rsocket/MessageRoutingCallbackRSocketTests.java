@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,28 +33,28 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.util.SocketUtils;
 
 /**
  *
  * @author Oleg Zhurakousky
- *
+ * @author Chris Bono
  */
 public class MessageRoutingCallbackRSocketTests {
 
 	@Test
 	public void testRoutingWithRoutingCallback() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(RoutingCallbackFunctionConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
 							"--spring.cloud.function.expected-content-type=text/plain",
-							"--spring.rsocket.server.port=" + port);
+							"--spring.rsocket.server.port=0");
 		) {
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
+
+			int port = applicationContext.getEnvironment().getProperty("local.rsocket.server.port", Integer.class);
 
 			// imperative
 			rsocketRequesterBuilder.tcp("localhost", port)

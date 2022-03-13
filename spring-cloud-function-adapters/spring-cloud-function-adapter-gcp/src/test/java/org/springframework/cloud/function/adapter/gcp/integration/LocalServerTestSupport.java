@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -41,7 +40,6 @@ import org.springframework.cloud.function.adapter.gcp.FunctionInvoker;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Daniel Zou
  * @author Mike Eltsufin
+ * @author Chris Bono
  */
 final public class LocalServerTestSupport {
 
@@ -82,10 +81,7 @@ final public class LocalServerTestSupport {
 		}
 	}
 
-	static ServerProcess startServer(Class<?> springApplicationMainClass, String function)
-			throws InterruptedException, IOException {
-		int port = SocketUtils.findAvailableTcpPort();
-
+	static ServerProcess startServer(Class<?> springApplicationMainClass, String function) throws IOException {
 		String signatureType = "http";
 		String target = FunctionInvoker.class.getCanonicalName();
 
@@ -102,7 +98,7 @@ final public class LocalServerTestSupport {
 
 		ProcessBuilder processBuilder = new ProcessBuilder().command(command).redirectErrorStream(true);
 		Map<String, String> environment = new HashMap<>();
-		environment.put("PORT", String.valueOf(port));
+		environment.put("PORT", String.valueOf(0));
 		environment.put("K_SERVICE", "test-function");
 		environment.put("FUNCTION_SIGNATURE_TYPE", signatureType);
 		environment.put("FUNCTION_TARGET", target);
@@ -112,28 +108,28 @@ final public class LocalServerTestSupport {
 		}
 		processBuilder.environment().putAll(environment);
 		Process serverProcess = processBuilder.start();
-		CountDownLatch ready = new CountDownLatch(1);
-		StringBuilder output = new StringBuilder();
-		Future<?> outputMonitorResult = EXECUTOR
-				.submit(() -> monitorOutput(serverProcess.getInputStream(), ready, output));
-		boolean serverReady = ready.await(5, TimeUnit.SECONDS);
-		if (!serverReady) {
+		Future<Integer> outputMonitorResult = EXECUTOR.submit(() -> monitorOutput(serverProcess.getInputStream()));
+
+		int port;
+		try {
+			port = outputMonitorResult.get(5L, TimeUnit.SECONDS);
+		}
+		catch (Exception ex) {
 			serverProcess.destroy();
 			throw new AssertionError("Server never became ready");
 		}
-		return new ServerProcess(serverProcess, outputMonitorResult, output, port);
+		return new ServerProcess(serverProcess, port);
 	}
 
-	private static void monitorOutput(InputStream processOutput, CountDownLatch ready, StringBuilder output) {
+	private static Integer monitorOutput(InputStream processOutput) {
 		try (BufferedReader reader = new BufferedReader(new InputStreamReader(processOutput))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
-				if (line.contains(SERVER_READY_STRING)) {
-					ready.countDown();
-				}
 				System.out.println(line);
-				synchronized (output) {
-					output.append(line).append('\n');
+				if (line.contains(SERVER_READY_STRING)) {
+					// Started ServerConnector@192b07fd{HTTP/1.1,[http/1.1]}{0.0.0.0:59259}
+					String portStr = line.substring(line.lastIndexOf(':') + 1, line.lastIndexOf('}'));
+					return Integer.parseInt(portStr);
 				}
 				if (line.contains("WARNING")) {
 					throw new AssertionError("Found warning in server output:\n" + line);
@@ -143,29 +139,23 @@ final public class LocalServerTestSupport {
 		catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
+		throw new RuntimeException("End of input stream and server never became ready");
 	}
 
 	static class ServerProcess implements AutoCloseable {
 
 		private final Process process;
 
-		private final Future<?> outputMonitorResult;
-
-		private final StringBuilder output;
-
 		private final int port;
 
-		ServerProcess(Process process, Future<?> outputMonitorResult, StringBuilder output, int port) {
+		ServerProcess(Process process, int port) {
 			this.process = process;
-			this.outputMonitorResult = outputMonitorResult;
-			this.output = output;
 			this.port = port;
 		}
 
 		Process process() {
 			return process;
 		}
-
 
 		@Override
 		public void close() {

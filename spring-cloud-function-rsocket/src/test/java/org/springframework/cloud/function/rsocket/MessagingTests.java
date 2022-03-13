@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,27 +34,27 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
  * @author Oleg Zhurakousky
- *
+ * @author Chris Bono
  */
 public class MessagingTests {
 
 	@Test
 	public void testPojoToStringViaMessage() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -76,14 +76,15 @@ public class MessagingTests {
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testPojoToStringViaMessageMap() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -107,14 +108,15 @@ public class MessagingTests {
 
 	@Test
 	public void testPojoToStringViaMessageExpectMessage() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -136,14 +138,15 @@ public class MessagingTests {
 
 	@Test
 	public void testPojoMessageToPojoViaMessage() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -167,14 +170,15 @@ public class MessagingTests {
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testPojoMessageToPojoViaMap() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -200,14 +204,15 @@ public class MessagingTests {
 
 	@Test
 	public void testPojoMessageToPojoViaMessageExpectMessage() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -229,14 +234,15 @@ public class MessagingTests {
 
 	@Test
 	public void testPojoMessageToPojoViaMessageExpectMessageRawPayload() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -258,14 +264,15 @@ public class MessagingTests {
 
 	@Test
 	public void testPojoMessageToPojoViaMessageExpectMessageStringPayload() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 
@@ -287,14 +294,15 @@ public class MessagingTests {
 
 	@Test
 	public void testPojoToMessageMap() {
-		int port = SocketUtils.findAvailableTcpPort();
 		try (
 			ConfigurableApplicationContext applicationContext =
 				new SpringApplicationBuilder(MessagingConfiguration.class)
 					.web(WebApplicationType.NONE)
 					.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.rsocket.server.port=" + port);
+						"--spring.rsocket.server.port=0");
 		) {
+			int port = getLocalRsocketPort(applicationContext);
+
 			RSocketRequester.Builder rsocketRequesterBuilder =
 				applicationContext.getBean(RSocketRequester.Builder.class);
 			Person p = new Person();
@@ -311,7 +319,9 @@ public class MessagingTests {
 		}
 	}
 
-
+	private int getLocalRsocketPort(ConfigurableApplicationContext context) {
+		return context.getEnvironment().getProperty("local.rsocket.server.port", Integer.class);
+	}
 
 	@EnableAutoConfiguration
 	@Configuration
