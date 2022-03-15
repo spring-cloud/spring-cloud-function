@@ -40,6 +40,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -305,14 +306,15 @@ public class GrpcInteractionTests {
 	}
 
 	private int patientlyGetPort(ConfigurableApplicationContext context) throws InterruptedException {
-		Thread.sleep(500);
-		String port = context.getEnvironment().getProperty("local.grpc.server.port");
-		if (port == null) {
-			Thread.sleep(500);
-			port = context.getEnvironment().getProperty("local.grpc.server.port");
-			assertThat(port).as("Unable to get 'local.grpc.server.port' - server may not have started up").isNotNull();
-		}
-		return Integer.valueOf(port);
+		await()
+			.pollDelay(Duration.ofMillis(500))
+			.pollInterval(Duration.ofMillis(500))
+			.atMost(Duration.ofSeconds(3))
+			.untilAsserted(() -> {
+				String port = context.getEnvironment().getProperty("local.grpc.server.port");
+				assertThat(port).as("Unable to get 'local.grpc.server.port' - server may not have started up").isNotEmpty();
+			});
+		return Integer.valueOf(context.getEnvironment().getProperty("local.grpc.server.port"));
 	}
 
 	@EnableAutoConfiguration

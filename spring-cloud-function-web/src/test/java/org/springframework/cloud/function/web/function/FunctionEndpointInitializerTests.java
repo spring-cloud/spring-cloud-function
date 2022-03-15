@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.function;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -36,6 +37,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
 *
@@ -105,14 +107,15 @@ public class FunctionEndpointInitializerTests {
 
 	private int startServerAndWaitForPort(Class<?> primaryAppConfig) throws InterruptedException {
 		ConfigurableApplicationContext context = FunctionalSpringApplication.run(primaryAppConfig, "--server.port=0");
-		Thread.sleep(500);
-		String port = context.getEnvironment().getProperty("local.server.port");
-		if (port == null) {
-			Thread.sleep(500);
-			port = context.getEnvironment().getProperty("local.server.port");
-			assertThat(port).as("Unable to get 'local.server.port' - server may not have started up").isNotNull();
-		}
-		return Integer.valueOf(port);
+		await()
+			.pollDelay(Duration.ofMillis(500))
+			.pollInterval(Duration.ofMillis(500))
+			.atMost(Duration.ofSeconds(3))
+			.untilAsserted(() -> {
+				String port = context.getEnvironment().getProperty("local.server.port");
+				assertThat(port).as("Unable to get 'local.server.port' - server may not have started up").isNotEmpty();
+			});
+		return Integer.valueOf(context.getEnvironment().getProperty("local.server.port"));
 	}
 
 	@SpringBootConfiguration
