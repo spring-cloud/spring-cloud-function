@@ -130,7 +130,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			}
 
 			if (response != null) {
-				FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders().getContentType());
+				FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
 				Message<byte[]> eventMessage = AWSLambdaUtils.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8),
 						fromHttp(response.getHeaders()), function.getInputType(), mapper);
 				if (logger.isDebugEnabled()) {
@@ -172,7 +172,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		return null;
 	}
 
-	private FunctionInvocationWrapper locateFunction(Environment environment, FunctionCatalog functionCatalog, MediaType contentType) {
+	private FunctionInvocationWrapper locateFunction(Environment environment, FunctionCatalog functionCatalog, HttpHeaders httpHeaders) {
+		MediaType contentType = httpHeaders.getContentType();
 		String handlerName = environment.getProperty("DEFAULT_HANDLER");
 		if (logger.isDebugEnabled()) {
 			logger.debug("Value of DEFAULT_HANDLER env: " + handlerName);
@@ -197,6 +198,15 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			handlerName = environment.getProperty("spring.cloud.function.definition");
 			if (logger.isDebugEnabled()) {
 				logger.debug("Value of 'spring.cloud.function.definition' env: " + handlerName);
+			}
+			function = functionCatalog.lookup(handlerName, contentType.toString());
+		}
+
+		if (function == null) {
+			logger.info("Could not determine DEFAULT_HANDLER, _HANDLER or 'spring.cloud.function.definition'");
+			handlerName = httpHeaders.get("spring.cloud.function.definition");
+			if (logger.isDebugEnabled()) {
+				logger.debug("Value of 'spring.cloud.function.definition' header: " + handlerName);
 			}
 			function = functionCatalog.lookup(handlerName, contentType.toString());
 		}
