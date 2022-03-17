@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog.observability.tracing;
 
-import io.micrometer.core.instrument.observation.Observation;
+import io.micrometer.observation.Observation;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.handler.TracingObservationHandler;
@@ -288,7 +288,7 @@ public class FunctionTracingObservationHandler implements TracingObservationHand
 		return this.tracer;
 	}
 
-	@Override
+//	@Override
 	public boolean supportsContext(Observation.Context context) {
 		return context instanceof FunctionContext && (((FunctionContext) context).getInput() instanceof Message<?>);
 	}

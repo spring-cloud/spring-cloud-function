@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.function.context.catalog.observability;
 
-import io.micrometer.core.instrument.observation.Observation;
-import io.micrometer.core.instrument.observation.ObservationRegistry;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -25,6 +25,8 @@ import org.reactivestreams.Publisher;
 import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
+
+
 
 /**
  * @author Marcin Grzejszczak

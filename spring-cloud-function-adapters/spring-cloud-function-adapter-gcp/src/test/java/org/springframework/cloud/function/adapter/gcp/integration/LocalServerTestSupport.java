@@ -38,10 +38,10 @@ import com.google.gson.Gson;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.adapter.gcp.FunctionInvoker;
+import org.springframework.cloud.function.utils.SocketUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

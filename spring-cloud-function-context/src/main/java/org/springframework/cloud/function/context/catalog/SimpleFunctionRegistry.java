@@ -53,6 +53,7 @@ import org.springframework.cloud.function.context.FunctionProperties.FunctionCon
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.expression.BeanFactoryResolver;
@@ -541,7 +542,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
 				logger.debug("Invoking function " + this);
 			}
-			Object result = this.doApply(input);
+			Object result;
+			if (input instanceof Message && ((Message) input).getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL) && ((Message) input).getHeaders().get(MessageUtils.TARGET_PROTOCOL).equals("streamBridge")) {
+				result = input;
+			}
+			else {
+				result = this.doApply(input);
+			}
+//			Object result = this.doApply(input);
 
 			if (result != null && this.outputType != null) {
 				result = this.convertOutputIfNecessary(result, this.outputType, this.expectedOutputContentType);
