@@ -34,6 +34,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.cloud.function.test.FunctionalExporterTests.ApplicationConfiguration;
+import org.springframework.cloud.function.utils.SocketUtils;
 import org.springframework.cloud.function.web.source.SupplierExporter;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -41,7 +42,6 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

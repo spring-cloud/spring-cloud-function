@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog.observability;
 
-import io.micrometer.core.instrument.observation.Observation;
+import io.micrometer.observation.Observation;
 
 /**
  * {@link Observation.TagsProvider} for {@link FunctionContext}.

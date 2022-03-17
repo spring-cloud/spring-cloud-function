@@ -33,6 +33,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.rsocket.context.RSocketServerBootstrap;
 import org.springframework.boot.rsocket.server.RSocketServer;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.utils.SocketUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,7 +42,6 @@ import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.util.SocketUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

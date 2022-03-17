@@ -16,8 +16,9 @@
 
 package org.springframework.cloud.function.context.catalog.observability;
 
-import io.micrometer.core.instrument.observation.Observation;
+
 import io.micrometer.core.lang.Nullable;
+import io.micrometer.observation.Observation;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 
