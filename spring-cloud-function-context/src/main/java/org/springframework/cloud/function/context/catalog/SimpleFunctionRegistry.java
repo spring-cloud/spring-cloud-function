@@ -548,7 +548,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
 				logger.debug("Invoking function " + this);
 			}
-			Object result = this.doApply(input);
+			Object result = (this.getTarget() instanceof PassThruFunction) ? input : this.doApply(input);
 
 			if (result != null && this.outputType != null) {
 				result = this.convertOutputIfNecessary(result, this.outputType, this.expectedOutputContentType);
@@ -1446,6 +1446,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		public Message<?> getOriginalMessage() {
 			return this.originalMessage;
+		}
+	}
+	
+	public static class PassThruFunction implements Function<Object, Object> {
+		@Override
+		public Object apply(Object t) {
+			return t;
 		}
 	}
 }
