@@ -53,7 +53,6 @@ import org.springframework.cloud.function.context.FunctionProperties.FunctionCon
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.expression.BeanFactoryResolver;
@@ -542,14 +541,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
 				logger.debug("Invoking function " + this);
 			}
-			Object result;
-			if (input instanceof Message && ((Message) input).getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL) && ((Message) input).getHeaders().get(MessageUtils.TARGET_PROTOCOL).equals("streamBridge")) {
-				result = input;
-			}
-			else {
-				result = this.doApply(input);
-			}
-//			Object result = this.doApply(input);
+			Object result = (this.getTarget() instanceof PassThruFunction) ? input : this.doApply(input);
 
 			if (result != null && this.outputType != null) {
 				result = this.convertOutputIfNecessary(result, this.outputType, this.expectedOutputContentType);
@@ -1441,6 +1433,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		public Message<?> getOriginalMessage() {
 			return this.originalMessage;
+		}
+	}
+	
+	public static class PassThruFunction implements Function<Object, Object> {
+		@Override
+		public Object apply(Object t) {
+			return t;
 		}
 	}
 }
