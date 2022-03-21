@@ -53,6 +53,7 @@ import static org.apache.http.HttpHeaders.USER_AGENT;
  *
  * @author Oleg Zhurakousky
  * @author Mark Sailes
+ * @author Rahul Lokurte
  * @since 3.1.1
  *
  */
@@ -204,7 +205,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 		if (function == null) {
 			logger.info("Could not determine DEFAULT_HANDLER, _HANDLER or 'spring.cloud.function.definition'");
-			handlerName = httpHeaders.get("spring.cloud.function.definition");
+			handlerName = httpHeaders.getFirst("spring.cloud.function.definition");
 			if (logger.isDebugEnabled()) {
 				logger.debug("Value of 'spring.cloud.function.definition' header: " + handlerName);
 			}
