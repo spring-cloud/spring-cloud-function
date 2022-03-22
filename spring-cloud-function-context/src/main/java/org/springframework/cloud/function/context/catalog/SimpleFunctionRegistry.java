@@ -1448,7 +1448,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			return this.originalMessage;
 		}
 	}
-	
+
 	public static class PassThruFunction implements Function<Object, Object> {
 		@Override
 		public Object apply(Object t) {
