@@ -1135,6 +1135,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (!(output instanceof Publisher) && this.enhancer != null) {
 				output = enhancer.apply(output);
 			}
+			if (this.getTarget() instanceof PassThruFunction) { // scst-2303
+				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
+						.getField(SimpleFunctionRegistry.this.headersField, ((Message) output).getHeaders());
+				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType[0]);
+				return messageConverter.toMessage(((Message) output).getPayload(), ((Message) output).getHeaders());
+			}
 
 			if (ObjectUtils.isEmpty(contentType) && !(output instanceof Publisher)) {
 				return output;
