@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
@@ -447,12 +448,31 @@ public class FunctionInvokerTests {
 			"    \"isBase64Encoded\": false\n" +
 			"}";
 
+	String gwAuthorizerEvent = "{\n"
+			+ "    \"type\":\"TOKEN\",\n"
+			+ "    \"authorizationToken\":\"allow\",\n"
+			+ "    \"methodArn\":\"arn:aws:execute-api:us-west-2:123456789012:ymy8tbxw7b/*/GET/\"\n"
+			+ "}";
+
 	@BeforeEach
 	public void before() throws Exception {
 		System.clearProperty("MAIN_CLASS");
 		System.clearProperty("spring.cloud.function.routing-expression");
 		System.clearProperty("spring.cloud.function.definition");
 		this.getEnvironment().clear();
+	}
+
+	@Test
+	public void testAPIGatewayCustomAuthorizerEvent() throws Exception {
+		System.setProperty("MAIN_CLASS", AuthorizerConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "acceptAuthorizerEvent");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.gwAuthorizerEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("APIGatewayCustomAuthorizerEvent(version=null, type=TOKEN");
 	}
 
 	@Test
@@ -1041,6 +1061,15 @@ public class FunctionInvokerTests {
 		Field field = env.getClass().getDeclaredField("m");
 		field.setAccessible(true);
 		return (Map<String, String>) field.get(env);
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class AuthorizerConfiguration {
+		@Bean
+		public Function<APIGatewayCustomAuthorizerEvent, String> acceptAuthorizerEvent() {
+			return v -> v.toString();
+		}
 	}
 
 	@EnableAutoConfiguration
