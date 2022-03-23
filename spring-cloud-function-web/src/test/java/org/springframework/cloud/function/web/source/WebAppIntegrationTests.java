@@ -34,7 +34,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.cloud.function.utils.SocketUtils;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.TestSocketUtils;
 import org.springframework.cloud.function.web.source.WebAppIntegrationTests.ApplicationConfiguration;
