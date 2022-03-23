@@ -17,7 +17,7 @@
 package org.springframework.cloud.function.cloudevent;
 
 import java.net.URI;
-import java.time.OffsetTime;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -111,13 +111,13 @@ public final class CloudEventMessageBuilder<T> {
 		return this;
 	}
 
-	public CloudEventMessageBuilder<T> setTime(OffsetTime time) {
+	public CloudEventMessageBuilder<T> setTime(OffsetDateTime time) {
 		this.headers.put(CloudEventMessageUtils.TIME, time);
 		return this;
 	}
 
 	public CloudEventMessageBuilder<T> setTime(String time) {
-		this.headers.put(CloudEventMessageUtils.TIME, OffsetTime.parse(time));
+		this.headers.put(CloudEventMessageUtils.TIME, OffsetDateTime.parse(time));
 		return this;
 	}
 
