@@ -48,6 +48,7 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.HybridFunctionalRegistrationTests.UppercaseFunction;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
+import org.springframework.cloud.function.context.config.SmartCompositeMessageConverter;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -86,7 +87,7 @@ public class SimpleFunctionRegistryTests {
 		messageConverters.add(new JsonMessageConverter(jsonMapper));
 		messageConverters.add(new ByteArrayMessageConverter());
 		messageConverters.add(new StringMessageConverter());
-		this.messageConverter = new CompositeMessageConverter(messageConverters);
+		this.messageConverter = new SmartCompositeMessageConverter(messageConverters);
 
 		this.conversionService = new DefaultConversionService();
 	}
