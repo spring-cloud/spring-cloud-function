@@ -18,7 +18,6 @@ package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -76,9 +75,6 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-		if (targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
-			return message.getPayload();
-		}
 		Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
 		if (targetClass == byte[].class && message.getPayload() instanceof String) {
 			return ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8);
