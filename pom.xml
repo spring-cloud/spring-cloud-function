@@ -141,6 +141,7 @@
 				</dependency>
 			</dependencies>
 		</profile>
+
 		<profile>
 			<id>core</id>
 			<modules>
