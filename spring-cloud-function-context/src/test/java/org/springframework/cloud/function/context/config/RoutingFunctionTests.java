@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterEach;
@@ -24,17 +26,22 @@ import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -52,11 +59,15 @@ public class RoutingFunctionTests {
 		context.close();
 	}
 
-	private FunctionCatalog configureCatalog() {
-		context = new SpringApplicationBuilder(RoutingFunctionConfiguration.class).run(
+	private FunctionCatalog configureCatalog(Class<?> configurationClass) {
+		context = new SpringApplicationBuilder(configurationClass).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG",
 				"--spring.cloud.function.routing.enabled=true");
 		return context.getBean(FunctionCatalog.class);
+	}
+
+	private FunctionCatalog configureCatalog() {
+		return configureCatalog(RoutingFunctionConfiguration.class);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -91,10 +102,7 @@ public class RoutingFunctionTests {
 				.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
 
-		StepVerifier
-		.create(resultFlux)
-		.expectError()
-		.verify();
+		StepVerifier.create(resultFlux).expectError().verify();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -106,10 +114,27 @@ public class RoutingFunctionTests {
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".routing-expression", "'echoFlux'").build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
-		StepVerifier
-		.create(resultFlux)
-		.expectError()
-		.verify();
+		StepVerifier.create(resultFlux).expectError().verify();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void failWithHeaderProvidedExpressionAccessingRuntime() {
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".routing-expression",
+						"T(java.lang.Runtime).getRuntime().exec(\"open -a calculator.app\")")
+				.build();
+		try {
+			function.apply(message);
+			fail();
+		}
+		catch (Exception e) {
+			assertThat(e.getMessage()).isEqualTo("EL1005E: Type cannot be found 'java.lang.Runtime'");
+		}
+
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -151,7 +176,8 @@ public class RoutingFunctionTests {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testInvocationWithRoutingBeanExpression() {
-		System.setProperty(FunctionProperties.PREFIX + ".routing-expression", "@reverse.apply(#root.getHeaders().get('func'))");
+		System.setProperty(FunctionProperties.PREFIX + ".routing-expression",
+				"@reverse.apply(#root.getHeaders().get('func'))");
 		FunctionCatalog functionCatalog = this.configureCatalog();
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
@@ -170,16 +196,17 @@ public class RoutingFunctionTests {
 			Assertions.fail();
 		}
 		catch (Exception e) {
-			//ignore
+			// ignore
 		}
 
 		// non existing function
 		try {
-			function.apply(MessageBuilder.withPayload("hello").setHeader(FunctionProperties.PREFIX + ".definition", "blah").build());
+			function.apply(MessageBuilder.withPayload("hello")
+					.setHeader(FunctionProperties.PREFIX + ".definition", "blah").build());
 			Assertions.fail();
 		}
 		catch (Exception e) {
-			//ignore
+			// ignore
 		}
 	}
 
@@ -195,6 +222,22 @@ public class RoutingFunctionTests {
 				.setHeader(FunctionProperties.PREFIX + ".definition", "uppercase").build();
 
 		assertThat(function.apply(message)).isEqualTo("OLLEH");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testMultipleRouters() {
+		System.setProperty(FunctionProperties.PREFIX + ".routing-expression", "'uppercase'");
+		FunctionCatalog functionCatalog = this.configureCatalog(MultipleRouterConfiguration.class);
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello").build();
+		assertThat(function.apply(message)).isEqualTo("HELLO");
+
+		function = functionCatalog.lookup("mySpecialRouter");
+		assertThat(function).isNotNull();
+		message = MessageBuilder.withPayload("hello").build();
+		assertThat(function.apply(message)).isEqualTo("olleh");
 	}
 
 	@EnableAutoConfiguration
@@ -214,6 +257,28 @@ public class RoutingFunctionTests {
 		@Bean
 		public Function<Flux<String>, Flux<String>> echoFlux() {
 			return f -> f;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class MultipleRouterConfiguration {
+
+		@Bean
+		RoutingFunction mySpecialRouter(FunctionCatalog functionCatalog, BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
+			Map<String, String> propertiesMap = new HashMap<>();
+			propertiesMap.put(FunctionProperties.PREFIX + ".routing-expression", "'reverse'");
+			return new RoutingFunction(functionCatalog, propertiesMap, new BeanFactoryResolver(beanFactory), routingCallback);
+		}
+
+		@Bean
+		public Function<String, String> reverse() {
+			return v -> new StringBuilder(v).reverse().toString();
+		}
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return String::toUpperCase;
 		}
 	}
 }
