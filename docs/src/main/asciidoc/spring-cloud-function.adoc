@@ -145,7 +145,7 @@ public class RoutingFunction implements Function<Object, Object> {
 The routing instructions could be communicated in several ways. We support providing instructions via Message headers, System 
 properties as well as pluggable strategy. So let's look at some of the details
 
-*MessageRoutingCallback*
+==== MessageRoutingCallback
 
 The `MessageRoutingCallback` is a strategy to assist with determining the name of the route-to function definition.
 
@@ -231,7 +231,7 @@ conflict resolutions in the event multiple mechanisms are used at the same time,
 3. Application Properties (Any function) 
 
 
-*Function Filtering*
+==== Function Filtering
 Filtering is the type of routing where there are only two paths - 'go' or 'discard'. In terms of functions it mean
 you only want to invoke a certain function if some condition returns 'true', otherwise you want to discard input.
 However, when it comes to discarding input there are many interpretation of what it could mean in the context of your application.
@@ -260,6 +260,58 @@ IMPORTANT: When dealing with reactive inputs (e.g., Publisher), routing instruct
 due to the nature of the reactive functions which are invoked only once to pass a Publisher and the rest
 is handled by the reactor, hence we can not access and/or rely on the routing instructions communicated via individual
 values (e.g., Message).
+
+==== Multiple Routers
+
+By default the framework will always have a single routing function configured as described in previous sections. However, there are times when you may need more then one routing function.
+In that case you can create your own instance of the `RoutingFunction` bean in addition to the existing one as long as you give it a name other than `functionRouter`.
+
+You can pass `spring.cloud.function.routing-expression` or `spring.cloud.function.definition` to RoutinFunction as key/value pairs in the map.
+
+Here is a simple example
+
+----
+@Configuration
+protected static class MultipleRouterConfiguration {
+
+	@Bean
+	RoutingFunction mySpecialRouter(FunctionCatalog functionCatalog, BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
+		Map<String, String> propertiesMap = new HashMap<>();
+		propertiesMap.put(FunctionProperties.PREFIX + ".routing-expression", "'reverse'");
+		return new RoutingFunction(functionCatalog, propertiesMap, new BeanFactoryResolver(beanFactory), routingCallback);
+	}
+
+	@Bean
+	public Function<String, String> reverse() {
+		return v -> new StringBuilder(v).reverse().toString();
+	}
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return String::toUpperCase;
+	}
+}
+----
+
+and a test that demonstrates how it works
+
+`
+----
+@Test
+public void testMultipleRouters() {
+	System.setProperty(FunctionProperties.PREFIX + ".routing-expression", "'uppercase'");
+	FunctionCatalog functionCatalog = this.configureCatalog(MultipleRouterConfiguration.class);
+	Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+	assertThat(function).isNotNull();
+	Message<String> message = MessageBuilder.withPayload("hello").build();
+	assertThat(function.apply(message)).isEqualTo("HELLO");
+
+	function = functionCatalog.lookup("mySpecialRouter");
+	assertThat(function).isNotNull();
+	message = MessageBuilder.withPayload("hello").build();
+	assertThat(function.apply(message)).isEqualTo("olleh");
+}
+----
 
 === Input/Output Enrichment
 
