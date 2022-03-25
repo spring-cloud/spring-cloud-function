@@ -45,7 +45,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Nullable
 	public Object fromMessage(Message<?> message, Class<?> targetClass) {
 		for (MessageConverter converter : getConverters()) {
-			if (targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
+			if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
 				return message.getPayload();
 			}
 			Object result = converter.fromMessage(message, targetClass);
@@ -60,7 +60,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Nullable
 	public Object fromMessage(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 		for (MessageConverter converter : getConverters()) {
-			if (targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
+			if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
 				return message.getPayload();
 			}
 			Object result = (converter instanceof SmartMessageConverter ?
