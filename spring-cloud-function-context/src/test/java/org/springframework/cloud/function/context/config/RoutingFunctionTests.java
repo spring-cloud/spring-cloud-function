@@ -41,7 +41,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  *
@@ -129,7 +129,7 @@ public class RoutingFunctionTests {
 				.build();
 		try {
 			function.apply(message);
-			fail();
+			fail("Function shoudl not succeed");
 		}
 		catch (Exception e) {
 			assertThat(e.getMessage()).isEqualTo("EL1005E: Type cannot be found 'java.lang.Runtime'");
