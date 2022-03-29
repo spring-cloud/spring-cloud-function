@@ -33,6 +33,8 @@ import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.BeanResolver;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.DataBindingPropertyAccessor;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -58,6 +60,9 @@ public class RoutingFunction implements Function<Object, Object> {
 	private static Log logger = LogFactory.getLog(RoutingFunction.class);
 
 	private final StandardEvaluationContext evalContext = new StandardEvaluationContext();
+
+	private final SimpleEvaluationContext headerEvalContext = SimpleEvaluationContext
+			.forPropertyAccessors(DataBindingPropertyAccessor.forReadOnlyAccess()).build();
 
 	private final SpelExpressionParser spelParser = new SpelExpressionParser();
 
@@ -123,13 +128,13 @@ public class RoutingFunction implements Function<Object, Object> {
 					}
 				}
 				else if (StringUtils.hasText((String) message.getHeaders().get("spring.cloud.function.routing-expression"))) {
-					function = this.functionFromExpression((String) message.getHeaders().get("spring.cloud.function.routing-expression"), message);
+					function = this.functionFromExpression((String) message.getHeaders().get("spring.cloud.function.routing-expression"), message, true);
 					if (function.isInputTypePublisher()) {
 						this.assertOriginalInputIsNotPublisher(originalInputIsPublisher);
 					}
 				}
 				else if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
-					function = this.functionFromExpression(functionProperties.getRoutingExpression(), message);
+					function = this.functionFromExpression(functionProperties.getRoutingExpression(), message, false);
 				}
 				else if (StringUtils.hasText(functionProperties.getDefinition())) {
 					function = this.functionFromDefinition(functionProperties.getDefinition());
@@ -147,7 +152,7 @@ public class RoutingFunction implements Function<Object, Object> {
 					function = functionFromDefinition(functionProperties.getDefinition());
 				}
 				else if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
-					function = this.functionFromExpression(functionProperties.getRoutingExpression(), input);
+					function = this.functionFromExpression(functionProperties.getRoutingExpression(), input, false);
 				}
 				else {
 					return input instanceof Mono
@@ -159,7 +164,7 @@ public class RoutingFunction implements Function<Object, Object> {
 		else {
 			this.assertOriginalInputIsNotPublisher(originalInputIsPublisher);
 			if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
-				function = this.functionFromExpression(functionProperties.getRoutingExpression(), input);
+				function = this.functionFromExpression(functionProperties.getRoutingExpression(), input, false);
 			}
 			else
 			if (StringUtils.hasText(functionProperties.getDefinition())) {
@@ -181,20 +186,6 @@ public class RoutingFunction implements Function<Object, Object> {
 				+ "spring.cloud.function.routing-expression' as application properties.");
 	}
 
-//	private FunctionInvocationWrapper functionFromCallback(Object input) {
-//		if (input instanceof Message) {
-//			Object routingResult = this.routingCallback.functionDefinition((Message<?>) input);
-//			if (routingResult != null && routingResult instanceof String) {
-//
-//			}
-//			if (StringUtils.hasText(functionDefinition)) {
-//				return this.functionFromDefinition(functionDefinition);
-//			}
-//		}
-//		logger.info("Unable to determine route-to function from the provided MessageRoutingCallback");
-//		return null;
-//	}
-
 	private FunctionInvocationWrapper functionFromDefinition(String definition) {
 		FunctionInvocationWrapper function = functionCatalog.lookup(definition);
 		Assert.notNull(function, "Failed to lookup function to route based on the value of 'spring.cloud.function.definition' property '"
@@ -205,9 +196,10 @@ public class RoutingFunction implements Function<Object, Object> {
 		return function;
 	}
 
-	private FunctionInvocationWrapper functionFromExpression(String routingExpression, Object input) {
+	private FunctionInvocationWrapper functionFromExpression(String routingExpression, Object input, boolean isViaHeader) {
 		Expression expression = spelParser.parseExpression(routingExpression);
-		String functionName = expression.getValue(this.evalContext, input, String.class);
+//		String functionName = expression.getValue(this.evalContext, input, String.class);
+		String functionName = isViaHeader ? expression.getValue(this.headerEvalContext, input, String.class) : expression.getValue(this.evalContext, input, String.class);
 		Assert.hasText(functionName, "Failed to resolve function name based on routing expression '" + functionProperties.getRoutingExpression() + "'");
 		FunctionInvocationWrapper function = functionCatalog.lookup(functionName);
 		Assert.notNull(function, "Failed to lookup function to route to based on the expression '"
