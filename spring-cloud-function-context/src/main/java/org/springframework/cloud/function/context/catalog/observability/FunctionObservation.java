@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.function.context.catalog.observability;
 
+import io.micrometer.common.docs.TagKey;
 import io.micrometer.observation.docs.DocumentedObservation;
-import io.micrometer.observation.docs.TagKey;
 
 /**
  * @author Marcin Grzejszczak

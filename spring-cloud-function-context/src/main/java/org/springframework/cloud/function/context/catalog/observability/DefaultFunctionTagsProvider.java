@@ -16,7 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog.observability;
 
-import io.micrometer.observation.Tags;
+import io.micrometer.common.Tags;
 
 public class DefaultFunctionTagsProvider implements FunctionTagsProvider {
 	@Override
