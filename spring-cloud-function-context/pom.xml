@@ -17,8 +17,8 @@
 
 	<properties>
 		<avro.version>1.10.2</avro.version>
-		<micrometer-bom.version>2.0.0-SNAPSHOT</micrometer-bom.version>
-		<micrometer-tracing-bom.version>1.0.0-SNAPSHOT</micrometer-tracing-bom.version>
+		<micrometer-bom.version>2.0.0-M3</micrometer-bom.version>
+		<micrometer-tracing-bom.version>1.0.0-M3</micrometer-tracing-bom.version>
 	</properties>
 
 	<dependencies>
@@ -135,11 +135,6 @@
 		</dependency>
 
 		<!-- Observability -->
-		<dependency>
-			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-observation</artifactId>
-<!-- 			<optional>true</optional> -->
-		</dependency>
 		<dependency>
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-core</artifactId>
