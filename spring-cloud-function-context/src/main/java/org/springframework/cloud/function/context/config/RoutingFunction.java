@@ -147,7 +147,7 @@ public class RoutingFunction implements Function<Object, Object> {
 					}
 				}
 				else if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
-					function = this.functionFromExpression(functionProperties.getRoutingExpression(), message);
+					function = this.functionFromExpression(functionProperties.getRoutingExpression(), message, true);
 				}
 				else if (StringUtils.hasText(functionProperties.getDefinition())) {
 					function = this.functionFromDefinition(functionProperties.getDefinition());
