@@ -121,6 +121,7 @@ final class AWSLambdaUtils {
 				}
 				Object providedHeaders = ((Map) request).remove("headers");
 				if (providedHeaders != null && providedHeaders instanceof Map) {
+					messageBuilder = MessageBuilder.withPayload(request);
 					messageBuilder.removeHeader("headers");
 					messageBuilder.copyHeaders((Map<String, Object>) providedHeaders);
 				}
