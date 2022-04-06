@@ -775,6 +775,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 */
 		@SuppressWarnings("unchecked")
 		private Object fluxifyInputIfNecessary(Object input) {
+			if (input instanceof Message && !((Message) input).getHeaders().containsKey("user-agent") && this.isConsumer() && !this.isInputTypePublisher()) {
+				return input;
+			}
 			if (FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
 				return input;
 			}
