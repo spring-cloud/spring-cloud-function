@@ -36,10 +36,16 @@ import org.springframework.messaging.support.MessageBuilder;
 public class UppercaseHandler extends FunctionInvoker<Message<String>, String> {
 
 	@FunctionName("uppercase")
-	public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
-			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
-		ExecutionContext context) {
-		Message<String> message = MessageBuilder.withPayload(request.getBody().get()).copyHeaders(request.getHeaders()).build();
+	public String execute(
+		@HttpTrigger(
+			name = "req",
+			methods = {HttpMethod.GET, HttpMethod.POST},
+			authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+		ExecutionContext context
+	) {
+		context.getLogger().warning("Using Java (" + System.getProperty("java.version") + ")");
+		Message<String> message = MessageBuilder.withPayload(request.getBody().get())
+			.copyHeaders(request.getHeaders()).build();
 		return handleRequest(message, context);
 	}
 }
