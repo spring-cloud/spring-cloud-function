@@ -1,42 +1,84 @@
-You can run this Azure function locally, similar to other Spring Cloud Function samples, however 
+== Running Locally  `
+You can run this Azure function locally, similar to other Spring Cloud Function samples, however
 this time by using the Azure Maven plugin, as the Microsoft Azure functions execution context must be available.
 
+NOTE: To run locally on top of Azure Functions, and to deploy to your live Azure environment, you will need the Azure Functions Core Tools installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-java?tabs=bash%2Cazure-cli%2Cbrowser#configure-your-local-environment[here] for details).
+
+.Follow these steps to build and run locally:
+[source,bash]
 ----
-# Build and run package 
-$ mvn clean package 
-$ mvn azure-functions:run
+../../mvnw clean package
+../../mvnw azure-functions:run
+----
+.console output
+[source,bash]
+----
+[INFO] Azure Function App's staging directory found at: /Users/cbono/repos/spring-cloud-function/spring-cloud-function-samples/function-sample-azure/target/azure-functions/spring-cloud-function-samples
+4.0.3971
+[INFO] Azure Functions Core Tools found.
+
+Azure Functions Core Tools
+Core Tools Version:       4.0.3971 Commit hash: d0775d487c93ebd49e9c1166d5c3c01f3c76eaaf  (64-bit)
+Function Runtime Version: 4.0.1.16815
+
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://127.0.0.1:53836/AzureFunctionsRpcMessages.FunctionRpc/EventStream application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /AzureFunctionsRpcMessages.FunctionRpc/EventStream'
+[2022-04-11T03:04:05.143Z] OpenJDK 64-Bit Server VM warning: Options -Xverify:none and -noverify were deprecated in JDK 13 and will likely be removed in a future release.
+[2022-04-11T03:04:05.247Z] Worker process started and initialized.
+
+Functions:
+
+        echo: [GET,POST] http://localhost:7071/api/echo
+
+        echoStream: [GET,POST] http://localhost:7071/api/echoStream
+
+        uppercase: [GET,POST] http://localhost:7071/api/uppercase
+
+        uppercaseReactive: [GET,POST] http://localhost:7071/api/uppercaseReactive
+
+For detailed output, run func with --verbose flag.
+[2022-04-11T03:04:10.163Z] Host lock lease acquired by instance ID '000000000000000000000000BEFE21CF'.
+
 ----
 
-The `uppercase` function is of the following signature `Function<Message<String>, String> uppercase()`. Its expected input is JSON, 
-therefore we need to provide the appropriate content-type (in this case `application/json`).
-
-Test the function using _curl_ and notice that the URL is formed by concatenating `<function url>/api/<function name>`
+.Test the _uppercase_ function using the following _curl_ command:
+[source,bash]
 ----
-# testing with cURL
-$ curl -H "Content-Type: application/json" localhost:7071/api/uppercase -d '{"greeting": "hello", "name": "your name"}'
-
-# result
+curl -H "Content-Type: application/json" localhost:7071/api/uppercase -d '{"greeting": "hello", "name": "foo"}'
+----
+.curl response
+[source,json]
+----
 {
   "greeting": "HELLO",
-  "name": "YOUR NAME"
+  "name": "FOO"
 }
 ----
+Notice that the URL is of the format `<function-base-url>/api/<function-name>`).
 
-The HTTP headers of the incoming request will be copied into input Message's MessageHeaders, so they become accessible if need to. 
-It is done in implementation of `UppercaseHandler` which extends `FunctionInvoker`.
+The `uppercase` function signature is `Function<Message<String>, String> uppercase()`. The implementation of `UppercaseHandler` (which extends `FunctionInvoker`) copies the HTTP headers of the incoming request into the input message's _MessageHeaders_ which makes them accessible to the function if needed.
 
 NOTE: Implementation of `FunctionInvoker` (your handler), should contain the least amount of code. It is really a type-safe way to define 
 and configure function to be recognized as Azure Function. 
 Everything else should be delegated to the base `FunctionInvoker` via `handleRequest(..)` callback which will invoke your function, taking care of 
 necessary type conversion, transformation etc. One exception to this rule is when custom result handling is required. In that case, the proper post-process method can be overridden as well in order to take control of the results processing.
 
+.UppercaseHandler.java
+[source,java]
 ----
 @FunctionName("uppercase")
-public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
-			HttpMethod.POST}, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
-	ExecutionContext context) {
-	Message<String> message = MessageBuilder.withPayload(request.getBody().get()).copyHeaders(request.getHeaders()).build();
-	return handleRequest(message, context);
+public String execute(
+    @HttpTrigger(
+        name = "req",
+        methods = {HttpMethod.GET, HttpMethod.POST},
+        authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+    ExecutionContext context
+) {
+    Message<String> message = MessageBuilder.withPayload(request.getBody().get())
+        .copyHeaders(request.getHeaders()).build();
+    return handleRequest(message, context);
 }
 ----
 
@@ -44,73 +86,222 @@ public String execute(@HttpTrigger(name = "req", methods = {HttpMethod.GET,
 The `echo` function does the same as the `uppercase` less the actual uppercasing. However, the important difference to notice is that function itself 
 takes primitive `String` as its input (i.e., `public Function<String, String> echo()`) while the actual handler passes instance of `Message` the same way as with `uppercase`. The framework recognizes that you only care about the payload and extracts it from the `Message` before calling the function.
 
-
-There is also a reactive version of 'uppercase' - `uppercaseReactive` which will produce the same result, but 
+There is also a reactive version of _uppercase_ (named _uppercaseReactive_) which will produce the same result, but
 demonstrates and validates the ability to use reactive functions with Azure.
 
-To run locally on top of Azure Functions, and to deploy to your live Azure environment, you will need the Azure Functions Core Tools installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-maven for more details).
+== Running on Azure
 
-To deploy the function to your live Azure environment, including an automatic provisioning of an HTTPTrigger for the function:
+NOTE: The Azure Java functions runtime does not yet support Java 17 but Spring Cloud Function 4.x requires it. To get around this limitation we deploy to Azure in a custom Docker container. Once https://github.com/Azure/azure-functions-java-worker/issues/548[Azure supports] Java 17 we can move back to using non-Docker deployments.
+
+==== Custom Docker Image
+The steps below describe the process to create a custom Docker image which is suitable for deployment on Azure and contains the 4.x Azure Functions runtime, the MS Java 17 JVM, and the sample functions in this repo.   
+
+====== Image name
+Pick an image name for the Docker container (eg. `onobc/function-sample-azure-java17:1.0.0`) and update the _pom.xml_ `functionDockerImageName` property with the image name.
+
+TIP: By default it is expected that the image name is a publicly accessible image on Docker Hub. However, other registries and credentials can be configured as described https://github.com/microsoft/azure-maven-plugins/wiki/Azure-Functions:-Configuration-Details#supporte-runtime[here].
+
+.Rebuild the functions (pom.xml was updated):
+[source,bash]
+---- 
+../../mvnw clean package
 ----
-# login to Azure from the CLI
-$ az login
+.Build the Docker image:
+[source,bash]
+----
+docker build -t <image-name> .
+----
 
-# deploy the function
-$ mvn azure-functions:deploy
+Test the Docker image locally by starting the container and issuing a request.
 
-[INFO] Authenticate with Azure CLI 2.0
-[INFO] The specified function app does not exist. Creating a new function app...
-[INFO] Successfully created the function app: function-sample-azure
-[INFO] Trying to deploy the function app...
-[INFO] Trying to deploy artifact to function-sample-azure...
-[INFO] Successfully deployed the artifact to https://function-sample-azure.azurewebsites.net
-[INFO] Successfully deployed the function app at https://function-sample-azure.azurewebsites.net
+.Start the function runtime locally in Docker:
+[source,bash]
+---- 
+docker run -p 8080:80 <image-name>
+----
+
+.console output
+[source,bash]
+----
+cbono@cbono-a01 function-sample-azure % docker run -p 8080:80 onobc/function-sample-azure-java17:1.0.0
+info: Host.Triggers.Warmup[0]
+      Initializing Warmup Extension.
+info: Host.Startup[503]
+      Initializing Host. OperationId: 'e7317c18-4daa-4d69-bf38-beaa51e1a012'.
+info: Host.Startup[504]
+      Host initialization: ConsecutiveErrors=0, StartupCount=1, OperationId=e7317c18-4daa-4d69-bf38-beaa51e1a012
+info: Microsoft.Azure.WebJobs.Hosting.OptionsLoggingService[0]
+      LoggerFilterOptions
+      {
+        "MinLevel": "None",
+        "Rules": [
+          {
+            "ProviderName": null,
+            "CategoryName": null,
+            "LogLevel": null,
+            "Filter": "<AddFilter>b__0"
+          },
+          {
+            "ProviderName": "Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics.SystemLoggerProvider",
+            "CategoryName": null,
+            "LogLevel": "None",
+            "Filter": null
+          },
+          {
+            "ProviderName": "Microsoft.Azure.WebJobs.Script.WebHost.Diagnostics.SystemLoggerProvider",
+            "CategoryName": null,
+            "LogLevel": null,
+            "Filter": "<AddFilter>b__0"
+          }
+        ]
+      }
+...
+...
+...
+info: Microsoft.Azure.WebJobs.Script.WebHost.WebScriptHostHttpRoutesManager[0]
+      Initializing function HTTP routes
+      Mapped function route 'api/echo' [GET,POST] to 'echo'
+      Mapped function route 'api/echoStream' [GET,POST] to 'echoStream'
+      Mapped function route 'api/uppercase' [GET,POST] to 'uppercase'
+      Mapped function route 'api/uppercaseReactive' [GET,POST] to 'uppercaseReactive'
+
+info: Host.Startup[412]
+      Host initialized (65ms)
+info: Host.Startup[413]
+      Host started (81ms)
+info: Host.Startup[0]
+      Job host started
+Hosting environment: Production
+Content root path: /azure-functions-host
+Now listening on: http://[::]:80
+Application started. Press Ctrl+C to shut down.
+info: Microsoft.Azure.WebJobs.Script.Workers.Rpc.RpcFunctionInvocationDispatcher[0]
+      Worker process started and initialized.
+info: Host.General[337]
+      Host lock lease acquired by instance ID '000000000000000000000000C4043012'.
+----
+
+.Test the _uppercase_ function using the following _curl_ command:
+[source,bash]
+----
+curl -H "Content-Type: application/json" localhost:8080/api/uppercase -d '{"greeting": "hello", "name": "foo"}'
+----
+.curl response
+[source,json]
+----
+{
+  "greeting": "HELLO",
+  "name": "FOO"
+}
+----
+
+.Push the image to Docker registry:
+[source,bash]
+---- 
+docker push <image-name>
+----
+At this point the custom image has been created and pushed to the configured Docker registry.
+
+==== Deploy to Azure
+To deploy the functions to your live Azure environment, including automatic provisioning of an _HTTPTrigger_ for each function, do the following. 
+
+.Login to Azure:
+[source,bash]
+----
+az login
+----
+
+.Deploy to Azure:
+[source,bash]
+----
+../../mvnw azure-functions:deploy
+----
+.console output
+[source,bash]
+----
+[INFO] ---------------< io.spring.sample:function-sample-azure >---------------
+[INFO] Building function-sample-azure 4.0.0.RELEASE
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- azure-functions-maven-plugin:1.16.0:deploy (default-cli) @ function-sample-azure ---
+Auth type: AZURE_CLI
+Default subscription: SCDF-Azure(b80d18******)
+Username: cbono@vmware.com
+[INFO] Subscription: SCDF-Azure(*******)
+[INFO] Reflections took 123 ms to scan 6 urls, producing 24 keys and 486 values
+[INFO] Start creating Resource Group(java-functions-group) in region (West US)...
+[INFO] Resource Group(java-functions-group) is successfully created.
+[INFO] Reflections took 1 ms to scan 3 urls, producing 12 keys and 12 values
+[INFO] Creating app service plan java-functions-app-service-plan...
+[INFO] Successfully created app service plan java-functions-app-service-plan.
+[INFO] Start creating Application Insight (spring-cloud-function-samples)...
+[INFO] Application Insight (spring-cloud-function-samples) is successfully created. You can visit https://ms.portal.azure.com/********providers/Microsoft.Insights/components/spring-cloud-function-samples to view your Application Insights component.
+[INFO] Creating function app spring-cloud-function-samples...
+[INFO] Set function worker runtime to java.
+[INFO] Ignoring decoding of null or empty value to:com.azure.resourcemanager.storage.fluent.models.StorageAccountInner
+[INFO] Successfully created function app spring-cloud-function-samples.
+[INFO] Skip deployment for docker app service
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-
-# Note: 
-# the function URL is: https://function-sample-azure.azurewebsites.net
-# the function can be accessed at: https://function-sample-azure.azurewebsites.net/api/uppercase
+[INFO] Total time:  01:30 min
+[INFO] Finished at: 2022-04-04T19:06:24-05:00
+[INFO] ------------------------------------------------------------------------
 ----
 
-On another terminal try this:
-----
-# testing
-curl https://<azure-function-url-from-the-log>/api/uppercase -d '{"greeting": "hello", "name": "your name"}'
+TIP: When deployed as a Docker container the function urls are not written to the console. You will need to inspect the functions in the Azure Portal to find the urls.
 
-# testing with cURL
-$ curl -H "Content-Type: application/json" https://function-sample-azure.azurewebsites.net/api/uppercase -d '{"greeting": "hello", "name": "your name"}'
-# result
-{
-  "greeting": "HELLO",
-  "name": "YOUR NAME"
-}
-----
+==== Inspect in Azure Portal
 
-Please ensure that you use the right URL for the function above.
+Navigate to the https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.Web%2Fsites/kind/functionapp[Function App] dashboard in the Azure portal and then:
 
-Alternatively you can test the function in the Azure Dashboard UI:
+* click on your function app (`"spring-cloud-function-samples"` by default)
+* click the left nav `"Functions"` link
+* click the `"uppercase"` function
 
-* click on the Dashboard
-* click on the function app `function-sample-azure` 
-* click on the left nav `Functions` and click the function name `uppercase`
-* click on the left nav `Code and Test` and at the top of the page `Test/Run`
-* In the body of the request, on the right-hand side, paste the same example we have used above:
+====== Function Url
+Click the `"Get Function Url"` link to see the function's url.
+
+====== Test via Portal
+* click on the left nav `"Code and Test"`
+* click on `"Test/Run"` at top of page
+* enter the following input json in the `"Body"` section on the right-hand side:
+
+[source,json]
 ----
 {
   "greeting": "hello",
-  "name": "your name"
+  "name": "foo"
 }
+----
+* click "Run" and the output should look like:
 
-# observe the HTTP response content
+[source,json]
+----
 {
   "greeting": "HELLO",
-  "name": "YOUR NAME"
+  "name": "FOO"
 }
 ----
 
-Please note that the Dashhboard provides by default information on Function Execution Count, Memory Consumption and Execution Time.
+===== Test via cURL
+Armed w/ the function url from above, issue the following curl command in another terminal:
+
+[source,bash]
+----
+curl -H "Content-Type: application/json" https://spring-cloud-function-samples.azurewebsites.net/api/uppercase -d '{"greeting": "hello", "name": "foo"}'
+----
+.curl response
+[source,json]
+----
+{
+  "greeting": "HELLO",
+  "name": "FOO"
+}
+----
+
+TIP: The Azure dashboard provides a plethora of information about your functions, including but not limited to execution count, memory consumption and execution time.
+
 
 ==== Custom Result Handling
 
@@ -118,15 +309,20 @@ As noted above, the implementation of `FunctionInvoker` (your handler), should c
 
 One such example can be seen in link:src/main/java/example/ReactiveEchoCustomResultHandler.java[ReactiveEchoCustomResultHandler.java].
 
-Once the function is deployed it can be tested using _curl_
-----
-$ curl -H "Content-Type: application/json" localhost:7071/api/echoStream -d '["hello","peepz"]'
+Once the function is deployed it can be tested using _curl_:
 
-# result
+[source,bash]
+----
+curl -H "Content-Type: application/json" localhost:7071/api/echoStream -d '["hello","peepz"]'
+----
+.result
+[source,bash]
+----
 Kicked off job for [hello, peepz]
 ----
 The custom result handling takes the Flux returned from the `echoStream` function and adds logging, uppercase mapping, and then subscribes to the publisher. The Azure logs output the following:
 
+[source,bash]
 ----
 [2022-03-01T01:36:57.439Z] 2022-02-28 19:36:57.439  INFO 20587 --- [pool-2-thread-2] o.s.boot.SpringApplication               : Started application in 0.466 seconds (JVM running for 57.906)
 [2022-03-01T01:36:57.462Z] BEGIN echo post-processing work ...
