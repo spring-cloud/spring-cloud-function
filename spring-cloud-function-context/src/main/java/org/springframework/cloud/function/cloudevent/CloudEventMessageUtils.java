@@ -18,7 +18,7 @@ package org.springframework.cloud.function.cloudevent;
 
 import java.lang.reflect.Field;
 import java.net.URI;
-import java.time.OffsetTime;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -208,9 +208,9 @@ public final class CloudEventMessageUtils {
 		return (String) message.getHeaders().get(prefix + _SUBJECT);
 	}
 
-	public static OffsetTime getTime(Message<?> message) {
+	public static OffsetDateTime getTime(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
-		return (OffsetTime) message.getHeaders().get(prefix + _TIME);
+		return (OffsetDateTime) message.getHeaders().get(prefix + _TIME);
 	}
 
 	@SuppressWarnings("unchecked")
