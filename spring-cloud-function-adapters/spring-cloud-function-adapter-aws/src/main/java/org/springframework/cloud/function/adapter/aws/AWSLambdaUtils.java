@@ -161,10 +161,21 @@ final class AWSLambdaUtils {
 		return messageBuilder;
 	}
 
+	private static byte[] extractPayload(Message<Object> msg, JsonMapper objectMapper) {
+		if (msg.getPayload() instanceof byte[]) {
+			return (byte[]) msg.getPayload();
+		}
+		else {
+			return objectMapper.toJson(msg.getPayload());
+		}
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static byte[] generateOutput(Message requestMessage, Message<byte[]> responseMessage,
+	public static byte[] generateOutput(Message requestMessage, Message<?> responseMessage,
 			JsonMapper objectMapper, Type functionOutputType) {
 
+		byte[] payload = extractPayload((Message<Object>) responseMessage, objectMapper);
+		
 		Class<?> outputClass = FunctionTypeUtils.getRawType(functionOutputType);
 		if (outputClass != null) {
 			String outputClassName = outputClass.getName();
@@ -172,11 +183,11 @@ final class AWSLambdaUtils {
 				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent") ||
 				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerResponseEvent") ||
 				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.IamPolicyResponse")) {
-				return responseMessage.getPayload();
+				return payload;
 			}
 		}
 
-		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : responseMessage.getPayload();
+		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : payload;
 		if (requestMessage.getHeaders().containsKey(AWS_API_GATEWAY) && ((boolean) requestMessage.getHeaders().get(AWS_API_GATEWAY))) {
 			Map<String, Object> response = new HashMap<String, Object>();
 			response.put("isBase64Encoded", false);
@@ -197,7 +208,7 @@ final class AWSLambdaUtils {
 			}
 
 			String body = responseMessage == null
-					? "\"OK\"" : new String(responseMessage.getPayload(), StandardCharsets.UTF_8);
+					? "\"OK\"" : new String(payload, StandardCharsets.UTF_8);
 			response.put("body", body);
 
 			if (responseMessage != null) {
