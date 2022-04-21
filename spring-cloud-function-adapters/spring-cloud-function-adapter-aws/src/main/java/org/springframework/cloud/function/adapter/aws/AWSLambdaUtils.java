@@ -174,8 +174,6 @@ final class AWSLambdaUtils {
 	public static byte[] generateOutput(Message requestMessage, Message<?> responseMessage,
 			JsonMapper objectMapper, Type functionOutputType) {
 
-		byte[] payload = extractPayload((Message<Object>) responseMessage, objectMapper);
-		
 		Class<?> outputClass = FunctionTypeUtils.getRawType(functionOutputType);
 		if (outputClass != null) {
 			String outputClassName = outputClass.getName();
@@ -183,11 +181,11 @@ final class AWSLambdaUtils {
 				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent") ||
 				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerResponseEvent") ||
 				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.IamPolicyResponse")) {
-				return payload;
+				return extractPayload((Message<Object>) responseMessage, objectMapper);
 			}
 		}
 
-		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : payload;
+		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : extractPayload((Message<Object>) responseMessage, objectMapper);
 		if (requestMessage.getHeaders().containsKey(AWS_API_GATEWAY) && ((boolean) requestMessage.getHeaders().get(AWS_API_GATEWAY))) {
 			Map<String, Object> response = new HashMap<String, Object>();
 			response.put("isBase64Encoded", false);
@@ -208,7 +206,7 @@ final class AWSLambdaUtils {
 			}
 
 			String body = responseMessage == null
-					? "\"OK\"" : new String(payload, StandardCharsets.UTF_8);
+					? "\"OK\"" : new String(extractPayload((Message<Object>) responseMessage, objectMapper), StandardCharsets.UTF_8);
 			response.put("body", body);
 
 			if (responseMessage != null) {
