@@ -37,6 +37,13 @@ public class FuncApplication implements ApplicationContextInitializer<GenericApp
 }
 ```
 
+== AWS Context
+
+In a typical implementation of AWS Handler user has access to AWS _context_ object. With function approach you can have the same experience if you need it.
+Upon each invocation the framework will add `aws-context` message header containing the AWS _context_ instance for that particular invocation. So if you need to access it 
+you can simply have `Message<YourPojo>` as an input parameter to your function and then access `aws-context` from message headers. 
+For convenience we provide AWSLambdaUtils.AWS_CONTEXT constant.
+
 == Platform Specific Features
 
 === HTTP and API Gateway
