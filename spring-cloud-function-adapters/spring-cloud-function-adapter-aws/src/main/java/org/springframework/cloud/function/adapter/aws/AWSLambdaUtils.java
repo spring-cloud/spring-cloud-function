@@ -51,6 +51,8 @@ final class AWSLambdaUtils {
 
 	static final String AWS_API_GATEWAY = "aws-api-gateway";
 
+	public static final String AWS_CONTEXT = "aws-context";
+
 	private AWSLambdaUtils() {
 
 	}
@@ -136,7 +138,7 @@ final class AWSLambdaUtils {
 			messageBuilder = MessageBuilder.withPayload(payload);
 		}
 		if (awsContext != null) {
-			messageBuilder.setHeader("aws-context", awsContext);
+			messageBuilder.setHeader(AWS_CONTEXT, awsContext);
 		}
 		logger.info("Incoming request headers: " + headers);
 
