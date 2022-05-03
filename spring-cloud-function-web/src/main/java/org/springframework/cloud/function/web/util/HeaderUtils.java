@@ -31,6 +31,11 @@ import org.springframework.messaging.MessageHeaders;
  */
 public final class HeaderUtils {
 
+	/**
+	 * Message Header name which contains HTTP request parameters.
+	 */
+	public static final String HTTP_REQUEST_PARAM = "http_request_param";
+
 	private static HttpHeaders IGNORED = new HttpHeaders();
 
 	private static HttpHeaders REQUEST_ONLY = new HttpHeaders();

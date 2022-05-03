@@ -17,6 +17,8 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
@@ -29,10 +31,12 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.mvc.PrefixTests.TestConfiguration;
+import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.Message;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +69,15 @@ public class PrefixTests {
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
+
+	@Test
+	public void uppercase() throws Exception {
+		ResponseEntity<String> result = this.rest.exchange(
+				RequestEntity.get(new URI("/functions/uppercase/foo?nome=Doe&prenome=John")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
+	}
+
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {
@@ -72,6 +85,17 @@ public class PrefixTests {
 		@Bean({ "words", "get/more" })
 		public Supplier<Flux<String>> words() {
 			return () -> Flux.fromArray(new String[] { "foo", "bar" });
+		}
+
+		@Bean
+		public Function<Message<String>, String[]> uppercase() {
+			return message -> {
+				assertThat(message.getPayload().equals("foo"));
+				Map<String, String> httpParam = (Map<String, String>) message.getHeaders().get(HeaderUtils.HTTP_REQUEST_PARAM);
+				assertThat(httpParam.get("nome")).isEqualTo("Doe");
+				assertThat(httpParam.get("prenome")).isEqualTo("John");
+				return new String[] { "foo", "bar" };
+			};
 		}
 
 	}
