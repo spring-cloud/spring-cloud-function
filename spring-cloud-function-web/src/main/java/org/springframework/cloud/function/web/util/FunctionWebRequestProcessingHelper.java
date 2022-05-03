@@ -93,7 +93,15 @@ public final class FunctionWebRequestProcessingHelper {
 
 		HttpHeaders headers = wrapper.getHeaders();
 
-		Message<?> inputMessage = argument == null ? null : MessageBuilder.withPayload(argument).copyHeaders(headers.toSingleValueMap()).build();
+		Message<?> inputMessage = null;
+
+		if (argument != null) {
+			MessageBuilder builder = MessageBuilder.withPayload(argument);
+			if (!CollectionUtils.isEmpty(wrapper.getParams())) {
+				builder = builder.setHeader(HeaderUtils.HTTP_REQUEST_PARAM, wrapper.getParams().toSingleValueMap());
+			}
+			inputMessage = builder.copyHeaders(headers.toSingleValueMap()).build();
+		}
 
 		if (function.isRoutingFunction()) {
 			function.setSkipOutputConversion(true);
