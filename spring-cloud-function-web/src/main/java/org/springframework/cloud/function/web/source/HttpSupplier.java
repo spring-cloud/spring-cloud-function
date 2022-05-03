@@ -25,7 +25,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.web.util.HeaderUtils;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -70,7 +70,7 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 	}
 
 	private Mono<?> transform(ClientResponse response) {
-		HttpStatus status = response.statusCode();
+		HttpStatusCode status = response.statusCode();
 		if (!status.is2xxSuccessful()) {
 			if (this.props.isDebug()) {
 				logger.info("Delaying supplier based on status=" + response.statusCode());
