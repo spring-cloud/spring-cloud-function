@@ -162,7 +162,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 						.body(outputBody), Object.class);
 
 					if (logger.isInfoEnabled()) {
-						logger.info("Result POST status: " + result.getStatusCode());
+						logger.info("Result POST status: " + result);
 					}
 				}
 				catch (Exception e) {
