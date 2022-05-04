@@ -19,6 +19,9 @@ package org.springframework.cloud.function.context.config;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -37,6 +40,8 @@ import org.springframework.util.StringUtils;
  */
 public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 
+	private Log logger = LogFactory.getLog(this.getClass());
+
 	public SmartCompositeMessageConverter(Collection<MessageConverter> converters) {
 		super(converters);
 	}
@@ -48,9 +53,16 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
 				return message.getPayload();
 			}
-			Object result = converter.fromMessage(message, targetClass);
-			if (result != null) {
-				return result;
+			try {
+				Object result = converter.fromMessage(message, targetClass);
+				if (result != null) {
+					return result;
+				}
+			}
+			catch (Exception e) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Failure during type conversion by " + converter + ". Will try the next converter.", e);
+				}
 			}
 		}
 		return null;
