@@ -54,7 +54,7 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 	}
 
 	@Override
-	public void accept(String json, Context context) {
+	public void accept(String json, Context context) throws Exception {
 		Thread.currentThread().setContextClassLoader(this.loader);
 		((RawBackgroundFunction) delegate).accept(json, context);
 	}
