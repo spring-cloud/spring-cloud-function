@@ -170,6 +170,8 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 
 		private Map<String, Object> outputHeaderMappingExpression;
 
+		private boolean copyInputHeaders;
+
 		public Map<String, Object> getInputHeaderMappingExpression() {
 			return inputHeaderMappingExpression;
 		}
@@ -185,6 +187,14 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 		public void setOutputHeaderMappingExpression(
 				Map<String, Object> outputHeaderMappingExpression) {
 			this.outputHeaderMappingExpression = outputHeaderMappingExpression;
+		}
+
+		public boolean isCopyInputHeaders() {
+			return copyInputHeaders;
+		}
+
+		public void setCopyInputHeaders(boolean copyInputHeaders) {
+			this.copyInputHeaders = copyInputHeaders;
 		}
 
 	}

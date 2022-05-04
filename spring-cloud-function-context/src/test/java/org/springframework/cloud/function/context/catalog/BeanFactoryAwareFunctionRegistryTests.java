@@ -57,6 +57,7 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.Nullable;
@@ -677,6 +678,29 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result).startsWith("{date=");
 	}
 
+	@Test
+	public void test_791() {
+		try (ConfigurableApplicationContext ac = new SpringApplicationBuilder(InputHeaderPropagationConfiguration.class)
+				.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true")) {
+			FunctionCatalog catalog = ac.getBean(FunctionCatalog.class);
+
+			Function<Message<String>, Message<byte[]>> uppercase = catalog.lookup("uppercase", "application/json");
+			Message<byte[]> result = uppercase.apply(MessageBuilder.withPayload("bob").setHeader("foo", "bar").build());
+			assertThat(result.getHeaders()).doesNotContainKey("foo");
+		}
+		try (ConfigurableApplicationContext ac = new SpringApplicationBuilder(InputHeaderPropagationConfiguration.class)
+				.run("--logging.level.org.springframework.cloud.function=DEBUG",
+						"--spring.main.lazy-initialization=true",
+						"--spring.cloud.function.configuration.uppercase.copy-input-headers=true")) {
+			FunctionCatalog catalog = ac.getBean(FunctionCatalog.class);
+
+			Function<Message<String>, Message<byte[]>> uppercase = catalog.lookup("uppercase", "application/json");
+			Message<byte[]> result = uppercase.apply(MessageBuilder.withPayload("bob").setHeader("foo", "bar").build());
+			assertThat(result.getHeaders()).containsKey("foo");
+		}
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testArrayPayloadOnFluxFunction() throws Exception {
@@ -925,6 +949,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 					return MessageBuilder.fromMessage(result).setHeader("after", "bar").build();
 				}
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class InputHeaderPropagationConfiguration {
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return x -> x.toUpperCase();
 		}
 	}
 

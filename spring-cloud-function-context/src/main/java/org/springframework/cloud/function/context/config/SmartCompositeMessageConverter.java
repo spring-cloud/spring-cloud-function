@@ -48,9 +48,14 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
 				return message.getPayload();
 			}
-			Object result = converter.fromMessage(message, targetClass);
-			if (result != null) {
-				return result;
+			try {
+				Object result = converter.fromMessage(message, targetClass);
+				if (result != null) {
+					return result;
+				}
+			}
+			catch (Exception e) {
+				// ignore
 			}
 		}
 		return null;
