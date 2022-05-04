@@ -428,6 +428,41 @@ IMPORTANT: IMPORTANT: At the moment, function arity is *only* supported for reac
 where evaluation and computation on confluence of events typically requires view into a
 stream of events rather than single event.
 
+=== Input Header propagation
+
+In a typical scenario input Message headers are not propagated to output and rightfully so, since the output of a function may be an input to something else requiring it's own set of Message headers.
+However, there are times when such propagation may be necessary so Spring Cloud Function provides several mechanisms to accomplish this.
+
+First you can always copy headers manually. For example, if you have a Function with the signature that takes `Message` and returns `Message` (i.e., `Function<Message, Message>`), you can simply and selectively copy headers yourselves. Remember, if your function returns Message, the framework will not do anything to it other then properly converting its payload.
+However, such approach may prove to be a bit tedious, especially in cases when you simply want to copy all headers. 
+To assist with cases like this we provide a simple property that would allow you to set a boolean flag on a function where you want input headers to be propagated.
+The property is `copy-input-headers`. 
+
+For example, let's assume you have the following configuration:
+
+[source, java]
+----
+@EnableAutoConfiguration
+@Configuration
+protected static class InputHeaderPropagationConfiguration {
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return x -> x.toUpperCase();
+	}
+}
+----
+
+As you know you can still invoke this function by sending a Message to it (framework will take care of type conversion and payload extraction)
+
+By simply setting `spring.cloud.function.configuration.uppercase.copy-input-headers` to `true`, the following assertion will be true as well
+
+----
+Function<Message<String>, Message<byte[]>> uppercase = catalog.lookup("uppercase", "application/json");
+Message<byte[]> result = uppercase.apply(MessageBuilder.withPayload("bob").setHeader("foo", "bar").build());
+assertThat(result.getHeaders()).containsKey("foo");
+----
+
 === Type conversion (Content-Type negotiation)
 
 Content-Type negotiation is one of the core features of Spring Cloud Function as it allows to not only transform the incoming data to the types declared 

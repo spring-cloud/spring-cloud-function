@@ -408,6 +408,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 
 		private boolean isSingleton = true;
 
+		private boolean propagateInputHeaders;
+
 		/*
 		 * This is primarily to support Stream's ability to access
 		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
@@ -433,6 +435,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			this.outputType = this.normalizeType(outputType);
 			this.functionDefinition = functionDefinition;
 			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
+			if (functionProperties != null) {
+				Map<String, FunctionConfigurationProperties> funcConfiguration = functionProperties.getConfiguration();
+				if (!CollectionUtils.isEmpty(funcConfiguration)) {
+					FunctionConfigurationProperties configuration = funcConfiguration.get(functionDefinition);
+					if (configuration != null) {
+						propagateInputHeaders = configuration.isCopyInputHeaders();
+					}
+				}
+			}
 		}
 
 		public boolean isSkipOutputConversion() {
@@ -1091,6 +1102,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		}
 
 		private boolean isExtractPayload(Message<?> message, Type type) {
+			if (this.propagateInputHeaders) {
+				return false;
+			}
 			if (this.isRoutingFunction()) {
 				return false;
 			}
