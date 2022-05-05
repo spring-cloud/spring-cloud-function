@@ -57,7 +57,7 @@ You should see the JAR to deploy in the `target/deploy` directory.
 ----
 gcloud functions deploy function-sample-gcp-background \
 --entry-point org.springframework.cloud.function.adapter.gcp.GcfJarLauncher \
---runtime java11 \
+--runtime java17 \
 --trigger-topic my-functions-topic \
 --source target/deploy \
 --memory 512MB
