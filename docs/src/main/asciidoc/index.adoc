@@ -1,5 +1,5 @@
 = Spring Cloud Function Reference Documentation
-Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra
+Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra, Dan Dobrin, Chris Bono
 
 *{project-version}*
 
