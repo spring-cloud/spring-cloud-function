@@ -123,8 +123,7 @@ final class AWSLambdaUtils {
 				}
 				Object providedHeaders = ((Map) request).remove("headers");
 				if (providedHeaders != null && providedHeaders instanceof Map) {
-					messageBuilder = createMessageBuilderForPOJOFunction(objectMapper, (Map) request);
-					messageBuilder.setHeader(AWS_API_GATEWAY, false);
+					messageBuilder = MessageBuilder.withPayload(objectMapper.toJson(request));
 					messageBuilder.removeHeader("headers");
 					messageBuilder.copyHeaders((Map<String, Object>) providedHeaders);
 				}
