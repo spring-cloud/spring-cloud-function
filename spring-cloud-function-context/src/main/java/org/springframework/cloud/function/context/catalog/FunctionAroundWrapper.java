@@ -18,6 +18,9 @@ package org.springframework.cloud.function.context.catalog;
 
 import java.util.function.BiFunction;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
 import org.springframework.util.StringUtils;
@@ -34,6 +37,8 @@ import org.springframework.util.StringUtils;
  * @since 3.1
  */
 public abstract class FunctionAroundWrapper implements BiFunction<Object, FunctionInvocationWrapper, Object> {
+
+	private static final Log log = LogFactory.getLog(FunctionAroundWrapper.class);
 
 	@Override
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
