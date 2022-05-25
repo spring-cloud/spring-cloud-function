@@ -20,6 +20,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -37,7 +39,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -52,27 +56,38 @@ public class FunctionInvokerHttpTests {
 
 	@Test
 	public void testHelloWorldSupplier() throws Exception {
-		testHttpFunction(HelloWorldSupplier.class, null, "Hello World!");
+		testHttpFunction(HelloWorldSupplier.class, null, "Hello World!", false, false);
 	}
 
 	@Test
 	public void testJsonInputFunction() throws Exception {
 		testHttpFunction(JsonInputFunction.class, new IncomingRequest("hello"),
-				"Thank you for sending the message: hello");
+				"Thank you for sending the message: hello", false, false);
 	}
 
 	@Test
 	public void testJsonInputOutputFunction() throws Exception {
 		testHttpFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
-				new OutgoingResponse("Thank you for sending the message: hello"));
+				new OutgoingResponse("Thank you for sending the message: hello"), false, false);
 	}
 
 	@Test
 	public void testJsonInputConsumer_Background() throws Exception {
-		testHttpFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null);
+		testHttpFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null, false, false);
 	}
 
-	private <I, O> void testHttpFunction(Class<?> configurationClass, I input, O expectedOutput) throws Exception {
+	@Test
+	public void testStatusCodeSet() throws Exception {
+		testHttpFunction(statusCodeSupplier.class, "hello", "hello", true, false);
+	}
+
+	@Test
+	public void testMultiValueHeaderSupplied() throws Exception {
+		testHttpFunction(multiValueHeaderSupplier.class, "hello", "hello", false, true);
+	}
+
+
+	private <I, O> void testHttpFunction(Class<?> configurationClass, I input, O expectedOutput, boolean statusCodeCheck, boolean multiHeaderCheck) throws Exception {
 		try (FunctionInvoker handler = new FunctionInvoker(configurationClass);) {
 
 			HttpRequest request = Mockito.mock(HttpRequest.class);
@@ -87,6 +102,14 @@ public class FunctionInvokerHttpTests {
 			BufferedWriter bufferedWriter = new BufferedWriter(writer);
 			when(response.getWriter()).thenReturn(bufferedWriter);
 			handler.service(request, response);
+
+			if (statusCodeCheck) {
+				verify(response).setStatusCode(404);
+			}
+
+			if (multiHeaderCheck) {
+				verify(response).appendHeader("multiValueHeader", "123,headerThing");
+			}
 
 			// Closing the writer is done by the Framework/caller.
 			bufferedWriter.close();
@@ -110,6 +133,41 @@ public class FunctionInvokerHttpTests {
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class statusCodeSupplier {
+
+		@Bean
+		public Function<String, Message<String>> function() {
+
+			String payload = "hello";
+
+			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("statusCode", 404)
+				.build();
+
+			return x -> msg;
+		};
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class multiValueHeaderSupplier {
+
+		@Bean
+		public Function<String, Message<String>> function() {
+
+			String payload = "hello";
+			List<Object> li = new ArrayList<Object>(asList(123, "headerThing"));
+
+			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("multiValueHeader", li)
+				.build();
+
+			return x -> msg;
+		};
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
 	protected static class JsonInputFunction {
 
 		@Bean
@@ -128,10 +186,9 @@ public class FunctionInvokerHttpTests {
 			return (in) -> {
 				return MessageBuilder
 						.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
-						.setHeader("foo", "bar").build();
+						.setHeader("statusCode", "bar").build();
 			};
 		}
-
 	}
 
 	@Configuration
