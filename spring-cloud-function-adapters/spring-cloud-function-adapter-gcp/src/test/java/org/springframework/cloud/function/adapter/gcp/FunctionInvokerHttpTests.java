@@ -18,6 +18,9 @@ package org.springframework.cloud.function.adapter.gcp;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -29,6 +32,7 @@ import java.util.function.Supplier;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -53,71 +57,111 @@ import static org.mockito.Mockito.when;
 public class FunctionInvokerHttpTests {
 
 	private static final Gson gson = new Gson();
+	private static HttpRequest request = Mockito.mock(HttpRequest.class);
+	private static HttpResponse response = Mockito.mock(HttpResponse.class);
+	private BufferedWriter bufferedWriter;
+	private StringWriter writer;
+
+
+	@BeforeEach
+	void testSetup() throws IOException {
+		writer = new StringWriter();
+		bufferedWriter = new BufferedWriter(writer);
+		when(response.getWriter()).thenReturn(bufferedWriter);
+	}
 
 	@Test
 	public void testHelloWorldSupplier() throws Exception {
-		testHttpFunction(HelloWorldSupplier.class, null, "Hello World!", false, false);
+
+		String expectedOutput = "Hello World!";
+		FunctionInvoker handler = new FunctionInvoker(HelloWorldSupplier.class);
+
+		handler.service(request, response);
+		bufferedWriter.close();
+
+		if (expectedOutput != null) {
+			assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+		}
+
 	}
 
 	@Test
 	public void testJsonInputFunction() throws Exception {
-		testHttpFunction(JsonInputFunction.class, new IncomingRequest("hello"),
-				"Thank you for sending the message: hello", false, false);
+
+		FunctionInvoker handler = new FunctionInvoker(JsonInputFunction.class);
+
+		String expectedOutput = "Thank you for sending the message: hello";
+		IncomingRequest input = new IncomingRequest("hello");
+
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		handler.service(request, response);
+		bufferedWriter.close();
+
+		if (expectedOutput != null) {
+			assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+		}
+
 	}
 
 	@Test
 	public void testJsonInputOutputFunction() throws Exception {
-		testHttpFunction(JsonInputOutputFunction.class, new IncomingRequest("hello"),
-				new OutgoingResponse("Thank you for sending the message: hello"), false, false);
+
+		FunctionInvoker handler = new FunctionInvoker(JsonInputOutputFunction.class);
+
+		OutgoingResponse expectedOutput = new OutgoingResponse("Thank you for sending the message: hello");
+		IncomingRequest input = new IncomingRequest("hello");
+
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		handler.service(request, response);
+		bufferedWriter.close();
+
+		if (expectedOutput != null) {
+			assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+		}
+
 	}
 
 	@Test
 	public void testJsonInputConsumer_Background() throws Exception {
-		testHttpFunction(JsonInputConsumer.class, new IncomingRequest("hello"), null, false, false);
+
+		FunctionInvoker handler = new FunctionInvoker(JsonInputConsumer.class);
+
+		IncomingRequest input = new IncomingRequest("hello");
+
+		ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+		System.setOut(new PrintStream(outContent));
+
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		handler.service(request, response);
+		bufferedWriter.close();
+
+		assertThat(outContent.toString()).isEqualTo("Thank you for sending the message: hello");
+
 	}
 
 	@Test
 	public void testStatusCodeSet() throws Exception {
-		testHttpFunction(statusCodeSupplier.class, "hello", "hello", true, false);
+
+		FunctionInvoker handler = new FunctionInvoker(StatusCodeSupplier.class);
+		String input = "hello";
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		handler.service(request, response);
+		bufferedWriter.close();
+
+		verify(response).setStatusCode(404);
+
 	}
 
 	@Test
 	public void testMultiValueHeaderSupplied() throws Exception {
-		testHttpFunction(multiValueHeaderSupplier.class, "hello", "hello", false, true);
-	}
 
+		FunctionInvoker handler = new FunctionInvoker(MultiValueHeaderSupplier.class);
+		String input = "hello";
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		handler.service(request, response);
+		bufferedWriter.close();
 
-	private <I, O> void testHttpFunction(Class<?> configurationClass, I input, O expectedOutput, boolean statusCodeCheck, boolean multiHeaderCheck) throws Exception {
-		try (FunctionInvoker handler = new FunctionInvoker(configurationClass);) {
-
-			HttpRequest request = Mockito.mock(HttpRequest.class);
-
-			if (input != null) {
-				when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
-			}
-
-			HttpResponse response = Mockito.mock(HttpResponse.class);
-			StringWriter writer = new StringWriter();
-
-			BufferedWriter bufferedWriter = new BufferedWriter(writer);
-			when(response.getWriter()).thenReturn(bufferedWriter);
-			handler.service(request, response);
-
-			if (statusCodeCheck) {
-				verify(response).setStatusCode(404);
-			}
-
-			if (multiHeaderCheck) {
-				verify(response).appendHeader("multiValueHeader", "123,headerThing");
-			}
-
-			// Closing the writer is done by the Framework/caller.
-			bufferedWriter.close();
-
-			if (expectedOutput != null) {
-				assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
-			}
-		}
+		verify(response).appendHeader("multiValueHeader", "123,headerThing");
 	}
 
 	@Configuration
@@ -133,7 +177,7 @@ public class FunctionInvokerHttpTests {
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
-	protected static class statusCodeSupplier {
+	protected static class StatusCodeSupplier {
 
 		@Bean
 		public Function<String, Message<String>> function() {
@@ -150,7 +194,7 @@ public class FunctionInvokerHttpTests {
 
 	@Configuration
 	@Import({ ContextFunctionCatalogAutoConfiguration.class })
-	protected static class multiValueHeaderSupplier {
+	protected static class MultiValueHeaderSupplier {
 
 		@Bean
 		public Function<String, Message<String>> function() {
@@ -197,7 +241,7 @@ public class FunctionInvokerHttpTests {
 
 		@Bean
 		public Consumer<IncomingRequest> function() {
-			return (in) -> System.out.println("Thank you for sending the message: " + in.message);
+			return (in) -> System.out.print("Thank you for sending the message: " + in.message);
 		}
 
 	}
