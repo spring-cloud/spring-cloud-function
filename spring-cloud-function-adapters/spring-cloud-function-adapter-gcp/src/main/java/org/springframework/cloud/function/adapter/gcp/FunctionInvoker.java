@@ -19,9 +19,9 @@ package org.springframework.cloud.function.adapter.gcp;
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
@@ -53,6 +53,11 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 		implements HttpFunction, RawBackgroundFunction {
 
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
+
+	/**
+	 * Constant specifying Http Status Code.
+	 */
+	public static final String httpStatusCode = "statusCode";
 
 	private String functionName = "";
 
@@ -95,8 +100,6 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 
-		String httpStatusCode = "statusCode";
-
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
 		Message<BufferedReader> message = getInputType() == Void.class || getInputType() == null ? null
@@ -110,14 +113,8 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 			for (Entry<String, Object> header : headers.entrySet()) {
 				Object values = header.getValue();
 				if (values instanceof Collection<?>) {
-					StringBuilder sb = new StringBuilder();
-					for (Iterator iterator = ((Collection<?>) values).iterator(); iterator.hasNext();) {
-						sb.append(iterator.next());
-						if (iterator.hasNext()) {
-							sb.append(",");
-						}
-					}
-					httpResponse.appendHeader(header.getKey(), sb.toString());
+					String headerValue = ((Collection<?>) values).stream().map(item -> item.toString()).collect(Collectors.joining(","));
+					httpResponse.appendHeader(header.getKey(), headerValue);
 				}
 				else {
 					httpResponse.appendHeader(header.getKey(), header.getValue().toString());
@@ -127,6 +124,9 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 
 			if (headers.containsKey(httpStatusCode) && (headers.get(httpStatusCode) instanceof Integer)) {
 				httpResponse.setStatusCode((int) headers.get(httpStatusCode));
+			}
+			else if (headers.containsKey(httpStatusCode) && (!(headers.get(httpStatusCode) instanceof Integer))) {
+				log.warn("The statusCode should be an Integer value");
 			}
 		}
 	}
