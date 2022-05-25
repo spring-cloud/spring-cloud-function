@@ -95,6 +95,8 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 
+		String httpStatusCode = "statusCode";
+
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
 		Message<BufferedReader> message = getInputType() == Void.class || getInputType() == null ? null
@@ -123,8 +125,8 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 			}
 			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
 
-			if (headers.containsKey("statusCode")) {
-				httpResponse.setStatusCode((int) headers.get("statusCode"));
+			if (headers.containsKey(httpStatusCode) && (headers.get(httpStatusCode) instanceof Integer)) {
+				httpResponse.setStatusCode((int) headers.get(httpStatusCode));
 			}
 		}
 	}
