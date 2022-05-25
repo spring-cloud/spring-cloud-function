@@ -186,7 +186,7 @@ public class FunctionInvokerHttpTests {
 			return (in) -> {
 				return MessageBuilder
 						.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
-						.setHeader("statusCode", "bar").build();
+						.setHeader("foo", "bar").build();
 			};
 		}
 	}
