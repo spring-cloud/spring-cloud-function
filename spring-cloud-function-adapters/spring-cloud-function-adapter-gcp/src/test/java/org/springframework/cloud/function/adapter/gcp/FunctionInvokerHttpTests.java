@@ -18,9 +18,7 @@ package org.springframework.cloud.function.adapter.gcp;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -34,8 +32,11 @@ import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,17 +55,20 @@ import static org.mockito.Mockito.when;
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  */
+
+@ExtendWith(OutputCaptureExtension.class)
 public class FunctionInvokerHttpTests {
 
 	private static final Gson gson = new Gson();
-	private static HttpRequest request = Mockito.mock(HttpRequest.class);
-	private static HttpResponse response = Mockito.mock(HttpResponse.class);
+	private HttpRequest request;
+	private HttpResponse response;
 	private BufferedWriter bufferedWriter;
 	private StringWriter writer;
 
-
 	@BeforeEach
 	void testSetup() throws IOException {
+		request = Mockito.mock(HttpRequest.class);
+		response = Mockito.mock(HttpResponse.class);
 		writer = new StringWriter();
 		bufferedWriter = new BufferedWriter(writer);
 		when(response.getWriter()).thenReturn(bufferedWriter);
@@ -79,9 +83,9 @@ public class FunctionInvokerHttpTests {
 		handler.service(request, response);
 		bufferedWriter.close();
 
-		if (expectedOutput != null) {
-			assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
-		}
+
+		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+
 
 	}
 
@@ -97,9 +101,9 @@ public class FunctionInvokerHttpTests {
 		handler.service(request, response);
 		bufferedWriter.close();
 
-		if (expectedOutput != null) {
-			assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
-		}
+
+		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+
 
 	}
 
@@ -115,27 +119,24 @@ public class FunctionInvokerHttpTests {
 		handler.service(request, response);
 		bufferedWriter.close();
 
-		if (expectedOutput != null) {
-			assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
-		}
+
+		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+
 
 	}
 
 	@Test
-	public void testJsonInputConsumer_Background() throws Exception {
+	public void testJsonInputConsumer_Background(CapturedOutput capturedOutput) throws Exception {
 
 		FunctionInvoker handler = new FunctionInvoker(JsonInputConsumer.class);
 
 		IncomingRequest input = new IncomingRequest("hello");
 
-		ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-		System.setOut(new PrintStream(outContent));
-
 		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
 		handler.service(request, response);
 		bufferedWriter.close();
 
-		assertThat(outContent.toString()).isEqualTo("Thank you for sending the message: hello");
+		assertThat(capturedOutput.toString()).contains("Thank you for sending the message: hello");
 
 	}
 
@@ -241,7 +242,7 @@ public class FunctionInvokerHttpTests {
 
 		@Bean
 		public Consumer<IncomingRequest> function() {
-			return (in) -> System.out.print("Thank you for sending the message: " + in.message);
+			return (in) -> System.out.println("Thank you for sending the message: " + in.message);
 		}
 
 	}

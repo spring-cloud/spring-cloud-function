@@ -55,9 +55,9 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
 
 	/**
-	 * Constant specifying Http Status Code.
+	 * Constant specifying Http Status Code. Accessible to users by calling 'FunctionInvoker.HTTP_STATUS_CODE'
 	 */
-	public static final String httpStatusCode = "statusCode";
+	public static final String HTTP_STATUS_CODE = "statusCode";
 
 	private String functionName = "";
 
@@ -103,7 +103,7 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
 		Message<BufferedReader> message = getInputType() == Void.class || getInputType() == null ? null
-				: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
+			: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 
 		Message<byte[]> result = function.apply(message);
 
@@ -122,11 +122,13 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 			}
 			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
 
-			if (headers.containsKey(httpStatusCode) && (headers.get(httpStatusCode) instanceof Integer)) {
-				httpResponse.setStatusCode((int) headers.get(httpStatusCode));
-			}
-			else if (headers.containsKey(httpStatusCode) && (!(headers.get(httpStatusCode) instanceof Integer))) {
-				log.warn("The statusCode should be an Integer value");
+			if (headers.containsKey(HTTP_STATUS_CODE)) {
+				if (headers.get(HTTP_STATUS_CODE) instanceof Integer) {
+					httpResponse.setStatusCode((int) headers.get(HTTP_STATUS_CODE));
+				}
+				else {
+					log.warn("The statusCode should be an Integer value");
+				}
 			}
 		}
 	}
