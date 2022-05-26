@@ -140,7 +140,7 @@ curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp-http -d "h
 Setting custom HTTP statusCode:
 
 ----
-Users can specify the response statusCode that they want to set by wrapping "statusCode" in headers. This constant is available to users by calling `FunctionInvoker.HTTP_STATUS_CODE`
+Functions can specify a custom HTTP response code by setting the `FunctionInvoker.HTTP_STATUS_CODE` header.
 ----
 
 [source, java]
@@ -150,7 +150,7 @@ public Function<String, Message<String>> function() {
 
 	String payload = "hello";
 
-	Message<String> message = MessageBuilder.withPayload(payload).setHeader("statusCode", 404).build();
+	Message<String> message = MessageBuilder.withPayload(payload).setHeader(FunctionInvoker.HTTP_STATUS_CODE, 404).build();
 
 	return input -> message;
 };
