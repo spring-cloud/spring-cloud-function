@@ -1,7 +1,7 @@
 buildscript {
 	ext {
-		springBootVersion = '2.2.0.BUILD-SNAPSHOT'
-		wrapperVersion = '1.0.17.RELEASE'
+		springBootVersion = '2.6.7'
+		wrapperVersion = '1.0.29.BUILD-SNAPSHOT'
 		shadowVersion = '5.1.0'
 	}
 	repositories {
@@ -20,7 +20,7 @@ buildscript {
 }
 
 apply plugin: 'java'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'org.springframework.boot'
@@ -40,8 +40,8 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "3.0.0.BUILD-SNAPSHOT"
-	awsLambdaEventsVersion = "2.0.2"
+	springCloudFunctionVersion = "3.2.4"
+	awsLambdaEventsVersion = "3.9.0"
 	awsLambdaCoreVersion = "1.1.0"
 }
 ext['reactor.version'] = "3.1.7.RELEASE"
@@ -84,9 +84,9 @@ dependencyManagement {
 }
 
 dependencies {
-	compile("org.springframework.cloud:spring-cloud-function-adapter-aws")
-	compile("org.springframework.cloud:spring-cloud-starter-function-webflux")
-	compile("org.springframework.boot:spring-boot-configuration-processor")
+	implementation("org.springframework.cloud:spring-cloud-function-adapter-aws")
+	implementation("org.springframework.cloud:spring-cloud-starter-function-webflux")
+	implementation("org.springframework.boot:spring-boot-configuration-processor")
 	compileOnly("com.amazonaws:aws-lambda-java-events:${awsLambdaEventsVersion}")
 	compileOnly("com.amazonaws:aws-lambda-java-core:${awsLambdaCoreVersion}")
 	testCompile('org.springframework.boot:spring-boot-starter-test')
