@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -101,6 +102,27 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@BeforeEach
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+
+	@SuppressWarnings({ "rawtypes" })
+	@Test
+	public void concurrencyLookupTest() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog();
+		ExecutorService executor = Executors.newCachedThreadPool();
+		for (int i = 0; i < 100; i++) {
+			executor.execute(() -> {
+				catalog.lookup("uppercase", "application/json");
+			});
+			executor.execute(() -> {
+				catalog.lookup("numberword", "application/json");
+			});
+		}
+		Thread.sleep(1000);
+		Field frField = ReflectionUtils.findField(catalog.getClass(), "functionRegistrations");
+		frField.setAccessible(true);
+		Collection c = (Collection) frField.get(catalog);
+		assertThat(c.size()).isEqualTo(2);
 	}
 
 	@SuppressWarnings("unchecked")
