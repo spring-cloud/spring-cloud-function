@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import net.jodah.typetools.TypeResolver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,6 +52,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+
+
 
 /**
  * Set of utility operations to interrogate function definitions.
@@ -82,10 +85,14 @@ public final class FunctionTypeUtils {
 		}
 		type = getGenericType(type);
 		Class<?> rawType = type instanceof ParameterizedType ? getRawType(type) : (Class<?>) type;
-		return Collection.class.isAssignableFrom(rawType);
+		return Collection.class.isAssignableFrom(rawType) || JsonNode.class.isAssignableFrom(rawType);
 	}
 
 	public static boolean isTypeArray(Type type) {
+		return getRawType(type).isArray();
+	}
+
+	public static boolean isJsonNode(Type type) {
 		return getRawType(type).isArray();
 	}
 
