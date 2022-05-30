@@ -18,8 +18,10 @@ package org.springframework.cloud.function.adapter.gcp;
 
 import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
@@ -32,6 +34,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeTypeUtils;
@@ -50,6 +53,11 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 		implements HttpFunction, RawBackgroundFunction {
 
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
+
+	/**
+	 * Constant specifying Http Status Code. Accessible to users by calling 'FunctionInvoker.HTTP_STATUS_CODE'
+	 */
+	public static final String HTTP_STATUS_CODE = "statusCode";
 
 	private String functionName = "";
 
@@ -91,18 +99,37 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	 */
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
+
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
 		Message<BufferedReader> message = getInputType() == Void.class || getInputType() == null ? null
-				: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
+			: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
+
 		Message<byte[]> result = function.apply(message);
 
 		if (result != null) {
+			MessageHeaders headers = result.getHeaders();
 			httpResponse.getWriter().write(new String(result.getPayload(), StandardCharsets.UTF_8));
-			for (Entry<String, Object> header : result.getHeaders().entrySet()) {
-				httpResponse.appendHeader(header.getKey(), header.getValue().toString());
+			for (Entry<String, Object> header : headers.entrySet()) {
+				Object values = header.getValue();
+				if (values instanceof Collection<?>) {
+					String headerValue = ((Collection<?>) values).stream().map(item -> item.toString()).collect(Collectors.joining(","));
+					httpResponse.appendHeader(header.getKey(), headerValue);
+				}
+				else {
+					httpResponse.appendHeader(header.getKey(), header.getValue().toString());
+				}
 			}
 			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
+
+			if (headers.containsKey(HTTP_STATUS_CODE)) {
+				if (headers.get(HTTP_STATUS_CODE) instanceof Integer) {
+					httpResponse.setStatusCode((int) headers.get(HTTP_STATUS_CODE));
+				}
+				else {
+					log.warn("The statusCode should be an Integer value");
+				}
+			}
 		}
 	}
 

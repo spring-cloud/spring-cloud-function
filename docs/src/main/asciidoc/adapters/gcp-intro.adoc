@@ -136,6 +136,28 @@ Invoke the HTTP function:
 curl https://REGION-PROJECT_ID.cloudfunctions.net/function-sample-gcp-http -d "hello"
 ----
 
+
+Setting custom HTTP statusCode:
+
+----
+Functions can specify a custom HTTP response code by setting the `FunctionInvoker.HTTP_STATUS_CODE` header.
+----
+
+[source, java]
+----
+@Bean
+public Function<String, Message<String>> function() {
+
+	String payload = "hello";
+
+	Message<String> message = MessageBuilder.withPayload(payload).setHeader(FunctionInvoker.HTTP_STATUS_CODE, 404).build();
+
+	return input -> message;
+};
+----
+
+
+
 ==== Background Functions
 
 Google Cloud Functions also supports deploying https://cloud.google.com/functions/docs/writing/background[Background Functions] which are invoked indirectly in response to an event, such as a message on a https://cloud.google.com/pubsub[Cloud Pub/Sub] topic, a change in a https://cloud.google.com/storage[Cloud Storage] bucket, or a https://firebase.google.com/[Firebase] event.
