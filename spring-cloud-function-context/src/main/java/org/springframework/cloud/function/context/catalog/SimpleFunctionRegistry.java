@@ -279,7 +279,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	/*
 	 *
 	 */
-	private synchronized FunctionInvocationWrapper compose(Class<?> type, String functionDefinition) {
+	private FunctionInvocationWrapper compose(Class<?> type, String functionDefinition) {
 		String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 		FunctionInvocationWrapper composedFunction = null;
 

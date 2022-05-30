@@ -112,50 +112,52 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			return null;
 		}
 		FunctionInvocationWrapper function = this.doLookup(type, functionDefinition, expectedOutputMimeTypes);
-
-		if (function == null) {
-			Set<String> functionRegistratioinNames = super.getNames(null);
-			String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
-			for (String functionName : functionNames) {
-				if (functionRegistratioinNames.contains(functionName) && logger.isDebugEnabled()) {
-					logger.debug("Skipping function '" + functionName + "' since it is already present");
-				}
-				else {
-					Object functionCandidate = this.discoverFunctionInBeanFactory(functionName);
-					if (functionCandidate != null) {
-						Type functionType = null;
-						FunctionRegistration functionRegistration = null;
-						if (functionCandidate instanceof FunctionRegistration) {
-							functionRegistration = (FunctionRegistration) functionCandidate;
-						}
-						else if (this.isFunctionPojo(functionCandidate, functionName)) {
-							Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
-							functionCandidate = this.proxyTarget(functionCandidate, functionalMethod);
-							functionType = FunctionTypeUtils.fromFunctionMethod(functionalMethod);
-						}
-						else if (this.isSpecialFunctionRegistration(functionNames, functionName)) {
-							functionRegistration = this.applicationContext
-									.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
-						}
-						else {
-							functionType = FunctionTypeUtils.discoverFunctionType(functionCandidate, functionName, this.applicationContext);
-						}
-						if (functionRegistration == null) {
-							functionRegistration = new FunctionRegistration(functionCandidate, functionName).type(functionType);
-						}
-						// Certain Kafka Streams functions such as KStream[] return types could be null (esp when using Kotlin).
-						if (functionRegistration != null) {
-							this.register(functionRegistration);
-						}
+		Object syncInstance = functionDefinition == null ? this : functionDefinition;
+		synchronized (syncInstance) {
+			if (function == null) {
+				Set<String> functionRegistratioinNames = super.getNames(null);
+				String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+				for (String functionName : functionNames) {
+					if (functionRegistratioinNames.contains(functionName) && logger.isDebugEnabled()) {
+						logger.debug("Skipping function '" + functionName + "' since it is already present");
 					}
 					else {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Function '" + functionName + "' is not available in FunctionCatalog or BeanFactory");
+						Object functionCandidate = this.discoverFunctionInBeanFactory(functionName);
+						if (functionCandidate != null) {
+							Type functionType = null;
+							FunctionRegistration functionRegistration = null;
+							if (functionCandidate instanceof FunctionRegistration) {
+								functionRegistration = (FunctionRegistration) functionCandidate;
+							}
+							else if (this.isFunctionPojo(functionCandidate, functionName)) {
+								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
+								functionCandidate = this.proxyTarget(functionCandidate, functionalMethod);
+								functionType = FunctionTypeUtils.fromFunctionMethod(functionalMethod);
+							}
+							else if (this.isSpecialFunctionRegistration(functionNames, functionName)) {
+								functionRegistration = this.applicationContext
+										.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
+							}
+							else {
+								functionType = FunctionTypeUtils.discoverFunctionType(functionCandidate, functionName, this.applicationContext);
+							}
+							if (functionRegistration == null) {
+								functionRegistration = new FunctionRegistration(functionCandidate, functionName).type(functionType);
+							}
+							// Certain Kafka Streams functions such as KStream[] return types could be null (esp when using Kotlin).
+							if (functionRegistration != null) {
+								this.register(functionRegistration);
+							}
+						}
+						else {
+							if (logger.isDebugEnabled()) {
+								logger.debug("Function '" + functionName + "' is not available in FunctionCatalog or BeanFactory");
+							}
 						}
 					}
 				}
+				function = super.doLookup(type, functionDefinition, expectedOutputMimeTypes);
 			}
-			function = super.doLookup(type, functionDefinition, expectedOutputMimeTypes);
 		}
 
 		return (T) function;
