@@ -39,6 +39,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -104,6 +105,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
+	@Test
+	public void testJsonNodeAsInput() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(JsonNodeConfiguration.class);
+		Function<Message<String>, Message<byte[]>> f = catalog.lookup("messageAsJsonNode", "application/json");
+		Message<String> m = MessageBuilder.withPayload("[{\"name\":\"bob\"}, {\"name\":\"bob\"}]").setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build();
+		assertThat(new String(f.apply(m).getPayload())).isEqualTo("[{\"name\":\"bob\"},{\"name\":\"bob\"}]");
+		f = catalog.lookup("asJsonNode", "application/json");
+		assertThat(new String(f.apply(m).getPayload())).isEqualTo("[{\"name\":\"bob\"},{\"name\":\"bob\"}]");
+	}
 
 	@SuppressWarnings({ "rawtypes" })
 	@Test
@@ -779,6 +789,24 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<Message<Person>, String> uppercasePerson() {
 			return v -> v.getPayload().getName().toUpperCase();
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class JsonNodeConfiguration {
+		@Bean
+		public Function<Message<JsonNode>, String> messageAsJsonNode() {
+			return v -> {
+				return v.getPayload().toString();
+			};
+		}
+
+		@Bean
+		public Function<JsonNode, String> asJsonNode() {
+			return v -> {
+				return v.toString();
+			};
 		}
 	}
 
