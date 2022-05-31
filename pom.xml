@@ -17,9 +17,6 @@
 	</parent>
 
 	<properties>
-		<java.version>1.8</java.version>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<wrapper.version>1.0.27.RELEASE</wrapper.version>
 		<docs.main>spring-cloud-function</docs.main>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
@@ -127,21 +124,13 @@
 			</plugin>
 		</plugins>
 	</reporting>
-
+	<dependencies>
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>javax.annotation-api</artifactId>
+		</dependency>
+	</dependencies>
 	<profiles>
-		<profile>
-			<id>java11+</id>
-			<activation>
-				<jdk>[11,)</jdk>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>javax.annotation</groupId>
-					<artifactId>javax.annotation-api</artifactId>
-				</dependency>
-			</dependencies>
-		</profile>
-
 		<profile>
 			<id>core</id>
 			<modules>
