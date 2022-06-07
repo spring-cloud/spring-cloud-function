@@ -102,7 +102,7 @@ public class SimpleFunctionRegistryTests {
 	public void concurrencyRegistrationTest() throws Exception {
 		Echo function = new Echo();
 		FunctionRegistration<Echo> registration = new FunctionRegistration<>(
-				function, "echo").type(FunctionType.of(Echo.class));
+				function, "echo").type(Echo.class);
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
 				new JacksonMapper(new ObjectMapper()));
 		ExecutorService executor = Executors.newCachedThreadPool();
