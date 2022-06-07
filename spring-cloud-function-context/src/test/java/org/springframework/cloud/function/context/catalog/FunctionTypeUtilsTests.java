@@ -17,10 +17,13 @@
 package org.springframework.cloud.function.context.catalog;
 
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,8 +35,10 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 
 import org.springframework.cloud.function.context.FunctionType;
+import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.messaging.Message;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 @SuppressWarnings("unused")
-public class FunctionTypeUtilsTests {
+public class FunctionTypeUtilsTests<T> {
 
 	@Test
 	public void testFunctionTypeFrom() throws Exception {
@@ -146,6 +151,21 @@ public class FunctionTypeUtilsTests {
 		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<List<String>>>() { }.getType())).isTrue();
 		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<List<Message<String>>>>() { }.getType())).isTrue();
 		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<Message<List<String>>>>() { }.getType())).isFalse();
+	}
+
+	@Test
+	public void testNoNpeFromIsMessage() {
+		FunctionTypeUtilsTests<Date> testService = new FunctionTypeUtilsTests<>();
+
+		Method methodUnderTest =
+			ReflectionUtils.findMethod(testService.getClass(), "notAMessageMethod", AtomicReference.class);
+		MethodParameter methodParameter = MethodParameter.forExecutable(methodUnderTest, 0);
+
+		assertThat(FunctionTypeUtils.isMessage(methodParameter.getGenericParameterType())).isFalse();
+	}
+
+	void notAMessageMethod(AtomicReference<T> payload) {
+
 	}
 
 	private static Function<String, Integer> function() {

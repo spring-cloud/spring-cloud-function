@@ -352,10 +352,15 @@ public final class FunctionTypeUtils {
 			type = getImmediateGenericType(type, 0);
 		}
 
-		if (type instanceof ParameterizedType && !Message.class.isAssignableFrom(TypeResolver.resolveRawClass(type, null))) {
+		Class<?> resolveRawClass = FunctionTypeUtils.getRawType(type);
+		if (type instanceof ParameterizedType && !Message.class.isAssignableFrom(resolveRawClass)) {
 			type = getImmediateGenericType(type, 0);
 		}
-		return Message.class.isAssignableFrom(TypeResolver.resolveRawClass(type, null));
+		resolveRawClass = FunctionTypeUtils.getRawType(type);
+		if (resolveRawClass == null) {
+			return false;
+		}
+		return Message.class.isAssignableFrom(resolveRawClass);
 	}
 
 	/**
