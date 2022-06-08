@@ -92,14 +92,16 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 					isConverted = true;
 				}
 				for (Iterator<MessageConverter> iterator = getConverters().iterator(); iterator.hasNext() && !isConverted;) {
-					Message<?> m  = MessageBuilder.withPayload(item).copyHeaders(message.getHeaders()).build(); // TODO Message creating may be expensive
 					MessageConverter converter = (MessageConverter) iterator.next();
-					Object conversionResult = (converter instanceof SmartMessageConverter & genericItemRawType != genericItemType ?
-							((SmartMessageConverter) converter).fromMessage(m, genericItemRawType, genericItemType) :
-							converter.fromMessage(m, genericItemRawType));
-					if (conversionResult != null) {
-						resultList.add(conversionResult);
-						isConverted = true;
+					if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO Stream stuff, needs to be removed
+						Message<?> m  = MessageBuilder.withPayload(item).copyHeaders(message.getHeaders()).build(); // TODO Message creating may be expensive
+						Object conversionResult = (converter instanceof SmartMessageConverter & genericItemRawType != genericItemType ?
+								((SmartMessageConverter) converter).fromMessage(m, genericItemRawType, genericItemType) :
+								converter.fromMessage(m, genericItemRawType));
+						if (conversionResult != null) {
+							resultList.add(conversionResult);
+							isConverted = true;
+						}
 					}
 				}
 			}
@@ -107,11 +109,13 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		}
 		else {
 			for (MessageConverter converter : getConverters()) {
-				result = (converter instanceof SmartMessageConverter ?
-						((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint) :
-						converter.fromMessage(message, targetClass));
-				if (result != null) {
-					return result;
+				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) {// TODO Stream stuff, needs to be removed
+					result = (converter instanceof SmartMessageConverter ?
+							((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint) :
+							converter.fromMessage(message, targetClass));
+					if (result != null) {
+						return result;
+					}
 				}
 			}
 		}
