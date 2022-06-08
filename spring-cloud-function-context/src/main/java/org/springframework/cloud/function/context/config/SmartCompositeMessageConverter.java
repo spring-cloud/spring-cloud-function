@@ -109,7 +109,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		}
 		else {
 			for (MessageConverter converter : getConverters()) {
-				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) {// TODO Stream stuff, needs to be removed
+				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO Stream stuff, needs to be removed
 					result = (converter instanceof SmartMessageConverter ?
 							((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint) :
 							converter.fromMessage(message, targetClass));
