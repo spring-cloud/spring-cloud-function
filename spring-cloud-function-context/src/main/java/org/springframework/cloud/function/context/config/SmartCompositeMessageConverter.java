@@ -41,6 +41,7 @@ import org.springframework.util.StringUtils;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Salvatore Bernardo
  *
  */
 public class SmartCompositeMessageConverter extends CompositeMessageConverter {
