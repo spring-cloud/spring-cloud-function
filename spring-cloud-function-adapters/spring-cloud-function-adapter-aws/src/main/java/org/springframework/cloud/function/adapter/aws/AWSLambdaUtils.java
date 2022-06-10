@@ -121,7 +121,7 @@ final class AWSLambdaUtils {
 					logger.info("Incoming request is API Gateway v2.0");
 					messageBuilder = createMessageBuilderForPOJOFunction(objectMapper, (Map) request);
 				}
-				Object providedHeaders = ((Map) request).remove("headers");
+				Object providedHeaders = ((Map) request).get("headers");
 				if (providedHeaders != null && providedHeaders instanceof Map) {
 					messageBuilder = MessageBuilder.withPayload(request);
 					messageBuilder.removeHeader("headers");
