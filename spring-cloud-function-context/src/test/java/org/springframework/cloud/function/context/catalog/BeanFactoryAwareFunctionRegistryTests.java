@@ -106,6 +106,27 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
+	public void testFunctionEligibilityFiltering() {
+		System.setProperty("spring.cloud.function.ineligible-definitions", "asJsonNode");
+		Collection<FunctionInvocationWrapper> registeredFunction = new ArrayList<FunctionInvocationWrapper>();
+		FunctionCatalog catalog = this.configureCatalog(JsonNodeConfiguration.class);
+		for (String beanName : context.getBeanDefinitionNames()) {
+			try {
+				FunctionInvocationWrapper function = catalog.lookup(beanName);
+				if (function != null) {
+					registeredFunction.add(function);
+				}
+			}
+			catch (Exception e) {
+				// ignore
+			}
+		}
+		System.out.println(registeredFunction);
+		assertThat(registeredFunction.size()).isEqualTo(2);
+		assertThat((FunctionInvocationWrapper) catalog.lookup("asJsonNode")).isNull();
+	}
+
+	@Test
 	public void testJsonNodeAsInput() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(JsonNodeConfiguration.class);
 		Function<Message<String>, Message<byte[]>> f = catalog.lookup("messageAsJsonNode", "application/json");
