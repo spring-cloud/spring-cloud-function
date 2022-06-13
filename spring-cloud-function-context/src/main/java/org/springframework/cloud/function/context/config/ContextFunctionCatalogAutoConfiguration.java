@@ -140,7 +140,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 	}
 
 	@Bean(RoutingFunction.FUNCTION_NAME)
-	RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
+	public RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
 								BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
 		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory), routingCallback);
 	}

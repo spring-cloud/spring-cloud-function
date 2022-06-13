@@ -156,11 +156,29 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
+		if (!isRegistrationEligible(registration)) {
+			return;
+		}
 		Assert.notNull(registration, "'registration' must not be null");
 		if (logger.isDebugEnabled()) {
 			logger.debug("Registering function " + registration.getNames());
 		}
 		this.functionRegistrations.add(registration);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private boolean isRegistrationEligible(FunctionRegistration registration) {
+		if (this.functionProperties != null) {
+			for (String definition : this.functionProperties.getIneligibleDefinitions()) {
+				if (registration.getTarget().getClass().getName().equals(definition)) {
+					return false;
+				}
+				else if (registration.getNames().contains(definition) || registration.getTarget().getClass().getName().contains(definition)) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	//-----

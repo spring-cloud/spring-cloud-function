@@ -50,6 +50,23 @@ and available to us since Java 8.
 - Function<I, O>
 - Consumer<I>
 
+In a nutshell, any bean in your Application Context that is of type `Supplier`, `Function` or `Consumer` could be registered with `FunctionCatalog`.
+This means that it could benefit from all the features described in this reference manual.
+
+==== Filtering ineligible functions
+A typical Application Context may include beans that are valid java functions, but not intended to be candidates to be registered with `FunctionCatalog`.
+Such beans could be auto-configurations from other projects or any other beans that qualify to be Java functions.
+The framework provides default filtering of known beans that should not be candidates for registration with function catalog.
+You can also add to this list additional beans by providing coma delimited list of bean definition names using
+`spring.cloud.function.ineligible-definitions` property
+
+For example,
+
+[source, test]
+----
+spring.cloud.function.ineligible-definitions=foo,bar
+----
+
 ==== Supplier
 Supplier can be _reactive_ - `Supplier<Flux<T>>`
 or _imperative_ - `Supplier<T>`. From the invocation standpoint this should make no difference

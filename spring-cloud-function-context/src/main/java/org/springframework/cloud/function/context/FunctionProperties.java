@@ -16,7 +16,10 @@
 
 package org.springframework.cloud.function.context;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -65,6 +68,11 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	 */
 	private String definition;
 
+	/**
+	 * List of functions that are not eligible to be registered in Function Catalog.
+	 */
+	private final List<String> ineligibleDefinitions;
+
 	private Map<String, FunctionConfigurationProperties> configuration;
 
 	private String expectedContentType;
@@ -72,6 +80,23 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	private Environment environment;
 
 	private ApplicationContext applicationContext;
+
+	public FunctionProperties() {
+		ineligibleDefinitions = new ArrayList<>();
+		String[] definitions = new String[] {
+				"org.springframework.boot",
+				"org.springframework.cloud.function.cloudevent.CloudEventsFunctionExtensionConfiguration",
+				"org.springframework.cloud.function.context.config.FunctionsEndpointAutoConfiguration",
+				"classLoaderMetrics",
+				"jvmMemoryMetrics",
+				"jvmInfoMetrics",
+				"jvmCompilationMetrics",
+				"uptimeMetrics",
+				"kotlinToFunctionTransformer",
+				"CloudEventsMessageConverterConfiguration"
+		};
+		ineligibleDefinitions.addAll(Arrays.asList(definitions));
+	}
 
 	public Map<String, FunctionConfigurationProperties> getConfiguration() {
 		return configuration;
@@ -162,6 +187,14 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	@Override
 	public void setEnvironment(Environment environment) {
 		this.environment = environment;
+	}
+
+	public List<String> getIneligibleDefinitions() {
+		return new ArrayList<>(this.ineligibleDefinitions);
+	}
+
+	public void setIneligibleDefinitions(List<String> definitions) {
+		this.ineligibleDefinitions.addAll(definitions);
 	}
 
 	public static class FunctionConfigurationProperties {
