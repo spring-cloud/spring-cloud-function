@@ -89,7 +89,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			for (Object item : iterablePayload) {
 				boolean isConverted = false;
 				if (item.getClass().getName().startsWith("org.springframework.kafka.support.KafkaNull")) {
-					resultList.add(item);
+					resultList.add(null);
 					isConverted = true;
 				}
 				for (Iterator<MessageConverter> iterator = getConverters().iterator(); iterator.hasNext() && !isConverted;) {
