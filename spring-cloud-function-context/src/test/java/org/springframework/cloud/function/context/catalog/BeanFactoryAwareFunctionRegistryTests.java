@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -185,17 +186,18 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(((FunctionInvocationWrapper) function).isComposed()).isTrue();
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testBiFunction() {
+		FunctionCatalog catalog = this.configureCatalog();
+
+		Function biFunction = catalog.lookup("biFuncUpperCase");
+		assertThat(biFunction.apply("hello")).isEqualTo("HELLO");
+	}
+
 	@Test
 	public void testImperativeFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
-
-//		Function<String, String> asIs = catalog.lookup("uppercase");
-//		assertThat(asIs.apply("uppercase")).isEqualTo("UPPERCASE");
-//
-//		Function<Flux<String>, Flux<String>> asFlux = catalog.lookup("uppercase");
-//		List<String> result = asFlux.apply(Flux.just("uppercaseFlux", "uppercaseFlux2")).collectList().block();
-//		assertThat(result.get(0)).isEqualTo("UPPERCASEFLUX");
-//		assertThat(result.get(1)).isEqualTo("UPPERCASEFLUX2");
 
 		Function<Flux<Message<byte[]>>, Flux<Message<byte[]>>> messageFlux = catalog.lookup("uppercase", "application/json");
 		Message<byte[]> message1 = MessageBuilder.withPayload("\"uppercaseFlux\"".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build();
@@ -1050,6 +1052,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Supplier<String> numberword() {
 			return () -> "one";
+		}
+
+		@Bean
+		public BiFunction<String, Map, String> biFuncUpperCase() {
+			return (p, h) -> {
+				return p.toUpperCase();
+			};
 		}
 
 		@Bean
