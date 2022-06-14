@@ -102,6 +102,15 @@ public final class FunctionTypeUtils {
 		return Collection.class.isAssignableFrom(rawType) || JsonNode.class.isAssignableFrom(rawType);
 	}
 
+	public static boolean isTypeMap(Type type) {
+		if (Map.class.isAssignableFrom(getRawType(type))) {
+			return true;
+		}
+		type = getGenericType(type);
+		Class<?> rawType = type instanceof ParameterizedType ? getRawType(type) : (Class<?>) type;
+		return Map.class.isAssignableFrom(rawType);
+	}
+
 	public static boolean isTypeArray(Type type) {
 		return getRawType(type).isArray();
 	}
