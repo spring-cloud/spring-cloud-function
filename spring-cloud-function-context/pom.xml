@@ -17,8 +17,6 @@
 
 	<properties>
 		<avro.version>1.10.2</avro.version>
-		<micrometer-bom.version>2.0.0-SNAPSHOT</micrometer-bom.version>
-		<micrometer-tracing-bom.version>1.0.0-SNAPSHOT</micrometer-tracing-bom.version>
 	</properties>
 
 	<dependencies>
