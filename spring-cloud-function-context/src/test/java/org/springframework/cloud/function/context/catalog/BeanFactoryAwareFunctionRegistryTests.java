@@ -114,7 +114,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		for (String beanName : context.getBeanDefinitionNames()) {
 			try {
 				FunctionInvocationWrapper function = catalog.lookup(beanName);
-				if (function != null) {
+				if (function != null && function.getFunctionDefinition().equals(beanName)) {
 					registeredFunction.add(function);
 				}
 			}

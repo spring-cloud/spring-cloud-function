@@ -121,6 +121,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 					+ "use 'spring.cloud.function.definition' property to explicitly define it.");
 			return null;
 		}
+		if (!isFunctionDefinitionEligible(functionDefinition)) {
+			return null;
+		}
 		FunctionInvocationWrapper function = this.doLookup(type, functionDefinition, expectedOutputMimeTypes);
 		Object syncInstance = functionDefinition == null ? this : functionDefinition;
 		synchronized (syncInstance) {
@@ -139,6 +142,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							if (functionCandidate instanceof FunctionRegistration) {
 								functionRegistration = (FunctionRegistration) functionCandidate;
 							}
+							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
+								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
+							}
 							else if (this.isFunctionPojo(functionCandidate, functionName)) {
 								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
 								functionCandidate = this.proxyTarget(functionCandidate, functionalMethod);
@@ -147,9 +153,6 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							else if (this.isSpecialFunctionRegistration(functionNames, functionName)) {
 								functionRegistration = this.applicationContext
 										.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
-							}
-							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
-								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
 							}
 							else {
 								functionType = FunctionTypeUtils.discoverFunctionType(functionCandidate, functionName, this.applicationContext);
