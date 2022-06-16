@@ -188,6 +188,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		return true;
 	}
 
+	boolean isFunctionDefinitionEligible(String functionDefinition) {
+		if (this.functionProperties != null) {
+			for (String definition : this.functionProperties.getIneligibleDefinitions()) {
+				if (functionDefinition.contains(definition)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	//-----
 
 	@Override
@@ -217,8 +228,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			function = this.compose(type, functionDefinition);
 		}
 
-		if (function != null   && !ObjectUtils.isEmpty(expectedOutputMimeTypes)) {
-			function.expectedOutputContentType = expectedOutputMimeTypes;
+		if (function != null) {
+			if (!ObjectUtils.isEmpty(expectedOutputMimeTypes)) {
+				function.expectedOutputContentType = expectedOutputMimeTypes;
+			}
 		}
 		else if (logger.isDebugEnabled()) {
 			logger.debug("Function '" + functionDefinition + "' is not found in cache");
@@ -243,8 +256,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 				? functionDefinition.replaceAll(",", "|")
 				: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
 
-		if (!this.getNames(null).contains(functionDefinition)) {
-			List<String> eligibleFunction = this.getNames(null).stream()
+		Set<String> names = this.getNames(null);
+		if (!names.contains(functionDefinition)) {
+			List<String> eligibleFunction = names.stream()
 					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
 					.collect(Collectors.toList());
 			if (eligibleFunction.size() == 1
