@@ -156,11 +156,40 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 	@Override
 	public <T> void register(FunctionRegistration<T> registration) {
+		if (!isRegistrationEligible(registration)) {
+			return;
+		}
 		Assert.notNull(registration, "'registration' must not be null");
 		if (logger.isDebugEnabled()) {
 			logger.debug("Registering function " + registration.getNames());
 		}
 		this.functionRegistrations.add(registration);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private boolean isRegistrationEligible(FunctionRegistration registration) {
+		if (this.functionProperties != null) {
+			for (String definition : this.functionProperties.getIneligibleDefinitions()) {
+				if (registration.getTarget().getClass().getName().equals(definition)) {
+					return false;
+				}
+				else if (registration.getNames().contains(definition) || registration.getTarget().getClass().getName().contains(definition)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	boolean isFunctionDefinitionEligible(String functionDefinition) {
+		if (this.functionProperties != null) {
+			for (String definition : this.functionProperties.getIneligibleDefinitions()) {
+				if (functionDefinition.contains(definition)) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	//-----
@@ -192,8 +221,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			function = this.compose(type, functionDefinition);
 		}
 
-		if (function != null   && !ObjectUtils.isEmpty(expectedOutputMimeTypes)) {
-			function.expectedOutputContentType = expectedOutputMimeTypes;
+		if (function != null) {
+			if (!ObjectUtils.isEmpty(expectedOutputMimeTypes)) {
+				function.expectedOutputContentType = expectedOutputMimeTypes;
+			}
 		}
 		else if (logger.isDebugEnabled()) {
 			logger.debug("Function '" + functionDefinition + "' is not found in cache");
@@ -218,8 +249,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				? functionDefinition.replaceAll(",", "|")
 				: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
 
-		if (!this.getNames(null).contains(functionDefinition)) {
-			List<String> eligibleFunction = this.getNames(null).stream()
+		Set<String> names = this.getNames(null);
+		if (!names.contains(functionDefinition)) {
+			List<String> eligibleFunction = names.stream()
 					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
 					.collect(Collectors.toList());
 			if (eligibleFunction.size() == 1
