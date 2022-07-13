@@ -97,4 +97,45 @@ public class CloudEventMessageUtilsAndBuilderTests {
 		assertThat(httpMessage.getHeaders().get("ce-specversion")).isNotNull();
 		assertThat(CloudEventMessageUtils.getSpecVersion(httpMessage)).isEqualTo("1.0");
 	}
+
+	@Test
+	void canonicalizeHeadersWithPossibleCopyReturnsCopyWithUpdatedHeadersWhenModified() {
+		// TODO add the following test cases
+		//
+		// defaultAttrs w/ unmodified keys -> not modified
+		// defaultAttrs w/ modified keys -> modified
+		// kafkaAttrs w/ (defaultAttrs+unmodified keys) -> modified
+		// amqpAttrs -> modified
+		// structured -> modified
+		Message<?> inputMessage = MessageBuilder.withPayload("hello")
+				.setHeader("ce_foo", "bar")
+				.setHeader("x", "x1")
+				.setHeader("x|x", "x2")
+				.build();
+
+		Message<?> updatedMessage = CloudEventMessageUtils.canonicalizeHeadersWithPossibleCopy(inputMessage);
+
+		assertThat(inputMessage).isNotSameAs(updatedMessage);
+		assertThat(updatedMessage.getHeaders())
+				.containsEntry("ce-foo", "bar")
+				.containsEntry("x", "x1")
+				.containsEntry("x|x", "x2");
+	}
+
+	@Test
+	void canonicalizeHeadersWithPossibleCopyReturnsSameInstanceWhenNotModified() {
+		Message<?> inputMessage = MessageBuilder.withPayload("hello")
+				.setHeader("ce-foo", "bar")
+				.setHeader("x", "x1")
+				.setHeader("x|x", "x2")
+				.build();
+
+		Message<?> updatedMessage = CloudEventMessageUtils.canonicalizeHeadersWithPossibleCopy(inputMessage);
+
+		assertThat(inputMessage).isSameAs(updatedMessage);
+		assertThat(updatedMessage.getHeaders())
+				.containsEntry("ce-foo", "bar")
+				.containsEntry("x", "x1")
+				.containsEntry("x|x", "x2");
+	}
 }
