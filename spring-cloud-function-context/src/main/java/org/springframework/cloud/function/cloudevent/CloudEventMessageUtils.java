@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.function.cloudevent;
 
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -34,7 +34,6 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -60,12 +59,6 @@ public final class CloudEventMessageUtils {
 		}
 
 	};
-
-	private static Field MESSAGE_HEADERS = ReflectionUtils.findField(MessageHeaders.class, "headers");
-
-	static {
-		MESSAGE_HEADERS.setAccessible(true);
-	}
 
 	private CloudEventMessageUtils() {
 	}
@@ -233,7 +226,7 @@ public final class CloudEventMessageUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	static Message<?> toCanonical(Message<?> inputMessage, MessageConverter messageConverter) {
-		Map<String, Object> headers = (Map<String, Object>) ReflectionUtils.getField(MESSAGE_HEADERS, inputMessage.getHeaders());
+		Map<String, Object> headers = new HashMap<>(inputMessage.getHeaders());
 		canonicalizeHeaders(headers, false);
 		if (isCloudEvent(inputMessage) && headers.containsKey("content-type")) {
 			inputMessage = MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, headers.get("content-type")).build();
@@ -269,7 +262,7 @@ public final class CloudEventMessageUtils {
 			return MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, inputContentType)
 					.build();
 		}
-		return inputMessage;
+		return MessageBuilder.withPayload(inputMessage.getPayload()).copyHeaders(headers).build();
 	}
 
 
