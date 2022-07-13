@@ -18,9 +18,9 @@ package org.springframework.cloud.function.observability;
 
 import java.util.function.Function;
 
-import io.micrometer.core.tck.TestObservationRegistry;
-import io.micrometer.core.tck.TestObservationRegistryAssert;
 import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.tck.TestObservationRegistry;
+import io.micrometer.observation.tck.TestObservationRegistryAssert;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
