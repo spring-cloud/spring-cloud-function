@@ -33,7 +33,7 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
  * @author Oleg Zhurakousky
  * @since 4.0.0
  */
-public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper implements Observation.KeyValuesProviderAware<FunctionTagsProvider> {
+public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
 
 	private static final Log log = LogFactory.getLog(ObservationFunctionAroundWrapper.class);
 
@@ -83,7 +83,6 @@ public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper impl
 		return context.getModifiedOutput();
 	}
 
-	@Override
 	public void setKeyValuesProvider(FunctionTagsProvider functionTagsProvider) {
 		this.tagsProvider = functionTagsProvider;
 	}
