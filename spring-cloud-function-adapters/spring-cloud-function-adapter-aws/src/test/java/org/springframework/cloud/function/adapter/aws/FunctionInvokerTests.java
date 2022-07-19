@@ -801,7 +801,7 @@ public class FunctionInvokerTests {
 	@Test
 	public void testApiGatewayPojoReturninPojo() throws Exception {
 		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
-		System.setProperty("spring.cloud.function.definition", "uppercasePojoReurnPojo");
+		System.setProperty("spring.cloud.function.definition", "uppercasePojoReturnPojo");
 		FunctionInvoker invoker = new FunctionInvoker();
 
 		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEventWithStructuredBody.getBytes());
@@ -1330,7 +1330,7 @@ public class FunctionInvokerTests {
 		}
 
 		@Bean
-		public Function<Person, Person> uppercasePojoReurnPojo() {
+		public Function<Person, Person> uppercasePojoReturnPojo() {
 			return v -> {
 				Person p = new Person();
 				p.setName(v.getName().toUpperCase());
