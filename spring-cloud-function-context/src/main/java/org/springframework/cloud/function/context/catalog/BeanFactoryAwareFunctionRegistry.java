@@ -52,7 +52,7 @@ import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.util.StringUtils;
 
 /**
- * Implementation of {@link FunctionRegistry} capable of discovering functioins in {@link BeanFactory}.
+ * Implementation of {@link FunctionRegistry} capable of discovering functions in {@link BeanFactory}.
  *
  * @author Oleg Zhurakousky
  */
