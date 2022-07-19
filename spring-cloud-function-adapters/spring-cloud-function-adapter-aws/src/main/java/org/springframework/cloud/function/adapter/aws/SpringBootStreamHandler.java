@@ -33,7 +33,9 @@ import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterI
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @deprecated since 3.2.7 in favor of {@link FunctionInvoker}
  */
+@Deprecated
 public class SpringBootStreamHandler extends AbstractSpringFunctionAdapterInitializer<Context>
 		implements RequestStreamHandler {
 
