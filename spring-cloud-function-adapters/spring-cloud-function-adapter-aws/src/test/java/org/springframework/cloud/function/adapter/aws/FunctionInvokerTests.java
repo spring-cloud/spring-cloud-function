@@ -19,7 +19,6 @@ package org.springframework.cloud.function.adapter.aws;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
@@ -459,7 +458,7 @@ public class FunctionInvokerTests {
 		System.clearProperty("MAIN_CLASS");
 		System.clearProperty("spring.cloud.function.routing-expression");
 		System.clearProperty("spring.cloud.function.definition");
-		this.getEnvironment().clear();
+		//this.getEnvironment().clear();
 	}
 
 	@Test
@@ -1037,30 +1036,6 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("\"olleh\"");
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Test
-	public void testWithDefinitionEnvVariable() throws Exception {
-
-		System.setProperty("MAIN_CLASS", SampleConfiguration.class.getName());
-		this.getEnvironment().put("SPRING_CLOUD_FUNCTION_DEFINITION", "reverse|uppercase");
-		FunctionInvoker invoker = new FunctionInvoker();
-
-		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		invoker.handleRequest(targetStream, output, null);
-
-		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		assertThat(result.get("body")).isEqualTo("\"OLLEH\"");
-	}
-
-	@SuppressWarnings("unchecked")
-	private Map<String, String> getEnvironment() throws Exception {
-		Map<String, String> env = System.getenv();
-		Field field = env.getClass().getDeclaredField("m");
-		field.setAccessible(true);
-		return (Map<String, String>) field.get(env);
 	}
 
 	@EnableAutoConfiguration

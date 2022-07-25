@@ -137,12 +137,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	public <T> T lookup(Class<?> type, String functionDefinition, String... expectedOutputMimeTypes) {
 		functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		FunctionInvocationWrapper function = this.doLookup(type, functionDefinition, expectedOutputMimeTypes);
-		if (logger.isInfoEnabled()) {
+		if (logger.isDebugEnabled()) {
 			if (function != null) {
-				logger.info("Located function: " + function);
+				logger.debug("Located function: " + function);
 			}
 			else {
-				logger.info("Failed to locate function: " + functionDefinition);
+				logger.debug("Failed to locate function: " + functionDefinition);
 			}
 		}
 		return (T) function;
