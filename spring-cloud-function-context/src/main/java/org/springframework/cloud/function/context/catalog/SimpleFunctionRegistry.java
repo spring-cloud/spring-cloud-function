@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.context.catalog;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -69,7 +68,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 
@@ -89,8 +87,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 * - do we care about FunctionRegistration after it's been registered? What additional value does it bring?
 	 *
 	 */
-
-	private final Field headersField;
 
 	private final Set<FunctionRegistration<?>> functionRegistrations = new CopyOnWriteArraySet<>();
 
@@ -117,8 +113,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		this.conversionService = conversionService;
 		this.jsonMapper = jsonMapper;
 		this.messageConverter = messageConverter;
-		this.headersField = ReflectionUtils.findField(MessageHeaders.class, "headers");
-		this.headersField.setAccessible(true);
 		this.functionInvocationHelper = functionInvocationHelper;
 		this.functionProperties = functionProperties;
 	}
@@ -775,7 +769,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		/**
 		 * Will wrap the result in a Message if necessary and will copy input headers to the output message.
 		 */
-		@SuppressWarnings("unchecked")
 		private Object enrichInvocationResultIfNecessary(Object input, Object result) {
 			if (result != null && !(result instanceof Publisher) && input instanceof Message) {
 				if (result instanceof Message) {
@@ -783,9 +776,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 						result = functionInvocationHelper.postProcessResult(result, (Message) input);
 					}
 					else {
-						Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-								.getField(SimpleFunctionRegistry.this.headersField, ((Message) result).getHeaders());
-						this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
+						Map<String, Object> headersMap = new HashMap<>(((Message) result).getHeaders());
+						this.sanitizeHeaders(((Message) result).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
+						result = MessageBuilder.withPayload(((Message) result).getPayload()).copyHeaders(headersMap).build();
 					}
 				}
 				else {
@@ -1178,10 +1171,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				output = enhancer.apply(output);
 			}
 			if (this.getTarget() instanceof PassThruFunction) { // scst-2303
-				Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-						.getField(SimpleFunctionRegistry.this.headersField, ((Message) output).getHeaders());
-				headersMap.put(MessageHeaders.CONTENT_TYPE, contentType[0]);
-				return messageConverter.toMessage(((Message) output).getPayload(), ((Message) output).getHeaders());
+				Message enrichedMessage = MessageBuilder.fromMessage((Message) output)
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType[0]).build();
+				return messageConverter.toMessage(enrichedMessage.getPayload(), enrichedMessage.getHeaders());
 			}
 
 			if (ObjectUtils.isEmpty(contentType) && !(output instanceof Publisher)) {
@@ -1376,17 +1368,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 */
 		@SuppressWarnings("unchecked")
 		private Object convertOutputMessageIfNecessary(Object output, String expectedOutputContetntType) {
-			Map<String, Object> headersMap = (Map<String, Object>) ReflectionUtils
-					.getField(SimpleFunctionRegistry.this.headersField, ((Message) output).getHeaders());
 			String contentType = ((Message) output).getHeaders().containsKey(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
 					? (String) ((Message) output).getHeaders().get(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
 							: expectedOutputContetntType;
 
 			if (StringUtils.hasText(contentType)) {
+				Map<String, Object> headersMap = new HashMap(((Message) output).getHeaders());
 				String[] expectedContentTypes = StringUtils.delimitedListToStringArray(contentType, ",");
 				for (String expectedContentType : expectedContentTypes) {
 					headersMap.put(MessageHeaders.CONTENT_TYPE, expectedContentType);
-					Object result = messageConverter.toMessage(((Message) output).getPayload(), ((Message) output).getHeaders());
+					Message message = MessageBuilder.withPayload(((Message) output).getPayload()).copyHeaders(headersMap).build();
+					Object result = messageConverter.toMessage(message.getPayload(), message.getHeaders());
 					if (result != null) {
 						return result;
 					}
