@@ -66,8 +66,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 				}
 			}
 			catch (Exception e) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Failure during type conversion by " + converter + ". Will try the next converter.", e);
+				if (logger.isWarnEnabled()) {
+					logger.warn("Failure during type conversion by " + converter + ". Will try the next converter.", e);
 				}
 			}
 		}
