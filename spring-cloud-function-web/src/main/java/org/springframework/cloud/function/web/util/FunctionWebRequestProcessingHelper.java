@@ -85,27 +85,27 @@ public final class FunctionWebRequestProcessingHelper {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static Publisher<?> processRequest(FunctionWrapper wrapper, Object argument, boolean eventStream) {
+		if (argument == null) {
+			argument = "";
+		}
 		FunctionInvocationWrapper function = wrapper.getFunction();
 
 		HttpHeaders headers = wrapper.getHeaders();
 
 		Message<?> inputMessage = null;
 
-		if (argument != null) {
-			MessageBuilder builder = MessageBuilder.withPayload(argument);
-			if (!CollectionUtils.isEmpty(wrapper.getParams())) {
-				builder = builder.setHeader(HeaderUtils.HTTP_REQUEST_PARAM, wrapper.getParams().toSingleValueMap());
-			}
-			inputMessage = builder.copyHeaders(headers.toSingleValueMap()).build();
+
+		MessageBuilder builder = MessageBuilder.withPayload(argument);
+		if (!CollectionUtils.isEmpty(wrapper.getParams())) {
+			builder = builder.setHeader(HeaderUtils.HTTP_REQUEST_PARAM, wrapper.getParams().toSingleValueMap());
 		}
+		inputMessage = builder.copyHeaders(headers.toSingleValueMap()).build();
 
 		if (function.isRoutingFunction()) {
 			function.setSkipOutputConversion(true);
 		}
 
-		Object input = argument == null ? "" : (argument instanceof Publisher ? Flux.from((Publisher) argument) : inputMessage);
-
-		Object result = function.apply(input);
+		Object result = function.apply(inputMessage);
 		if (function.isConsumer()) {
 			if (result instanceof Publisher) {
 				Mono.from((Publisher) result).subscribe();

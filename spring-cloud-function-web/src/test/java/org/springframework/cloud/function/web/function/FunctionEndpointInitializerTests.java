@@ -17,6 +17,11 @@
 package org.springframework.cloud.function.web.function;
 
 import java.net.URI;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -25,7 +30,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
@@ -35,6 +42,14 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.SocketUtils;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.ResolvableType;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,6 +70,29 @@ public class FunctionEndpointInitializerTests {
 	@AfterEach
 	public void close() throws Exception {
 		System.clearProperty("server.port");
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testEmptyBodyRequestParameters() throws Exception {
+		SpringApplication.run(BeansConfiguration.class);
+		String port = System.getProperty("server.port");
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		Map<String, String> params = new HashMap<>();
+		params.put("fname", "Jim");
+		params.put("lname", "Lahey");
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Accept", "application/json");
+		HttpEntity entity = new HttpEntity(headers);
+
+		String urlTemplate = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port + "/nullPayload")
+				.queryParam("fname", "Jim").queryParam("lname", "Lahey").encode().toUriString();
+
+		ResponseEntity<String> response = testRestTemplate.exchange(urlTemplate, HttpMethod.GET, entity, String.class);
+		String res = response.getBody();
+		assertThat(res).contains("Jim");
+		assertThat(res).contains("Lahey");
 	}
 
 	@Test
@@ -142,6 +180,17 @@ public class FunctionEndpointInitializerTests {
 						.type(FunctionType.consumer(String.class)));
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class BeansConfiguration {
+		@Bean
+		public BiFunction<String, Map<String, Object>, Map<String, Object>> nullPayload() {
+			return (p, h) -> {
+				return h;
+			};
+		}
 	}
 
 
