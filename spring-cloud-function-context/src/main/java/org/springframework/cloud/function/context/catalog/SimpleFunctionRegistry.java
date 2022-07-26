@@ -1321,6 +1321,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					? SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType, itemType)
 					: SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType);
 
+			if (convertedInput != null && !rawType.isAssignableFrom(convertedInput.getClass())) {
+				logger.warn("Failed to convert input to " + rawType + ". Will attempt to invoke function with raw type");
+			}
 
 			if (FunctionTypeUtils.isMessage(type)) {
 				if (convertedInput == null) {
