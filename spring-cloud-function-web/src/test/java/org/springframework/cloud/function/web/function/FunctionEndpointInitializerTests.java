@@ -16,9 +16,8 @@
 
 package org.springframework.cloud.function.web.function;
 
-import java.net.URI;
 
-import java.time.Duration;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -38,17 +37,15 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.SocketUtils;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.ResolvableType;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.SocketUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,7 +68,7 @@ public class FunctionEndpointInitializerTests {
 	public void close() throws Exception {
 		System.clearProperty("server.port");
 	}
-	
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testEmptyBodyRequestParameters() throws Exception {
