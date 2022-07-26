@@ -691,12 +691,11 @@ plain text and JSON.
 
 |===
 
-As the table above shows the behaviour of the endpoint depends on the method and also the type of incoming request data. When the incoming data 
-is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or `Flux`), then the response 
-will also contain a single value.
+As the table above shows the behavior of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or `Flux`), then the response will also contain a single value.
 For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream".
 
-Functions and consumers that are declared with input and output in `Message<?>` will see the request headers on the input messages, and the output message headers will be converted to HTTP headers.
+Functions and consumers that are declared with input and output in `Message<?>` will see the request headers as _message headers_, and the output _message headers_ will be converted to HTTP headers.
+The _payload_ of the Message will be a `body` or empty string if there is no `body` or it is null.
 
 When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accept headers for the best results).
 
@@ -706,8 +705,8 @@ See <<Testing Functional Applications>> to see the details and example on how to
 As you have noticed from the previous table, you can pass an argument to a function as path variable (i.e., `/{function}/{item}`).
 For example, `http://localhost:8080/uppercase/foo` will result in calling `uppercase` function with its input parameter being `foo`.
 
-While this is the recommended approach and the one that fits most use cases cases, there are times when you have to deal with HTTP request parameters. 
-The framework will treat HTTP request parameters similar to the HTTP headers by storing them in `Message` headers under the header key `http_request_param` 
+While this is the recommended approach and the one that fits most use cases cases, there are times when you have to deal with HTTP request parameters (e.g., `http://localhost:8080/uppercase/foo?name=Bill`)
+The framework will treat HTTP request parameters similar to the HTTP headers by storing them in the `Message` headers under the header key `http_request_param` 
 with its value being a `Map` of request parameters, so in order to access them your function input signature should accept `Message` type (e.g., `Function<Message<String>, String>`). For convenience we provide `HeaderUtils.HTTP_REQUEST_PARAM` constant.
 
 === Function Mapping rules 
