@@ -18,23 +18,34 @@ package org.springframework.cloud.function.web.function;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.ResolvableType;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -46,6 +57,28 @@ import static org.awaitility.Awaitility.await;
 * @since 2.1
 */
 public class FunctionEndpointInitializerTests {
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testEmptyBodyRequestParameters() throws Exception {
+		int port = startServerAndWaitForPort(BeansConfiguration.class, false);
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		Map<String, String> params = new HashMap<>();
+		params.put("fname", "Jim");
+		params.put("lname", "Lahey");
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Accept", "application/json");
+		HttpEntity entity = new HttpEntity(headers);
+
+		String urlTemplate = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port + "/nullPayload")
+				.queryParam("fname", "Jim").queryParam("lname", "Lahey").encode().toUriString();
+
+		ResponseEntity<String> response = testRestTemplate.exchange(urlTemplate, HttpMethod.GET, entity, String.class);
+		String res = response.getBody();
+		assertThat(res).contains("Jim");
+		assertThat(res).contains("Lahey");
+	}
 
 	@Test
 	public void testNonExistingFunction() throws Exception {
@@ -105,8 +138,10 @@ public class FunctionEndpointInitializerTests {
 		assertThat(response.getBody()).isEqualTo("Jim Lahey");
 	}
 
-	private int startServerAndWaitForPort(Class<?> primaryAppConfig) throws InterruptedException {
-		ConfigurableApplicationContext context = FunctionalSpringApplication.run(primaryAppConfig, "--server.port=0");
+	private int startServerAndWaitForPort(Class<?> primaryAppConfig, boolean functional) throws InterruptedException {
+		ConfigurableApplicationContext context = functional
+				? FunctionalSpringApplication.run(primaryAppConfig, "--server.port=0")
+						: SpringApplication.run(primaryAppConfig, "--server.port=0");
 		await()
 			.pollDelay(Duration.ofMillis(500))
 			.pollInterval(Duration.ofMillis(500))
@@ -116,6 +151,10 @@ public class FunctionEndpointInitializerTests {
 				assertThat(port).as("Unable to get 'local.server.port' - server may not have started up").isNotEmpty();
 			});
 		return Integer.valueOf(context.getEnvironment().getProperty("local.server.port"));
+	}
+
+	private int startServerAndWaitForPort(Class<?> primaryAppConfig) throws InterruptedException {
+		return this.startServerAndWaitForPort(primaryAppConfig, true);
 	}
 
 	@SpringBootConfiguration
@@ -134,6 +173,17 @@ public class FunctionEndpointInitializerTests {
 						.type(ResolvableType.forClassWithGenerics(Consumer.class, String.class).getType()));
 		}
 
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class BeansConfiguration {
+		@Bean
+		public BiFunction<String, Map<String, Object>, Map<String, Object>> nullPayload() {
+			return (p, h) -> {
+				return h;
+			};
+		}
 	}
 
 
