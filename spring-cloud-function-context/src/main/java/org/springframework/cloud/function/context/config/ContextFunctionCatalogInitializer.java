@@ -135,7 +135,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 			ConfigurationPropertiesBindingPostProcessor.register(registry);
 
 			String preferredMapper = context.getEnvironment().getProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY);
-					
+
 			if (ClassUtils.isPresent("com.google.gson.Gson", null) && "gson".equals(preferredMapper)) {
 				if (this.context.getBeanFactory().getBeanNamesForType(Gson.class, false, false).length == 0) {
 					this.context.registerBean(Gson.class, () -> new Gson());
