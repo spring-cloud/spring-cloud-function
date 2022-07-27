@@ -540,28 +540,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return type;
 		}
 
-		/**
-		 * Use individual {@link #getInputType()}, {@link #getOutputType()} and their variants as well as
-		 * other supporting operations instead.
-		 * @deprecated since 3.1
-		 */
-		@Deprecated
-		public Type getFunctionType() {
-			if (this.isFunction()) {
-				ResolvableType rItype = ResolvableType.forType(this.inputType);
-				ResolvableType rOtype = ResolvableType.forType(this.outputType);
-				return ResolvableType.forClassWithGenerics(Function.class, rItype, rOtype).getType();
-			}
-			else if (this.isConsumer()) {
-				ResolvableType rItype = ResolvableType.forType(this.inputType);
-				return ResolvableType.forClassWithGenerics(Consumer.class, rItype).getType();
-			}
-			else {
-				ResolvableType rOtype = ResolvableType.forType(this.outputType);
-				return ResolvableType.forClassWithGenerics(Supplier.class, rOtype).getType();
-			}
-		}
-
 		public Class<?> getRawOutputType() {
 			return this.outputType == null ? null : FunctionTypeUtils.getRawType(this.outputType);
 		}
