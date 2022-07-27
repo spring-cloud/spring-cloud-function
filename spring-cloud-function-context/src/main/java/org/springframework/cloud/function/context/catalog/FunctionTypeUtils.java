@@ -42,6 +42,7 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.support.GenericApplicationContext;
@@ -260,11 +261,10 @@ public final class FunctionTypeUtils {
 		}
 	}
 
-	public static int getInputCount(Type functionType) {
-		assertSupportedTypes(functionType);
-		int inputCount = isSupplier(functionType) ? 0 : 1;
-		if (functionType instanceof ParameterizedType && !isSupplier(functionType)) {
-			Type inputType = ((ParameterizedType) functionType).getActualTypeArguments()[0];
+	public static int getInputCount(FunctionInvocationWrapper function) {
+		int inputCount = function.isSupplier() ? 0 : 1;
+		if (inputCount > 0) {
+			Type inputType = function.getInputType();
 			if (isMulti(inputType)) {
 				inputCount = ((ParameterizedType) inputType).getActualTypeArguments().length;
 			}
@@ -272,11 +272,10 @@ public final class FunctionTypeUtils {
 		return inputCount;
 	}
 
-	public static int getOutputCount(Type functionType) {
-		assertSupportedTypes(functionType);
-		int outputCount = isConsumer(functionType) ? 0 : 1;
-		if (functionType instanceof ParameterizedType && !isConsumer(functionType)) {
-			Type outputType = ((ParameterizedType) functionType).getActualTypeArguments()[isSupplier(functionType) ? 0 : 1];
+	public static int getOutputCount(FunctionInvocationWrapper function) {
+		int outputCount = function.isConsumer() ? 0 : 1;
+		if (outputCount > 0) {
+			Type outputType = function.getOutputType();
 			if (isMulti(outputType)) {
 				outputCount = ((ParameterizedType) outputType).getActualTypeArguments().length;
 			}
