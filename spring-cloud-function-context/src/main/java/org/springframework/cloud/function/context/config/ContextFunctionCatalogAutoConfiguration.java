@@ -85,9 +85,6 @@ import org.springframework.util.StringUtils;
 @AutoConfigureAfter(name = {"org.springframework.cloud.function.deployer.FunctionDeployerConfiguration"})
 public class ContextFunctionCatalogAutoConfiguration {
 
-	@Deprecated
-	static final String PREFERRED_MAPPER_PROPERTY = "spring.http.converters.preferred-json-mapper";
-
 	/**
 	 * The name of the property to specify desired JSON mapper. Available values are `jackson' and 'gson'.
 	 */
@@ -194,9 +191,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 	public static class JsonMapperConfiguration {
 		@Bean
 		public JsonMapper jsonMapper(ApplicationContext context) {
-			String preferredMapper = context.getEnvironment().containsProperty(JSON_MAPPER_PROPERTY)
-				? context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY)
-				: context.getEnvironment().getProperty(PREFERRED_MAPPER_PROPERTY);
+			String preferredMapper = context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY);
 			if (StringUtils.hasText(preferredMapper)) {
 				if ("gson".equals(preferredMapper) && ClassUtils.isPresent("com.google.gson.Gson", null)) {
 					return gson(context);
