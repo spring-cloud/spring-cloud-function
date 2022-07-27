@@ -67,56 +67,6 @@ public class FunctionTypeUtilsTests<T> {
 	}
 
 	@Test
-	public void testInputCount() throws Exception {
-		int inputCount = FunctionTypeUtils.getInputCount(getReturnType("function"));
-		assertThat(inputCount).isEqualTo(1);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("typelessFunction"));
-		assertThat(inputCount).isEqualTo(1);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("multiInputOutputFunction"));
-		assertThat(inputCount).isEqualTo(2);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("multiInputOutputPublisherFunction"));
-		assertThat(inputCount).isEqualTo(2);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("multiInputOutputPublisherFunctionComplexTypes"));
-		assertThat(inputCount).isEqualTo(2);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("consumer"));
-		assertThat(inputCount).isEqualTo(1);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("typelessConsumer"));
-		assertThat(inputCount).isEqualTo(1);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("multiInputConsumer"));
-		assertThat(inputCount).isEqualTo(2);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("supplier"));
-		assertThat(inputCount).isEqualTo(0);
-		inputCount = FunctionTypeUtils.getInputCount(getReturnType("typelessSupplier"));
-		assertThat(inputCount).isEqualTo(0);
-	}
-
-	@Test
-	public void testOutputCount() throws Exception {
-		int outputCount = FunctionTypeUtils.getOutputCount(getReturnType("function"));
-		assertThat(outputCount).isEqualTo(1);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("typelessFunction"));
-		assertThat(outputCount).isEqualTo(1);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("multiInputOutputFunction"));
-		assertThat(outputCount).isEqualTo(3);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("multiInputOutputPublisherFunction"));
-		assertThat(outputCount).isEqualTo(3);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("multiInputOutputPublisherFunctionComplexTypes"));
-		assertThat(outputCount).isEqualTo(3);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("consumer"));
-		assertThat(outputCount).isEqualTo(0);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("typelessConsumer"));
-		assertThat(outputCount).isEqualTo(0);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("multiInputConsumer"));
-		assertThat(outputCount).isEqualTo(0);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("supplier"));
-		assertThat(outputCount).isEqualTo(1);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("typelessSupplier"));
-		assertThat(outputCount).isEqualTo(1);
-		outputCount = FunctionTypeUtils.getOutputCount(getReturnType("multiOutputSupplier"));
-		assertThat(outputCount).isEqualTo(2);
-	}
-
-	@Test
 	public void testFunctionTypeByClassDiscovery() {
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(Function.class);
 		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(Object.class);
