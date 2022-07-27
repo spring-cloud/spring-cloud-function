@@ -208,15 +208,19 @@ downstream. So effectively you letting the framework to benefit from the work yo
 
 If the input argument is of type `Message<?>`, you can communicate routing instruction by setting one of
 `spring.cloud.function.definition` or `spring.cloud.function.routing-expression` Message headers.
+As the name of the property suggests `spring.cloud.function.routing-expression` relies on Spring Expression Language (SpEL).
 For more static cases you can use `spring.cloud.function.definition` header which allows you to provide
 the name of a single function (e.g., `...definition=foo`) or a composition instruction (e.g., `...definition=foo|bar|baz`).
-For more dynamic cases you can use `spring.cloud.function.routing-expression` header which allows
-you to use Spring Expression Language (SpEL) and provide SpEL expression that should resolve
+For more dynamic cases you can use `spring.cloud.function.routing-expression` header and provide SpEL expression that should resolve
 into definition of a function (as described above).
 
 NOTE: SpEL evaluation context's root object is the
 actual input argument, so in the case of `Message<?>` you can construct expression that has access
 to both `payload` and `headers` (e.g., `spring.cloud.function.routing-expression=headers.function_name`).
+
+IMPORTANT: SpEL allows user to provide string representation of Java code to be executed. Given that the `spring.cloud.function.routing-expression` could be provided via Message headers means that ability to set such expression could be exposed to the end user (i.e., HTTP Headers when using web module) which could result in some problems (e.g., malicious code). To manage that, all expressions coming via Message headers will only be evaluated against `SimpleEvaluationContext` which has limited functionality and designed to only evaluate the context object (Message in our case). On the other hand, all expressions that are set via property or system variable are evaluated against `StandardEvaluationContext`, which allows for full flexibility of Java language. 
+While setting expression via system/application property or environment variable is generally considered to be secure as it is not exposed to the end user in normal cases, there are cases where visibility as well as capability to update system, application and environment variables are indeed exposed to the end user via Spring Boot Actuator endpoints provided either by some of the Spring projects or third parties or custom implementation by the end user. Such endpoints must be secured using industry standard web security practices.
+Spring Cloud Function does not expose any of such endpoints. 
 
 In specific execution environments/models the adapters are responsible to translate and communicate
 `spring.cloud.function.definition` and/or `spring.cloud.function.routing-expression` via Message header.
