@@ -16,26 +16,18 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
-import java.io.ByteArrayInputStream;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
-import com.amazonaws.services.lambda.runtime.serialization.PojoSerializer;
-import com.amazonaws.services.lambda.runtime.serialization.events.LambdaEventSerializers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -51,18 +43,18 @@ final class AWSLambdaUtils {
 
 	static final String AWS_API_GATEWAY = "aws-api-gateway";
 
+	static final String AWS_EVENT = "aws-event";
+
 	public static final String AWS_CONTEXT = "aws-context";
 
 	private AWSLambdaUtils() {
 
 	}
 
-	public static Message<byte[]> generateMessage(byte[] payload, MessageHeaders headers,
-			Type inputType, JsonMapper objectMapper) {
-		return generateMessage(payload, headers, inputType, objectMapper, null);
-	}
-
 	static boolean isSupportedAWSType(Type inputType) {
+		if (FunctionTypeUtils.isMessage(inputType)) {
+			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
+		}
 		String typeName = inputType.getTypeName();
 		return typeName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent")
 				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.S3Event")
@@ -74,93 +66,30 @@ final class AWSLambdaUtils {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static Message<byte[]> generateMessage(byte[] payload, MessageHeaders headers,
-			Type inputType, JsonMapper objectMapper, @Nullable Context awsContext) {
-
+	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper) {
 		if (logger.isInfoEnabled()) {
-			logger.info("Incoming JSON Event: " + new String(payload));
+			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
 		}
 
-		if (FunctionTypeUtils.isMessage(inputType)) {
-			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
-		}
+		Object structMessage = jsonMapper.fromJson(payload, Object.class);
+		boolean isApiGateway = structMessage instanceof Map
+				&& (((Map<String, Object>) structMessage).containsKey("httpMethod") ||
+						(((Map<String, Object>) structMessage).containsKey("routeKey") && ((Map) structMessage).containsKey("version")));
 
-		MessageBuilder messageBuilder = null;
-		if (inputType != null && isSupportedAWSType(inputType)) {
-			PojoSerializer<?> serializer = LambdaEventSerializers.serializerFor(FunctionTypeUtils.getRawType(inputType), Thread.currentThread().getContextClassLoader());
-			Object event = serializer.fromJson(new ByteArrayInputStream(payload));
-			messageBuilder = MessageBuilder.withPayload(event);
-			if (event instanceof APIGatewayProxyRequestEvent || event instanceof APIGatewayV2HTTPEvent) {
-				messageBuilder.setHeader(AWS_API_GATEWAY, true);
-				logger.info("Incoming request is API Gateway");
-			}
+		Message<byte[]> requestMessage;
+		MessageBuilder<byte[]> builder = MessageBuilder.withPayload(payload);
+		if (isApiGateway) {
+			builder.setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true);
 		}
-		else {
-			Object request;
-			try {
-				request = objectMapper.fromJson(payload, Object.class);
-			}
-			catch (Exception e) {
-				throw new IllegalStateException(e);
-			}
-
-			if (request instanceof Map) {
-				logger.info("Incoming MAP: " + request);
-				if (((Map) request).containsKey("httpMethod")) { //API Gateway
-					logger.info("Incoming request is API Gateway");
-					boolean mapInputType = (inputType instanceof ParameterizedType && ((Class<?>) ((ParameterizedType) inputType).getRawType()).isAssignableFrom(Map.class));
-					if (mapInputType) {
-						messageBuilder = MessageBuilder.withPayload(request).setHeader("httpMethod", ((Map) request).get("httpMethod"));
-						messageBuilder.setHeader(AWS_API_GATEWAY, true);
-					}
-					else {
-						messageBuilder = createMessageBuilderForPOJOFunction(objectMapper, (Map) request);
-					}
-				}
-				else if ((((Map) request).containsKey("routeKey") && ((Map) request).containsKey("version"))) {
-					logger.info("Incoming request is API Gateway v2.0");
-					messageBuilder = createMessageBuilderForPOJOFunction(objectMapper, (Map) request);
-				}
-				Object providedHeaders = ((Map) request).get("headers");
-				if (providedHeaders != null && providedHeaders instanceof Map) {
-					messageBuilder = MessageBuilder.withPayload(request);
-					messageBuilder.removeHeader("headers");
-					messageBuilder.copyHeaders((Map<String, Object>) providedHeaders);
-				}
-			}
-			else if (request instanceof Iterable) {
-				messageBuilder = MessageBuilder.withPayload(request);
-			}
+		if (!isSupplier && AWSLambdaUtils.isSupportedAWSType(inputType)) {
+			builder.setHeader(AWSLambdaUtils.AWS_EVENT, true);
 		}
-
-
-		if (messageBuilder == null) {
-			messageBuilder = MessageBuilder.withPayload(payload);
+		//
+		if (structMessage instanceof Map && ((Map<String, Object>) structMessage).containsKey("headers")) {
+			builder.copyHeaders((Map<String, Object>) ((Map<String, Object>) structMessage).get("headers"));
 		}
-		if (awsContext != null) {
-			messageBuilder.setHeader(AWS_CONTEXT, awsContext);
-		}
-		logger.info("Incoming request headers: " + headers);
-
-		return messageBuilder.copyHeaders(headers).build();
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static MessageBuilder createMessageBuilderForPOJOFunction(JsonMapper objectMapper, Map request) {
-		Object body = request.remove("body");
-		try {
-			body = body instanceof String
-					? String.valueOf(body).getBytes(StandardCharsets.UTF_8)
-							: objectMapper.toJson(body);
-		}
-		catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
-		logger.info("Body is " + body);
-
-		MessageBuilder messageBuilder = MessageBuilder.withPayload(body).copyHeaders(request);
-		messageBuilder.setHeader(AWS_API_GATEWAY, true);
-		return messageBuilder;
+		requestMessage = builder.build();
+		return requestMessage;
 	}
 
 	private static byte[] extractPayload(Message<Object> msg, JsonMapper objectMapper) {
