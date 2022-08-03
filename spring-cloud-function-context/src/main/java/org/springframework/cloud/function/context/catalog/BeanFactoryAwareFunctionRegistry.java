@@ -189,7 +189,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		}
 
 		if (!FunctionTypeUtils.isTypeMap(inputType2)) {
-			throw new UnsupportedOperationException("BiFunction's second argument must be assignable to Map, since BiFunction "
+			logger.debug("BiFunction's second argument must be assignable to Map, since BiFunction "
 					+ "represents parsed Message with first argument being payload and second headers. "
 					+ "Other signatures are not supported at the moment.");
 		}
