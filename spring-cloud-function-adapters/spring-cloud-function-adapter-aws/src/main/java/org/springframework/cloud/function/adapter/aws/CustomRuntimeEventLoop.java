@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,7 +42,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
@@ -139,8 +135,10 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 			if (response != null) {
 				FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
-				Message<byte[]> eventMessage = AWSLambdaUtils.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8),
-						fromHttp(response.getHeaders()), function.getInputType(), mapper);
+
+				Message<byte[]> eventMessage = AWSLambdaUtils
+						.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8), function.getInputType(), function.isSupplier(), mapper);
+
 				if (logger.isDebugEnabled()) {
 					logger.debug("Event message: " + eventMessage);
 				}
@@ -253,25 +251,6 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			logger.info("Located function " + function.getFunctionDefinition());
 		}
 		return function;
-	}
-
-	private MessageHeaders fromHttp(HttpHeaders headers) {
-		Map<String, Object> map = new LinkedHashMap<>();
-		for (String name : headers.keySet()) {
-			Collection<?> values = multi(headers.get(name));
-			name = name.toLowerCase();
-			Object value = values == null ? null
-					: (values.size() == 1 ? values.iterator().next() : values);
-			if (name.toLowerCase().equals(HttpHeaders.CONTENT_TYPE.toLowerCase())) {
-				name = MessageHeaders.CONTENT_TYPE;
-			}
-			map.put(name, value);
-		}
-		return new MessageHeaders(map);
-	}
-
-	private Collection<?> multi(Object value) {
-		return value instanceof Collection ? (Collection<?>) value : Arrays.asList(value);
 	}
 
 	private static String extractVersion() {
