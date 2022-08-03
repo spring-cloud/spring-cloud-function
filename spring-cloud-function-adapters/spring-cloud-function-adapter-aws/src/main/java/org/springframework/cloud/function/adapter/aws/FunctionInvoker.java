@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,10 @@ package org.springframework.cloud.function.adapter.aws;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -53,7 +50,6 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -80,35 +76,11 @@ public class FunctionInvoker implements RequestStreamHandler {
 		this.start();
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({ "rawtypes" })
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-		final byte[] payload = StreamUtils.copyToByteArray(input);
-
-		if (logger.isInfoEnabled()) {
-			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
-		}
-
-		Object structMessage = this.jsonMapper.fromJson(payload, Object.class);
-
-		boolean isApiGateway = structMessage instanceof Map
-				&& (((Map) structMessage).containsKey("httpMethod") ||
-						(((Map) structMessage).containsKey("routeKey") && ((Map) structMessage).containsKey("version")));
-
-
-		// TODO we should eventually completely delegate to message converter
-		Message requestMessage;
-		if (isApiGateway) {
-			MessageBuilder builder = MessageBuilder.withPayload(payload).setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true);
-			if (structMessage instanceof Map && ((Map) structMessage).containsKey("headers")) {
-				builder.copyHeaders((Map) ((Map) structMessage).get("headers"));
-			}
-			requestMessage = builder.build();
-		}
-		else {
-			requestMessage = AWSLambdaUtils
-					.generateMessage(payload, new MessageHeaders(Collections.emptyMap()), function.getInputType(), this.jsonMapper, context);
-		}
+		Message requestMessage = AWSLambdaUtils
+				.generateMessage(StreamUtils.copyToByteArray(input), this.function.getInputType(), this.function.isSupplier(), jsonMapper);
 
 		Object response = this.function.apply(requestMessage);
 		byte[] responseBytes = this.buildResult(requestMessage, response);
