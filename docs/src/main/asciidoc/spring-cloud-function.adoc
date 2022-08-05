@@ -78,18 +78,18 @@ However, the same reactive suppliers can also represent _finite_ stream(s) (e.g.
 In those cases such reactive suppliers must be hooked up to some polling mechanism of the underlying framework.
 
 To assist with that Spring Cloud Function provides a marker annotation
-`org.springframework.cloud.function.context.PollableSupplier` to signal that such supplier produces a
+`org.springframework.cloud.function.context.PollableBean` to signal that such supplier produces a
 finite stream and may need to be polled again. That said, it is important to understand that Spring Cloud Function itself
 provides no behavior for this annotation.
 
-In addition `PollableSupplier` annotation exposes a _splittable_ attribute to signal that produced stream
+In addition `PollableBean` annotation exposes a _splittable_ attribute to signal that produced stream
 needs to be split (see https://www.enterpriseintegrationpatterns.com/patterns/messaging/Sequencer.html[Splitter EIP])
 
 Here is the example:
 
 [source, java]
 ----
-@PollableSupplier(splittable = true)
+@PollableBean(splittable = true)
 public Supplier<Flux<String>> someSupplier() {
 	return () -> {
 		String v1 = String.valueOf(System.nanoTime());
