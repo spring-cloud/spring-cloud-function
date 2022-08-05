@@ -27,13 +27,14 @@ public class FuncApplication implements ApplicationContextInitializer<GenericApp
 		return value -> new Bar(value.uppercase()));
 	}
 
-	@Override
-	public void initialize(GenericApplicationContext context) {
-		context.registerBean("function", FunctionRegistration.class,
-			() -> new FunctionRegistration<Function<Foo, Bar>>(function())
-                .type(FunctionTypeUtils.functionType(Foo.class, Bar.class)));
-	}
+    @Override
+    public void initialize(GenericApplicationContext context) {
+        Supplier<FunctionRegistration> supplier = () -> new FunctionRegistration<>(function()).type(
+                FunctionType.compose(FunctionType.from(Foo.class), FunctionType.from(Bar.class))
+        );
 
+        context.registerBean("function", FunctionRegistration.class, supplier);
+    }
 }
 ```
 
