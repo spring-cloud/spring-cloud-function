@@ -80,7 +80,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 		Message requestMessage = AWSLambdaUtils
-				.generateMessage(StreamUtils.copyToByteArray(input), this.function.getInputType(), this.function.isSupplier(), jsonMapper);
+				.generateMessage(StreamUtils.copyToByteArray(input), this.function.getInputType(), this.function.isSupplier(), jsonMapper, context);
 
 		Object response = this.function.apply(requestMessage);
 		byte[] responseBytes = this.buildResult(requestMessage, response);
