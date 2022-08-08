@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -65,8 +66,12 @@ final class AWSLambdaUtils {
 				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.KinesisEvent");
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper) {
+		return generateMessage(payload, inputType, isSupplier, jsonMapper, null);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper, Context context) {
 		if (logger.isInfoEnabled()) {
 			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
 		}
@@ -83,6 +88,9 @@ final class AWSLambdaUtils {
 		}
 		if (!isSupplier && AWSLambdaUtils.isSupportedAWSType(inputType)) {
 			builder.setHeader(AWSLambdaUtils.AWS_EVENT, true);
+		}
+		if (context != null) {
+			builder.setHeader(AWSLambdaUtils.AWS_CONTEXT, context);
 		}
 		//
 		if (structMessage instanceof Map && ((Map<String, Object>) structMessage).containsKey("headers")) {
