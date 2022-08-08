@@ -18,7 +18,9 @@ package org.springframework.cloud.function.adapter.aws;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
@@ -26,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
@@ -504,11 +507,16 @@ public class FunctionInvokerTests {
 	public void testKinesisEvent() throws Exception {
 		System.setProperty("MAIN_CLASS", KinesisConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputKinesisEvent");
-		FunctionInvoker invoker = new FunctionInvoker();
+		FunctionInvoker invoker = new FunctionInvoker() {
+			public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+				assertThat(context).isNotNull();
+				super.handleRequest(input, output, context);
+			}
+		};
 
 		InputStream targetStream = new ByteArrayInputStream(this.sampleKinesisEvent.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		invoker.handleRequest(targetStream, output, null);
+		invoker.handleRequest(targetStream, output, new TestContext());
 
 		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 		assertThat(result).contains("49590338271490256608559692538361571095921575989136588898");
@@ -760,11 +768,16 @@ public class FunctionInvokerTests {
 	public void testLBEventInOut() throws Exception {
 		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputOutputLBEvent");
-		FunctionInvoker invoker = new FunctionInvoker();
+		FunctionInvoker invoker = new FunctionInvoker() {
+			public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+				assertThat(context).isNotNull();
+				super.handleRequest(input, output, context);
+			}
+		};
 
 		InputStream targetStream = new ByteArrayInputStream(this.sampleLBEvent.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		invoker.handleRequest(targetStream, output, null);
+		invoker.handleRequest(targetStream, output, new TestContext());
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("Hello from ELB");
@@ -842,11 +855,16 @@ public class FunctionInvokerTests {
 	public void testApiGatewayEvent() throws Exception {
 		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputApiEvent");
-		FunctionInvoker invoker = new FunctionInvoker();
+		FunctionInvoker invoker = new FunctionInvoker() {
+			public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+				assertThat(context).isNotNull();
+				super.handleRequest(input, output, context);
+			}
+		};
 
 		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		invoker.handleRequest(targetStream, output, null);
+		invoker.handleRequest(targetStream, output, new TestContext());
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
