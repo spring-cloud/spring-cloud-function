@@ -225,7 +225,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 		if (function != null) {
-			function = this.wrapInAroundAviceIfNecessary(function);
+			function = this.wrapInAroundAdviceIfNecessary(function);
 		}
 
 		return (T) function;
@@ -263,7 +263,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 * There is no current use cases in functions where it is used.
 	 * The approach may change in the future.
 	 */
-	private FunctionInvocationWrapper wrapInAroundAviceIfNecessary(FunctionInvocationWrapper function) {
+	private FunctionInvocationWrapper wrapInAroundAdviceIfNecessary(FunctionInvocationWrapper function) {
 		FunctionInvocationWrapper wrappedFunction = function;
 		if (function != null && this.functionAroundWrapper != null) {
 			wrappedFunction = new FunctionInvocationWrapper(function) {
