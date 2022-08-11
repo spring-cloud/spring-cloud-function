@@ -38,11 +38,13 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
+import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.KotlinDetector;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.lang.Nullable;
@@ -143,6 +145,13 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							}
 							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
 								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
+							}
+							else if (KotlinDetector.isKotlinType(functionCandidate.getClass())) {
+								KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper wrapper =
+									new KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper(functionCandidate);
+								wrapper.setName(functionName);
+								wrapper.setBeanFactory(this.applicationContext.getBeanFactory());
+								functionRegistration = wrapper.getFunctionRegistration();
 							}
 							else if (this.isFunctionPojo(functionCandidate, functionName)) {
 								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
