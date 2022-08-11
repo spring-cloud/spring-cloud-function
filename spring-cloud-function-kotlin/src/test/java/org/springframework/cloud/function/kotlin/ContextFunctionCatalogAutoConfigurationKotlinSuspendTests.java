@@ -16,27 +16,16 @@
 
 package org.springframework.cloud.function.kotlin;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import kotlin.jvm.functions.Function2;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import org.springframework.beans.factory.BeanCreationException;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.support.GenericApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author Adrien Poupard
@@ -60,67 +49,29 @@ public class ContextFunctionCatalogAutoConfigurationKotlinSuspendTests {
 		create(new Class[] { KotlinSuspendFlowLambdasConfiguration.class,
 			ContextFunctionCatalogAutoConfigurationKotlinTests.SimpleConfiguration.class });
 
-		Object function = this.context.getBean("kotlinFunction");
-		ParameterizedType functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinFunction", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
 
-		function = this.context.getBean("kotlinConsumer");
-		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinConsumer", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Consumer.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		FunctionInvocationWrapper kotlinFunction = functionCatalog.lookup("kotlinFunction");
+		assertThat(kotlinFunction.isFunction()).isTrue();
+		assertThat(kotlinFunction.getInputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(kotlinFunction.getOutputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
-		function = this.context.getBean("kotlinSupplier");
-		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinSupplier", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Supplier.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		FunctionInvocationWrapper kotlinConsumer = functionCatalog.lookup("kotlinConsumer");
+		assertThat(kotlinConsumer.isConsumer()).isTrue();
+		assertThat(kotlinConsumer.getInputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
-		function = this.context.getBean("kotlinPojoFunction");
-		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinPojoFunction", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("reactor.core.publisher.Flux<org.springframework.cloud.function.kotlin.Person>");
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
-	}
+		FunctionInvocationWrapper kotlinSupplier = functionCatalog.lookup("kotlinSupplier");
+		assertThat(kotlinSupplier.isSupplier()).isTrue();
+		assertThat(kotlinSupplier.getOutputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
-	@Test
-	public void shouldNotLoadKotlinSuspendLambasNotUsingFlow() {
-		create(new Class[] { KotlinSuspendLambdasConfiguration.class,
-			ContextFunctionCatalogAutoConfigurationKotlinTests.SimpleConfiguration.class });
-
-		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function2.class);
-		assertThatThrownBy(() -> {
-			this.catalog.lookup(Function.class, "kotlinFunction");
-		}).isInstanceOf(BeanCreationException.class);
-
-		assertThatThrownBy(() -> {
-			this.catalog.lookup(Function.class, "kotlinConsumer");
-		}).isInstanceOf(BeanCreationException.class);
-
-		assertThatThrownBy(() -> {
-			this.catalog.lookup(Supplier.class, "kotlinSupplier");
-		}).isInstanceOf(BeanCreationException.class);
-
+		FunctionInvocationWrapper kotlinPojoFunction = functionCatalog.lookup("kotlinPojoFunction");
+		assertThat(kotlinPojoFunction.isFunction()).isTrue();
+		assertThat(kotlinPojoFunction.getInputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<org.springframework.cloud.function.kotlin.Person>");
+		assertThat(kotlinPojoFunction.getOutputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 	}
 
 	private void create(Class<?>[] types, String... props) {
 		this.context = (GenericApplicationContext) new SpringApplicationBuilder(types).properties(props).run();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
 	}
-
-	@EnableAutoConfiguration
-	@Configuration
-	protected static class SimpleConfiguration {
-
-		@Bean
-		public Function<String, String> function2() {
-			return value -> value + "function2";
-		}
-
-	}
-
 }

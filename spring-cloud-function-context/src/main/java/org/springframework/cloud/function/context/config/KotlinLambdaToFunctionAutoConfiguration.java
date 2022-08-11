@@ -35,16 +35,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.BeanNameAware;
-import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.config.ConstructorArgumentValues;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
@@ -83,46 +74,14 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 		};
 	}
 
-	/**
-	 * Will transform all discovered Kotlin's Function lambdas to java
-	 * Supplier, Function and Consumer, retaining the original Kotlin type
-	 * characteristics.
-	 *
-	 * @return the bean factory post processor
-	 */
-	@Bean
-	public static BeanFactoryPostProcessor kotlinToFunctionTransformer(ConfigurableListableBeanFactory beanFactory) {
-		return new BeanFactoryPostProcessor() {
-
-			@Override
-			public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
-					throws BeansException {
-				String[] beanDefinitionNames = beanFactory.getBeanDefinitionNames();
-				for (String beanDefinitionName : beanDefinitionNames) {
-					BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanDefinitionName);
-
-					if (beanDefinition instanceof AnnotatedBeanDefinition && ((AnnotatedBeanDefinition) beanDefinition).getFactoryMethodMetadata() != null) {
-						String typeName = ((AnnotatedBeanDefinition) beanDefinition).getFactoryMethodMetadata().getReturnTypeName();
-						if (typeName.startsWith("kotlin.jvm.functions.Function")) {
-							RootBeanDefinition cbd = new RootBeanDefinition(KotlinFunctionWrapper.class);
-							ConstructorArgumentValues ca = new ConstructorArgumentValues();
-							ca.addGenericArgumentValue(beanDefinition);
-							cbd.setConstructorArgumentValues(ca);
-							((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(beanDefinitionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, cbd);
-						}
-					}
-				}
-			}
-		};
-	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static final class KotlinFunctionWrapper implements Function<Object, Object>, Supplier<Object>, Consumer<Object>,
 			Function0<Object>, Function1<Object, Object>, Function2<Object, Object, Object>,
-			Function3<Object, Object, Object, Object>, Function4<Object, Object, Object, Object, Object>,
-			FactoryBean<FunctionRegistration>,
-			BeanNameAware,
-			BeanFactoryAware {
+			Function3<Object, Object, Object, Object>, Function4<Object, Object, Object, Object, Object> {
+//			FactoryBean<FunctionRegistration>,
+//			BeanNameAware,
+//			BeanFactoryAware {
 
 		private final Object kotlinLambdaTarget;
 
@@ -192,8 +151,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			return this.apply(null);
 		}
 
-		@Override
-		public FunctionRegistration getObject() throws Exception {
+		public FunctionRegistration getFunctionRegistration() {
 			String name = this.name.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX)
 				? this.name.replace(FunctionRegistration.REGISTRATION_NAME_SUFFIX, "")
 				: this.name;
@@ -284,17 +242,16 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			return type.getTypeName().contains(clazz.getName());
 		}
 
-		@Override
 		public Class<?> getObjectType() {
 			return FunctionRegistration.class;
 		}
 
-		@Override
-		public void setBeanName(String name) {
+
+		public void setName(String name) {
 			this.name = name;
 		}
 
-		@Override
+
 		public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 			this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
 		}
