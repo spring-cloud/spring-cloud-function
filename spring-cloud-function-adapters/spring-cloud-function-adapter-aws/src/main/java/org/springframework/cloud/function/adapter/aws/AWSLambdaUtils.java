@@ -38,7 +38,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * @author Oleg Zhurakousky
  *
  */
-final class AWSLambdaUtils {
+public final class AWSLambdaUtils {
 
 	private static Log logger = LogFactory.getLog(AWSLambdaUtils.class);
 
