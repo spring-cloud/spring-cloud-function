@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.kotlin;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -59,39 +57,37 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		create(new Class[] { KotlinLambdasConfiguration.class,
 				SimpleConfiguration.class });
 
-		Object function = this.context.getBean("kotlinFunction");
-		ParameterizedType functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinFunction", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
 
-		function = this.context.getBean("kotlinConsumer");
-		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinConsumer", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Consumer.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
+		FunctionInvocationWrapper kotlinFunction = functionCatalog.lookup("kotlinFunction");
+		assertThat(kotlinFunction.isFunction()).isTrue();
+		assertThat(kotlinFunction.getInputType()).isEqualTo(String.class);
+		assertThat(kotlinFunction.getOutputType()).isEqualTo(String.class);
 
-		function = this.context.getBean("kotlinSupplier");
-		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinSupplier", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Supplier.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(1);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(String.class.getName());
+		FunctionInvocationWrapper kotlinConsumer = functionCatalog.lookup("kotlinConsumer");
+		assertThat(kotlinConsumer.isConsumer()).isTrue();
+		assertThat(kotlinConsumer.getInputType()).isEqualTo(String.class);
 
-		function = this.context.getBean("kotlinPojoFunction");
-		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinPojoFunction", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo(Person.class.getName());
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+		FunctionInvocationWrapper kotlinSupplier = functionCatalog.lookup("kotlinSupplier");
+		assertThat(kotlinSupplier.isSupplier()).isTrue();
+		assertThat(kotlinSupplier.getOutputType()).isEqualTo(String.class);
 
+		FunctionInvocationWrapper kotlinPojoFunction = functionCatalog.lookup("kotlinPojoFunction");
+		assertThat(kotlinPojoFunction.isFunction()).isTrue();
+		assertThat(kotlinPojoFunction.getInputType()).isEqualTo(Person.class);
+		assertThat(kotlinPojoFunction.getOutputType()).isEqualTo(String.class);
 
-		function = this.context.getBean("kotlinListPojoFunction");
-		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinListPojoFunction", this.context);
-		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
-		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+		FunctionInvocationWrapper kotlinListPojoFunction = functionCatalog.lookup("kotlinListPojoFunction");
+		assertThat(kotlinListPojoFunction.isFunction()).isTrue();
+		assertThat(kotlinListPojoFunction.getInputType().getTypeName()).isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
+		assertThat(kotlinListPojoFunction.getOutputType()).isEqualTo(String.class);
+
+//		function = this.context.getBean("kotlinListPojoFunction");
+//		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinListPojoFunction", this.context);
+//		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
+//		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
+//		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
+//		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
 	}
 
 	@Test
