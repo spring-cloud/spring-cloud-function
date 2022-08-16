@@ -115,8 +115,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		functionDefinition = StringUtils.hasText(functionDefinition)
 				? functionDefinition
 						: this.applicationContext.getEnvironment().getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
-
-		functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
+		if (!this.applicationContext.containsBean(functionDefinition) || !KotlinDetector.isKotlinType(this.applicationContext.getBean(functionDefinition).getClass())) {
+			functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
+		}
 		if (!StringUtils.hasText(functionDefinition)) {
 			logger.info("Can't determine default function definition. Please "
 					+ "use 'spring.cloud.function.definition' property to explicitly define it.");
