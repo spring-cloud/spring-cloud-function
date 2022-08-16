@@ -784,7 +784,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 					}
 					else {
 						Map<String, Object> headersMap = new HashMap<>(((Message) result).getHeaders());
-						this.sanitizeHeaders(((Message) result).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
+						this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
 						result = MessageBuilder.withPayload(((Message) result).getPayload()).copyHeaders(headersMap).build();
 					}
 				}

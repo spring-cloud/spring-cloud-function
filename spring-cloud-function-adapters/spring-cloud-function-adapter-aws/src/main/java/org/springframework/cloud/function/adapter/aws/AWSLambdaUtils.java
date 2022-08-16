@@ -46,6 +46,9 @@ public final class AWSLambdaUtils {
 
 	static final String AWS_EVENT = "aws-event";
 
+	/**
+	 * The name of the headers that stores AWS Context object.
+	 */
 	public static final String AWS_CONTEXT = "aws-context";
 
 	private AWSLambdaUtils() {
