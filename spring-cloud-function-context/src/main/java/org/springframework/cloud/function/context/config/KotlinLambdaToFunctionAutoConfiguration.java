@@ -98,9 +98,6 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			if (ObjectUtils.isEmpty(input)) {
 				return this.invoke();
 			}
-			else if (ObjectUtils.isArray(input)) {
-				return null;
-			}
 			else {
 				return this.invoke(input);
 			}

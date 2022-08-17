@@ -186,8 +186,6 @@ public final class FunctionTypeUtils {
 
 	@SuppressWarnings("unchecked")
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
-		Assert.isTrue(isFunctional(functionalClass), "Type must be one of Supplier, Function or Consumer");
-
 		if (Function.class.isAssignableFrom(functionalClass)) {
 			for (Type superInterface : functionalClass.getGenericInterfaces()) {
 				if (superInterface != null && !superInterface.equals(Object.class)) {
