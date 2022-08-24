@@ -753,11 +753,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					if (functionInvocationHelper != null && CloudEventMessageUtils.isCloudEvent(((Message) input))) {
 						result = functionInvocationHelper.postProcessResult(result, (Message) input);
 					}
-					else {
-						Map<String, Object> headersMap = new HashMap<>(((Message) result).getHeaders());
-						this.sanitizeHeaders(((Message) input).getHeaders()).forEach((k, v) -> headersMap.putIfAbsent(k, v));
-						result = MessageBuilder.withPayload(((Message) result).getPayload()).copyHeaders(headersMap).build();
-					}
 				}
 				else {
 					if (functionInvocationHelper != null && CloudEventMessageUtils.isCloudEvent(((Message) input))) {
