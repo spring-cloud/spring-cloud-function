@@ -156,6 +156,17 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(c.size()).isEqualTo(2);
 	}
 
+	@Test
+	public void testReturnedMessageIsUnmodified() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog();
+		Function<Message<String>, Message<byte[]>> function = catalog.lookup("uppercaseMessage", "application/json");
+		assertThat(function).isNotNull();
+
+		Message<byte[]> result = function.apply(MessageBuilder.withPayload("bob").setHeader("foo", "foo").build());
+		assertThat(result.getHeaders().containsKey("foo")).isFalse();
+		assertThat(result.getHeaders().containsKey("bar")).isTrue();
+	}
+
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testDefaultLookup() throws Exception {
@@ -1076,6 +1087,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<Message<String>, Message<String>> uppercaseMessage() {
+			return message -> {
+				Message<String> result = MessageBuilder.fromMessage(message)
+					.removeHeader("foo").setHeader("bar", "bar").build();
+				return result;
+			};
 		}
 
 		@Bean
