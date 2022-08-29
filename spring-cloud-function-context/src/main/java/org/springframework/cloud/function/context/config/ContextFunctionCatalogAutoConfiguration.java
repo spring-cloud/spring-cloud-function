@@ -40,9 +40,6 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
-import org.springframework.cloud.function.context.converter.avro.AvroSchemaMessageConverter;
-import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManager;
-import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
@@ -158,23 +155,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 		@ConditionalOnMissingBean
 		public CloudEventMessageConverter cloudEventMessageConverter() {
 			return new CloudEventMessageConverter();
-		}
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(name = "org.apache.avro.Schema")
-	static class AvroSchemaMessageConverterConfiguration {
-
-		@Bean
-		@ConditionalOnMissingBean
-		public AvroSchemaServiceManager avroSchemaServiceManager() {
-			return new AvroSchemaServiceManagerImpl();
-		}
-
-		@Bean
-		@ConditionalOnMissingBean
-		public AvroSchemaMessageConverter avroSchemaMessageConverter(AvroSchemaServiceManager avroSchemaServiceManager) {
-			return new AvroSchemaMessageConverter(avroSchemaServiceManager);
 		}
 	}
 
