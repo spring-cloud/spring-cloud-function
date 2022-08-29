@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.context.config;
 
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
-import org.apache.avro.Schema;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -26,8 +25,6 @@ import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistry;
-import org.springframework.cloud.function.context.converter.avro.AvroSchemaMessageConverter;
-import org.springframework.cloud.function.context.converter.avro.AvroSchemaServiceManager;
 import org.springframework.cloud.function.context.scan.TestFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,37 +44,6 @@ public class ContextFunctionCatalogAutoConfigurationConditionalLoadingTests {
 	void autoConfigDisabledWhenCustomFunctionCatalogExists() {
 		contextRunner.withBean(FunctionCatalog.class, () -> mock(FunctionCatalog.class))
 			.run((context) -> assertThat(context).doesNotHaveBean(FunctionRegistry.class));
-	}
-
-	@Nested
-	class AvroSchemaMessageConverterConfig {
-
-		@Test
-		void avroSchemaMessageConverterBeansLoadedWhenAvroOnClasspath() {
-			contextRunner.run((context) -> assertThat(context).hasSingleBean(AvroSchemaServiceManager.class)
-				.hasSingleBean(AvroSchemaMessageConverter.class));
-		}
-
-		@Test
-		void avroSchemaMessageConverterBeansNotLoadedWhenAvroNotOnClasspath() {
-			contextRunner.withClassLoader(new FilteredClassLoader(Schema.class)).run((context) ->
-				assertThat(context).doesNotHaveBean(AvroSchemaServiceManager.class)
-					.doesNotHaveBean(AvroSchemaMessageConverter.class));
-		}
-
-		@Test
-		void customAvroSchemaServiceManagerIsRespected() {
-			AvroSchemaServiceManager customManager = mock(AvroSchemaServiceManager.class);
-			contextRunner.withBean(AvroSchemaServiceManager.class, () -> customManager)
-				.run((context) -> assertThat(context).getBean(AvroSchemaServiceManager.class).isSameAs(customManager));
-		}
-
-		@Test
-		void customAvroSchemaMessageConverterIsRespected() {
-			AvroSchemaMessageConverter customConverter = mock(AvroSchemaMessageConverter.class);
-			contextRunner.withBean(AvroSchemaMessageConverter.class, () -> customConverter)
-				.run((context) -> assertThat(context).getBean(AvroSchemaMessageConverter.class).isSameAs(customConverter));
-		}
 	}
 
 	@Nested
