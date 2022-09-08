@@ -231,15 +231,16 @@ public final class CloudEventMessageUtils {
 		inputMessage = canonicalizeHeadersWithPossibleCopy(inputMessage);
 		Map<String, Object> headers = new HashMap<>(inputMessage.getHeaders());
 
-		if (isCloudEvent(inputMessage) && headers.containsKey("content-type")) {
+		boolean isCloudEvent = isCloudEvent(inputMessage);
+		if (isCloudEvent && headers.containsKey("content-type")) {
 			inputMessage = MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, headers.get("content-type")).build();
 		}
-
+		MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
 		String inputContentType = (String) inputMessage.getHeaders().get(DATACONTENTTYPE);
 		// first check the obvious and see if content-type is `cloudevents`
-		if (!isCloudEvent(inputMessage) && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+		if (!isCloudEvent && contentType != null) {
 			// structured-mode
-			MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
+
 			if (contentType.getType().equals(APPLICATION_CLOUDEVENTS.getType()) && contentType
 					.getSubtype().startsWith(APPLICATION_CLOUDEVENTS.getSubtype())) {
 
@@ -254,7 +255,6 @@ public final class CloudEventMessageUtils {
 						.setHeader(DATACONTENTTYPE, dataContentType).build();
 				Map<String, Object> structuredCloudEvent = (Map<String, Object>) messageConverter
 						.fromMessage(cloudEventMessage, Map.class);
-
 				canonicalizeHeaders(structuredCloudEvent, true);
 				return buildBinaryMessageFromStructuredMap(structuredCloudEvent,
 						inputMessage.getHeaders());
