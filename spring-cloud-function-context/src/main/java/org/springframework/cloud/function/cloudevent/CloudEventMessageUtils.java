@@ -32,6 +32,7 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
@@ -228,15 +229,16 @@ public final class CloudEventMessageUtils {
 	static Message<?> toCanonical(Message<?> inputMessage, MessageConverter messageConverter) {
 		Map<String, Object> headers = new HashMap<>(inputMessage.getHeaders());
 		canonicalizeHeaders(headers, false);
-		if (isCloudEvent(inputMessage) && headers.containsKey("content-type")) {
+		boolean isCloudEvent = isCloudEvent(inputMessage);
+		if (isCloudEvent && headers.containsKey("content-type")) {
 			inputMessage = MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, headers.get("content-type")).build();
 		}
 
 		String inputContentType = (String) inputMessage.getHeaders().get(DATACONTENTTYPE);
+		MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
 		// first check the obvious and see if content-type is `cloudevents`
-		if (!isCloudEvent(inputMessage) && headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+		if (!isCloudEvent && contentType != null) {
 			// structured-mode
-			MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
 			if (contentType.getType().equals(APPLICATION_CLOUDEVENTS.getType()) && contentType
 					.getSubtype().startsWith(APPLICATION_CLOUDEVENTS.getSubtype())) {
 
@@ -251,7 +253,7 @@ public final class CloudEventMessageUtils {
 						.setHeader(DATACONTENTTYPE, dataContentType).build();
 				Map<String, Object> structuredCloudEvent = (Map<String, Object>) messageConverter
 						.fromMessage(cloudEventMessage, Map.class);
-
+				Assert.notEmpty(structuredCloudEvent, "Failed to convert CloudEvent from structured mode");
 				canonicalizeHeaders(structuredCloudEvent, true);
 				return buildBinaryMessageFromStructuredMap(structuredCloudEvent,
 						inputMessage.getHeaders());

@@ -391,6 +391,7 @@ public class CloudEventFunctionTests {
 		Function<Message<SpringReleaseEvent>, Message<SpringReleaseEvent>> springReleaseAsMessage() {
 			return message -> {
 				SpringReleaseEvent updated = springRelease().apply(message.getPayload());
+				assertThat(message.getHeaders().get("ce-type")).isEqualTo("org.springframework");
 				return CloudEventMessageBuilder.withData(updated)
 						.copyHeaders(message.getHeaders())
 						.setSource("https://spring.release.event")
