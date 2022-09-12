@@ -57,7 +57,7 @@ enum FunctionObservation implements DocumentedObservation {
 		 */
 		FUNCTION_NAME {
 			public String asString() {
-				return "spring.cloud.function.name";
+				return "spring.cloud.function.definition";
 			}
 		}
 
