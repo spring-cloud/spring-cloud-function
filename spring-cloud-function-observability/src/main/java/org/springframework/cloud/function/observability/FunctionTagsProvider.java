@@ -17,14 +17,15 @@
 package org.springframework.cloud.function.observability;
 
 import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationConvention;
 
 /**
- * {@link Observation.KeyValuesProvider} for {@link FunctionContext}.
+ * {@link ObservationConvention} for {@link FunctionContext}.
  *
  * @author Marcin Grzejszczak
  * @author Oleg Zhurakousky
  */
-public interface FunctionTagsProvider extends Observation.KeyValuesProvider<FunctionContext> {
+public interface FunctionTagsProvider extends ObservationConvention<FunctionContext> {
 
 	@Override
 	default boolean supportsContext(Observation.Context context) {

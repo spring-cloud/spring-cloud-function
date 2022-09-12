@@ -68,7 +68,7 @@ public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
 		Object result = Observation
 			.createNotStarted(FunctionObservation.FUNCTION_OBSERVATION.getName(), context, this.observationRegistry)
 			.contextualName(FunctionObservation.FUNCTION_OBSERVATION.getContextualName())
-			.keyValuesProvider(tagsProvider)
+			//.keyValuesProvider(tagsProvider)
 			.observe(() -> {
 				Object r = message == null ? targetFunction.get() : targetFunction.apply(invocationMessage);
 				context.setModifiedOutput(r);
