@@ -21,6 +21,6 @@ import io.micrometer.common.KeyValues;
 public class DefaultFunctionTagsProvider implements FunctionTagsProvider {
 	@Override
 	public KeyValues getLowCardinalityKeyValues(FunctionContext context) {
-		return KeyValues.of(FunctionObservation.FunctionLowCardinalityTags.FUNCTION_NAME.of(context.getTargetFunction().getFunctionDefinition()));
+		return KeyValues.of(FunctionObservation.FunctionLowCardinalityTags.FUNCTION_NAME.withValue(context.getTargetFunction().getFunctionDefinition()));
 	}
 }

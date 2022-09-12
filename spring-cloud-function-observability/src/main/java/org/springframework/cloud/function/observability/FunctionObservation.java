@@ -56,8 +56,7 @@ enum FunctionObservation implements DocumentedObservation {
 		 * Name of the function.
 		 */
 		FUNCTION_NAME {
-			@Override
-			public String getKeyName() {
+			public String asString() {
 				return "spring.cloud.function.name";
 			}
 		}
