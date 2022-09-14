@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.context.annotation.ScannedGenericBeanDefinition;
-import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.ClassUtils;
@@ -51,8 +49,7 @@ public abstract class FunctionContextUtils {
 		String actualName = null;
 		for (String name : names) {
 			if (registry.containsBeanDefinition(name)) {
-				definition = (AbstractBeanDefinition) registry
-						.getBeanDefinition(name);
+				definition = (AbstractBeanDefinition) registry.getBeanDefinition(name);
 				actualName = name;
 			}
 			else if (registry.containsBean(name)) {
@@ -62,15 +59,6 @@ public abstract class FunctionContextUtils {
 
 		if (definition == null) {
 			return null;
-		}
-		else if (definition instanceof ScannedGenericBeanDefinition) {
-			try {
-				return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
-			}
-			catch (Exception e) {
-				// ignore since name may not be actually resolved to a class in some cases
-				// java.lang.IllegalStateException: Bean class name [functions.Greeter] has not been resolved into an actual Class
-			}
 		}
 
 		Object source = definition.getSource();
@@ -82,13 +70,7 @@ public abstract class FunctionContextUtils {
 		else if (source instanceof Resource) {
 			param = registry.getType(actualName);
 		}
-		else {
-			ResolvableType type = (ResolvableType) getField(definition, "targetType");
-			if (type != null) {
-				param = type.getType();
-			}
-		}
-		return param;
+		return param != null ? param : definition.getResolvableType().getType();
 	}
 
 	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
