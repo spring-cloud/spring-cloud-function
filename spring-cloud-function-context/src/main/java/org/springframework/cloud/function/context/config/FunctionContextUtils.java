@@ -104,6 +104,10 @@ public abstract class FunctionContextUtils {
 				}
 			}
 		}
+
+		if (!(param instanceof ParameterizedType) && definition.hasBeanClass()) {
+			return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
+		}
 		return param;
 	}
 
