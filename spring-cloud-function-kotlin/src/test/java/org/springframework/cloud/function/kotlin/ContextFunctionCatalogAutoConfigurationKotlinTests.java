@@ -55,9 +55,16 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 	@Test
 	public void typeDiscoveryTests() {
 		create(new Class[] { KotlinLambdasConfiguration.class,
-				SimpleConfiguration.class });
+				SimpleConfiguration.class,
+				KotlinComponentFunction.class});
 
 		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
+
+		FunctionInvocationWrapper kotlinComponentFunction = functionCatalog.lookup("kotlinComponentFunction");
+		assertThat(kotlinComponentFunction.isFunction()).isTrue();
+		assertThat(kotlinComponentFunction.getInputType().getTypeName()).isEqualTo("java.lang.String");
+		assertThat(kotlinComponentFunction.getOutputType().getTypeName()).isEqualTo("java.lang.String");
+		assertThat(kotlinComponentFunction.apply("bob")).isEqualTo("BOB");
 
 		FunctionInvocationWrapper kotlinFunction = functionCatalog.lookup("kotlinFunction");
 		assertThat(kotlinFunction.isFunction()).isTrue();
