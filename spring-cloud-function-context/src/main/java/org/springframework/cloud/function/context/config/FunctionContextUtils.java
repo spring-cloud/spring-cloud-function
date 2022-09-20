@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -70,7 +71,17 @@ public abstract class FunctionContextUtils {
 		else if (source instanceof Resource) {
 			param = registry.getType(actualName);
 		}
-		return param != null ? param : definition.getResolvableType().getType();
+
+		if (param != null) {
+			return param;
+		}
+		else {
+			Type t = definition.getResolvableType().getType();
+			if (t instanceof ParameterizedType) {
+				return t;
+			}
+			return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
+		}
 	}
 
 	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
