@@ -40,6 +40,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
@@ -79,10 +80,6 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 	public static final class KotlinFunctionWrapper implements Function<Object, Object>, Supplier<Object>, Consumer<Object>,
 			Function0<Object>, Function1<Object, Object>, Function2<Object, Object, Object>,
 			Function3<Object, Object, Object, Object>, Function4<Object, Object, Object, Object, Object> {
-//			FactoryBean<FunctionRegistration>,
-//			BeanNameAware,
-//			BeanFactoryAware {
-
 		private final Object kotlinLambdaTarget;
 
 		private String name;
@@ -123,7 +120,10 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			if (CoroutinesUtils.isValidSuspendingFunction(kotlinLambdaTarget, arg0)) {
 				return CoroutinesUtils.invokeSuspendingFunction(kotlinLambdaTarget, arg0);
 			}
-			return ((Function1) this.kotlinLambdaTarget).invoke(arg0);
+			if (this.kotlinLambdaTarget instanceof Function1) {
+				return ((Function1) this.kotlinLambdaTarget).invoke(arg0);
+			}
+			return ((Function) this.kotlinLambdaTarget).apply(arg0);
 		}
 
 		@Override
@@ -131,7 +131,10 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			if (CoroutinesUtils.isValidSuspendingSupplier(kotlinLambdaTarget)) {
 				return CoroutinesUtils.invokeSuspendingSupplier(kotlinLambdaTarget);
 			}
-			return ((Function0) this.kotlinLambdaTarget).invoke();
+			if (this.kotlinLambdaTarget instanceof Function0) {
+				return ((Function0) this.kotlinLambdaTarget).invoke();
+			}
+			return ((Supplier) this.kotlinLambdaTarget).get();
 		}
 
 		@Override
@@ -191,7 +194,9 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 					ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(continuationArgType))
 				).getType();
 			}
-			else {
+			else if (!FunctionTypeUtils.isFunction(functionType)
+					&& !FunctionTypeUtils.isConsumer(functionType)
+					&& !FunctionTypeUtils.isSupplier(functionType)) {
 				throw new UnsupportedOperationException("Multi argument Kotlin functions are not currently supported");
 			}
 			registration = registration.type(functionType);
