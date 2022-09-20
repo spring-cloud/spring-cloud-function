@@ -77,10 +77,10 @@ public abstract class FunctionContextUtils {
 		}
 		else {
 			Type t = definition.getResolvableType().getType();
-			if (t instanceof ParameterizedType) {
-				return t;
+			if (!(t instanceof ParameterizedType) && definition.hasBeanClass()) {
+				return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
 			}
-			return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
+			return param;
 		}
 	}
 
