@@ -166,6 +166,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(name = "org.apache.avro.Schema")
+	@ConditionalOnProperty(value = "spring.cloud.stream.avro.enabled", havingValue = "true", matchIfMissing = true)
 	static class AvroSchemaMessageConverterConfiguration {
 
 		@Bean

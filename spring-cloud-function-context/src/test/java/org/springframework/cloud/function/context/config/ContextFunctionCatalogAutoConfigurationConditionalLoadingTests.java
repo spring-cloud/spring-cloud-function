@@ -37,6 +37,7 @@ import static org.mockito.Mockito.mock;
  * Tests the conditional loading aspects of the {@link ContextFunctionCatalogAutoConfiguration}.
  *
  * @author Chris Bono
+ * @author Soby Chacko
  */
 public class ContextFunctionCatalogAutoConfigurationConditionalLoadingTests {
 
@@ -56,6 +57,13 @@ public class ContextFunctionCatalogAutoConfigurationConditionalLoadingTests {
 		void avroSchemaMessageConverterBeansLoadedWhenAvroOnClasspath() {
 			contextRunner.run((context) -> assertThat(context).hasSingleBean(AvroSchemaServiceManager.class)
 				.hasSingleBean(AvroSchemaMessageConverter.class));
+		}
+
+		@Test
+		void avroSchemaMessageConverterBeansNotLoadedWhenAvroOnClasspathButDisabledThroughProperty() {
+			contextRunner.withPropertyValues("spring.cloud.stream.avro.enabled:false")
+				.run((context) -> assertThat(context).doesNotHaveBean(AvroSchemaServiceManager.class)
+					.doesNotHaveBean(AvroSchemaMessageConverter.class));
 		}
 
 		@Test
