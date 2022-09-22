@@ -1,0 +1,2 @@
+org.springframework.cloud.function.rsocket.RSocketAutoConfiguration
+org.springframework.cloud.function.rsocket.RSocketCustomizerConfiguration
