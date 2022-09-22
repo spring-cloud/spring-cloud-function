@@ -80,7 +80,7 @@ public abstract class FunctionContextUtils {
 			if (!(t instanceof ParameterizedType) && definition.hasBeanClass()) {
 				return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
 			}
-			return param;
+			return t;
 		}
 	}
 
