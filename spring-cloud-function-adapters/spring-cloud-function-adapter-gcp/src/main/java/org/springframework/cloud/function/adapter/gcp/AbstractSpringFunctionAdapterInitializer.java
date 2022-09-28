@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.context;
+package org.springframework.cloud.function.adapter.gcp;
 
 import java.io.Closeable;
 import java.lang.reflect.Type;
@@ -37,6 +37,9 @@ import reactor.core.publisher.Mono;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -60,11 +63,10 @@ import org.springframework.util.CollectionUtils;
  * @author Oleg Zhurakousky
  * @since 2.1
  *
- * @deprecated since 3.1 in favor of individual implementations of invokers
+ * NOTE: Moved from core package. Onl used by GCP
  */
 @SuppressWarnings("rawtypes")
-@Deprecated
-public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Closeable {
+abstract class AbstractSpringFunctionAdapterInitializer<C> implements Closeable {
 
 	private static Log logger = LogFactory.getLog(AbstractSpringFunctionAdapterInitializer.class);
 
@@ -97,12 +99,12 @@ public abstract class AbstractSpringFunctionAdapterInitializer<C> implements Clo
 		return context;
 	}
 
-	public AbstractSpringFunctionAdapterInitializer(Class<?> configurationClass) {
+	AbstractSpringFunctionAdapterInitializer(Class<?> configurationClass) {
 		Assert.notNull(configurationClass, "'configurationClass' must not be null");
 		this.configurationClass = configurationClass;
 	}
 
-	public AbstractSpringFunctionAdapterInitializer() {
+	AbstractSpringFunctionAdapterInitializer() {
 		this(FunctionClassUtils.getStartClass());
 	}
 
