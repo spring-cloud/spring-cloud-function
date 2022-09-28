@@ -31,7 +31,6 @@ import com.google.cloud.functions.RawBackgroundFunction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.function.context.AbstractSpringFunctionAdapterInitializer;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
