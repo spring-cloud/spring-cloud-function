@@ -36,11 +36,6 @@ public class GsonMapper extends JsonMapper {
 	}
 
 	@Override
-	public <T> T toObject(String json, Type type) {
-		return this.fromJson(json, type);
-	}
-
-	@Override
 	public String toString(Object value) {
 		return this.gson.toJson(value);
 	}

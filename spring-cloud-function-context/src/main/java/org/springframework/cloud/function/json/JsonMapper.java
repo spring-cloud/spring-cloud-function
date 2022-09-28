@@ -28,8 +28,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.core.ResolvableType;
-
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -37,32 +35,6 @@ import org.springframework.core.ResolvableType;
 public abstract class JsonMapper {
 
 	private static Log logger = LogFactory.getLog(JsonMapper.class);
-
-	/**
-	 * @param <T>  type for list arguments
-	 * @param json JSON input
-	 * @param type type of list arguments
-	 * @return list of elements
-	 * @deprecated since v2.0 in favor of {@link #toObject(String, Type)}
-	 */
-	@Deprecated
-	<T> List<T> toList(String json, Class<T> type) {
-		Type actualType = (json.startsWith("[") && !List.class.isAssignableFrom(type))
-				? ResolvableType.forClassWithGenerics(ArrayList.class, (Class<?>) type).getType()
-				: type;
-		return toObject(json, actualType);
-	}
-
-	/**
-	 * @param <T>  return type
-	 * @param json JSON input
-	 * @param type type
-	 * @return object
-	 * @since 2.0
-	 * @deprecated since v3.0.4 in favor of {@link #fromJson(Object, Type)}
-	 */
-	@Deprecated
-	abstract <T> T toObject(String json, Type type);
 
 	@SuppressWarnings("unchecked")
 	public <T> T fromJson(Object json, Type type) {
@@ -108,18 +80,6 @@ public abstract class JsonMapper {
 			result = ((String) value).getBytes(StandardCharsets.UTF_8);
 		}
 		return result;
-	}
-
-	/**
-	 * @param <T>  type for list arguments
-	 * @param json JSON input
-	 * @param type type of list arguments
-	 * @return single object
-	 * @deprecated since v2.0 in favor of {@link #toObject(String, Type)}
-	 */
-	@Deprecated
-	<T> T toSingle(String json, Class<T> type) {
-		return toObject(json, type);
 	}
 
 	public abstract String toString(Object value);
