@@ -241,6 +241,8 @@ shadowJar {
 	append 'META-INF/spring.handlers'
 	append 'META-INF/spring.schemas'
 	append 'META-INF/spring.tooling'
+	append 'META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports'
+	append 'META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports'
 	transform(PropertiesFileTransformer) {
 		paths = ['META-INF/spring.factories']
 		mergeStrategy = "append"
