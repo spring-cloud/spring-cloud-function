@@ -38,11 +38,6 @@ public class JacksonMapper extends JsonMapper {
 		this.mapper = mapper;
 	}
 
-	@Override
-	public <T> T toObject(String json, Type type) {
-		return this.fromJson(json, type);
-	}
-
 	public void configureObjectMapper(Consumer<ObjectMapper> configurer) {
 		configurer.accept(mapper);
 	}
