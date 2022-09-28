@@ -106,7 +106,9 @@ manifest, using the `Start-Class` attribute (which will be added for you by the 
 tooling if you use the starter parent). If there is no `Start-Class` in your manifest you can
 use an environment variable or system property `MAIN_CLASS` when you deploy the function to AWS.
 
-If you are not using the functional bean definitions but relying on Spring Boot's auto-configuration, and are not depending on `spring-boot-starter-parent`, then additional transformers must be configured as part of the maven-shade-plugin execution.
+If you are not using the functional bean definitions but relying on Spring Boot's auto-configuration,
+and are not depending on `spring-boot-starter-parent`,
+then additional transformers must be configured as part of the maven-shade-plugin execution.
 
 [[shade-plugin-setup]]
 [source, xml]
