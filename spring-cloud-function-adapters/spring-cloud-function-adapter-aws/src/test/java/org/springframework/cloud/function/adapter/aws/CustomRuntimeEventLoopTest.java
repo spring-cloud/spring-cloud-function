@@ -115,7 +115,7 @@ public class CustomRuntimeEventLoopTest {
 	}
 
 	@EnableAutoConfiguration
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class MultipleFunctionConfiguration {
 		@Bean
 		public Function<String, String> uppercase() {
