@@ -56,7 +56,7 @@ import org.springframework.util.ObjectUtils;
  * @author Dmitriy Tsypov
  * @since 2.0
  */
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @ConditionalOnClass(name = "kotlin.jvm.functions.Function0")
 public class KotlinLambdaToFunctionAutoConfiguration {
 
