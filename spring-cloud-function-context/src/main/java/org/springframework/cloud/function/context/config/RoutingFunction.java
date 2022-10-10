@@ -160,18 +160,16 @@ public class RoutingFunction implements Function<Object, Object> {
 			}
 		}
 		else if (input instanceof Publisher) {
-			if (function == null) {
-				if (StringUtils.hasText(functionProperties.getDefinition())) {
-					function = functionFromDefinition(functionProperties.getDefinition());
-				}
-				else if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
-					function = this.functionFromExpression(functionProperties.getRoutingExpression(), input);
-				}
-				else {
-					return input instanceof Mono
+			if (StringUtils.hasText(functionProperties.getDefinition())) {
+				function = functionFromDefinition(functionProperties.getDefinition());
+			}
+			else if (StringUtils.hasText(functionProperties.getRoutingExpression())) {
+				function = this.functionFromExpression(functionProperties.getRoutingExpression(), input);
+			}
+			else {
+				return input instanceof Mono
 							? Mono.from((Publisher<?>) input).map(v -> route(v, originalInputIsPublisher))
 									: Flux.from((Publisher<?>) input).map(v -> route(v, originalInputIsPublisher));
-				}
 			}
 		}
 		else {
