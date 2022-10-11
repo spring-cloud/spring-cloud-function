@@ -66,7 +66,7 @@ public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
 		FunctionContext context = new FunctionContext(targetFunction).withInput(message);
 		Object invocationMessage = context.getModifiedInput();
 		Object result = Observation
-			.createNotStarted(FunctionObservation.FUNCTION_OBSERVATION.getName(), context, this.observationRegistry)
+			.createNotStarted(FunctionObservation.FUNCTION_OBSERVATION.getName(), () -> context, this.observationRegistry)
 			.contextualName(FunctionObservation.FUNCTION_OBSERVATION.getContextualName())
 			.observe(() -> {
 				Object r = message == null ? targetFunction.get() : targetFunction.apply(invocationMessage);

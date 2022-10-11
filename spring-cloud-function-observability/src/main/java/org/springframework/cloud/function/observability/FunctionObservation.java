@@ -17,14 +17,14 @@
 package org.springframework.cloud.function.observability;
 
 import io.micrometer.common.docs.KeyName;
-import io.micrometer.observation.docs.DocumentedObservation;
+import io.micrometer.observation.docs.ObservationDocumentation;
 
 /**
  * @author Marcin Grzejszczak
  * @author Oleg Zhurakousky
  * @since 4.0.0
  */
-enum FunctionObservation implements DocumentedObservation {
+enum FunctionObservation implements ObservationDocumentation {
 	/**
 	 * Observation created around a function execution.
 	 */

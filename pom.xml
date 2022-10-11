@@ -28,7 +28,15 @@
 		<maven-checkstyle-plugin.includeTestSourceDirectory>true
 		</maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
-
+	
+	<dependencies>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>context-propagation</artifactId>
+			<version>1.0.0-RC1</version>
+		</dependency>
+	</dependencies>
+	
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
