@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.context.config;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
