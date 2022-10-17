@@ -1,0 +1,16 @@
+{
+    "functionTimeout": "00:05:00",
+    "version": "2.0",
+    "extensions": {
+        "kafka": {
+            "maxBatchSize": 64,
+            "SubscriberIntervalInSeconds": 1,
+            "ExecutorChannelCapacity": 1,
+            "ChannelFullRetryIntervalInMs": 50
+        }
+    },
+    "extensionBundle": {
+        "id": "Microsoft.Azure.Functions.ExtensionBundle",
+        "version": "[3.3.0, 4.0.0)"
+    }
+}
