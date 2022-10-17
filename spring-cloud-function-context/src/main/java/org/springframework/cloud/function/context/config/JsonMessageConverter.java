@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -75,7 +78,13 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+		if (conversionHint instanceof ParameterizedTypeReference<?>) {
+			conversionHint = ((ParameterizedTypeReference<?>) conversionHint).getType();
+		}
 		Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
+		if (convertToType == Object.class) {
+			return message.getPayload();
+		}
 		if (targetClass == byte[].class && message.getPayload() instanceof String) {
 			return ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8);
 		}
@@ -84,7 +93,7 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 				return this.jsonMapper.fromJson(message.getPayload(), convertToType);
 			}
 			catch (Exception e) {
-				if (message.getPayload() instanceof byte[] && targetClass.isAssignableFrom(String.class)) {
+				if (message.getPayload() instanceof byte[] && String.class.isAssignableFrom(targetClass)) {
 					return new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
 				}
 				else if (logger.isDebugEnabled()) {
