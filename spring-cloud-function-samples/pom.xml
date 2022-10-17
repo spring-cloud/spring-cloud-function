@@ -25,6 +25,8 @@
 		<module>function-sample-aws-custom-bean</module>
 		<module>function-sample-supplier-exporter</module>
 		<module>function-sample-azure</module>
+		<module>function-sample-azure-timer-trigger</module>
+		<module>function-sample-azure-kafka-trigger</module>
 		<module>function-sample-spring-integration</module>
 		<module>function-sample-gcp-http</module>
  		<module>function-sample-gcp-background</module>
