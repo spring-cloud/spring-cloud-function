@@ -556,7 +556,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
 				logger.debug("Invoking function " + this);
 			}
-			Object result = (this.getTarget() instanceof PassThruFunction) ? input : this.doApply(input);
+			//Object result = (this.getTarget() instanceof PassThruFunction) ? input : this.doApply(input);
+
+			Object result = this.doApply(input);
 
 			if (result != null && this.outputType != null) {
 				result = this.convertOutputIfNecessary(result, this.outputType, this.expectedOutputContentType);

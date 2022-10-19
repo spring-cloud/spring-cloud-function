@@ -2,3 +2,5 @@ org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConf
 org.springframework.cloud.function.cloudevent.CloudEventsFunctionExtensionConfiguration
 org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration
 org.springframework.cloud.function.context.config.FunctionsEndpointAutoConfiguration
+org.springframework.cloud.function.context.config.ObservabilityAutoConfiguration
+org.springframework.cloud.function.observability.ObservationAutoConfiguration
