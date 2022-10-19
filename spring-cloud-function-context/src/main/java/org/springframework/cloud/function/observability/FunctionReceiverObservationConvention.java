@@ -20,15 +20,16 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationConvention;
 
 /**
- * {@link ObservationConvention} for {@link FunctionContext}.
+ * {@link ObservationConvention} for {@link FunctionReceiverContext}.
  *
  * @author Marcin Grzejszczak
  * @author Oleg Zhurakousky
+ * @since 4.0.0
  */
-public interface FunctionTagsProvider extends ObservationConvention<FunctionContext> {
+public interface FunctionReceiverObservationConvention extends ObservationConvention<FunctionReceiverContext> {
 
 	@Override
 	default boolean supportsContext(Observation.Context context) {
-		return context instanceof FunctionContext;
+		return context instanceof FunctionReceiverContext;
 	}
 }
