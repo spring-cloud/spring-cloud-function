@@ -90,28 +90,31 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 	@SuppressWarnings("unchecked")
 	private byte[] buildResult(Message<?> requestMessage, Object output) throws IOException {
-		Message<byte[]> responseMessage;
+		Message<byte[]> responseMessage = null;
 		if (output instanceof Publisher<?>) {
 			List<Object> result = new ArrayList<>();
 			for (Object value : Flux.from((Publisher<?>) output).toIterable()) {
-				if (logger.isInfoEnabled()) {
-					logger.info("Response value: " + value);
+				if (logger.isDebugEnabled()) {
+					logger.debug("Response value: " + value);
 				}
 				result.add(value);
 			}
 			if (result.size() > 1) {
 				output = result;
 			}
-			else {
+			else if (result.size() == 1) {
 				output = result.get(0);
 			}
-
-			if (logger.isInfoEnabled()) {
-				logger.info("OUTPUT: " + output + " - " + output.getClass().getName());
+			else {
+				output = null;
 			}
-
-			byte[] payload = this.jsonMapper.toJson(output);
-			responseMessage = MessageBuilder.withPayload(payload).build();
+			if (output != null) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("OUTPUT: " + output + " - " + output.getClass().getName());
+				}
+				byte[] payload = this.jsonMapper.toJson(output);
+				responseMessage = MessageBuilder.withPayload(payload).build();
+			}
 		}
 		else {
 			responseMessage = (Message<byte[]>) output;
