@@ -18,9 +18,31 @@ package org.springframework.cloud.function.observability;
 
 import io.micrometer.common.KeyValues;
 
-public class DefaultFunctionTagsProvider implements FunctionTagsProvider {
+/**
+ * Default implementation of {@link FunctionReceiverObservationConvention}.
+ *
+ * @author Marcin Grzejszczak
+ * @since 4.0.0
+ */
+public class DefaultFunctionReceiverObservationConvention implements FunctionReceiverObservationConvention {
+
+	/**
+	 * Singleton instance of this convention.
+	 */
+	public static final FunctionReceiverObservationConvention INSTANCE = new DefaultFunctionReceiverObservationConvention();
+
 	@Override
-	public KeyValues getLowCardinalityKeyValues(FunctionContext context) {
+	public KeyValues getLowCardinalityKeyValues(FunctionReceiverContext context) {
 		return KeyValues.of(FunctionObservation.FunctionLowCardinalityTags.FUNCTION_NAME.withValue(context.getTargetFunction().getFunctionDefinition()));
+	}
+
+	@Override
+	public String getName() {
+		return "spring.cloud.function.receive";
+	}
+
+	@Override
+	public String getContextualName(FunctionReceiverContext context) {
+		return context.getTargetFunction().getFunctionDefinition() + " receive";
 	}
 }

@@ -16,25 +16,19 @@
 
 package org.springframework.cloud.function.observability;
 
-import io.micrometer.observation.ObservationRegistry;
-
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationConvention;
 
 /**
+ * {@link ObservationConvention} for {@link FunctionSenderContext}.
  *
+ * @author Marcin Grzejszczak
  * @author Oleg Zhurakousky
- *
  */
-@Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(ObservationRegistry.class)
-public class ObservationAutoConfiguration {
+public interface FunctionSenderObservationConvention extends ObservationConvention<FunctionSenderContext> {
 
-	@Bean
-	@ConditionalOnMissingBean
-	public ObservationFunctionAroundWrapper observationFunctionAroundWrapper(ObservationRegistry registry) {
-		return new ObservationFunctionAroundWrapper(registry);
+	@Override
+	default boolean supportsContext(Observation.Context context) {
+		return context instanceof FunctionSenderContext;
 	}
 }

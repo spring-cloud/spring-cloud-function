@@ -24,8 +24,9 @@ import io.micrometer.observation.ObservationConvention;
  *
  * @author Marcin Grzejszczak
  * @author Oleg Zhurakousky
+ * @since 4.0.0
  */
-public interface FunctionTagsProvider extends ObservationConvention<FunctionContext> {
+public interface FunctionObservationConvention extends ObservationConvention<FunctionContext> {
 
 	@Override
 	default boolean supportsContext(Observation.Context context) {

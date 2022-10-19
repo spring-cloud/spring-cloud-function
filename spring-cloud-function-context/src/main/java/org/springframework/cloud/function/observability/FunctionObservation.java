@@ -17,6 +17,8 @@
 package org.springframework.cloud.function.observability;
 
 import io.micrometer.common.docs.KeyName;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.docs.ObservationDocumentation;
 
 /**
@@ -26,17 +28,52 @@ import io.micrometer.observation.docs.ObservationDocumentation;
  */
 enum FunctionObservation implements ObservationDocumentation {
 	/**
-	 * Observation created around a function execution.
+	 * Observation created around receiving a message (via consumer or function).
 	 */
-	FUNCTION_OBSERVATION {
+	FUNCTION_CONSUMER_OBSERVATION {
 		@Override
-		public String getName() {
-			return "spring.cloud.function";
+		public Class<? extends ObservationConvention<? extends Observation.Context>> getDefaultConvention() {
+			return DefaultFunctionReceiverObservationConvention.class;
 		}
 
 		@Override
-		public String getContextualName() {
-			return "function";
+		public KeyName[] getLowCardinalityKeyNames() {
+			return FunctionLowCardinalityTags.values();
+		}
+
+		@Override
+		public String getPrefix() {
+			return "spring.cloud.function";
+		}
+	},
+
+	/**
+	 * Observation created around producing a message (via supplier or function).
+	 */
+	FUNCTION_PRODUCER_OBSERVATION {
+		@Override
+		public Class<? extends ObservationConvention<? extends Observation.Context>> getDefaultConvention() {
+			return DefaultFunctionSenderObservationConvention.class;
+		}
+
+		@Override
+		public KeyName[] getLowCardinalityKeyNames() {
+			return FunctionLowCardinalityTags.values();
+		}
+
+		@Override
+		public String getPrefix() {
+			return "spring.cloud.function";
+		}
+	},
+
+	/**
+	 * Observation created around processing a message (functional bean processing).
+	 */
+	FUNCTION_PROCESSING_OBSERVATION {
+		@Override
+		public Class<? extends ObservationConvention<? extends Observation.Context>> getDefaultConvention() {
+			return DefaultFunctionObservationConvention.class;
 		}
 
 		@Override

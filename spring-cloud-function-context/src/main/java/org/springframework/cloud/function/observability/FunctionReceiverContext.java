@@ -16,22 +16,25 @@
 
 package org.springframework.cloud.function.observability;
 
-import io.micrometer.observation.Observation;
+import io.micrometer.observation.transport.ReceiverContext;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
+import org.springframework.messaging.Message;
 
 /**
- * {@link Observation.Context} for function processing.
+ * {@link ReceiverContext} for receiving messages through functional interfaces.
  *
  * @author Marcin Grzejszczak
  * @since 4.0.0
  */
-public class FunctionContext extends Observation.Context {
+public class FunctionReceiverContext extends ReceiverContext<Message<?>> {
 
 	private final SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction;
 
-	public FunctionContext(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
+	public FunctionReceiverContext(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction, Message<?> carrier) {
+		super((message, key) -> (String) message.getHeaders().get(key));
 		this.targetFunction = targetFunction;
+		setCarrier(carrier);
 	}
 
 	public SimpleFunctionRegistry.FunctionInvocationWrapper getTargetFunction() {
