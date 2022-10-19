@@ -44,6 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -1024,6 +1025,21 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"OK\"");
 	}
 
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testApiGatewayWithMonoVoidAsReturn() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "reactiveWithVoidReturn");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("\"OK\"");
+	}
+
 	@Test
 	public void testWithDefaultRoutingFailure() throws Exception {
 		System.setProperty("MAIN_CLASS", SampleConfiguration.class.getName());
@@ -1313,6 +1329,11 @@ public class FunctionInvokerTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+
+		@Bean
+		public Function<Mono<String>, Mono<Void>> reactiveWithVoidReturn() {
+			return v -> Mono.empty();
 		}
 
 		@Bean
