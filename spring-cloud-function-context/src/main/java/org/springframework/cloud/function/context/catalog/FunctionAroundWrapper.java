@@ -40,7 +40,7 @@ public abstract class FunctionAroundWrapper {
 	private static final Log log = LogFactory.getLog(FunctionAroundWrapper.class);
 
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
-		String functionalTracingEnabledStr = System.getProperty("spring.sleuth.function.enabled");
+		String functionalTracingEnabledStr = System.getProperty("spring.cloud.function.observability.enabled");
 		boolean functionalTracingEnabled = StringUtils.hasText(functionalTracingEnabledStr)
 				? Boolean.parseBoolean(functionalTracingEnabledStr) : true;
 		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message) {
