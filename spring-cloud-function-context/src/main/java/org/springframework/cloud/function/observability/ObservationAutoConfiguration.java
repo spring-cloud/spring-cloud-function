@@ -19,8 +19,10 @@ package org.springframework.cloud.function.observability;
 import io.micrometer.observation.ObservationRegistry;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,7 +35,8 @@ public class ObservationAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public ObservationFunctionAroundWrapper observationFunctionAroundWrapper(ObservationRegistry registry, ObjectProvider<FunctionReceiverObservationConvention> functionReceiverObservationConvention, ObjectProvider<FunctionObservationConvention> functionObservationConvention, ObjectProvider<FunctionSenderObservationConvention> functionSenderObservationConvention) {
+	@ConditionalOnBean(ObservationRegistry.class)
+	public FunctionAroundWrapper observationFunctionAroundWrapper(ObservationRegistry registry, ObjectProvider<FunctionReceiverObservationConvention> functionReceiverObservationConvention, ObjectProvider<FunctionObservationConvention> functionObservationConvention, ObjectProvider<FunctionSenderObservationConvention> functionSenderObservationConvention) {
 		return new ObservationFunctionAroundWrapper(registry, functionReceiverObservationConvention.getIfAvailable(() -> null), functionObservationConvention.getIfAvailable(() -> null), functionSenderObservationConvention.getIfAvailable(() -> null));
 	}
 }

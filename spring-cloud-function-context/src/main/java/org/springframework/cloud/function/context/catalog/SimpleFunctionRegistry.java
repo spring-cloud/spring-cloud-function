@@ -442,6 +442,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			this.skipOutputConversion = function.skipOutputConversion;
 			this.skipInputConversion = function.skipInputConversion;
 			this.target = function.target;
+			this.propagateInputHeaders = function.propagateInputHeaders;
+			this.composed = function.composed;
 			this.inputType = function.inputType;
 			this.outputType = function.outputType;
 			this.functionDefinition = function.functionDefinition;
@@ -499,6 +501,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return this.enhancer;
 		}
 
+		public Type getOutputType() {
+			return this.outputType;
+		}
+
 		/**
 		 * !!! INTERNAL USE ONLY !!!
 		 * This is primarily to support s-c-Stream's ability to access
@@ -512,10 +518,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		public Object getTarget() {
 			return target;
-		}
-
-		public Type getOutputType() {
-			return this.outputType;
 		}
 
 		public Type getInputType() {
@@ -1139,7 +1141,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (this.skipOutputConversion) {
 				return output;
 			}
-			if (functionAroundWrapper == null && output instanceof Message && isExtractPayload((Message<?>) output, type)) {
+			if (/*functionAroundWrapper == null && */ output instanceof Message && isExtractPayload((Message<?>) output, type)) {
 				output = ((Message) output).getPayload();
 			}
 			if (!(output instanceof Publisher) && this.enhancer != null) {

@@ -53,6 +53,7 @@ import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -1020,6 +1021,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 
 		@Bean
+		@ConditionalOnMissingBean
 		public FunctionAroundWrapper wrapper() {
 			return new FunctionAroundWrapper() {
 
