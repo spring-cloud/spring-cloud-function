@@ -43,6 +43,6 @@ public class DefaultFunctionObservationConvention implements FunctionObservation
 
 	@Override
 	public String getContextualName(FunctionContext context) {
-		return context.getTargetFunction().getFunctionDefinition();
+		return context.getTargetFunction().getFunctionDefinition() + " process";
 	}
 }

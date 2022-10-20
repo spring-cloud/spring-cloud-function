@@ -19,19 +19,24 @@ package org.springframework.cloud.function.observability;
 import io.micrometer.observation.Observation;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
+import org.springframework.messaging.Message;
 
 /**
  * {@link Observation.Context} for function processing.
  *
  * @author Marcin Grzejszczak
+ * @author Oleg Zhurakousky
  * @since 4.0.0
  */
 public class FunctionContext extends Observation.Context {
 
 	private final SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction;
 
-	public FunctionContext(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
+	private final Message<?> message;
+
+	public FunctionContext(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction, Message<?> message) {
 		this.targetFunction = targetFunction;
+		this.message = message;
 	}
 
 	public SimpleFunctionRegistry.FunctionInvocationWrapper getTargetFunction() {
