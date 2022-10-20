@@ -16,10 +16,9 @@
 
 package org.springframework.cloud.function.context.catalog;
 
-import java.util.function.BiFunction;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.messaging.Message;
@@ -36,16 +35,15 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @since 3.1
  */
-public abstract class FunctionAroundWrapper implements BiFunction<Object, FunctionInvocationWrapper, Object> {
+public abstract class FunctionAroundWrapper {
 
 	private static final Log log = LogFactory.getLog(FunctionAroundWrapper.class);
 
-	@Override
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
 		String functionalTracingEnabledStr = System.getProperty("spring.sleuth.function.enabled");
 		boolean functionalTracingEnabled = StringUtils.hasText(functionalTracingEnabledStr)
 				? Boolean.parseBoolean(functionalTracingEnabledStr) : true;
-		if (functionalTracingEnabled) {
+		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message) {
 			boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
 			targetFunction.setSkipOutputConversion(true);
 			try {

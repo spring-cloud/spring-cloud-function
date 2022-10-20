@@ -61,7 +61,6 @@ public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
 		return nonReactorStream(message, targetFunction);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Object nonReactorStream(Object message,
 		SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
 		if (targetFunction.isConsumer()) {
