@@ -16,12 +16,9 @@
 
 package org.springframework.cloud.function.context.config;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,30 +110,8 @@ public abstract class FunctionContextUtils {
 
 	private static Method[] getCandidateMethods(final Class<?> factoryClass,
 			final RootBeanDefinition mbd) {
-		if (System.getSecurityManager() != null) {
-			return AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-				@Override
-				public Method[] run() {
-					return (mbd.isNonPublicAccessAllowed()
-							? ReflectionUtils.getAllDeclaredMethods(factoryClass)
-							: factoryClass.getMethods());
-				}
-			});
-		}
-		else {
-			return (mbd.isNonPublicAccessAllowed()
-					? ReflectionUtils.getAllDeclaredMethods(factoryClass)
-					: factoryClass.getMethods());
-		}
+		return (mbd.isNonPublicAccessAllowed()
+				? ReflectionUtils.getAllDeclaredMethods(factoryClass)
+				: factoryClass.getMethods());
 	}
-
-	private static Object getField(Object target, String name) {
-		Field field = ReflectionUtils.findField(target.getClass(), name);
-		if (field == null) {
-			return null;
-		}
-		ReflectionUtils.makeAccessible(field);
-		return ReflectionUtils.getField(field, target);
-	}
-
 }

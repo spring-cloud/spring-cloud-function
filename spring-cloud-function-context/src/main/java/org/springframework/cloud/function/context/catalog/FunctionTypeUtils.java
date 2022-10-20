@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -547,20 +547,5 @@ public final class FunctionTypeUtils {
 			}
 		}
 		return functionDefinition;
-	}
-
-	private static boolean isFunctional(Type type) {
-		if (type instanceof ParameterizedType) {
-			type = ((ParameterizedType) type).getRawType();
-			Assert.isTrue(type instanceof Class<?>, "Must be one of Supplier, Function, Consumer"
-					+ " or FunctionRegistration. Was " + type);
-		}
-
-		Class<?> candidateType = (Class<?>) type;
-		return Supplier.class.isAssignableFrom(candidateType)
-				|| Function.class.isAssignableFrom(candidateType)
-				|| Consumer.class.isAssignableFrom(candidateType)
-				|| BiFunction.class.isAssignableFrom(candidateType)
-				|| BiConsumer.class.isAssignableFrom(candidateType);
 	}
 }

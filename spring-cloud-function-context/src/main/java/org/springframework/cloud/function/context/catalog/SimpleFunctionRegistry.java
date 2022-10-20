@@ -445,6 +445,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			this.propagateInputHeaders = function.propagateInputHeaders;
 			this.composed = function.composed;
 			this.inputType = function.inputType;
+			this.composed = function.composed;
 			this.outputType = function.outputType;
 			this.functionDefinition = function.functionDefinition;
 			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
@@ -1134,6 +1135,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 * This is an optional conversion which would only happen if `expected-content-type` is
 		 * set as a header in a message or explicitly provided as part of the lookup.
 		 */
+		@SuppressWarnings("unchecked")
 		private Object convertOutputIfNecessary(Object output, Type type, String[] contentType) {
 			if (output instanceof Message && ((Message) output).getPayload() instanceof byte[]) {
 				return output;
