@@ -38,10 +38,6 @@ public class KafkaTriggerDemoApplication {
 	public Function<Message<String>, String> uppercase(JsonMapper mapper) {
 		return message -> {
 
-			// // (Optionally) access and use the Azure function context.
-			ExecutionContext context = (ExecutionContext) message.getHeaders().get("executionContext");
-			context.getLogger().info("Kafka triggered with data: " + message.getPayload());
-
 			// Convert the message payload into Azure's KafkaEntity format.
 			KafkaEntity kafkaEntity = mapper.fromJson(message.getPayload(), KafkaEntity.class);
 

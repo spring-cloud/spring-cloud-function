@@ -39,7 +39,7 @@ public class UppercaseHandler extends FunctionInvoker<Message<String>, String> {
             brokerList = "%BrokerList%", 
             consumerGroup = "$Default", 
             username = "%ConfluentCloudUsername%", 
-            password = "ConfluentCloudPassword", 
+            password = "%ConfluentCloudPassword%", 
             authenticationMode = BrokerAuthenticationMode.PLAIN, 
             protocol = BrokerProtocol.PLAINTEXT,
             // protocol = BrokerProtocol.SASLSSL,
@@ -50,11 +50,11 @@ public class UppercaseHandler extends FunctionInvoker<Message<String>, String> {
             topic = "output",  
             brokerList="%BrokerList%",
             username = "%ConfluentCloudUsername%", 
-            password = "ConfluentCloudPassword",
+            password = "%ConfluentCloudPassword%",
             authenticationMode = BrokerAuthenticationMode.PLAIN,
             // sslCaLocation = "confluent_cloud_cacert.pem", // Enable this line for windows.  
             protocol = BrokerProtocol.PLAINTEXT
-            //protocol = BrokerProtocol.SASLSSL
+            // protocol = BrokerProtocol.SASLSSL
         )  OutputBinding<String> output,
         final ExecutionContext context) {
 
