@@ -27,45 +27,6 @@ import io.micrometer.observation.docs.ObservationDocumentation;
  * @since 4.0.0
  */
 enum FunctionObservation implements ObservationDocumentation {
-	/**
-	 * Observation created around receiving a message (via consumer or function).
-	 */
-	FUNCTION_CONSUMER_OBSERVATION {
-		@Override
-		public Class<? extends ObservationConvention<? extends Observation.Context>> getDefaultConvention() {
-			return DefaultFunctionReceiverObservationConvention.class;
-		}
-
-		@Override
-		public KeyName[] getLowCardinalityKeyNames() {
-			return FunctionLowCardinalityTags.values();
-		}
-
-		@Override
-		public String getPrefix() {
-			return "spring.cloud.function";
-		}
-	},
-
-	/**
-	 * Observation created around producing a message (via supplier or function).
-	 */
-	FUNCTION_PRODUCER_OBSERVATION {
-		@Override
-		public Class<? extends ObservationConvention<? extends Observation.Context>> getDefaultConvention() {
-			return DefaultFunctionSenderObservationConvention.class;
-		}
-
-		@Override
-		public KeyName[] getLowCardinalityKeyNames() {
-			return FunctionLowCardinalityTags.values();
-		}
-
-		@Override
-		public String getPrefix() {
-			return "spring.cloud.function";
-		}
-	},
 
 	/**
 	 * Observation created around processing a message (functional bean processing).
