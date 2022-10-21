@@ -102,3 +102,8 @@ Also to allow your functions to scale properly on the Premium plan when using Ka
 	}
 }
 ```
+
+## References
+
+* [Apache Kafka for Confluent Cloud - Azure portal](https://learn.microsoft.com/en-us/azure/partner-solutions/apache-kafka-confluent-cloud/create) - show how to create an instance of Apache Kafka for Confluent Cloud.
+- [Create a Cluster in Confluent Cloud](https://docs.confluent.io/cloud/current/clusters/create-cluster.html#create-a-cluster-in-ccloud)

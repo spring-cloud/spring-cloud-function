@@ -7,6 +7,7 @@
 
 		"BrokerList": "localhost:9092",
 		"ConfluentCloudUsername": "test",
+		"ConfluentCloudPassword": "test",
 		"TriggerKafkaTopic": "trigger"
 	}
 }
