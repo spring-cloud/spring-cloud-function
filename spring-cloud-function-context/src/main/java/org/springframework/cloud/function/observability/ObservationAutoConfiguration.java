@@ -20,7 +20,6 @@ import io.micrometer.observation.ObservationRegistry;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
 import org.springframework.context.annotation.Bean;
@@ -30,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Oleg Zhurakousky
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(ObservationRegistry.class)
+@ConditionalOnBean(org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration.class)
 public class ObservationAutoConfiguration {
 
 	@Bean
