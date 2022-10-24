@@ -47,10 +47,7 @@ public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
 
 	private Object nonReactorStream(Message<?> message,
 		SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
-		//if (targetFunction.isConsumer() || targetFunction.isFunction()) {
-			return functionProcessingObservation(targetFunction, message).observe(() -> targetFunction.apply(message));
-//		}
-//		return functionProcessingObservation(targetFunction, message).observe(targetFunction::get);
+		return functionProcessingObservation(targetFunction, message).observe(() -> targetFunction.apply(message));
 	}
 
 	private Observation functionProcessingObservation(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction, Message<?> message) {
