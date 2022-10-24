@@ -43,15 +43,8 @@ public abstract class FunctionAroundWrapper {
 		String functionalTracingEnabledStr = System.getProperty("spring.cloud.function.observability.enabled");
 		boolean functionalTracingEnabled = StringUtils.hasText(functionalTracingEnabledStr)
 				? Boolean.parseBoolean(functionalTracingEnabledStr) : true;
-		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message) {
-			boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
-			targetFunction.setSkipOutputConversion(true);
-			try {
-				return this.doApply(input, targetFunction);
-			}
-			finally {
-				targetFunction.setSkipOutputConversion(isSkipOutputConversion);
-			}
+		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message && !FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
+			return this.doApply(input, targetFunction);
 		}
 		else {
 			return targetFunction.apply(input);

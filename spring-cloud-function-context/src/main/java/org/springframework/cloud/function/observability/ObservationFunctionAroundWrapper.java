@@ -20,7 +20,6 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 
 import org.springframework.cloud.function.context.catalog.FunctionAroundWrapper;
-import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -43,18 +42,15 @@ public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
 
 	@Override
 	protected Object doApply(Object message, SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
-		if (FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
-			return targetFunction.apply(message); // no instrumentation
-		}
 		return nonReactorStream((Message<?>) message, targetFunction);
 	}
 
 	private Object nonReactorStream(Message<?> message,
 		SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
-		if (targetFunction.isConsumer() || targetFunction.isFunction()) {
+		//if (targetFunction.isConsumer() || targetFunction.isFunction()) {
 			return functionProcessingObservation(targetFunction, message).observe(() -> targetFunction.apply(message));
-		}
-		return functionProcessingObservation(targetFunction, message).observe(targetFunction::get);
+//		}
+//		return functionProcessingObservation(targetFunction, message).observe(targetFunction::get);
 	}
 
 	private Observation functionProcessingObservation(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction, Message<?> message) {
