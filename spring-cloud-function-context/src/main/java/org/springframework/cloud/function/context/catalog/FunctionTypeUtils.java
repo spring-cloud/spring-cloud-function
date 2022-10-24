@@ -99,6 +99,7 @@ public final class FunctionTypeUtils {
 			return true;
 		}
 		type = getGenericType(type);
+		type = type == null ? Object.class : type;
 		Class<?> rawType = type instanceof ParameterizedType ? getRawType(type) : (Class<?>) type;
 		return Collection.class.isAssignableFrom(rawType) || JsonNode.class.isAssignableFrom(rawType);
 	}

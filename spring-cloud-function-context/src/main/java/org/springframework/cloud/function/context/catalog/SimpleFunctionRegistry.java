@@ -224,10 +224,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			logger.debug("Function '" + functionDefinition + "' is not found in cache");
 		}
 
-		if (function != null) {
-			function = this.wrapInAroundAdviceIfNecessary(function);
-		}
-
 		return (T) function;
 	}
 
@@ -256,28 +252,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 		}
 		return functionDefinition;
-	}
-
-	/**
-	 * This is primarily to support spring-cloud-sleauth.
-	 * There is no current use cases in functions where it is used.
-	 * The approach may change in the future.
-	 */
-	private FunctionInvocationWrapper wrapInAroundAdviceIfNecessary(FunctionInvocationWrapper function) {
-		FunctionInvocationWrapper wrappedFunction = function;
-		if (function != null && this.functionAroundWrapper != null) {
-			wrappedFunction = new FunctionInvocationWrapper(function) {
-				@Override
-				Object doApply(Object input) {
-					if (logger.isDebugEnabled()) {
-						logger.debug("Executing around advise(s): " + functionAroundWrapper);
-					}
-
-					return functionAroundWrapper.apply(input, function);
-				}
-			};
-		}
-		return wrappedFunction;
 	}
 
 	/*
@@ -429,6 +403,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private boolean propagateInputHeaders;
 
+		private boolean wrapped;
+
 		/*
 		 * This is primarily to support Stream's ability to access
 		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
@@ -436,20 +412,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 * of stream will be refactored to address this.
 		 */
 		private Function<Object, Object> enhancer;
-
-		FunctionInvocationWrapper(FunctionInvocationWrapper function) {
-			this.expectedOutputContentType = function.expectedOutputContentType;
-			this.skipOutputConversion = function.skipOutputConversion;
-			this.skipInputConversion = function.skipInputConversion;
-			this.target = function.target;
-			this.propagateInputHeaders = function.propagateInputHeaders;
-			this.composed = function.composed;
-			this.inputType = function.inputType;
-			this.composed = function.composed;
-			this.outputType = function.outputType;
-			this.functionDefinition = function.functionDefinition;
-			this.message = this.inputType != null && FunctionTypeUtils.isMessage(this.inputType);
-		}
 
 		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
 			this.target = target;
@@ -559,12 +521,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
 				logger.debug("Invoking function " + this);
 			}
-			//Object result = (this.getTarget() instanceof PassThruFunction) ? input : this.doApply(input);
 
-			Object result = this.doApply(input);
-
-			if (result != null && this.outputType != null) {
-				result = this.convertOutputIfNecessary(result, this.outputType, this.expectedOutputContentType);
+			Object result;
+			if (functionAroundWrapper != null && !this.wrapped) {
+				this.wrapped = true;
+				result = functionAroundWrapper.apply(input, this);
+			}
+			else {
+				result = this.doApply(input);
 			}
 
 			return result;
@@ -719,6 +683,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 			else { // Function
 				result = this.invokeFunction(convertedInput);
+			}
+
+			if (result != null && this.outputType != null) {
+				result = this.convertOutputIfNecessary(result, this.outputType, this.expectedOutputContentType);
 			}
 			return result;
 		}
