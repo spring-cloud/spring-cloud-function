@@ -46,13 +46,6 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	public final static String PREFIX = "spring.cloud.function";
 
 	/**
-	 * Name of the header to be used to instruct function catalog to skip input type conversion.
-	 * @deprecated since 3.1. Not used anymore
-	 */
-	@Deprecated
-	public final static String SKIP_CONVERSION_HEADER = "skip-input-type-conversion";
-
-	/**
 	 * Name of the header to be used to instruct function to apply this content type for output conversion.
 	 */
 	public final static String EXPECT_CONTENT_TYPE_HEADER = "expected-content-type";
