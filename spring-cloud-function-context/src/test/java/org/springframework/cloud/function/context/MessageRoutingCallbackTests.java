@@ -80,7 +80,7 @@ public class MessageRoutingCallbackTests {
 			return new MessageRoutingCallback() {
 
 				@Override
-				public FunctionRoutingResult routingResult(Message<?> message) {
+				public String routingResult(Message<?> message) {
 					String payload = new String((byte[]) message.getPayload());
 
 					MessageBuilder<?> builder;
@@ -95,8 +95,7 @@ public class MessageRoutingCallbackTests {
 					}
 					Message<?> m = builder.copyHeaders(message.getHeaders()).build();
 					createdMessageIds.put(functionDefinition, m.getHeaders().getId());
-					FunctionRoutingResult functionRoutingResult = new FunctionRoutingResult(functionDefinition, m);
-					return functionRoutingResult;
+					return functionDefinition;
 				}
 			};
 		}

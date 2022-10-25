@@ -28,7 +28,6 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
-import org.springframework.cloud.function.context.MessageRoutingCallback.FunctionRoutingResult;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.context.expression.MapAccessor;
@@ -123,14 +122,9 @@ public class RoutingFunction implements Function<Object, Object> {
 		if (input instanceof Message) {
 			Message<?> message = (Message<?>) input;
 			if (this.routingCallback != null) {
-				FunctionRoutingResult routingResult = this.routingCallback.routingResult(message);
-				if (routingResult != null) {
-					if (StringUtils.hasText(routingResult.getFunctionDefinition())) {
-						function = this.functionFromDefinition(routingResult.getFunctionDefinition());
-					}
-					if (routingResult.getMessage() != null) {
-						message = routingResult.getMessage();
-					}
+				String functionDefinition = this.routingCallback.routingResult(message);
+				if (StringUtils.hasText(functionDefinition)) {
+					function = this.functionFromDefinition(functionDefinition);
 				}
 			}
 			if (function == null) {
