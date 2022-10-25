@@ -33,16 +33,8 @@ import org.springframework.messaging.Message;
 public interface MessageRoutingCallback {
 
 	/**
-	 * @deprecated in 3.1 in favor of {@link #routingResult(Message)}
-	 */
-	@Deprecated
-	default String functionDefinition(Message<?> message) {
-		return null;
-	}
-
-	/**
 	 * Computes and returns the instance of {@link FunctionRoutingResult} which encapsulates,
-	 * at the very minimum, function definition and optionally Message to be used downstream.
+	 * at the very minimum, function definition.
 	 * <br><br>
 	 * Providing such message is primarily an optimization feature. It could be useful for cases
 	 * where routing procedure is complex and results in, let's say, conversion of the payload to
@@ -52,39 +44,7 @@ public interface MessageRoutingCallback {
 	 * @param message input message
 	 * @return instance of {@link FunctionRoutingResult} containing the result of the routing computation
 	 */
-	default FunctionRoutingResult routingResult(Message<?> message) {
-		return new FunctionRoutingResult(functionDefinition(message));
-	}
-
-	/**
-	 * Domain object that represents the result of the {@link MessageRoutingCallback#routingResult(Message)}
-	 * computation. It consists of function definition and optional Message to be used downstream
-	 * (see {@link MessageRoutingCallback#routingResult(Message)} for more details.
-	 *
-	 * @author Oleg Zhurakousky
-	 *
-	 */
-	final class FunctionRoutingResult {
-
-		private final String functionDefinition;
-
-		private final Message<?> message;
-
-		FunctionRoutingResult(String functionDefinition, Message<?> message) {
-			this.functionDefinition = functionDefinition;
-			this.message = message;
-		}
-
-		public FunctionRoutingResult(String functionDefinition) {
-			this(functionDefinition, null);
-		}
-
-		public String getFunctionDefinition() {
-			return functionDefinition;
-		}
-
-		public Message<?> getMessage() {
-			return message;
-		}
+	default String routingResult(Message<?> message) {
+		return (String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION);
 	}
 }

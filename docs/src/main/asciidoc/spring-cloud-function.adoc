@@ -193,17 +193,6 @@ public MessageRoutingCallback customRouter() {
 In the preceding example you can see a very simple implementation of `MessageRoutingCallback` which determines the function definition from 
 `func_name` Message header of the incoming Message and returns the instance of `FunctionRoutingResult` containing the definition of function to invoke.
 
-Additionally, the `FunctionRoutingResult` provides another constructor allowing you to provide an instance of `Message` as second argument to be used down stream. 
-This is primarily for runtime optimizations. To better understand this case let's look at the following scenario. 
-You need to route based on the payoload type. However, an input Message typically comes in as let's say JSON payload (as `byte[]`) . In order 
-to determine the route-to function definition you need to first process such JSON and potentially create an instance of the target type.
-Once that determination is done you can pass it to `RoutingFunction` which still has a reference to the original Message with un-processed payload
-This means that somewhere downstream, type conversion/transformation would need to be repeated. 
-
-Allowing you to create a new `Message` with converted payload as part of the `FunctionRoutingResult` will instruct `RoutingFunction` to use such `Message` 
-downstream. So effectively you letting the framework to benefit from the work you already did. 
-
-
 *Message Headers*
 
 If the input argument is of type `Message<?>`, you can communicate routing instruction by setting one of

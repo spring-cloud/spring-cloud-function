@@ -109,7 +109,7 @@ public class MessageRoutingCallbackRSocketTests {
 		public MessageRoutingCallback customRouter() {
 			return new MessageRoutingCallback() {
 				@Override
-				public String functionDefinition(Message<?> message) {
+				public String routingResult(Message<?> message) {
 					return (String) message.getHeaders().get("func_name");
 				}
 			};
