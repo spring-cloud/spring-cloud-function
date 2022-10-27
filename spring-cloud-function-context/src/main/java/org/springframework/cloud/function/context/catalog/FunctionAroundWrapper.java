@@ -40,7 +40,8 @@ public abstract class FunctionAroundWrapper implements BiFunction<Object, Functi
 		String functionalTracingEnabledStr = System.getProperty("spring.sleuth.function.enabled");
 		boolean functionalTracingEnabled = StringUtils.hasText(functionalTracingEnabledStr)
 				? Boolean.parseBoolean(functionalTracingEnabledStr) : true;
-		if (functionalTracingEnabled) {
+		if (functionalTracingEnabled && !targetFunction.isInputTypePublisher() &&
+				input instanceof Message && !FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
 			boolean isSkipOutputConversion = targetFunction.isSkipOutputConversion();
 			targetFunction.setSkipOutputConversion(true);
 			try {
