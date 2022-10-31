@@ -19,7 +19,9 @@ package org.springframework.cloud.function.context.catalog;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -90,6 +92,18 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	@Override
 	public Set<String> getNames(Class<?> type) {
 		Set<String> registeredNames = super.getNames(type);
+
+		//--- see https://github.com/spring-cloud/spring-cloud-function/issues/947
+		Set<String> arroundWrapperNeamnames = this.applicationContext.getBeansOfType(FunctionAroundWrapper.class).keySet();
+		String[] names = this.applicationContext.getBeanNamesForType(BiFunction.class);
+		List<String> biFunctions = new ArrayList<>();
+		for (int i = 0; i < names.length; i++) {
+			if (!arroundWrapperNeamnames.contains(names[i])) {
+				biFunctions.add(names[i]);
+			}
+		}
+		///
+
 		if (type == null) {
 			registeredNames
 				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Function.class)));
@@ -98,7 +112,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			registeredNames
 				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Consumer.class)));
 			registeredNames
-				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(BiFunction.class)));
+				.addAll(biFunctions);
 			registeredNames
 				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(BiConsumer.class)));
 			registeredNames
