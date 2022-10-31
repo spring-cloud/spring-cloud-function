@@ -36,12 +36,6 @@
 		<dependency>
 			<artifactId>spring-cloud-function-adapter-azure</artifactId>
 			<groupId>org.springframework.cloud</groupId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-logging</artifactId>
-				</exclusion>
-			</exclusions> 
 		</dependency>
 
 		<dependency>
