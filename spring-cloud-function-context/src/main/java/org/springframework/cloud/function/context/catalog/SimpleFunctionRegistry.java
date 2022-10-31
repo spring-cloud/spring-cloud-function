@@ -272,7 +272,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 	 */
 	private FunctionInvocationWrapper wrapInAroundAdviceIfNecessary(FunctionInvocationWrapper function) {
 		FunctionInvocationWrapper wrappedFunction = function;
-		if (function != null && this.functionAroundWrapper != null) {
+		if (function != null && this.functionAroundWrapper != null && !function.isSupplier()
+				&& !function.isInputTypePublisher() && !function.isOutputTypePublisher() && !FunctionTypeUtils.isCollectionOfMessage(function.getOutputType())) {
 			wrappedFunction = new FunctionInvocationWrapper(function) {
 				@Override
 				Object doApply(Object input) {
