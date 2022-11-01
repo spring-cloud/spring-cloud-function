@@ -1159,6 +1159,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 */
 		private Object convertOutputIfNecessary(Object output, Type type, String[] contentType) {
 			if (output instanceof Message && ((Message) output).getPayload() instanceof byte[]) {
+				if (contentType != null) {
+					return MessageBuilder.fromMessage((Message) output)
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType[0])
+						.build();
+				}
 				return output;
 			}
 			if (this.skipOutputConversion) {
