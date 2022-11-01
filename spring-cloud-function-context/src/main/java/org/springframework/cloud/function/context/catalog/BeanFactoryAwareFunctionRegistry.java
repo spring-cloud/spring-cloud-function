@@ -185,9 +185,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 								functionRegistration = new FunctionRegistration(functionCandidate, functionName).type(functionType);
 							}
 							// Certain Kafka Streams functions such as KStream[] return types could be null (esp when using Kotlin).
-							if (functionRegistration != null) {
-								this.register(functionRegistration);
-							}
+							this.register(functionRegistration);
 						}
 						else {
 							if (logger.isDebugEnabled()) {
