@@ -1157,48 +1157,55 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 		 * This is an optional conversion which would only happen if `expected-content-type` is
 		 * set as a header in a message or explicitly provided as part of the lookup.
 		 */
+		@SuppressWarnings("unchecked")
 		private Object convertOutputIfNecessary(Object output, Type type, String[] contentType) {
-			if (output instanceof Message && ((Message) output).getPayload() instanceof byte[]) {
-				return output;
-			}
+			Object convertedOutput = output;
 			if (this.skipOutputConversion) {
-				return output;
+				return convertedOutput;
 			}
-			if (functionAroundWrapper == null && output instanceof Message && isExtractPayload((Message<?>) output, type)) {
-				output = ((Message) output).getPayload();
+
+			if (convertedOutput instanceof Publisher) {
+				return this.convertOutputPublisherIfNecessary((Publisher) convertedOutput, type, contentType);
 			}
-			if (!(output instanceof Publisher) && this.enhancer != null) {
-				output = enhancer.apply(output);
+
+			if (convertedOutput instanceof Message) {
+				if (((Message) convertedOutput).getPayload() instanceof byte[] && ObjectUtils.isEmpty(contentType)) {
+					return convertedOutput;
+				}
+				else if (isExtractPayload((Message<?>) convertedOutput, type)) {
+					convertedOutput = ((Message) convertedOutput).getPayload();
+				}
+			}
+
+			if (this.enhancer != null) {
+				convertedOutput = enhancer.apply(convertedOutput);
 			}
 			if (this.getTarget() instanceof PassThruFunction) { // scst-2303
-				Message enrichedMessage = MessageBuilder.fromMessage((Message) output)
+				Message enrichedMessage = MessageBuilder.fromMessage((Message) convertedOutput)
 						.setHeader(MessageHeaders.CONTENT_TYPE, contentType[0]).build();
 				return messageConverter.toMessage(enrichedMessage.getPayload(), enrichedMessage.getHeaders());
 			}
 
-			if (ObjectUtils.isEmpty(contentType) && !(output instanceof Publisher)) {
-				return output;
+			if (ObjectUtils.isEmpty(contentType)) {
+				return convertedOutput;
 			}
 
-			Object convertedOutput = output;
+
 
 			if (FunctionTypeUtils.isMultipleArgumentType(type)) {
 				convertedOutput = this.convertMultipleOutputArgumentTypeIfNecesary(convertedOutput, type, contentType);
 			}
-			else if (output instanceof Publisher) {
-				convertedOutput = this.convertOutputPublisherIfNecessary((Publisher) output, type, contentType);
+			else if (convertedOutput instanceof Message) {
+				convertedOutput = this.convertOutputMessageIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
 			}
-			else if (output instanceof Message) {
-				convertedOutput = this.convertOutputMessageIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
+			else if (convertedOutput instanceof Collection && this.isOutputTypeMessage()) {
+				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType);
 			}
-			else if (output instanceof Collection && this.isOutputTypeMessage()) {
-				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType);
-			}
-			else if (ObjectUtils.isArray(output) && !(output instanceof byte[])) {
-				convertedOutput = this.convertMultipleOutputValuesIfNecessary(output, ObjectUtils.isEmpty(contentType) ? null : contentType);
+			else if (ObjectUtils.isArray(convertedOutput) && !(convertedOutput instanceof byte[])) {
+				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType);
 			}
 			else {
-				convertedOutput = messageConverter.toMessage(output,
+				convertedOutput = messageConverter.toMessage(convertedOutput,
 						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType == null ? "application/json" : contentType[0])));
 			}
 
