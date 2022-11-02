@@ -579,6 +579,19 @@ public class FunctionInvokerTests {
 	}
 
 	@Test
+	public void testSQSEventWithConstructorArg() throws Exception {
+		System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
+		FunctionInvoker invoker = new FunctionInvoker("inputSQSEvent");
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleSQSEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("arn:aws:sqs:eu-central-1:123456789012:MyQueue");
+	}
+
+	@Test
 	public void testSQSEventAsMessage() throws Exception {
 		System.setProperty("MAIN_CLASS", SQSConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputSQSEventAsMessage");
