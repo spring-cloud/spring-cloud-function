@@ -77,7 +77,10 @@ public abstract class JsonMapper {
 				logger.debug(
 						"String already represents JSON. Skipping conversion in favor of 'getBytes(StandardCharsets.UTF_8'.");
 			}
-			result = ((String) value).getBytes(StandardCharsets.UTF_8);
+			result = value instanceof byte[] ? (byte[]) value : ((String) value).getBytes(StandardCharsets.UTF_8);
+		}
+		else if (value instanceof byte[]) {
+			result = (byte[]) value;
 		}
 		return result;
 	}
