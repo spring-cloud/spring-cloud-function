@@ -227,9 +227,8 @@ class FunctionEndpointFactory {
 			function = this.functionCatalog.lookup(Function.class, handler);
 		}
 		else {
-			String[] accept = FunctionWebRequestProcessingHelper.acceptContentTypes(request.headers().accept());
 			function = FunctionWebRequestProcessingHelper.findFunction(this.functionProperties, request.method(), functionCatalog, request.attributes(),
-					request.path(), accept);
+					request.path());
 		}
 		return function;
 	}

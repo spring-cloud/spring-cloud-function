@@ -84,7 +84,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			path = path.substring(this.prefix.length());
 		}
 		Object function = FunctionWebRequestProcessingHelper
-				.findFunction(this.functionProperties, request.getRequest().getMethod(), this.functions, request.getAttributes(), path, new String[] {});
+				.findFunction(this.functionProperties, request.getRequest().getMethod(), this.functions, request.getAttributes(), path);
 
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {
