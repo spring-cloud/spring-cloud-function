@@ -24,22 +24,21 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * !INTERNAL USE ONLY!
@@ -56,26 +55,13 @@ public final class FunctionWebRequestProcessingHelper {
 	}
 
 	public static FunctionInvocationWrapper findFunction(FunctionProperties functionProperties, HttpMethod method, FunctionCatalog functionCatalog,
-											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
+											Map<String, Object> attributes, String path) {
 		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST)) {
-			return doFindFunction(functionProperties.getDefinition(), method, functionCatalog, attributes, path, acceptContentTypes);
+			return doFindFunction(functionProperties.getDefinition(), method, functionCatalog, attributes, path);
 		}
 		else {
 			throw new IllegalStateException("HTTP method '" + method + "' is not supported;");
 		}
-	}
-
-	public static String[] acceptContentTypes(List<MediaType> acceptHeaders) {
-		String[] acceptContentTypes = new String[] {};
-		if (!CollectionUtils.isEmpty(acceptHeaders)) {
-			acceptContentTypes = acceptHeaders.stream().map(mediaType -> mediaType.toString()).toArray(String[]::new);
-		}
-		else {
-			acceptContentTypes = new String[] {MediaType.APPLICATION_JSON.toString()};
-		}
-
-		acceptContentTypes = new String[] {StringUtils.arrayToCommaDelimitedString(acceptContentTypes)};
-		return new String[] {};
 	}
 
 	public static Object invokeFunction(FunctionInvocationWrapper function, Object input, boolean isMessage) {
@@ -159,11 +145,11 @@ public final class FunctionWebRequestProcessingHelper {
 	}
 
 	private static FunctionInvocationWrapper doFindFunction(String functionDefinition, HttpMethod method, FunctionCatalog functionCatalog,
-											Map<String, Object> attributes, String path, String[] acceptContentTypes) {
+											Map<String, Object> attributes, String path) {
 
 		path = path.startsWith("/") ? path.substring(1) : path;
 		if (method.equals(HttpMethod.GET)) {
-			FunctionInvocationWrapper function = functionCatalog.lookup(path, acceptContentTypes);
+			FunctionInvocationWrapper function = functionCatalog.lookup(path);
 			if (function != null && function.isSupplier()) {
 				attributes.put(WebRequestConstants.SUPPLIER, function);
 				return function;
@@ -181,14 +167,14 @@ public final class FunctionWebRequestProcessingHelper {
 			name = builder.toString();
 			value = path.length() > name.length() ? path.substring(name.length() + 1)
 					: null;
-			FunctionInvocationWrapper function = functionCatalog.lookup(name, acceptContentTypes);
+			FunctionInvocationWrapper function = functionCatalog.lookup(name);
 			if (function != null) {
 				return postProcessFunction(function, value, attributes);
 			}
 		}
 
 		if (StringUtils.hasText(functionDefinition)) {
-			FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition, acceptContentTypes);
+			FunctionInvocationWrapper function = functionCatalog.lookup(functionDefinition);
 			if (function != null) {
 				return postProcessFunction(function, value, attributes);
 			}
