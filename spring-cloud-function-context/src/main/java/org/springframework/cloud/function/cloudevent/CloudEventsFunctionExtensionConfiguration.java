@@ -30,7 +30,7 @@ import org.springframework.messaging.Message;
  * @since 3.1
  */
 @Configuration(proxyBeanMethods = false)
-class CloudEventsFunctionExtensionConfiguration {
+public class CloudEventsFunctionExtensionConfiguration {
 
 	// The following two beans are intended to be mutually exclusive. Only one should be activated based
 	// on the presence of Cloud Event SDK API
