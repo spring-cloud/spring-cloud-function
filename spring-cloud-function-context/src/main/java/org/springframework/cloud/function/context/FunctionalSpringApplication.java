@@ -96,6 +96,7 @@ public class FunctionalSpringApplication
 		Assert.isInstanceOf(GenericApplicationContext.class, context,
 				"ApplicationContext must be an instanceof GenericApplicationContext");
 		for (Object source : getAllSources()) {
+			System.out.println("======> SOURCE: " + source);
 			Class<?> type = null;
 			Object handler = null;
 			if (source instanceof String) {

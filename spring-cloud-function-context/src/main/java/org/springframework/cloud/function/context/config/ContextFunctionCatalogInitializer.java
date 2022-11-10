@@ -176,6 +176,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 					List<MessageConverter> messageConverters = new ArrayList<>();
 					JsonMapper jsonMapper = this.context.getBean(JsonMapper.class);
 
+					messageConverters.addAll(context.getBeansOfType(MessageConverter.class).values());
 					messageConverters.add(new JsonMessageConverter(jsonMapper));
 					messageConverters.add(new ByteArrayMessageConverter());
 					messageConverters.add(new StringMessageConverter());

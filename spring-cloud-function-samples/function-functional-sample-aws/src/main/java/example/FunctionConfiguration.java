@@ -8,6 +8,9 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+
 @SpringBootConfiguration
 public class FunctionConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
 
@@ -26,5 +29,9 @@ public class FunctionConfiguration implements ApplicationContextInitializer<Gene
     	context.registerBean("uppercase", FunctionRegistration.class,
 				() -> new FunctionRegistration<>(function).type(
 						FunctionType.from(String.class).to(String.class)));
+    	
+    	context.registerBean("testFunction", FunctionRegistration.class,
+				() -> new FunctionRegistration<>(new TestFunction()).type(
+						FunctionType.from(APIGatewayProxyRequestEvent.class).to(APIGatewayProxyResponseEvent.class)));
     }
 }
