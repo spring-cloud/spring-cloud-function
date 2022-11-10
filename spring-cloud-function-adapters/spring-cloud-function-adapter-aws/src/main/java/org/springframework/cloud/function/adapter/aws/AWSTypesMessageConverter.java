@@ -55,11 +55,11 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 
 	@Override
 	protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
-		if (message.getHeaders().containsKey(AWSLambdaUtils.AWS_API_GATEWAY) && ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_API_GATEWAY))) {
-			return true;
+		if (message.getHeaders().containsKey(AWSLambdaUtils.AWS_API_GATEWAY)) {
+			return ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_API_GATEWAY));
 		}
-		if (message.getHeaders().containsKey(AWSLambdaUtils.AWS_EVENT) && ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_EVENT))) {
-			return true;
+		if (message.getHeaders().containsKey(AWSLambdaUtils.AWS_EVENT)) {
+			return ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_EVENT));
 		}
 		return false;
 	}

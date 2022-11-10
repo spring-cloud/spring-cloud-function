@@ -926,6 +926,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 			if (inputValue instanceof Message && !this.isInputTypeMessage()) {
 				inputValue = ((Message) inputValue).getPayload();
 			}
+			System.out.println("Invoking function: " + this + "with input type: " + this.getInputType());
 			Object result = ((Function) this.target).apply(inputValue);
 
 			if (result instanceof Publisher && functionInvocationHelper != null) {
@@ -1096,7 +1097,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry, FunctionInspect
 							: convertedInput;
 				}
 				if (convertedInput != null && logger.isDebugEnabled()) {
-					logger.debug("Converted Message: " + input + " to: " + convertedInput);
+					logger.debug("Converted Message: " + input + " to: " +
+							(convertedInput instanceof OriginalMessageHolder ? ((OriginalMessageHolder) convertedInput).value.getClass() : convertedInput));
 				}
 			}
 			else {
