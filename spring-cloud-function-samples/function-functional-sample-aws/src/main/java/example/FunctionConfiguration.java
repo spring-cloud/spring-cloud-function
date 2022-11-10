@@ -26,16 +26,12 @@ public class FunctionConfiguration implements ApplicationContextInitializer<Gene
     @Override
     public void initialize(GenericApplicationContext context) {
     	Function<String, String> function = (str) -> str + str.toUpperCase();
-    	context.registerBean("uppercase", FunctionRegistration.class,
-<<<<<<< HEAD
-				() -> new FunctionRegistration<>(function).type(FunctionTypeUtils.functionType(String.class, String.class)));
-=======
-				() -> new FunctionRegistration<>(function).type(
-						FunctionType.from(String.class).to(String.class)));
     	
-    	context.registerBean("testFunction", FunctionRegistration.class,
-				() -> new FunctionRegistration<>(new TestFunction()).type(
-						FunctionType.from(APIGatewayProxyRequestEvent.class).to(APIGatewayProxyResponseEvent.class)));
->>>>>>> 3cb9dde6... GH-932 Fix registration of AWSTypesMessageConverter for functional spring applications
+    	context.registerBean("uppercase", FunctionRegistration.class,
+				() -> new FunctionRegistration<>(function).type(FunctionTypeUtils.functionType(String.class, String.class)));
+    	
+    	context.registerBean("uppercase", FunctionRegistration.class,
+				() -> new FunctionRegistration<>(new TestFunction()).type(FunctionTypeUtils.functionType(APIGatewayProxyRequestEvent.class, APIGatewayProxyResponseEvent.class)));
+  
     }
 }
