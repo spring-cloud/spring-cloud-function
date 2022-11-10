@@ -99,7 +99,13 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 					if (payload instanceof byte[]) {
 						payload = new String((byte[]) payload, StandardCharsets.UTF_8);
 					}
-					logger.warn("Failed to convert value: " + payload, e);
+
+					if (logger.isDebugEnabled()) {
+						logger.debug("Failed to convert value: " + payload + " to: " + targetClass, e);
+					}
+					else {
+						logger.warn("Failed to convert value: " + payload + " to: " + targetClass);
+					}
 				}
 			}
 		}
