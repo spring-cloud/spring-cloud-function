@@ -32,6 +32,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
 import net.jodah.typetools.TypeResolver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,6 +48,7 @@ import org.springframework.cloud.function.context.FunctionType;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.KotlinDetector;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -171,6 +174,14 @@ public final class FunctionTypeUtils {
 
 	@SuppressWarnings("unchecked")
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
+		if (KotlinDetector.isKotlinPresent()) {
+			if (Function1.class.isAssignableFrom(functionalClass)) {
+				return TypeResolver.reify(Function1.class, (Class<Function1<?, ?>>) functionalClass);
+			}
+			else if (Function0.class.isAssignableFrom(functionalClass)) {
+				return TypeResolver.reify(Function0.class, (Class<Function0<?>>) functionalClass);
+			}
+		}
 		if (Function.class.isAssignableFrom(functionalClass)) {
 			for (Type superInterface : functionalClass.getGenericInterfaces()) {
 				if (superInterface != null && !superInterface.equals(Object.class)) {
@@ -187,7 +198,7 @@ public final class FunctionTypeUtils {
 		else if (Supplier.class.isAssignableFrom(functionalClass)) {
 			return TypeResolver.reify(Supplier.class, (Class<Supplier<?>>) functionalClass);
 		}
-		return null;
+		return TypeResolver.reify(functionalClass);
 	}
 
 	public static Type discoverFunctionTypeFromFunctionMethod(Method functionMethod) {
