@@ -29,6 +29,9 @@ import java.util.List
 @EnableAutoConfiguration
 @Configuration
 class KotlinLambdasConfiguration {
+
+	@Bean
+	fun uppercase(): Function<String, String> = KotlinComponentFunction()
 	@Bean
 	fun kotlinFunction(): (String) -> String {
 		return { it.toUpperCase() }

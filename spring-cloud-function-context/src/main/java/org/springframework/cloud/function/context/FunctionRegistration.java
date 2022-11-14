@@ -29,20 +29,11 @@ import java.util.function.Supplier;
 
 import net.jodah.typetools.TypeResolver;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.cloud.function.core.FluxConsumer;
-import org.springframework.cloud.function.core.FluxFunction;
-import org.springframework.cloud.function.core.FluxSupplier;
-import org.springframework.cloud.function.core.FluxToMonoFunction;
-import org.springframework.cloud.function.core.FluxedConsumer;
-import org.springframework.cloud.function.core.FluxedFunction;
-import org.springframework.cloud.function.core.MonoSupplier;
-import org.springframework.cloud.function.core.MonoToFluxFunction;
+import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
+import org.springframework.core.KotlinDetector;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
@@ -123,7 +114,10 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	}
 
 	public FunctionRegistration<T> type(FunctionType type) {
-
+		this.type = type;
+		if (KotlinDetector.isKotlinPresent() && this.target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) {
+			return this;
+		}
 		Type t = FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
 		if (t == null) { // only valid for Kafka Stream KStream[] return type.
 			return null;
@@ -137,7 +131,6 @@ public class FunctionRegistration<T> implements BeanNameAware {
 			throw new IllegalStateException("Discovered function type does not match provided function type. Discovered: "
 					+ discoveredFunctionType + "; Provided: " + type);
 		}
-		this.type = type;
 		return this;
 	}
 
@@ -166,6 +159,13 @@ public class FunctionRegistration<T> implements BeanNameAware {
 		return this.names(Arrays.asList(names));
 	}
 
+	@Override
+	public void setBeanName(String name) {
+		if (CollectionUtils.isEmpty(this.names)) {
+			this.name(name);
+		}
+	}
+
 	/**
 	 * Transforms (wraps) function identified by the 'target' to its {@code Flux}
 	 * equivalent unless it already is. For example, {@code Function<String, String>}
@@ -175,66 +175,11 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	 *
 	 */
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public <S> FunctionRegistration<S> wrap() {
-		this.isFunctionSignatureSupported();
-		FunctionRegistration<S> result;
-		if (this.type == null) {
-			result = (FunctionRegistration<S>) this;
-		}
-		else if (this.target instanceof RoutingFunction) {
-			S target = (S) this.target;
-			result = new FunctionRegistration<S>(target);
-			result.type(this.type.getType());
-			result = result.target(target).names(this.names)
-					.type(result.type.wrap(Flux.class)).properties(this.properties);
-		}
-		else {
-			S target = (S) this.target;
-			result = new FunctionRegistration<S>(target);
-			result.type(this.type.getType());
 
-			if (!this.type.isWrapper()) {
-				target = target instanceof Supplier
-						? (S) new FluxSupplier((Supplier<?>) target)
-						: target instanceof Function
-								? (S) new FluxFunction((Function<?, ?>) target)
-								: (S) new FluxConsumer((Consumer<?>) target);
-			}
-			else if (Mono.class.isAssignableFrom(this.type.getOutputWrapper())) {
-				target = target instanceof Supplier
-						? (S) new MonoSupplier((Supplier<?>) target)
-						: (S) new FluxToMonoFunction((Function<?, ?>) target);
-			}
-			else if (Mono.class.isAssignableFrom(this.type.getInputWrapper())) {
-				target = (S) new MonoToFluxFunction((Function) target);
-			}
-			else if (target instanceof Consumer) {
-				target = (S) new FluxedConsumer((Consumer<?>) target);
-			}
-			else if (target instanceof Function) {
-				target = (S) new FluxedFunction((Function<?, ?>) target);
-			}
-			result = result.target(target).names(this.names)
-					.type(result.type.wrap(Flux.class)).properties(this.properties);
-		}
-
-		return result;
-	}
-
-	@Override
-	public void setBeanName(String name) {
-		if (CollectionUtils.isEmpty(this.names)) {
-			this.name(name);
-		}
-	}
-
-	private void isFunctionSignatureSupported() {
-		if (type != null) {
-			Assert.isTrue(!(Mono.class.isAssignableFrom(this.type.getOutputWrapper())
-					&& Mono.class.isAssignableFrom(this.type.getInputWrapper())),
-					"Function<Mono, Mono> is not supported.");
-		}
-	}
-
+//	@Override
+//	public void setBeanName(String name) {
+//		if (CollectionUtils.isEmpty(this.names)) {
+//			this.name(name);
+//		}
+//	}
 }

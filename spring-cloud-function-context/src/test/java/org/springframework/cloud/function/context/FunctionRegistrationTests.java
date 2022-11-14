@@ -36,16 +36,6 @@ public class FunctionRegistrationTests {
 		assertThat(registration.getNames()).contains("foos");
 	}
 
-	@Test
-	public void wrap() {
-		FunctionRegistration<Foos> registration = new FunctionRegistration<>(new Foos(),
-				"foos").type(FunctionType.of(Foos.class).getType());
-		FunctionRegistration<?> other = registration.wrap();
-		assertThat(registration.getType().isWrapper()).isFalse();
-		assertThat(other.getType().isWrapper()).isTrue();
-		assertThat(other.getTarget()).isNotEqualTo(registration.getTarget());
-	}
-
 	private static class Foos implements Function<Integer, String> {
 
 		@Override
