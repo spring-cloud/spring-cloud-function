@@ -56,7 +56,8 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 	public void typeDiscoveryTests() {
 		create(new Class[] { KotlinLambdasConfiguration.class,
 				SimpleConfiguration.class,
-				KotlinComponentFunction.class});
+				KotlinComponentFunction.class,
+				ComponentUppercase.class});
 
 		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
 
@@ -89,12 +90,19 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		assertThat(kotlinListPojoFunction.getInputType().getTypeName()).isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
 		assertThat(kotlinListPojoFunction.getOutputType()).isEqualTo(String.class);
 
-//		function = this.context.getBean("kotlinListPojoFunction");
-//		functionType = (ParameterizedType) FunctionTypeUtils.discoverFunctionType(function, "kotlinListPojoFunction", this.context);
-//		assertThat(functionType.getRawType().getTypeName()).isEqualTo(Function.class.getName());
-//		assertThat(functionType.getActualTypeArguments().length).isEqualTo(2);
-//		assertThat(functionType.getActualTypeArguments()[0].getTypeName()).isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
-//		assertThat(functionType.getActualTypeArguments()[1].getTypeName()).isEqualTo(String.class.getName());
+		FunctionInvocationWrapper componentUppercase = functionCatalog.lookup("componentUppercase");
+		assertThat(componentUppercase.isFunction()).isTrue();
+		assertThat(componentUppercase.getInputType()).isEqualTo(String.class);
+		assertThat(componentUppercase.getOutputType()).isEqualTo(String.class);
+
+		assertThat(componentUppercase.apply("hello")).isEqualTo("HELLO");
+
+		FunctionInvocationWrapper uppercaseBean = functionCatalog.lookup("uppercase");
+		assertThat(uppercaseBean.isFunction()).isTrue();
+		assertThat(uppercaseBean.getInputType()).isEqualTo(String.class);
+		assertThat(uppercaseBean.getOutputType()).isEqualTo(String.class);
+
+		assertThat(uppercaseBean.apply("hello")).isEqualTo("HELLO");
 	}
 
 	@Test
