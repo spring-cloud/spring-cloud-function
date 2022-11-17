@@ -240,7 +240,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 	@Override
 	protected boolean containsFunction(String functionName) {
-		return super.containsFunction(functionName) ? true : this.applicationContext.containsBean(functionName);
+		return super.containsFunction(functionName) || this.applicationContext.containsBean(functionName);
 	}
 
 	private boolean isFunctionPojo(Object functionCandidate, String functionName) {
