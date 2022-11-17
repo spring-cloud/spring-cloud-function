@@ -243,6 +243,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		if (!names.contains(functionDefinition)) {
 			List<String> eligibleFunction = names.stream()
 					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
+					.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
 					.collect(Collectors.toList());
 			if (eligibleFunction.size() == 1
 					&& !eligibleFunction.get(0).equals(functionDefinition)

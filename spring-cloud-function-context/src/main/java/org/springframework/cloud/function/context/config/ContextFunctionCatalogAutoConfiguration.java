@@ -35,11 +35,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.cloudevent.CloudEventsFunctionInvocationHelper;
+import org.springframework.cloud.function.context.DefaultMessageRoutingHandler;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
+import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.cloud.function.context.catalog.BeanFactoryAwareFunctionRegistry;
+import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
@@ -53,6 +56,7 @@ import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
@@ -131,9 +135,16 @@ public class ContextFunctionCatalogAutoConfiguration {
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Bean(RoutingFunction.FUNCTION_NAME)
 	public RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
-								BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
+								BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback,
+								@Nullable DefaultMessageRoutingHandler defaultMessageRoutingHandler) {
+		if (defaultMessageRoutingHandler != null) {
+			FunctionRegistration functionRegistration = new FunctionRegistration(defaultMessageRoutingHandler, RoutingFunction.DEFAULT_ROUTE_HANDLER);
+			functionRegistration.type(FunctionTypeUtils.consumerType(ResolvableType.forClassWithGenerics(Message.class, Object.class).getType()));
+			((FunctionRegistry) functionCatalog).register(functionRegistration);
+		}
 		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory), routingCallback);
 	}
 

@@ -51,6 +51,11 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	public final static String EXPECT_CONTENT_TYPE_HEADER = "expected-content-type";
 
 	/**
+	 * SpEL expression to be used with RoutingFunction.
+	 */
+	public final static String ROUTING_EXPRESSION = PREFIX + ".routing-expression";
+
+	/**
 	 * The name of function definition property.
 	 */
 	public final static String FUNCTION_DEFINITION = PREFIX + ".definition";
@@ -60,6 +65,12 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	 * or function composition definition (e.g., 'myFunction|yourFunction')
 	 */
 	private String definition;
+
+	/**
+	 * SpEL expression which should result in function definition (e.g., function name or composition instruction).
+	 * NOTE: SpEL evaluation context's root object is the input argument (e.g., Message).
+	 */
+	private String routingExpression;
 
 	/**
 	 * List of functions that are not eligible to be registered in Function Catalog.
@@ -94,12 +105,6 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	public Map<String, FunctionConfigurationProperties> getConfiguration() {
 		return configuration;
 	}
-
-	/**
-	 * SpEL expression which should result in function definition (e.g., function name or composition instruction).
-	 * NOTE: SpEL evaluation context's root object is the input argument (e.g., Message).
-	 */
-	private String routingExpression;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setConfiguration(Map<String, FunctionConfigurationProperties> configuration) {

@@ -57,6 +57,11 @@ public class RoutingFunction implements Function<Object, Object> {
 	 */
 	public static final String FUNCTION_NAME = "functionRouter";
 
+	/**
+	 * The name of this function for routing of un-routable messages.
+	 */
+	public static final String DEFAULT_ROUTE_HANDLER = "defaultMessageRoutingHandler";
+
 	private static Log logger = LogFactory.getLog(RoutingFunction.class);
 
 	private final StandardEvaluationContext evalContext = new StandardEvaluationContext();
@@ -81,13 +86,6 @@ public class RoutingFunction implements Function<Object, Object> {
 		this(functionCatalog, extractIntoFunctionProperties(propertiesMap), beanResolver, routingCallback);
 	}
 
-	private static FunctionProperties extractIntoFunctionProperties(Map<String, String> propertiesMap) {
-		FunctionProperties functionProperties = new FunctionProperties();
-		functionProperties.setDefinition(propertiesMap.get(FunctionProperties.FUNCTION_DEFINITION));
-		functionProperties.setRoutingExpression(propertiesMap.get(FunctionProperties.PREFIX + ".routing-expression"));
-		return functionProperties;
-	}
-
 	public RoutingFunction(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
 			BeanResolver beanResolver, MessageRoutingCallback routingCallback) {
 		this.functionCatalog = functionCatalog;
@@ -95,6 +93,13 @@ public class RoutingFunction implements Function<Object, Object> {
 		this.routingCallback = routingCallback;
 		this.evalContext.addPropertyAccessor(new MapAccessor());
 		evalContext.setBeanResolver(beanResolver);
+	}
+
+	private static FunctionProperties extractIntoFunctionProperties(Map<String, String> propertiesMap) {
+		FunctionProperties functionProperties = new FunctionProperties();
+		functionProperties.setDefinition(propertiesMap.get(FunctionProperties.FUNCTION_DEFINITION));
+		functionProperties.setRoutingExpression(propertiesMap.get(FunctionProperties.ROUTING_EXPRESSION));
+		return functionProperties;
 	}
 
 	@Override
@@ -128,14 +133,14 @@ public class RoutingFunction implements Function<Object, Object> {
 				}
 			}
 			if (function == null) {
-				if (StringUtils.hasText((String) message.getHeaders().get("spring.cloud.function.definition"))) {
-					function = functionFromDefinition((String) message.getHeaders().get("spring.cloud.function.definition"));
+				if (StringUtils.hasText((String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION))) {
+					function = functionFromDefinition((String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION));
 					if (function.isInputTypePublisher()) {
 						this.assertOriginalInputIsNotPublisher(originalInputIsPublisher);
 					}
 				}
-				else if (StringUtils.hasText((String) message.getHeaders().get("spring.cloud.function.routing-expression"))) {
-					function = this.functionFromExpression((String) message.getHeaders().get("spring.cloud.function.routing-expression"), message, true);
+				else if (StringUtils.hasText((String) message.getHeaders().get(FunctionProperties.ROUTING_EXPRESSION))) {
+					function = this.functionFromExpression((String) message.getHeaders().get(FunctionProperties.ROUTING_EXPRESSION), message, true);
 					if (function.isInputTypePublisher()) {
 						this.assertOriginalInputIsNotPublisher(originalInputIsPublisher);
 					}
@@ -192,7 +197,7 @@ public class RoutingFunction implements Function<Object, Object> {
 	}
 
 	private FunctionInvocationWrapper functionFromDefinition(String definition) {
-		FunctionInvocationWrapper function = functionCatalog.lookup(definition);
+		FunctionInvocationWrapper function = this.resolveFunction(definition);
 		Assert.notNull(function, "Failed to lookup function to route based on the value of 'spring.cloud.function.definition' property '"
 				+ functionProperties.getDefinition() + "'");
 		if (logger.isInfoEnabled()) {
@@ -211,14 +216,23 @@ public class RoutingFunction implements Function<Object, Object> {
 			input = MessageUtils.toCaseInsensitiveHeadersStructure((Message<?>) input);
 		}
 
-		String functionName = isViaHeader ? expression.getValue(this.headerEvalContext, input, String.class) : expression.getValue(this.evalContext, input, String.class);
-		Assert.hasText(functionName, "Failed to resolve function name based on routing expression '" + functionProperties.getRoutingExpression() + "'");
-		FunctionInvocationWrapper function = functionCatalog.lookup(functionName);
+		String definition = isViaHeader ? expression.getValue(this.headerEvalContext, input, String.class) : expression.getValue(this.evalContext, input, String.class);
+		Assert.hasText(definition, "Failed to resolve function name based on routing expression '" + functionProperties.getRoutingExpression() + "'");
+		FunctionInvocationWrapper function = this.resolveFunction(definition);
 		Assert.notNull(function, "Failed to lookup function to route to based on the expression '"
-				+ functionProperties.getRoutingExpression() + "' which resolved to '" + functionName + "' function name.");
+				+ functionProperties.getRoutingExpression() + "' which resolved to '" + definition + "' function definition.");
 		if (logger.isInfoEnabled()) {
 			logger.info("Resolved function from provided [routing-expression]  " + routingExpression);
 		}
 		return function;
 	}
+
+	private FunctionInvocationWrapper resolveFunction(String definition) {
+		FunctionInvocationWrapper function = functionCatalog.lookup(definition);
+		if (function == null) {
+			function = functionCatalog.lookup(RoutingFunction.DEFAULT_ROUTE_HANDLER);
+		}
+		return function;
+	}
+
 }
