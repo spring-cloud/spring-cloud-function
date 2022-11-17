@@ -29,6 +29,7 @@ import reactor.test.StepVerifier;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.cloud.function.context.DefaultMessageRoutingHandler;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.MessageRoutingCallback;
@@ -68,6 +69,31 @@ public class RoutingFunctionTests {
 
 	private FunctionCatalog configureCatalog() {
 		return configureCatalog(RoutingFunctionConfiguration.class);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testDefaultRouting() {
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".definition", "blah").build();
+
+		FunctionCatalog functionCatalog = this.configureCatalog(EmptyConfiguration.class);
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		try {
+			function.apply(message);
+			fail();
+		}
+		catch (Exception e) {
+			// Good
+		}
+		//
+		functionCatalog = this.configureCatalog(ConfigurationWithDefaultMessageRoutingHandler.class);
+		function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		function.apply(message);
+		ConfigurationWithDefaultMessageRoutingHandler config = this.context.getBean(ConfigurationWithDefaultMessageRoutingHandler.class);
+		assertThat(config.defaultHandlerInvoked).isTrue();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -279,6 +305,27 @@ public class RoutingFunctionTests {
 		@Bean
 		public Function<String, String> uppercase() {
 			return String::toUpperCase;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class EmptyConfiguration {
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class ConfigurationWithDefaultMessageRoutingHandler {
+		public boolean defaultHandlerInvoked;
+		@Bean
+		public DefaultMessageRoutingHandler defaultRoutingHandler() {
+			return new DefaultMessageRoutingHandler() {
+				@Override
+				public void accept(Message<?> message) {
+					super.accept(message);
+					defaultHandlerInvoked = true;
+				}
+			};
 		}
 	}
 }
