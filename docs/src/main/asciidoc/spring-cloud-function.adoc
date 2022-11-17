@@ -240,6 +240,27 @@ conflict resolutions in the event multiple mechanisms are used at the same time,
 2. Message Headers (If function is imperative and no `MessageRoutingCallback` provided)
 3. Application Properties (Any function) 
 
+*Unroutable Messages*
+
+In the event route-to function is not available in catalog you will get an exception stating that. 
+
+There are cases when such behavior is not desired and you may want to have some "catch-all" type function which can handle such messages.
+To accomplish that, framework provides `org.springframework.cloud.function.context.DefaultMessageRoutingHandler` strategy. All you need to do is register it as a bean.
+Its default implementation will simply log the fact that the message is un-routable, but will allow message flow to proceed without the exception, effectively dropping the un-routable message.
+If you want something more sophisticated all you need to do is provide your own implementation of this strategy and register it as a bean.
+
+[source, java]
+----
+@Bean
+public DefaultMessageRoutingHandler defaultRoutingHandler() {
+	return new DefaultMessageRoutingHandler() {
+		@Override
+		public void accept(Message<?> message) {
+			// do something really cool
+		}
+	};
+}
+----
 
 ==== Function Filtering
 Filtering is the type of routing where there are only two paths - 'go' or 'discard'. In terms of functions it mean
