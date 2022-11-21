@@ -873,7 +873,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (inputValue instanceof Message && !this.isInputTypeMessage()) {
 				inputValue = ((Message) inputValue).getPayload();
 			}
-			System.out.println("Invoking function: " + this + "with input type: " + this.getInputType());
+
+			if (logger.isDebugEnabled()) {
+				logger.debug("Invoking function: " + this + "with input type: " + this.getInputType());
+			}
+
 			Object result = ((Function) this.target).apply(inputValue);
 
 			if (result instanceof Publisher && functionInvocationHelper != null) {
