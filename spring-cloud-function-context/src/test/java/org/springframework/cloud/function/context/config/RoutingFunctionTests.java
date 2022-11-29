@@ -82,7 +82,7 @@ public class RoutingFunctionTests {
 		assertThat(function).isNotNull();
 		try {
 			function.apply(message);
-			fail();
+			fail("Should not be here");
 		}
 		catch (Exception e) {
 			// Good
