@@ -10,9 +10,7 @@
 	<artifactId>spring-cloud-function-grpc-cloudevent-ext</artifactId>
 	<name>spring-cloud-function-grpc-cloudevent-ext</name>
 	<description>CloudEvent extension for spring-cloud-function-grpc</description>
-	<properties>
-		<java.version>1.8</java.version>
-	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
