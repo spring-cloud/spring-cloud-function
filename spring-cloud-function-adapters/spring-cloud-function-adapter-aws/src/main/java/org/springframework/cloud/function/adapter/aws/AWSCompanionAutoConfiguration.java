@@ -20,9 +20,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
-import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.CollectionUtils;
+
 
 /**
  *
@@ -30,18 +31,13 @@ import org.springframework.util.CollectionUtils;
  * @since 3.2
  *
  */
-public class AWSCompanionAutoConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
+public class AWSCompanionAutoConfiguration  {
 
-	@Override
-	public void initialize(GenericApplicationContext applicationContext) {
-		applicationContext.registerBean("awsTypesMessageConverter", AWSTypesMessageConverter.class,
-				() -> {
-					if (CollectionUtils.isEmpty(applicationContext.getBeansOfType(JsonMapper.class).values())) {
-						return new AWSTypesMessageConverter(new JacksonMapper(new ObjectMapper()));
-					}
-					else {
-						return new AWSTypesMessageConverter(applicationContext.getBean(JsonMapper.class));
-					}
-				});
+	@Bean
+	public AWSTypesMessageConverter awsTypesMessageConverter(GenericApplicationContext applicationContext) {
+		JsonMapper jsonMapper = CollectionUtils.isEmpty(applicationContext.getBeansOfType(JsonMapper.class).values())
+				? new JacksonMapper(new ObjectMapper())
+						: applicationContext.getBean(JsonMapper.class);
+		return new AWSTypesMessageConverter(jsonMapper);
 	}
 }
