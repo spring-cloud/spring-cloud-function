@@ -16,13 +16,11 @@
 
 package com.example.azure.di.timetriggerdemo;
 
-import java.util.concurrent.Flow.Publisher;
 import java.util.function.Consumer;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
-import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
