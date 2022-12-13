@@ -54,6 +54,12 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
 		try {
+			// Backward compatibility workaround. If the function class is of type FunctionInvoker then create plain
+			// Java instance and delegate to FunctionInvoker adaptor approach.
+			if (functionClass.getName().equals("org.springframework.cloud.function.adapter.azure.FunctionInvoker")) {
+				return functionClass.newInstance();
+			}
+
 			initialize(FunctionClassUtils.getStartClass());
 			Map<String, T> azureFunctionBean = APPLICATION_CONTEXT.getBeansOfType(functionClass);
 			if (CollectionUtils.isEmpty(azureFunctionBean)) {
