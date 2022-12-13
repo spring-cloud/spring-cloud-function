@@ -121,7 +121,10 @@
 		</executions>
 	</plugin>
 	```
-
+	- Set the AZURE subscription configuration such as app name, resource group, region, service plan, pricing Tier
+    - Runtime configuration:
+		- [Java Versions](https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#java-versions)
+		- Specify [Deployment OS](https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#specify-the-deployment-os)
 
 * Build the project: 
 
