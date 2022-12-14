@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,7 +32,15 @@ import com.google.cloud.functions.RawBackgroundFunction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionalSpringApplication;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
+import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.utils.FunctionClassUtils;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -46,10 +55,10 @@ import org.springframework.util.MimeTypeUtils;
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  * @author Oleg Zhurakousky
+ * @author Biju Kunjummen
  * @since 3.0.4
  */
-public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<HttpRequest>
-		implements HttpFunction, RawBackgroundFunction {
+public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
 
@@ -60,17 +69,19 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 
 	private String functionName = "";
 
+	protected FunctionCatalog catalog;
+
+	private FunctionInvocationWrapper function;
+
 	public FunctionInvoker() {
-		super();
-		init();
+		this(FunctionClassUtils.getStartClass());
 	}
 
 	public FunctionInvoker(Class<?> configurationClass) {
-		super(configurationClass);
-		init();
+		init(configurationClass);
 	}
 
-	private void init() {
+	private void init(Class<?> configurationClass) {
 		if (System.getenv().containsKey("spring.cloud.function.definition")) {
 			this.functionName = System.getenv("spring.cloud.function.definition");
 		}
@@ -80,14 +91,12 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 			System.setProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY, "gson");
 		}
 
-		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
-				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
-		initialize(null);
+		initialize(configurationClass);
 	}
 
 	private <I> Function<Message<I>, Message<byte[]>> lookupFunction() {
 		Function<Message<I>, Message<byte[]>> function = this.catalog.lookup(functionName,
-				MimeTypeUtils.APPLICATION_JSON.toString());
+			MimeTypeUtils.APPLICATION_JSON.toString());
 		Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
 		return function;
 	}
@@ -101,7 +110,7 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
-		Message<BufferedReader> message = getInputType() == Void.class || getInputType() == null ? null
+		Message<BufferedReader> message = this.function.getInputType() == Void.class || this.function.getInputType() == null ? null
 			: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 
 		Message<byte[]> result = function.apply(message);
@@ -135,22 +144,53 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	/**
 	 * The implementation of a GCF {@link RawBackgroundFunction} that will be used as the
 	 * entry point from GCF.
-	 * @param json the payload.
+	 *
+	 * @param json    the payload.
 	 * @param context event context.
 	 * @since 3.0.5
 	 */
 	@Override
 	public void accept(String json, Context context) {
-
 		Function<Message<String>, Message<byte[]>> function = lookupFunction();
-		Message<String> message = getInputType() == Void.class ? null
-				: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
+		Message<String> message = this.function.getInputType() == Void.class ? null
+			: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
 
 		Message<byte[]> result = function.apply(message);
 
 		if (result != null) {
 			log.info("Dropping background function result: " + new String(result.getPayload()));
 		}
+	}
+
+	private void initialize(Class<?> configurationClass) {
+		log.info("Initializing: " + configurationClass);
+		SpringApplication springApplication = springApplication(configurationClass);
+		ConfigurableApplicationContext context = springApplication.run();
+		context.getAutowireCapableBeanFactory().autowireBean(this);
+		this.catalog = context.getBean(FunctionCatalog.class);
+		initFunctionConsumerOrSupplierFromCatalog(configurationClass);
+	}
+
+	private void initFunctionConsumerOrSupplierFromCatalog(Object targetContext) {
+		this.function = this.catalog.lookup(this.functionName, "application/json");
+		if (this.function == null) {
+			Set<String> names = this.catalog.getNames(null);
+			this.function = catalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+		}
+
+		if (this.function.isOutputTypePublisher()) {
+			this.function.setSkipOutputConversion(true);
+		}
+		Assert.notNull(this.function, "Failed to lookup function " + this.functionName);
+
+		this.functionName = this.function.getFunctionDefinition();
+		log.info("Located function: '" + this.functionName + "'");
+	}
+
+	private SpringApplication springApplication(Class<?> configurationClass) {
+		SpringApplication application = new FunctionalSpringApplication(configurationClass);
+		application.setWebApplicationType(WebApplicationType.NONE);
+		return application;
 	}
 
 }
