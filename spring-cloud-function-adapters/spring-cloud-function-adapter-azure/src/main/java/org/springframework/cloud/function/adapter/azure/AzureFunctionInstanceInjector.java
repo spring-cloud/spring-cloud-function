@@ -26,6 +26,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -56,7 +57,7 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 		try {
 			// Backward compatibility workaround. If the function class is of type FunctionInvoker then create plain
 			// Java instance and delegate to FunctionInvoker adaptor approach.
-			if (functionClass.getName().equals("org.springframework.cloud.function.adapter.azure.FunctionInvoker")) {
+			if (ClassUtils.isAssignable(FunctionInvoker.class, functionClass)) {
 				return functionClass.newInstance();
 			}
 

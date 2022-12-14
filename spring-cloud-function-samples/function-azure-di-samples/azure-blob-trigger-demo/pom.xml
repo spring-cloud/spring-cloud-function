@@ -10,18 +10,15 @@
 		<!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example.azure.di</groupId>
-	<artifactId>azure-httptrigger-demo</artifactId>
+	<artifactId>azure-blob-trigger-demo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>azure-httptrigger-demo</name>
-	
-	<description>Demo Spring Boot, Azure Function - HttpTrigger (DI adapter)</description>
-
+	<name>azure-blob-trigger-demo</name>
+	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>11</java.version>
 		<spring-boot-thin-layout.version>1.0.28.RELEASE</spring-boot-thin-layout.version>
-		
-		<!-- Spring Boot start class! WARING: correct class must be set! -->
-		<start-class>com.example.azure.di.httptriggerdemo.HttpTriggerDemoApplication</start-class>
+
+		<start-class>com.example.azure.di.azureblobtriggerdemo.AzureBlobTriggerDemoApplication</start-class>
 
 		<!-- AZURE FUNCTION CONFIG -->
 		<azure.functions.maven.plugin.version>1.22.0</azure.functions.maven.plugin.version>
@@ -31,12 +28,17 @@
 		<functionAppServicePlanName>java-functions-app-service-plan</functionAppServicePlanName>
 		<functionPricingTier>EP1</functionPricingTier>
 	</properties>
-	<dependencies>
 
+	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-azure</artifactId>
-			<version>3.2.9-SNAPSHOT</version> <!-- TODO: replace with GA version once 3.2.9 is released -->
+			<version>3.2.9-SNAPSHOT</version>			<!-- TODO: replace with GA version once 3.2.9 is released -->
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
 		<dependency>
@@ -44,7 +46,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -62,6 +63,7 @@
 					<pricingTier>${functionPricingTier}</pricingTier>
 
 					<hostJson>${project.basedir}/src/main/resources/host.json</hostJson>
+					<localSettingsJson>${project.basedir}/src/main/resources/local.settings.json</localSettingsJson>
 
 					<runtime>
 						<os>linux</os>
