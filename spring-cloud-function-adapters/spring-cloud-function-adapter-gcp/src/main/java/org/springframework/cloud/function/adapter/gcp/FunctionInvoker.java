@@ -20,7 +20,9 @@ import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.cloud.functions.Context;
@@ -31,7 +33,15 @@ import com.google.cloud.functions.RawBackgroundFunction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionalSpringApplication;
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
+import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.utils.FunctionClassUtils;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -46,10 +56,10 @@ import org.springframework.util.MimeTypeUtils;
  * @author Dmitry Solomakha
  * @author Mike Eltsufin
  * @author Oleg Zhurakousky
+ * @author Biju Kunjummen
  * @since 3.0.4
  */
-public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<HttpRequest>
-		implements HttpFunction, RawBackgroundFunction {
+public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
 
@@ -60,34 +70,38 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 
 	private String functionName = "";
 
+	protected FunctionCatalog catalog;
+
+	private FunctionInvocationWrapper functionWrapped;
+
+	private ConfigurableApplicationContext context;
+
 	public FunctionInvoker() {
-		super();
-		init();
+		this(FunctionClassUtils.getStartClass());
 	}
 
 	public FunctionInvoker(Class<?> configurationClass) {
-		super(configurationClass);
-		init();
+		init(configurationClass);
 	}
 
-	private void init() {
-		if (System.getenv().containsKey("spring.cloud.function.definition")) {
-			this.functionName = System.getenv("spring.cloud.function.definition");
-		}
-
+	private void init(Class<?> configurationClass) {
 		// Default to GSON if implementation not specified.
 		if (!System.getenv().containsKey(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY)) {
 			System.setProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY, "gson");
 		}
-
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
-				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
-		initialize(null);
+			.setContextClassLoader(FunctionInvoker.class.getClassLoader());
+
+		log.info("Initializing: " + configurationClass);
+		SpringApplication springApplication = springApplication(configurationClass);
+		this.context = springApplication.run();
+		this.catalog = this.context.getBean(FunctionCatalog.class);
+		initFunctionConsumerOrSupplierFromCatalog();
 	}
 
 	private <I> Function<Message<I>, Message<byte[]>> lookupFunction() {
 		Function<Message<I>, Message<byte[]>> function = this.catalog.lookup(functionName,
-				MimeTypeUtils.APPLICATION_JSON.toString());
+			MimeTypeUtils.APPLICATION_JSON.toString());
 		Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
 		return function;
 	}
@@ -98,10 +112,9 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	 */
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
-
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
-		Message<BufferedReader> message = getInputType() == Void.class || getInputType() == null ? null
+		Message<BufferedReader> message = this.functionWrapped.getInputType() == Void.class || this.functionWrapped.getInputType() == null ? null
 			: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 
 		Message<byte[]> result = function.apply(message);
@@ -135,22 +148,78 @@ public class FunctionInvoker extends AbstractSpringFunctionAdapterInitializer<Ht
 	/**
 	 * The implementation of a GCF {@link RawBackgroundFunction} that will be used as the
 	 * entry point from GCF.
-	 * @param json the payload.
+	 *
+	 * @param json    the payload.
 	 * @param context event context.
 	 * @since 3.0.5
 	 */
 	@Override
 	public void accept(String json, Context context) {
-
 		Function<Message<String>, Message<byte[]>> function = lookupFunction();
-		Message<String> message = getInputType() == Void.class ? null
-				: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
+		Message<String> message = this.functionWrapped.getInputType() == Void.class ? null
+			: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
 
 		Message<byte[]> result = function.apply(message);
 
 		if (result != null) {
 			log.info("Dropping background function result: " + new String(result.getPayload()));
 		}
+	}
+
+	private void initFunctionConsumerOrSupplierFromCatalog() {
+		String name = resolveName(Function.class);
+		this.functionWrapped = this.catalog.lookup(Function.class, name);
+		if (this.functionWrapped != null) {
+			this.functionName = name;
+			return;
+		}
+		name = resolveName(Consumer.class);
+		this.functionWrapped = this.catalog.lookup(Consumer.class, name);
+		if (this.functionWrapped != null) {
+			this.functionName = name;
+			return;
+		}
+
+		name = resolveName(Supplier.class);
+		this.functionWrapped = this.catalog.lookup(Supplier.class, name);
+		if (this.functionWrapped != null) {
+			this.functionName = name;
+			return;
+		}
+
+		// Default to Routing Function
+		this.functionWrapped = this.catalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+		if (this.functionWrapped != null) {
+			this.functionName = RoutingFunction.FUNCTION_NAME;
+		}
+
+		Assert.notNull(this.functionWrapped, "Couldn't resolve a handler function");
+	}
+
+	private String resolveName(Class<?> type) {
+		if (System.getenv().containsKey("spring.cloud.function.definition")) {
+			return System.getenv("spring.cloud.function.definition");
+		}
+		String functionName = this.context.getEnvironment().getProperty("function.name");
+		if (functionName != null) {
+			return functionName;
+		}
+		else if (type.isAssignableFrom(Function.class)) {
+			return "function";
+		}
+		else if (type.isAssignableFrom(Consumer.class)) {
+			return "consumer";
+		}
+		else if (type.isAssignableFrom(Supplier.class)) {
+			return "supplier";
+		}
+		throw new IllegalStateException("Unknown type " + type);
+	}
+
+	private SpringApplication springApplication(Class<?> configurationClass) {
+		SpringApplication application = new FunctionalSpringApplication(configurationClass);
+		application.setWebApplicationType(WebApplicationType.NONE);
+		return application;
 	}
 
 }
