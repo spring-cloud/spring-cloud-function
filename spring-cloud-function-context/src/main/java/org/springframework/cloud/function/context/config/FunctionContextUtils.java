@@ -55,8 +55,14 @@ public abstract class FunctionContextUtils {
 			}
 		}
 
+		Class<?> beanClass = null;
+
+
 		if (definition == null) {
 			return null;
+		}
+		else {
+			beanClass = resolveBeanClass(definition);
 		}
 
 		Object source = definition.getSource();
@@ -74,7 +80,7 @@ public abstract class FunctionContextUtils {
 		}
 		else {
 			Type t = definition.getResolvableType().getType();
-			if (!(t instanceof ParameterizedType) && definition.hasBeanClass()) {
+			if (!(t instanceof ParameterizedType) && beanClass != null) {
 				return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
 			}
 			return t;
@@ -97,6 +103,15 @@ public abstract class FunctionContextUtils {
 			params.add(ClassUtils.resolveClassName(holder.getType(), null));
 		}
 		return params.toArray(new Class<?>[0]);
+	}
+
+	private static Class<?> resolveBeanClass(AbstractBeanDefinition beanDefinition) {
+		try {
+			return beanDefinition.hasBeanClass() ? beanDefinition.getBeanClass() : ClassUtils.getDefaultClassLoader().loadClass(beanDefinition.getBeanClassName());
+		}
+		catch (Exception e) {
+			return null;
+		}
 	}
 
 	private static Type findBeanType(AbstractBeanDefinition definition, String declaringClassName, String methodName) {
