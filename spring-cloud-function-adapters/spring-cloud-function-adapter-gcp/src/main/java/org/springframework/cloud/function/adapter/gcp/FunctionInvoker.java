@@ -20,8 +20,9 @@ import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.cloud.functions.Context;
@@ -71,7 +72,9 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 
 	protected FunctionCatalog catalog;
 
-	private FunctionInvocationWrapper function;
+	private FunctionInvocationWrapper functionWrapped;
+
+	private ConfigurableApplicationContext context;
 
 	public FunctionInvoker() {
 		this(FunctionClassUtils.getStartClass());
@@ -82,16 +85,18 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	}
 
 	private void init(Class<?> configurationClass) {
-		if (System.getenv().containsKey("spring.cloud.function.definition")) {
-			this.functionName = System.getenv("spring.cloud.function.definition");
-		}
-
 		// Default to GSON if implementation not specified.
 		if (!System.getenv().containsKey(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY)) {
 			System.setProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY, "gson");
 		}
+		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
+			.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 
-		initialize(configurationClass);
+		log.info("Initializing: " + configurationClass);
+		SpringApplication springApplication = springApplication(configurationClass);
+		this.context = springApplication.run();
+		this.catalog = this.context.getBean(FunctionCatalog.class);
+		initFunctionConsumerOrSupplierFromCatalog();
 	}
 
 	private <I> Function<Message<I>, Message<byte[]>> lookupFunction() {
@@ -107,10 +112,9 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	 */
 	@Override
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
-
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
-		Message<BufferedReader> message = this.function.getInputType() == Void.class || this.function.getInputType() == null ? null
+		Message<BufferedReader> message = this.functionWrapped.getInputType() == Void.class || this.functionWrapped.getInputType() == null ? null
 			: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 
 		Message<byte[]> result = function.apply(message);
@@ -152,7 +156,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	@Override
 	public void accept(String json, Context context) {
 		Function<Message<String>, Message<byte[]>> function = lookupFunction();
-		Message<String> message = this.function.getInputType() == Void.class ? null
+		Message<String> message = this.functionWrapped.getInputType() == Void.class ? null
 			: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
 
 		Message<byte[]> result = function.apply(message);
@@ -162,29 +166,54 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		}
 	}
 
-	private void initialize(Class<?> configurationClass) {
-		log.info("Initializing: " + configurationClass);
-		SpringApplication springApplication = springApplication(configurationClass);
-		ConfigurableApplicationContext context = springApplication.run();
-		context.getAutowireCapableBeanFactory().autowireBean(this);
-		this.catalog = context.getBean(FunctionCatalog.class);
-		initFunctionConsumerOrSupplierFromCatalog(configurationClass);
+	private void initFunctionConsumerOrSupplierFromCatalog() {
+		String name = resolveName(Function.class);
+		this.functionWrapped = this.catalog.lookup(Function.class, name);
+		if (this.functionWrapped != null) {
+			this.functionName = name;
+			return;
+		}
+		name = resolveName(Consumer.class);
+		this.functionWrapped = this.catalog.lookup(Consumer.class, name);
+		if (this.functionWrapped != null) {
+			this.functionName = name;
+			return;
+		}
+
+		name = resolveName(Supplier.class);
+		this.functionWrapped = this.catalog.lookup(Supplier.class, name);
+		if (this.functionWrapped != null) {
+			this.functionName = name;
+			return;
+		}
+
+		// Default to Routing Function
+		this.functionWrapped = this.catalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+		if (this.functionWrapped != null) {
+			this.functionName = RoutingFunction.FUNCTION_NAME;
+		}
+
+		Assert.notNull(this.functionWrapped, "Couldn't resolve a handler function");
 	}
 
-	private void initFunctionConsumerOrSupplierFromCatalog(Object targetContext) {
-		this.function = this.catalog.lookup(this.functionName, "application/json");
-		if (this.function == null) {
-			Set<String> names = this.catalog.getNames(null);
-			this.function = catalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+	private String resolveName(Class<?> type) {
+		if (System.getenv().containsKey("spring.cloud.function.definition")) {
+			return System.getenv("spring.cloud.function.definition");
 		}
-
-		if (this.function.isOutputTypePublisher()) {
-			this.function.setSkipOutputConversion(true);
+		String functionName = this.context.getEnvironment().getProperty("function.name");
+		if (functionName != null) {
+			return functionName;
 		}
-		Assert.notNull(this.function, "Failed to lookup function " + this.functionName);
-
-		this.functionName = this.function.getFunctionDefinition();
-		log.info("Located function: '" + this.functionName + "'");
+		else if (type.isAssignableFrom(Function.class)) {
+			return "function";
+		}
+		else if (type.isAssignableFrom(Consumer.class)) {
+			return "consumer";
+		}
+		else if (type.isAssignableFrom(Supplier.class)) {
+			return "supplier";
+		}
+		throw new IllegalStateException("Unknown type " + type);
 	}
 
 	private SpringApplication springApplication(Class<?> configurationClass) {
