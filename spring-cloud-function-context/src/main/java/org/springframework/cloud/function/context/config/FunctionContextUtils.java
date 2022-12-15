@@ -30,8 +30,6 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.core.FunctionFactoryMetadata;
-import org.springframework.context.annotation.ScannedGenericBeanDefinition;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.MethodMetadata;
@@ -62,12 +60,17 @@ public abstract class FunctionContextUtils {
 			}
 		}
 
+		Class<?> beanClass = null;
+
+
 		if (definition == null) {
 			return null;
 		}
-		else if (definition instanceof ScannedGenericBeanDefinition) {
+
+		if (definition instanceof AbstractBeanDefinition) {
 			try {
-				return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
+				beanClass = resolveBeanClass(definition);
+				return FunctionTypeUtils.discoverFunctionTypeFromClass(beanClass);
 			}
 			catch (Exception e) {
 				// ignore since name may not be actually resolved to a class in some cases
@@ -89,24 +92,10 @@ public abstract class FunctionContextUtils {
 			if (type != null) {
 				param = type.getType();
 			}
-			else {
-				Class<?> beanClass = definition.hasBeanClass() ? definition.getBeanClass() : null;
-				if (beanClass != null
-						&& !FunctionFactoryMetadata.class.isAssignableFrom(beanClass)) {
-					param = beanClass;
-				}
-				else {
-					Object bean = registry.getBean(actualName);
-					// could be FunctionFactoryMetadata. . . TODO investigate and fix
-					if (bean instanceof FunctionFactoryMetadata) {
-						param = ((FunctionFactoryMetadata<?>) bean).getFactoryMethod().getGenericReturnType();
-					}
-				}
-			}
 		}
 
-		if (!(param instanceof ParameterizedType) && definition.hasBeanClass()) {
-			return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
+		if (!(param instanceof ParameterizedType) && beanClass != null) {
+			return FunctionTypeUtils.discoverFunctionTypeFromClass(beanClass);
 		}
 		return param;
 	}
@@ -127,6 +116,15 @@ public abstract class FunctionContextUtils {
 			params.add(ClassUtils.resolveClassName(holder.getType(), null));
 		}
 		return params.toArray(new Class<?>[0]);
+	}
+
+	private static Class<?> resolveBeanClass(AbstractBeanDefinition beanDefinition) {
+		try {
+			return beanDefinition.hasBeanClass() ? beanDefinition.getBeanClass() : ClassUtils.getDefaultClassLoader().loadClass(beanDefinition.getBeanClassName());
+		}
+		catch (Exception e) {
+			throw new IllegalStateException("Can't resolve class", e);
+		}
 	}
 
 	private static Type findBeanType(AbstractBeanDefinition definition, String declaringClassName, String methodName) {
