@@ -50,7 +50,7 @@ assemble.dependsOn = [shadowJar, thinJar]
 
 jar {
 	manifest {
-		attributes 'Main-Class': 'example.Config'
+		attributes 'Main-Class': 'example.FunctionConfiguration'
 	}
 }
 
