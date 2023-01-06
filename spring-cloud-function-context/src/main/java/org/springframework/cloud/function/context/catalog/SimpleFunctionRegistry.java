@@ -879,7 +879,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				logger.debug("Invoking function: " + this + "with input type: " + this.getInputType());
 			}
 
-			Object result = ((Function) this.target).apply(inputValue);
+			Object result;
+			if (inputValue != null && inputValue.getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
+				result = ((Function) this.target).apply(null);
+			}
+			else {
+				result = ((Function) this.target).apply(inputValue);
+			}
 
 			if (result instanceof Publisher && functionInvocationHelper != null) {
 				result = this.postProcessFunction((Publisher) result, firstInputMessage);
