@@ -75,16 +75,14 @@ public abstract class FunctionContextUtils {
 			param = registry.getType(actualName);
 		}
 
-		if (param != null) {
-			return param;
+		if (param == null) {
+			param = definition.getResolvableType().getType();
 		}
-		else {
-			Type t = definition.getResolvableType().getType();
-			if (!(t instanceof ParameterizedType) && beanClass != null) {
-				return FunctionTypeUtils.discoverFunctionTypeFromClass(definition.getBeanClass());
-			}
-			return t;
+
+		if (!(param instanceof ParameterizedType) && beanClass != null) {
+			return FunctionTypeUtils.discoverFunctionTypeFromClass(beanClass);
 		}
+		return param;
 	}
 
 	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
