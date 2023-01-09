@@ -20,12 +20,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -39,6 +41,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
@@ -119,9 +122,12 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		}
 		if (!StringUtils.hasText(functionDefinition)) {
-			logger.info("Can't determine default function definition. Please "
-					+ "use 'spring.cloud.function.definition' property to explicitly define it.");
-			return null;
+			Collection<Object> functionalBeans = this.getNames(null).stream()
+					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
+					.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
+					.collect(Collectors.toList());
+			logger.warn("Multiple functional beans were found " + functionalBeans + ", thus can't determine default function definition. Please "
+					+ "use 'spring.cloud.function.definition' property to explicitly define it. ");
 		}
 		if (!isFunctionDefinitionEligible(functionDefinition)) {
 			return null;
