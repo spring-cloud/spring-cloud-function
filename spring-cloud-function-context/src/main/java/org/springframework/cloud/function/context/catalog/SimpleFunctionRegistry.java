@@ -871,7 +871,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				inputValue = this.extractValueFromOriginalValueHolderIfNecessary(value);
 			}
 
-			if (inputValue instanceof Message && !this.isInputTypeMessage()) {
+			if (!(this.target instanceof PassThruFunction) && inputValue instanceof Message && !this.isInputTypeMessage()) {
 				inputValue = ((Message) inputValue).getPayload();
 			}
 
@@ -1001,7 +1001,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		@SuppressWarnings("unchecked")
 		private boolean isInputConversionNecessary(Object input, Type type) {
-			if (type == null || this.getRawClassFor(type) == Void.class || this.target instanceof RoutingFunction || this.isComposed()) {
+			if (type == null || this.getRawClassFor(type) == Void.class || this.target instanceof RoutingFunction || this.isComposed() || this.target instanceof PassThruFunction) {
 				if (this.getRawClassFor(type) == Void.class) {
 					if (input instanceof Message) {
 						input = ((Message) input).getPayload();
