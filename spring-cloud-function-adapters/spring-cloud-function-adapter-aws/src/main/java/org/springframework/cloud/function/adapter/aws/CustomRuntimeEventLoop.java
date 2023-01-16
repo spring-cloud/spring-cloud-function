@@ -147,6 +147,21 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 				String invocationUrl = MessageFormat
 						.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
 
+				String traceId = response.getHeaders().getFirst("Lambda-Runtime-Trace-Id");
+				if (traceId != null) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Lambda-Runtime-Trace-Id: " + traceId);
+					}
+					try {
+						// The X-Ray SDK uses this value to connect trace data between services.
+						System.setProperty("com.amazonaws.xray.traceHeader", traceId);
+					} catch (Exception e) {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Failed to set amazon x-ray trace id", e);
+						}
+					}
+				}
+
 				try {
 					Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
 
