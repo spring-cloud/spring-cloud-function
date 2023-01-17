@@ -43,6 +43,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 
@@ -148,20 +149,20 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 						.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
 
 				String traceId = response.getHeaders().getFirst("Lambda-Runtime-Trace-Id");
-				if (traceId != null) {
+				if (StringUtils.hasText(traceId)) {
 					if (logger.isDebugEnabled()) {
 						logger.debug("Lambda-Runtime-Trace-Id: " + traceId);
 					}
 					try {
 						// The X-Ray SDK uses this value to connect trace data between services.
 						System.setProperty("com.amazonaws.xray.traceHeader", traceId);
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 						if (logger.isDebugEnabled()) {
 							logger.debug("Failed to set amazon x-ray trace id", e);
 						}
 					}
 				}
-
 				try {
 					Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
 
