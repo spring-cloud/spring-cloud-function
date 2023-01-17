@@ -52,6 +52,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -765,6 +766,24 @@ public class FunctionInvokerTests {
 	}
 
 	@Test
+	public void testLBEventReturningMessage() throws Exception {
+		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "inputOutputLBEventAsMessage");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.sampleLBEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		System.out.println("RESULT: " + result);
+		assertThat(result.get("body")).isEqualTo("\"Hello\"");
+		assertThat((boolean) result.get("isBase64Encoded")).isFalse();
+		assertThat(((Map) result.get("headers")).get("foo")).isEqualTo("bar");
+		assertThat(result.get("statusCode")).isEqualTo(200);
+	}
+
+	@Test
 	public void testLBEventAsMessage() throws Exception {
 		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputLBEventAsMessage");
@@ -1295,6 +1314,14 @@ public class FunctionInvokerTests {
 			return v -> {
 				System.out.println("Received: " + v);
 				return v.getBody();
+			};
+		}
+
+		@Bean
+		public Function<ApplicationLoadBalancerRequestEvent, Message<byte[]>> inputOutputLBEventAsMessage() {
+			return v -> {
+				Message<byte[]> message = MessageBuilder.withPayload("\"Hello\"".getBytes(StandardCharsets.UTF_8)).setHeader("foo", "bar").build();
+				return message;
 			};
 		}
 
