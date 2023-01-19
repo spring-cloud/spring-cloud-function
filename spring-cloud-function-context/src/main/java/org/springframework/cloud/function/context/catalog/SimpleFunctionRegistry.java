@@ -1136,7 +1136,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 
 			if (convertedOutput instanceof Message) {
-				if (((Message) convertedOutput).getPayload() instanceof byte[]) {
+				if (((Message) convertedOutput).getPayload() instanceof byte[] && ObjectUtils.isEmpty(contentType)) {
 					return convertedOutput;
 				}
 				else if (isExtractPayload((Message<?>) convertedOutput, type)) {
