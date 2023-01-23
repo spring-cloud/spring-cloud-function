@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -47,11 +48,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -929,6 +932,25 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"Hello from Lambda\"");
 	}
 
+	@Test
+	public void testResponseBase64Encoded() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoStringMessage");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		JsonMapper mapper = new JacksonMapper(new ObjectMapper());
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		Map resultMap = mapper.fromJson(result, Map.class);
+		assertThat((boolean) resultMap.get(AWSLambdaUtils.IS_BASE64_ENCODED)).isTrue();
+		String body = new String(Base64.getDecoder().decode((String) resultMap.get(AWSLambdaUtils.BODY)), StandardCharsets.UTF_8);
+		assertThat(body).isEqualTo("hello");
+	}
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayAsSupplier() throws Exception {
@@ -1344,6 +1366,14 @@ public class FunctionInvokerTests {
 		@Bean
 		public Supplier<String> supply() {
 			return () -> "boom";
+		}
+
+		@Bean
+		public Function<Message<String>, Message<String>> echoStringMessage() {
+			return m -> {
+				String encodedPayload = Base64.getEncoder().encodeToString(m.getPayload().getBytes(StandardCharsets.UTF_8));
+				return MessageBuilder.withPayload(encodedPayload).setHeader("isBase64Encoded", true).build();
+			};
 		}
 
 

@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.adapter.aws;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import com.amazonaws.services.lambda.runtime.serialization.PojoSerializer;
@@ -100,6 +101,9 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 			@Nullable Object conversionHint) {
+		if (payload instanceof String && headers.containsKey(AWSLambdaUtils.IS_BASE64_ENCODED)  && (boolean) headers.get(AWSLambdaUtils.IS_BASE64_ENCODED)) {
+			return ((String) payload).getBytes(StandardCharsets.UTF_8);
+		}
 		return jsonMapper.toJson(payload);
 	}
 
