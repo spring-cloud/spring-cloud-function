@@ -46,6 +46,14 @@ public final class AWSLambdaUtils {
 
 	static final String AWS_EVENT = "aws-event";
 
+	static final String IS_BASE64_ENCODED = "isBase64Encoded";
+
+	static final String STATUS_CODE = "statusCode";
+
+	static final String BODY = "body";
+
+	static final String HEADERS = "headers";
+
 	/**
 	 * The name of the headers that stores AWS Context object.
 	 */
@@ -130,18 +138,19 @@ public final class AWSLambdaUtils {
 		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : extractPayload((Message<Object>) responseMessage, objectMapper);
 		if (requestMessage.getHeaders().containsKey(AWS_API_GATEWAY) && ((boolean) requestMessage.getHeaders().get(AWS_API_GATEWAY))) {
 			Map<String, Object> response = new HashMap<String, Object>();
-			response.put("isBase64Encoded", false);
+			response.put(IS_BASE64_ENCODED, responseMessage != null && responseMessage.getHeaders().containsKey(IS_BASE64_ENCODED)
+					? responseMessage.getHeaders().get(IS_BASE64_ENCODED) : false);
 
 			AtomicReference<MessageHeaders> headers = new AtomicReference<>();
 			int statusCode = HttpStatus.OK.value();
 			if (responseMessage != null) {
 				headers.set(responseMessage.getHeaders());
-				statusCode = headers.get().containsKey("statusCode")
-						? (int) headers.get().get("statusCode")
+				statusCode = headers.get().containsKey(STATUS_CODE)
+						? (int) headers.get().get(STATUS_CODE)
 						: HttpStatus.OK.value();
 			}
 
-			response.put("statusCode", statusCode);
+			response.put(STATUS_CODE, statusCode);
 			if (isRequestKinesis(requestMessage)) {
 				HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
 				response.put("statusDescription", httpStatus.toString());
@@ -149,12 +158,11 @@ public final class AWSLambdaUtils {
 
 			String body = responseMessage == null
 					? "\"OK\"" : new String(extractPayload((Message<Object>) responseMessage, objectMapper), StandardCharsets.UTF_8);
-			response.put("body", body);
-
+			response.put(BODY, body);
 			if (responseMessage != null) {
 				Map<String, String> responseHeaders = new HashMap<>();
 				headers.get().keySet().forEach(key -> responseHeaders.put(key, headers.get().get(key).toString()));
-				response.put("headers", responseHeaders);
+				response.put(HEADERS, responseHeaders);
 			}
 
 			try {
