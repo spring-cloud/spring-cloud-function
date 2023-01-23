@@ -56,7 +56,7 @@ public final class AWSLambdaUtils {
 	}
 
 	static boolean isSupportedAWSType(Type inputType) {
-		if (FunctionTypeUtils.isMessage(inputType)) {
+		if (FunctionTypeUtils.isMessage(inputType) || FunctionTypeUtils.isPublisher(inputType)) {
 			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
 		}
 		String typeName = inputType.getTypeName();
