@@ -689,12 +689,6 @@ public class FunctionInvokerTests {
 
 	@Test
 	public void testS3Event() throws Exception {
-
-//		S3EventSerializer<S3Event> ser = new S3EventSerializer<S3Event>().withClass(S3Event.class).withClassLoader(S3Event.class.getClassLoader());
-//		InputStream targetStream = new ByteArrayInputStream(this.s3Event.getBytes());
-//		S3Event event = ser.fromJson(targetStream);
-//		System.out.println(event);
-
 		System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputS3Event");
 		FunctionInvoker invoker = new FunctionInvoker();
@@ -748,6 +742,20 @@ public class FunctionInvokerTests {
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
+	}
+
+	@Test
+	public void testS3EventReactive() throws Exception {
+		System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoStringFlux");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.s3Event.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		assertThat(result).contains("s3SchemaVersion");
 	}
 
 	@Test
@@ -1254,6 +1262,11 @@ public class FunctionInvokerTests {
 	public static class S3Configuration {
 		@Bean
 		public Function<String, String> echoString() {
+			return v -> v;
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> echoStringFlux() {
 			return v -> v;
 		}
 
