@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd ${LAMBDA_TASK_ROOT:-.}
+
+./native-uppercase -Dlogging.level.org.springframework=DEBUG
