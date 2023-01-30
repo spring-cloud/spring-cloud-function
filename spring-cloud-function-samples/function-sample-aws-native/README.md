@@ -28,10 +28,11 @@ Once the build finishes, you can deploy it.
 
 Start *AWS Dashboard* and navigate to **AWS Lambda** Services
 
-Click on `Create Function`.  Enter `uppercase` for *function name*. For the runtime select `Provide your own bootstrap on Amazon Linux 2`. Make sure you select the proper architecture (`x86_64` or `arm64`). 
+Click on `Create Function`.  Enter `uppercase` for *function name*. For the runtime select `Provide your own bootstrap on Amazon Linux 2`. 
+Make sure you select the proper architecture (`x86_64` or `arm64`). 
 
 Click on `Create Function` again.
 
-Next you need to upload your project, so click on `Upload From` and point to the ZIP file that was created by the build process (in the target directory).
+Next you need to upload your project, so click on `Upload From` and point to the ZIP file that was created by the build process (in the `target` directory).
 
-Once the file is uploaded navigate to the `Test` tab. YOu can change the input data or use the default. Basically you need to pas a String in a JSON format such as "hello" and you should see the output "HELLO". 
+Once the file is uploaded navigate to the `Test` tab. You can change the input data or use the default. Basically you need to pas a String in a JSON format such as "hello" and you should see the output "HELLO". 
