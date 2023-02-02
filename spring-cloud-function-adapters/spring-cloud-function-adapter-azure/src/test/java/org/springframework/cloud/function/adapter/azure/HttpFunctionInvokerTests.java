@@ -160,7 +160,7 @@ public class HttpFunctionInvokerTests {
 
 	}
 
-	class HttpRequestMessageStub<I> implements HttpRequestMessage<I> {
+	public static class HttpRequestMessageStub<I> implements HttpRequestMessage<I> {
 
 		private URI uri;
 		private HttpMethod httpMethod;
@@ -225,7 +225,7 @@ public class HttpFunctionInvokerTests {
 
 	}
 
-	class BuilderStub implements Builder {
+	public static class BuilderStub implements Builder {
 
 		private HttpStatusType status;
 		private Map<String, String> headers = new HashMap<>();
@@ -256,7 +256,7 @@ public class HttpFunctionInvokerTests {
 
 	}
 
-	class HttpResponseMessageStub implements HttpResponseMessage {
+	public static class HttpResponseMessageStub implements HttpResponseMessage {
 
 		private HttpStatusType status;
 		private Map<String, String> headers = new HashMap<>();
