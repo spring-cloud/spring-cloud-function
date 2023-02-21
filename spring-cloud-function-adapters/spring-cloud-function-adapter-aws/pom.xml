@@ -86,25 +86,31 @@
 		</dependency>
 		
 		<dependency>
+<<<<<<< HEAD
+=======
 			<!-- Spring Boot autoconfiguration needs this to be able to create a Jackson
 				ObjectMapper -->
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
-			<optional>true</optional>
+<!--			<optional>true</optional>-->
 <!-- 			<scope>test</scope> -->
 		</dependency>
 		<dependency>
+>>>>>>> 24687a3ab (working on AWS)
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-webmvc</artifactId>
-		   <optional>true</optional>
+<!--		   <optional>true</optional>-->
 		</dependency>
 		<dependency>
+<<<<<<< HEAD
+=======
 		    <groupId>javax.servlet</groupId>
 		    <artifactId>javax.servlet-api</artifactId>
 <!--		    <version>3.1.0</version>-->
-		    <scope>provided</scope>
+<!--		    <scope>provided</scope>-->
 		</dependency>
 		<dependency>
+>>>>>>> 24687a3ab (working on AWS)
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-web</artifactId>
 			<optional>true</optional>
