@@ -146,7 +146,7 @@ And of course you can't compose uncomposable such as Consumer and Function, Cons
 Since version 2.2 Spring Cloud Function provides routing feature allowing
 you to invoke a single function which acts as a router to an actual function you wish to invoke
 This feature is very useful in certain FAAS environments where maintaining configurations
-for several functions could be cumbersome or exposing more then one function is not possible.
+for several functions could be cumbersome or exposing more than one function is not possible.
 
 The `RoutingFunction` is registered in _FunctionCatalog_  under the name `functionRouter`. For simplicity
 and consistency you can also refer to `RoutingFunction.FUNCTION_NAME` constant.
@@ -294,7 +294,7 @@ values (e.g., Message).
 
 ==== Multiple Routers
 
-By default the framework will always have a single routing function configured as described in previous sections. However, there are times when you may need more then one routing function.
+By default the framework will always have a single routing function configured as described in previous sections. However, there are times when you may need more than one routing function.
 In that case you can create your own instance of the `RoutingFunction` bean in addition to the existing one as long as you give it a name other than `functionRouter`.
 
 You can pass `spring.cloud.function.routing-expression` or `spring.cloud.function.definition` to RoutinFunction as key/value pairs in the map.
@@ -732,7 +732,7 @@ In other words, providing you only have `uppercase` function in catalog
 Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).
 For example,  `curl -H "Content-Type: text/plain" localhost:8080/uppercase,reverse -d hello`.
 
-For cases where there is more then a single function in catalog, each function will be exported and mapped with function name being 
+For cases where there is more than a single function in catalog, each function will be exported and mapped with function name being 
 part of the path (e.g., `localhost:8080/uppercase`). 
 In this scenario you can still map specific function or function composition to the root path by providing
 `spring.cloud.function.definition` property 
@@ -751,7 +751,7 @@ of the actual URL, giving user ability to use it for evaluation and computation.
 
 === Function Filtering rules 
 
-In situations where there are more then one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
+In situations where there are more than one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
 the same `spring.cloud.function.definition` property listing functions you intend to export delimited by `;`.
 Note that in this case nothing will be mapped to the root path and functions that are not listed (including compositions) are not going to be exported
 
