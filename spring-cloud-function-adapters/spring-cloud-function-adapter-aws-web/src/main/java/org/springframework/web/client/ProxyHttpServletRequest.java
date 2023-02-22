@@ -164,30 +164,9 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	private final Map<String, String[]> parameters = new LinkedHashMap<>(16);
 
-//	private String protocol = DEFAULT_PROTOCOL;
-//
-//	private String scheme = DEFAULT_SCHEME;
-//
-//	private String serverName = DEFAULT_SERVER_NAME;
-//
-//	private int serverPort = DEFAULT_SERVER_PORT;
-//
-//	private String remoteAddr = DEFAULT_REMOTE_ADDR;
-//
-//	private String remoteHost = DEFAULT_REMOTE_HOST;
-
 	/** List of locales in descending order. */
 	private final LinkedList<Locale> locales = new LinkedList<>();
 
-	private boolean secure = false;
-
-//	private int remotePort = DEFAULT_SERVER_PORT;
-//
-//	private String localName = DEFAULT_SERVER_NAME;
-//
-//	private String localAddr = DEFAULT_SERVER_ADDR;
-//
-//	private int localPort = DEFAULT_SERVER_PORT;
 
 	private boolean asyncStarted = false;
 
@@ -248,29 +227,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	// ---------------------------------------------------------------------
 	// Constructors
 	// ---------------------------------------------------------------------
-
-//	/**
-//	 * Create a new {@code MockHttpServletRequest} with a default
-//	 * {@link MockServletContext}.
-//	 * @param method the request method (may be {@code null})
-//	 * @param requestURI the request URI (may be {@code null})
-//	 * @see #setMethod
-//	 * @see #setRequestURI
-//	 * @see #MockHttpServletRequest(ServletContext, String, String)
-//	 */
-//	public ServerlessHttpServletRequest(@Nullable String method, @Nullable String requestURI) {
-//		this(null, method, requestURI);
-//	}
-//
-//	/**
-//	 * Create a new {@code MockHttpServletRequest} with the supplied {@link ServletContext}.
-//	 * @param servletContext the ServletContext that the request runs in
-//	 * (may be {@code null} to use a default {@link MockServletContext})
-//	 * @see #MockHttpServletRequest(ServletContext, String, String)
-//	 */
-//	public ServerlessHttpServletRequest(@Nullable ServletContext servletContext) {
-//		this(servletContext, "", "");
-//	}
 
 	/**
 	 * Create a new {@code MockHttpServletRequest} with the supplied
@@ -470,18 +426,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public ServletInputStream getInputStream() {
-//		if (this.inputStream != null) {
-//			return this.inputStream;
-//		}
-//		else if (this.reader != null) {
-//			throw new IllegalStateException(
-//					"Cannot call getInputStream() after getReader() has already been called for the current request")			;
-//		}
-//
-//		this.inputStream = (this.content != null ?
-//				new DelegatingServletInputStream(new ByteArrayInputStream(this.content)) :
-//				EMPTY_SERVLET_INPUT_STREAM);
-//		return this.inputStream;
 		throw new UnsupportedOperationException();
 	}
 
@@ -635,64 +579,24 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public String getScheme() {
-//		return this.scheme;
 		throw new UnsupportedOperationException();
 	}
 
 	public void setServerName(String serverName) {
-//		this.serverName = serverName;
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public String getServerName() {
-//		String rawHostHeader = getHeader(HttpHeaders.HOST);
-//		String host = rawHostHeader;
-//		if (host != null) {
-//			host = host.trim();
-//			if (host.startsWith("[")) {
-//				int indexOfClosingBracket = host.indexOf(']');
-//				Assert.state(indexOfClosingBracket > -1, () -> "Invalid Host header: " + rawHostHeader);
-//				host = host.substring(0, indexOfClosingBracket + 1);
-//			}
-//			else if (host.contains(":")) {
-//				host = host.substring(0, host.indexOf(':'));
-//			}
-//			return host;
-//		}
-//
-//		// else
-//		return this.serverName;
 		throw new UnsupportedOperationException();
 	}
 
 	public void setServerPort(int serverPort) {
-//		this.serverPort = serverPort;
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public int getServerPort() {
-//		String rawHostHeader = getHeader(HttpHeaders.HOST);
-//		String host = rawHostHeader;
-//		if (host != null) {
-//			host = host.trim();
-//			int idx;
-//			if (host.startsWith("[")) {
-//				int indexOfClosingBracket = host.indexOf(']');
-//				Assert.state(indexOfClosingBracket > -1, () -> "Invalid Host header: " + rawHostHeader);
-//				idx = host.indexOf(':', indexOfClosingBracket);
-//			}
-//			else {
-//				idx = host.indexOf(':');
-//			}
-//			if (idx != -1) {
-//				return Integer.parseInt(host.substring(idx + 1));
-//			}
-//		}
-//
-//		// else
-//		return this.serverPort;
 		throw new UnsupportedOperationException();
 	}
 
@@ -720,24 +624,20 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void setRemoteAddr(String remoteAddr) {
-//		this.remoteAddr = remoteAddr;
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public String getRemoteAddr() {
 		return "proxy";
-//		throw new UnsupportedOperationException();
 	}
 
 	public void setRemoteHost(String remoteHost) {
-//		this.remoteHost = remoteHost;
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public String getRemoteHost() {
-//		return this.remoteHost;
 		throw new UnsupportedOperationException();
 	}
 
@@ -841,18 +741,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	/**
-	 * Set the boolean {@code secure} flag indicating whether the mock request was
-	 * made using a secure channel, such as HTTPS.
-	 *
-	 * @see #isSecure()
-	 * @see #getScheme()
-	 * @see #setScheme(String)
-	 */
-	public void setSecure(boolean secure) {
-		this.secure = secure;
-	}
-
-	/**
 	 * Return {@code true} if the {@link #setSecure secure} flag has been set to
 	 * {@code true} or if the {@link #getScheme scheme} is {@code https}.
 	 *
@@ -860,13 +748,11 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	 */
 	@Override
 	public boolean isSecure() {
-//		return (this.secure || HTTPS.equalsIgnoreCase(this.scheme));
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public RequestDispatcher getRequestDispatcher(String path) {
-//		return new MockRequestDispatcher(path);
 		throw new UnsupportedOperationException();
 	}
 
@@ -877,29 +763,24 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void setRemotePort(int remotePort) {
-//		this.remotePort = remotePort;
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public int getRemotePort() {
-//		return this.remotePort;
 		throw new UnsupportedOperationException();
 	}
 
 	public void setLocalName(String localName) {
-//		this.localName = localName;
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public String getLocalName() {
-//		return this.localName;
 		throw new UnsupportedOperationException();
 	}
 
 	public void setLocalAddr(String localAddr) {
-//		this.localAddr = localAddr;
 		throw new UnsupportedOperationException();
 	}
 
@@ -909,7 +790,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void setLocalPort(int localPort) {
-//		this.localPort = localPort;
 		throw new UnsupportedOperationException();
 	}
 
@@ -926,10 +806,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public AsyncContext startAsync(ServletRequest request, @Nullable ServletResponse response) {
-//		Assert.state(this.asyncSupported, "Async not supported");
-//		this.asyncStarted = true;
-//		this.asyncContext = new MockAsyncContext(request, response);
-//		return this.asyncContext;
 		throw new UnsupportedOperationException();
 	}
 
@@ -952,15 +828,12 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void setAsyncContext(@Nullable AsyncContext asyncContext) {
-//		this.asyncContext = asyncContext;
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	@Nullable
 	public AsyncContext getAsyncContext() {
-//		return this.asyncContext;
-//		throw new UnsupportedOperationException();
 		return null;
 	}
 

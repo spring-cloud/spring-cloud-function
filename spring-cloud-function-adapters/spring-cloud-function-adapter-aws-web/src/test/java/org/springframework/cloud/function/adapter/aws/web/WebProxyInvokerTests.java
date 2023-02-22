@@ -21,19 +21,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Map;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.cloud.function.adapter.aws.TestContext;
-import org.springframework.cloud.function.json.JacksonMapper;
+
 
 
 public class WebProxyInvokerTests {
 
 	static String apiGatewayEvent = "{\n" +
 			"    \"resource\": \"/pets\",\n" +
-			"    \"path\": \"/pets/64f56d94-a059-4111-9eeb-ee0c994b1ba8\",\n" +
+			"    \"path\": \"/pets/64f56d94-a059-4111-9eeb-ee0c994b1ba8?foo=bar\",\n" +
 			"    \"httpMethod\": \"GET\",\n" +
 			"    \"headers\": {\n" +
 			"        \"accept\": \"*/*\",\n" +
@@ -116,11 +114,11 @@ public class WebProxyInvokerTests {
 
 		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		invoker.handleRequest(targetStream, output, new TestContext());
+		invoker.handleRequest(targetStream, output);
 
-		JacksonMapper mapper = new JacksonMapper(new ObjectMapper());
+		ObjectMapper mapper = new ObjectMapper();
 		System.out.println("RESULT: =======> " + new String(output.toByteArray()));
-		Map result = mapper.fromJson(output.toByteArray(), Map.class);
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		System.out.println(result);
 	}
 }
