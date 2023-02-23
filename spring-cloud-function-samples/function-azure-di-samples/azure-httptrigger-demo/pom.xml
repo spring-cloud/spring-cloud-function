@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.example.azure.di</groupId>
 	<artifactId>azure-httptrigger-demo</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>azure-httptrigger-demo</name>
 	
 	<description>Demo Spring Boot, Azure Function - HttpTrigger (DI adapter)</description>
