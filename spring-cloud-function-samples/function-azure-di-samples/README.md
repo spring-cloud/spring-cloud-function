@@ -107,7 +107,7 @@
 			<hostJson>${project.basedir}/src/main/resources/host.json</hostJson>
 
 			<runtime>
-				<os>linux</os> 
+				<os>linux</os>
 				<javaVersion>11</javaVersion>
 			</runtime>
 
@@ -135,7 +135,7 @@
 		- [Java Versions](https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#java-versions)
 		- Specify [Deployment OS](https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#specify-the-deployment-os)
 
-* Build the project: 
+* Build the project:
 
 	```
 	./mvnw clean package
@@ -143,7 +143,10 @@
 
 ## Running Locally
 
-NOTE: To run locally on top of `Azure Functions`, and to deploy to your live Azure environment, you will need `Azure Functions Core Tools` installed along with the Azure CLI (see [here](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-java?tabs=bash%2Cazure-cli%2Cbrowser#configure-your-local-environment)). 
+NOTE: To run locally on top of `Azure Functions`, and to deploy to your live Azure environment, you will need `Azure Functions Core Tools` installed along with the Azure CLI (see [here](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-java?tabs=bash%2Cazure-cli%2Cbrowser#configure-your-local-environment)).
+
+NOTE: [Azure Functions Core Tools](https://github.com/Azure/azure-functions-core-tools) version `4.0.5030` or newer is required!
+
 For some configuration you would need the [Azurite emulator](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-emulator) as well.
 
 Then build and run the sample:
@@ -200,7 +203,7 @@ VS Code remote debug configuration:
 				"request": "attach",
 				"hostName": "localhost",
 				"port": "5005"
-			},  
+			},
 	}
-		
+
 	```
