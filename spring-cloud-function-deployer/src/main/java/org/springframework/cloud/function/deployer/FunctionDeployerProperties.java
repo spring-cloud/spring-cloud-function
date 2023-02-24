@@ -16,11 +16,12 @@
 
 package org.springframework.cloud.function.deployer;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.util.Assert;
+
 
 /**
  * Configuration properties for deciding how to locate the functional class to execute.

@@ -47,16 +47,16 @@
 			<artifactId>jackson-module-kotlin</artifactId>
 			<optional>true</optional>
 		</dependency>
-		<dependency> 
-			<groupId>javax.annotation</groupId>
-			<artifactId>javax.annotation-api</artifactId>
-			<version>1.3.2</version>
-		</dependency>
-		<dependency>
-		    <groupId>javax.activation</groupId>
-		    <artifactId>javax.activation-api</artifactId>
-		    <version>1.2.0</version>
-		</dependency>
+<!--		<dependency> -->
+<!--			<groupId>javax.annotation</groupId>-->
+<!--			<artifactId>javax.annotation-api</artifactId>-->
+<!--			<version>1.3.2</version>-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--		    <groupId>javax.activation</groupId>-->
+<!--		    <artifactId>javax.activation-api</artifactId>-->
+<!--		    <version>1.2.0</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>

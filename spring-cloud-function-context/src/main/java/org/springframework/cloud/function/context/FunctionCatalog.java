@@ -21,8 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.activation.MimeType;
-
 
 /**
  * @author Dave Syer
@@ -33,7 +31,6 @@ public interface FunctionCatalog {
 	/**
 	 * Will look up the instance of the functional interface by name only.
 	 *
-	 * @param                    <T> instance type
 	 * @param functionDefinition the definition of the functional interface. Must
 	 *                           not be null;
 	 * @return instance of the functional interface registered with this catalog
@@ -87,13 +84,7 @@ public interface FunctionCatalog {
 		return this.lookup(null, functionDefinition, expectedOutputMimeTypes);
 	}
 
-	<T> T lookup(Class<?> type, String functionDefinition, String... expectedOutputMimeTypes); //{
-//		throw new UnsupportedOperationException("This instance of FunctionCatalog does not support this operation");
-//	}
-
-
-
-
+	<T> T lookup(Class<?> type, String functionDefinition, String... expectedOutputMimeTypes);
 
 	Set<String> getNames(Class<?> type);
 
