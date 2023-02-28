@@ -20,19 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -146,18 +139,6 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (this.jsonMapper instanceof JacksonMapper) {
 			((JacksonMapper) this.jsonMapper).configureObjectMapper(objectMapper -> {
 				if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
-					SimpleModule module = new SimpleModule();
-					module.addDeserializer(Date.class, new JsonDeserializer<Date>() {
-						@Override
-						public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-								throws IOException {
-							Calendar calendar = Calendar.getInstance();
-							calendar.setTimeInMillis(jsonParser.getValueAsLong());
-							return calendar.getTime();
-						}
-					});
-					objectMapper.registerModule(module);
-					objectMapper.registerModule(new JodaModule());
 					objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
 				}
 			});
