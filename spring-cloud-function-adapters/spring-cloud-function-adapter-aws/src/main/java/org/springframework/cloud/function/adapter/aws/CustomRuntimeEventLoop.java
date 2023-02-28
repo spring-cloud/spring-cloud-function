@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 the original author or authors.
+ * Copyright 2021-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,35 +134,28 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			}
 
 			if (response != null) {
-				FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
-
-				Message<byte[]> eventMessage = AWSLambdaUtils
-						.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8), function.getInputType(), function.isSupplier(), mapper);
-
-				if (logger.isDebugEnabled()) {
-					logger.debug("Event message: " + eventMessage);
-				}
-
 				String requestId = response.getHeaders().getFirst("Lambda-Runtime-Aws-Request-Id");
-				String invocationUrl = MessageFormat
-						.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
+				try {
+					FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
 
-				String traceId = response.getHeaders().getFirst("Lambda-Runtime-Trace-Id");
-				if (StringUtils.hasText(traceId)) {
+					Message<byte[]> eventMessage = AWSLambdaUtils
+							.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8), function.getInputType(), function.isSupplier(), mapper);
+
 					if (logger.isDebugEnabled()) {
-						logger.debug("Lambda-Runtime-Trace-Id: " + traceId);
+						logger.debug("Event message: " + eventMessage);
 					}
-					try {
-						// The X-Ray SDK uses this value to connect trace data between services.
+
+					String invocationUrl = MessageFormat
+							.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
+
+					String traceId = response.getHeaders().getFirst("Lambda-Runtime-Trace-Id");
+					if (StringUtils.hasText(traceId)) {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Lambda-Runtime-Trace-Id: " + traceId);
+						}
 						System.setProperty("com.amazonaws.xray.traceHeader", traceId);
 					}
-					catch (Exception e) {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Failed to set amazon x-ray trace id", e);
-						}
-					}
-				}
-				try {
+
 					Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
 
 					if (responseMessage != null && logger.isDebugEnabled()) {
@@ -179,31 +172,35 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 					}
 				}
 				catch (Exception e) {
-					String errorMessage = e.getMessage();
-					String errorType = e.getClass().getSimpleName();
-					StringWriter sw = new StringWriter();
-					PrintWriter pw = new PrintWriter(sw);
-					e.printStackTrace(pw);
-					String stackTrace = sw.toString();
-					Map<String, String> em = new HashMap<>();
-					em.put("errorMessage", errorMessage);
-					em.put("errorType", errorType);
-					em.put("stackTrace", stackTrace);
-					byte[] outputBody = mapper.toJson(em);
-					try {
-						String errorUrl = MessageFormat.format(LAMBDA_ERROR_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
-						ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(errorUrl))
-								.header(USER_AGENT, USER_AGENT_VALUE)
-								.body(outputBody), Object.class);
-						if (logger.isInfoEnabled()) {
-							logger.info("Result ERROR status: " + result.getStatusCode());
-						}
-					}
-					catch (Exception e2) {
-						throw new IllegalArgumentException("Failed to report error", e2);
-					}
+					this.propagateAwsError(requestId, e, mapper, runtimeApi, rest);
 				}
 			}
+		}
+	}
+
+	private void propagateAwsError(String requestId, Exception e, JsonMapper mapper, String runtimeApi, RestTemplate rest) {
+		String errorMessage = e.getMessage();
+		String errorType = e.getClass().getSimpleName();
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		String stackTrace = sw.toString();
+		Map<String, String> em = new HashMap<>();
+		em.put("errorMessage", errorMessage);
+		em.put("errorType", errorType);
+		em.put("stackTrace", stackTrace);
+		byte[] outputBody = mapper.toJson(em);
+		try {
+			String errorUrl = MessageFormat.format(LAMBDA_ERROR_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
+			ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(errorUrl))
+					.header(USER_AGENT, USER_AGENT_VALUE)
+					.body(outputBody), Object.class);
+			if (logger.isInfoEnabled()) {
+				logger.info("Result ERROR status: " + result.getStatusCode());
+			}
+		}
+		catch (Exception e2) {
+			throw new IllegalArgumentException("Failed to report error", e2);
 		}
 	}
 
