@@ -44,6 +44,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -784,7 +785,7 @@ public class FunctionInvokerTests {
 
 		InputStream targetStream = new ByteArrayInputStream(this.sampleLBEvent.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		invoker.handleRequest(targetStream, output, null);
+		invoker.handleRequest(targetStream, output, Mockito.mock(Context.class));
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
@@ -1003,26 +1004,6 @@ public class FunctionInvokerTests {
 		Map headers = (Map) result.get("headers");
 		assertThat(headers.get("foo")).isEqualTo("bar");
 	}
-
-//	@SuppressWarnings("rawtypes")
-//	@Test
-//	public void testApiGatewayInAndOutWithException() throws Exception {
-//		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
-//		System.setProperty("spring.cloud.function.definition", "inputOutputApiEventException");
-//		FunctionInvoker invoker = new FunctionInvoker();
-//
-//		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
-//		ByteArrayOutputStream output = new ByteArrayOutputStream();
-//		invoker.handleRequest(targetStream, output, null);
-//
-//		Map result = mapper.readValue(output.toByteArray(), Map.class);
-//		assertThat(result.get("body")).isEqualTo("Intentional");
-//
-//		Map headers = (Map) result.get("headers");
-//		assertThat(headers.get("foo")).isEqualTo("bar");
-//	}
-
-
 
 	@SuppressWarnings("rawtypes")
 	@Test
@@ -1347,9 +1328,10 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<Message<ApplicationLoadBalancerRequestEvent>, String> inputLBEventAsMessage(JsonMapper jsonMapper) {
-			return v -> {
-				System.out.println("Received: " + v);
-				return v.getPayload().getBody();
+			return message -> {
+				System.out.println("Received: " + message);
+				assertThat(message.getHeaders().get(AWSLambdaUtils.AWS_CONTEXT)).isNotNull();
+				return message.getPayload().getBody();
 			};
 		}
 
