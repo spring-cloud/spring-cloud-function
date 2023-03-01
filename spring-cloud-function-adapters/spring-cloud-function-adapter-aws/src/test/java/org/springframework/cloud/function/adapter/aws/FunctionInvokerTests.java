@@ -512,6 +512,7 @@ public class FunctionInvokerTests {
 		System.setProperty("MAIN_CLASS", KinesisConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputKinesisEvent");
 		FunctionInvoker invoker = new FunctionInvoker() {
+			@Override
 			public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 				assertThat(context).isNotNull();
 				super.handleRequest(input, output, context);
@@ -701,7 +702,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
-		assertThat(result).contains("s3SchemaVersion");
+		assertThat(result).contains("ObjectCreated:Put");
 	}
 
 	@Test
@@ -715,7 +716,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
-		assertThat(result).contains("s3SchemaVersion");
+		assertThat(result).contains("ObjectCreated:Put");
 	}
 
 	@Test
@@ -794,6 +795,7 @@ public class FunctionInvokerTests {
 		System.setProperty("MAIN_CLASS", LBConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputOutputLBEvent");
 		FunctionInvoker invoker = new FunctionInvoker() {
+			@Override
 			public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 				assertThat(context).isNotNull();
 				super.handleRequest(input, output, context);
@@ -881,6 +883,7 @@ public class FunctionInvokerTests {
 		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputApiEvent");
 		FunctionInvoker invoker = new FunctionInvoker() {
+			@Override
 			public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
 				assertThat(context).isNotNull();
 				super.handleRequest(input, output, context);
@@ -1296,15 +1299,15 @@ public class FunctionInvokerTests {
 		public Function<S3Event, String> inputS3Event(JsonMapper jsonMapper) {
 			return v -> {
 				System.out.println("Received: " + v);
-				return jsonMapper.toString(v);
+				return v.getRecords().get(0).getEventName();
 			};
 		}
 
 		@Bean
 		public Function<Message<S3Event>, String> inputS3EventAsMessage(JsonMapper jsonMapper) {
-			return v -> {
-				System.out.println("Received: " + v);
-				return jsonMapper.toString(v);
+			return m -> {
+				System.out.println("Received: " + m);
+				return m.getPayload().getRecords().get(0).getEventName();
 			};
 		}
 
