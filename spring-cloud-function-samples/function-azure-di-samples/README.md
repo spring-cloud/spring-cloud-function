@@ -174,7 +174,7 @@ Build and deploy
 
 Run the function in debug mode.
 ```
-./mvnw azure-functions:deploy -DenableDebug
+./mvnw azure-functions:run -DenableDebug
 ```
 
 Alternatively and the `JAVA_OPTS` value to your `local.settings.json` like this:

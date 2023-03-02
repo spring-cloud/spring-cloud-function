@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>oz.spring.petstore</groupId>
+    <artifactId>pet-store</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>pet-store</name>
+    <description>Simple pet store written with the Spring framework</description>
+
+    <scm>
+        <url>https://github.com/awslabs/aws-serverless-java-container.git</url>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <java.version>8</java.version>
+        <spring-boot-thin-layout.version>1.0.28.RELEASE</spring-boot-thin-layout.version>
+
+        <!-- Spring Boot start class! WARING: correct class must be set! -->
+        <start-class>oz.spring.petstore.PetStoreSpringAppConfig</start-class>
+
+        <!-- AZURE FUNCTION CONFIG -->
+        <azure.functions.maven.plugin.version>1.23.0</azure.functions.maven.plugin.version>
+        <functionAppName>spring-cloud-function-samples</functionAppName>
+        <functionAppRegion>westus</functionAppRegion>
+        <functionResourceGroup>java-functions-group</functionResourceGroup>
+        <functionAppServicePlanName>java-functions-app-service-plan</functionAppServicePlanName>
+        <functionPricingTier>EP1</functionPricingTier>
+
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+
+        <spring.version>5.3.25</spring.version>
+        <junit.version>4.13.2</junit.version>
+        <log4j.version>2.19.0</log4j.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-function-adapter-azure-web</artifactId>
+            <version>3.2.9-SNAPSHOT</version>
+        </dependency>
+        <!--
+             the Spring Context Indexer run an annotation processor at compile time and generates
+             a META-INF/spring.components file that Spring can use to speed up component scanning at boot time.
+             For small applications, this doesn't make a big difference. However, for large applications with
+             complex dependencies this may improve your cold start time significantly.
+        -->
+        <!-- <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-indexer</artifactId>
+            <version>${spring.version}</version>
+            <optional>true</optional>
+        </dependency> -->
+
+        <!-- <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency> -->
+
+        <!-- <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency> -->
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.microsoft.azure</groupId>
+                <artifactId>azure-functions-maven-plugin</artifactId>
+                <version>${azure.functions.maven.plugin.version}</version>
+
+                <configuration>
+                    <localDebugConfig>transport=dt_socket,server=y,suspend=y,address=5005</localDebugConfig>
+                    <appName>${functionAppName}</appName>
+                    <resourceGroup>${functionResourceGroup}</resourceGroup>
+                    <region>${functionAppRegion}</region>
+                    <appServicePlanName>${functionAppServicePlanName}</appServicePlanName>
+                    <pricingTier>${functionPricingTier}</pricingTier>
+
+                    <hostJson>${project.basedir}/src/main/resources/host.json</hostJson>
+
+                    <runtime>
+                        <os>linux</os>
+                        <javaVersion>11</javaVersion>
+                    </runtime>
+
+                    <funcPort>7072</funcPort>
+
+                    <appSettings>
+                        <property>
+                            <name>FUNCTIONS_EXTENSION_VERSION</name>
+                            <value>~4</value>
+                        </property>
+                    </appSettings>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>package-functions</id>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.springframework.boot.experimental</groupId>
+                        <artifactId>spring-boot-thin-layout</artifactId>
+                        <version>${spring-boot-thin-layout.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
