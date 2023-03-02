@@ -27,7 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -41,10 +40,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -60,20 +59,14 @@ import javax.servlet.http.Part;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 public class ProxyHttpServletRequest implements HttpServletRequest {
-
-	private static final String HTTP = "http";
-
-	private static final String HTTPS = "https";
 
 	private static final String CHARSET_PREFIX = "charset=";
 
@@ -89,53 +82,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	 */
 	private static final String[] DATE_FORMATS = new String[] { "EEE, dd MMM yyyy HH:mm:ss zzz",
 			"EEE, dd-MMM-yy HH:mm:ss zzz", "EEE MMM dd HH:mm:ss yyyy" };
-
-	// ---------------------------------------------------------------------
-	// Public constants
-	// ---------------------------------------------------------------------
-
-	/**
-	 * The default protocol: 'HTTP/1.1'.
-	 *
-	 * @since 4.3.7
-	 */
-	public static final String DEFAULT_PROTOCOL = "HTTP/1.1";
-
-	/**
-	 * The default scheme: 'http'.
-	 *
-	 * @since 4.3.7
-	 */
-	public static final String DEFAULT_SCHEME = HTTP;
-
-	/**
-	 * The default server address: '127.0.0.1'.
-	 */
-	public static final String DEFAULT_SERVER_ADDR = "127.0.0.1";
-
-	/**
-	 * The default server name: 'localhost'.
-	 */
-	public static final String DEFAULT_SERVER_NAME = "localhost";
-
-	/**
-	 * The default server port: '80'.
-	 */
-	public static final int DEFAULT_SERVER_PORT = 80;
-
-	/**
-	 * The default remote address: '127.0.0.1'.
-	 */
-	public static final String DEFAULT_REMOTE_ADDR = "127.0.0.1";
-
-	/**
-	 * The default remote host: 'localhost'.
-	 */
-	public static final String DEFAULT_REMOTE_HOST = "localhost";
-
-	// ---------------------------------------------------------------------
-	// Lifecycle properties
-	// ---------------------------------------------------------------------
 
 	private final ServletContext servletContext;
 
@@ -224,36 +170,13 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	private final MultiValueMap<String, Part> parts = new LinkedMultiValueMap<>();
 
-	// ---------------------------------------------------------------------
-	// Constructors
-	// ---------------------------------------------------------------------
 
-	/**
-	 * Create a new {@code MockHttpServletRequest} with the supplied
-	 * {@link ServletContext}, {@code method}, and {@code requestURI}.
-	 * <p>
-	 * The preferred locale will be set to {@link Locale#ENGLISH}.
-	 *
-	 * @param servletContext the ServletContext that the request runs in (may be
-	 *                       {@code null} to use a default
-	 *                       {@link MockServletContext})
-	 * @param method         the request method (may be {@code null})
-	 * @param requestURI     the request URI (may be {@code null})
-	 * @see #setMethod
-	 * @see #setRequestURI
-	 * @see #setPreferredLocales
-	 * @see MockServletContext
-	 */
 	public ProxyHttpServletRequest(ServletContext servletContext, String method, String requestURI) {
 		this.servletContext = servletContext;
 		this.method = method;
 		this.requestURI = requestURI;
 		this.locales.add(Locale.ENGLISH);
 	}
-
-	// ---------------------------------------------------------------------
-	// Lifecycle methods
-	// ---------------------------------------------------------------------
 
 	/**
 	 * Return the ServletContext that this request is associated with. (Not
@@ -264,49 +187,13 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		return this.servletContext;
 	}
 
-	/**
-	 * Return whether this request is still active (that is, not completed yet).
-	 */
-	public boolean isActive() {
-		return this.active;
-	}
-
-	/**
-	 * Mark this request as completed, keeping its state.
-	 */
-	public void close() {
-		this.active = false;
-	}
-
-	/**
-	 * Invalidate this request, clearing its state.
-	 */
-	public void invalidate() {
-		close();
-		clearAttributes();
-	}
-
-	/**
-	 * Check whether this request is still active (that is, not completed yet),
-	 * throwing an IllegalStateException if not active anymore.
-	 */
-	protected void checkActive() throws IllegalStateException {
-		Assert.state(this.active, "Request is not active anymore");
-	}
-
-	// ---------------------------------------------------------------------
-	// ServletRequest interface
-	// ---------------------------------------------------------------------
-
 	@Override
 	public Object getAttribute(String name) {
-		checkActive();
 		return this.attributes.get(name);
 	}
 
 	@Override
 	public Enumeration<String> getAttributeNames() {
-		checkActive();
 		return Collections.enumeration(new LinkedHashSet<>(this.attributes.keySet()));
 	}
 
@@ -426,7 +313,34 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public ServletInputStream getInputStream() {
-		throw new UnsupportedOperationException();
+		InputStream stream = new ByteArrayInputStream(this.content);
+		return new ServletInputStream() {
+
+			boolean finished = false;
+
+			@Override
+			public int read() throws IOException {
+		        int readByte = stream.read();
+		        if (readByte == -1) {
+		            finished = true;
+		        }
+		        return readByte;
+			}
+
+			@Override
+			public void setReadListener(ReadListener readListener) {
+			}
+
+			@Override
+			public boolean isReady() {
+				return !finished;
+			}
+
+			@Override
+			public boolean isFinished() {
+				return finished;
+			}
+		};
 	}
 
 	/**
@@ -561,19 +475,8 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		return Collections.unmodifiableMap(this.parameters);
 	}
 
-	public void setProtocol(String protocol) {
-		// this.protocol = protocol;
-		throw new UnsupportedOperationException();
-	}
-
 	@Override
 	public String getProtocol() {
-		// return this.protocol;
-		throw new UnsupportedOperationException();
-	}
-
-	public void setScheme(String scheme) {
-//		this.scheme = scheme;
 		throw new UnsupportedOperationException();
 	}
 
@@ -643,7 +546,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public void setAttribute(String name, @Nullable Object value) {
-		checkActive();
 		Assert.notNull(name, "Attribute name must not be null");
 		if (value != null) {
 			this.attributes.put(name, value);
@@ -655,7 +557,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public void removeAttribute(String name) {
-		checkActive();
 		Assert.notNull(name, "Attribute name must not be null");
 		this.attributes.remove(name);
 	}
@@ -795,7 +696,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public int getLocalPort() {
-//		return this.localPort;
 		throw new UnsupportedOperationException();
 	}
 
@@ -846,10 +746,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		return this.dispatcherType;
 	}
 
-	// ---------------------------------------------------------------------
-	// HttpServletRequest interface
-	// ---------------------------------------------------------------------
-
 	public void setAuthType(@Nullable String authType) {
 		this.authType = authType;
 	}
@@ -858,21 +754,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Nullable
 	public String getAuthType() {
 		return this.authType;
-	}
-
-	public void setCookies(@Nullable Cookie... cookies) {
-		this.cookies = (ObjectUtils.isEmpty(cookies) ? null : cookies);
-		if (this.cookies == null) {
-			removeHeader(HttpHeaders.COOKIE);
-		}
-		else {
-			doAddHeaderValue(HttpHeaders.COOKIE, encodeCookies(this.cookies), true);
-		}
-	}
-
-	private static String encodeCookies(@NonNull Cookie... cookies) {
-		return Arrays.stream(cookies).map(c -> c.getName() + '=' + (c.getValue() == null ? "" : c.getValue()))
-				.collect(Collectors.joining("; "));
 	}
 
 	@Override
@@ -943,16 +824,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		else {
 			header.addValue(value);
 		}
-	}
-
-	/**
-	 * Remove already registered entries for the specified HTTP header, if any.
-	 *
-	 * @since 4.3.20
-	 */
-	public void removeHeader(String name) {
-		Assert.notNull(name, "Header name must not be null");
-		this.headers.remove(name);
 	}
 
 	/**
@@ -1104,8 +975,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Override
 	public boolean isUserInRole(String role) {
 		throw new UnsupportedOperationException();
-//		return (this.userRoles.contains(role) || (this.servletContext instanceof MockServletContext &&
-//				((MockServletContext) this.servletContext).getDeclaredRoles().contains(role)));
 	}
 
 	public void setUserPrincipal(@Nullable Principal userPrincipal) {
@@ -1140,20 +1009,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public StringBuffer getRequestURL() {
-		String scheme = getScheme();
-		String server = getServerName();
-		int port = getServerPort();
-		String uri = getRequestURI();
-
-		StringBuffer url = new StringBuffer(scheme).append("://").append(server);
-		if (port > 0
-				&& ((HTTP.equalsIgnoreCase(scheme) && port != 80) || (HTTPS.equalsIgnoreCase(scheme) && port != 443))) {
-			url.append(':').append(port);
-		}
-		if (StringUtils.hasText(uri)) {
-			url.append(uri);
-		}
-		return url;
+		throw new UnsupportedOperationException();
 	}
 
 	public void setServletPath(String servletPath) {
@@ -1166,28 +1022,13 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void setSession(HttpSession session) {
-//		this.session = session;
-//		if (session instanceof MockHttpSession) {
-//			MockHttpSession mockSession = ((MockHttpSession) session);
-//			mockSession.access();
-//		}
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	@Nullable
 	public HttpSession getSession(boolean create) {
-		checkActive();
-		// Reset session if invalidated.
-//		if (this.session instanceof MockHttpSession && ((MockHttpSession) this.session).isInvalid()) {
-//			this.session = null;
-//		}
-//		// Create new session if necessary.
-//		if (this.session == null && create) {
-//			this.session = new MockHttpSession(this.servletContext);
-//		}
 		return this.session;
-//		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -1196,20 +1037,8 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		return getSession(true);
 	}
 
-	/**
-	 * The implementation of this (Servlet 3.1+) method calls
-	 * {@link MockHttpSession#changeSessionId()} if the session is a mock session.
-	 * Otherwise it simply returns the current session id.
-	 *
-	 * @since 4.0.3
-	 */
 	@Override
 	public String changeSessionId() {
-//		Assert.isTrue(this.session != null, "The request does not have a session");
-//		if (this.session instanceof MockHttpSession) {
-//			return ((MockHttpSession) this.session).changeSessionId();
-//		}
-//		return this.session.getId();
 		throw new UnsupportedOperationException();
 	}
 
