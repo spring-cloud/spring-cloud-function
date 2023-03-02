@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -366,7 +367,39 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public ServletInputStream getInputStream() {
-		throw new UnsupportedOperationException();
+		InputStream stream = new ByteArrayInputStream(this.content);
+		return new ServletInputStream() {
+
+			boolean finished = false;
+
+			@Override
+			public int read() throws IOException {
+				if (stream == null) {
+					return -1;
+				}
+				int readByte = stream.read();
+				if (readByte == -1) {
+					finished = true;
+				}
+				return readByte;
+			}
+
+			@Override
+			public void setReadListener(ReadListener readListener) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public boolean isReady() {
+				return !finished;
+			}
+
+			@Override
+			public boolean isFinished() {
+				return finished;
+			}
+		};
 	}
 
 	/**
