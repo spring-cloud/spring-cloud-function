@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 public class ProxyMvc {
@@ -45,6 +46,8 @@ public class ProxyMvc {
 
 	private final Filter[] filters;
 
+	private final ConfigurableWebApplicationContext applicationContext;
+
 	@Nullable
 	private Charset defaultResponseCharacterEncoding;
 
@@ -53,13 +56,16 @@ public class ProxyMvc {
 	 *
 	 * @see org.springframework.test.web.servlet.setup.MockMvcBuilders
 	 */
-	public ProxyMvc(DispatcherServlet servlet, Filter... filters) {
+	public ProxyMvc(DispatcherServlet servlet, ConfigurableWebApplicationContext applicationContext) {
 		Assert.notNull(servlet, "DispatcherServlet is required");
-		Assert.notNull(filters, "Filters cannot be null");
-		Assert.noNullElements(filters, "Filters cannot contain null values");
+		this.applicationContext = applicationContext;
 
 		this.servlet = servlet;
-		this.filters = filters;
+		this.filters = applicationContext.getBeansOfType(Filter.class).values().toArray(new Filter[0]);
+	}
+
+	public void stop() {
+		this.applicationContext.stop();
 	}
 
 	/**
@@ -101,9 +107,13 @@ public class ProxyMvc {
 	 * @see org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
 	 */
-	public void perform(HttpServletRequest request, HttpServletResponse response) throws Exception {
+	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.servlet, this.filters);
 		filterChain.doFilter(request, response);
+	}
+
+	public ConfigurableWebApplicationContext getApplicationContext() {
+		return applicationContext;
 	}
 
 	private static class ProxyFilterChain implements FilterChain {
