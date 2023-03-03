@@ -75,7 +75,7 @@ public class WebProxyInvoker {
 
 		DispatcherServlet servlet = new DispatcherServlet(applpicationContext);
 		servlet.init(servletConfig);
-		this.mvc = new ProxyMvc(servlet, applpicationContext.getBeansOfType(Filter.class).values().toArray(new Filter[0]));
+		this.mvc = new ProxyMvc(servlet, applpicationContext);
 	}
 
 	/*
@@ -118,7 +118,7 @@ public class WebProxyInvoker {
 
 		ProxyHttpServletResponse httpResponse = new ProxyHttpServletResponse();
 		try {
-			this.mvc.perform(httpRequest, httpResponse);
+			this.mvc.service(httpRequest, httpResponse);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
