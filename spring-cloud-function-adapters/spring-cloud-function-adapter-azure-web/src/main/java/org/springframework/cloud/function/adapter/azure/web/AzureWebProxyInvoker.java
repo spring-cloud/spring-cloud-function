@@ -57,9 +57,9 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author Oleg Zhurakousky
  *
  */
-public class WebProxyInvoker implements FunctionInstanceInjector {
+public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
-	private static Log logger = LogFactory.getLog(WebProxyInvoker.class);
+	private static Log logger = LogFactory.getLog(AzureWebProxyInvoker.class);
 
 	private ProxyMvc mvc;
 
@@ -69,28 +69,38 @@ public class WebProxyInvoker implements FunctionInstanceInjector {
 
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
-		System.setProperty("MAIN_CLASS", "oz.spring.petstore.PetStoreSpringAppConfig");
-		// TODO: Cache the initialization as the getInstance is called before each function invokatoin
+		// System.setProperty("MAIN_CLASS", "oz.spring.petstore.PetStoreSpringAppConfig");
 		this.initialize();
 		return (T) this;
 	}
 
-	public void initialize() throws ServletException {
-		Class<?> startClass = FunctionClassUtils.getStartClass();
-		AnnotationConfigWebApplicationContext applicationContext = new AnnotationConfigWebApplicationContext();
-		applicationContext.register(startClass);
+	/**
+	 * Because the getInstance is called by Azure Java Function on every function request we need to cache the Spring
+	 * context initialization on the first function call.
+	 * @throws ServletException error.
+	 */
+	private void initialize() throws ServletException {
+		synchronized (AzureWebProxyInvoker.class.getName()) {
+			if (this.servletContext == null) {
+				Class<?> startClass = FunctionClassUtils.getStartClass();
+				AnnotationConfigWebApplicationContext applicationContext = new AnnotationConfigWebApplicationContext();
+				applicationContext.register(startClass);
 
-		this.servletContext = new ProxyServletContext();
-		ServletConfig servletConfig = new ProxyServletConfig(this.servletContext);
+				this.servletContext = new ProxyServletContext();
+				ServletConfig servletConfig = new ProxyServletConfig(this.servletContext);
 
-		DispatcherServlet servlet = new DispatcherServlet(applicationContext);
-		servlet.init(servletConfig);
-		this.mvc = new ProxyMvc(servlet,
-				applicationContext.getBeansOfType(Filter.class).values().toArray(new Filter[0]));
+				DispatcherServlet servlet = new DispatcherServlet(applicationContext);
+				servlet.init(servletConfig);
+				this.mvc = new ProxyMvc(servlet,
+						applicationContext.getBeansOfType(Filter.class).values().toArray(new Filter[0]));
+			}
+		}
 	}
 
 	private HttpServletRequest prepareRequest(HttpRequestMessage<Optional<String>> request) {
 
+		// Note: Currently this is the only way to pass the the application
+		// route (e.g. the execution REST url)
 		String path = request.getQueryParameters().get("path");
 
 		if (!StringUtils.hasText(path)) {
@@ -99,16 +109,18 @@ public class WebProxyInvoker implements FunctionInstanceInjector {
 		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(servletContext,
 				request.getHttpMethod().toString(), path);
 
-		if (request.getBody().isPresent()) {
-			httpRequest.setContent(request.getBody().get().getBytes());
-		}
+		request.getBody().ifPresent(body -> {
+			httpRequest.setContent(body.getBytes());
+		});
 
 		if (!CollectionUtils.isEmpty(request.getQueryParameters())) {
 			httpRequest.setParameters(request.getQueryParameters());
 		}
 
-		for (Entry<String, String> entry : request.getHeaders().entrySet()) {
-			httpRequest.addHeader(entry.getKey(), entry.getValue());
+		if (!CollectionUtils.isEmpty(request.getHeaders())) {
+			for (Entry<String, String> entry : request.getHeaders().entrySet()) {
+				httpRequest.addHeader(entry.getKey(), entry.getValue());
+			}
 		}
 
 		return httpRequest;
