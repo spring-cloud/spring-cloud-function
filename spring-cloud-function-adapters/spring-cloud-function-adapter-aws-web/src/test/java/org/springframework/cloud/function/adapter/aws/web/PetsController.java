@@ -43,7 +43,6 @@ public class PetsController {
 
 	@RequestMapping(path = "/pets", method = RequestMethod.GET)
 	public Pet[] listPets(@RequestParam("limit") Optional<Integer> limit, Principal principal) {
-		System.out.println("=====> EXECUTING");
 		int queryLimit = 10;
 		if (limit.isPresent()) {
 			queryLimit = limit.get();

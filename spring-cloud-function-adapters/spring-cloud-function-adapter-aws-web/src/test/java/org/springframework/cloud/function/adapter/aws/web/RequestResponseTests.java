@@ -48,6 +48,19 @@ public class RequestResponseTests {
 	}
 
 	@Test
+	public void validateGetListOfPojosWithParam() throws Exception {
+		ProxyHttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets");
+		request.setParameter("limit", "5");
+		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		mvc.service(request, response);
+		TypeReference<List<Pet>> tr = new TypeReference<List<Pet>>() {
+		};
+		List<Pet> pets = mapper.readValue(response.getContentAsByteArray(), tr);
+		assertThat(pets.size()).isEqualTo(5);
+		assertThat(pets.get(0)).isInstanceOf(Pet.class);
+	}
+
+	@Test
 	public void validateGetPojo() throws Exception {
 		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets/6e3cc370-892f-4efe-a9eb-82926ff8cc5b");
 		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
@@ -58,7 +71,7 @@ public class RequestResponseTests {
 	}
 
 	@Test
-	public void validatePost() throws Exception {
+	public void validatePostWithBody() throws Exception {
 		ProxyHttpServletRequest request = new ProxyHttpServletRequest(null, "POST", "/pets/");
 		String jsonPet = "{\n"
 				+ "   \"id\":\"1234\",\n"
