@@ -36,14 +36,12 @@ import javax.servlet.http.HttpServletRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-
+import org.springframework.cloud.function.serverless.web.ProxyHttpServletRequest;
+import org.springframework.cloud.function.serverless.web.ProxyHttpServletResponse;
+import org.springframework.cloud.function.serverless.web.ProxyMvc;
+import org.springframework.cloud.function.serverless.web.ProxyServletContext;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.ProxyHttpServletRequest;
-import org.springframework.web.client.ProxyHttpServletResponse;
-import org.springframework.web.client.ProxyMvc;
-import org.springframework.web.client.ProxyServletContext;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
@@ -61,21 +59,12 @@ public class WebProxyInvoker {
 
 	private final ProxyMvc mvc;
 
-	private final ServletContext servletContext;
 
 	ObjectMapper mapper = new ObjectMapper();
 
 	public WebProxyInvoker() throws ServletException {
 		Class<?> startClass = FunctionClassUtils.getStartClass();
-		AnnotationConfigWebApplicationContext applpicationContext = new AnnotationConfigWebApplicationContext();
-		applpicationContext.register(startClass);
-
-		this.servletContext = new ProxyServletContext();
-		ServletConfig servletConfig = new ProxyServletConfig(this.servletContext);
-
-		DispatcherServlet servlet = new DispatcherServlet(applpicationContext);
-		servlet.init(servletConfig);
-		this.mvc = new ProxyMvc(servlet, applpicationContext);
+		this.mvc = ProxyMvc.INSTANCE(startClass);
 	}
 
 	/*
@@ -96,7 +85,7 @@ public class WebProxyInvoker {
 			logger.debug("httpMethod: " + httpMethod);
 			logger.debug("path: " + path);
 		}
-		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(servletContext, httpMethod, path);
+		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(null, httpMethod, path);
 		if (StringUtils.hasText((String) request.get("body"))) {
 			httpRequest.setContent(((String) request.get("body")).getBytes());
 		}
