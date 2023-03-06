@@ -111,7 +111,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	/** List of locales in descending order. */
 	private final LinkedList<Locale> locales = new LinkedList<>();
 
-
 	private boolean asyncStarted = false;
 
 	private boolean asyncSupported = false;
@@ -167,7 +166,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	private boolean requestedSessionIdFromURL = false;
 
 	private final MultiValueMap<String, Part> parts = new LinkedMultiValueMap<>();
-
 
 	public ProxyHttpServletRequest(ServletContext servletContext, String method, String requestURI) {
 		this.servletContext = servletContext;
@@ -318,11 +316,11 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 			@Override
 			public int read() throws IOException {
-		        int readByte = stream.read();
-		        if (readByte == -1) {
-		            finished = true;
-		        }
-		        return readByte;
+				int readByte = stream.read();
+				if (readByte == -1) {
+					finished = true;
+				}
+				return readByte;
 			}
 
 			@Override
