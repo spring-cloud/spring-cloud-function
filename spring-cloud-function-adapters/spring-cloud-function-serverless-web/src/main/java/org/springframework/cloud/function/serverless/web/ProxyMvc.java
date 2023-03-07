@@ -44,6 +44,15 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
+/**
+ * Represents the main entry point into interaction with web application over light-weight proxy.
+ * After creating an instance via {@link #INSTANCE(Class...)} operation which will initialize the provided component
+ * classes of your web application (effectively starting your web application less web server),
+ * you use {@link #service(HttpServletRequest, HttpServletResponse)} operation to send request and receive a response.
+ *
+ * @author Oleg Zhurakousky
+ *
+ */
 public class ProxyMvc {
 
 	static final String MVC_RESULT_ATTRIBUTE = ProxyMvc.class.getName().concat(".MVC_RESULT_ATTRIBUTE");

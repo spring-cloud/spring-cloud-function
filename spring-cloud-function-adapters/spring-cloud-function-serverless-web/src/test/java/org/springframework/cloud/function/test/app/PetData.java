@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.aws.web;
+package org.springframework.cloud.function.test.app;
 
 
 import java.util.ArrayList;
