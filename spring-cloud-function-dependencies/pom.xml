@@ -81,6 +81,11 @@
 				<artifactId>spring-cloud-function-grpc-cloudevent-ext</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-function-serverless-web</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<profiles>

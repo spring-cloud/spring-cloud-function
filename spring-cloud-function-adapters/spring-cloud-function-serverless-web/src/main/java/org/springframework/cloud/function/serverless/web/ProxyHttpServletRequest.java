@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -58,17 +59,18 @@ import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.LinkedCaseInsensitiveMap;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.StringUtils;
 
+/**
+ *
+ * @author Oleg Zhurakousky
+ *
+ */
 public class ProxyHttpServletRequest implements HttpServletRequest {
-
-	private static final String CHARSET_PREFIX = "charset=";
 
 	private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
@@ -98,9 +100,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	private byte[] content;
 
 	@Nullable
-	private String contentType;
-
-	@Nullable
 	private ServletInputStream inputStream;
 
 	@Nullable
@@ -117,17 +116,13 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	private DispatcherType dispatcherType = DispatcherType.REQUEST;
 
-	// ---------------------------------------------------------------------
-	// HttpServletRequest properties
-	// ---------------------------------------------------------------------
-
 	@Nullable
 	private String authType;
 
 	@Nullable
 	private Cookie[] cookies;
 
-	private final Map<String, HeaderValueHolder> headers = new LinkedCaseInsensitiveMap<>();
+	private final HttpHeaders headers = new HttpHeaders();
 
 	@Nullable
 	private String method;
@@ -202,18 +197,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Override
 	public void setCharacterEncoding(@Nullable String characterEncoding) {
 		this.characterEncoding = characterEncoding;
-		updateContentTypeHeader();
-	}
-
-	private void updateContentTypeHeader() {
-		if (StringUtils.hasLength(this.contentType)) {
-			String value = this.contentType;
-			if (StringUtils.hasLength(this.characterEncoding)
-					&& !this.contentType.toLowerCase().contains(CHARSET_PREFIX)) {
-				value += ';' + CHARSET_PREFIX + this.characterEncoding;
-			}
-			doAddHeaderValue(HttpHeaders.CONTENT_TYPE, value, true);
-		}
 	}
 
 	/**
@@ -262,13 +245,13 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	 */
 	@Nullable
 	public String getContentAsString() throws IllegalStateException, UnsupportedEncodingException {
-		Assert.state(this.characterEncoding != null, "Cannot get content as a String for a null character encoding. "
-				+ "Consider setting the characterEncoding in the request.");
+//		Assert.state(this.characterEncoding != null, "Cannot get content as a String for a null character encoding. "
+//				+ "Consider setting the characterEncoding in the request.");
 
 		if (this.content == null) {
 			return null;
 		}
-		return new String(this.content, this.characterEncoding);
+		return new String(this.content, StandardCharsets.UTF_8);
 	}
 
 	@Override
@@ -282,29 +265,13 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void setContentType(@Nullable String contentType) {
-		this.contentType = contentType;
-		if (contentType != null) {
-			try {
-				MediaType mediaType = MediaType.parseMediaType(contentType);
-				if (mediaType.getCharset() != null) {
-					this.characterEncoding = mediaType.getCharset().name();
-				}
-			}
-			catch (IllegalArgumentException ex) {
-				// Try to get charset value anyway
-				int charsetIndex = contentType.toLowerCase().indexOf(CHARSET_PREFIX);
-				if (charsetIndex != -1) {
-					this.characterEncoding = contentType.substring(charsetIndex + CHARSET_PREFIX.length());
-				}
-			}
-			updateContentTypeHeader();
-		}
+		this.headers.set(HttpHeaders.CONTENT_TYPE, contentType);
 	}
 
 	@Override
 	@Nullable
 	public String getContentType() {
-		return this.contentType;
+		return this.headers.containsKey(HttpHeaders.CONTENT_TYPE) ? this.headers.get(HttpHeaders.CONTENT_TYPE).get(0) : null;
 	}
 
 	@Override
@@ -565,37 +532,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	/**
-	 * Add a new preferred locale, before any existing locales.
-	 *
-	 * @see #setPreferredLocales
-	 */
-	public void addPreferredLocale(Locale locale) {
-		Assert.notNull(locale, "Locale must not be null");
-		this.locales.addFirst(locale);
-		updateAcceptLanguageHeader();
-	}
-
-	/**
-	 * Set the list of preferred locales, in descending order, effectively replacing
-	 * any existing locales.
-	 *
-	 * @since 3.2
-	 * @see #addPreferredLocale
-	 */
-	public void setPreferredLocales(List<Locale> locales) {
-		Assert.notEmpty(locales, "Locale list must not be empty");
-		this.locales.clear();
-		this.locales.addAll(locales);
-		updateAcceptLanguageHeader();
-	}
-
-	private void updateAcceptLanguageHeader() {
-		HttpHeaders headers = new HttpHeaders();
-		headers.setAcceptLanguageAsLocales(this.locales);
-		doAddHeaderValue(HttpHeaders.ACCEPT_LANGUAGE, headers.getFirst(HttpHeaders.ACCEPT_LANGUAGE), true);
-	}
-
-	/**
 	 * Return the first preferred {@linkplain Locale locale} configured in this mock
 	 * request.
 	 * <p>
@@ -758,104 +694,86 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		return this.cookies;
 	}
 
-	/**
-	 * Add an HTTP header entry for the given name.
-	 * <p>
-	 * While this method can take any {@code Object} as a parameter, it is
-	 * recommended to use the following types:
-	 * <ul>
-	 * <li>String or any Object to be converted using {@code toString()}; see
-	 * {@link #getHeader}.</li>
-	 * <li>String, Number, or Date for date headers; see
-	 * {@link #getDateHeader}.</li>
-	 * <li>String or Number for integer headers; see {@link #getIntHeader}.</li>
-	 * <li>{@code String[]} or {@code Collection<String>} for multiple values; see
-	 * {@link #getHeaders}.</li>
-	 * </ul>
-	 *
-	 * @see #getHeaderNames
-	 * @see #getHeaders
-	 * @see #getHeader
-	 * @see #getDateHeader
-	 */
-	public void addHeader(String name, Object value) {
-		if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name) && !this.headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
-			setContentType(value.toString());
-		}
-		else if (HttpHeaders.ACCEPT_LANGUAGE.equalsIgnoreCase(name)
-				&& !this.headers.containsKey(HttpHeaders.ACCEPT_LANGUAGE)) {
-			try {
-				HttpHeaders headers = new HttpHeaders();
-				headers.add(HttpHeaders.ACCEPT_LANGUAGE, value.toString());
-				List<Locale> locales = headers.getAcceptLanguageAsLocales();
-				this.locales.clear();
-				this.locales.addAll(locales);
-				if (this.locales.isEmpty()) {
-					this.locales.add(Locale.ENGLISH);
-				}
+	@Override
+	@Nullable
+	public String getHeader(String name) {
+		return this.headers.containsKey(name) ? this.headers.get(name).toString() : null;
+	}
+
+	@Override
+	public Enumeration<String> getHeaders(String name) {
+		return Collections.enumeration(this.headers.containsKey(name) ? this.headers.get(name) : new LinkedList<>());
+	}
+
+	@Override
+	public Enumeration<String> getHeaderNames() {
+		return Collections.enumeration(this.headers.keySet());
+	}
+
+	public void setHeader(String name, @Nullable String value) {
+		this.headers.set(name, value);
+	}
+
+	public void addHeader(String name, @Nullable String value) {
+		this.headers.add(name, value);
+	}
+
+	public void addHeaders(MultiValueMap<String, String> headers) {
+		this.headers.addAll(headers);
+	}
+
+	public void setHeaders(MultiValueMap<String, String> headers) {
+		this.headers.clear();
+		this.addHeaders(headers);
+	}
+
+	@Override
+	public int getIntHeader(String name) {
+		List<String> header = this.headers.get(name);
+		if (!CollectionUtils.isEmpty(header) && header.size() == 1) {
+			Object value = header.get(0);
+			if (value instanceof Number) {
+				return ((Number) value).intValue();
 			}
-			catch (IllegalArgumentException ex) {
-				// Invalid Accept-Language format -> just store plain header
+			else if (value instanceof String) {
+				return Integer.parseInt((String) value);
 			}
-			doAddHeaderValue(name, value, true);
+			else if (value != null) {
+				throw new NumberFormatException("Value for header '" + name + "' is not a Number: " + value);
+			}
+			else {
+				return -1;
+			}
 		}
 		else {
-			doAddHeaderValue(name, value, false);
+			return -1;
 		}
 	}
 
-	private void doAddHeaderValue(String name, @Nullable Object value, boolean replace) {
-		HeaderValueHolder header = this.headers.get(name);
-		Assert.notNull(value, "Header value must not be null");
-		if (header == null || replace) {
-			header = new HeaderValueHolder();
-			this.headers.put(name, header);
-		}
-		if (value instanceof Collection) {
-			header.addValues((Collection<?>) value);
-		}
-		else if (value.getClass().isArray()) {
-			header.addValueArray(value);
-		}
-		else {
-			header.addValue(value);
-		}
-	}
-
-	/**
-	 * Return the long timestamp for the date header with the given {@code name}.
-	 * <p>
-	 * If the internal value representation is a String, this method will try to
-	 * parse it as a date using the supported date formats:
-	 * <ul>
-	 * <li>"EEE, dd MMM yyyy HH:mm:ss zzz"</li>
-	 * <li>"EEE, dd-MMM-yy HH:mm:ss zzz"</li>
-	 * <li>"EEE MMM dd HH:mm:ss yyyy"</li>
-	 * </ul>
-	 *
-	 * @param name the header name
-	 * @see <a href="https://tools.ietf.org/html/rfc7231#section-7.1.1.1">Section
-	 *      7.1.1.1 of RFC 7231</a>
-	 */
 	@Override
 	public long getDateHeader(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		Object value = (header != null ? header.getValue() : null);
-		if (value instanceof Date) {
-			return ((Date) value).getTime();
-		}
-		else if (value instanceof Number) {
-			return ((Number) value).longValue();
-		}
-		else if (value instanceof String) {
-			return parseDateHeader(name, (String) value);
-		}
-		else if (value != null) {
-			throw new IllegalArgumentException(
-					"Value for header '" + name + "' is not a Date, Number, or String: " + value);
+		List<String> header = this.headers.get(name);
+		if (!CollectionUtils.isEmpty(header) && header.size() == 1) {
+			Object value = header.get(0);
+			if (value instanceof Date) {
+				return ((Date) value).getTime();
+			}
+			else if (value instanceof Number) {
+				return ((Number) value).longValue();
+			}
+			else if (value instanceof String) {
+				return parseDateHeader(name, (String) value);
+			}
+			else if (value != null) {
+				throw new IllegalArgumentException(
+						"Value for header '" + name + "' is not a Date, Number, or String: " + value);
+			}
+			else {
+				return -1L;
+			}
 		}
 		else {
-			return -1L;
+			return -1;
 		}
 	}
 
@@ -871,42 +789,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 			}
 		}
 		throw new IllegalArgumentException("Cannot parse date value '" + value + "' for '" + name + "' header");
-	}
-
-	@Override
-	@Nullable
-	public String getHeader(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		return (header != null ? header.getStringValue() : null);
-	}
-
-	@Override
-	public Enumeration<String> getHeaders(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		return Collections.enumeration(header != null ? header.getStringValues() : new LinkedList<>());
-	}
-
-	@Override
-	public Enumeration<String> getHeaderNames() {
-		return Collections.enumeration(this.headers.keySet());
-	}
-
-	@Override
-	public int getIntHeader(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		Object value = (header != null ? header.getValue() : null);
-		if (value instanceof Number) {
-			return ((Number) value).intValue();
-		}
-		else if (value instanceof String) {
-			return Integer.parseInt((String) value);
-		}
-		else if (value != null) {
-			throw new NumberFormatException("Value for header '" + name + "' is not a Number: " + value);
-		}
-		else {
-			return -1;
-		}
 	}
 
 	public void setMethod(@Nullable String method) {

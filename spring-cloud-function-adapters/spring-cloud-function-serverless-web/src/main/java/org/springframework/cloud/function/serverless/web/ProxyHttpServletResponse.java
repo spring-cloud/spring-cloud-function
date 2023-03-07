@@ -22,16 +22,12 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -41,86 +37,43 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.web.util.WebUtils;
 
+/**
+ *
+ * @author Oleg Zhurakousky
+ *
+ */
 public class ProxyHttpServletResponse implements HttpServletResponse {
 
-	private static final String CHARSET_PREFIX = "charset=";
-
 	private static final String DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
-
-	private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-
-	// ---------------------------------------------------------------------
-	// ServletResponse properties
-	// ---------------------------------------------------------------------
-
-	private boolean outputStreamAccessAllowed = true;
 
 	private String defaultCharacterEncoding = WebUtils.DEFAULT_CHARACTER_ENCODING;
 
 	private String characterEncoding = this.defaultCharacterEncoding;
 
-	/**
-	 * {@code true} if the character encoding has been explicitly set through
-	 * {@link HttpServletResponse} methods or through a {@code charset} parameter on
-	 * the {@code Content-Type}.
-	 */
-	private boolean characterEncodingSet = false;
-
 	private final ByteArrayOutputStream content = new ByteArrayOutputStream(1024);
 
 	private final ServletOutputStream outputStream = new ResponseServletOutputStream();
-
-	private long contentLength = 0;
 
 	private String contentType;
 
 	private int bufferSize = 4096;
 
-	private boolean committed;
-
 	private Locale locale = Locale.getDefault();
-
-	// ---------------------------------------------------------------------
-	// HttpServletResponse properties
-	// ---------------------------------------------------------------------
 
 	private final List<Cookie> cookies = new ArrayList<>();
 
-	private final Map<String, HeaderValueHolder> headers = new LinkedCaseInsensitiveMap<>();
+	private final HttpHeaders headers = new HttpHeaders();
 
 	private int status = HttpServletResponse.SC_OK;
 
 	@Nullable
 	private String errorMessage;
 
-	// ---------------------------------------------------------------------
-	// ServletResponse interface
-	// ---------------------------------------------------------------------
-
 	@Override
 	public void setCharacterEncoding(String characterEncoding) {
-		setExplicitCharacterEncoding(characterEncoding);
-		updateContentTypePropertyAndHeader();
-	}
-
-	private void setExplicitCharacterEncoding(String characterEncoding) {
-		Assert.notNull(characterEncoding, "'characterEncoding' must not be null");
 		this.characterEncoding = characterEncoding;
-		this.characterEncodingSet = true;
-	}
-
-	private void updateContentTypePropertyAndHeader() {
-		if (this.contentType != null) {
-			String value = this.contentType;
-			if (this.characterEncodingSet && !value.toLowerCase().contains(CHARSET_PREFIX)) {
-				value += ';' + CHARSET_PREFIX + getCharacterEncoding();
-				this.contentType = value;
-			}
-			doAddHeaderValue(HttpHeaders.CONTENT_TYPE, value, true);
-		}
 	}
 
 	@Override
@@ -130,7 +83,6 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public ServletOutputStream getOutputStream() {
-		Assert.state(this.outputStreamAccessAllowed, "OutputStream access not allowed");
 		return this.outputStream;
 	}
 
@@ -162,24 +114,8 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 		return this.content.toString(getCharacterEncoding());
 	}
 
-	/**
-	 * Get the content of the response body as a {@code String}, using the provided
-	 * {@code fallbackCharset} if no charset has been explicitly defined and
-	 * otherwise using the charset specified for the response by the application,
-	 * either through {@link HttpServletResponse} methods or through a charset
-	 * parameter on the {@code Content-Type}.
-	 *
-	 * @return the content as a {@code String}
-	 * @throws UnsupportedEncodingException if the character encoding is not
-	 *                                      supported
-	 * @since 5.2
-	 * @see #getContentAsString()
-	 * @see #setCharacterEncoding(String)
-	 * @see #setContentType(String)
-	 */
 	public String getContentAsString(Charset fallbackCharset) throws UnsupportedEncodingException {
-		String charsetName = (this.characterEncodingSet ? getCharacterEncoding() : fallbackCharset.name());
-		return this.content.toString(charsetName);
+		return this.content.toString(getCharacterEncoding());
 	}
 
 	@Override
@@ -224,21 +160,15 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 		this.content.reset();
 	}
 
-	public void setCommitted(boolean committed) {
-		this.committed = committed;
-	}
-
 	@Override
 	public boolean isCommitted() {
-		return this.committed;
+		return true;
 	}
 
 	@Override
 	public void reset() {
 		resetBuffer();
 		this.characterEncoding = this.defaultCharacterEncoding;
-		this.characterEncodingSet = false;
-		this.contentLength = 0;
 		this.contentType = null;
 		this.locale = Locale.getDefault();
 		this.cookies.clear();
@@ -249,16 +179,11 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public void setLocale(@Nullable Locale locale) {
-		// Although the Javadoc for javax.servlet.ServletResponse.setLocale(Locale) does
-		// not
-		// state how a null value for the supplied Locale should be handled, both Tomcat
-		// and
-		// Jetty simply ignore a null value. So we do the same here.
 		if (locale == null) {
 			return;
 		}
 		this.locale = locale;
-		doAddHeaderValue(HttpHeaders.CONTENT_LANGUAGE, locale.toLanguageTag(), true);
+		this.headers.add(HttpHeaders.CONTENT_LANGUAGE, locale.toLanguageTag());
 	}
 
 	@Override
@@ -314,8 +239,7 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 	@Override
 	@Nullable
 	public String getHeader(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		return (header != null ? header.getStringValue() : null);
+		return this.headers.containsKey(name) ? this.headers.get(name).toString() : null;
 	}
 
 	/**
@@ -331,13 +255,7 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 	 */
 	@Override
 	public List<String> getHeaders(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		if (header != null) {
-			return header.getStringValues();
-		}
-		else {
-			return Collections.emptyList();
-		}
+		return this.headers.get(name);
 	}
 
 	/**
@@ -350,24 +268,7 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 	 */
 	@Nullable
 	public Object getHeaderValue(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		return (header != null ? header.getValue() : null);
-	}
-
-	/**
-	 * Return all values for the given header as a List of value objects.
-	 *
-	 * @param name the name of the header
-	 * @return the associated header values, or an empty List if none
-	 */
-	public List<Object> getHeaderValues(String name) {
-		HeaderValueHolder header = this.headers.get(name);
-		if (header != null) {
-			return header.getValues();
-		}
-		else {
-			return Collections.emptyList();
-		}
+		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	/**
@@ -411,14 +312,12 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 		Assert.state(!isCommitted(), "Cannot set error status - response is already committed");
 		this.status = status;
 		this.errorMessage = errorMessage;
-		setCommitted(true);
 	}
 
 	@Override
 	public void sendError(int status) throws IOException {
 		Assert.state(!isCommitted(), "Cannot set error status - response is already committed");
 		this.status = status;
-		setCommitted(true);
 	}
 
 	@Override
@@ -427,7 +326,6 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 		Assert.notNull(url, "Redirect URL must not be null");
 		setHeader(HttpHeaders.LOCATION, url);
 		setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
-		setCommitted(true);
 	}
 
 	@Nullable
@@ -437,25 +335,12 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public void setDateHeader(String name, long value) {
-		setHeaderValue(name, formatDate(value));
+		this.headers.set(name, formatDate(value));
 	}
 
 	@Override
 	public void addDateHeader(String name, long value) {
-		addHeaderValue(name, formatDate(value));
-	}
-
-	public long getDateHeader(String name) {
-		String headerValue = getHeader(name);
-		if (headerValue == null) {
-			return -1;
-		}
-		try {
-			return newDateFormat().parse(getHeader(name)).getTime();
-		}
-		catch (ParseException ex) {
-			throw new IllegalArgumentException("Value for header '" + name + "' is not a valid Date: " + headerValue);
-		}
+		this.headers.add(name, formatDate(value));
 	}
 
 	private String formatDate(long date) {
@@ -464,55 +349,27 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	private DateFormat newDateFormat() {
 		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT, Locale.US);
-		dateFormat.setTimeZone(GMT);
 		return dateFormat;
 	}
 
 	@Override
 	public void setHeader(String name, @Nullable String value) {
-		setHeaderValue(name, value);
+		this.headers.set(name, value);
 	}
 
 	@Override
 	public void addHeader(String name, @Nullable String value) {
-		addHeaderValue(name, value);
+		this.headers.add(name, value);
 	}
 
 	@Override
 	public void setIntHeader(String name, int value) {
-		setHeaderValue(name, value);
+		this.headers.set(name, String.valueOf(value));
 	}
 
 	@Override
 	public void addIntHeader(String name, int value) {
-		addHeaderValue(name, value);
-	}
-
-	private void setHeaderValue(String name, @Nullable Object value) {
-		if (value == null) {
-			return;
-		}
-		boolean replaceHeader = true;
-		doAddHeaderValue(name, value, replaceHeader);
-	}
-
-	private void addHeaderValue(String name, @Nullable Object value) {
-		if (value == null) {
-			return;
-		}
-		boolean replaceHeader = false;
-		doAddHeaderValue(name, value, replaceHeader);
-	}
-
-	private void doAddHeaderValue(String name, Object value, boolean replace) {
-		Assert.notNull(value, "Header value must not be null");
-		HeaderValueHolder header = this.headers.computeIfAbsent(name, key -> new HeaderValueHolder());
-		if (replace) {
-			header.setValue(value);
-		}
-		else {
-			header.addValue(value);
-		}
+		this.headers.add(name, String.valueOf(value));
 	}
 
 	@Override
@@ -536,20 +393,6 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 	@Nullable
 	public String getErrorMessage() {
 		return this.errorMessage;
-	}
-
-	// ---------------------------------------------------------------------
-	// Methods for MockRequestDispatcher
-	// ---------------------------------------------------------------------
-
-	@Nullable
-	public String getForwardedUrl() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Nullable
-	public String getIncludedUrl() {
-		throw new UnsupportedOperationException();
 	}
 
 	/**

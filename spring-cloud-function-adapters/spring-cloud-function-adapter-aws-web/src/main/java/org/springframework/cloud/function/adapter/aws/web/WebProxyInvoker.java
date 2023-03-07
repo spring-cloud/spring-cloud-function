@@ -19,31 +19,25 @@ package org.springframework.cloud.function.adapter.aws.web;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.servlet.Filter;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.function.serverless.web.ProxyHttpServletRequest;
 import org.springframework.cloud.function.serverless.web.ProxyHttpServletResponse;
 import org.springframework.cloud.function.serverless.web.ProxyMvc;
-import org.springframework.cloud.function.serverless.web.ProxyServletContext;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
-import org.springframework.web.servlet.DispatcherServlet;
 
 /**
  *
@@ -74,10 +68,9 @@ public class WebProxyInvoker {
 	 */
 	@SuppressWarnings("unchecked")
 	private HttpServletRequest prepareRequest(InputStream input) throws IOException {
-
 		Map<String, Object> request = mapper.readValue(input, Map.class);
-		if (logger.isDebugEnabled()) {
-			logger.debug("Request: " + request);
+		if (logger.isInfoEnabled()) {
+			logger.info("Request: " + request);
 		}
 		String httpMethod = (String) request.get("httpMethod");
 		String path = (String) request.get("path");
@@ -86,18 +79,29 @@ public class WebProxyInvoker {
 			logger.debug("path: " + path);
 		}
 		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(null, httpMethod, path);
+
+		// CONTENT
 		if (StringUtils.hasText((String) request.get("body"))) {
 			httpRequest.setContent(((String) request.get("body")).getBytes());
 		}
-		if (request.get("queryStringParameters") != null) {
-			httpRequest.setParameters((Map<String, ?>) request.get("queryStringParameters"));
+
+		// REQUEST PARAM
+		if (request.get("multiValueQueryStringParameters") != null) {
+			Map<String, List<String>> parameters = (Map<String, List<String>>) request.get("multiValueQueryStringParameters");
+			for (Entry<String, List<String>> parameter : parameters.entrySet()) {
+				httpRequest.setParameter(parameter.getKey(), parameter.getValue().toArray(new String[] {}));
+			}
 		}
 
-		Map<String, Object> headers = (Map<String, Object>) request.get("headers");
-		headers.putAll((Map<String, Object>) request.get("multiValueHeaders"));
-		for (Entry<String, Object> entry : headers.entrySet()) {
-			httpRequest.addHeader(entry.getKey(), entry.getValue());
+		// HEADERS
+		Map<String, List<String>> headers = (Map<String, List<String>>) request.get("multiValueHeaders");
+		HttpHeaders httpHeaders = new HttpHeaders();
+		for (Entry<String, List<String>> entry : headers.entrySet()) {
+			// TODO may need to do some header formatting
+			httpHeaders.addAll(entry.getKey(), entry.getValue());
 		}
+		httpRequest.setHeaders(httpHeaders);
+
 		return httpRequest;
 	}
 
@@ -121,47 +125,20 @@ public class WebProxyInvoker {
 			}
 			Map<String, Object> apiGatewayResponseStructure = new HashMap<String, Object>();
 			apiGatewayResponseStructure.put("isBase64Encoded", false);
-			apiGatewayResponseStructure.put("statusCode", 200);
+			apiGatewayResponseStructure.put("statusCode", HttpStatus.OK.value());
 			apiGatewayResponseStructure.put("body", responseString);
 
 			Map<String, List<String>> multiValueHeaders = new HashMap<>();
+			Map<String, String> headers = new HashMap<>();
 			for (String headerName : httpResponse.getHeaderNames()) {
 				multiValueHeaders.put(headerName, httpResponse.getHeaders(headerName));
+				headers.put(headerName, httpResponse.getHeaders(headerName).toString());
 			}
-			// TODO investigate why AWS doesn't like List as value
-//			apiGatewayResponseStructure.put("headers", multiValueHeaders);
+			apiGatewayResponseStructure.put("multiValueHeaders", multiValueHeaders);
+			apiGatewayResponseStructure.put("headers", headers);
 
 			byte[] apiGatewayResponseBytes = mapper.writeValueAsBytes(apiGatewayResponseStructure);
 			StreamUtils.copy(apiGatewayResponseBytes, output);
-		}
-	}
-
-	private static class ProxyServletConfig implements ServletConfig {
-
-		private final ServletContext servletContext;
-
-		ProxyServletConfig(ServletContext servletContext) {
-			this.servletContext = servletContext;
-		}
-
-		@Override
-		public String getServletName() {
-			return "serverless-proxy";
-		}
-
-		@Override
-		public ServletContext getServletContext() {
-			return this.servletContext;
-		}
-
-		@Override
-		public Enumeration<String> getInitParameterNames() {
-			return Collections.enumeration(new ArrayList<String>());
-		}
-
-		@Override
-		public String getInitParameter(String name) {
-			return null;
 		}
 	}
 }
