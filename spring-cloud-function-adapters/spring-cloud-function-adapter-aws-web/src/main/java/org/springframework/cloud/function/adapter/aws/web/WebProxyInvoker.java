@@ -81,9 +81,13 @@ public class WebProxyInvoker {
 			logger.debug("path: " + path);
 		}
 		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(null, httpMethod, path);
+
+		// CONTENT
 		if (StringUtils.hasText((String) request.get("body"))) {
 			httpRequest.setContent(((String) request.get("body")).getBytes());
 		}
+
+		// REQUEST PARAM
 		if (request.get("multiValueQueryStringParameters") != null) {
 			Map<String, List<String>> parameters = (Map<String, List<String>>) request.get("multiValueQueryStringParameters");
 			for (Entry<String, List<String>> parameter : parameters.entrySet()) {
@@ -91,14 +95,15 @@ public class WebProxyInvoker {
 			}
 		}
 
+		// HEADERS
 		Map<String, List<String>> headers = (Map<String, List<String>>) request.get("multiValueHeaders");
 		HttpHeaders httpHeaders = new HttpHeaders();
-
 		for (Entry<String, List<String>> entry : headers.entrySet()) {
 			// TODO may need to do some header formatting
 			httpHeaders.addAll(entry.getKey(), entry.getValue());
 		}
 		httpRequest.setHeaders(httpHeaders);
+
 		return httpRequest;
 	}
 
@@ -126,11 +131,13 @@ public class WebProxyInvoker {
 			apiGatewayResponseStructure.put("body", responseString);
 
 			Map<String, List<String>> multiValueHeaders = new HashMap<>();
+			Map<String, String> headers = new HashMap<>();
 			for (String headerName : httpResponse.getHeaderNames()) {
 				multiValueHeaders.put(headerName, httpResponse.getHeaders(headerName));
+				headers.put(headerName, httpResponse.getHeaders(headerName).toString());
 			}
-			// TODO investigate why AWS doesn't like List as value
-//			apiGatewayResponseStructure.put("headers", multiValueHeaders);
+			apiGatewayResponseStructure.put("multiValueHeaders", multiValueHeaders);
+			apiGatewayResponseStructure.put("headers", headers);
 
 			byte[] apiGatewayResponseBytes = mapper.writeValueAsBytes(apiGatewayResponseStructure);
 			StreamUtils.copy(apiGatewayResponseBytes, output);

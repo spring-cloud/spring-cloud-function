@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.serverless.web.ProxyHttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -182,6 +183,9 @@ public class WebProxyInvokerTests {
 		assertThat(request.getContentType()).isEqualTo("application/json");
 		assertThat(request.getParameterValues("foo").length).isEqualTo(2);
 		assertThat(request.getParameterValues("foo")[0]).isEqualTo("bar");
+		assertThat(request.getParameterValues("abc").length).isEqualTo(1);
+		assertThat(request.getParameterValues("abc")[0]).isEqualTo("xyz");
+		assertThat(request.getHeaders(HttpHeaders.CONTENT_TYPE).nextElement()).isEqualTo("application/json");
 	}
 
 	@Test
