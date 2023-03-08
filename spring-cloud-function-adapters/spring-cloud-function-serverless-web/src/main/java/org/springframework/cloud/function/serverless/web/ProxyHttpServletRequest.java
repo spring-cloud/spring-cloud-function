@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -244,13 +245,13 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	 */
 	@Nullable
 	public String getContentAsString() throws IllegalStateException, UnsupportedEncodingException {
-		Assert.state(this.characterEncoding != null, "Cannot get content as a String for a null character encoding. "
-				+ "Consider setting the characterEncoding in the request.");
+//		Assert.state(this.characterEncoding != null, "Cannot get content as a String for a null character encoding. "
+//				+ "Consider setting the characterEncoding in the request.");
 
 		if (this.content == null) {
 			return null;
 		}
-		return new String(this.content, this.characterEncoding);
+		return new String(this.content, StandardCharsets.UTF_8);
 	}
 
 	@Override

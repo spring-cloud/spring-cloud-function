@@ -354,22 +354,22 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public void setHeader(String name, @Nullable String value) {
-		this.headers.set(name, name);
+		this.headers.set(name, value);
 	}
 
 	@Override
 	public void addHeader(String name, @Nullable String value) {
-		this.headers.add(name, name);
+		this.headers.add(name, value);
 	}
 
 	@Override
 	public void setIntHeader(String name, int value) {
-		this.headers.set(name, name);
+		this.headers.set(name, String.valueOf(value));
 	}
 
 	@Override
 	public void addIntHeader(String name, int value) {
-		this.headers.add(name, name);
+		this.headers.add(name, String.valueOf(value));
 	}
 
 	@Override

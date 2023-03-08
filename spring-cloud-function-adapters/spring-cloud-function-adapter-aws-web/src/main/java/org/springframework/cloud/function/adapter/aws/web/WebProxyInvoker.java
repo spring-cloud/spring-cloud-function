@@ -68,9 +68,7 @@ public class WebProxyInvoker {
 	 */
 	@SuppressWarnings("unchecked")
 	private HttpServletRequest prepareRequest(InputStream input) throws IOException {
-
 		Map<String, Object> request = mapper.readValue(input, Map.class);
-		System.out.println("Request: " + request);
 		if (logger.isInfoEnabled()) {
 			logger.info("Request: " + request);
 		}

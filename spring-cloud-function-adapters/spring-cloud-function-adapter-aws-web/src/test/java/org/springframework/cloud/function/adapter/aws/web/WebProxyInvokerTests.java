@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,47 +37,37 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class WebProxyInvokerTests {
 
-	static String apiGatewayEvent = "{\n"
+	static String API_GATEWAY_EVENT = "{\n"
 			+ "    \"version\": \"1.0\",\n"
 			+ "    \"resource\": \"$default\",\n"
 			+ "    \"path\": \"/pets\",\n"
-			+ "    \"httpMethod\": \"GET\",\n"
+			+ "    \"httpMethod\": \"POST\",\n"
 			+ "    \"headers\": {\n"
-			+ "        \"Content-Length\": \"0\",\n"
-			+ "        \"content-type\": \"application/json\",\n"
+			+ "        \"Content-Length\": \"45\",\n"
+			+ "        \"Content-Type\": \"application/json\",\n"
 			+ "        \"Host\": \"i76bfhczs0.execute-api.eu-west-3.amazonaws.com\",\n"
-			+ "        \"User-Agent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36\",\n"
-			+ "        \"X-Amzn-Trace-Id\": \"Root=1-640739ff-4face0f32be123794d1e8a10\",\n"
+			+ "        \"User-Agent\": \"curl/7.79.1\",\n"
+			+ "        \"X-Amzn-Trace-Id\": \"Root=1-64087690-2151375b219d3ba3389ea84e\",\n"
 			+ "        \"X-Forwarded-For\": \"109.210.252.44\",\n"
 			+ "        \"X-Forwarded-Port\": \"443\",\n"
 			+ "        \"X-Forwarded-Proto\": \"https\",\n"
-			+ "        \"accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\",\n"
-			+ "        \"accept-encoding\": \"gzip, deflate, br\",\n"
-			+ "        \"accept-language\": \"en-US,en;q=0.9,ru;q=0.8,uk;q=0.7\",\n"
-			+ "        \"sec-ch-ua\": \"\\\"Not?A_Brand\\\";v=\\\"8\\\", \\\"Chromium\\\";v=\\\"108\\\", \\\"Google Chrome\\\";v=\\\"108\\\"\",\n"
-			+ "        \"sec-ch-ua-mobile\": \"?0\",\n"
-			+ "        \"sec-ch-ua-platform\": \"\\\"macOS\\\"\",\n"
-			+ "        \"sec-fetch-dest\": \"document\",\n"
-			+ "        \"sec-fetch-mode\": \"navigate\",\n"
-			+ "        \"sec-fetch-site\": \"none\",\n"
-			+ "        \"sec-fetch-user\": \"?1\",\n"
-			+ "        \"upgrade-insecure-requests\": \"1\"\n"
+			+ "        \"accept\": \"*/*\"\n"
 			+ "    },\n"
 			+ "    \"multiValueHeaders\": {\n"
 			+ "        \"Content-Length\": [\n"
-			+ "            \"0\"\n"
+			+ "            \"45\"\n"
 			+ "        ],\n"
-			+ "        \"content-type\": [\n"
+			+ "        \"Content-Type\": [\n"
 			+ "            \"application/json\"\n"
 			+ "        ],\n"
 			+ "        \"Host\": [\n"
 			+ "            \"i76bfhczs0.execute-api.eu-west-3.amazonaws.com\"\n"
 			+ "        ],\n"
 			+ "        \"User-Agent\": [\n"
-			+ "            \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36\"\n"
+			+ "            \"curl/7.79.1\"\n"
 			+ "        ],\n"
 			+ "        \"X-Amzn-Trace-Id\": [\n"
-			+ "            \"Root=1-640739ff-4face0f32be123794d1e8a10\"\n"
+			+ "            \"Root=1-64087690-2151375b219d3ba3389ea84e\"\n"
 			+ "        ],\n"
 			+ "        \"X-Forwarded-For\": [\n"
 			+ "            \"109.210.252.44\"\n"
@@ -88,37 +79,7 @@ public class WebProxyInvokerTests {
 			+ "            \"https\"\n"
 			+ "        ],\n"
 			+ "        \"accept\": [\n"
-			+ "            \"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\"\n"
-			+ "        ],\n"
-			+ "        \"accept-encoding\": [\n"
-			+ "            \"gzip, deflate, br\"\n"
-			+ "        ],\n"
-			+ "        \"accept-language\": [\n"
-			+ "            \"en-US,en;q=0.9,ru;q=0.8,uk;q=0.7\"\n"
-			+ "        ],\n"
-			+ "        \"sec-ch-ua\": [\n"
-			+ "            \"\\\"Not?A_Brand\\\";v=\\\"8\\\", \\\"Chromium\\\";v=\\\"108\\\", \\\"Google Chrome\\\";v=\\\"108\\\"\"\n"
-			+ "        ],\n"
-			+ "        \"sec-ch-ua-mobile\": [\n"
-			+ "            \"?0\"\n"
-			+ "        ],\n"
-			+ "        \"sec-ch-ua-platform\": [\n"
-			+ "            \"\\\"macOS\\\"\"\n"
-			+ "        ],\n"
-			+ "        \"sec-fetch-dest\": [\n"
-			+ "            \"document\"\n"
-			+ "        ],\n"
-			+ "        \"sec-fetch-mode\": [\n"
-			+ "            \"navigate\"\n"
-			+ "        ],\n"
-			+ "        \"sec-fetch-site\": [\n"
-			+ "            \"none\"\n"
-			+ "        ],\n"
-			+ "        \"sec-fetch-user\": [\n"
-			+ "            \"?1\"\n"
-			+ "        ],\n"
-			+ "        \"upgrade-insecure-requests\": [\n"
-			+ "            \"1\"\n"
+			+ "            \"*/*\"\n"
 			+ "        ]\n"
 			+ "    },\n"
 			+ "    \"queryStringParameters\": {\n"
@@ -139,8 +100,8 @@ public class WebProxyInvokerTests {
 			+ "        \"apiId\": \"i76bfhczs0\",\n"
 			+ "        \"domainName\": \"i76bfhczs0.execute-api.eu-west-3.amazonaws.com\",\n"
 			+ "        \"domainPrefix\": \"i76bfhczs0\",\n"
-			+ "        \"extendedRequestId\": \"BaYAChmeiGYEJyQ=\",\n"
-			+ "        \"httpMethod\": \"GET\",\n"
+			+ "        \"extendedRequestId\": \"Bdd2ngt5iGYEMIg=\",\n"
+			+ "        \"httpMethod\": \"POST\",\n"
 			+ "        \"identity\": {\n"
 			+ "            \"accessKey\": null,\n"
 			+ "            \"accountId\": null,\n"
@@ -153,39 +114,45 @@ public class WebProxyInvokerTests {
 			+ "            \"principalOrgId\": null,\n"
 			+ "            \"sourceIp\": \"109.210.252.44\",\n"
 			+ "            \"user\": null,\n"
-			+ "            \"userAgent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36\",\n"
+			+ "            \"userAgent\": \"curl/7.79.1\",\n"
 			+ "            \"userArn\": null\n"
 			+ "        },\n"
 			+ "        \"path\": \"/pets\",\n"
 			+ "        \"protocol\": \"HTTP/1.1\",\n"
-			+ "        \"requestId\": \"BaYAChmeiGYEJyQ=\",\n"
-			+ "        \"requestTime\": \"07/Mar/2023:13:19:59 +0000\",\n"
-			+ "        \"requestTimeEpoch\": 1678195199907,\n"
+			+ "        \"requestId\": \"Bdd2ngt5iGYEMIg=\",\n"
+			+ "        \"requestTime\": \"08/Mar/2023:11:50:40 +0000\",\n"
+			+ "        \"requestTimeEpoch\": 1678276240455,\n"
 			+ "        \"resourceId\": \"$default\",\n"
 			+ "        \"resourcePath\": \"$default\",\n"
 			+ "        \"stage\": \"$default\"\n"
 			+ "    },\n"
 			+ "    \"pathParameters\": null,\n"
 			+ "    \"stageVariables\": null,\n"
-			+ "    \"body\": null,\n"
+			+ "    \"body\": \"{\\\"id\\\":\\\"123\\\",\\\"breed\\\":\\\"Datsun\\\",\\\"name\\\":\\\"Donald\\\"}\",\n"
 			+ "    \"isBase64Encoded\": false\n"
 			+ "}";
+
+
 
 
 	@Test
 	public void validateHttpServletRequestConstruction() throws Exception {
 		System.setProperty("MAIN_CLASS", PetStoreSpringAppConfig.class.getName());
 		WebProxyInvoker invoker = new WebProxyInvoker();
-		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		InputStream targetStream = new ByteArrayInputStream(API_GATEWAY_EVENT.getBytes());
 		Method prepareRequest  = ReflectionUtils.findMethod(WebProxyInvoker.class, "prepareRequest", InputStream.class);
 		prepareRequest.setAccessible(true);
 		ProxyHttpServletRequest request = (ProxyHttpServletRequest) prepareRequest.invoke(invoker, targetStream);
+
 		assertThat(request.getContentType()).isEqualTo("application/json");
 		assertThat(request.getParameterValues("foo").length).isEqualTo(2);
 		assertThat(request.getParameterValues("foo")[0]).isEqualTo("bar");
 		assertThat(request.getParameterValues("abc").length).isEqualTo(1);
 		assertThat(request.getParameterValues("abc")[0]).isEqualTo("xyz");
 		assertThat(request.getHeaders(HttpHeaders.CONTENT_TYPE).nextElement()).isEqualTo("application/json");
+		assertThat(request.getContentAsString()).isEqualTo("{\"id\":\"123\",\"breed\":\"Datsun\",\"name\":\"Donald\"}");
+		assertThat(request.getContentLength()).isEqualTo(45);
+		assertThat(request.getMethod()).isEqualTo("POST");
 	}
 
 	@Test
@@ -193,13 +160,16 @@ public class WebProxyInvokerTests {
 		System.setProperty("MAIN_CLASS", PetStoreSpringAppConfig.class.getName());
 		WebProxyInvoker invoker = new WebProxyInvoker();
 
-		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		InputStream targetStream = new ByteArrayInputStream(API_GATEWAY_EVENT.getBytes());
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		invoker.handleRequest(targetStream, output);
 
 		ObjectMapper mapper = new ObjectMapper();
-		System.out.println("RESULT: =======> " + new String(output.toByteArray()));
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		System.out.println(result);
+		assertThat((boolean) result.get("isBase64Encoded")).isFalse();
+		assertThat(((Map<String, List<String>>) result.get("multiValueHeaders")).get("Content-Type").get(0)).isEqualTo("application/json");
+		assertThat(result.get("statusCode")).isEqualTo(200);
+		Pet pet = mapper.readValue((String) result.get("body"), Pet.class);
+		assertThat(pet.getName()).isEqualTo("Donald");
 	}
 }
