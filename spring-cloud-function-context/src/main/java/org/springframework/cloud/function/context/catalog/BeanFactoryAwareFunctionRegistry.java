@@ -53,6 +53,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -126,8 +127,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
 					.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
 					.collect(Collectors.toList());
-			logger.warn("Multiple functional beans were found " + functionalBeans + ", thus can't determine default function definition. Please "
+			if (!CollectionUtils.isEmpty(functionalBeans) && functionalBeans.size() > 1) {
+				logger.warn("Multiple functional beans were found " + functionalBeans + ", thus can't determine default function definition. Please "
 					+ "use 'spring.cloud.function.definition' property to explicitly define it. ");
+			}
 		}
 		if (!isFunctionDefinitionEligible(functionDefinition)) {
 			return null;
