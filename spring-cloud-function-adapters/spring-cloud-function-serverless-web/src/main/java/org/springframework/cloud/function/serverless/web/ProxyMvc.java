@@ -27,6 +27,7 @@ import java.util.List;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -36,10 +37,15 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
@@ -54,6 +60,8 @@ import org.springframework.web.servlet.DispatcherServlet;
  *
  */
 public class ProxyMvc {
+
+	private static Log LOG = LogFactory.getLog(ProxyMvc.class);
 
 	static final String MVC_RESULT_ATTRIBUTE = ProxyMvc.class.getName().concat(".MVC_RESULT_ATTRIBUTE");
 
@@ -70,6 +78,8 @@ public class ProxyMvc {
 		GenericWebApplicationContext applpicationContext = new GenericWebApplicationContext(servletContext);
 		AnnotatedBeanDefinitionReader reader = new AnnotatedBeanDefinitionReader(applpicationContext);
 		reader.register(componentClasses);
+
+		reader.register(ProxyErrorController.class);
 
 		try {
 			DispatcherServlet servlet = new DispatcherServlet(applpicationContext);
@@ -199,7 +209,40 @@ public class ProxyMvc {
 			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 					throws IOException, ServletException {
 
-				this.delegateServlet.service(request, response);
+				try {
+					this.delegateServlet.service(request, response);
+					if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value()) {
+						((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, ((HttpServletResponse) response).getStatus());
+						this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, null);
+						((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((ProxyHttpServletRequest) request).getRequestURI());
+
+						((ProxyHttpServletRequest) request).setRequestURI("/error");
+						this.delegateServlet.service(request, response);
+					}
+				}
+				catch (Exception e) {
+					((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.INTERNAL_SERVER_ERROR);
+					this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, e);
+					((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, e);
+					((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((ProxyHttpServletRequest) request).getRequestURI());
+
+					LOG.error("Failed processing the request to: " + ((ProxyHttpServletRequest) request).getRequestURI(), e);
+					((ProxyHttpServletRequest) request).setRequestURI("/error");
+					this.delegateServlet.service(request, response);
+				}
+			}
+
+			private void setErrorMessageAttribute(ProxyHttpServletRequest request, ProxyHttpServletResponse response, Exception exception) {
+				if (exception != null && StringUtils.hasText(exception.getMessage())) {
+					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, exception.getMessage());
+				}
+				else if (StringUtils.hasText(response.getErrorMessage())) {
+					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, response.getErrorMessage());
+				}
+				else {
+					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, HttpStatus.valueOf(response.getStatus()).getReasonPhrase());
+
+				}
 			}
 
 			@Override

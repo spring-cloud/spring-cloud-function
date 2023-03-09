@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.test.app.Pet;
 import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig;
+import org.springframework.http.HttpStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,7 +45,7 @@ public class RequestResponseTests {
 
 	@BeforeEach
 	public void before() {
-		this.mvc = ProxyMvc.INSTANCE(PetStoreSpringAppConfig.class);
+		this.mvc = ProxyMvc.INSTANCE(PetStoreSpringAppConfig.class, ProxyErrorController.class);
 	}
 
 	@AfterEach
@@ -85,6 +86,23 @@ public class RequestResponseTests {
 		Pet pet = mapper.readValue(response.getContentAsByteArray(), Pet.class);
 		assertThat(pet).isNotNull();
 		assertThat(pet.getName()).isNotEmpty();
+	}
+
+	@Test
+	public void errorThrownFromMethod() throws Exception {
+		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets/2");
+		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		mvc.service(request, response);
+		assertThat(response.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+		assertThat(response.getErrorMessage()).isEqualTo("No such Dog");
+	}
+
+	@Test
+	public void errorUnexpectedWhitelabel() throws Exception {
+		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets/2/3/4");
+		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		mvc.service(request, response);
+		assertThat(response.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
 	}
 
 	@Test

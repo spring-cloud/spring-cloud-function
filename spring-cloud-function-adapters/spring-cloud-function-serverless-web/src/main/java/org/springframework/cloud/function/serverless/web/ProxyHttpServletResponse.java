@@ -162,7 +162,7 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public boolean isCommitted() {
-		return true;
+		return false;
 	}
 
 	@Override
