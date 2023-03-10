@@ -36,6 +36,7 @@ import com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.cloud.function.serverless.web.FunctionClassUtils;
 import org.springframework.cloud.function.serverless.web.ProxyHttpServletRequest;
 import org.springframework.cloud.function.serverless.web.ProxyHttpServletResponse;
 import org.springframework.cloud.function.serverless.web.ProxyMvc;
