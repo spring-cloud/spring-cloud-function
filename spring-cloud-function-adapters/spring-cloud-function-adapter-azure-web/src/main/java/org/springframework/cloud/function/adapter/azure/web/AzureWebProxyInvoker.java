@@ -16,19 +16,13 @@
 
 package org.springframework.cloud.function.adapter.azure.web;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Optional;
 
-import javax.servlet.Filter;
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
@@ -42,14 +36,11 @@ import com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.cloud.function.serverless.web.ProxyHttpServletRequest;
+import org.springframework.cloud.function.serverless.web.ProxyHttpServletResponse;
+import org.springframework.cloud.function.serverless.web.ProxyMvc;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.ProxyHttpServletRequest;
-import org.springframework.web.client.ProxyHttpServletResponse;
-import org.springframework.web.client.ProxyMvc;
-import org.springframework.web.client.ProxyServletContext;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
-import org.springframework.web.servlet.DispatcherServlet;
 
 /**
  *
@@ -61,15 +52,17 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 	private static Log logger = LogFactory.getLog(AzureWebProxyInvoker.class);
 
+	private static final String AZURE_WEB_ADAPTER_NAME = "AzureWebAdapter";
+	private static final String AZURE_WEB_ADAPTER_ROUTE = AZURE_WEB_ADAPTER_NAME
+			+ "/{e?}/{e2?}/{e3?}/{e4?}/{e5?}/{e6?}/{e7?}/{e8?}/{e9?}/{e10?}/{e11?}/{e12?}/{e13?}/{e14?}/{e15?}";
+
 	private ProxyMvc mvc;
 
 	private ServletContext servletContext;
 
-	ObjectMapper mapper = new ObjectMapper();
-
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
-		// System.setProperty("MAIN_CLASS", "oz.spring.petstore.PetStoreSpringAppConfig");
+	//	System.setProperty("MAIN_CLASS", "oz.spring.petstore.PetStoreSpringAppConfig");
 		this.initialize();
 		return (T) this;
 	}
@@ -81,31 +74,19 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 	 */
 	private void initialize() throws ServletException {
 		synchronized (AzureWebProxyInvoker.class.getName()) {
-			if (this.servletContext == null) {
+			if (mvc == null) {
 				Class<?> startClass = FunctionClassUtils.getStartClass();
-				AnnotationConfigWebApplicationContext applicationContext = new AnnotationConfigWebApplicationContext();
-				applicationContext.register(startClass);
-
-				this.servletContext = new ProxyServletContext();
-				ServletConfig servletConfig = new ProxyServletConfig(this.servletContext);
-
-				DispatcherServlet servlet = new DispatcherServlet(applicationContext);
-				servlet.init(servletConfig);
-				this.mvc = new ProxyMvc(servlet,
-						applicationContext.getBeansOfType(Filter.class).values().toArray(new Filter[0]));
+				this.mvc = ProxyMvc.INSTANCE(startClass);
 			}
 		}
 	}
 
 	private HttpServletRequest prepareRequest(HttpRequestMessage<Optional<String>> request) {
 
-		// Note: Currently this is the only way to pass the the application
-		// route (e.g. the execution REST url)
-		String path = request.getQueryParameters().get("path");
+		int pathOffset = request.getUri().getPath().indexOf(AZURE_WEB_ADAPTER_NAME) + AZURE_WEB_ADAPTER_NAME.length();
 
-		if (!StringUtils.hasText(path)) {
-			throw new IllegalStateException("Missing path parameter");
-		}
+		String path = request.getUri().getPath().substring(pathOffset);
+
 		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(servletContext,
 				request.getHttpMethod().toString(), path);
 
@@ -126,10 +107,10 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 		return httpRequest;
 	}
 
-	@FunctionName("AzureWebAdapter")
+	@FunctionName(AZURE_WEB_ADAPTER_NAME)
 	public HttpResponseMessage execute(
 			@HttpTrigger(name = "req", methods = { HttpMethod.GET,
-					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+					HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS, route = AZURE_WEB_ADAPTER_ROUTE) HttpRequestMessage<Optional<String>> request,
 			ExecutionContext context) {
 
 		context.getLogger().info("Request body is: " + request.getBody().orElse("[empty]"));
@@ -138,7 +119,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 		ProxyHttpServletResponse httpResponse = new ProxyHttpServletResponse();
 		try {
-			this.mvc.perform(httpRequest, httpResponse);
+			this.mvc.service(httpRequest, httpResponse);
 
 			Builder responseBuilder = request.createResponseBuilder(HttpStatus.OK);
 			for (String headerName : httpResponse.getHeaderNames()) {
@@ -160,34 +141,5 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 			throw new IllegalStateException(e);
 		}
 
-	}
-
-	private static class ProxyServletConfig implements ServletConfig {
-
-		private final ServletContext servletContext;
-
-		ProxyServletConfig(ServletContext servletContext) {
-			this.servletContext = servletContext;
-		}
-
-		@Override
-		public String getServletName() {
-			return "serverless-proxy";
-		}
-
-		@Override
-		public ServletContext getServletContext() {
-			return this.servletContext;
-		}
-
-		@Override
-		public Enumeration<String> getInitParameterNames() {
-			return Collections.enumeration(new ArrayList<String>());
-		}
-
-		@Override
-		public String getInitParameter(String name) {
-			return null;
-		}
 	}
 }

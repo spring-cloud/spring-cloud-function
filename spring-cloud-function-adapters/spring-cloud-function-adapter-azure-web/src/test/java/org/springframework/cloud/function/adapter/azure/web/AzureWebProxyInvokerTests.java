@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.adapter.azure.web;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +40,9 @@ public class AzureWebProxyInvokerTests {
 		HttpRequestMessageStub<Optional<String>> request = new HttpRequestMessageStub<Optional<String>>();
 
 		request.setHttpMethod(HttpMethod.GET);
-		request.setQueryParameters(Collections.singletonMap("path", "/pets"));
+
+		request.setUri(new URI(
+				"http://localhost:7072/api/AzureWebAdapter/pets"));
 
 		request.setBody(Optional.of("{\"id\":\"535932f1-d18b-488a-ad8f-8d50b9678492\"" +
 				"\"breed\":\"Beagle\",\"name\":\"Murphy\",\"dateOfBirth\":1591682824313}"));
