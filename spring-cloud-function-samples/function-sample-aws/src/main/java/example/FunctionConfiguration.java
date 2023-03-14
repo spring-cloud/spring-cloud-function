@@ -19,13 +19,6 @@ public class FunctionConfiguration {
 
 	@Bean
 	public Function<String, String> uppercase() {
-		return value -> {
-			if (value.equals("exception")) {
-				throw new RuntimeException("Intentional exception");
-			}
-			else {
-				return value.toUpperCase();
-			}
-		};
+		return value -> value.toUpperCase();
 	}
 }
