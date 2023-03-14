@@ -26,13 +26,13 @@ As you can see it's a standard Spring Boot application that has no code-level de
 
 So, once deployed as AWS Lambda you can send a String and receive the uppercased version of it back.
 
-* Build *
+**Build**
 
 ```
 ./mvnw clean package
 ```
 
-** Deploy **
+**Deploy**
 
 Combination of pre-configured [Spring Boot maven plugin](https://docs.spring.io/spring-boot/docs/current/maven-plugin/reference/htmlsingle/) and [Apache Maven Shade plugin](https://maven.apache.org/plugins/maven-shade-plugin/) will produce a deployable JAR file. 
 
