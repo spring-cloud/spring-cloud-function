@@ -26,7 +26,7 @@ As you can see it's a standard Spring Boot application that has no code-level de
 
 So, once deployed as AWS Lambda you can send a String and receive the uppercased version of it back.
 
-** Build **
+* Build *
 
 ```
 ./mvnw clean package
