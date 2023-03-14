@@ -47,3 +47,11 @@ When ask about _handler_ you specify `org.springframework.cloud.function.adapter
 You can also find more details deployment procedures in this quick [getting started](https://docs.spring.io/spring-cloud-function/docs/3.2.9/reference/html/aws.html#_getting_started) paragraph available in Spring Cloud Function documentation. 
 
 #### Other Examples
+
+Below is a set of additional examples showcasing more complex scenarios
+
+- [Functional Bean registration](https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-functional-sample-aws). This example is similar to the basic example provided above wit the exception that it demonstrates [functional bean registration](https://docs.spring.io/spring-cloud-function/docs/3.2.9/reference/html/spring-cloud-function.html#_functional_bean_definitions) instead of classic which greatly improves startup time.  
+- [AWS Custom Runtime - classic Spring bean registration](https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-custom-bean). This example demonstrates usage of AWS custom runtime with classic bean registration.
+- [AWS Custom Runtime - functional Spring bean registration](https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-custom). This example demonstrates usage of AWS custom runtime with functional bean registration.
+- [GraalVM Native in AWS](https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-native). This example demonstrates Spring Cloud Function support for GraalVM Native deployment.
+- [Function Routing with AWS](https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-routing). This example demonstrates routing capabilities of Spring Cloud Function when deployed as AWS Lambdas
