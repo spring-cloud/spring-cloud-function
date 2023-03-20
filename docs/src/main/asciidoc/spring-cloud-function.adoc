@@ -183,7 +183,7 @@ For example:
 public MessageRoutingCallback customRouter() {
 	return new MessageRoutingCallback() {
 		@Override
-		FunctionRoutingResult routingResult(Message<?> message) {
+		public FunctionRoutingResult routingResult(Message<?> message) {
 			return new FunctionRoutingResult((String) message.getHeaders().get("func_name"));
 		}
 	};
