@@ -64,16 +64,6 @@
 			<plugin>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<groupId>org.jetbrains.kotlin</groupId>
-				<version>1.8.10</version>
-				<configuration>
-					<args>
-						<arg>-Xjsr305=strict</arg>
-					</args>
-					<compilerPlugins>
-						<plugin>spring</plugin>
-					</compilerPlugins>
-					<jvmTarget>17</jvmTarget>
-				</configuration>
 				<executions>
 					<execution>
 						<id>test-compile</id>
@@ -85,17 +75,9 @@
 								<sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
 								<sourceDir>${project.basedir}/src/test/java</sourceDir>
 							</sourceDirs>
-							<jvmTarget>17</jvmTarget>
 						</configuration>
 					</execution>
 				</executions>
-				<dependencies>
-					<dependency>
-						<groupId>org.jetbrains.kotlin</groupId>
-						<artifactId>kotlin-maven-allopen</artifactId>
-						<version>1.8.10</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

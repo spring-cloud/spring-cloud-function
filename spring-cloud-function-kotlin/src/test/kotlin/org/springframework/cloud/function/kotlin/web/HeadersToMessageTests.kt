@@ -41,12 +41,12 @@ import java.net.URI
 	properties = ["spring.cloud.function.web.path=/functions", "spring.main.web-application-type=reactive"]
 )
 @ContextConfiguration(classes = [RestApplication::class, HeadersToMessageTests.TestConfiguration::class])
-class HeadersToMessageTests {
+open class HeadersToMessageTests {
 	@Autowired
 	private val rest: TestRestTemplate? = null
 	@Test
 	@Throws(Exception::class)
-	fun testBodyAndCustomHeaderFromMessagePropagation() {
+	open fun testBodyAndCustomHeaderFromMessagePropagation() {
 		// test POJO paylod
 		var postForEntity = rest!!
 			.exchange(
@@ -74,9 +74,9 @@ class HeadersToMessageTests {
 
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
-	class TestConfiguration {
+	open class TestConfiguration {
 		@Bean("string")
-		fun functiono(): (message: Message<String?>) -> Message<String> = { request: Message<String?> ->
+		open fun functiono(): (message: Message<String?>) -> Message<String?> = { request: Message<String?> ->
 			val message =
 				MessageBuilder.withPayload(request.payload)
 					.setHeader("X-Content-Type", "application/xml")
@@ -85,7 +85,7 @@ class HeadersToMessageTests {
 		}
 
 		@Bean("employee")
-		fun function1(): (employee: Message<Employee>) -> Message<Employee> = { request ->
+		open fun function1(): (employee: Message<Employee>) -> Message<Employee> = { request ->
 			val message =
 				MessageBuilder
 					.withPayload(request.payload)
@@ -96,7 +96,7 @@ class HeadersToMessageTests {
 	}
 
 	// used by json converter
-	class Employee {
+	open class Employee {
 		var name: String? = null
 		var age = 0
 	}

@@ -28,39 +28,39 @@ import java.util.List
  */
 @EnableAutoConfiguration
 @Configuration
-class KotlinLambdasConfiguration {
+open class KotlinLambdasConfiguration {
 
 	@Bean
-	fun uppercase(): Function<String, String> = KotlinComponentFunction()
+	open fun uppercase(): Function<String, String> = KotlinComponentFunction()
 	@Bean
-	fun kotlinFunction(): (String) -> String {
+	open fun kotlinFunction(): (String) -> String {
 		return { it.toUpperCase() }
 	}
 
 	@Bean
-	fun kotlinPojoFunction(): (Person) -> String {
+	open fun kotlinPojoFunction(): (Person) -> String {
 		return { it.name.toString()}
 	}
 	
 	@Bean
-	fun kotlinListPojoFunction(): (List<Person>) -> String {
+	open fun kotlinListPojoFunction(): (List<Person>) -> String {
 		return {
 			"List of: " + it.get(0).name
 		}
 	}
 
 	@Bean
-	fun kotlinConsumer(): (String) -> Unit {
+	open fun kotlinConsumer(): (String) -> Unit {
 		return { println(it) }
 	}
 
 	@Bean
-	fun kotlinSupplier(): () -> String {
+	open fun kotlinSupplier(): () -> String {
 		return { "Hello" }
 	}
 
 	@Bean
-	fun javaFunction(): Function<String, String> {
+	open fun javaFunction(): Function<String, String> {
 		return Function { x -> x }
 	}
 
