@@ -84,7 +84,7 @@
 					<dependency>
 						<groupId>org.jetbrains.kotlin</groupId>
 						<artifactId>kotlin-maven-allopen</artifactId>
-						<version>1.4.21</version>
+						<version>1.8.10</version>
 					</dependency>
 				</dependencies>
 			</plugin>
