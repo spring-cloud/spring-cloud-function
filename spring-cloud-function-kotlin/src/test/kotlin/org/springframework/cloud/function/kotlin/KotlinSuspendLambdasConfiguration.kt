@@ -26,20 +26,20 @@ import org.springframework.context.annotation.Configuration
  */
 @EnableAutoConfiguration
 @Configuration
-class KotlinSuspendLambdasConfiguration {
+open class KotlinSuspendLambdasConfiguration {
 
 	@Bean
-	fun kotlinFunction(): suspend (Person) -> String {
+	open fun kotlinFunction(): suspend (Person) -> String {
 		return { it.name.toString()}
 	}
 
 	@Bean
-	fun kotlinConsumer(): suspend (String) -> Unit {
+	open fun kotlinConsumer(): suspend (String) -> Unit {
 		return { println(it) }
 	}
 
 	@Bean
-	fun kotlinSupplier(): suspend () -> String {
+	open fun kotlinSupplier(): suspend () -> String {
 		return { "Hello" }
 	}
 

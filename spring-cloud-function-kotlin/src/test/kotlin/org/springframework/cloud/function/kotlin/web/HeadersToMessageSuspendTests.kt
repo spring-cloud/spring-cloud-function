@@ -41,12 +41,12 @@ import java.net.URI
 	properties = ["spring.cloud.function.web.path=/functions", "spring.main.web-application-type=reactive"]
 )
 @ContextConfiguration(classes = [RestApplication::class, HeadersToMessageSuspendTests.TestConfiguration::class])
-class HeadersToMessageSuspendTests {
+open class HeadersToMessageSuspendTests {
 	@Autowired
 	private val rest: TestRestTemplate? = null
 	@Test
 	@Throws(Exception::class)
-	fun testBodyAndCustomHeaderFromMessagePropagation() {
+	open fun testBodyAndCustomHeaderFromMessagePropagation() {
 		// test POJO paylod
 		var postForEntity = rest!!
 			.exchange(
@@ -75,9 +75,9 @@ class HeadersToMessageSuspendTests {
 
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
-	class TestConfiguration {
+	open class TestConfiguration {
 		@Bean("stringSuspend")
-		fun functiono():suspend (employee: Flow<Message<String>>) -> Flow<Message<String>> = { flow: Flow<Message<String>> ->
+		open fun functiono():suspend (employee: Flow<Message<String>>) -> Flow<Message<String>> = { flow: Flow<Message<String>> ->
 			flow.map { request ->
 				val message =
 					MessageBuilder.withPayload(request.payload)
@@ -88,7 +88,7 @@ class HeadersToMessageSuspendTests {
 		}
 
 		@Bean("employeeSuspend")
-		fun function1(): suspend (employee: Flow<Message<Employee>>) -> Flow<Message<Employee>> = { flow ->
+		open fun function1(): suspend (employee: Flow<Message<Employee>>) -> Flow<Message<Employee>> = { flow ->
 			flow.map { request ->
 				val message =
 					MessageBuilder
@@ -101,7 +101,7 @@ class HeadersToMessageSuspendTests {
 		}
 	}
 
-	class Employee {
+	open class Employee {
 		var name: String? = null
 		var age = 0
 	}

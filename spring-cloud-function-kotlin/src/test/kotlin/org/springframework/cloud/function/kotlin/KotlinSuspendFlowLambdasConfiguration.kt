@@ -32,32 +32,32 @@ import java.util.function.Function
  */
 @EnableAutoConfiguration
 @Configuration
-class KotlinSuspendFlowLambdasConfiguration {
+open class KotlinSuspendFlowLambdasConfiguration {
 
 	@Bean
-	fun kotlinFunction(): suspend (Flow<String>) -> Flow<String> =  { flow ->
+	open fun kotlinFunction(): suspend (Flow<String>) -> Flow<String> =  { flow ->
 		flow.map { value -> value.toUpperCase() }
 	}
 	
 	@Bean
-	fun kotlinPojoFunction(): suspend (Flow<Person>) -> Flow<String> = { flow ->
+	open fun kotlinPojoFunction(): suspend (Flow<Person>) -> Flow<String> = { flow ->
 		flow.map(Person::toString)
 	}
 
 	@Bean
-	fun kotlinConsumer(): suspend (Flow<String>) -> Unit = { flow ->
+	open fun kotlinConsumer(): suspend (Flow<String>) -> Unit = { flow ->
 		flow.collect(::println)
 	}
 
 	@Bean
-	fun kotlinSupplier(): suspend () -> Flow<String>  = {
+	open fun kotlinSupplier(): suspend () -> Flow<String>  = {
 		flow {
 			emit("Hello")
 		}
 	}
 
 	@Bean
-	fun javaFunction(): Function<Flux<String>, Flux<String>> {
+	open fun javaFunction(): Function<Flux<String>, Flux<String>> {
 		return Function { x -> x }
 	}
 
