@@ -20,12 +20,17 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.EventListener;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
 import javax.servlet.RequestDispatcher;
@@ -200,9 +205,14 @@ public class ProxyServletContext implements ServletContext {
 		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
+	Map<String, ServletRegistration> registrations = new HashMap<>();
+
 	@Override
 	public Dynamic addServlet(String servletName, Servlet servlet) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+
+		ProxyServletRegistration registration = new ProxyServletRegistration(servletName, servlet, this);
+		this.registrations.put(servletName, registration);
+		return registration;
 	}
 
 	@Override
@@ -222,7 +232,7 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public ServletRegistration getServletRegistration(String servletName) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		return this.registrations.get(servletName);
 	}
 
 	@Override
@@ -240,9 +250,18 @@ public class ProxyServletContext implements ServletContext {
 		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
+	Map<String, FilterRegistration> filterRegistrations = new HashMap<>();
+
 	@Override
 	public javax.servlet.FilterRegistration.Dynamic addFilter(String filterName, Class<? extends Filter> filterClass) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		try {
+			Filter filter = filterClass.getDeclaredConstructor().newInstance();
+			ProxyFilterRegistration registration = new ProxyFilterRegistration(filterName, filter);
+			filterRegistrations.put(filterName, registration);
+			return registration;
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	@Override
@@ -252,12 +271,12 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public FilterRegistration getFilterRegistration(String filterName) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		return this.filterRegistrations.get(filterName);
 	}
 
 	@Override
 	public Map<String, ? extends FilterRegistration> getFilterRegistrations() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		return this.filterRegistrations;
 	}
 
 	@Override

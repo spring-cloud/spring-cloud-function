@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -32,14 +33,14 @@ import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRegistration;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -65,41 +66,49 @@ public class ProxyMvc {
 
 	static final String MVC_RESULT_ATTRIBUTE = ProxyMvc.class.getName().concat(".MVC_RESULT_ATTRIBUTE");
 
-	private final DispatcherServlet servlet;
-
-	private final Filter[] filters;
+	private final DispatcherServlet dispatcher;
 
 	private final ConfigurableWebApplicationContext applicationContext;
 
-	public static ProxyMvc INSTANCE(Class<?>... componentClasses) {
-		Assert.notEmpty(componentClasses, "'componentClasses' must not be null or empty");
+	private ServletContext servletContext;
 
+	private volatile boolean initialized;
+
+	public ConfigurableWebApplicationContext getApplicationContext() {
+		return this.applicationContext;
+	}
+
+	public ServletContext getServletContext() {
+		return this.servletContext;
+	}
+
+	public static ProxyMvc INSTANCE(ConfigurableWebApplicationContext applpicationContext) {
 		ProxyServletContext servletContext = new ProxyServletContext();
-		GenericWebApplicationContext applpicationContext = new GenericWebApplicationContext(servletContext);
+		applpicationContext.setServletContext(servletContext);
+		DispatcherServlet dispatcher = new DispatcherServlet(applpicationContext);
+		ServletRegistration.Dynamic reg = servletContext.addServlet("dispatcherServlet", dispatcher);
+		reg.setLoadOnStartup(1);
+
+		ProxyMvc mvc = new ProxyMvc(dispatcher, applpicationContext);
+		mvc.servletContext = servletContext;
+		return mvc;
+	}
+
+	public static ProxyMvc INSTANCE(Class<?>... componentClasses) {
+		GenericWebApplicationContext applpicationContext = new GenericWebApplicationContext();
 		AnnotatedBeanDefinitionReader reader = new AnnotatedBeanDefinitionReader(applpicationContext);
-		reader.register(componentClasses);
-
-		reader.register(ProxyErrorController.class);
-
-		try {
-			DispatcherServlet servlet = new DispatcherServlet(applpicationContext);
-			servlet.init(new ProxyServletConfig(servletContext));
-			applpicationContext.registerBean(DispatcherServlet.class, servlet);
-
-			return new ProxyMvc(servlet, applpicationContext);
+		if (!ObjectUtils.isEmpty(componentClasses)) {
+			reader.register(componentClasses);
 		}
-		catch (Exception e) {
-			throw new IllegalStateException("Failed to create MVC Proxy", e);
-		}
+		return INSTANCE(applpicationContext);
 	}
 
 	/**
 	 * Private constructor, not for direct instantiation.
 	 */
-	ProxyMvc(DispatcherServlet servlet, ConfigurableWebApplicationContext applicationContext) {
+	ProxyMvc(DispatcherServlet dispatcher, ConfigurableWebApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
-		this.servlet = servlet;
-		this.filters = applicationContext.getBeansOfType(Filter.class).values().toArray(new Filter[0]);
+		this.dispatcher = dispatcher;
 	}
 
 	public void stop() {
@@ -118,8 +127,23 @@ public class ProxyMvc {
 	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		ProxyFilterChain filterChain = new ProxyFilterChain(this.servlet, this.filters);
+		this.service(request, response, (CountDownLatch) null);
+	}
+
+	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
+		synchronized (this) {
+			if (!this.initialized) {
+				this.dispatcher.init(new ProxyServletConfig(this.servletContext));
+				this.initialized = true;
+			}
+		}
+
+		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
 		filterChain.doFilter(request, response);
+
+		if (latch != null) {
+			latch.countDown();
+		}
 	}
 
 	private static class ProxyFilterChain implements FilterChain {
@@ -143,10 +167,12 @@ public class ProxyMvc {
 		 * @param filters the {@link Filter}'s to invoke in this {@link FilterChain}
 		 * @since 3.2
 		 */
-		ProxyFilterChain(Servlet servlet, Filter... filters) {
+		ProxyFilterChain(DispatcherServlet servlet) {
+			List<Filter> filters = new ArrayList<>();
+			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ProxyFilterRegistration)fr).getFilter()));
 			Assert.notNull(filters, "filters cannot be null");
 			Assert.noNullElements(filters, "filters cannot contain null values");
-			this.filters = initFilterList(servlet, filters);
+			this.filters = initFilterList(servlet, filters.toArray(new Filter[] {}));
 		}
 
 		private static List<Filter> initFilterList(Servlet servlet, Filter... filters) {
@@ -210,24 +236,37 @@ public class ProxyMvc {
 					throws IOException, ServletException {
 
 				try {
-					this.delegateServlet.service(request, response);
-					if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value()) {
-						((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, ((HttpServletResponse) response).getStatus());
+					if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value() && request instanceof ProxyHttpServletRequest) {
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, ((HttpServletResponse) response).getStatus());
 						this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, null);
-						((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((ProxyHttpServletRequest) request).getRequestURI());
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
 
 						((ProxyHttpServletRequest) request).setRequestURI("/error");
 						this.delegateServlet.service(request, response);
 					}
+					else {
+						this.delegateServlet.service(request, response);
+						if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value() && request instanceof ProxyHttpServletRequest) {
+							((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, ((HttpServletResponse) response).getStatus());
+							this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, null);
+							((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
+
+							((ProxyHttpServletRequest) request).setRequestURI("/error");
+							this.delegateServlet.service(request, response);
+						}
+					}
 				}
 				catch (Exception e) {
-					((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.INTERNAL_SERVER_ERROR);
-					this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, e);
-					((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, e);
-					((ProxyHttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((ProxyHttpServletRequest) request).getRequestURI());
+					if (request instanceof ProxyHttpServletRequest) {
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.INTERNAL_SERVER_ERROR);
+						this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, e);
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, e);
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
+						((ProxyHttpServletRequest) request).setRequestURI("/error");
+					}
 
-					LOG.error("Failed processing the request to: " + ((ProxyHttpServletRequest) request).getRequestURI(), e);
-					((ProxyHttpServletRequest) request).setRequestURI("/error");
+					LOG.error("Failed processing the request to: " + ((HttpServletRequest) request).getRequestURI(), e);
+
 					this.delegateServlet.service(request, response);
 				}
 			}
@@ -270,7 +309,7 @@ public class ProxyMvc {
 
 		@Override
 		public String getServletName() {
-			return "serverless-proxy";
+			return "spring-serverless-proxy";
 		}
 
 		@Override
