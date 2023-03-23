@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -267,6 +268,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		FunctionInvocationWrapper function = functionRegistration != null
 				? this.invocationWrapperInstance(functionName, functionRegistration.getTarget(), functionRegistration.getType())
 				: null;
+		if (functionRegistration != null) {
+			Object userFunction = functionRegistration.getUserFunction();
+			if (userFunction instanceof BiConsumer && function != null) {
+				function.setWrappedBiConsumer(true);
+			}
+		}
 		if (functionRegistration != null && functionRegistration.getProperties().containsKey("singleton")) {
 			try {
 				function.isSingleton = Boolean.parseBoolean(functionRegistration.getProperties().get("singleton"));
@@ -415,6 +422,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 */
 		private Function<Object, Object> enhancer;
 
+		private boolean wrappedBiConsumer;
+
 		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
@@ -430,6 +439,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					}
 				}
 			}
+		}
+
+		public boolean isWrappedBiConsumer() {
+			return wrappedBiConsumer;
+		}
+
+		public void setWrappedBiConsumer(boolean wrappedBiConsumer) {
+			this.wrappedBiConsumer = wrappedBiConsumer;
 		}
 
 		public boolean isSkipOutputConversion() {
