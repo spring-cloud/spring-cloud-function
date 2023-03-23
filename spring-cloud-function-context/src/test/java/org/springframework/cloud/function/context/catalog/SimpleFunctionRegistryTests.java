@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -77,7 +78,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky
- *
+ * @author Soby Chacko
  */
 public class SimpleFunctionRegistryTests {
 
@@ -572,6 +573,25 @@ public class SimpleFunctionRegistryTests {
 		assertThat(lookedUpFunction).isNotNull();
 		lookedUpFunction.apply(null);
 		assertThat(consumerDowncounter.get()).isZero();
+	}
+
+	@Test
+	void biConsumerUserFunctionTypeIsKnownInFunctionInvocationWrapper() {
+		BiConsumer<Object, Object> testBiConsumer = (a, b) -> { };
+		Function<Object, Object> wrappedFunction = x -> {
+			testBiConsumer.accept(null, null);
+			return null;
+		};
+		FunctionRegistration<Function<Object, Object>> registration = new FunctionRegistration<>(
+			wrappedFunction, "functionWrappingBiConsumer").type(Function.class);
+		registration.setUserFunction(testBiConsumer);
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+			new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+
+		FunctionInvocationWrapper functionInvocationWrapper = catalog.lookup("functionWrappingBiConsumer");
+
+		assertThat(functionInvocationWrapper.isWrappedBiConsumer()).isTrue();
 	}
 
 	public Function<String, String> uppercase() {

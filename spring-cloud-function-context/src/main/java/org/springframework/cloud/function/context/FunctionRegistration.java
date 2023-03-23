@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.springframework.util.CollectionUtils;
  * @param <T> target type
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 public class FunctionRegistration<T> implements BeanNameAware {
 
@@ -60,6 +61,15 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	private T target;
 
 	private Type type;
+
+	/**
+	 * In certain cased, {@link FunctionRegistration} needs to know details
+	 * about the user function. For example, when the user provides a BiConsumer,
+	 * we wrap that in a regular Function. There are actions that a downstream client
+	 * needs to take based on the type information of the wrapped function such as
+	 * not creating an output binding when the wrapped type is a BiConsumer.
+	 */
+	private Object userFunction;
 
 	/**
 	 * Creates instance of FunctionRegistration.
@@ -179,5 +189,13 @@ public class FunctionRegistration<T> implements BeanNameAware {
 		if (CollectionUtils.isEmpty(this.names)) {
 			this.name(name);
 		}
+	}
+
+	public Object getUserFunction() {
+		return userFunction;
+	}
+
+	public void setUserFunction(Object userFunction) {
+		this.userFunction = userFunction;
 	}
 }

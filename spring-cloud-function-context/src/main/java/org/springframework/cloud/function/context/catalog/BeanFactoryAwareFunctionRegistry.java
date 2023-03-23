@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import org.springframework.util.StringUtils;
  * Implementation of {@link FunctionRegistry} capable of discovering functions in {@link BeanFactory}.
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry implements ApplicationContextAware {
 
@@ -228,7 +229,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			}
 		};
 
-		return new FunctionRegistration<>(wrapperFunction, functionName).type(biFunctionWrapperType);
+		FunctionRegistration<Function> functionRegistration = new FunctionRegistration<>(wrapperFunction, functionName).type(biFunctionWrapperType);
+		functionRegistration.setUserFunction(userFunction);
+		return functionRegistration;
 	}
 
 	private Object discoverFunctionInBeanFactory(String functionName) {
