@@ -2,4 +2,4 @@
 
 cd ${LAMBDA_TASK_ROOT:-.}
 
-./native-uppercase -Dlogging.level.org.springframework=DEBUG
+./function-sample-aws-native -Dlogging.level.org.springframework=DEBUG

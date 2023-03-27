@@ -1,0 +1,15 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        hire-in-0:
+          binder: rabbit1
+        hire-out-0:
+          binder: kafka1
+      binders:
+        rabbit1:
+          type: rabbit
+        kafka1:
+          type: kafka
+    function:
+      definition: hire

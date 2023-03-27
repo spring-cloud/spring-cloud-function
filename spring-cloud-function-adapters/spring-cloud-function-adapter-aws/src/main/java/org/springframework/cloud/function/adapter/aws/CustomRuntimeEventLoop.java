@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
@@ -218,7 +219,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		return null;
 	}
 
-	private FunctionInvocationWrapper locateFunction(Environment environment, FunctionCatalog functionCatalog, HttpHeaders httpHeaders) {
+	private FunctionInvocationWrapper locateFunction(Environment environment, FunctionCatalog functionCatalog,
+			HttpHeaders httpHeaders) {
 		MediaType contentType = httpHeaders.getContentType();
 		String handlerName = environment.getProperty("DEFAULT_HANDLER");
 		if (logger.isDebugEnabled()) {
@@ -255,6 +257,15 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 				logger.debug("Value of 'spring.cloud.function.definition' header: " + handlerName);
 			}
 			function = functionCatalog.lookup(handlerName, contentType.toString());
+		}
+
+		if (function == null) {
+			function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+			if (function != null && logger.isInfoEnabled()) {
+				logger.info("Will default to RoutingFunction, since multiple functions available in FunctionCatalog."
+								+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
+								+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
+			}
 		}
 
 		Assert.notNull(function, "Failed to locate function. Tried locating default function, "

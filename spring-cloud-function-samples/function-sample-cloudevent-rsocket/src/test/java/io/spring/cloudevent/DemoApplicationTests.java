@@ -21,7 +21,7 @@ import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.util.MimeTypeUtils;
 
 
-@SpringBootTest(properties = {"spring.rsocket.server.port=55555"})
+@SpringBootTest(properties = {"spring.rsocket.server.port=55551"})
 @ExtendWith(DemoApplicationTests.TestRule.class)
 public class DemoApplicationTests {
 
@@ -44,7 +44,7 @@ public class DemoApplicationTests {
 				"    }\n" +
 				"}";
 
-		this.rsocketRequesterBuilder.tcp("localhost", 55555)
+		this.rsocketRequesterBuilder.tcp("localhost", 55551)
 			.route("hire")
 			.metadata("{\"content-type\":\"application/cloudevents+json\"}", MimeTypeUtils.APPLICATION_JSON)
 			.data(payload)
