@@ -40,7 +40,4 @@ RUN ln -s /usr/lib/gradle/bin/gradle /usr/bin/gradle
 
 ENV JAVA_HOME /usr/lib/graalvm
 
-ENTRYPOINT ["sh"]
-COPY . /home
-WORKDIR /home
-ENTRYPOINT ["sh"]
+WORKDIR /function-sample-aws-native

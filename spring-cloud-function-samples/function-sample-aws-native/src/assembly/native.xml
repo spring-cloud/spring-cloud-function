@@ -22,7 +22,7 @@
 			<useDefaultExcludes>true</useDefaultExcludes>
 			<fileMode>0775</fileMode>
 			<includes>
-				<include>native-uppercase</include>
+				<include>function-sample-aws-native</include>
 			</includes>
 		</fileSet>
 	</fileSets>
