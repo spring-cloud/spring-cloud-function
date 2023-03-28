@@ -16,11 +16,15 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.core.GenericTypeResolver;
+import org.springframework.core.MethodParameter;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -75,7 +79,10 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	protected Object convertFromInternal(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
-		Type convertToType = conversionHint == null ? targetClass : (Type) conversionHint;
+		if (conversionHint instanceof ParameterizedTypeReference<?>) {
+			conversionHint = ((ParameterizedTypeReference<?>) conversionHint).getType();
+		}
+		Type convertToType = this.getResolvedType(targetClass, conversionHint);
 		if (targetClass == byte[].class && message.getPayload() instanceof String) {
 			return ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8);
 		}
@@ -110,6 +117,24 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 			@Nullable Object conversionHint) {
 		return jsonMapper.toJson(payload);
+	}
+
+
+	private Type getResolvedType(Class<?> targetClass, @Nullable Object conversionHint) {
+		if (conversionHint instanceof MethodParameter) {
+			MethodParameter param = (MethodParameter) conversionHint;
+			param = param.nestedIfOptional();
+			if (Message.class.isAssignableFrom(param.getParameterType())) {
+				param = param.nested();
+			}
+			Type genericParameterType = param.getNestedGenericParameterType();
+			Class<?> contextClass = param.getContainingClass();
+			return GenericTypeResolver.resolveType(genericParameterType, contextClass);
+		}
+		else if (conversionHint instanceof ParameterizedType) {
+			return (Type) conversionHint;
+		}
+		return targetClass;
 	}
 
 }
