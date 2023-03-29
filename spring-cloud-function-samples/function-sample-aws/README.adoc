@@ -1,11 +1,11 @@
 == Introduction
 
-Spring Cloud Function is a framework that promotes the notion that any business requirement could be realized as one of the `java.util.Supplier`, `java.util.Function` or `java.util.Consumer` while providing a set of abstractions to execute such functions in different context using provided set of Spring Boot adapter auto-configurations. For example, the same function implementation could be realized as Message Handler or REST endpoint or AWS Lambda and many more without touching its code, by simply adding one of the provided dependencies to your POM or Gradle script.
+Spring Cloud Function is a framework that promotes the notion that any business requirement could be realized as one of the `java.util.Supplier`, `java.util.Function` or `java.util.Consumer` while providing a set of abstractions to execute such functions in different context using provided set of Spring Boot adapter auto-configurations. For example, the same function implementation could be realized as Message Handler or REST endpoint or AWS Lambda function and many more without touching its code, by simply adding one of the provided dependencies to your POM or Gradle script.
 
-While you can find more details on Spring Cloud Function and all of its features https://spring.io/projects/spring-cloud-function[here], this example is about AWS Lambdas and Spring support for it.
+While you can find more details on Spring Cloud Function and all of its features https://spring.io/projects/spring-cloud-function[here], this example is about AWS Lambda functions and Spring support for it.
 
 While AWS provides a set of  interfaces to implement various type of handlers (`RequestHandler`, `RequestStreamHandler` etc), you may want to keep your implementations POJO-like or you may have an existing legacy code that you would want to turn into AWS lambda. Regardless of the case Spring Cloud Function AWS adapter can help.
-This example demonstrates how a simple Java Function managed as Spring Bean can be easily turned into and deployed as AWS Lambda. 
+This example demonstrates how a simple Java Function managed as Spring Bean can be easily turned into and deployed as AWS Lambda function. 
 
 === Basic Example
 
