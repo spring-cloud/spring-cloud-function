@@ -57,6 +57,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
+import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -971,6 +972,40 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"boom\"");
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testApiGatewayInAndOutInputStream() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoInputStreamToString");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("hello");
+		Map headers = (Map) result.get("headers");
+		assertThat(headers).isNotEmpty();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testApiGatewayInAndOutInputStreamMsg() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "echoInputStreamMsgToString");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isEqualTo("hello");
+		Map headers = (Map) result.get("headers");
+		assertThat(headers).isNotEmpty();
+	}
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayInAndOut() throws Exception {
@@ -1397,6 +1432,34 @@ public class FunctionInvokerTests {
 		public Function<APIGatewayProxyRequestEvent, String> inputApiEvent() {
 			return v -> {
 				return v.getBody();
+			};
+		}
+
+		@Bean
+
+		public Function<InputStream, String> echoInputStreamToString() {
+			return is -> {
+				try {
+					String result = StreamUtils.copyToString(is, StandardCharsets.UTF_8);
+					return result;
+				}
+				catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			};
+		}
+
+		@Bean
+
+		public Function<Message<InputStream>, String> echoInputStreamMsgToString() {
+			return msg -> {
+				try {
+					String result = StreamUtils.copyToString(msg.getPayload(), StandardCharsets.UTF_8);
+					return result;
+				}
+				catch (Exception e) {
+					throw new RuntimeException(e);
+				}
 			};
 		}
 
