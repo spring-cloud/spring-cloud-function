@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -31,7 +33,9 @@ import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.util.StreamUtils;
 
 /**
  *
@@ -77,6 +81,23 @@ public final class AWSLambdaUtils {
 				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.KinesisEvent");
 	}
 
+	@SuppressWarnings("rawtypes")
+	public static Message generateMessage(InputStream payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper, Context context) throws IOException {
+		if (inputType != null && FunctionTypeUtils.isMessage(inputType)) {
+			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
+		}
+		if (inputType != null && InputStream.class.isAssignableFrom(FunctionTypeUtils.getRawType(inputType))) {
+			MessageBuilder msgBuilder = MessageBuilder.withPayload(payload);
+			if (context != null) {
+				msgBuilder.setHeader(AWSLambdaUtils.AWS_CONTEXT, context);
+			}
+			return msgBuilder.build();
+		}
+		else {
+			return generateMessage(StreamUtils.copyToByteArray(payload), inputType, isSupplier, jsonMapper, context);
+		}
+	}
+
 	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper) {
 		return generateMessage(payload, inputType, isSupplier, jsonMapper, null);
 	}
@@ -86,6 +107,7 @@ public final class AWSLambdaUtils {
 		if (logger.isInfoEnabled()) {
 			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
 		}
+
 
 		Object structMessage = jsonMapper.fromJson(payload, Object.class);
 		boolean isApiGateway = structMessage instanceof Map
