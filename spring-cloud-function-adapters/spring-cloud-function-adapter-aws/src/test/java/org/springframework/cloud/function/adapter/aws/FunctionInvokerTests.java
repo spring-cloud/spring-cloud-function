@@ -312,7 +312,7 @@ public class FunctionInvokerTests {
 			"        \"extendedRequestId\": \"NL0A1EokCGYFZOA=\",\n" +
 			"        \"requestTime\": \"27/May/2020:09:32:14 +0000\",\n" +
 			"        \"path\": \"/test/uppercase2\",\n" +
-			"        \"accountId\": \"313369169943\",\n" +
+			"        \"accountId\": \"354656767676\",\n" +
 			"        \"protocol\": \"HTTP/1.1\",\n" +
 			"        \"stage\": \"test\",\n" +
 			"        \"domainPrefix\": \"fhul32ccy2\",\n" +
@@ -429,7 +429,7 @@ public class FunctionInvokerTests {
 			"        \"extendedRequestId\": \"NL0A1EokCGYFZOA=\",\n" +
 			"        \"requestTime\": \"27/May/2020:09:32:14 +0000\",\n" +
 			"        \"path\": \"/test/uppercase2\",\n" +
-			"        \"accountId\": \"313369169943\",\n" +
+			"        \"accountId\": \"356746756756\",\n" +
 			"        \"protocol\": \"HTTP/1.1\",\n" +
 			"        \"stage\": \"test\",\n" +
 			"        \"domainPrefix\": \"fhul32ccy2\",\n" +
