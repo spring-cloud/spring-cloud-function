@@ -52,6 +52,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionProperties.FunctionConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
+import org.springframework.cloud.function.context.PostProcessingFunction;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -414,6 +415,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private boolean wrapped;
 
+		private final ThreadLocal<Message<Object>> unconvertedResult = new ThreadLocal<>();
+
+		private PostProcessingFunction postProcessor;
+
 		/*
 		 * This is primarily to support Stream's ability to access
 		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
@@ -425,6 +430,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		private boolean wrappedBiConsumer;
 
 		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
+			if (target instanceof PostProcessingFunction) {
+				this.postProcessor = (PostProcessingFunction) target;
+			}
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
 			this.outputType = this.normalizeType(outputType);
@@ -436,6 +444,25 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					FunctionConfigurationProperties configuration = funcConfiguration.get(functionDefinition);
 					if (configuration != null) {
 						propagateInputHeaders = configuration.isCopyInputHeaders();
+					}
+				}
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		public void postProcess() {
+			if (this.postProcessor != null) {
+				Message result = this.unconvertedResult.get();
+				if (result != null) {
+					try {
+						this.postProcessor.postProcess(result);
+					}
+					catch (Exception ex) {
+						logger.warn("Failed to post process function "
+								+ this.functionDefinition  + "; Result of the invocation before post processing is " + result, ex);
+					}
+					finally {
+						this.unconvertedResult.remove();
 					}
 				}
 			}
@@ -652,6 +679,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			String composedName = this.functionDefinition + "|" + afterWrapper.functionDefinition;
 			FunctionInvocationWrapper composedFunction = invocationWrapperInstance(composedName, rawComposedFunction, composedFunctionType);
 			composedFunction.composed = true;
+			if (((FunctionInvocationWrapper) after).target instanceof PostProcessingFunction) {
+				composedFunction.postProcessor = (PostProcessingFunction) ((FunctionInvocationWrapper) after).target;
+			}
 
 			return (Function<Object, V>) composedFunction;
 		}
@@ -702,6 +732,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 			else { // Function
 				result = this.invokeFunction(convertedInput);
+			}
+
+			if (this.postProcessor != null) {
+				this.unconvertedResult.set((Message<Object>) result);
 			}
 
 			if (result != null && this.outputType != null) {
