@@ -37,6 +37,12 @@ import org.springframework.messaging.Message;
  */
 public interface PostProcessingFunction<I, O> extends Function<I, O> {
 
+	@SuppressWarnings("unchecked")
+	@Override
+	default O apply(I t) {
+		return (O) t;
+	}
+
 	/**
 	 * Will post process the result of this's function invocation after this function has been triggered.
 	 * <br>
