@@ -16,10 +16,10 @@
 
 package org.springframework.cloud.function.web.util;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -126,8 +126,8 @@ public final class FunctionWebRequestProcessingHelper {
 		}
 
 		return Mono.from(pResult).map(v -> {
-			if (v instanceof Iterable) {
-				List aggregatedResult = (List) ((Collection) v).stream().map(m -> {
+			if (v instanceof Iterable i) {
+				List aggregatedResult = (List) StreamSupport.stream(i.spliterator(), false).map(m -> {
 					return m instanceof Message ? processMessage(responseOkBuilder, (Message<?>) m) : m;
 				}).collect(Collectors.toList());
 				return responseOkBuilder.header("content-type", "application/json").body(aggregatedResult);
