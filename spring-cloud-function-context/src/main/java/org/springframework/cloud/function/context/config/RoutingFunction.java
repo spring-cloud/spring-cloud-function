@@ -193,6 +193,12 @@ public class RoutingFunction implements Function<Object, Object> {
 			}
 		}
 
+		if (function.getTarget().equals(this)) {
+			throw new IllegalStateException("Failed to establish route, and routing to itself is not allowed as it creates a loop. Please provide: "
+					+ "'spring.cloud.function.definition' as Message header or as application property or "
+					+ "'spring.cloud.function.routing-expression' as application property.");
+		}
+
 		return function.apply(input);
 	}
 
