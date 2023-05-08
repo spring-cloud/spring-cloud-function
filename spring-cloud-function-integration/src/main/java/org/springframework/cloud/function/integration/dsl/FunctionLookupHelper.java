@@ -1,0 +1,86 @@
+/*
+ * Copyright 2023-2023 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.cloud.function.integration.dsl;
+
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import org.springframework.cloud.function.context.FunctionCatalog;
+
+/**
+ * The helper class to lookup functions from the catalog in lazy manner and cache their instances.
+ *
+ * @author Artem Bilan
+ *
+ * @since 4.0.3
+ */
+public class FunctionLookupHelper {
+
+	private final FunctionCatalog functionCatalog;
+
+	FunctionLookupHelper(FunctionCatalog functionCatalog) {
+		this.functionCatalog = functionCatalog;
+	}
+
+	<P> Supplier<P> lookupSupplier(String functionDefinition) {
+		return () ->
+				memoize(() -> this.functionCatalog.<Supplier<P>>lookup(Supplier.class, functionDefinition))
+						.get()
+						.get();
+	}
+
+	<P> Function<P, ?> lookupFunction(String functionDefinition) {
+		return (p) ->
+				memoize(() -> this.functionCatalog.<Function<P, ?>>lookup(Function.class, functionDefinition))
+						.get()
+						.apply(p);
+	}
+
+	<P> Consumer<P> lookupConsumer(String consumerDefinition) {
+		return (p) ->
+				memoize(() -> this.functionCatalog.<Consumer<P>>lookup(Consumer.class, consumerDefinition))
+						.get()
+						.accept(p);
+	}
+
+	/**
+	 * The delegate {@link Supplier#get()} is called exactly once and the result is cached.
+	 * @param  <T> Generic type of supplied value
+	 * @param  delegate The actual Supplier
+	 * @return The memoized Supplier
+	 */
+	private static <T> Supplier<T> memoize(Supplier<? extends T> delegate) {
+		AtomicReference<T> value = new AtomicReference<>();
+		return () -> {
+			T val = value.get();
+			if (val == null) {
+				synchronized (value) {
+					val = value.get();
+					if (val == null) {
+						val = Objects.requireNonNull(delegate.get());
+						value.set(val);
+					}
+				}
+			}
+			return val;
+		};
+	}
+
+}
