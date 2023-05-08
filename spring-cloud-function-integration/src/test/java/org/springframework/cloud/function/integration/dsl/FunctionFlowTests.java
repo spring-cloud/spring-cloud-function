@@ -1,0 +1,136 @@
+/*
+ * Copyright 2023-2023 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.cloud.function.integration.dsl;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.PollerSpec;
+import org.springframework.integration.dsl.Pollers;
+import org.springframework.integration.handler.LoggingHandler;
+import org.springframework.integration.scheduling.PollerMetadata;
+import org.springframework.integration.test.util.OnlyOnceTrigger;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.GenericMessage;
+import org.springframework.test.annotation.DirtiesContext;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * @author Artem Bilan
+ *
+ * @since 4.0.3
+ */
+@SpringBootTest
+@DirtiesContext
+public class FunctionFlowTests {
+
+	@Autowired
+	QueueChannel wireTapChannel;
+
+	@Autowired
+	BlockingQueue<String> results;
+
+	@Test
+	void fromSupplierOverFunctionToConsumer() throws InterruptedException {
+		String result = results.poll(10, TimeUnit.SECONDS);
+		assertThat(result).isEqualTo("SIMPLE TEST DATA");
+		Message<?> receive = wireTapChannel.receive(10_000);
+		assertThat(receive).isNotNull()
+				.extracting(Message::getPayload)
+				.isEqualTo("simple test data".getBytes());
+	}
+
+	@Autowired
+	MessageChannel functionCompositionInput;
+
+	@Test
+	void fromChannelToFunctionComposition() throws InterruptedException {
+		this.functionCompositionInput.send(new GenericMessage<>("compose this"));
+
+		String result = results.poll(10, TimeUnit.SECONDS);
+		assertThat(result).isEqualTo("COMPOSE THIS");
+	}
+
+	@EnableAutoConfiguration
+	@Configuration(proxyBeanMethods = false)
+	static class TestIntegrationConfiguration {
+
+		@Bean(PollerMetadata.DEFAULT_POLLER)
+		PollerSpec defaultPoller() {
+			return Pollers.trigger(new OnlyOnceTrigger());
+		}
+
+		@Bean
+		Supplier<byte[]> simpleByteArraySupplier() {
+			return "simple test data"::getBytes;
+		}
+
+		@Bean
+		Function<String, String> upperCaseFunction() {
+			return String::toUpperCase;
+		}
+
+		@Bean
+		BlockingQueue<String> results() {
+			return new LinkedBlockingQueue<>();
+		}
+
+		@Bean
+		Consumer<String> simpleStringConsumer(BlockingQueue<String> results) {
+			return results::add;
+		}
+
+		@Bean
+		QueueChannel wireTapChannel() {
+			return new QueueChannel();
+		}
+
+		@Bean
+		IntegrationFlow someFunctionFlow(FunctionFlowBuilder functionFlowBuilder) {
+			return functionFlowBuilder
+					.fromSupplier("simpleByteArraySupplier")
+					.wireTap("wireTapChannel")
+					.apply("upperCaseFunction")
+					.log(LoggingHandler.Level.WARN, FunctionFlowTests.class.getName())
+					.accept("simpleStringConsumer");
+		}
+
+		@Bean
+		IntegrationFlow functionCompositionFlow(FunctionFlowBuilder functionFlowBuilder) {
+			return functionFlowBuilder
+					.from("functionCompositionInput")
+					.accept("upperCaseFunction|simpleStringConsumer");
+		}
+
+	}
+
+}
