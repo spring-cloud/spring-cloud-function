@@ -19,6 +19,7 @@ package org.springframework.cloud.function.adapter.aws;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
 
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -40,10 +41,19 @@ public class CustomRuntimeEventLoopTest {
 
 	@Test
 	public void testDefaultFunctionLookup() throws Exception {
+		testDefaultFunctionLookup("uppercase", SingleFunctionConfiguration.class);
+	}
+
+	@Test
+	public void testDefaultFunctionLookupReactive() throws Exception {
+		testDefaultFunctionLookup("uppercase", SingleFunctionConfigurationReactive.class);
+	}
+
+	private void testDefaultFunctionLookup(String handler, Class<?> context) throws Exception {
 		try (ConfigurableApplicationContext userContext =
-				new SpringApplicationBuilder(SingleFunctionConfiguration.class, AWSCustomRuntime.class)
+				new SpringApplicationBuilder(context, AWSCustomRuntime.class)
 					.web(WebApplicationType.SERVLET)
-					.properties("_HANDLER=uppercase", "server.port=0")
+					.properties("_HANDLER=" + handler, "server.port=0")
 					.run()) {
 
 			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
@@ -111,6 +121,14 @@ public class CustomRuntimeEventLoopTest {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase();
+		}
+	}
+
+	@EnableAutoConfiguration
+	protected static class SingleFunctionConfigurationReactive {
+		@Bean
+		public Function<Flux<String>, Flux<String>> uppercase() {
+			return v -> v.map(String::toUpperCase);
 		}
 	}
 
