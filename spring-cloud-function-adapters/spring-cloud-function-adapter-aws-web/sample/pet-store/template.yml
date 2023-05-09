@@ -12,7 +12,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: org.springframework.cloud.function.adapter.aws.web.WebProxyInvoker::handleRequest
-      Runtime: java11
+      Runtime: java17
       CodeUri: .
       MemorySize: 512
       Policies: AWSLambdaBasicExecutionRole

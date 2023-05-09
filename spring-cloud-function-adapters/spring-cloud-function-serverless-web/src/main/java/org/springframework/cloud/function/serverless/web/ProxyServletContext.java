@@ -20,29 +20,25 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.EventListener;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.FilterRegistration;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
-import javax.servlet.ServletRegistration.Dynamic;
-import javax.servlet.SessionCookieConfig;
-import javax.servlet.SessionTrackingMode;
-import javax.servlet.descriptor.JspConfigDescriptor;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterRegistration;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRegistration;
+import jakarta.servlet.ServletRegistration.Dynamic;
+import jakarta.servlet.SessionCookieConfig;
+import jakarta.servlet.SessionTrackingMode;
+import jakarta.servlet.descriptor.JspConfigDescriptor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -131,28 +127,8 @@ public class ProxyServletContext implements ServletContext {
 	}
 
 	@Override
-	public Servlet getServlet(String name) throws ServletException {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
-	}
-
-	@Override
-	public Enumeration<Servlet> getServlets() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
-	}
-
-	@Override
-	public Enumeration<String> getServletNames() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
-	}
-
-	@Override
 	public void log(String msg) {
 		this.logger.info(msg);
-	}
-
-	@Override
-	public void log(Exception exception, String msg) {
-		this.logger.error(msg, exception);
 	}
 
 	@Override
@@ -241,25 +217,26 @@ public class ProxyServletContext implements ServletContext {
 	}
 
 	@Override
-	public javax.servlet.FilterRegistration.Dynamic addFilter(String filterName, String className) {
+	public FilterRegistration.Dynamic addFilter(String filterName, String className) {
 		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
-	public javax.servlet.FilterRegistration.Dynamic addFilter(String filterName, Filter filter) {
+	public FilterRegistration.Dynamic addFilter(String filterName, Filter filter) {
 		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	Map<String, FilterRegistration> filterRegistrations = new HashMap<>();
 
 	@Override
-	public javax.servlet.FilterRegistration.Dynamic addFilter(String filterName, Class<? extends Filter> filterClass) {
+	public FilterRegistration.Dynamic addFilter(String filterName, Class<? extends Filter> filterClass) {
 		try {
 			Filter filter = filterClass.getDeclaredConstructor().newInstance();
 			ProxyFilterRegistration registration = new ProxyFilterRegistration(filterName, filter);
 			filterRegistrations.put(filterName, registration);
 			return registration;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
@@ -290,12 +267,12 @@ public class ProxyServletContext implements ServletContext {
 	}
 
 	@Override
-	public Set<javax.servlet.SessionTrackingMode> getDefaultSessionTrackingModes() {
+	public Set<SessionTrackingMode> getDefaultSessionTrackingModes() {
 		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
-	public Set<javax.servlet.SessionTrackingMode> getEffectiveSessionTrackingModes() {
+	public Set<SessionTrackingMode> getEffectiveSessionTrackingModes() {
 		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 

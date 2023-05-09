@@ -24,9 +24,9 @@
     </licenses>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <spring.version>5.3.25</spring.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <spring.version>6.0.8</spring.version>
         <junit.version>4.13.2</junit.version>
         <log4j.version>2.19.0</log4j.version>
     </properties>

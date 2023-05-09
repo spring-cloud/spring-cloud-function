@@ -29,10 +29,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.Nullable;
@@ -42,6 +42,7 @@ import org.springframework.web.util.WebUtils;
 /**
  *
  * @author Oleg Zhurakousky
+ * @since 4.x
  *
  */
 public class ProxyHttpServletResponse implements HttpServletResponse {
@@ -296,18 +297,6 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 	}
 
 	@Override
-	@Deprecated
-	public String encodeUrl(String url) {
-		return encodeURL(url);
-	}
-
-	@Override
-	@Deprecated
-	public String encodeRedirectUrl(String url) {
-		return encodeRedirectURL(url);
-	}
-
-	@Override
 	public void sendError(int status, String errorMessage) throws IOException {
 		Assert.state(!isCommitted(), "Cannot set error status - response is already committed");
 		this.status = status;
@@ -379,11 +368,6 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 		}
 	}
 
-	@Override
-	@Deprecated
-	public void setStatus(int status, String errorMessage) {
-		throw new UnsupportedOperationException();
-	}
 
 	@Override
 	public int getStatus() {

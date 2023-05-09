@@ -1,7 +1,7 @@
-Copied from https://github.com/awslabs/aws-serverless-java-container/tree/main/samples/spring/pet-store
+Modeled after https://github.com/awslabs/aws-serverless-java-container/tree/main/samples/spring/pet-store
 
 # Serverless Spring example
-A basic pet store written with the [Spring framework](https://projects.spring.io/spring-framework/). The `StreamLambdaHandler` object is the main entry point for Lambda.
+A basic pet store written with the [Spring framework](https://projects.spring.io/spring-framework/). 
 
 The application can be deployed in an AWS account using the [Serverless Application Model](https://github.com/awslabs/serverless-application-model). The `template.yml` file in the root folder contains the application definition.
 
@@ -12,6 +12,7 @@ The application can be deployed in an AWS account using the [Serverless Applicat
 
 ## Deployment
 In a shell, navigate to the sample's folder and use the SAM CLI to build a deployable package
+
 ```
 $ sam build
 ```

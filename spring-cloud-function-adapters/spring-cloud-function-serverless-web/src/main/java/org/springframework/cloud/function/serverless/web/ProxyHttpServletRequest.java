@@ -42,21 +42,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.DispatcherType;
-import javax.servlet.ReadListener;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpUpgradeHandler;
-import javax.servlet.http.Part;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletConnection;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpUpgradeHandler;
+import jakarta.servlet.http.Part;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.Nullable;
@@ -589,12 +590,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
-	@Deprecated
-	public String getRealPath(String path) {
-		return this.servletContext.getRealPath(path);
-	}
-
 	public void setRemotePort(int remotePort) {
 		throw new UnsupportedOperationException();
 	}
@@ -674,7 +669,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	@Override
-	public javax.servlet.DispatcherType getDispatcherType() {
+	public DispatcherType getDispatcherType() {
 		return this.dispatcherType;
 	}
 
@@ -814,7 +809,8 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Override
 	@Nullable
 	public String getPathTranslated() {
-		return (this.pathInfo != null ? getRealPath(this.pathInfo) : null);
+		//return (this.pathInfo != null ? getRealPath(this.pathInfo) : null);
+		return this.pathInfo;
 	}
 
 	public void setContextPath(String contextPath) {
@@ -948,12 +944,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	@Override
-	@Deprecated
-	public boolean isRequestedSessionIdFromUrl() {
-		return isRequestedSessionIdFromURL();
-	}
-
-	@Override
 	public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
 		throw new UnsupportedOperationException();
 	}
@@ -981,7 +971,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	@Override
-	public Collection<javax.servlet.http.Part> getParts() throws IOException, ServletException {
+	public Collection<Part> getParts() throws IOException, ServletException {
 		List<Part> result = new LinkedList<>();
 		for (List<Part> list : this.parts.values()) {
 			result.addAll(list);
@@ -992,5 +982,23 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Override
 	public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public String getRequestId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getProtocolRequestId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ServletConnection getServletConnection() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

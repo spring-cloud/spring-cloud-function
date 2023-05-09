@@ -33,7 +33,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @RestController
 @EnableWebMvc
 public class PetsController {
-	@RequestMapping(path = "/pets", method = RequestMethod.POST)
+	@RequestMapping(path = "/pets/", method = RequestMethod.POST)
 	public Pet createPet(@RequestBody Pet newPet) {
 		if (newPet.getName() == null || newPet.getBreed() == null) {
 			return null;

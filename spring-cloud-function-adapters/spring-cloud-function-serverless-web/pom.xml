@@ -9,13 +9,12 @@
 	<description>Base serverless web adapter</description>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-function-adapter-parent</artifactId>
-		<version>3.2.10-SNAPSHOT</version>
+		<artifactId>spring-cloud-function-parent</artifactId>
+		<version>4.0.3-SNAPSHOT</version>
 	</parent>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -25,12 +24,12 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
+<!--			<version>6.0.8</version>	-->
 		</dependency>
 		<dependency>
 		    <groupId>jakarta.servlet</groupId>
 		    <artifactId>jakarta.servlet-api</artifactId>
-<!--		    <version>6.0.0</version>-->
-<!--		    <scope>provided</scope>-->
+		    <scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

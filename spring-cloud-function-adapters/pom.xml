@@ -17,7 +17,7 @@
 
 	<modules>
 		<module>spring-cloud-function-adapter-aws</module>
-		<module>spring-cloud-function-adapter-azure-web/sample/pet-store</module>
+<!--		<module>spring-cloud-function-adapter-azure-web/sample/pet-store</module>-->
 		<module>spring-cloud-function-adapter-azure</module>
 		<module>spring-cloud-function-adapter-gcp</module>
 		<module>spring-cloud-function-grpc</module>
