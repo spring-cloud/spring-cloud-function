@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.test.aws;
 
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,8 +24,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
@@ -42,9 +44,10 @@ public class AWSCustomRuntime  {
 
 	BlockingQueue<Message<String>> outputQueue = new ArrayBlockingQueue<>(3);
 
-	public AWSCustomRuntime(ServletWebServerApplicationContext context) {
-		int port = context.getWebServer().getPort();
-		System.setProperty("AWS_LAMBDA_RUNTIME_API", "localhost:" + port);
+	public AWSCustomRuntime(ConfigurableApplicationContext context) {
+		context.getEnvironment().getPropertySources().addFirst(
+			new MapPropertySource("AWSCustomRuntime",
+				Map.of("AWS_LAMBDA_RUNTIME_API", "localhost:${local.server.port}")));
 	}
 
 	@Bean("2018-06-01/runtime/invocation/consume/response")
@@ -58,7 +61,10 @@ public class AWSCustomRuntime  {
 
 		return () -> {
 			try {
-				Object value = inputQueue.poll(Long.MAX_VALUE, TimeUnit.SECONDS);
+				Object value = inputQueue.poll(1L, TimeUnit.SECONDS);
+				if (value == null) {
+					return MessageBuilder.withPayload("").build();
+				}
 				if (!(value instanceof Message)) {
 					return MessageBuilder.withPayload((String) value)
 							.setHeader("Lambda-Runtime-Aws-Request-Id", "consume")
