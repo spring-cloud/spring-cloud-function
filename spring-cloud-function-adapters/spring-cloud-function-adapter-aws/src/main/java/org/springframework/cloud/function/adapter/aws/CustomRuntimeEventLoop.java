@@ -135,7 +135,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 				logger.debug("New Event received: " + response);
 			}
 
-			if (response != null) {
+			if (response != null && response.hasBody()) {
 				String requestId = response.getHeaders().getFirst("Lambda-Runtime-Aws-Request-Id");
 				try {
 					FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
