@@ -19,8 +19,6 @@ package org.springframework.cloud.function.adapter.aws;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import com.amazonaws.services.lambda.runtime.Context;
@@ -28,8 +26,6 @@ import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.databind.MapperFeature;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -44,7 +40,6 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
@@ -83,43 +78,9 @@ public class FunctionInvoker implements RequestStreamHandler {
 				.generateMessage(input, this.function.getInputType(), this.function.isSupplier(), jsonMapper, context);
 
 		Object response = this.function.apply(requestMessage);
-		byte[] responseBytes = this.buildResult(requestMessage, response);
+		byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, response, this.jsonMapper, function.getOutputType());
 		StreamUtils.copy(responseBytes, output);
 		// any exception should propagate
-	}
-
-	@SuppressWarnings("unchecked")
-	private byte[] buildResult(Message<?> requestMessage, Object output) throws IOException {
-		Message<byte[]> responseMessage = null;
-		if (output instanceof Publisher<?>) {
-			List<Object> result = new ArrayList<>();
-			for (Object value : Flux.from((Publisher<?>) output).toIterable()) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Response value: " + value);
-				}
-				result.add(value);
-			}
-			if (result.size() > 1) {
-				output = result;
-			}
-			else if (result.size() == 1) {
-				output = result.get(0);
-			}
-			else {
-				output = null;
-			}
-			if (output != null) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("OUTPUT: " + output + " - " + output.getClass().getName());
-				}
-				byte[] payload = this.jsonMapper.toJson(output);
-				responseMessage = MessageBuilder.withPayload(payload).build();
-			}
-		}
-		else {
-			responseMessage = (Message<byte[]>) output;
-		}
-		return AWSLambdaUtils.generateOutput(requestMessage, responseMessage, this.jsonMapper, function.getOutputType());
 	}
 
 	private void start() {

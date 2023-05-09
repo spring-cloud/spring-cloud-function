@@ -157,14 +157,13 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 						}
 						System.setProperty("com.amazonaws.xray.traceHeader", traceId);
 					}
+					Object responseObject = function.apply(eventMessage);
 
-					Message<byte[]> responseMessage = (Message<byte[]>) function.apply(eventMessage);
-
-					if (responseMessage != null && logger.isDebugEnabled()) {
-						logger.debug("Reply from function: " + responseMessage);
+					if (responseObject != null && logger.isDebugEnabled()) {
+						logger.debug("Reply from function: " + responseObject);
 					}
 
-					byte[] outputBody = AWSLambdaUtils.generateOutput(eventMessage, responseMessage, mapper, function.getOutputType());
+					byte[] outputBody = AWSLambdaUtils.generateOutputFromObject(eventMessage, responseObject, mapper, function.getOutputType());
 					ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(invocationUrl))
 						.header(USER_AGENT, USER_AGENT_VALUE)
 						.body(outputBody), Object.class);

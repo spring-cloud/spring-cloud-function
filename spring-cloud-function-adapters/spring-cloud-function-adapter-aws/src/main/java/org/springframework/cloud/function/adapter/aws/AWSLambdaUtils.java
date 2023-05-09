@@ -20,13 +20,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -139,6 +143,43 @@ public final class AWSLambdaUtils {
 		else {
 			return objectMapper.toJson(msg.getPayload());
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static byte[] generateOutputFromObject(Message<?> requestMessage, Object output, JsonMapper objectMapper, Type functionOutputType) {
+		Message<byte[]> responseMessage = null;
+		if (output instanceof Publisher<?>) {
+			List<Object> result = new ArrayList<>();
+			for (Object value : Flux.from((Publisher<?>) output).toIterable()) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("Response value: " + value);
+				}
+				result.add(value);
+			}
+			if (result.size() > 1) {
+				output = result;
+			}
+			else if (result.size() == 1) {
+				output = result.get(0);
+			}
+			else {
+				output = null;
+			}
+			if (output instanceof Message<?> && ((Message<?>) output).getPayload() instanceof byte[]) {
+				responseMessage = (Message<byte[]>) output;
+			}
+			else if (output != null) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("OUTPUT: " + output + " - " + output.getClass().getName());
+				}
+				byte[] payload = objectMapper.toJson(output);
+				responseMessage = MessageBuilder.withPayload(payload).build();
+			}
+		}
+		else {
+			responseMessage = (Message<byte[]>) output;
+		}
+		return generateOutput(requestMessage, responseMessage, objectMapper, functionOutputType);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
