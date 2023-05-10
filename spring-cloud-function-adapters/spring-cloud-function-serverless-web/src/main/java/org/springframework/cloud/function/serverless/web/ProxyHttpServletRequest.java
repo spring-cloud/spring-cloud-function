@@ -446,7 +446,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public String getScheme() {
-		throw new UnsupportedOperationException();
+		return "https";
 	}
 
 	public void setServerName(String serverName) {
@@ -455,7 +455,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public String getServerName() {
-		throw new UnsupportedOperationException();
+		return "spring-serverless-web-proxy";
 	}
 
 	public void setServerPort(int serverPort) {
@@ -464,7 +464,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public int getServerPort() {
-		throw new UnsupportedOperationException();
+		return 0;
 	}
 
 	@Override
@@ -582,7 +582,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	 */
 	@Override
 	public boolean isSecure() {
-		throw new UnsupportedOperationException();
+		return false;
 	}
 
 	@Override
@@ -883,7 +883,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public StringBuffer getRequestURL() {
-		throw new UnsupportedOperationException();
+		return new StringBuffer(this.requestURI);
 	}
 
 	public void setServletPath(String servletPath) {
@@ -902,6 +902,9 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Override
 	@Nullable
 	public HttpSession getSession(boolean create) {
+		if (this.session == null) {
+			this.session = new ProxyHttpSession(this.servletContext);
+		}
 		return this.session;
 	}
 

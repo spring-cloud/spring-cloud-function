@@ -42,6 +42,8 @@ import jakarta.servlet.descriptor.JspConfigDescriptor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.util.ClassUtils;
+
 /**
  * Empty no-op representation of {@link ServletContext} to satisfy required dependencies to
  * successfully proxy incoming web requests to target web application.
@@ -143,7 +145,9 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public String getServerInfo() {
-		return "serverless-web-proxy";
+		return ClassUtils.isPresent("com.amazonaws.serverless.proxy.spring.SpringLambdaContainerHandler", ClassUtils.getDefaultClassLoader())
+				? "aws-serverless-java-container/6.0"
+						: "serverless-web-proxy";
 	}
 
 	@Override

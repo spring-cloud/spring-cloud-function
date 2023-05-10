@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.cloud.function.test.app.Pet;
 import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -77,6 +78,7 @@ public class RequestResponseTests {
 		assertThat(pets.get(0)).isInstanceOf(Pet.class);
 	}
 
+	@WithMockUser("spring")
 	@Test
 	public void validateGetPojo() throws Exception {
 		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets/6e3cc370-892f-4efe-a9eb-82926ff8cc5b");

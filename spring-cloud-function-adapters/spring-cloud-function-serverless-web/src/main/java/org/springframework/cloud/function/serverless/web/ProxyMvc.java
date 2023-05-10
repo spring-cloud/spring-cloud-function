@@ -170,6 +170,7 @@ public class ProxyMvc {
 		ProxyFilterChain(DispatcherServlet servlet) {
 			List<Filter> filters = new ArrayList<>();
 			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ProxyFilterRegistration) fr).getFilter()));
+			servlet.getWebApplicationContext().getBeansOfType(Filter.class).values().forEach(f -> filters.add(f));
 			Assert.notNull(filters, "filters cannot be null");
 			Assert.noNullElements(filters, "filters cannot contain null values");
 			this.filters = initFilterList(servlet, filters.toArray(new Filter[] {}));
