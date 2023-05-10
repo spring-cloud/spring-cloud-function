@@ -54,6 +54,15 @@ public class RequestResponseTests {
 	}
 
 	@Test
+	public void validateAccessDeniedWithCustomHandler() throws Exception {
+		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/foo");
+		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		mvc.service(request, response);
+		assertThat(response.getErrorMessage()).isEqualTo("Can't touch this");
+		assertThat(response.getStatus()).isEqualTo(403);
+	}
+
+	@Test
 	public void validateGetListOfPojos() throws Exception {
 		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets");
 		ProxyHttpServletResponse response = new ProxyHttpServletResponse();

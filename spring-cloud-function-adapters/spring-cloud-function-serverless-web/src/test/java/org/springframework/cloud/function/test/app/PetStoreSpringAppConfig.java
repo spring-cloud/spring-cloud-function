@@ -17,32 +17,29 @@
 package org.springframework.cloud.function.test.app;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 
-import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
-import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.web.filter.GenericFilterBean;
 import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.HandlerMapping;
@@ -74,32 +71,9 @@ public class PetStoreSpringAppConfig {
 	}
 
 	@Bean
-	public BeanPostProcessor post() {
-		return new BeanPostProcessor() {
-			@Override
-			public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-				if (beanName.equals("securityFilterChain")) {
-					DefaultSecurityFilterChain chain = (DefaultSecurityFilterChain) bean;
-					ArrayList<Filter> filters = new ArrayList<>();
-					chain.getFilters().forEach(f -> {
-						if (!(f instanceof CsrfFilter)) {
-							filters.add(f);
-						}
-					});
-					bean = new DefaultSecurityFilterChain(chain.getRequestMatcher(), filters);
-				}
-				//System.out.println(beanName);
-				return bean;
-			}
-		};
-	}
-
-
-	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
+		http.csrf().disable() // need for POST
 			.addFilterBefore(new GenericFilterBean() {
-
 				@Override
 				public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 						throws IOException, ServletException {
@@ -112,22 +86,24 @@ public class PetStoreSpringAppConfig {
 				}
 			}, SecurityContextHolderFilter.class)
 			.authorizeHttpRequests((requests) -> requests
-				.requestMatchers("/", "/pets", "/pets/").permitAll()
+				.requestMatchers("/", "/pets", "/pets/").hasAnyAuthority("USER")
+				.requestMatchers("/foo").hasAnyAuthority("FOO")
 				.anyRequest().authenticated()
 			)
+			.exceptionHandling().accessDeniedHandler(accessDeniedHandler()).and()
 			.logout((logout) -> logout.permitAll());
 
 		return http.build();
 	}
 
 	@Bean
-	public Filter filter() {
-		return new Filter() {
+	public AccessDeniedHandler accessDeniedHandler() {
+
+		return new AccessDeniedHandler() {
 			@Override
-			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-					throws IOException, ServletException {
-				System.out.println("FILTER ===> Hello from: " + request.getLocalAddr());
-				chain.doFilter(request, response);
+			public void handle(HttpServletRequest request, HttpServletResponse response,
+					AccessDeniedException accessDeniedException) throws IOException, ServletException {
+				response.sendError(403, "Can't touch this");
 			}
 		};
 	}
