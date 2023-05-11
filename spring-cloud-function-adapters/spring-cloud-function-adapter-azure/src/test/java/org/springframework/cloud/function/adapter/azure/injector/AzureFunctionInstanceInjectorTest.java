@@ -44,6 +44,7 @@ import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.messaging.Message;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Christian Tzolov
@@ -135,7 +136,7 @@ public class AzureFunctionInstanceInjectorTest {
 		}
 	}
 
-	@Configuration
+	@Component
 	public static class MyAzureTestFunction {
 
 		@Autowired
