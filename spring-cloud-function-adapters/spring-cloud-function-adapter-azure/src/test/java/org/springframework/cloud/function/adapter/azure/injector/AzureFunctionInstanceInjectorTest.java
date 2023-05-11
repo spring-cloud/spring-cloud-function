@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
-import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.cloud.function.adapter.azure.AzureFunctionInstanceInjector;
 import org.springframework.cloud.function.adapter.azure.AzureFunctionUtil;
 import org.springframework.cloud.function.adapter.azure.HttpFunctionInvokerTests;
@@ -119,8 +118,7 @@ public class AzureFunctionInstanceInjectorTest {
 	}
 
 	@Configuration
-	@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-			@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
+	@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
 	public static class MyMainConfig {
 
 		@Bean
