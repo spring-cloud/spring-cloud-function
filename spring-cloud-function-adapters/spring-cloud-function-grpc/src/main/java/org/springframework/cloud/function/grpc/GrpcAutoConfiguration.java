@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.grpc.BindableService;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -37,7 +38,7 @@ import org.springframework.util.StringUtils;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionGrpcProperties.class)
 @ConditionalOnProperty(name = "spring.cloud.function.grpc.server", havingValue = "true", matchIfMissing = true)
-class GrpcAutoConfiguration {
+public class GrpcAutoConfiguration {
 
 	@Bean
 	public GrpcServer grpcServer(FunctionGrpcProperties grpcProperties, BindableService[] grpcMessagingServices) {
@@ -53,8 +54,9 @@ class GrpcAutoConfiguration {
 	}
 
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings("rawtypes")
 	@Bean
+	@ConditionalOnMissingBean
 	public BindableService grpcSpringMessageHandler(MessageHandlingHelper helper) {
 		return new GrpcServerMessageHandler(helper);
 	}
