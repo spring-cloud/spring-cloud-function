@@ -70,7 +70,7 @@ import com.google.protobuf.GeneratedMessageV3;
  *
  */
 @SuppressWarnings("rawtypes")
-class GrpcServerMessageHandler extends MessagingServiceImplBase {
+public class GrpcServerMessageHandler extends MessagingServiceImplBase {
 
 	private Log logger = LogFactory.getLog(GrpcServerMessageHandler.class);
 
@@ -78,8 +78,7 @@ class GrpcServerMessageHandler extends MessagingServiceImplBase {
 
 	private boolean running;
 
-
-	GrpcServerMessageHandler(MessageHandlingHelper<GeneratedMessageV3> helper) {
+	public GrpcServerMessageHandler(MessageHandlingHelper<GeneratedMessageV3> helper) {
 		this.helper = helper;
 	}
 
