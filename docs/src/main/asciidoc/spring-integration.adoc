@@ -20,7 +20,7 @@ The following example demonstrates the `FunctionFlowBuilder` in action alongside
 [source,java]
 ----
 @Configuration
-static class IntegrationConfiguration {
+public class IntegrationConfiguration {
 
     @Bean
     Supplier<byte[]> simpleByteArraySupplier() {

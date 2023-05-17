@@ -40,24 +40,22 @@ public class FunctionLookupHelper {
 	}
 
 	<P> Supplier<P> lookupSupplier(String functionDefinition) {
-		return () ->
-				memoize(() -> this.functionCatalog.<Supplier<P>>lookup(Supplier.class, functionDefinition))
-						.get()
-						.get();
+		Supplier<Supplier<P>> memoizedSupplier = lazyLookup(Supplier.class, functionDefinition);
+		return () -> memoizedSupplier.get().get();
 	}
 
 	<P> Function<P, ?> lookupFunction(String functionDefinition) {
-		return (p) ->
-				memoize(() -> this.functionCatalog.<Function<P, ?>>lookup(Function.class, functionDefinition))
-						.get()
-						.apply(p);
+		Supplier<Function<P, ?>> memoizedFunction = lazyLookup(Function.class, functionDefinition);
+		return (p) -> memoizedFunction.get().apply(p);
 	}
 
 	<P> Consumer<P> lookupConsumer(String consumerDefinition) {
-		return (p) ->
-				memoize(() -> this.functionCatalog.<Consumer<P>>lookup(Consumer.class, consumerDefinition))
-						.get()
-						.accept(p);
+		Supplier<Consumer<P>> memoizedConsumer = lazyLookup(Consumer.class, consumerDefinition);
+		return (p) -> memoizedConsumer.get().accept(p);
+	}
+
+	private <T> Supplier<T> lazyLookup(Class<?> functionType, String functionDefinition) {
+		return memoize(() -> this.functionCatalog.lookup(functionType, functionDefinition));
 	}
 
 	/**

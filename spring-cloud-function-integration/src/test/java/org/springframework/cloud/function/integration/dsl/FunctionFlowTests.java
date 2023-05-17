@@ -28,12 +28,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.PollerSpec;
 import org.springframework.integration.dsl.Pollers;
+import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.test.util.OnlyOnceTrigger;
@@ -43,6 +46,7 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Artem Bilan
@@ -53,31 +57,45 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext
 public class FunctionFlowTests {
 
-	@Autowired
-	QueueChannel wireTapChannel;
+	// To verify cached lookups
+	@SpyBean
+	FunctionCatalog functionCatalog;
 
 	@Autowired
 	BlockingQueue<String> results;
 
 	@Test
-	void fromSupplierOverFunctionToConsumer() throws InterruptedException {
-		String result = results.poll(10, TimeUnit.SECONDS);
+	void fromSupplierOverFunctionToConsumer(@Autowired SourcePollingChannelAdapter supplierEndpoint,
+			@Autowired QueueChannel wireTapChannel) throws InterruptedException {
+
+		supplierEndpoint.start();
+
+		String result = this.results.poll(10, TimeUnit.SECONDS);
 		assertThat(result).isEqualTo("SIMPLE TEST DATA");
 		Message<?> receive = wireTapChannel.receive(10_000);
-		assertThat(receive).isNotNull()
+		assertThat(receive)
 				.extracting(Message::getPayload)
 				.isEqualTo("simple test data".getBytes());
+
+		supplierEndpoint.stop();
 	}
 
-	@Autowired
-	MessageChannel functionCompositionInput;
-
 	@Test
-	void fromChannelToFunctionComposition() throws InterruptedException {
-		this.functionCompositionInput.send(new GenericMessage<>("compose this"));
+	void fromChannelToFunctionComposition(@Autowired MessageChannel functionCompositionInput)
+			throws InterruptedException {
 
-		String result = results.poll(10, TimeUnit.SECONDS);
+		functionCompositionInput.send(new GenericMessage<>("compose this"));
+
+		String result = this.results.poll(10, TimeUnit.SECONDS);
 		assertThat(result).isEqualTo("COMPOSE THIS");
+
+		functionCompositionInput.send(new GenericMessage<>("compose again"));
+
+		result = this.results.poll(10, TimeUnit.SECONDS);
+		assertThat(result).isEqualTo("COMPOSE AGAIN");
+
+		// Ensure that FunctionLookupHelper.memoize() does its trick calling FunctionCatalog.lookup() only once
+		verify(this.functionCatalog).lookup(Consumer.class, "upperCaseFunction|simpleStringConsumer");
 	}
 
 	@EnableAutoConfiguration
@@ -117,7 +135,7 @@ public class FunctionFlowTests {
 		@Bean
 		IntegrationFlow someFunctionFlow(FunctionFlowBuilder functionFlowBuilder) {
 			return functionFlowBuilder
-					.fromSupplier("simpleByteArraySupplier")
+					.fromSupplier("simpleByteArraySupplier", e -> e.id("supplierEndpoint").autoStartup(false))
 					.wireTap("wireTapChannel")
 					.apply("upperCaseFunction")
 					.log(LoggingHandler.Level.WARN, FunctionFlowTests.class.getName())
