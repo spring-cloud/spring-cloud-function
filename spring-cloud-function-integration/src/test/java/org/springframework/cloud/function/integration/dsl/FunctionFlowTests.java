@@ -36,16 +36,19 @@ import org.springframework.integration.channel.QueueChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.PollerSpec;
 import org.springframework.integration.dsl.Pollers;
+import org.springframework.integration.dsl.context.IntegrationFlowContext;
 import org.springframework.integration.endpoint.SourcePollingChannelAdapter;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.integration.scheduling.PollerMetadata;
 import org.springframework.integration.test.util.OnlyOnceTrigger;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -97,6 +100,27 @@ public class FunctionFlowTests {
 		// Ensure that FunctionLookupHelper.memoize() does its trick calling FunctionCatalog.lookup() only once
 		verify(this.functionCatalog).lookup(Consumer.class, "upperCaseFunction|simpleStringConsumer");
 	}
+
+	@Test
+	void noFunctionInCatalogException(@Autowired FunctionFlowBuilder functionFlowBuilder,
+			@Autowired IntegrationFlowContext integrationFlowContext) {
+
+		IntegrationFlow wrongFlow =
+				functionFlowBuilder.from("inputChannel")
+						.accept("nonExistingConsumer");
+
+		IntegrationFlowContext.IntegrationFlowRegistration registration =
+				integrationFlowContext.registration(wrongFlow)
+						.register();
+
+		assertThatExceptionOfType(MessageDeliveryException.class)
+				.isThrownBy(() -> registration.getInputChannel().send(new GenericMessage<>("test")))
+				.withRootCauseInstanceOf(IllegalArgumentException.class)
+				.withStackTraceContaining("No 'nonExistingConsumer' in the catalog");
+
+		registration.destroy();
+	}
+
 
 	@EnableAutoConfiguration
 	@Configuration(proxyBeanMethods = false)
