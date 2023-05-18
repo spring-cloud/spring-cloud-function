@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.util.Assert;
 
 /**
  * The helper class to lookup functions from the catalog in lazy manner and cache their instances.
@@ -55,7 +56,13 @@ public class FunctionLookupHelper {
 	}
 
 	private <T> Supplier<T> lazyLookup(Class<?> functionType, String functionDefinition) {
-		return memoize(() -> this.functionCatalog.lookup(functionType, functionDefinition));
+		return memoize(() -> requireNonNull(functionType, functionDefinition));
+	}
+
+	private  <T> T requireNonNull(Class<?> functionType, String functionDefinition) {
+		T function = this.functionCatalog.lookup(functionType, functionDefinition);
+		Assert.notNull(function, () -> "No '" + functionDefinition + "' in the catalog");
+		return function;
 	}
 
 	/**
@@ -72,7 +79,7 @@ public class FunctionLookupHelper {
 				synchronized (value) {
 					val = value.get();
 					if (val == null) {
-						val = Objects.requireNonNull(delegate.get());
+						val = delegate.get();
 						value.set(val);
 					}
 				}
