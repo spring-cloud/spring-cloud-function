@@ -49,6 +49,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -102,8 +103,11 @@ public class FunctionFlowTests {
 	}
 
 	@Test
-	void noFunctionInCatalogException(@Autowired FunctionFlowBuilder functionFlowBuilder,
-			@Autowired IntegrationFlowContext integrationFlowContext) {
+	void noFunctionInCatalogException(@Autowired IntegrationFlowContext integrationFlowContext) {
+		// We need to mock here since BeanFactoryAwareFunctionRegistry will have slightly different logic
+		FunctionCatalog mockFunctionCatalog = mock(FunctionCatalog.class);
+
+		FunctionFlowBuilder functionFlowBuilder = new FunctionFlowBuilder(mockFunctionCatalog);
 
 		IntegrationFlow wrongFlow =
 				functionFlowBuilder.from("inputChannel")
