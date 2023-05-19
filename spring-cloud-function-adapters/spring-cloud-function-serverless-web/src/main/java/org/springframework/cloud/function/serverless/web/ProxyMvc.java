@@ -72,8 +72,6 @@ public class ProxyMvc {
 
 	private ServletContext servletContext;
 
-	private volatile boolean initialized;
-
 	public ConfigurableWebApplicationContext getApplicationContext() {
 		return this.applicationContext;
 	}
@@ -83,15 +81,7 @@ public class ProxyMvc {
 	}
 
 	public static ProxyMvc INSTANCE(ConfigurableWebApplicationContext applpicationContext) {
-		ProxyServletContext servletContext = new ProxyServletContext();
-		applpicationContext.setServletContext(servletContext);
-		DispatcherServlet dispatcher = new DispatcherServlet(applpicationContext);
-		ServletRegistration.Dynamic reg = servletContext.addServlet("dispatcherServlet", dispatcher);
-		reg.setLoadOnStartup(1);
-
-		ProxyMvc mvc = new ProxyMvc(dispatcher, applpicationContext);
-		mvc.servletContext = servletContext;
-		return mvc;
+		return new ProxyMvc(applpicationContext);
 	}
 
 	public static ProxyMvc INSTANCE(Class<?>... componentClasses) {
@@ -103,12 +93,26 @@ public class ProxyMvc {
 		return INSTANCE(applpicationContext);
 	}
 
+
 	/**
 	 * Private constructor, not for direct instantiation.
 	 */
-	ProxyMvc(DispatcherServlet dispatcher, ConfigurableWebApplicationContext applicationContext) {
+	ProxyMvc(ConfigurableWebApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
-		this.dispatcher = dispatcher;
+		ProxyServletContext servletContext = new ProxyServletContext();
+		this.applicationContext.setServletContext(servletContext);
+		this.dispatcher = new DispatcherServlet(this.applicationContext);
+		this.dispatcher.setDetectAllHandlerMappings(false);
+
+		ServletRegistration.Dynamic reg = servletContext.addServlet("dispatcherServlet", dispatcher);
+		reg.setLoadOnStartup(1);
+		this.servletContext = applicationContext.getServletContext();
+		try {
+			this.dispatcher.init(new ProxyServletConfig(this.servletContext));
+		}
+		catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	public void stop() {
@@ -131,13 +135,6 @@ public class ProxyMvc {
 	}
 
 	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
-		synchronized (this) {
-			if (!this.initialized) {
-				this.dispatcher.init(new ProxyServletConfig(this.servletContext));
-				this.initialized = true;
-			}
-		}
-
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
 		filterChain.doFilter(request, response);
 

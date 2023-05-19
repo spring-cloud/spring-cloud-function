@@ -32,48 +32,17 @@
     </properties>
 
     <dependencies>
+		<dependency>
+            <groupId>io.github.crac</groupId>
+            <artifactId>org-crac</artifactId>
+            <version>0.1.3</version>
+        </dependency>
  		<dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-function-adapter-aws-web</artifactId>
-            <version>3.2.9-SNAPSHOT</version>
+            <version>4.0.3-SNAPSHOT</version>
         </dependency>
-        <!--
-             the Spring Context Indexer run an annotation processor at compile time and generates
-             a META-INF/spring.components file that Spring can use to speed up component scanning at boot time.
-             For small applications, this doesn't make a big difference. However, for large applications with
-             complex dependencies this may improve your cold start time significantly.
-        -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-indexer</artifactId>
-            <version>${spring.version}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-lambda-java-log4j2</artifactId>
-            <version>1.5.1</version>
-        </dependency>
-
+       
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

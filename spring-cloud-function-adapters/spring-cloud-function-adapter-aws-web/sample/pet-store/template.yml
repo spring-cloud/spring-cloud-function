@@ -11,10 +11,14 @@ Resources:
   PetStoreFunction:
     Type: AWS::Serverless::Function
     Properties:
+#      AutoPublishAlias: bcn
+      FunctionName: pet-store-17
       Handler: org.springframework.cloud.function.adapter.aws.web.WebProxyInvoker::handleRequest
       Runtime: java17
+      SnapStart:
+        ApplyOn: PublishedVersions
       CodeUri: .
-      MemorySize: 512
+      MemorySize: 1024
       Policies: AWSLambdaBasicExecutionRole
       Timeout: 30
       Environment:
@@ -32,6 +36,6 @@ Outputs:
     Description: URL for application
     Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/pets'
     Export:
-      Name: PetStoreLambda
+      Name: SpringPetStoreApi
       
 
