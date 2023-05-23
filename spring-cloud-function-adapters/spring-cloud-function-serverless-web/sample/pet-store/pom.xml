@@ -6,7 +6,7 @@
 
     <groupId>oz.spring.petstore</groupId>
     <artifactId>pet-store</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version><!-- @releaser:version-check-off -->
     <name>pet-store</name>
     <description>Simple pet store written with the Spring framework</description>
     <url>https://aws.amazon.com/lambda/</url>
@@ -35,7 +35,7 @@
  		<dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-function-adapter-aws-web</artifactId>
-            <version>3.2.9-SNAPSHOT</version>
+            <version>3.2.9-SNAPSHOT</version><!-- @releaser:version-check-off -->
         </dependency>
         <!--
              the Spring Context Indexer run an annotation processor at compile time and generates
@@ -140,7 +140,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-install-plugin</artifactId>
-                        <version>3.0.0-M1</version>
+                        <version>3.0.0-M1</version><!-- @releaser:version-check-off -->
                         <configuration>
                             <skip>true</skip>
                         </configuration>
