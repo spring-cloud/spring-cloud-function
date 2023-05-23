@@ -19,6 +19,7 @@ package org.springframework.cloud.function.adapter.aws.web;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,8 @@ public class WebProxyInvoker {
 			logger.debug("httpMethod: " + httpMethod);
 			logger.debug("path: " + path);
 		}
-		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(null, httpMethod, path);
+
+		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(this.mvc.getServletContext(), httpMethod, path);
 
 		// CONTENT
 		if (StringUtils.hasText((String) request.get("body"))) {
@@ -126,13 +128,14 @@ public class WebProxyInvoker {
 			apiGatewayResponseStructure.put("isBase64Encoded", false);
 			apiGatewayResponseStructure.put("statusCode", HttpStatus.OK.value());
 			apiGatewayResponseStructure.put("body", responseString);
-
 			Map<String, List<String>> multiValueHeaders = new HashMap<>();
 			Map<String, String> headers = new HashMap<>();
 			for (String headerName : httpResponse.getHeaderNames()) {
 				multiValueHeaders.put(headerName, httpResponse.getHeaders(headerName));
 				headers.put(headerName, httpResponse.getHeaders(headerName).toString());
 			}
+			headers.put(HttpHeaders.CONTENT_TYPE, httpResponse.getContentType());
+			multiValueHeaders.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList(httpResponse.getContentType()));
 			apiGatewayResponseStructure.put("multiValueHeaders", multiValueHeaders);
 			apiGatewayResponseStructure.put("headers", headers);
 

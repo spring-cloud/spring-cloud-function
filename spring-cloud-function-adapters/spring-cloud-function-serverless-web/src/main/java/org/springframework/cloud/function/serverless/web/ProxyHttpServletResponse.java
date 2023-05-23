@@ -18,8 +18,10 @@ package org.springframework.cloud.function.serverless.web;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -69,6 +71,8 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	private int status = HttpServletResponse.SC_OK;
 
+	private ResponsePrintWriter writer;
+
 	@Nullable
 	private String errorMessage;
 
@@ -89,7 +93,11 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public PrintWriter getWriter() throws UnsupportedEncodingException {
-		throw new UnsupportedOperationException();
+		if (this.writer == null) {
+			Writer targetWriter = new OutputStreamWriter(this.content, getCharacterEncoding());
+			this.writer = new ResponsePrintWriter(targetWriter);
+		}
+		return this.writer;
 	}
 
 	public byte[] getContentAsByteArray() {
@@ -163,7 +171,7 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public boolean isCommitted() {
-		return false;
+		return this.writer == null ? false : this.writer.commited;
 	}
 
 	@Override
@@ -422,6 +430,49 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 		public void close() throws IOException {
 			super.close();
 			flushBuffer();
+		}
+	}
+
+	private class ResponsePrintWriter extends PrintWriter {
+
+		private boolean commited;
+
+		ResponsePrintWriter(Writer out) {
+			super(out, true);
+		}
+
+		@Override
+		public void write(char[] buf, int off, int len) {
+			super.write(buf, off, len);
+			super.flush();
+			this.commited = true;
+		}
+
+		@Override
+		public void write(String s, int off, int len) {
+			super.write(s, off, len);
+			super.flush();
+			this.commited = true;
+		}
+
+		@Override
+		public void write(int c) {
+			super.write(c);
+			super.flush();
+			this.commited = true;
+		}
+
+		@Override
+		public void flush() {
+			super.flush();
+			this.commited = true;
+		}
+
+		@Override
+		public void close() {
+			super.flush();
+			super.close();
+			this.commited = true;
 		}
 	}
 

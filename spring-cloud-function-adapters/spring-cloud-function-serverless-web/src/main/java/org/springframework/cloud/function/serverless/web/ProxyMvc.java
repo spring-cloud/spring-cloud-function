@@ -41,14 +41,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.context.annotation.AnnotatedBeanDefinitionReader;
+import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
-import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -85,11 +84,8 @@ public class ProxyMvc {
 	}
 
 	public static ProxyMvc INSTANCE(Class<?>... componentClasses) {
-		GenericWebApplicationContext applpicationContext = new GenericWebApplicationContext();
-		AnnotatedBeanDefinitionReader reader = new AnnotatedBeanDefinitionReader(applpicationContext);
-		if (!ObjectUtils.isEmpty(componentClasses)) {
-			reader.register(componentClasses);
-		}
+		AnnotationConfigServletWebApplicationContext applpicationContext = new AnnotationConfigServletWebApplicationContext();
+		applpicationContext.scan(componentClasses[0].getPackageName());
 		return INSTANCE(applpicationContext);
 	}
 
@@ -108,10 +104,17 @@ public class ProxyMvc {
 		reg.setLoadOnStartup(1);
 		this.servletContext = applicationContext.getServletContext();
 		try {
+
 			this.dispatcher.init(new ProxyServletConfig(this.servletContext));
+			try {
+				this.service(new ProxyHttpServletRequest(servletContext, "INFO", "/"), new ProxyHttpServletResponse());
+			}
+			catch (Exception e) {
+				//ignore as this is just a pre-warming attempt
+			}
 		}
 		catch (Exception e) {
-			throw new IllegalStateException(e);
+			throw new IllegalStateException("Faild to create Spring MVC DispatcherServlet proxy", e);
 		}
 	}
 
@@ -162,7 +165,7 @@ public class ProxyMvc {
 		 *
 		 * @param servlet the {@link Servlet} to invoke in this {@link FilterChain}
 		 * @param filters the {@link Filter}'s to invoke in this {@link FilterChain}
-		 * @since 3.2
+		 * @since 4.0.x
 		 */
 		ProxyFilterChain(DispatcherServlet servlet) {
 			List<Filter> filters = new ArrayList<>();
