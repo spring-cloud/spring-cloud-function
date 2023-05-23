@@ -8,7 +8,7 @@
 	<description>Azure Function Adapter for Spring Cloud Function</description>
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-function-parent</artifactId>
+		<artifactId>spring-cloud-function-adapter-parent</artifactId>
 		<version>4.0.3-SNAPSHOT</version>
 	</parent>
 	<properties>
