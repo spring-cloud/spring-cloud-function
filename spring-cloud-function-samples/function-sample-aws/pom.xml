@@ -22,7 +22,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<wrapper.version>1.0.27.RELEASE</wrapper.version>
+		<wrapper.version>1.0.29.RELEASE</wrapper.version>
 		<aws-lambda-events.version>3.9.0</aws-lambda-events.version>
 		<spring-cloud-function.version>4.0.3-SNAPSHOT</spring-cloud-function.version>
 	</properties>
@@ -70,13 +70,6 @@
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<dependencies>
@@ -90,7 +83,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.2.4</version>
 				<configuration>
 					<createDependencyReducedPom>false</createDependencyReducedPom>
 					<shadedArtifactAttached>true</shadedArtifactAttached>
