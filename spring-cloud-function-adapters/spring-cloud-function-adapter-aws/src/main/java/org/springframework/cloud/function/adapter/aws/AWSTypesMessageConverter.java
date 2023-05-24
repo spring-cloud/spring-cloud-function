@@ -62,6 +62,10 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 		if (message.getHeaders().containsKey(AWSLambdaUtils.AWS_EVENT)) {
 			return ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_EVENT));
 		}
+		//TODO Do we really need the ^^ above? It seems like the line below dows the trick
+		else if (targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
+			return true;
+		}
 		return false;
 	}
 

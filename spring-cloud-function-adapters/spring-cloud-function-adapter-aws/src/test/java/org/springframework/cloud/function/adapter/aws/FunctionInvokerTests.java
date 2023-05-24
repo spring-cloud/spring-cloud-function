@@ -37,6 +37,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerResponseEvent;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
@@ -72,6 +73,159 @@ public class FunctionInvokerTests {
 	ObjectMapper mapper = new ObjectMapper();
 
 	String jsonCollection = "[\"Ricky\",\"Julien\",\"Bubbles\"]";
+
+	String dynamoDbEvent = "{\n"
+			+ "  \"Records\": [\n"
+			+ "    {\n"
+			+ "      \"eventID\": \"f07f8ca4b0b26cb9c4e5e77e69f274ee\",\n"
+			+ "      \"eventName\": \"INSERT\",\n"
+			+ "      \"eventVersion\": \"1.1\",\n"
+			+ "      \"eventSource\": \"aws:dynamodb\",\n"
+			+ "      \"awsRegion\": \"us-east-1\",\n"
+			+ "      \"userIdentity\":{\n"
+			+ "        \"type\":\"Service\",\n"
+			+ "        \"principalId\":\"dynamodb.amazonaws.com\"\n"
+			+ "      },\n"
+			+ "      \"dynamodb\": {\n"
+			+ "        \"ApproximateCreationDateTime\": 1.684934517E9,\n"
+			+ "        \"Keys\": {\n"
+			+ "          \"val\": {\n"
+			+ "            \"S\": \"data\"\n"
+			+ "          },\n"
+			+ "          \"key\": {\n"
+			+ "            \"S\": \"binary\"\n"
+			+ "          }\n"
+			+ "        },\n"
+			+ "        \"NewImage\": {\n"
+			+ "          \"val\": {\n"
+			+ "            \"S\": \"data\"\n"
+			+ "          },\n"
+			+ "          \"asdf1\": {\n"
+			+ "            \"B\": \"AAEqQQ==\"\n"
+			+ "          },\n"
+			+ "          \"asdf2\": {\n"
+			+ "            \"BS\": [\n"
+			+ "              \"AAEqQQ==\",\n"
+			+ "              \"QSoBAA==\"\n"
+			+ "            ]\n"
+			+ "          },\n"
+			+ "          \"key\": {\n"
+			+ "            \"S\": \"binary\"\n"
+			+ "          }\n"
+			+ "        },\n"
+			+ "        \"SequenceNumber\": \"1405400000000002063282832\",\n"
+			+ "        \"SizeBytes\": 54,\n"
+			+ "        \"StreamViewType\": \"NEW_AND_OLD_IMAGES\"\n"
+			+ "      },\n"
+			+ "      \"eventSourceARN\": \"arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000\"\n"
+			+ "    },\n"
+			+ "    {\n"
+			+ "      \"eventID\": \"f07f8ca4b0b26cb9c4e5e77e42f274ee\",\n"
+			+ "      \"eventName\": \"INSERT\",\n"
+			+ "      \"eventVersion\": \"1.1\",\n"
+			+ "      \"eventSource\": \"aws:dynamodb\",\n"
+			+ "      \"awsRegion\": \"us-east-1\",\n"
+			+ "      \"dynamodb\": {\n"
+			+ "        \"ApproximateCreationDateTime\": 1480642020,\n"
+			+ "        \"Keys\": {\n"
+			+ "          \"val\": {\n"
+			+ "            \"S\": \"data\"\n"
+			+ "          },\n"
+			+ "          \"key\": {\n"
+			+ "            \"S\": \"binary\"\n"
+			+ "          }\n"
+			+ "        },\n"
+			+ "        \"NewImage\": {\n"
+			+ "          \"val\": {\n"
+			+ "            \"S\": \"data\"\n"
+			+ "          },\n"
+			+ "          \"asdf1\": {\n"
+			+ "            \"B\": \"AAEqQQ==\"\n"
+			+ "          },\n"
+			+ "          \"b2\": {\n"
+			+ "            \"B\": \"test\"\n"
+			+ "          },\n"
+			+ "          \"asdf2\": {\n"
+			+ "            \"BS\": [\n"
+			+ "              \"AAEqQQ==\",\n"
+			+ "              \"QSoBAA==\",\n"
+			+ "              \"AAEqQQ==\"\n"
+			+ "            ]\n"
+			+ "          },\n"
+			+ "          \"key\": {\n"
+			+ "            \"S\": \"binary\"\n"
+			+ "          },\n"
+			+ "          \"Binary\": {\n"
+			+ "            \"B\": \"AAEqQQ==\"\n"
+			+ "          },\n"
+			+ "          \"Boolean\": {\n"
+			+ "            \"BOOL\": true\n"
+			+ "          },\n"
+			+ "          \"BinarySet\": {\n"
+			+ "            \"BS\": [\n"
+			+ "              \"AAEqQQ==\",\n"
+			+ "              \"AAEqQQ==\"\n"
+			+ "            ]\n"
+			+ "          },\n"
+			+ "          \"List\": {\n"
+			+ "            \"L\": [\n"
+			+ "              {\n"
+			+ "                \"S\": \"Cookies\"\n"
+			+ "              },\n"
+			+ "              {\n"
+			+ "                \"S\": \"Coffee\"\n"
+			+ "              },\n"
+			+ "              {\n"
+			+ "                \"N\": \"3.14159\"\n"
+			+ "              }\n"
+			+ "            ]\n"
+			+ "          },\n"
+			+ "          \"Map\": {\n"
+			+ "            \"M\": {\n"
+			+ "              \"Name\": {\n"
+			+ "                \"S\": \"Joe\"\n"
+			+ "              },\n"
+			+ "              \"Age\": {\n"
+			+ "                \"N\": \"35\"\n"
+			+ "              }\n"
+			+ "            }\n"
+			+ "          },\n"
+			+ "          \"FloatNumber\": {\n"
+			+ "            \"N\": \"123.45\"\n"
+			+ "          },\n"
+			+ "          \"IntegerNumber\": {\n"
+			+ "            \"N\": \"123\"\n"
+			+ "          },\n"
+			+ "          \"NumberSet\": {\n"
+			+ "            \"NS\": [\n"
+			+ "              \"1234\",\n"
+			+ "              \"567.8\"\n"
+			+ "            ]\n"
+			+ "          },\n"
+			+ "          \"Null\": {\n"
+			+ "            \"NULL\": true\n"
+			+ "          },\n"
+			+ "          \"String\": {\n"
+			+ "            \"S\": \"Hello\"\n"
+			+ "          },\n"
+			+ "          \"StringSet\": {\n"
+			+ "            \"SS\": [\n"
+			+ "              \"Giraffe\",\n"
+			+ "              \"Zebra\"\n"
+			+ "            ]\n"
+			+ "          },\n"
+			+ "          \"EmptyStringSet\": {\n"
+			+ "            \"SS\": []\n"
+			+ "          }\n"
+			+ "        },\n"
+			+ "        \"SequenceNumber\": \"1405400000000002063282832\",\n"
+			+ "        \"SizeBytes\": 54,\n"
+			+ "        \"StreamViewType\": \"NEW_AND_OLD_IMAGES\"\n"
+			+ "      },\n"
+			+ "      \"eventSourceARN\": \"arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000\"\n"
+			+ "    }\n"
+			+ "  ]\n"
+			+ "}";
 
 	String sampleLBEvent = "{\n"
 			+ "  \"requestContext\": {\n"
@@ -568,6 +722,17 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 		assertThat(result.length()).isEqualTo(14); // some additional JSON formatting
+	}
+
+	@Test
+	public void testDynamoDb() throws Exception {
+		System.setProperty("MAIN_CLASS", DynamoDbConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "consume");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.dynamoDbEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
 	}
 
 	@Test
@@ -1140,6 +1305,15 @@ public class FunctionInvokerTests {
 		@Bean
 		public Function<APIGatewayCustomAuthorizerEvent, String> acceptAuthorizerEvent() {
 			return v -> v.toString();
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class DynamoDbConfiguration {
+		@Bean
+		public Consumer<DynamodbEvent> consume() {
+			return event -> event.getRecords().forEach(System.out::println);
 		}
 	}
 
