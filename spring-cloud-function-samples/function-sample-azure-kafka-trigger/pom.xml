@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.5</version>
+		<version>3.0.7</version>
 		<relativePath/>
 		<!-- lookup parent from repository -->
 	</parent>
@@ -16,7 +16,7 @@
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud-dependencies.version>2022.0.3-SNAPSHOT</spring-cloud-dependencies.version>
+		<spring-cloud-dependencies.version>2022.0.3</spring-cloud-dependencies.version>
 		<azure.functions.java.core.version>2.1.0</azure.functions.java.core.version>
 
 		<start-class>example.KafkaTriggerDemoApplication</start-class>
