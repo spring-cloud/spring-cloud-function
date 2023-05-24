@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.integration.dsl;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
