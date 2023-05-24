@@ -156,6 +156,7 @@ public final class AWSLambdaUtils {
 				}
 				result.add(value);
 			}
+
 			if (result.size() > 1) {
 				output = result;
 			}
@@ -165,15 +166,17 @@ public final class AWSLambdaUtils {
 			else {
 				output = null;
 			}
-			if (output instanceof Message<?> && ((Message<?>) output).getPayload() instanceof byte[]) {
-				responseMessage = (Message<byte[]>) output;
-			}
-			else if (output != null) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("OUTPUT: " + output + " - " + output.getClass().getName());
+			if (output != null && output instanceof Message<?>) {
+				if (output instanceof Message<?>) {
+					responseMessage = (Message<byte[]>) output;
 				}
-				byte[] payload = objectMapper.toJson(output);
-				responseMessage = MessageBuilder.withPayload(payload).build();
+				else {
+					if (logger.isDebugEnabled()) {
+						logger.debug("OUTPUT: " + output + " - " + output.getClass().getName());
+					}
+					byte[] payload = objectMapper.toJson(output);
+					responseMessage = MessageBuilder.withPayload(payload).build();
+				}
 			}
 		}
 		else {
