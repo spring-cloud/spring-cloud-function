@@ -62,9 +62,17 @@ public class FunctionInvoker implements RequestStreamHandler {
 
 	private volatile String functionDefinition;
 
+	private boolean started;
+
 	public FunctionInvoker(String functionDefinition) {
 		this.functionDefinition = functionDefinition;
-		this.start();
+		String lateInitialization = System.getenv("FUNCTION_INVOKER_LATE_INITIALIZATION");
+		if (!StringUtils.hasText(lateInitialization) || !Boolean.parseBoolean(lateInitialization)) {
+			this.start();
+		}
+		else {
+			logger.info("Spring Application Context will be initialized on first request");
+		}
 	}
 
 	public FunctionInvoker() {
@@ -74,6 +82,9 @@ public class FunctionInvoker implements RequestStreamHandler {
 	@SuppressWarnings({ "rawtypes" })
 	@Override
 	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+		if (!this.started) {
+			this.start();
+		}
 		Message requestMessage = AWSLambdaUtils
 				.generateMessage(input, this.function.getInputType(), this.function.isSupplier(), jsonMapper, context);
 
@@ -142,5 +153,6 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (logger.isInfoEnabled()) {
 			logger.info("Located function: '" + this.functionDefinition + "'");
 		}
+		this.started = true;
 	}
 }
