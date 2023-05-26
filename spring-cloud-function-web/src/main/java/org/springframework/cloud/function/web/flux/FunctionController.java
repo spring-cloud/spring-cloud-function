@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2016-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,9 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.cloud.function.web.util.FunctionWrapper;
@@ -32,8 +34,10 @@ import org.springframework.http.codec.multipart.Part;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ServerWebExchange;
@@ -44,16 +48,29 @@ import org.springframework.web.server.ServerWebExchange;
  * @author Oleg Zhurakousky
  */
 @Component
+@EnableConfigurationProperties(FunctionHttpProperties.class)
 public class FunctionController {
+
+	private final FunctionHttpProperties functionHttpProperties;
+
+	public FunctionController(FunctionHttpProperties functionHttpProperties) {
+		this.functionHttpProperties = functionHttpProperties;
+	}
 
 	@SuppressWarnings("unchecked")
 	@PostMapping(path = "/**", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
 	@ResponseBody
 	public Mono<ResponseEntity<?>> form(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return request.getFormData().doOnSuccess(params -> wrapper.getParams().addAll(params))
-				.then(Mono.defer(() -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
-						.processRequest(wrapper, wrapper.getParams(), false)));
+		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return request.getFormData().doOnSuccess(params -> wrapper.getParams().addAll(params))
+					.then(Mono.defer(() -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
+							.processRequest(wrapper, wrapper.getParams(), false)));
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
+		}
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -61,10 +78,15 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> multipart(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return request.getMultipartData()
-				.doOnSuccess(params -> wrapper.getParams().addAll(multi(params)))
-				.then(Mono.defer(() -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
-						.processRequest(wrapper, wrapper.getParams(), false)));
+		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return request.getMultipartData()
+					.doOnSuccess(params -> wrapper.getParams().addAll(multi(params)))
+					.then(Mono.defer(() -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
+							.processRequest(wrapper, wrapper.getParams(), false)));
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -72,20 +94,66 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> post(ServerWebExchange request,
 			@RequestBody(required = false) String body) {
-		return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper(request), body, false);
+		FunctionWrapper wrapper = wrapper(request);
+		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@PutMapping(path = "/**")
+	@ResponseBody
+	public Mono<ResponseEntity<?>> put(ServerWebExchange request,
+			@RequestBody(required = false) String body) {
+		FunctionWrapper wrapper = wrapper(request);
+		if (FunctionWebRequestProcessingHelper.isValidFunction("PUT", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("PUT", wrapper.getFunction().getFunctionDefinition()));
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@DeleteMapping(path = "/**")
+	@ResponseBody
+	public Mono<ResponseEntity<?>> delete(ServerWebExchange request,
+			@RequestBody(required = false) String body) {
+		FunctionWrapper wrapper = wrapper(request);
+		if (FunctionWebRequestProcessingHelper.isValidFunction("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("DELETE", wrapper.getFunction().getFunctionDefinition()));
+		}
 	}
 
 	@PostMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Publisher<?> postStream(ServerWebExchange request, @RequestBody(required = false) Flux<String> body) {
-		return FunctionWebRequestProcessingHelper.processRequest(wrapper(request), body, true);
+		FunctionWrapper wrapper = wrapper(request);
+		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, true);
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
+		}
+
 	}
 
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Publisher<?> getStream(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true);
+		if (FunctionWebRequestProcessingHelper.isValidFunction("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true);
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("GET", wrapper.getFunction().getFunctionDefinition()));
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -93,7 +161,12 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> get(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
+		if (FunctionWebRequestProcessingHelper.isValidFunction("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
+		}
+		else {
+			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("GET", wrapper.getFunction().getFunctionDefinition()));
+		}
 	}
 
 	private FunctionWrapper wrapper(ServerWebExchange request) {

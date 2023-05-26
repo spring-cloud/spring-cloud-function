@@ -30,6 +30,7 @@ import reactor.core.publisher.Mono;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -69,6 +70,35 @@ public final class FunctionWebRequestProcessingHelper {
 	public static Object invokeFunction(FunctionInvocationWrapper function, Object input, boolean isMessage) {
 		Object result = function.apply(input);
 		return postProcessResult(result, isMessage);
+	}
+
+	public static boolean isValidFunction(String httpMethod, String functionDefinition, FunctionHttpProperties functionHttpProperties) {
+		List<String> functionDefinitions = null;
+		switch (httpMethod) {
+			case "GET":
+				functionDefinitions = functionHttpProperties.getGet();
+				break;
+			case "POST":
+				functionDefinitions = functionHttpProperties.getPost();
+				break;
+			case "PUT":
+				functionDefinitions = functionHttpProperties.getPut();
+				break;
+			case "DELETE":
+				functionDefinitions = functionHttpProperties.getDelete();
+				break;
+			default:
+				return false;
+		}
+		return CollectionUtils.isEmpty(functionDefinitions) || functionDefinitions.contains(functionDefinition);
+	}
+
+	public static String buildBadMappingErrorMessage(String httpMethod, String functionDefinition) {
+		return "Function '" + functionDefinition + "' is not eligible to be invoked "
+				+ "via  " + httpMethod + "  method. This is due to the fact that explicit mappings for " + httpMethod
+				+ " are provided via 'spring.cloud.function.http." + httpMethod + "' property "
+				+ "and this function is not listed there. Either remove all explicit mappings for " + httpMethod + " or add this function to the list of functions "
+				+ "specified in 'spring.cloud.function.http." + httpMethod + "' property.";
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
