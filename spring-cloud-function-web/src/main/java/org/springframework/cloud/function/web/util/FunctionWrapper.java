@@ -37,8 +37,21 @@ public class FunctionWrapper {
 
 	private Object argument;
 
+	private final String method;
+
+	/**
+	 *
+	 * @param function instance of {@link FunctionInvocationWrapper}
+	 * @deprecated since 4.0.4 in favor of the constructor that takes Http method as second argument.
+	 */
+	@Deprecated
 	public FunctionWrapper(FunctionInvocationWrapper function) {
+		this(function, null);
+	}
+
+	public FunctionWrapper(FunctionInvocationWrapper function, String method) {
 		this.function = function;
+		this.method = method;
 	}
 
 	public HttpHeaders getHeaders() {
@@ -63,5 +76,9 @@ public class FunctionWrapper {
 
 	public MultiValueMap<String, String> getParams() {
 		return params;
+	}
+
+	public String getMethod() {
+		return method;
 	}
 }

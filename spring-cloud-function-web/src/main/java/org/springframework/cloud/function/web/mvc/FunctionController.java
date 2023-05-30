@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.server.HttpServerRequest;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -32,6 +33,7 @@ import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.cloud.function.web.util.FunctionWrapper;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
@@ -47,10 +49,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.StandardMultipartHttpServletRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * @author Dave Syer
@@ -152,11 +157,11 @@ public class FunctionController {
 	}
 
 	@DeleteMapping(path = "/**")
-	@ResponseBody
-	public Object delete(WebRequest request, @RequestBody(required = false) String body) {
+	@ResponseStatus(value = HttpStatus.NO_CONTENT)
+	public void delete(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isValidFunction("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
+			FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
 		}
 		else {
 			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("DELETE", wrapper.getFunction().getFunctionDefinition()));
@@ -178,7 +183,7 @@ public class FunctionController {
 	private FunctionWrapper wrapper(WebRequest request) {
 		FunctionInvocationWrapper function = (FunctionInvocationWrapper) request
 				.getAttribute(WebRequestConstants.HANDLER, WebRequest.SCOPE_REQUEST);
-		FunctionWrapper wrapper = new FunctionWrapper(function);
+		FunctionWrapper wrapper = new FunctionWrapper(function, (((ServletWebRequest) request).getRequest()).getMethod());
 		for (String key : request.getParameterMap().keySet()) {
 			wrapper.getParams().addAll(key, Arrays.asList(request.getParameterValues(key)));
 		}

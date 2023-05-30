@@ -34,6 +34,7 @@ import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity.HeadersBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.messaging.Message;
@@ -59,7 +60,7 @@ public final class FunctionWebRequestProcessingHelper {
 
 	public static FunctionInvocationWrapper findFunction(FunctionProperties functionProperties, HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path) {
-		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST)) {
+		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.DELETE)) {
 			return doFindFunction(functionProperties.getDefinition(), method, functionCatalog, attributes, path);
 		}
 		else {
@@ -132,7 +133,8 @@ public final class FunctionWebRequestProcessingHelper {
 			if (result instanceof Publisher) {
 				Mono.from((Publisher) result).subscribe();
 			}
-			return Mono.just(ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers)).build());
+			return "DELETE".equals(wrapper.getMethod()) ?
+					Mono.empty() : Mono.just(ResponseEntity.ok().headers(HeaderUtils.sanitize(headers)).build());
 		}
 
 		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers));

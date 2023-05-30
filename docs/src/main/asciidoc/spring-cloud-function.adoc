@@ -698,9 +698,9 @@ plain text and JSON.
 
 | GET    | /{supplier} | - | Items from the named supplier              | 200 OK
 | POST   | /{consumer} | JSON object or text | Mirrors input and pushes request body into consumer           | 202 Accepted
-| POST   | /{consumer} | JSON array or text with new lines | Mirrors input and pushes body into consumer one by one | 202 Accepted
+| PUT    | /{consumer} | JSON object or text | Mirrors input and pushes request body into consumer           | 202 Accepted
 | POST   | /{function} | JSON object or text | The result of applying the named function | 200 OK
-| POST   | /{function} | JSON array or text with new lines | The result of applying the named function | 200 OK
+| PUT    | /{function} | JSON object or text | The result of applying the named function | 200 OK
 | GET    | /{function}/{item} | - | Convert the item into an object and return the result of applying the function | 200 OK
 
 |===
