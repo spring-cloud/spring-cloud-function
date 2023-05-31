@@ -40,6 +40,7 @@ import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -161,6 +162,7 @@ public class FunctionController {
 	public void delete(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isValidFunction("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			Assert.isTrue(wrapper.getFunction().isConsumer(), "'DELETE' can only be mapped to Consumer");
 			FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
 		}
 		else {

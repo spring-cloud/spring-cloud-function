@@ -64,8 +64,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 public class HttpPostIntegrationTests {
 
-	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;
-
 	@LocalServerPort
 	private int port;
 

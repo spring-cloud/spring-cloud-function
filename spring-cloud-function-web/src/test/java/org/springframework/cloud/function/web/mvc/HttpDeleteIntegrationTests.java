@@ -16,24 +16,18 @@
 
 package org.springframework.cloud.function.web.mvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,26 +39,18 @@ import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.mvc.HttpDeleteIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.util.StringUtils;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.util.MimeType;
 
 /**
  * @author Oleg Zhurakousky
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
-@ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
+@ContextConfiguration(classes = {ApplicationConfiguration.class})
 public class HttpDeleteIntegrationTests {
-
-	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;
 
 	@LocalServerPort
 	private int port;
@@ -98,6 +84,14 @@ public class HttpDeleteIntegrationTests {
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 	}
 
+	@Test
+	public void testDeleteWithFunction() throws Exception {
+		ResponseEntity<Void> result = this.rest.exchange(
+				RequestEntity.delete(new URI("/deleteFunction"))
+				.build(), Void.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
 	@EnableAutoConfiguration
 	@TestConfiguration
 	public static class ApplicationConfiguration {
@@ -108,6 +102,16 @@ public class HttpDeleteIntegrationTests {
 			SpringApplication.run(HttpDeleteIntegrationTests.ApplicationConfiguration.class,
 					args);
 		}
+
+		@Bean
+		public Function<String, String> deleteFunction() {
+			return v -> {
+				assertThat(v).isEqualTo("123");
+				System.out.println("Deleting: " + v);
+				return null;
+			};
+		}
+
 
 		@Bean
 		public Consumer<String> deleteConsumer() {
