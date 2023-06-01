@@ -729,12 +729,16 @@ endpoint (on "/" by default, but configurable with
 functions in the application context where function name becomes part of the URL path. The supported content types are
 plain text and JSON.
 
+IMPORTANT: It is important to understand that while SCF provides ability to export Functional beans as REST endpoints it is NOT a replacement for Spring MVC/WebFlux etc. 
+It is primarily to accommodate _stateless serverless patterns_ where you simply want to have some stateless functionality to be exposed via HTTP. 
+
 |===
 | Method | Path | Request | Response | Status
 
 | GET    | /{supplier} | - | Items from the named supplier              | 200 OK
 | POST   | /{consumer} | JSON object or text | Mirrors input and pushes request body into consumer           | 202 Accepted
 | PUT    | /{consumer} | JSON object or text | Mirrors input and pushes request body into consumer           | 202 Accepted
+| DELETE | /{consumer} | JSON object or text | - | 204 NO CONTENT
 | POST   | /{function} | JSON object or text | The result of applying the named function | 200 OK
 | PUT    | /{function} | JSON object or text | The result of applying the named function | 200 OK
 | GET    | /{function}/{item} | - | Convert the item into an object and return the result of applying the function | 200 OK
@@ -742,7 +746,7 @@ plain text and JSON.
 |===
 
 As the table above shows the behavior of the endpoint depends on the method and also the type of incoming request data. When the incoming data is single valued, and the target function is declared as obviously single valued (i.e. not returning a collection or `Flux`), then the response will also contain a single value.
-For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream".
+For multi-valued responses the client can ask for a server-sent event stream by sending `Accept: text/event-stream`.
 
 Functions and consumers that are declared with input and output in `Message<?>` will see the request headers as _message headers_, and the output _message headers_ will be converted to HTTP headers.
 The _payload_ of the Message will be a `body` or empty string if there is no `body` or it is null.
@@ -792,6 +796,7 @@ the same `spring.cloud.function.definition` property listing functions you inten
 Note that in this case nothing will be mapped to the root path and functions that are not listed (including compositions) are not going to be exported
 
 For example,
+
 ----
 --spring.cloud.function.definition=foo;bar
 ----
@@ -804,11 +809,29 @@ This will only export function `foo` and function `bar` regardless how many func
 
 This will only export function composition `foo|bar` and function `baz` regardless how many functions are available in catalog (e.g., `localhost:8080/foo,bar`). 
 
+=== CRUD REST with Spring Cloud Function
+
+By now it should be clear that functions are exported as REST endpoints and can be invoked using various HTTP methods. In other words a single 
+function could be triggered via GET, POST, PUT etc. 
+
+However, it is not always desirable and certainly does not fit the CRUD concept. And while SCF does not support and has no intention of supporting 
+all the features of Spring web stack, the framework does provide support for CRUD mappings where a single function could be mapped to a particular HTTP method(s). 
+It is done via spring.cloud.function.http.<method-name> property.
+
+For example,
+
+----
+spring.cloud.function.http.GET=uppercase;reverse;foo|bar
+spring.cloud.function.http.POST=reverse
+spring.cloud.function.http.DELETE=deleteById
+----
+
+As you can see, here we’re mapping functions to various HTTP methods using the same rules as `spring.cloud.function.definition` property where “;” allows us to define several functions and “|” signifies function composition. 
 
 == Standalone Streaming Applications
 
 To send or receive messages from a broker (such as RabbitMQ or Kafka) you can leverage `spring-cloud-stream` project and it's integration with Spring Cloud Function.
-Please refer to https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring_cloud_function[Spring Cloud Function] section of the Spring Cloud Stream reference manual for more details and examples.
+Please refer to https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring_cloud_function[Spring Cloud Function] section of the https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream] reference manual for more details and examples.
 
 == Deploying a Packaged Function
 
