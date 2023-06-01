@@ -31,8 +31,8 @@ Here's a complete, executable, testable Spring Boot application
 public class Application {
 
   @Bean
-  public Function<Flux<String>, Flux<String>> uppercase() {
-    return flux -> flux.map(value -> value.toUpperCase());
+  public Function<String, String> uppercase() {
+    return value -> value.toUpperCase();
   }
 
   public static void main(String[] args) {

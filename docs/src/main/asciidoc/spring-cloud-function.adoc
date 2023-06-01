@@ -50,15 +50,52 @@ and available to us since Java 8.
 - Function<I, O>
 - Consumer<I>
 
-In a nutshell, any bean in your Application Context that is of type `Supplier`, `Function` or `Consumer` could be registered with `FunctionCatalog`.
-This means that it could benefit from all the features described in this reference manual.
+To avoid constantly mentioning `Supplier`, `Function` and `Consumer` we’ll refer to them a Functional beans for the rest of this manual where appropriate.
+
+In a nutshell, any bean in your Application Context that is Functional bean will lazily be registered with `FunctionCatalog`.
+This means that it could benefit from all of the additional features described in this reference manual.
+
+In a simplest of application all you need to do is to declare `@Bean` of type `Supplier`, `Function` or `Consumer` in your application configuration.
+Then you can access `FunctionCatalog` and lookup a particular function based on its name. 
+
+For example:
+
+
+[source, test]
+----
+@Bean
+public Function<String, String> uppercase() {
+    return value -> value.toUpperCase();
+}
+
+. . .
+
+FunctionCatalog catalog = applicationContext.getBean(FunctionCatalog.class);
+Function uppercase =  catalog.lookup(“uppercase”);
+----
+
+Important to understand that given that `uppercase` is a bean, you can certainly get it form the `ApplicationContext` directly, but all you will get is just your bean as you declared it without any extra features provided by SCF. When you do lookup of a function via `FunctionCatalog`, the instance you will receive is wrapped (instrumented) with additional features (i.e., type conversion, composition etc.) described in this manual. Also, it is important to understand that a typical user does not use Spring Cloud Function directly. Instead a typical user implements Java `Function/Supplier/Consumer` with the idea of using it in different execution contexts without additional work. For example the same java function could be represented as _REST endpoint_ or _Streaming message handler_ or _AWS Lambda_ and more via Spring Cloud Function provided 
+adapters as well as other frameworks using Spring Cloud Function as the core programming model (e.g., https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream])
+So in summary Spring Cloud Function instruments java functions with additional features to be utilised in variety of execution contexts.
+
+
+==== Function definition
+While the previous example shows you how to lookup function in FunctionCatalog programmatically, in a typical integration case where Spring Cloud Function used as programming model by another framework (e.fg. Spring Cloud Stream), you declare which functions to use via `spring.cloud.function.definition` property. Knowing that it is  important to understand some default behaviour when it comes to discovering functions in `FunctionCatalog`. For example, if you only have one Functional bean in your `ApplicationContext`,  the `spring.cloud.function.definition` property typically will not be required, since a single function in `FunctionCatalog` can be looked up by an empty name or any name. For example, assuming that `uppercase` is the only function in your catalog, it can be looked up as `catalog.lookup(null)`, `catalog.lookup(“”)`, `catalog.lookup(“foo”)`
+That said, for cases where you are using framework such as Spring Cloud Stream which uses `spring.cloud.function.definition` it is best practice and recommended to always use `spring.cloud.function.definition` property.
+
+For example,
+
+[source, test]
+----
+spring.cloud.function.definition=uppercase
+----
 
 ==== Filtering ineligible functions
 A typical Application Context may include beans that are valid java functions, but not intended to be candidates to be registered with `FunctionCatalog`.
 Such beans could be auto-configurations from other projects or any other beans that qualify to be Java functions.
 The framework provides default filtering of known beans that should not be candidates for registration with function catalog.
 You can also add to this list additional beans by providing coma delimited list of bean definition names using
-`spring.cloud.function.ineligible-definitions` property
+`spring.cloud.function.ineligible-definitions` property.
 
 For example,
 
@@ -113,7 +150,6 @@ need to write `Consumer<Flux<?>>`, but if you do need to do that,
 remember to subscribe to the input flux. 
 
 === Function Composition
-
 Function Composition is a feature that allows one to compose several functions into one.
 The core support is based on function composition feature available with https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html#andThen-java.util.function.Function-[Function.andThen(..)]
 support available since Java 8. However on top of it, we provide few additional features.
