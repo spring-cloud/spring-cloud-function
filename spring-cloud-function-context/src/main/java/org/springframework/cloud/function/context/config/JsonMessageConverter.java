@@ -31,6 +31,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.MimeType;
+import org.springframework.util.StringUtils;
 
 /**
  * Implementation of {@link MessageConverter} which uses Jackson or Gson libraries to do the
@@ -71,7 +72,15 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	protected boolean canConvertFrom(Message<?> message, @Nullable Class<?> targetClass) {
-		if (targetClass == null || !supportsMimeType(message.getHeaders())) {
+		return supportsMimeType(message.getHeaders()) && this.canDiscoverConvertToType(message, targetClass);
+	}
+
+	private boolean canDiscoverConvertToType(Message<?> message, Class<?> targetClass) {
+		if (targetClass == null || targetClass == Object.class) {
+			MimeType mimeType = getMimeType(message.getHeaders());
+			if (StringUtils.hasText(mimeType.getParameter("type"))) {
+				return true;
+			}
 			return false;
 		}
 		return true;
@@ -83,8 +92,20 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 			conversionHint = ((ParameterizedTypeReference<?>) conversionHint).getType();
 		}
 		Type convertToType = this.getResolvedType(targetClass, conversionHint);
-		if (convertToType == Object.class) {
-			return message.getPayload();
+		if (convertToType == null || convertToType == Object.class) {
+			MimeType mimeType = getMimeType(message.getHeaders());
+			String type = mimeType.getParameter("type");
+			if (StringUtils.hasText(type)) {
+				try {
+					convertToType = Thread.currentThread().getContextClassLoader().loadClass(type);
+				}
+				catch (ClassNotFoundException e) {
+					throw new IllegalArgumentException("Failed to load class `" + type + "` specified by the provided content-type: " + mimeType, e);
+				}
+			}
+			else {
+				return message.getPayload();
+			}
 		}
 		if (targetClass == byte[].class && message.getPayload() instanceof String) {
 			return ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8);
