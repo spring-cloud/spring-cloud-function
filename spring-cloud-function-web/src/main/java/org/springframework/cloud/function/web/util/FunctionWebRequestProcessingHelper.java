@@ -71,7 +71,7 @@ public final class FunctionWebRequestProcessingHelper {
 		return postProcessResult(result, isMessage);
 	}
 
-	public static boolean isValidFunction(String httpMethod, String functionDefinition, FunctionHttpProperties functionHttpProperties) {
+	public static boolean isFunctionValidForMethod(String httpMethod, String functionDefinition, FunctionHttpProperties functionHttpProperties) {
 		String functionDefinitions = null;
 		switch (httpMethod) {
 			case "GET":
@@ -92,7 +92,7 @@ public final class FunctionWebRequestProcessingHelper {
 		if (StringUtils.hasText(functionDefinitions)) {
 			return Arrays.asList(functionDefinitions.split(";")).contains(functionDefinition);
 		}
-		return false;
+		return true;
 	}
 
 	public static String buildBadMappingErrorMessage(String httpMethod, String functionDefinition) {
@@ -135,7 +135,7 @@ public final class FunctionWebRequestProcessingHelper {
 				Mono.from((Publisher) result).subscribe();
 			}
 			return "DELETE".equals(wrapper.getMethod()) ?
-					Mono.empty() : Mono.just(ResponseEntity.ok().headers(HeaderUtils.sanitize(headers)).build());
+					Mono.empty() : Mono.just(ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers)).build());
 		}
 
 		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers));

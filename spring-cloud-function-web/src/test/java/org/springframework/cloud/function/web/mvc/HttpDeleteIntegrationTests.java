@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.web.mvc;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +25,7 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -35,7 +34,6 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.mvc.HttpDeleteIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
@@ -43,7 +41,8 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.util.MimeType;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Oleg Zhurakousky

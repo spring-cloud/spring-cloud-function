@@ -75,7 +75,7 @@ public class FunctionController {
 	@ResponseBody
 	public Object form(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			if (((ServletWebRequest) request).getRequest() instanceof StandardMultipartHttpServletRequest) {
 				MultiValueMap<String, MultipartFile> multiFileMap = ((StandardMultipartHttpServletRequest) ((ServletWebRequest) request)
 															.getRequest()).getMultiFileMap();
@@ -109,7 +109,7 @@ public class FunctionController {
 			@RequestBody(required = false) String body) {
 		String argument = StringUtils.hasText(body) ? body : "";
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, argument, true)).map(response -> ResponseEntity.ok()
 					.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 		}
@@ -122,7 +122,7 @@ public class FunctionController {
 	@ResponseBody
 	public Publisher<?> getStream(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true);
 		}
 		else {
@@ -134,7 +134,8 @@ public class FunctionController {
 	@ResponseBody
 	public Object post(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+			Assert.isTrue(!wrapper.getFunction().isSupplier(), "'POST' can only be mapped to Function or Consumer");
 			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
 		}
 		else {
@@ -146,7 +147,7 @@ public class FunctionController {
 	@ResponseBody
 	public Object put(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("PUT", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("PUT", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
 		}
 		else {
@@ -155,10 +156,10 @@ public class FunctionController {
 	}
 
 	@DeleteMapping(path = "/**")
-	@ResponseStatus(value = HttpStatus.NO_CONTENT)
+	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			Assert.isTrue(wrapper.getFunction().isConsumer(), "'DELETE' can only be mapped to Consumer");
 			FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
 		}
@@ -171,7 +172,7 @@ public class FunctionController {
 	@ResponseBody
 	public Object get(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
 		}
 		else {

@@ -62,7 +62,7 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> form(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return request.getFormData().doOnSuccess(params -> wrapper.getParams().addAll(params))
 					.then(Mono.defer(() -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
 							.processRequest(wrapper, wrapper.getParams(), false)));
@@ -78,7 +78,7 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> multipart(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return request.getMultipartData()
 					.doOnSuccess(params -> wrapper.getParams().addAll(multi(params)))
 					.then(Mono.defer(() -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper
@@ -95,7 +95,7 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> post(ServerWebExchange request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
 		}
 		else {
@@ -109,7 +109,7 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> put(ServerWebExchange request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("PUT", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("PUT", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
 		}
 		else {
@@ -123,7 +123,7 @@ public class FunctionController {
 	public Mono<ResponseEntity<?>> delete(ServerWebExchange request,
 			@RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
 		}
 		else {
@@ -135,7 +135,7 @@ public class FunctionController {
 	@ResponseBody
 	public Publisher<?> postStream(ServerWebExchange request, @RequestBody(required = false) Flux<String> body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, true);
 		}
 		else {
@@ -148,7 +148,7 @@ public class FunctionController {
 	@ResponseBody
 	public Publisher<?> getStream(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true);
 		}
 		else {
@@ -161,7 +161,7 @@ public class FunctionController {
 	@ResponseBody
 	public Mono<ResponseEntity<?>> get(ServerWebExchange request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isValidFunction("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
+		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			return (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
 		}
 		else {

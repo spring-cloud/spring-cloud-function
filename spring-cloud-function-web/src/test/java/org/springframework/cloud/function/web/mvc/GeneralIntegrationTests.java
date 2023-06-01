@@ -29,6 +29,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 
@@ -42,22 +43,22 @@ public class GeneralIntegrationTests {
 	@Test
 	public void testMappedAndUnmappedDeleteFunction() throws Exception {
 		ApplicationContext context = SpringApplication.run(MultipleConsumerConfiguration.class, "--server.port=0",
-				"--spring.cloud.function.http.DELETE=delete2;deleteFunction|delete1");
+				"--spring.cloud.function.http.DELETE=consumer2;supplier;function|consumer1");
 		String port = context.getEnvironment().getProperty("local.server.port");
 		TestRestTemplate template = new TestRestTemplate();
 
 		ResponseEntity<Void> result = template.exchange(
-				RequestEntity.delete(new URI("http://localhost:" + port + "/delete1"))
+				RequestEntity.delete(new URI("http://localhost:" + port + "/consumer1"))
 				.build(), Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 
 		result = template.exchange(
-				RequestEntity.delete(new URI("http://localhost:" + port + "/delete2"))
+				RequestEntity.delete(new URI("http://localhost:" + port + "/consumer2"))
 				.build(), Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
 		result = template.exchange(
-				RequestEntity.delete(new URI("http://localhost:" + port + "/deleteFunction,delete1"))
+				RequestEntity.delete(new URI("http://localhost:" + port + "/function,consumer1"))
 				.build(), Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
@@ -67,22 +68,59 @@ public class GeneralIntegrationTests {
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
+	@Test
+	public void testMappedAndUnmappedPostPutFunction() throws Exception {
+		ApplicationContext context = SpringApplication.run(MultipleConsumerConfiguration.class, "--server.port=0",
+				"--spring.cloud.function.http.POST=consumer2;function;supplier;function|consumer1");
+		String port = context.getEnvironment().getProperty("local.server.port");
+		TestRestTemplate template = new TestRestTemplate();
+
+		ResponseEntity<String> result = template.exchange(RequestEntity
+				.post(new URI("http://localhost:" + port + "/consumer1")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
+
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+
+		result = template.exchange(RequestEntity
+				.post(new URI("http://localhost:" + port + "/consumer2")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(result.getBody()).isNull();
+
+		result = template.exchange(RequestEntity
+				.post(new URI("http://localhost:" + port + "/function,consumer1")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+		assertThat(result.getBody()).isNull();
+
+		result = template.exchange(RequestEntity
+				.post(new URI("http://localhost:" + port + "/function")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
+
+		result = template.exchange(RequestEntity
+				.post(new URI("http://localhost:" + port + "/supplier")).contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
 
 	@EnableAutoConfiguration
 	protected static class MultipleConsumerConfiguration {
 
 		@Bean
-		public Consumer<String> delete1() {
-			return v -> {};
+		public Consumer<String> consumer1() {
+			return v -> { };
 		}
 
 		@Bean
-		public Consumer<String> delete2() {
-			return v -> {};
+		public Consumer<String> consumer2() {
+			return v -> { };
 		}
 
 		@Bean
-		public Function<String, String> deleteFunction() {
+		public Function<String, String> function() {
 			return v -> v;
 		}
 
