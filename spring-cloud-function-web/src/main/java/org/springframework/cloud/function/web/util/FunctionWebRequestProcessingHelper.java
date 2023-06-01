@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.util;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,15 +35,12 @@ import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.RequestEntity.HeadersBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-
-
 
 /**
  * !INTERNAL USE ONLY!
@@ -74,7 +72,7 @@ public final class FunctionWebRequestProcessingHelper {
 	}
 
 	public static boolean isValidFunction(String httpMethod, String functionDefinition, FunctionHttpProperties functionHttpProperties) {
-		List<String> functionDefinitions = null;
+		String functionDefinitions = null;
 		switch (httpMethod) {
 			case "GET":
 				functionDefinitions = functionHttpProperties.getGet();
@@ -91,7 +89,10 @@ public final class FunctionWebRequestProcessingHelper {
 			default:
 				return false;
 		}
-		return CollectionUtils.isEmpty(functionDefinitions) || functionDefinitions.contains(functionDefinition);
+		if (StringUtils.hasText(functionDefinitions)) {
+			return Arrays.asList(functionDefinitions.split(";")).contains(functionDefinition);
+		}
+		return false;
 	}
 
 	public static String buildBadMappingErrorMessage(String httpMethod, String functionDefinition) {

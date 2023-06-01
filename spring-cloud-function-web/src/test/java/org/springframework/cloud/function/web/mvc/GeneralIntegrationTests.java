@@ -17,28 +17,20 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.web.multipart.MultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 /**
@@ -49,9 +41,9 @@ public class GeneralIntegrationTests {
 
 	@Test
 	public void testMappedAndUnmappedDeleteFunction() throws Exception {
-		ApplicationContext context = SpringApplication.run(MultipleConsumerConfiguration.class, "--server.port=0", "--spring.cloud.function.http.DELETE=delete2");
+		ApplicationContext context = SpringApplication.run(MultipleConsumerConfiguration.class, "--server.port=0",
+				"--spring.cloud.function.http.DELETE=delete2;deleteFunction|delete1");
 		String port = context.getEnvironment().getProperty("local.server.port");
-		JsonMapper mapper = context.getBean(JsonMapper.class);
 		TestRestTemplate template = new TestRestTemplate();
 
 		ResponseEntity<Void> result = template.exchange(
@@ -63,6 +55,16 @@ public class GeneralIntegrationTests {
 				RequestEntity.delete(new URI("http://localhost:" + port + "/delete2"))
 				.build(), Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+		result = template.exchange(
+				RequestEntity.delete(new URI("http://localhost:" + port + "/deleteFunction,delete1"))
+				.build(), Void.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+		result = template.exchange(
+				RequestEntity.delete(new URI("http://localhost:" + port + "/supplier"))
+				.build(), Void.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 
@@ -77,6 +79,16 @@ public class GeneralIntegrationTests {
 		@Bean
 		public Consumer<String> delete2() {
 			return v -> {};
+		}
+
+		@Bean
+		public Function<String, String> deleteFunction() {
+			return v -> v;
+		}
+
+		@Bean
+		public Supplier<String> supplier() {
+			return () -> "";
 		}
 	}
 }

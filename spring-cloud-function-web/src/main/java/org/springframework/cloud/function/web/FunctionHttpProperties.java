@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.web;
 
-import java.util.List;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionProperties;
 
@@ -27,60 +25,59 @@ import org.springframework.cloud.function.context.FunctionProperties;
 * @since 4.0.4
 *
 */
-
 @ConfigurationProperties(prefix = FunctionProperties.PREFIX + ".http")
 public class FunctionHttpProperties {
 
 	/**
-	 * Blah.
+	 * Function definition mappings for GET method (e.g. 'spring.cloud.function.http.GET=foo;bar|baz')
 	 */
-	public List<String> get;
+	public String get;
 
 
 	/**
-	 * Blah.
+	 * Function definition mappings for POST method (e.g. 'spring.cloud.function.http.POST=foo;bar|baz')
 	 */
-	public List<String> post;
+	public String post;
 
 	/**
-	 * Blah.
+	 * Function definition mappings for PUT method (e.g. 'spring.cloud.function.http.PUT=foo;bar|baz')
 	 */
-	public List<String> put;
+	public String put;
 
 	/**
-	 * Blah.
+	 * Function definition mappings for DELETE method (e.g. 'spring.cloud.function.http.DELETE=foo;bar|baz')
 	 */
-	public List<String> delete;
+	public String delete;
 
-	public List<String> getGet() {
+	public String getGet() {
 		return this.get;
 	}
 
-	public void setGet(List<String> get) {
+	public void setGet(String get) {
 		this.get = get;
 	}
 
-	public List<String> getPost() {
+	public String getPost() {
 		return post;
 	}
 
-	public void setPost(List<String> post) {
+	public void setPost(String post) {
 		this.post = post;
 	}
 
-	public List<String> getPut() {
+	public String getPut() {
 		return put;
 	}
 
-	public void setPut(List<String> put) {
+	public void setPut(String put) {
 		this.put = put;
 	}
 
-	public List<String> getDelete() {
+	public String getDelete() {
 		return delete;
 	}
 
-	public void setDelete(List<String> delete) {
+	public void setDelete(String delete) {
 		this.delete = delete;
 	}
 }
