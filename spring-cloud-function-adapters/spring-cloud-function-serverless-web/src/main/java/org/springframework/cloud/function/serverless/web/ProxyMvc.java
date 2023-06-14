@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import jakarta.servlet.AsyncContext;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
@@ -49,8 +50,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
-import org.springframework.web.context.request.async.WebAsyncManager;
-import org.springframework.web.context.request.async.WebAsyncUtils;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -143,14 +142,24 @@ public final class ProxyMvc {
 
 
 	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
+		((ProxyHttpServletRequest) request).setAsyncStarted(true);
+
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
 		filterChain.doFilter(request, response);
 
-		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
-		if (asyncManager.isConcurrentHandlingStarted()) {
-			this.dispatcher.service(request, response);
+		AsyncContext asyncContext = request.getAsyncContext();
+		if (asyncContext != null) {
+			filterChain = new ProxyFilterChain(this.dispatcher);
+			((ProxyAsyncContext) asyncContext).addDispatchHandler(() -> {
+				try {
+					new ProxyFilterChain(this.dispatcher).doFilter(request, response);
+					asyncContext.complete();
+				}
+				catch (Exception e) {
+					throw new IllegalStateException(e);
+				}
+			});
 		}
-
 
 		if (latch != null) {
 			latch.countDown();

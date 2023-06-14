@@ -634,6 +634,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Override
 	public AsyncContext startAsync(ServletRequest request, @Nullable ServletResponse response) {
 		Assert.state(this.asyncSupported, "Async not supported");
+		this.dispatcherType = DispatcherType.ASYNC;
 		this.asyncStarted = true;
 		this.asyncContext = this.asyncContext == null ? new ProxyAsyncContext(request, response) : this.asyncContext;
 		return this.asyncContext;
