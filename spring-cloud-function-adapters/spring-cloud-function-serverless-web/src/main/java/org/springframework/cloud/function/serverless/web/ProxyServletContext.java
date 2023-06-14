@@ -227,7 +227,9 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public FilterRegistration.Dynamic addFilter(String filterName, Filter filter) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		ProxyFilterRegistration registration = new ProxyFilterRegistration(filterName, filter);
+		filterRegistrations.put(filterName, registration);
+		return registration;
 	}
 
 	Map<String, FilterRegistration> filterRegistrations = new HashMap<>();

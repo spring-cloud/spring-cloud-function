@@ -41,13 +41,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebApplicationContext;
+import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
+import org.springframework.web.context.request.async.WebAsyncManager;
+import org.springframework.web.context.request.async.WebAsyncUtils;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -59,7 +62,7 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author Oleg Zhurakousky
  *
  */
-public class ProxyMvc {
+public final class ProxyMvc {
 
 	private static Log LOG = LogFactory.getLog(ProxyMvc.class);
 
@@ -84,8 +87,7 @@ public class ProxyMvc {
 	}
 
 	public static ProxyMvc INSTANCE(Class<?>... componentClasses) {
-		AnnotationConfigServletWebApplicationContext applpicationContext = new AnnotationConfigServletWebApplicationContext();
-		applpicationContext.scan(componentClasses[0].getPackageName());
+		ConfigurableWebApplicationContext applpicationContext = ServerlessWebApplication.run(componentClasses, new String[] {});
 		return INSTANCE(applpicationContext);
 	}
 
@@ -97,21 +99,23 @@ public class ProxyMvc {
 		this.applicationContext = applicationContext;
 		ProxyServletContext servletContext = new ProxyServletContext();
 		this.applicationContext.setServletContext(servletContext);
-		this.dispatcher = new DispatcherServlet(this.applicationContext);
-		this.dispatcher.setDetectAllHandlerMappings(false);
+		this.applicationContext.refresh();
 
-		ServletRegistration.Dynamic reg = servletContext.addServlet("dispatcherServlet", dispatcher);
+		if (this.applicationContext.containsBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
+			this.dispatcher = this.applicationContext.getBean(DispatcherServlet.class);
+		}
+		else {
+			this.dispatcher = new DispatcherServlet(this.applicationContext);
+			this.dispatcher.setDetectAllHandlerMappings(false);
+			((GenericApplicationContext) this.applicationContext).registerBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME,
+					DispatcherServlet.class, () -> this.dispatcher);
+		}
+
+		ServletRegistration.Dynamic reg = servletContext.addServlet(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME, dispatcher);
 		reg.setLoadOnStartup(1);
 		this.servletContext = applicationContext.getServletContext();
 		try {
-
 			this.dispatcher.init(new ProxyServletConfig(this.servletContext));
-			try {
-				this.service(new ProxyHttpServletRequest(servletContext, "INFO", "/"), new ProxyHttpServletResponse());
-			}
-			catch (Exception e) {
-				//ignore as this is just a pre-warming attempt
-			}
 		}
 		catch (Exception e) {
 			throw new IllegalStateException("Faild to create Spring MVC DispatcherServlet proxy", e);
@@ -137,9 +141,16 @@ public class ProxyMvc {
 		this.service(request, response, (CountDownLatch) null);
 	}
 
+
 	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
 		filterChain.doFilter(request, response);
+
+		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+		if (asyncManager.isConcurrentHandlingStarted()) {
+			this.dispatcher.service(request, response);
+		}
+
 
 		if (latch != null) {
 			latch.countDown();
@@ -170,7 +181,7 @@ public class ProxyMvc {
 		ProxyFilterChain(DispatcherServlet servlet) {
 			List<Filter> filters = new ArrayList<>();
 			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ProxyFilterRegistration) fr).getFilter()));
-			servlet.getWebApplicationContext().getBeansOfType(Filter.class).values().forEach(f -> filters.add(f));
+			//servlet.getWebApplicationContext().getBeansOfType(Filter.class).values().forEach(f -> filters.add(f));
 			Assert.notNull(filters, "filters cannot be null");
 			Assert.noNullElements(filters, "filters cannot contain null values");
 			this.filters = initFilterList(servlet, filters.toArray(new Filter[] {}));
@@ -310,7 +321,7 @@ public class ProxyMvc {
 
 		@Override
 		public String getServletName() {
-			return "spring-serverless-proxy";
+			return DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME;
 		}
 
 		@Override

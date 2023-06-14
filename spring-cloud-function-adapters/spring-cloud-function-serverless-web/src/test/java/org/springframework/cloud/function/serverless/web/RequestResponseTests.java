@@ -25,6 +25,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+
 import org.springframework.cloud.function.test.app.Pet;
 import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig;
 import org.springframework.http.HttpStatus;
@@ -45,7 +46,7 @@ public class RequestResponseTests {
 
 	@BeforeEach
 	public void before() {
-		this.mvc = ProxyMvc.INSTANCE(PetStoreSpringAppConfig.class, ProxyErrorController.class);
+		this.mvc = ProxyMvc.INSTANCE(ProxyErrorController.class, PetStoreSpringAppConfig.class);
 	}
 
 	@AfterEach

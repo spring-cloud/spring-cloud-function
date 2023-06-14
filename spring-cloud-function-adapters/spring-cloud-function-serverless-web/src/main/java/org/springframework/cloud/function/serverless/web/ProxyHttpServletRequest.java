@@ -113,7 +113,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	private boolean asyncStarted = false;
 
-	private boolean asyncSupported = false;
+	private boolean asyncSupported = true;
 
 	private DispatcherType dispatcherType = DispatcherType.REQUEST;
 
@@ -162,6 +162,8 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	private boolean requestedSessionIdFromURL = false;
 
 	private final MultiValueMap<String, Part> parts = new LinkedMultiValueMap<>();
+
+	private AsyncContext asyncContext;
 
 	public ProxyHttpServletRequest(ServletContext servletContext, String method, String requestURI) {
 		this.servletContext = servletContext;
@@ -246,8 +248,6 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	 */
 	@Nullable
 	public String getContentAsString() throws IllegalStateException, UnsupportedEncodingException {
-//		Assert.state(this.characterEncoding != null, "Cannot get content as a String for a null character encoding. "
-//				+ "Consider setting the characterEncoding in the request.");
 
 		if (this.content == null) {
 			return null;
@@ -633,7 +633,10 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public AsyncContext startAsync(ServletRequest request, @Nullable ServletResponse response) {
-		throw new UnsupportedOperationException();
+		Assert.state(this.asyncSupported, "Async not supported");
+		this.asyncStarted = true;
+		this.asyncContext = this.asyncContext == null ? new ProxyAsyncContext(request, response) : this.asyncContext;
+		return this.asyncContext;
 	}
 
 	public void setAsyncStarted(boolean asyncStarted) {
@@ -647,6 +650,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	public void setAsyncSupported(boolean asyncSupported) {
 		this.asyncSupported = asyncSupported;
+		this.dispatcherType = DispatcherType.ASYNC;
 	}
 
 	@Override
@@ -655,14 +659,15 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void setAsyncContext(@Nullable AsyncContext asyncContext) {
-		throw new UnsupportedOperationException();
+		this.asyncContext = asyncContext;
 	}
 
 	@Override
 	@Nullable
 	public AsyncContext getAsyncContext() {
-		return null;
+		return this.asyncContext;
 	}
+
 
 	public void setDispatcherType(DispatcherType dispatcherType) {
 		this.dispatcherType = dispatcherType;
@@ -692,7 +697,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Override
 	@Nullable
 	public String getHeader(String name) {
-		return this.headers.containsKey(name) ? this.headers.get(name).toString() : null;
+		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	@Override

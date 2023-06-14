@@ -41,6 +41,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.util.WebUtils;
 
+
 /**
  *
  * @author Oleg Zhurakousky
@@ -160,7 +161,6 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public void flushBuffer() {
-
 	}
 
 	@Override
@@ -248,7 +248,7 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 	@Override
 	@Nullable
 	public String getHeader(String name) {
-		return this.headers.containsKey(name) ? this.headers.get(name).toString() : null;
+		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	/**
