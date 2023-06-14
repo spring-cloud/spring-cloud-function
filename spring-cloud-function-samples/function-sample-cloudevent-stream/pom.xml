@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-cloudevent-stream</artifactId>
-	<version>4.0.0-RELEASE</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>function-sample-cloudevent-stream</name>
 	<description>Demo project for Spring Boot</description>
 

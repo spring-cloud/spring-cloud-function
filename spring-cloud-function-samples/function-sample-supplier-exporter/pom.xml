@@ -6,7 +6,7 @@
 	
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-aws-supplier-exporter</artifactId>
-	<version>4.0.0.RELEASE</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>function-sample-aws-supplier-exporter</name>
 	<description>Spring Cloud Function Example showing Supplier Exporter</description>

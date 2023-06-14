@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-aws-custom</artifactId>
-	<version>4.0.0.RELEASE</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>function-sample-aws-custom</name>
 	<description>Demo project for Spring Cloud Function with custom AWS Lambda runtime</description>
 

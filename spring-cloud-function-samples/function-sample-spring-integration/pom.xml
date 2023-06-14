@@ -4,7 +4,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-spring-integration</artifactId>
-	<version>2.0.0.BUILD-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>function-sample-spring-integration</name>
 	<description>Spring Cloud Function Web Support</description>

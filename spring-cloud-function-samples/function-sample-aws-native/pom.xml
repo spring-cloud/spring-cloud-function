@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>oz.native.sample</groupId>
 	<artifactId>function-sample-aws-native</artifactId>
-	<version>4.0.0.RELEASE</version>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>function-sample-aws-native</name>
 	<description>Sample of AWS with Spring Native</description>
 	<properties>
