@@ -12,13 +12,13 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.7</version>
+		<version>3.2.0-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
 	<properties>
-		<java.version>1.8</java.version>
-		<spring-cloud-function.version>4.0.4-SNAPSHOT</spring-cloud-function.version>
+		<java.version>17</java.version>
+		<spring-cloud-function.version>4.1.0-SNAPSHOT</spring-cloud-function.version>
 		<wrapper.version>1.0.27.RELEASE</wrapper.version>
 	</properties>
 

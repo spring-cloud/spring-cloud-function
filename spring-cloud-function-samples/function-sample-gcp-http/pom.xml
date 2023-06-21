@@ -15,19 +15,19 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.7</version>
+		<version>3.2.0-SNAPSHOT</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<properties>
-		<spring-cloud-function.version>4.0.4-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>4.1.0-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-gcp</artifactId>
-			<version>4.0.0-SNAPSHOT</version>
+			<version>4.1.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- test dependencies -->
