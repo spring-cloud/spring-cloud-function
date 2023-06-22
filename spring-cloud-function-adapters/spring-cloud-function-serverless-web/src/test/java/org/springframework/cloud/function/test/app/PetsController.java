@@ -28,12 +28,27 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 
 @RestController
 @EnableWebMvc
 public class PetsController {
+
+	@RequestMapping(path = "/petsAsync/", method = RequestMethod.POST)
+	public DeferredResult<Pet>  createPetAsync(@RequestBody Pet newPet) {
+		if (newPet.getName() == null || newPet.getBreed() == null) {
+			return null;
+		}
+
+		Pet dbPet = newPet;
+		dbPet.setId(UUID.randomUUID().toString());
+		DeferredResult<Pet> result = new DeferredResult<Pet>();
+		result.setResult(dbPet);
+		return result;
+	}
+
 	@RequestMapping(path = "/pets/", method = RequestMethod.POST)
 	public Pet createPet(@RequestBody Pet newPet) {
 		if (newPet.getName() == null || newPet.getBreed() == null) {
