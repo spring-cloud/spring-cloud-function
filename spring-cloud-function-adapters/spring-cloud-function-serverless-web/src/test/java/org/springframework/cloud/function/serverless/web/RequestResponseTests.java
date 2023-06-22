@@ -134,4 +134,22 @@ public class RequestResponseTests {
 		assertThat(pet.getName()).isNotEmpty();
 	}
 
+	@Test
+	public void validatePostAsyncWithBody() throws Exception {
+		ProxyHttpServletRequest request = new ProxyHttpServletRequest(null, "POST", "/petsAsync/");
+		String jsonPet = "{\n"
+				+ "   \"id\":\"1234\",\n"
+				+ "   \"breed\":\"Canish\",\n"
+				+ "   \"name\":\"Foo\",\n"
+				+ "   \"date\":\"2012-04-23T18:25:43.511Z\"\n"
+				+ "}";
+		request.setContent(jsonPet.getBytes());
+		request.setContentType("application/json");
+		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		mvc.service(request, response);
+		Pet pet = mapper.readValue(response.getContentAsByteArray(), Pet.class);
+		assertThat(pet).isNotNull();
+		assertThat(pet.getName()).isNotEmpty();
+	}
+
 }
