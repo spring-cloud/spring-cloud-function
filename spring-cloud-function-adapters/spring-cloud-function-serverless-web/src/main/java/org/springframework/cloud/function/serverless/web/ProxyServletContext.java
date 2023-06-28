@@ -115,7 +115,7 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public InputStream getResourceAsStream(String path) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		return null;
 	}
 
 	@Override
