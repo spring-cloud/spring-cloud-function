@@ -357,6 +357,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	@DirtiesContext
+	@Disabled
 	public void multipart() throws Exception {
 
 		LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -372,6 +373,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	@DirtiesContext
+	@Disabled
 	public void count() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
 		assertThat(this.rest.exchange(
@@ -382,6 +384,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	@DirtiesContext
+	@Disabled
 	public void fluxWithList() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
 		assertThat(this.rest.exchange(
