@@ -146,15 +146,17 @@ public final class ProxyMvc {
 		AsyncContext asyncContext = request.getAsyncContext();
 		if (asyncContext != null) {
 			filterChain = new ProxyFilterChain(this.dispatcher);
-			((ProxyAsyncContext) asyncContext).addDispatchHandler(() -> {
-				try {
-					new ProxyFilterChain(this.dispatcher).doFilter(request, response);
-					asyncContext.complete();
-				}
-				catch (Exception e) {
-					throw new IllegalStateException(e);
-				}
-			});
+			if (asyncContext instanceof ProxyAsyncContext proxyAsyncContext) {
+				proxyAsyncContext.addDispatchHandler(() -> {
+					try {
+						new ProxyFilterChain(this.dispatcher).doFilter(request, response);
+						asyncContext.complete();
+					}
+					catch (Exception e) {
+						throw new IllegalStateException(e);
+					}
+				});
+			}
 		}
 
 		if (latch != null) {
@@ -262,20 +264,12 @@ public final class ProxyMvc {
 					}
 					else {
 						this.delegateServlet.service(request, response);
-						if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value() && request instanceof ProxyHttpServletRequest) {
-							((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, ((HttpServletResponse) response).getStatus());
-							this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, null);
-							((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
-
-							((ProxyHttpServletRequest) request).setRequestURI("/error");
-							this.delegateServlet.service(request, response);
-						}
 					}
 				}
 				catch (Exception e) {
 					if (request instanceof ProxyHttpServletRequest) {
-						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.INTERNAL_SERVER_ERROR);
-						this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, e);
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.INTERNAL_SERVER_ERROR.value());
+						this.setErrorMessageAttribute((HttpServletRequest) request, (HttpServletResponse) response, e);
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, e);
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
 						((ProxyHttpServletRequest) request).setRequestURI("/error");
@@ -287,12 +281,12 @@ public final class ProxyMvc {
 				}
 			}
 
-			private void setErrorMessageAttribute(ProxyHttpServletRequest request, ProxyHttpServletResponse response, Exception exception) {
+			private void setErrorMessageAttribute(HttpServletRequest request, HttpServletResponse response, Exception exception) {
 				if (exception != null && StringUtils.hasText(exception.getMessage())) {
 					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, exception.getMessage());
 				}
-				else if (StringUtils.hasText(response.getErrorMessage())) {
-					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, response.getErrorMessage());
+				else if (response instanceof ProxyHttpServletResponse proxyResponse && StringUtils.hasText(proxyResponse.getErrorMessage())) {
+					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, proxyResponse.getErrorMessage());
 				}
 				else {
 					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, HttpStatus.valueOf(response.getStatus()).getReasonPhrase());
