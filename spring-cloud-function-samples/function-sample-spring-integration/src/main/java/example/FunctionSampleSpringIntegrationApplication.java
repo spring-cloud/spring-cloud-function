@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 the original author or authors.
+ * Copyright 2019-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.handler.LoggingHandler;
 import org.springframework.messaging.Message;
 
@@ -35,9 +34,10 @@ public class FunctionSampleSpringIntegrationApplication {
 
 	@Bean
 	public IntegrationFlow uppercaseFlow() {
-		return IntegrationFlows.from(MessageFunction.class, (gateway) -> gateway.beanName("uppercase"))
+		return IntegrationFlow.from(MessageFunction.class, (gateway) -> gateway.beanName("uppercase"))
 				.<String, String>transform(String::toUpperCase)
-				.logAndReply(LoggingHandler.Level.WARN);
+				.log(LoggingHandler.Level.WARN)
+				.get();
 	}
 
 	public interface MessageFunction extends Function<Message<String>, Message<String>> {
