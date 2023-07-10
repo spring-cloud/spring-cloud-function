@@ -23,7 +23,6 @@
 		<module>spring-cloud-function-grpc</module>
 		<module>spring-cloud-function-grpc-cloudevent-ext</module>
 		<module>spring-cloud-function-serverless-web</module>
-		<module>spring-cloud-function-adapter-aws-web</module>
 		<module>spring-cloud-function-adapter-azure-web</module>
 	</modules>
 
