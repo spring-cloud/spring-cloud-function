@@ -33,6 +33,7 @@ import org.springframework.beans.factory.aot.BeanFactoryInitializationCode;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
+import org.springframework.cloud.function.context.message.MessageUtils;
 
 /**
  * Ensure that Function/Consumer input types are reflectively available.
@@ -100,6 +101,10 @@ public class FunctionTypeProcessor implements BeanFactoryInitializationAotProces
 				runtimeHints.reflection().registerType(typeHints[i], MemberCategory.PUBLIC_FIELDS,
 						MemberCategory.INVOKE_DECLARED_METHODS, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
 			}
+
+			// known static types
+			runtimeHints.reflection().registerType(MessageUtils.MessageStructureWithCaseInsensitiveHeaderKeys.class,
+					MemberCategory.INVOKE_PUBLIC_METHODS);
 		}
 
 	}
