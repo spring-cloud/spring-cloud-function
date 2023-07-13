@@ -74,14 +74,7 @@ public final class AWSLambdaUtils {
 		if (FunctionTypeUtils.isMessage(inputType) || FunctionTypeUtils.isPublisher(inputType)) {
 			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
 		}
-		String typeName = inputType.getTypeName();
-		return typeName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent")
-				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.S3Event")
-				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent")
-				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.SNSEvent")
-				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.SQSEvent")
-				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayCustomAuthorizerEvent")
-				|| typeName.equals("com.amazonaws.services.lambda.runtime.events.KinesisEvent");
+		return FunctionTypeUtils.getRawType(inputType).getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -121,6 +114,9 @@ public final class AWSLambdaUtils {
 		MessageBuilder<byte[]> builder = MessageBuilder.withPayload(payload);
 		if (isApiGateway) {
 			builder.setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true);
+			if (JsonMapper.isJsonStringRepresentsCollection(((Map) structMessage).get("body"))) {
+				builder.setHeader("payload", ((Map) structMessage).get("body"));
+			}
 		}
 		if (!isSupplier && AWSLambdaUtils.isSupportedAWSType(inputType)) {
 			builder.setHeader(AWSLambdaUtils.AWS_EVENT, true);
@@ -145,35 +141,50 @@ public final class AWSLambdaUtils {
 		}
 	}
 
+	private static Object convertFromJsonIfNecessary(Object value, JsonMapper objectMapper) {
+		if (JsonMapper.isJsonString(value)) {
+			return objectMapper.fromJson(value, Object.class);
+		}
+		return value;
+	}
+
 	@SuppressWarnings("unchecked")
 	public static byte[] generateOutputFromObject(Message<?> requestMessage, Object output, JsonMapper objectMapper, Type functionOutputType) {
 		Message<byte[]> responseMessage = null;
 		if (output instanceof Publisher<?>) {
 			List<Object> result = new ArrayList<>();
-			for (Object value : Flux.from((Publisher<?>) output).toIterable()) {
+			Message<?> lastMessage = null;
+			for (Object item : Flux.from((Publisher<?>) output).toIterable()) {
 				if (logger.isDebugEnabled()) {
-					logger.debug("Response value: " + value);
+					logger.debug("Response value: " + item);
 				}
-				result.add(value);
+				if (item instanceof Message<?> message) {
+					result.add(convertFromJsonIfNecessary(message.getPayload(), objectMapper));
+					lastMessage = message;
+				}
+				else {
+					result.add(convertFromJsonIfNecessary(item, objectMapper));
+				}
 			}
-			if (result.size() > 1) {
-				output = result;
+
+			byte[] resultPayload;
+			if (result.size() == 1) {
+				resultPayload = objectMapper.toJson(result.get(0));
 			}
-			else if (result.size() == 1) {
-				output = result.get(0);
+			else if (result.size() > 1) {
+				resultPayload = objectMapper.toJson(result);
 			}
 			else {
-				output = null;
+				resultPayload = null;
 			}
-			if (output instanceof Message<?> && ((Message<?>) output).getPayload() instanceof byte[]) {
-				responseMessage = (Message<byte[]>) output;
-			}
-			else if (output != null) {
-				if (logger.isDebugEnabled()) {
-					logger.debug("OUTPUT: " + output + " - " + output.getClass().getName());
+
+			if (resultPayload != null) {
+				System.out.println(new String(resultPayload));
+				MessageBuilder<byte[]> messageBuilder = MessageBuilder.withPayload(resultPayload);
+				if (lastMessage != null) {
+					messageBuilder.copyHeaders(lastMessage.getHeaders());
 				}
-				byte[] payload = objectMapper.toJson(output);
-				responseMessage = MessageBuilder.withPayload(payload).build();
+				responseMessage = messageBuilder.build();
 			}
 		}
 		else {

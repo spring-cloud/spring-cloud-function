@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.io.ByteArrayInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.SocketException;
@@ -44,10 +45,7 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
-
-
 
 import static org.apache.http.HttpHeaders.USER_AGENT;
 
@@ -107,7 +105,6 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		return this.running;
 	}
 
-	@SuppressWarnings("unchecked")
 	private void eventLoop(ConfigurableApplicationContext context) {
 		Environment environment = context.getEnvironment();
 		logger.info("Starting spring-cloud-function CustomRuntimeEventLoop");
@@ -140,33 +137,18 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 				try {
 					FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
 
-					Message<byte[]> eventMessage = AWSLambdaUtils
-							.generateMessage(response.getBody().getBytes(StandardCharsets.UTF_8), function.getInputType(), function.isSupplier(), mapper);
+					ByteArrayInputStream is = new ByteArrayInputStream(response.getBody().getBytes(StandardCharsets.UTF_8));
+					Message<?> requestMessage = AWSLambdaUtils.generateMessage(is, function.getInputType(), function.isSupplier(), mapper, null);
 
-					if (logger.isDebugEnabled()) {
-						logger.debug("Event message: " + eventMessage);
-					}
+					Object functionResponse = function.apply(requestMessage);
+					byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, functionResponse, mapper, function.getOutputType());
 
 					String invocationUrl = MessageFormat
 							.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
 
-					String traceId = response.getHeaders().getFirst("Lambda-Runtime-Trace-Id");
-					if (StringUtils.hasText(traceId)) {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Lambda-Runtime-Trace-Id: " + traceId);
-						}
-						System.setProperty("com.amazonaws.xray.traceHeader", traceId);
-					}
-					Object responseObject = function.apply(eventMessage);
-
-					if (responseObject != null && logger.isDebugEnabled()) {
-						logger.debug("Reply from function: " + responseObject);
-					}
-
-					byte[] outputBody = AWSLambdaUtils.generateOutputFromObject(eventMessage, responseObject, mapper, function.getOutputType());
 					ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(invocationUrl))
 						.header(USER_AGENT, USER_AGENT_VALUE)
-						.body(outputBody), Object.class);
+						.body(responseBytes), Object.class);
 
 					if (logger.isInfoEnabled()) {
 						logger.info("Result POST status: " + result);

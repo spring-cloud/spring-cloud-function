@@ -820,7 +820,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (!this.isRoutingFunction() && !(input instanceof Publisher)) {
 				Object payload = input;
 				if (input instanceof Message) {
-					payload = ((Message) input).getPayload();
+					if (((Message) input).getHeaders().containsKey("payload")) {
+						payload = ((Message) input).getHeaders().get("payload");
+					}
+					else {
+						payload = ((Message) input).getPayload();
+					}
 				}
 				if (JsonMapper.isJsonStringRepresentsCollection(payload)
 						&& !FunctionTypeUtils.isTypeCollection(this.inputType) && !FunctionTypeUtils.isTypeArray(this.inputType)) {
