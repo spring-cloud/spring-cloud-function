@@ -1124,9 +1124,7 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map response = mapper.readValue(output.toByteArray(), Map.class);
-		System.out.println(response);
-//		Person person = mapper.readValue((String) response.get("body"), Person.class);
-//		assertThat(person.getName()).isEqualTo("JIM LAHEY");
+		assertThat(response.get("body").toString()).isEqualTo("[{\"name\":\"JIM LAHEY\"},{\"name\":\"RICKY\"}]");
 	}
 
 	@SuppressWarnings("rawtypes")
