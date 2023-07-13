@@ -39,6 +39,9 @@ public abstract class JsonMapper {
 	@SuppressWarnings("unchecked")
 	public <T> T fromJson(Object json, Type type) {
 		if (json instanceof Collection<?>) {
+			if (FunctionTypeUtils.isTypeCollection(type)) {
+				return (T) json;
+			}
 			Collection<?> inputs = (Collection<?>) json;
 			Type itemType = FunctionTypeUtils.getImmediateGenericType(type, 0);
 			Collection<?> results = FunctionTypeUtils.getRawType(type).isAssignableFrom(List.class)
@@ -112,6 +115,9 @@ public abstract class JsonMapper {
 
 	public static boolean isJsonStringRepresentsCollection(Object value) {
 		boolean isJson = false;
+		if (value instanceof Iterable && !value.getClass().getPackage().getName().startsWith("reactor.util.function")) {
+			return true;
+		}
 		if (value instanceof byte[]) {
 			value = new String((byte[]) value, StandardCharsets.UTF_8);
 		}

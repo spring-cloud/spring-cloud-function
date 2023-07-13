@@ -39,6 +39,90 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class CustomRuntimeEventLoopTest {
 
+	private String API_EVENT = "{\n"
+			+ "    \"version\": \"1.0\",\n"
+			+ "    \"resource\": \"$default\",\n"
+			+ "    \"path\": \"/question\",\n"
+			+ "    \"httpMethod\": \"POST\",\n"
+			+ "    \"headers\": {\n"
+			+ "        \"Content-Length\": \"40\",\n"
+			+ "        \"Content-Type\": \"application/json\",\n"
+			+ "        \"Host\": \"emcdxu5ijj.execute-api.us-east-2.amazonaws.com\",\n"
+			+ "        \"User-Agent\": \"curl/7.88.1\",\n"
+			+ "        \"X-Amzn-Trace-Id\": \"Root=1-64ad9787-4c89d5af7607eb9e522e01d5\",\n"
+			+ "        \"X-Forwarded-For\": \"109.210.252.44\",\n"
+			+ "        \"X-Forwarded-Port\": \"443\",\n"
+			+ "        \"X-Forwarded-Proto\": \"https\",\n"
+			+ "        \"accept\": \"*/*\"\n"
+			+ "    },\n"
+			+ "    \"multiValueHeaders\": {\n"
+			+ "        \"Content-Length\": [\n"
+			+ "            \"40\"\n"
+			+ "        ],\n"
+			+ "        \"Content-Type\": [\n"
+			+ "            \"application/json\"\n"
+			+ "        ],\n"
+			+ "        \"Host\": [\n"
+			+ "            \"emcdxu5ijj.execute-api.us-east-2.amazonaws.com\"\n"
+			+ "        ],\n"
+			+ "        \"User-Agent\": [\n"
+			+ "            \"curl/7.88.1\"\n"
+			+ "        ],\n"
+			+ "        \"X-Amzn-Trace-Id\": [\n"
+			+ "            \"Root=1-64ad9787-4c89d5af7607eb9e522e01d5\"\n"
+			+ "        ],\n"
+			+ "        \"X-Forwarded-For\": [\n"
+			+ "            \"109.210.252.44\"\n"
+			+ "        ],\n"
+			+ "        \"X-Forwarded-Port\": [\n"
+			+ "            \"443\"\n"
+			+ "        ],\n"
+			+ "        \"X-Forwarded-Proto\": [\n"
+			+ "            \"https\"\n"
+			+ "        ],\n"
+			+ "        \"accept\": [\n"
+			+ "            \"*/*\"\n"
+			+ "        ]\n"
+			+ "    },\n"
+			+ "    \"queryStringParameters\": null,\n"
+			+ "    \"multiValueQueryStringParameters\": null,\n"
+			+ "    \"requestContext\": {\n"
+			+ "        \"accountId\": \"313369169943\",\n"
+			+ "        \"apiId\": \"emcdxu5ijj\",\n"
+			+ "        \"domainName\": \"emcdxu5ijj.execute-api.us-east-2.amazonaws.com\",\n"
+			+ "        \"domainPrefix\": \"emcdxu5ijj\",\n"
+			+ "        \"extendedRequestId\": \"H6SdPgXtiYcEP1w=\",\n"
+			+ "        \"httpMethod\": \"POST\",\n"
+			+ "        \"identity\": {\n"
+			+ "            \"accessKey\": null,\n"
+			+ "            \"accountId\": null,\n"
+			+ "            \"caller\": null,\n"
+			+ "            \"cognitoAmr\": null,\n"
+			+ "            \"cognitoAuthenticationProvider\": null,\n"
+			+ "            \"cognitoAuthenticationType\": null,\n"
+			+ "            \"cognitoIdentityId\": null,\n"
+			+ "            \"cognitoIdentityPoolId\": null,\n"
+			+ "            \"principalOrgId\": null,\n"
+			+ "            \"sourceIp\": \"109.210.252.44\",\n"
+			+ "            \"user\": null,\n"
+			+ "            \"userAgent\": \"curl/7.88.1\",\n"
+			+ "            \"userArn\": null\n"
+			+ "        },\n"
+			+ "        \"path\": \"/question\",\n"
+			+ "        \"protocol\": \"HTTP/1.1\",\n"
+			+ "        \"requestId\": \"H6SdPgXtiYcEP1w=\",\n"
+			+ "        \"requestTime\": \"11/Jul/2023:17:55:19 +0000\",\n"
+			+ "        \"requestTimeEpoch\": 1689098119662,\n"
+			+ "        \"resourceId\": \"$default\",\n"
+			+ "        \"resourcePath\": \"$default\",\n"
+			+ "        \"stage\": \"$default\"\n"
+			+ "    },\n"
+			+ "    \"pathParameters\": null,\n"
+			+ "    \"stageVariables\": null,\n"
+			+ "    \"body\": \"[{\\\"latitude\\\": 41.34, \\\"longitude\\\": 2.78},{\\\"latitude\\\": 43.24, \\\"longitude\\\": 3.78}]\",\n"
+			+ "    \"isBase64Encoded\": false\n"
+			+ "}";
+
 	@Test
 	public void testDefaultFunctionLookup() throws Exception {
 		testDefaultFunctionLookup("uppercase", SingleFunctionConfiguration.class);
@@ -99,6 +183,21 @@ public class CustomRuntimeEventLoopTest {
 	}
 
 	@Test
+	public void test_HANDLERWithApiGatewayRequestAndFlux() throws Exception {
+		try (ConfigurableApplicationContext userContext =
+				new SpringApplicationBuilder(MultipleFunctionConfiguration.class, AWSCustomRuntime.class)
+					.web(WebApplicationType.SERVLET)
+					.properties("_HANDLER=echoFlux", "server.port=0")
+					.run()) {
+
+			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
+			String response = aws.exchange(API_EVENT).getPayload();
+			assertThat(response).contains("{\\\"latitude\\\":2.78,\\\"longitude\\\":41.34}");
+			assertThat(response).contains("{\\\"latitude\\\":3.78,\\\"longitude\\\":43.24}");
+		}
+	}
+
+	@Test
 	@DirtiesContext
 	public void test_definitionLookupAndComposition() throws Exception {
 		try (ConfigurableApplicationContext userContext =
@@ -149,6 +248,13 @@ public class CustomRuntimeEventLoopTest {
 		public Function<Person, Person> uppercasePerson() {
 			return p -> new Person(p.getName().toUpperCase());
 		}
+
+		@Bean
+		public Function<Flux<GeoLocation>, Flux<GeoLocation>> echoFlux() {
+			return flux -> flux.map(g -> {
+				return new GeoLocation(g.longitude(), g.latitude());
+			});
+		}
 	}
 
 	@EnableAutoConfiguration
@@ -185,4 +291,7 @@ public class CustomRuntimeEventLoopTest {
 		}
 	}
 
+
+	public record GeoLocation(Float latitude, Float longitude) {
+	}
 }
