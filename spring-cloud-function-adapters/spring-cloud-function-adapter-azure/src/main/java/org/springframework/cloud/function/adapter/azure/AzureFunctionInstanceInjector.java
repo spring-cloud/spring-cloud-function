@@ -22,10 +22,12 @@ import com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.ResourceBanner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -96,6 +98,8 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 		SpringApplication application = new org.springframework.cloud.function.context.FunctionalSpringApplication(
 				configurationClass);
 		application.setWebApplicationType(WebApplicationType.NONE);
+		application.setBanner(new ResourceBanner(
+				new DefaultResourceLoader().getResource("classpath:/spring-azure-function-banner.txt")));
 		return application;
 	}
 }

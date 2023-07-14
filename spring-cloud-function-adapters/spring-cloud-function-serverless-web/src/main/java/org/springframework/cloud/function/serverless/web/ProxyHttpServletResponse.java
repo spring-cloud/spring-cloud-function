@@ -135,7 +135,7 @@ public class ProxyHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public void setContentLengthLong(long len) {
-		throw new UnsupportedOperationException();
+		// Ignore
 	}
 
 	@Override

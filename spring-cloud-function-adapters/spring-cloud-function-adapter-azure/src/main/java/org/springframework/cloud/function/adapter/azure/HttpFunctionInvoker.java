@@ -29,7 +29,11 @@ import com.microsoft.azure.functions.HttpResponseMessage;
  * @author Oleg Zhurakousky
  *
  * @since 3.2
+ *
+ * @deprecated since 4.0.0 in favor of the dependency injection implementation {@link AzureFunctionInstanceInjector}.
+ * Follow the official documentation for further information.
  */
+@Deprecated
 public class HttpFunctionInvoker<I> extends
 		FunctionInvoker<HttpRequestMessage<I>, HttpResponseMessage> {
 

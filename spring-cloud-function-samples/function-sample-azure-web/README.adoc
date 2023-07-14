@@ -1,0 +1,66 @@
+== Spring Azure Web Adapter Demo
+
+A https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-azure-web[spring-cloud-function-adapter-azure-web] adapter sample.
+
+This sample implements a standard Spring Boot Web application, with a REST API for managing a list of country entities. Later are persisted with JPA and H2 database.
+
+The `spring-cloud-function-adapter-azure-web` adapter provides a light-weight Azure Function forwarding proxy which allows deploying the existing Spring Boot Web application as a Azure Function.
+
+=== Usage
+
+==== Build
+
+[source,shell]
+----
+./mvnw clean install
+----
+
+==== Run Locally
+
+[source,shell]
+----
+./mvnw azure-functions:run
+----
+
+Then use `curl` to interact with the rest application:
+
+----
+curl -X GET http://localhost:7072/api/AzureWebAdapter/
+----
+
+will output result like `Country Count: 0`.
+
+Then add few Countries:
+----
+curl -X POST -H 'Content-Type:application/json' http://localhost:7072/api/AzureWebAdapter/countries -d '{"name" : "Bulgaria"}'
+curl -X POST -H 'Content-Type:application/json' http://localhost:7072/api/AzureWebAdapter/countries -d '{"name" : "Netherlands"}'
+curl -X POST -H 'Content-Type:application/json' http://localhost:7072/api/AzureWebAdapter/countries -d '{"name" : "Ukraine"}'
+----
+
+And check the count again:
+
+----
+curl -X GET http://localhost:7072/api/AzureWebAdapter/
+----
+
+now the output is `Country Count: 3` and `curl -X GET http://localhost:7072/api/AzureWebAdapter/countries` will output: `Countries: Country{id=1, name='Bulgaria'}Country{id=2, name='Netherlands'}Country{id=3, name='Ukraine'}`.
+
+==== Running on Azure
+
+Make sure you are logged in your Azure account.
+
+----
+az login
+----
+
+and deploy
+
+----
+./mvnw azure-functions:deploy
+----
+
+
+
+
+
+
