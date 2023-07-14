@@ -1,0 +1,49 @@
+== Spring Cloud Function on Azure - Gradle Example
+
+Show how to build SCF/Azure application with the Azure Function Gradle Plugin.
+
+IMPORTANT: For a general information about building and deploying `Azure Functions` with Spring Cloud Function, consult the https://docs.spring.io/spring-cloud-function/docs/current/reference/html/azure.html[Azure Adapter] documentation.
+
+=== Usage
+
+==== Package Staging folder
+
+Use the script below to package your staging folder:
+
+[source,shell]
+----
+./gradlew azureFunctionsPackage
+----
+
+==== Run Azure Functions locally
+
+Use the script below to run the function locally.
+
+[source,shell]
+----
+./gradlew azureFunctionsRun
+----
+
+Once up and running test with:
+
+[source,shell]
+----
+curl -X POST http://localhost:7071/api/bean -d 'low case test'
+----
+
+should trigger an output like: `LOW CASE TEST%`
+
+TIP: To debug your functions, please add `localDebug = "transport=dt_socket,server=y,suspend=n,address=5005"` to the `azurefunctions` section of your `build.gradle`.
+
+==== Deploy Azure Functions to Azure Cloud
+
+[source,shell]
+----
+./gradlew azureFunctionsDeploy
+----
+
+=== References
+
+- https://github.com/microsoft/azure-gradle-plugins/tree/master/azure-functions-gradle-plugin[Azure Functions Gradle Plugin]
+- https://learn.microsoft.com/en-us/azure/azure-functions/functions-create-first-java-gradle[Use Java and Gradle to create and publish a function to Azure]
+- https://docs.spring.io/spring-cloud-function/docs/current/reference/html/azure.html[Spring Cloud Function - Microsoft Azure Adapter]

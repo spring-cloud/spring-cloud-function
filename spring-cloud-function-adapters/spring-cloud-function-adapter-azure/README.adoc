@@ -7,6 +7,11 @@ Edit the files in the src/main/asciidoc/ directory instead.
 This project provides an adapter layer for a Spring Cloud Function application onto Azure.
 You can write an app with a single `@Bean` of type `Function` and it will be deployable in Azure if you get the JAR file laid out right.
 
-== Sample Function
+== Sample Functions
 
-Go to the link:../../spring-cloud-function-samples/function-sample-azure/[function-sample-azure] to learn about how the sample works, and how to run and test it.
+- ../../spring-cloud-function-samples/function-sample-azure-http-trigger[Azure HTTP Trigger (Maven)]
+- ../../spring-cloud-function-samples/function-sample-azure-http-trigger-gradle[Azure HTTP Trigger (Gradle)]
+- ../../spring-cloud-function-samples/function-sample-azure-blob-trigger[Azure Blob Trigger (Maven)]
+- ../../spring-cloud-function-samples/function-sample-azure-timer-trigger[Azure Timer Trigger (Maven)]
+- ../../spring-cloud-function-samples/function-sample-azure-kafka-trigger[Azure Kafka Trigger & Output Binding (Maven)]
+- ../../spring-cloud-function-samples/function-sample-azure/[(Legacy - FunctionInvoker) Azure HTTP Trigger (Maven)]

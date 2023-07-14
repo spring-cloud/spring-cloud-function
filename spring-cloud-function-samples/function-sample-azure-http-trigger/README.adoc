@@ -1,0 +1,94 @@
+== Azure Functions HTTP triggers sample
+
+IMPORTANT: For a general information about building and deploying `Azure Functions` with Spring Cloud Function, consult the https://docs.spring.io/spring-cloud-function/docs/current/reference/html/azure.html[Azure Adapter] documentation.
+
+Azure Functions may be invoked via HTTP requests to build serverless APIs.
+Find more about the https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-http-webhook?tabs=in-process%2Cfunctionsv2&pivots=programming-language-java[HTTP triggers].
+
+=== Usage
+
+==== Package Staging folder
+
+Use the script below to package your staging folder:
+
+[source,shell]
+----
+./mvnw clean package
+----
+
+==== Run Azure Functions locally
+
+Use the script below to run the function locally.
+
+[source,shell]
+----
+./mvnw azure-functions:run
+----
+
+NOTE: To run locally on top of `Azure Functions`, and to deploy to your live Azure environment, you will need `Azure Functions Core Tools` installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-java?tabs=bash%2Cazure-cli%2Cbrowser#configure-your-local-environment[here]).
+
+NOTE: https://github.com/Azure/azure-functions-core-tools[Azure Functions Core Tools] version `4.0.5030` or newer is required!
+
+For some configuration you would need the https://learn.microsoft.com/en-us/azure/storage/common/storage-use-emulator[Azurite emulator] as well.
+
+
+==== Deploy Azure Functions to Azure Cloud
+
+Make sure you are logged in your Azure account.
+
+[source,shell]
+----
+az login
+----
+
+then build and deploy
+
+[source,shell]
+----
+./mvnw clean package
+./mvnw azure-functions:deploy
+----
+
+
+==== Debug locally
+
+Run the function in debug mode.
+
+[source,shell]
+----
+./mvnw azure-functions:run -DenableDebug
+----
+
+Alternatively and the `JAVA_OPTS` value to your `local.settings.json` like this:
+
+[source,json]
+----
+{
+	"IsEncrypted": false,
+	"Values": {
+		...
+		"FUNCTIONS_WORKER_RUNTIME": "java",
+		"JAVA_OPTS": "-Djava.net.preferIPv4Stack=true -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=127.0.0.1:5005"
+	}
+}
+----
+
+
+For VSCode remote debug use configuration like this:
+
+[source,json]
+----
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"name": "Attach to Remote Program",
+			"request": "attach",
+			"hostName": "localhost",
+			"port": "5005"
+		},
+	    ...
+	]
+}
+----

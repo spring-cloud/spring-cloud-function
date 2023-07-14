@@ -38,6 +38,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.cloud.function.serverless.web.ProxyHttpServletRequest;
 import org.springframework.cloud.function.serverless.web.ProxyHttpServletResponse;
 import org.springframework.cloud.function.serverless.web.ProxyMvc;
+import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -61,7 +62,6 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
-	//	System.setProperty("MAIN_CLASS", "oz.spring.petstore.PetStoreSpringAppConfig");
 		this.initialize();
 		return (T) this;
 	}

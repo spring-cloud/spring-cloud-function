@@ -65,8 +65,14 @@ import org.springframework.util.StringUtils;
  * @param <O> result type
  * @author Oleg Zhurakousky
  * @author Chris Bono
+ * @author Christian Tzolov
+ *
  * @since 3.2
+ *
+ * @deprecated since 4.0.0 in favor of the dependency injection implementation {@link AzureFunctionInstanceInjector}.
+ * Follow the official documentation for further information.
  */
+@Deprecated
 public class FunctionInvoker<I, O> {
 
 	private static Log logger = LogFactory.getLog(FunctionInvoker.class);
@@ -109,11 +115,13 @@ public class FunctionInvoker<I, O> {
 
 	private FunctionInvocationWrapper discoverFunction(String functionDefinition) {
 		FunctionInvocationWrapper function = FUNCTION_CATALOG.lookup(functionDefinition);
-		if (function != null && StringUtils.hasText(functionDefinition) && !function.getFunctionDefinition().equals(functionDefinition)) {
+		if (function != null && StringUtils.hasText(functionDefinition)
+				&& !function.getFunctionDefinition().equals(functionDefinition)) {
 			this.registerFunction(functionDefinition);
 			function = FUNCTION_CATALOG.lookup(functionDefinition);
 		}
-		else if (function == null && StringUtils.hasText(functionDefinition) && APPLICATION_CONTEXT.containsBean(functionDefinition)) {
+		else if (function == null && StringUtils.hasText(functionDefinition)
+				&& APPLICATION_CONTEXT.containsBean(functionDefinition)) {
 			this.registerFunction(functionDefinition);
 			function = FUNCTION_CATALOG.lookup(functionDefinition);
 		}
@@ -128,20 +136,22 @@ public class FunctionInvoker<I, O> {
 		Object functionResult = function.apply(enhancedInput);
 
 		if (functionResult instanceof Publisher) {
-			return postProcessReactiveFunctionResult(input, enhancedInput, (Publisher<?>) functionResult, function, executionContext);
+			return postProcessReactiveFunctionResult(input, enhancedInput, (Publisher<?>) functionResult, function,
+					executionContext);
 		}
 		return postProcessImperativeFunctionResult(input, enhancedInput, functionResult, function, executionContext);
 	}
 
 	/**
-	 * Post-processes the result from a non-reactive function invocation before returning it to the Azure
-	 * runtime. The default behavior is to {@link #convertOutputIfNecessary possibly convert} the result.
+	 * Post-processes the result from a non-reactive function invocation before returning it to the Azure runtime. The
+	 * default behavior is to {@link #convertOutputIfNecessary possibly convert} the result.
 	 *
-	 * <p>Provides a hook for custom function invokers to extend/modify the function results handling.
+	 * <p>
+	 * Provides a hook for custom function invokers to extend/modify the function results handling.
 	 *
 	 * @param rawInputs the inputs passed in from the Azure runtime
-	 * @param functionInputs the actual inputs used for the function invocation; may be
-	 *            {@link #enhanceInputIfNecessary different} from the {@literal rawInputs}
+	 * @param functionInputs the actual inputs used for the function invocation; may be {@link #enhanceInputIfNecessary
+	 * different} from the {@literal rawInputs}
 	 * @param functionResult the result from the function invocation
 	 * @param function the invoked function
 	 * @param executionContext the Azure execution context
@@ -149,44 +159,47 @@ public class FunctionInvoker<I, O> {
 	 */
 	@SuppressWarnings("unchecked")
 	protected O postProcessImperativeFunctionResult(I rawInputs, Object functionInputs, Object functionResult,
-		FunctionInvocationWrapper function, ExecutionContext executionContext
-	) {
+			FunctionInvocationWrapper function, ExecutionContext executionContext) {
 		return (O) this.convertOutputIfNecessary(rawInputs, functionResult);
 	}
 
 	/**
-	 * Post-processes the result from a reactive function invocation before returning it to the Azure
-	 * runtime. The default behavior is to delegate to {@link #postProcessMonoFunctionResult} or
+	 * Post-processes the result from a reactive function invocation before returning it to the Azure runtime. The
+	 * default behavior is to delegate to {@link #postProcessMonoFunctionResult} or
 	 * {@link #postProcessFluxFunctionResult} based on the result type.
 	 *
-	 * <p>Provides a hook for custom function invokers to extend/modify the function results handling.
+	 * <p>
+	 * Provides a hook for custom function invokers to extend/modify the function results handling.
 	 *
 	 * @param rawInputs the inputs passed in from the Azure runtime
-	 * @param functionInputs the actual inputs used for the function invocation; may be
-	 *            {@link #enhanceInputIfNecessary different} from the {@literal rawInputs}
+	 * @param functionInputs the actual inputs used for the function invocation; may be {@link #enhanceInputIfNecessary
+	 * different} from the {@literal rawInputs}
 	 * @param functionResult the result from the function invocation
 	 * @param function the invoked function
 	 * @param executionContext the Azure execution context
 	 * @return the possibly modified function results
 	 */
 	protected O postProcessReactiveFunctionResult(I rawInputs, Object functionInputs, Publisher<?> functionResult,
-		FunctionInvocationWrapper function, ExecutionContext executionContext
-	) {
+			FunctionInvocationWrapper function, ExecutionContext executionContext) {
 		if (FunctionTypeUtils.isMono(function.getOutputType())) {
-			return postProcessMonoFunctionResult(rawInputs, functionInputs, Mono.from(functionResult), function, executionContext);
+			return postProcessMonoFunctionResult(rawInputs, functionInputs, Mono.from(functionResult), function,
+					executionContext);
 		}
-		return postProcessFluxFunctionResult(rawInputs, functionInputs, Flux.from(functionResult), function, executionContext);
+		return postProcessFluxFunctionResult(rawInputs, functionInputs, Flux.from(functionResult), function,
+				executionContext);
 	}
 
 	/**
 	 * Post-processes the {@code Mono} result from a reactive function invocation before returning it to the Azure
-	 * runtime. The default behavior is to {@link Mono#blockOptional()} and {@link #convertOutputIfNecessary possibly convert} the result.
+	 * runtime. The default behavior is to {@link Mono#blockOptional()} and {@link #convertOutputIfNecessary possibly
+	 * convert} the result.
 	 *
-	 * <p>Provides a hook for custom function invokers to extend/modify the function results handling.
+	 * <p>
+	 * Provides a hook for custom function invokers to extend/modify the function results handling.
 	 *
 	 * @param rawInputs the inputs passed in from the Azure runtime
-	 * @param functionInputs the actual inputs used for the function invocation; may be
-	 *            {@link #enhanceInputIfNecessary different} from the {@literal rawInputs}
+	 * @param functionInputs the actual inputs used for the function invocation; may be {@link #enhanceInputIfNecessary
+	 * different} from the {@literal rawInputs}
 	 * @param functionResult the Mono result from the function invocation
 	 * @param function the invoked function
 	 * @param executionContext the Azure execution context
@@ -194,20 +207,21 @@ public class FunctionInvoker<I, O> {
 	 */
 	@SuppressWarnings("unchecked")
 	protected O postProcessMonoFunctionResult(I rawInputs, Object functionInputs, Mono<?> functionResult,
-		FunctionInvocationWrapper function, ExecutionContext executionContext
-	) {
+			FunctionInvocationWrapper function, ExecutionContext executionContext) {
 		return (O) this.convertOutputIfNecessary(rawInputs, functionResult.blockOptional().get());
 	}
 
 	/**
 	 * Post-processes the {@code Flux} result from a reactive function invocation before returning it to the Azure
-	 * runtime. The default behavior is to {@link Flux#toIterable() block} and {@link #convertOutputIfNecessary possibly convert} the results.
+	 * runtime. The default behavior is to {@link Flux#toIterable() block} and {@link #convertOutputIfNecessary possibly
+	 * convert} the results.
 	 *
-	 * <p>Provides a hook for custom function invokers to extend/modify the function results handling.
+	 * <p>
+	 * Provides a hook for custom function invokers to extend/modify the function results handling.
 	 *
 	 * @param rawInputs the inputs passed in from the Azure runtime
-	 * @param functionInputs the actual inputs used for the function invocation; may be
-	 *            {@link #enhanceInputIfNecessary different} from the {@literal rawInputs}
+	 * @param functionInputs the actual inputs used for the function invocation; may be {@link #enhanceInputIfNecessary
+	 * different} from the {@literal rawInputs}
 	 * @param functionResult the Mono result from the function invocation
 	 * @param function the invoked function
 	 * @param executionContext the Azure execution context
@@ -215,16 +229,16 @@ public class FunctionInvoker<I, O> {
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	protected O postProcessFluxFunctionResult(I rawInputs, Object functionInputs, Flux<?> functionResult,
-		FunctionInvocationWrapper function, ExecutionContext executionContext
-	) {
+			FunctionInvocationWrapper function, ExecutionContext executionContext) {
 		List resultList = new ArrayList<>();
 		for (Object resultItem : functionResult.toIterable()) {
 			if (resultItem instanceof Collection) {
 				resultList.addAll((Collection) resultItem);
 			}
 			else {
-				if (!function.isSupplier() && Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getInputType()))
-					&& !Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getOutputType()))) {
+				if (!function.isSupplier()
+						&& Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getInputType()))
+						&& !Collection.class.isAssignableFrom(FunctionTypeUtils.getRawType(function.getOutputType()))) {
 					return (O) this.convertOutputIfNecessary(rawInputs, resultItem);
 				}
 				else {
@@ -238,11 +252,10 @@ public class FunctionInvoker<I, O> {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void registerFunction(String functionDefinition) {
 		if (APPLICATION_CONTEXT.containsBean(functionDefinition)) {
-			FunctionRegistration functionRegistration =
-					new FunctionRegistration(APPLICATION_CONTEXT.getBean(functionDefinition), functionDefinition);
+			FunctionRegistration functionRegistration = new FunctionRegistration(
+					APPLICATION_CONTEXT.getBean(functionDefinition), functionDefinition);
 
-			Type type = FunctionContextUtils.
-					findType(functionDefinition, APPLICATION_CONTEXT.getBeanFactory());
+			Type type = FunctionContextUtils.findType(functionDefinition, APPLICATION_CONTEXT.getBeanFactory());
 
 			functionRegistration = functionRegistration.type(type);
 
@@ -305,8 +318,9 @@ public class FunctionInvoker<I, O> {
 		MessageBuilder<?> messageBuilder = null;
 		if (input instanceof HttpRequestMessage) {
 			HttpRequestMessage<I> requestMessage = (HttpRequestMessage<I>) input;
-			Object payload = requestMessage.getHttpMethod() != null && requestMessage.getHttpMethod().equals(HttpMethod.GET)
-					? requestMessage.getQueryParameters()
+			Object payload = requestMessage.getHttpMethod() != null
+					&& requestMessage.getHttpMethod().equals(HttpMethod.GET)
+							? requestMessage.getQueryParameters()
 							: requestMessage.getBody();
 
 			if (payload == null) {
@@ -352,8 +366,10 @@ public class FunctionInvoker<I, O> {
 				if (CollectionUtils.isEmpty(mf)) {
 					OBJECT_MAPPER = new JacksonMapper(new ObjectMapper());
 					JsonMessageConverter jsonConverter = new JsonMessageConverter(OBJECT_MAPPER);
-					SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(Collections.singletonList(jsonConverter));
-					FUNCTION_CATALOG = new SimpleFunctionRegistry(APPLICATION_CONTEXT.getBeanFactory().getConversionService(),
+					SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(
+							Collections.singletonList(jsonConverter));
+					FUNCTION_CATALOG = new SimpleFunctionRegistry(
+							APPLICATION_CONTEXT.getBeanFactory().getConversionService(),
 							messageConverter, OBJECT_MAPPER);
 				}
 				else {
