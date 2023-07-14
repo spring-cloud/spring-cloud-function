@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +31,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Dave Syer
+ * @author Chris Bono
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
@@ -122,6 +126,18 @@ public class HttpGetIntegrationTests {
 				.exchange(RequestEntity.get(new URI("/word")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("foo");
+	}
+
+	// TODO: Once bug is fixed this test (last entry) will fully pass and this COMMENT should be removed
+	@ParameterizedTest
+	@ValueSource(strings = {"[hello", "hello]", "[hello]"})
+	void textContentTypeWithValueWrappedBracketsIsOk(String inputMessagePayloadValue) throws URISyntaxException {
+		ResponseEntity<String> postForEntity = this.rest
+				.exchange(RequestEntity.post(new URI("/echo"))
+						.contentType(MediaType.TEXT_PLAIN)
+						.body(inputMessagePayloadValue), String.class);
+		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(postForEntity.getBody()).isEqualTo(inputMessagePayloadValue);
 	}
 
 	@Test
@@ -299,6 +315,11 @@ public class HttpGetIntegrationTests {
 		@Bean
 		public Supplier<String> word() {
 			return () -> "foo";
+		}
+
+		@Bean
+		public Function<String, String> echo() {
+			return (input) -> input;
 		}
 
 		@Bean

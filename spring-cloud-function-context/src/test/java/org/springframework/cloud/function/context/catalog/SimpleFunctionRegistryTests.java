@@ -41,6 +41,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -79,6 +81,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author Chris Bono
  */
 public class SimpleFunctionRegistryTests {
 
@@ -188,6 +191,20 @@ public class SimpleFunctionRegistryTests {
 		Object result = lookedUpFunction.apply("{\"HELLO\":\"WORLD\"}");
 		assertThat(result).isNotInstanceOf(Message.class);
 		assertThat(result).isEqualTo("{\"HELLO\":\"WORLD\"}");
+	}
+
+	// TODO: Once bug is fixed this test (last entry) will fully pass and this COMMENT should be removed
+	@ParameterizedTest
+	@ValueSource(strings = {"[hello", "hello]", "[hello]"})
+	void textContentTypeWithValueWrappedBracketsIsOk(String inputMessagePayloadValue) {
+		var catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter, new JacksonMapper(new ObjectMapper()));
+		catalog.register(new FunctionRegistration<>(new Echo(), "echo").type(Echo.class));
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("echo");
+		var inputMessage = MessageBuilder.withPayload(inputMessagePayloadValue)
+				.setHeader("contentType", "text/plain")
+				.build();
+		var functionResult = lookedUpFunction.apply(inputMessage);
+		assertThat(functionResult).isEqualTo(inputMessagePayloadValue);
 	}
 
 	@SuppressWarnings("unchecked")
