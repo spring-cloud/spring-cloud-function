@@ -128,7 +128,6 @@ public class HttpGetIntegrationTests {
 		assertThat(result.getBody()).isEqualTo("foo");
 	}
 
-	// TODO: Once bug is fixed this test (last entry) will fully pass and this COMMENT should be removed
 	@ParameterizedTest
 	@ValueSource(strings = {"[hello", "hello]", "[hello]"})
 	void textContentTypeWithValueWrappedBracketsIsOk(String inputMessagePayloadValue) throws URISyntaxException {
