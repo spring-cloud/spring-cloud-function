@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -61,6 +62,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.http.HttpHeaders;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -69,6 +71,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -82,7 +85,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Roman Samarev
  * @author Soby Chacko
- *
+ * @author Chris Bono
  */
 public class SimpleFunctionRegistry implements FunctionRegistry {
 	protected Log logger = LogFactory.getLog(this.getClass());
@@ -805,9 +808,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return sanitizedHeaders;
 		}
 
-		/*
-		 *
-		 */
 		@SuppressWarnings("unchecked")
 		private Object fluxifyInputIfNecessary(Object input) {
 			if (input instanceof Message && !((Message) input).getHeaders().containsKey("user-agent") && this.isConsumer() && !this.isInputTypePublisher()) {
@@ -819,16 +819,20 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 			if (!this.isRoutingFunction() && !(input instanceof Publisher)) {
 				Object payload = input;
-				if (input instanceof Message) {
-					if (((Message) input).getHeaders().containsKey("payload")) {
-						payload = ((Message) input).getHeaders().get("payload");
+				var treatPayloadAsPlainText = false;
+				if (input instanceof Message msg) {
+					if (msg.getHeaders().containsKey("payload")) {
+						payload = msg.getHeaders().get("payload");
 					}
 					else {
-						payload = ((Message) input).getPayload();
+						payload = msg.getPayload();
 					}
+					treatPayloadAsPlainText = contentTypeHeaderValue(msg).equals(MimeTypeUtils.TEXT_PLAIN_VALUE);
 				}
-				if (JsonMapper.isJsonStringRepresentsCollection(payload)
-						&& !FunctionTypeUtils.isTypeCollection(this.inputType) && !FunctionTypeUtils.isTypeArray(this.inputType)) {
+
+				if ((!treatPayloadAsPlainText && JsonMapper.isJsonStringRepresentsCollection(payload))
+						&& !FunctionTypeUtils.isTypeCollection(this.inputType)
+						&& !FunctionTypeUtils.isTypeArray(this.inputType)) {
 					MessageHeaders headers = ((Message) input).getHeaders();
 					Collection collectionPayload = jsonMapper.fromJson(payload, Collection.class);
 					Class inputClass = FunctionTypeUtils.getRawType(this.inputType);
@@ -872,9 +876,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return input;
 		}
 
-		/*
-		 *
-		 */
+		private String contentTypeHeaderValue(Message<?> msg) {
+			var contentType = msg.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+			if (contentType == null) {
+				contentType = msg.getHeaders().get(HttpHeaders.CONTENT_TYPE);
+				if (contentType == null) {
+					contentType = msg.getHeaders().get(HttpHeaders.CONTENT_TYPE.toLowerCase());
+				}
+			}
+			return Objects.toString(contentType);
+		}
+
 		@SuppressWarnings("unchecked")
 		private Object invokeFunction(Object convertedInput) {
 			Object result;
