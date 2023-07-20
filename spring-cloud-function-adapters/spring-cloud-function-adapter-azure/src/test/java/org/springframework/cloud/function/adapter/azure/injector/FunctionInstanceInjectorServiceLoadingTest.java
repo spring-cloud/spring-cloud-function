@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;

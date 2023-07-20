@@ -72,27 +72,24 @@ public class PetStoreSpringAppConfig {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf().disable() // need for POST
-			.addFilterBefore(new GenericFilterBean() {
-				@Override
-				public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-						throws IOException, ServletException {
-					SecurityContext securityContext = SecurityContextHolder.getContext();
-					securityContext.setAuthentication(UsernamePasswordAuthenticationToken.authenticated("user", "password",
-							Collections.singleton(new SimpleGrantedAuthority("USER"))));
-					HttpSession session = ((HttpServletRequest) request).getSession();
-					session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
-					chain.doFilter(request, response);
-				}
-			}, SecurityContextHolderFilter.class)
-			.authorizeHttpRequests((requests) -> requests
-				.requestMatchers("/", "/pets", "/pets/").hasAnyAuthority("USER")
-				.requestMatchers("/foo").hasAnyAuthority("FOO")
-				.anyRequest().authenticated()
+		http
+		.addFilterBefore(new GenericFilterBean() {
+			@Override
+			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+					throws IOException, ServletException {
+				SecurityContext securityContext = SecurityContextHolder.getContext();
+				securityContext.setAuthentication(UsernamePasswordAuthenticationToken.authenticated("user", "password",
+						Collections.singleton(new SimpleGrantedAuthority("USER"))));
+				HttpSession session = ((HttpServletRequest) request).getSession();
+				session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
+				chain.doFilter(request, response);
+			}
+		}, SecurityContextHolderFilter.class)
+		.securityMatcher("/foo")
+		.authorizeHttpRequests(authorize -> authorize
+				.anyRequest().hasRole("FOO")
 			)
-			.exceptionHandling().accessDeniedHandler(accessDeniedHandler()).and()
-			.logout((logout) -> logout.permitAll());
-
+		.exceptionHandling(f -> f.accessDeniedHandler(accessDeniedHandler()));
 		return http.build();
 	}
 

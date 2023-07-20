@@ -217,7 +217,7 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public Map<String, ? extends ServletRegistration> getServletRegistrations() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		return this.registrations;
 	}
 
 	@Override
