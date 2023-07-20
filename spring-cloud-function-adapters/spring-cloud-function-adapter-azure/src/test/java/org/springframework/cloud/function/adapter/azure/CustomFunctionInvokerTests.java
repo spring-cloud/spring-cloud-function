@@ -30,6 +30,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.function.adapter.azure.helper.TestExecutionContext;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.function.adapter.azure;
+package org.springframework.cloud.function.adapter.azure.helper;
 
 import java.util.UUID;
 import java.util.logging.Logger;

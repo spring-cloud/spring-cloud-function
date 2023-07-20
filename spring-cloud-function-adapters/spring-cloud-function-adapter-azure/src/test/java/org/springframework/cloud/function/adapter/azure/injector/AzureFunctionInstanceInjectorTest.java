@@ -16,11 +16,8 @@
 
 package org.springframework.cloud.function.adapter.azure.injector;
 
-import java.util.Iterator;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.function.Function;
-import java.util.logging.Logger;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
@@ -33,123 +30,84 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.cloud.function.adapter.azure.AzureFunctionInstanceInjector;
 import org.springframework.cloud.function.adapter.azure.AzureFunctionUtil;
-import org.springframework.cloud.function.adapter.azure.HttpFunctionInvokerTests;
+import org.springframework.cloud.function.adapter.azure.helper.HttpRequestMessageStub;
+import org.springframework.cloud.function.adapter.azure.helper.TestExecutionContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
 /**
+ * This is an example JUnit test for Azure Adapter.
+ *
  * @author Christian Tzolov
  */
 public class AzureFunctionInstanceInjectorTest {
 
-	static ExecutionContext executionContext = new ExecutionContext() {
-		@Override
-		public Logger getLogger() {
-			return Logger.getLogger(AzureFunctionInstanceInjectorTest.class.getName());
-		}
-
-		@Override
-		public String getInvocationId() {
-			return "id1";
-		}
-
-		@Override
-		public String getFunctionName() {
-			return "hello";
-		}
-	};
+	static ExecutionContext TEST_EXECUTION_CONTEXT = new TestExecutionContext("hello");
 
 	@Test
 	public void testFunctionInjector() throws Exception {
 
-		FunctionInstanceInjector injector = initializeFunctionInstanceInjector();
-		Assertions.assertThat(injector).isNotNull();
-		Assertions.assertThat(injector).isInstanceOf(AzureFunctionInstanceInjector.class);
+		// The SpringBootApplication class
+		System.setProperty("MAIN_CLASS", MySpringConfig.class.getName());
 
-		System.setProperty("MAIN_CLASS", MyMainConfig.class.getName());
+		FunctionInstanceInjector injector = new AzureFunctionInstanceInjector();
 
-		MyAzureTestFunction functionInstance = injector.getInstance(MyAzureTestFunction.class);
+		// Emulates the Azure Function Java Runtime DI call
+		MyAzureFunction azureFunction = injector.getInstance(MyAzureFunction.class);
 
-		HttpFunctionInvokerTests.HttpRequestMessageStub<Optional<String>> request = new HttpFunctionInvokerTests.HttpRequestMessageStub<Optional<String>>();
+		Assertions.assertThat(azureFunction).isNotNull();
 
-		request.setBody(Optional.of("test"));
+		HttpRequestMessageStub<Optional<String>> requestStub = new HttpRequestMessageStub<Optional<String>>();
 
-		String result = functionInstance.execute(request, executionContext);
+		requestStub.setBody(Optional.of("payload"));
 
-		Assertions.assertThat(result).isEqualTo("TEST");
+		String result = azureFunction.execute(requestStub, TEST_EXECUTION_CONTEXT);
 
-		Assertions.assertThat(functionInstance).isNotNull();
-		Assertions.assertThat(functionInstance).isInstanceOf(MyAzureTestFunction.class);
-	}
+		Assertions.assertThat(result).isEqualTo("PAYLOAD");
 
-	private static FunctionInstanceInjector initializeFunctionInstanceInjector() {
-		FunctionInstanceInjector functionInstanceInjector = null;
-		ClassLoader prevContextClassLoader = Thread.currentThread().getContextClassLoader();
-		try {
-			Iterator<FunctionInstanceInjector> iterator = ServiceLoader.load(FunctionInstanceInjector.class).iterator();
-			if (iterator.hasNext()) {
-				functionInstanceInjector = iterator.next();
-				if (iterator.hasNext()) {
-					throw new RuntimeException(
-							"Customer function app has multiple FunctionInstanceInjector implementations");
-				}
-			}
-			else {
-				functionInstanceInjector = new FunctionInstanceInjector() {
-					@Override
-					public <T> T getInstance(Class<T> functionClass) throws Exception {
-						return functionClass.getDeclaredConstructor().newInstance();
-					}
-				};
-			}
-		}
-		finally {
-			Thread.currentThread().setContextClassLoader(prevContextClassLoader);
-		}
-		return functionInstanceInjector;
-	}
-
-	@Configuration
-	@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
-	public static class MyMainConfig {
-
-		@Bean
-		public Function<Message<String>, String> uppercase() {
-			return message -> {
-				ExecutionContext context = (ExecutionContext) message.getHeaders()
-						.get(AzureFunctionUtil.EXECUTION_CONTEXT);
-				Assertions.assertThat(context).isNotNull();
-				Assertions.assertThat(context.getFunctionName()).isEqualTo("hello");
-				return message.getPayload().toUpperCase();
-			};
-
-		}
+		Assertions.assertThat(azureFunction).isInstanceOf(MyAzureFunction.class);
 	}
 
 	@Component
-	public static class MyAzureTestFunction {
+	public static class MyAzureFunction {
 
 		@Autowired
 		private Function<Message<String>, String> uppercase;
 
-		@FunctionName("ditest")
+		@FunctionName("hello")
 		public String execute(
-				@HttpTrigger(name = "req", methods = { HttpMethod.GET,
-						HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+				@HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 				ExecutionContext context) {
 
 			Message<String> enhancedRequest = (Message<String>) AzureFunctionUtil.enhanceInputIfNecessary(
 					request.getBody().get(),
 					context);
+
 			return uppercase.apply(enhancedRequest);
+		}
+	}
+
+	@Configuration
+	@ComponentScan
+	public static class MySpringConfig {
+
+		@Bean
+		public Function<Message<String>, String> uppercaseBean() {
+			return message -> {
+				ExecutionContext context = (ExecutionContext) message.getHeaders()
+						.get(AzureFunctionUtil.EXECUTION_CONTEXT);
+
+				Assertions.assertThat(context).isNotNull();
+				Assertions.assertThat(context.getFunctionName()).isEqualTo("hello");
+
+				return message.getPayload().toUpperCase();
+			};
+
 		}
 	}
 }
