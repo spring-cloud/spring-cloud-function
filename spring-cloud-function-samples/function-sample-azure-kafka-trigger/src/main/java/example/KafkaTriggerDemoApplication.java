@@ -18,7 +18,6 @@ package example;
 import java.util.Map;
 import java.util.function.Function;
 
-import com.microsoft.azure.functions.ExecutionContext;
 import example.entity.KafkaEntity;
 
 import org.springframework.boot.SpringApplication;

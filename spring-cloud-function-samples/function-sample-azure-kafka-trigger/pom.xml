@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.7</version>
+		<version>3.1.1</version>
 		<relativePath/>
 		<!-- lookup parent from repository -->
 	</parent>
@@ -16,8 +16,8 @@
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud-function-dependencies.version>4.0.4</spring-cloud-function-dependencies.version>
-		<azure.functions.java.core.version>3.0.0</azure.functions.java.core.version>
+		<spring-cloud-function-dependencies.version>4.0.5-SNAPSHOT</spring-cloud-function-dependencies.version>
+		<spring-boot-thin-layout.version>1.0.28.RELEASE</spring-boot-thin-layout.version>
 
 		<start-class>example.KafkaTriggerDemoApplication</start-class>
 
@@ -33,28 +33,14 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-context</artifactId>
+			<version>${spring-cloud-function-dependencies.version}</version>
 		</dependency>
 		<dependency>
-			<artifactId>spring-cloud-function-adapter-azure</artifactId>
 			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-adapter-azure</artifactId>
+			<version>${spring-cloud-function-dependencies.version}</version>
 		</dependency>
 	</dependencies>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-function-dependencies</artifactId>
-				<version>${spring-cloud-function-dependencies.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>com.microsoft.azure.functions</groupId>
-				<artifactId>azure-functions-java-library</artifactId>
-				<version>${azure.functions.java.core.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<build>
 		<plugins>
@@ -104,10 +90,17 @@
 				</executions>
 			</plugin>
 
-			<!-- <plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin> -->
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.boot.experimental</groupId>
+						<artifactId>spring-boot-thin-layout</artifactId>
+						<version>${spring-boot-thin-layout.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
 		</plugins>
 	</build>
 </project>

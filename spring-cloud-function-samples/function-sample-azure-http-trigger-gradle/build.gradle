@@ -28,12 +28,13 @@ jar {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure:4.0.3"
+    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure:4.0.5-SNAPSHOT"
 }
 
 tasks.named('test') {

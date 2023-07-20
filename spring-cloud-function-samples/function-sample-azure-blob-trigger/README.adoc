@@ -9,6 +9,16 @@ The Blob storage binding is part of an https://learn.microsoft.com/en-us/azure/a
 
 === Usage
 
+For local Azure Storage development you need https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio[Azurite emulator].
+For the emulator you can run a docker container (see below) or use the https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio-code[Visual-Studio-Code extension].
+
+Here is how to start the `Azure emulator` as docker container:
+
+[source,shell]
+----
+docker run --name azurite --rm -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
+----
+
 ==== Package Staging folder
 
 Use the script below to package your staging folder:
@@ -27,11 +37,14 @@ Use the script below to run the function locally.
 ./mvnw azure-functions:run
 ----
 
-NOTE: To run locally on top of `Azure Functions`, and to deploy to your live Azure environment, you will need `Azure Functions Core Tools` installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-java?tabs=bash%2Cazure-cli%2Cbrowser#configure-your-local-environment[here]).
+Use the https://azure.microsoft.com/en-us/products/storage/storage-explorer/[Azure Storage Explorer] to access the Emulator Storage Account.
 
-NOTE: https://github.com/Azure/azure-functions-core-tools[Azure Functions Core Tools] version `4.0.5030` or newer is required!
+Under the `Blob Containers` create 3 new containers: `test-trigger`, `test-input`, `test-output`.
+Then upload the `src/test/resource/sample.txt` file into the `test-input` and the `test-trigger` folders in this order.
 
-For some configuration you would need the https://learn.microsoft.com/en-us/azure/storage/common/storage-use-emulator[Azurite emulator] as well.
+The appearance of the `sample.txt` file in the `test-trigger` folder triggers the `blobTest` function handler, that would look up for a file with the same name (because we used the `{name}` convention in the @BlobInput path) from the `test-input` folder.
+Later is passed through the auto-wired `uppercase` service and the result is saved in the `test-output` folder.
+Verify that the newly created file in `test-output` is in capitalized letters.
 
 
 ==== Deploy Azure Functions to Azure Cloud
