@@ -34,7 +34,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure:4.0.5-SNAPSHOT"
+    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure:4.1.0-SNAPSHOT"
 }
 
 tasks.named('test') {
