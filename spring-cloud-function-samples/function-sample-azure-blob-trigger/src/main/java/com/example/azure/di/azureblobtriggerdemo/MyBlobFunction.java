@@ -33,33 +33,33 @@ import org.springframework.stereotype.Component;
 /**
  * Azure Functions with Azure Storage Blob.
  * https://docs.microsoft.com/en-us/azure/azure-functions/functions-bindings-storage-blob-trigger?tabs=java
- * 
- * The Blob storage binding is part of an extension bundle, which is specified in your host.json project file. 
+ *
+ * The Blob storage binding is part of an extension bundle, which is specified in your host.json project file.
  */
 
 @Component
 public class MyBlobFunction {
 
-
     @Autowired
-    private Function<String, String> uppercase;
+    private Function<byte[], byte[]> uppercase;
 
     /**
      * This function will be invoked when a new or updated blob is detected at the specified path. The blob contents are
      * provided as input to this function. The location of the blob is provided in the path parameter. Example -
-     * test-triggerinput-java/{name} below
+     * test-trigger/{name} below
      */
     @FunctionName("BlobTrigger")
     @StorageAccount("AzureWebJobsStorage")
-    public void BlobTriggerToBlobTest(
-            @BlobTrigger(name = "triggerBlob", path = "test-triggerinput-java/{name}", dataType = "binary") byte[] triggerBlob,
+    public void blobTest(
+            @BlobTrigger(name = "triggerBlob", path = "test-trigger/{name}", dataType = "binary") byte[] triggerBlob,
             @BindingName("name") String fileName,
-            @BlobInput(name = "inputBlob", path = "test-input-java/{name}", dataType = "binary") byte[] inputBlob,
-            @BlobOutput(name = "outputBlob", path = "test-output-java/{name}", dataType = "binary") OutputBinding<byte[]> outputBlob,
+            @BlobInput(name = "inputBlob", path = "test-input/{name}", dataType = "binary") byte[] inputBlob,
+            @BlobOutput(name = "outputBlob", path = "test-output/{name}", dataType = "binary") OutputBinding<byte[]> outputBlob,
             final ExecutionContext context) {
-                
-        context.getLogger().info("Java Blob trigger function BlobTriggerToBlobTest processed a blob.\n Name: "
+
+        context.getLogger().info("Java Blob trigger function blobTest processed a blob.\n Name: "
                 + fileName + "\n Size: " + triggerBlob.length + " Bytes");
-        outputBlob.setValue(inputBlob);
+
+        outputBlob.setValue(uppercase.apply(inputBlob));
     }
 }

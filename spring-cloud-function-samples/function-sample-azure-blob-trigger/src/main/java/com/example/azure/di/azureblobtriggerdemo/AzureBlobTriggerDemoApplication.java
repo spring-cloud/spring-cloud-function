@@ -30,7 +30,7 @@ public class AzureBlobTriggerDemoApplication {
 	}
 
 	@Bean
-	public Function<String, String> uppercase() {
-		return payload -> payload.toUpperCase();
+	public Function<byte[], byte[]> uppercase() {
+		return payload -> new String(payload).toUpperCase().getBytes();
 	}
 }

@@ -35,6 +35,8 @@ should trigger an output like: `LOW CASE TEST%`
 
 TIP: To debug your functions, please add `localDebug = "transport=dt_socket,server=y,suspend=n,address=5005"` to the `azurefunctions` section of your `build.gradle`.
 
+IMPORTANT: After completing the sample run `./gradlew clean` to clean the hanging `azure-functions-java-worker.jar` processes.
+
 ==== Deploy Azure Functions to Azure Cloud
 
 [source,shell]
