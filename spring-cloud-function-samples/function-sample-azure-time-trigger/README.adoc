@@ -60,11 +60,10 @@ The `spring-cloud-function-adapter-azure` dependency activates the AzureFunction
 <dependency>
 	<groupId>org.springframework.cloud</groupId>
 	<artifactId>spring-cloud-function-adapter-azure</artifactId>
-	<version>3.2.9-SNAPSHOT</version>
 </dependency>
 ----
 
-(Version 3.2.9 or higher)
+(Version 4.x.x or higher)
 
 
 The `uppercase` function with signature `Function<Message<String>, Void> uppercase()` is defined as `@Bean` in the TimeTriggerDemoApplication context.
