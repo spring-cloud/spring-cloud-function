@@ -41,7 +41,7 @@ files:
 .Gradle
 ----
 dependencies {
-    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure:<last version>"
+    implementation 'org.springframework.cloud:spring-cloud-function-adapter-azure'
 }
 ----
 ====
@@ -50,8 +50,8 @@ NOTE: version `4.0.0+` is required. Having the adapter on the classpath activate
 
 === Function Implementation
 
-You can use the `@Component` (or `@Service`) annotation to turn any exiting Azure Function class (e.g. class with `@FunctionName` annotated handlers) into a Spring component.
-Then you can auto-wire the required dependencies (or the https://docs.spring.io/spring-cloud-function/docs/current/reference/html/spring-cloud-function.html#_function_catalog_and_flexible_function_signatures[FunctionCatalog] instance for Spring Cloud Function) and use those inside your Azure function handler.
+Use the `@Component` (or `@Service`) annotation to turn any exiting Azure Function class (e.g. with `@FunctionName` handlers) into a Spring component.
+Then you can auto-wire the required dependencies (or the https://docs.spring.io/spring-cloud-function/docs/current/reference/html/spring-cloud-function.html#_function_catalog_and_flexible_function_signatures[FunctionCatalog] for Spring Cloud Function composition) and use those inside the Azure function handlers.
 
 [source,java]
 ----
@@ -64,39 +64,39 @@ public class MyAzureFunction {
 	// The FunctionCatalog leverages the Spring Cloud Function framework.
 	@Autowired private FunctionCatalog functionCatalog; // <2>
 
-	@FunctionName("spring")
-	public String plainBean( // <3>
+	@FunctionName("spring") // <3>
+	public String plainBean( // <4>
 			@HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 			ExecutionContext context) {
 
 		return this.uppercase.apply(request.getBody().get());
 	}
 
-	@FunctionName("scf")
-	public String springCloudFunction( // <4>
+	@FunctionName("scf") // <3>
+	public String springCloudFunction( // <5>
 			@HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 			ExecutionContext context) {
 
 		// Use SCF composition. Composed functions are not just spring beans but SCF such.
-		Function composed = this.functionCatalog.lookup("reverse|uppercase"); // <5>
+		Function composed = this.functionCatalog.lookup("reverse|uppercase"); // <6>
 
 		return (String) composed.apply(request.getBody().get());
 	}
 }
 ----
-Azure's programming-model uses the https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#java-function-basics[@FunctionName] method annotation to identify the designated function handlers.
-When invoked by a trigger (such as `@HttpTrigger`), functions process that trigger, and any other inputs, to produce one or more outputs.
-
-TIP: Use the Java annotations included in the https://learn.microsoft.com/en-us/java/api/com.microsoft.azure.functions.annotation?view=azure-java-stable[com.microsoft.azure.functions.annotation.*] package to bind input and outputs to your methods.
 
 <1> Indicates that the `MyAzureFunction` class is a "component" to be considered by the Spring Framework as a candidate for auto-detection and classpath scanning.
 <2> Auto-wire the `uppercase` and `functionCatalog` beans defined in the `HttpTriggerDemoApplication` (below).
-<3> The `plainBean` method handler is mapped to an Azure function that uses of the auto-wired `uppercase` spring bean to compute the result.
+<3> The https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#java-function-basics[@FunctionName] annotation identifies the designated Azure function handlers.
+When invoked by a trigger (such as `@HttpTrigger`), functions process that trigger, and any other inputs, to produce one or more outputs.
+<4> The `plainBean` method handler is mapped to an Azure function that uses of the auto-wired `uppercase` spring bean to compute the result.
 It demonstrates how to use "plain" Spring components in your Azure handlers.
-<4> The `springCloudFunction` method handler is mapped to another Azure function, that uses the auto-wired `FunctionCatalog` instance to compute the result.
-<5> Shows how to leverage the Spring Cloud Function https://docs.spring.io/spring-cloud-function/docs/current/reference/html/spring-cloud-function.html#_function_catalog_and_flexible_function_signatures[FunctionCatalog] composition API.
+<5> The `springCloudFunction` method handler is mapped to another Azure function, that uses the auto-wired `FunctionCatalog` instance to compute the result.
+<6> Shows how to leverage the Spring Cloud Function https://docs.spring.io/spring-cloud-function/docs/current/reference/html/spring-cloud-function.html#_function_catalog_and_flexible_function_signatures[FunctionCatalog] composition API.
 
-The actual Spring defined beans used inside the handlers looks like this:
+TIP: Use the Java annotations included in the https://learn.microsoft.com/en-us/java/api/com.microsoft.azure.functions.annotation?view=azure-java-stable[com.microsoft.azure.functions.annotation.*] package to bind input and outputs to your methods.
+
+The implementation of the business logic used inside the Azure handlers looks like a common Spring application:
 
 [source,java]
 ----
@@ -118,7 +118,7 @@ public class HttpTriggerDemoApplication {
 	}
 }
 ----
-<1> the `@SpringBootApplication` annotated class should be used as Main-Class (or Start-Class) in you Maven/Gradle configurations as explained in <<star-class-configuration, star class configuration>>.
+<1> The `@SpringBootApplication` annotated class is used as a `Main-Class` (or `Start-Class`) as explained in <<star-class-configuration, star class configuration>>.
 <2> Functions auto-wired and used in the Azure function handlers.
 
 ==== Accessing Azure ExecutionContext
@@ -130,7 +130,7 @@ For that purpose the `AzureFunctionUtil.enhanceInputIfNecessary` allow you to ad
 
 [source,java]
 ----
-@FunctionName("ditest")
+@FunctionName("myazurefunction")
 public String execute(
 	@HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 	ExecutionContext context) {
@@ -159,19 +159,15 @@ public Function<Message<String>, String> uppercase(JsonMapper mapper) {
 ----
 <1> Retrieve the ExecutionContext instance from the header.
 
-=== Configuration and Project Layout
+=== Project Layout
 
-You don't need the Spring Cloud Function Web at runtime in Azure, so you can exclude this before you create the JAR you deploy to Azure, but it won't be used if you include it, so it doesn't hurt to leave it in.
-A function application on Azure is an archive generated either by the Maven (`azure-functions-maven-plugin`) or the  Gradle(`azure-functions-gradle-plugin`) plugins.
-The function lives in the JAR file generated by this project.
-
-The sample creates it as an executable jar, using the thin layout, so that Azure can find the handler classes. If you prefer you can just use a regular flat JAR file.
-The dependencies should *not* be included.
-
-In order to run Spring Cloud Function applications on Microsoft Azure, you have to use Maven or Gradle plugins offered by Azure.
-
-Provide the Azure-specific configuration for your application, specifying the `resourceGroup`, `appName` and other optional properties.
+In order to run Spring Cloud Function applications on Microsoft Azure, you have to use the Maven or Gradle plugins offered by Azure.
+Later imposes a specific https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#folder-structure[package archive structure] that interferes with the `standard` Spring Boot package jars.
+The <<disable-spring-boot-layout,Disable Spring Boot Layout>> section below explains how to handle this.
+You have to provide Azure specific configurations such as the `resourceGroup`, `appName` and other optional properties.
 More information about the runtime configurations: https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#java-versions[Java Versions], https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#specify-the-deployment-os[Deployment OS].
+
+==== Azure Maven/Gradle Plugin
 
 Sample Azure Function (Maven/Gradle) configuration would like like:
 
@@ -252,6 +248,16 @@ azurefunctions {
 
 The complete plugin documentation is available at the https://github.com/microsoft/azure-maven-plugins/tree/develop/azure-functions-maven-plugin[Azure Maven] and https://github.com/microsoft/azure-gradle-plugins/tree/master/azure-functions-gradle-plugin[Azure Gradle] repositories.
 
+
+==== Disable Spring Boot Layout
+
+The Azure Functions come with their own (non-Boot) execution runtime that imposes its own packaging format generated by the Azure's maven/gradle plugins.
+Therefore we can't use the (standard) Spring Boot packaging.
+You have to either disable the Spring-Boot plugin all together or opt for the https://github.com/dsyer/spring-boot-thin-launcher[spring-boot-thin-launcher] instead.
+This https://github.com/spring-cloud/spring-cloud-function/blob/3bafcc59175fb61e323e393487d413441287a450/spring-cloud-function-samples/function-sample-azure-http-trigger/pom.xml#L97-L107[snipped] illustrates how to use the `spring-boot-thin-launcher` for Maven.
+
+==== Provide Main-Class
+
 [[star-class-configuration]]
 Next you must specify the `Start-Class` or `Main-Class` to point to your application main class.
 
@@ -271,19 +277,34 @@ Next you must specify the `Start-Class` or `Main-Class` to point to your applica
 jar {
     manifest {
         attributes(
-            "Main-Class": "YOUR APP MAIN CLASS"
+            "Main-Class": "YOUR-APP-MAIN-CLASS"
         )
     }
 }
 ----
 ====
 
-IMPORTANT: The main class provided must be annotated by `@SpringBootApplication` or `@SpringBootConfiguration` annotation.
+Alternatively you can explicitly set the main class using the `MAIN_CLASS` environment variable.
 
+For local runs, you can set the `MAIN_CLASS` in your the `local.settings.json`:
 
-You will also have to ensure that the files to be scanned by the plugin can be found in the Azure functions staging directory (see the https://github.com/microsoft/azure-maven-plugins[plugin repository] for more details on the staging directory and it's default location).
+[source,json]
+----
+{
+	"IsEncrypted": false,
+	"Values": {
+		... ,
+		"MAIN_CLASS": "YOUR-APP-MAIN-CLASS"
+	}
+}
+----
 
-Add the `host.json` configuration file:
+IMPORTANT: When not set via the `MAIN_CLASS` variable, the Azure adapter will try to retrieve the main class from the `MANIFEST/META-INFO` sections of all dependencies.
+The first main class annotated with a `@SpringBootApplication` or `@SpringBootConfiguration` is selected.
+
+==== Configuration Metadata
+
+You can use a shared https://learn.microsoft.com/en-us/azure/azure-functions/functions-host-json[host.json] file to configure the function app.
 
 [source,json]
 ----
@@ -291,10 +312,12 @@ Add the `host.json` configuration file:
 	"version": "2.0",
 	"extensionBundle": {
 		"id": "Microsoft.Azure.Functions.ExtensionBundle",
-		"version": "[3.*, 4.0.0)"
+		"version": "[4.*, 5.0.0)"
 	}
 }
 ----
+
+The host.json metadata file contains configuration options that affect all functions in a function app instance.
 
 TIP: If the file is not in the project top folder you need to configure your plugins accordingly (like `hostJson` maven attribute).
 
@@ -334,7 +357,7 @@ files:
 .Gradle
 ----
 dependencies {
-    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure-web:<last-version>"
+    implementation 'org.springframework.cloud:spring-cloud-function-adapter-azure-web'
 }
 ----
 ====
