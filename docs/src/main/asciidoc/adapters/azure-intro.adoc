@@ -12,6 +12,8 @@ The Azure annotations are just a type-safe way to configure your java function t
 The https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[spring-cloud-function-adapter-azure] extends the basic programming model to provide Spring and Spring Cloud Function support.
 With the adapter you can build your Spring Cloud Function application using dependency injections and then auto-wire the necessary services into your Azure handler methods.
 
+image::../images/scf-azure-adapter.svg[width=800,scaledwidth="75%",align="center"]
+
 TIP: For Web-based function applications, you can replace the generic `adapter-azure` with the specialized https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-azure-web[spring-cloud-function-adapter-azure-web].
 With the Azure Web Adapter you can deploy any Spring Web application as an Azure, HttpTrigger, function.
 This adapter hides the Azure annotations complexity and uses the familiar https://docs.spring.io/spring-boot/docs/current/reference/html/web.html[Spring Web] programming model instead.
