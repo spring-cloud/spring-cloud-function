@@ -56,7 +56,7 @@ In a nutshell, any bean in your Application Context that is Functional bean will
 This means that it could benefit from all of the additional features described in this reference manual.
 
 In a simplest of application all you need to do is to declare `@Bean` of type `Supplier`, `Function` or `Consumer` in your application configuration.
-Then you can access `FunctionCatalog` and lookup a particular function based on its name. 
+Then you can access `FunctionCatalog` and lookup a particular function based on its name.
 
 For example:
 
@@ -74,7 +74,7 @@ FunctionCatalog catalog = applicationContext.getBean(FunctionCatalog.class);
 Function uppercase =  catalog.lookup(“uppercase”);
 ----
 
-Important to understand that given that `uppercase` is a bean, you can certainly get it form the `ApplicationContext` directly, but all you will get is just your bean as you declared it without any extra features provided by SCF. When you do lookup of a function via `FunctionCatalog`, the instance you will receive is wrapped (instrumented) with additional features (i.e., type conversion, composition etc.) described in this manual. Also, it is important to understand that a typical user does not use Spring Cloud Function directly. Instead a typical user implements Java `Function/Supplier/Consumer` with the idea of using it in different execution contexts without additional work. For example the same java function could be represented as _REST endpoint_ or _Streaming message handler_ or _AWS Lambda_ and more via Spring Cloud Function provided 
+Important to understand that given that `uppercase` is a bean, you can certainly get it form the `ApplicationContext` directly, but all you will get is just your bean as you declared it without any extra features provided by SCF. When you do lookup of a function via `FunctionCatalog`, the instance you will receive is wrapped (instrumented) with additional features (i.e., type conversion, composition etc.) described in this manual. Also, it is important to understand that a typical user does not use Spring Cloud Function directly. Instead a typical user implements Java `Function/Supplier/Consumer` with the idea of using it in different execution contexts without additional work. For example the same java function could be represented as _REST endpoint_ or _Streaming message handler_ or _AWS Lambda_ and more via Spring Cloud Function provided
 adapters as well as other frameworks using Spring Cloud Function as the core programming model (e.g., https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream])
 So in summary Spring Cloud Function instruments java functions with additional features to be utilised in variety of execution contexts.
 
@@ -147,7 +147,7 @@ invoked only once to pass a reference to the stream (Flux or Mono) and imperativ
 Consumer is a little bit special because it has a `void` return type,
 which implies blocking, at least potentially. Most likely you will not
 need to write `Consumer<Flux<?>>`, but if you do need to do that,
-remember to subscribe to the input flux. 
+remember to subscribe to the input flux.
 
 === Function Composition
 Function Composition is a feature that allows one to compose several functions into one.
@@ -195,7 +195,7 @@ public class RoutingFunction implements Function<Object, Object> {
 . . .
 }
 ----
-The routing instructions could be communicated in several ways. We support providing instructions via Message headers, System 
+The routing instructions could be communicated in several ways. We support providing instructions via Message headers, System
 properties as well as pluggable strategy. So let's look at some of the details
 
 ==== MessageRoutingCallback
@@ -211,7 +211,7 @@ public interface MessageRoutingCallback {
 ----
 
 All you need to do is implement and register it as a bean to be picked up by the `RoutingFunction`.
-For example: 
+For example:
 
 [source, java]
 ----
@@ -226,7 +226,7 @@ public MessageRoutingCallback customRouter() {
 }
 ----
 
-In the preceding example you can see a very simple implementation of `MessageRoutingCallback` which determines the function definition from 
+In the preceding example you can see a very simple implementation of `MessageRoutingCallback` which determines the function definition from
 `func_name` Message header of the incoming Message and returns the instance of `FunctionRoutingResult` containing the definition of function to invoke.
 
 *Message Headers*
@@ -243,9 +243,9 @@ NOTE: SpEL evaluation context's root object is the
 actual input argument, so in the case of `Message<?>` you can construct expression that has access
 to both `payload` and `headers` (e.g., `spring.cloud.function.routing-expression=headers.function_name`).
 
-IMPORTANT: SpEL allows user to provide string representation of Java code to be executed. Given that the `spring.cloud.function.routing-expression` could be provided via Message headers means that ability to set such expression could be exposed to the end user (i.e., HTTP Headers when using web module) which could result in some problems (e.g., malicious code). To manage that, all expressions coming via Message headers will only be evaluated against `SimpleEvaluationContext` which has limited functionality and designed to only evaluate the context object (Message in our case). On the other hand, all expressions that are set via property or system variable are evaluated against `StandardEvaluationContext`, which allows for full flexibility of Java language. 
+IMPORTANT: SpEL allows user to provide string representation of Java code to be executed. Given that the `spring.cloud.function.routing-expression` could be provided via Message headers means that ability to set such expression could be exposed to the end user (i.e., HTTP Headers when using web module) which could result in some problems (e.g., malicious code). To manage that, all expressions coming via Message headers will only be evaluated against `SimpleEvaluationContext` which has limited functionality and designed to only evaluate the context object (Message in our case). On the other hand, all expressions that are set via property or system variable are evaluated against `StandardEvaluationContext`, which allows for full flexibility of Java language.
 While setting expression via system/application property or environment variable is generally considered to be secure as it is not exposed to the end user in normal cases, there are cases where visibility as well as capability to update system, application and environment variables are indeed exposed to the end user via Spring Boot Actuator endpoints provided either by some of the Spring projects or third parties or custom implementation by the end user. Such endpoints must be secured using industry standard web security practices.
-Spring Cloud Function does not expose any of such endpoints. 
+Spring Cloud Function does not expose any of such endpoints.
 
 In specific execution environments/models the adapters are responsible to translate and communicate
 `spring.cloud.function.definition` and/or `spring.cloud.function.routing-expression` via Message header.
@@ -259,26 +259,26 @@ or `spring.cloud.function.routing-expression` as application properties. The rul
 previous section apply here as well. The only difference is you provide these instructions as
 application properties (e.g., `--spring.cloud.function.definition=foo`).
 
-NOTE: It is important to understand that providing `spring.cloud.function.definition` 
+NOTE: It is important to understand that providing `spring.cloud.function.definition`
 or `spring.cloud.function.routing-expression` as Message headers will only work for imperative functions (e.g., `Function<Foo, Bar>`).
-That is to say that we can _only_ route ***per-message*** with imperative functions. With reactive functions we can not route 
+That is to say that we can _only_ route ***per-message*** with imperative functions. With reactive functions we can not route
 ***per-message***. Therefore you can only provide your routing instructions as Application Properties.
 It's all about unit-of-work. In imperative function unit of work is Message so we can route based on such unit-of-work.
-With reactive function unit-of-work is the entire stream, so we'll act only on the instruction provided via application 
+With reactive function unit-of-work is the entire stream, so we'll act only on the instruction provided via application
 properties and route the entire stream.
 
 *Order of priority for routing instructions*
 
-Given that we have several mechanisms of providing routing instructions it is important to understand the priorities for 
+Given that we have several mechanisms of providing routing instructions it is important to understand the priorities for
 conflict resolutions in the event multiple mechanisms are used at the same time, so here is the order:
 
 1. `MessageRoutingCallback` (If function is imperative will take over regardless if anything else is defined)
 2. Message Headers (If function is imperative and no `MessageRoutingCallback` provided)
-3. Application Properties (Any function) 
+3. Application Properties (Any function)
 
 *Unroutable Messages*
 
-In the event route-to function is not available in catalog you will get an exception stating that. 
+In the event route-to function is not available in catalog you will get an exception stating that.
 
 There are cases when such behavior is not desired and you may want to have some "catch-all" type function which can handle such messages.
 To accomplish that, framework provides `org.springframework.cloud.function.context.DefaultMessageRoutingHandler` strategy. All you need to do is register it as a bean.
@@ -303,7 +303,7 @@ Filtering is the type of routing where there are only two paths - 'go' or 'disca
 you only want to invoke a certain function if some condition returns 'true', otherwise you want to discard input.
 However, when it comes to discarding input there are many interpretation of what it could mean in the context of your application.
 For example, you may want to log it, or you may want to maintain the counter of discarded messages. you may also want to do nothing at all.
-Because of these different paths, we do not provide a general configuration option for how to deal with discarded messages. 
+Because of these different paths, we do not provide a general configuration option for how to deal with discarded messages.
 Instead we simply recommend to define a simple Consumer which would signify the 'discard' path:
 
 [source, java]
@@ -317,7 +317,7 @@ Now you can have routing expression that really only has two paths effectively b
 
 [source, text]
 ----
---spring.cloud.function.routing-expression=headers.contentType.toString().equals('text/plain') ? 'echo' : 'devNull' 
+--spring.cloud.function.routing-expression=headers.contentType.toString().equals('text/plain') ? 'echo' : 'devNull'
 ----
 Every message that does not fit criteria to go to 'echo' function will go to 'devNull' where you can simply do nothing with it.
 The signature `Consumer<?>` will also ensure that no type conversion will be attempted resulting in almost no execution overhead.
@@ -404,8 +404,8 @@ public Function<Message<?>, Message<?>> myBusinessFunction() {
 
 And then compose your function by providing the following function definition `enrich|myBusinessFunction`.
 
-While the described approach is the most flexible, it is also the most involved as it requires you to write some code, make it a bean or 
-manually register it as a function before you can compose it with the business function as you can see from the preceding example. 
+While the described approach is the most flexible, it is also the most involved as it requires you to write some code, make it a bean or
+manually register it as a function before you can compose it with the business function as you can see from the preceding example.
 
 But what if modifications (enrichments) you are trying to make are trivial as they are in the preceding example? Is there a simpler and more dynamic and configurable
  mechanism to accomplish the same?
@@ -441,11 +441,11 @@ public void testMixedInputOutputHeaderMapping() throws Exception {
 ----
 
 Here you see a properties called `input-header-mapping-expression` and `output-header-mapping-expression` preceded by the name of the function (i.e., `split`) and followed by the name of the message header key you want to set and the value as SpEL expression. The first expression (for 'keyOut1') is literal SpEL expressions enclosed in single quotes, effectively setting 'keyOut1' to value `hello1`. The `keyOut2` is set to the value of existing 'contentType' header.
- 
+
 You can also observe some interesting features in the input header mapping where we actually splitting a value of the existing header 'path', setting individual values of key1 and key2 to the values of split elements based on the index.
 
-NOTE: if for whatever reason the provided expression evaluation fails, the execution of the function will proceed as if nothing ever happen. 
-However you will see the WARN message in your logs informing you about it 
+NOTE: if for whatever reason the provided expression evaluation fails, the execution of the function will proceed as if nothing ever happen.
+However you will see the WARN message in your logs informing you about it
 
 [source, text]
 ----
@@ -501,9 +501,9 @@ In a typical scenario input Message headers are not propagated to output and rig
 However, there are times when such propagation may be necessary so Spring Cloud Function provides several mechanisms to accomplish this.
 
 First you can always copy headers manually. For example, if you have a Function with the signature that takes `Message` and returns `Message` (i.e., `Function<Message, Message>`), you can simply and selectively copy headers yourselves. Remember, if your function returns Message, the framework will not do anything to it other then properly converting its payload.
-However, such approach may prove to be a bit tedious, especially in cases when you simply want to copy all headers. 
+However, such approach may prove to be a bit tedious, especially in cases when you simply want to copy all headers.
 To assist with cases like this we provide a simple property that would allow you to set a boolean flag on a function where you want input headers to be propagated.
-The property is `copy-input-headers`. 
+The property is `copy-input-headers`.
 
 For example, let's assume you have the following configuration:
 
@@ -532,10 +532,10 @@ assertThat(result.getHeaders()).containsKey("foo");
 
 === Type conversion (Content-Type negotiation)
 
-Content-Type negotiation is one of the core features of Spring Cloud Function as it allows to not only transform the incoming data to the types declared 
+Content-Type negotiation is one of the core features of Spring Cloud Function as it allows to not only transform the incoming data to the types declared
 by the function signature, but to do the same transformation during function composition making otherwise un-composable (by type) functions composable.
 
-To better understand the mechanics and the necessity behind content-type negotiation, we take a look at a very simple use case by 
+To better understand the mechanics and the necessity behind content-type negotiation, we take a look at a very simple use case by
 using the following function as an example:
 
 [source, java]
@@ -546,39 +546,39 @@ public Function<Person, String> personFunction {..}
 
 The function shown in the preceding example expects a `Person` object as an argument and produces a String type as an output. If such function is
 invoked with the type `Person`, than all works fine. But typically function plays a role of a handler for the incoming data which most often comes
-in the raw format such as `byte[]`, `JSON String` etc. In order for the framework to succeed in passing the incoming data as an argument to 
-this function, it has to somehow transform the incoming data to a `Person` type. 
- 
-Spring Cloud Function relies on two native to Spring mechanisms to accomplish that. 
- 
+in the raw format such as `byte[]`, `JSON String` etc. In order for the framework to succeed in passing the incoming data as an argument to
+this function, it has to somehow transform the incoming data to a `Person` type.
+
+Spring Cloud Function relies on two native to Spring mechanisms to accomplish that.
+
 . _MessageConverter_ - to convert from incoming Message data to a type declared by the function.
 . _ConversionService_ - to convert from incoming non-Message data to a type declared by the function.
- 
-This means that depending on the type of the raw data (Message or non-Message) Spring Cloud Function will apply one or the other mechanisms. 
- 
-For most cases when dealing with functions that are invoked as part of some other request (e.g., HTTP, Messaging etc) the framework relies on `MessageConverters`, 
-since such requests already converted to Spring `Message`. In other words, the framework locates and applies the appropriate `MessageConverter`. 
-To accomplish that, the framework needs some instructions from the user. One of these instructions is already provided by the signature of the function 
-itself (Person type). Consequently, in theory, that should be (and, in some cases, is) enough. However, for the majority of use cases, in order to 
+
+This means that depending on the type of the raw data (Message or non-Message) Spring Cloud Function will apply one or the other mechanisms.
+
+For most cases when dealing with functions that are invoked as part of some other request (e.g., HTTP, Messaging etc) the framework relies on `MessageConverters`,
+since such requests already converted to Spring `Message`. In other words, the framework locates and applies the appropriate `MessageConverter`.
+To accomplish that, the framework needs some instructions from the user. One of these instructions is already provided by the signature of the function
+itself (Person type). Consequently, in theory, that should be (and, in some cases, is) enough. However, for the majority of use cases, in order to
 select the appropriate `MessageConverter`, the framework needs an additional piece of information. That missing piece is `contentType` header.
- 
-Such header usually comes as part of the Message where it is injected by the corresponding adapter that created such Message in the first place. 
+
+Such header usually comes as part of the Message where it is injected by the corresponding adapter that created such Message in the first place.
 For example, HTTP POST request will have its content-type HTTP header copied to `contentType` header of the Message.
- 
+
 For cases when such header does not exist framework relies on the default content type as `application/json`.
 
 
 ==== Content Type versus Argument Type
 
 As mentioned earlier, for the framework to select the appropriate `MessageConverter`, it requires argument type and, optionally, content type information.
-The logic for selecting the appropriate `MessageConverter` resides with the argument resolvers which trigger right before the invocation of the user-defined 
+The logic for selecting the appropriate `MessageConverter` resides with the argument resolvers which trigger right before the invocation of the user-defined
 function (which is when the actual argument type is known to the framework).
 If the argument type does not match the type of the current payload, the framework delegates to the stack of the
 pre-configured `MessageConverters` to see if any one of them can convert the payload.
 
-The combination of `contentType` and argument type is the mechanism by which framework determines if message can be converted to a target type by locating 
+The combination of `contentType` and argument type is the mechanism by which framework determines if message can be converted to a target type by locating
 the appropriate `MessageConverter`.
-If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter` 
+If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter`
 (see `<<user-defined-message-converters>>`).
 
 NOTE: Do not expect `Message` to be converted into some other type based only on the `contentType`.
@@ -608,11 +608,11 @@ up to the actual implementation of the `MessageConverter` to support multiple ty
 As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
 The following list describes the provided `MessageConverters`, in order of precedence (the first `MessageConverter` that works is used):
 
-. `JsonMessageConverter`:  Supports conversion of the payload of the `Message` to/from POJO for cases when `contentType` is `application/json` using Jackson (DEFAULT) or Gson libraries. This message converter also aware of `type` parameter (e.g., _application/json;type=foo.bar.Person_). This is useful for cases where types may not be known at the time when function is developed, hence function signature may look like `Function<?, ?>` or `Function` or `Function<Object, Object>`. In other words for type conversion we typically derive type from function signature. Having, mime-type parameter allows you to communicate type in a more dynamic way.  
+. `JsonMessageConverter`:  Supports conversion of the payload of the `Message` to/from POJO for cases when `contentType` is `application/json` using Jackson (DEFAULT) or Gson libraries. This message converter also aware of `type` parameter (e.g., _application/json;type=foo.bar.Person_). This is useful for cases where types may not be known at the time when function is developed, hence function signature may look like `Function<?, ?>` or `Function` or `Function<Object, Object>`. In other words for type conversion we typically derive type from function signature. Having, mime-type parameter allows you to communicate type in a more dynamic way.
 . `ByteArrayMessageConverter`: Supports conversion of the payload of the `Message` from `byte[]` to `byte[]` for cases when `contentType` is `application/octet-stream`. It is essentially a pass through and exists primarily for backward compatibility.
 . `StringMessageConverter`: Supports conversion of any type to a `String` when `contentType` is `text/plain`.
 
-When no appropriate converter is found, the framework throws an exception. When that happens, you should check your code and configuration and ensure you did 
+When no appropriate converter is found, the framework throws an exception. When that happens, you should check your code and configuration and ensure you did
 not miss anything (that is, ensure that you provided a `contentType` by using a binding or a header).
 However, most likely, you found some uncommon case (such as a custom `contentType` perhaps) and the current stack of provided `MessageConverters`
 does not know how to convert. If that is the case, you can add custom `MessageConverter`. See <<user-defined-message-converters>>.
@@ -663,15 +663,15 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
 
 ==== Note on JSON options
 
-In Spring Cloud Function we support Jackson and Gson mechanisms to deal with JSON. 
-And for your benefit have abstracted it under `org.springframework.cloud.function.json.JsonMapper` which itself is aware of two mechanisms and will use the one selected 
+In Spring Cloud Function we support Jackson and Gson mechanisms to deal with JSON.
+And for your benefit have abstracted it under `org.springframework.cloud.function.json.JsonMapper` which itself is aware of two mechanisms and will use the one selected
 by you or following the default rule.
 The default rules are as follows:
 
 * Whichever library is on the classpath that is the mechanism that is going to be used. So if you have `com.fasterxml.jackson.*` to the classpath, Jackson is going to be used and if you have `com.google.code.gson`, then Gson will be used.
 * If you have both, then Gson will be the default, or you can set `spring.cloud.function.preferred-json-mapper` property with either of two values: `gson` or `jackson`.
- 
- 
+
+
 That said, the type conversion is usually transparent to the developer, however given that `org.springframework.cloud.function.json.JsonMapper` is also registered as a bean
 you can easily inject it into your code if needed.
 
@@ -709,8 +709,8 @@ autoconfiguration and supporting classes.
 
 === Function Component Scan
 
-Spring Cloud Function will scan for implementations of `Function`, `Consumer` and `Supplier` in a package called `functions` if it exists. Using this 
-feature you can write functions that have no dependencies on Spring - not even the `@Component` annotation is needed. If you want to use a different 
+Spring Cloud Function will scan for implementations of `Function`, `Consumer` and `Supplier` in a package called `functions` if it exists. Using this
+feature you can write functions that have no dependencies on Spring - not even the `@Component` annotation is needed. If you want to use a different
 package, you can set `spring.cloud.function.scan.packages`. You can also use `spring.cloud.function.scan.enabled=false` to switch off the scan completely.
 
 == Standalone Web Applications
@@ -729,8 +729,8 @@ endpoint (on "/" by default, but configurable with
 functions in the application context where function name becomes part of the URL path. The supported content types are
 plain text and JSON.
 
-IMPORTANT: It is important to understand that while SCF provides ability to export Functional beans as REST endpoints it is NOT a replacement for Spring MVC/WebFlux etc. 
-It is primarily to accommodate _stateless serverless patterns_ where you simply want to have some stateless functionality to be exposed via HTTP. 
+IMPORTANT: It is important to understand that while SCF provides ability to export Functional beans as REST endpoints it is NOT a replacement for Spring MVC/WebFlux etc.
+It is primarily to accommodate _stateless serverless patterns_ where you simply want to have some stateless functionality to be exposed via HTTP.
 
 |===
 | Method | Path | Request | Response | Status
@@ -760,22 +760,22 @@ As you have noticed from the previous table, you can pass an argument to a funct
 For example, `http://localhost:8080/uppercase/foo` will result in calling `uppercase` function with its input parameter being `foo`.
 
 While this is the recommended approach and the one that fits most use cases cases, there are times when you have to deal with HTTP request parameters (e.g., `http://localhost:8080/uppercase/foo?name=Bill`)
-The framework will treat HTTP request parameters similar to the HTTP headers by storing them in the `Message` headers under the header key `http_request_param` 
+The framework will treat HTTP request parameters similar to the HTTP headers by storing them in the `Message` headers under the header key `http_request_param`
 with its value being a `Map` of request parameters, so in order to access them your function input signature should accept `Message` type (e.g., `Function<Message<String>, String>`). For convenience we provide `HeaderUtils.HTTP_REQUEST_PARAM` constant.
 
-=== Function Mapping rules 
+=== Function Mapping rules
 
 If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
-In other words, providing you only have `uppercase` function in catalog 
+In other words, providing you only have `uppercase` function in catalog
 `curl -H "Content-Type: text/plain" localhost:8080/uppercase -d hello` and `curl -H "Content-Type: text/plain" localhost:8080/ -d hello` calls are identical.
 
 Composite functions can be addressed using pipes or commas to separate function names (pipes are legal in URL paths, but a bit awkward to type on the command line).
 For example,  `curl -H "Content-Type: text/plain" localhost:8080/uppercase,reverse -d hello`.
 
-For cases where there is more than a single function in catalog, each function will be exported and mapped with function name being 
-part of the path (e.g., `localhost:8080/uppercase`). 
+For cases where there is more than a single function in catalog, each function will be exported and mapped with function name being
+part of the path (e.g., `localhost:8080/uppercase`).
 In this scenario you can still map specific function or function composition to the root path by providing
-`spring.cloud.function.definition` property 
+`spring.cloud.function.definition` property
 
 For example,
 ----
@@ -785,11 +785,11 @@ For example,
 The above property will compose 'foo' and 'bar' function and map the composed function to the "/" path.
 
 The same property will also work for cases where function can not be resolved via URL. For example, your URL may be `localhost:8080/uppercase`, but there is no `uppercase` function.
-However there are function `foo` and `bar`. So, in this case `localhost:8080/uppercase` will resolve to `foo|bar`. 
-This could be useful especially for cases when URL is used to communicate certain information since there will be Message header called `uri` with the value 
-of the actual URL, giving user ability to use it for evaluation and computation.  
+However there are function `foo` and `bar`. So, in this case `localhost:8080/uppercase` will resolve to `foo|bar`.
+This could be useful especially for cases when URL is used to communicate certain information since there will be Message header called `uri` with the value
+of the actual URL, giving user ability to use it for evaluation and computation.
 
-=== Function Filtering rules 
+=== Function Filtering rules
 
 In situations where there are more than one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
 the same `spring.cloud.function.definition` property listing functions you intend to export delimited by `;`.
@@ -801,21 +801,21 @@ For example,
 --spring.cloud.function.definition=foo;bar
 ----
 
-This will only export function `foo` and function `bar` regardless how many functions are available in catalog (e.g., `localhost:8080/foo`). 
+This will only export function `foo` and function `bar` regardless how many functions are available in catalog (e.g., `localhost:8080/foo`).
 
 ----
 --spring.cloud.function.definition=foo|bar;baz
 ----
 
-This will only export function composition `foo|bar` and function `baz` regardless how many functions are available in catalog (e.g., `localhost:8080/foo,bar`). 
+This will only export function composition `foo|bar` and function `baz` regardless how many functions are available in catalog (e.g., `localhost:8080/foo,bar`).
 
 === CRUD REST with Spring Cloud Function
 
-By now it should be clear that functions are exported as REST endpoints and can be invoked using various HTTP methods. In other words a single 
-function could be triggered via GET, POST, PUT etc. 
+By now it should be clear that functions are exported as REST endpoints and can be invoked using various HTTP methods. In other words a single
+function could be triggered via GET, POST, PUT etc.
 
-However, it is not always desirable and certainly does not fit the CRUD concept. And while SCF does not support and has no intention of supporting 
-all the features of Spring web stack, the framework does provide support for CRUD mappings where a single function could be mapped to a particular HTTP method(s). 
+However, it is not always desirable and certainly does not fit the CRUD concept. And while SCF does not support and has no intention of supporting
+all the features of Spring web stack, the framework does provide support for CRUD mappings where a single function could be mapped to a particular HTTP method(s).
 It is done via spring.cloud.function.http.<method-name> property.
 
 For example,
@@ -826,7 +826,7 @@ spring.cloud.function.http.POST=reverse
 spring.cloud.function.http.DELETE=deleteById
 ----
 
-As you can see, here we’re mapping functions to various HTTP methods using the same rules as `spring.cloud.function.definition` property where “;” allows us to define several functions and “|” signifies function composition. 
+As you can see, here we’re mapping functions to various HTTP methods using the same rules as `spring.cloud.function.definition` property where “;” allows us to define several functions and “|” signifies function composition.
 
 == Standalone Streaming Applications
 
@@ -848,11 +848,11 @@ The standard entry point is to add `spring-cloud-function-deployer` to the class
 ```
 
 
-At a minimum the user has to provide a `spring.cloud.function.location` which is a URL or resource location for the archive containing 
-the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties` 
-for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so 
-that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function 
-registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though 
+At a minimum the user has to provide a `spring.cloud.function.location` which is a URL or resource location for the archive containing
+the functions. It can optionally use a `maven:` prefix to locate the artifact via a dependency lookup (see `FunctionProperties`
+for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so
+that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function
+registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though
 it was created in an isolated class loader (by deault).
 
 Here is the example of deploying a JAR which contains an 'uppercase' function and invoking it .
@@ -893,8 +893,8 @@ public class DeployFunctionDemo {
 }
 ```
 
-Keep in mind that Maven resource such as local and remote repositories, user, password and more are resolved using default MavenProperties which 
-effectively use local defaults and will work for majority of cases. However if you need to customize you can simply provide a bean of type 
+Keep in mind that Maven resource such as local and remote repositories, user, password and more are resolved using default MavenProperties which
+effectively use local defaults and will work for majority of cases. However if you need to customize you can simply provide a bean of type
 `MavenProperties` where you can set additional properties (see example below).
 
 ```java
@@ -906,7 +906,7 @@ public MavenProperties mavenProperties() {
 }
 ```
 
-=== Supported Packaging Scenarios 
+=== Supported Packaging Scenarios
 
 Currently Spring Cloud Function supports several packaging scenarios to give you the most flexibility when it comes to deploying functions.
 
@@ -931,7 +931,7 @@ All you need to do is specify `location` and `function-class` properties when de
 --spring.cloud.function.function-class=function.example.UpperCaseFunction
 ```
 
-It's conceivable in some cases that you might want to package multiple functions together. For such scenarios you can use 
+It's conceivable in some cases that you might want to package multiple functions together. For such scenarios you can use
 `spring.cloud.function.function-class` property to list several classes delimiting them by `;`.
 
 For example,
@@ -948,14 +948,14 @@ You can also find a corresponding test in https://github.com/spring-cloud/spring
 
 *** Component Scanning ***
 
-Since version 3.1.4 you can simplify your configuration thru component scanning feature described in <<Function Component Scan>>. If you place your functional class in  
-package named `functions`, you can omit `spring.cloud.function.function-class` property as framework will auto-discover functional classes loading them in function catalog. 
-Keep in mind the naming convention to follow when doing function lookup. For example function class `functions.UpperCaseFunction` will be available in `FunctionCatalog` 
-under the name `upperCaseFunction`.  
+Since version 3.1.4 you can simplify your configuration thru component scanning feature described in <<Function Component Scan>>. If you place your functional class in
+package named `functions`, you can omit `spring.cloud.function.function-class` property as framework will auto-discover functional classes loading them in function catalog.
+Keep in mind the naming convention to follow when doing function lookup. For example function class `functions.UpperCaseFunction` will be available in `FunctionCatalog`
+under the name `upperCaseFunction`.
 
 ==== Spring Boot JAR
 
-This packaging option implies there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR 
+This packaging option implies there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR
 runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
 For example; Consider that such JAR contains the following class (which could have some additional Spring dependencies providing Spring/Spring Boot is on the classpath):
 ```java
@@ -980,7 +980,7 @@ You can also find a corresponding test in https://github.com/spring-cloud/spring
 ==== Spring Boot Application
 
 This packaging option implies your JAR is complete stand alone Spring Boot application with functions as managed Spring beans.
-As before there is an obvious assumption that there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR 
+As before there is an obvious assumption that there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR
 runs in the isolated class loader, there will not be any version conflict with the Spring Boot version used by the actual deployer.
 For example; Consider that such JAR contains the following class:
 ```java
@@ -1009,7 +1009,7 @@ in addition to the `location` property we also specify `definition` property ins
 For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootapp[here].
 You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L164[FunctionDeployerTests].
 
-NOTE: This particular deployment option may or may not have Spring Cloud Function on it's classpath. From the deployer perspective this doesn't matter. 
+NOTE: This particular deployment option may or may not have Spring Cloud Function on it's classpath. From the deployer perspective this doesn't matter.
 
 == Functional Bean Definitions
 
@@ -1025,6 +1025,6 @@ Lambda], and https://github.com/spring-cloud/spring-cloud-function/tree/{branch}
 https://github.com/projectriff/java-function-invoker[Java Function Invoker] acts natively is an adapter for Spring Cloud Function jars.
 
 include::adapters/aws-intro.adoc[]
-include::adapters/azure-intro.adoc[]
+include::adapters/azure-intro.adoc[leveloffset=+1]
 include::adapters/gcp-intro.adoc[]
 
