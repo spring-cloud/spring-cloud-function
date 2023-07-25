@@ -24,6 +24,7 @@ include::getting-started.adoc[]
 
 == Programming model
 
+[[function.catalog]]
 
 === Function Catalog and Flexible Function Signatures
 
