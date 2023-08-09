@@ -6,7 +6,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-functional-aws-routing</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version><!-- @releaser:version-check-off -->
 	<packaging>jar</packaging>
 
 	<name>function-sample-functional-aws-routing</name>

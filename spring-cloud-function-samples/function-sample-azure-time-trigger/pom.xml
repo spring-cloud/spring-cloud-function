@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.example.azure.di</groupId>
 	<artifactId>azure-timetrigger-demo</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version><!-- @releaser:version-check-off -->
 	<name>azure-timetrigger-demo</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>

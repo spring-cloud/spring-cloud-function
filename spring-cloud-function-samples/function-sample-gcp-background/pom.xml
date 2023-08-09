@@ -7,7 +7,7 @@
 
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-gcp-background</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version><!-- @releaser:version-check-off -->
 	<packaging>jar</packaging>
 
 	<name>function-sample-gcp-background</name>

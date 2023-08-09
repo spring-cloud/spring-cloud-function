@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.example</groupId>
 	<artifactId>azure-web-demo</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version><!-- @releaser:version-check-off -->
 	<name>azure-web-demo</name>
 	<description>Spring Cloud Function - Azure Function Web Adapter Demo</description>
 

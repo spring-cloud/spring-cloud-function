@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.spring.sample</groupId>
 	<artifactId>function-sample-kotlin-web</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1-SNAPSHOT</version><!-- @releaser:version-check-off -->
 	<name>function-sample-kotlin-web</name>
 	<description>Demo project for Spring Cloud Function Web Kotlin integration</description>
 	
