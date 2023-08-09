@@ -39,7 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-@Disabled("Disalbe temporarily due to some CI issues on 4.0.x builds")
 public class RequestResponseTests {
 
 	private ObjectMapper mapper = new ObjectMapper();
