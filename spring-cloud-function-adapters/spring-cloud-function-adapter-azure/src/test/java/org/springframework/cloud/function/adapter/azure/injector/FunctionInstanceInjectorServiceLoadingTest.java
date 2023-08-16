@@ -40,6 +40,7 @@ import org.springframework.cloud.function.adapter.azure.helper.TestExecutionCont
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
@@ -96,6 +97,7 @@ public class FunctionInstanceInjectorServiceLoadingTest {
 		return functionInstanceInjector;
 	}
 
+	@Configuration
 	@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
 	public static class MyMainConfig {
 

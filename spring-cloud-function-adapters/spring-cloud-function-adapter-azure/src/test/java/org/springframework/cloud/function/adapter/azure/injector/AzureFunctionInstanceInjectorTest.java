@@ -35,6 +35,7 @@ import org.springframework.cloud.function.adapter.azure.helper.HttpRequestMessag
 import org.springframework.cloud.function.adapter.azure.helper.TestExecutionContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
@@ -90,6 +91,7 @@ public class AzureFunctionInstanceInjectorTest {
 		}
 	}
 
+	@Configuration
 	@ComponentScan
 	public static class MySpringConfig {
 
