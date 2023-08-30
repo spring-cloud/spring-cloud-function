@@ -1033,13 +1033,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 			else {
 				Object extractedValue = this.extractValueFromOriginalValueHolderIfNecessary(convertedInput);
-				if (extractedValue instanceof Message &&
-					((Message) extractedValue).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
-						((Consumer) this.target).accept(null);
-				}
-				else {
-					((Consumer) this.target).accept(extractedValue);
-				}
+				((Consumer) this.target).accept(extractedValue);
 			}
 			return result;
 		}
