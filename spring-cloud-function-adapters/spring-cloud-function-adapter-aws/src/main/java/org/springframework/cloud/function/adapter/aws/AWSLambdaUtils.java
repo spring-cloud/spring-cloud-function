@@ -179,7 +179,6 @@ public final class AWSLambdaUtils {
 			}
 
 			if (resultPayload != null) {
-				System.out.println(new String(resultPayload));
 				MessageBuilder<byte[]> messageBuilder = MessageBuilder.withPayload(resultPayload);
 				if (lastMessage != null) {
 					messageBuilder.copyHeaders(lastMessage.getHeaders());

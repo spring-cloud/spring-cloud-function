@@ -115,7 +115,7 @@ public abstract class JsonMapper {
 
 	public static boolean isJsonStringRepresentsCollection(Object value) {
 		boolean isJson = false;
-		if (value instanceof Iterable && !value.getClass().getPackage().getName().startsWith("reactor.util.function")) {
+		if (value instanceof Collection && !value.getClass().getPackage().getName().startsWith("reactor.util.function")) {
 			return true;
 		}
 		if (value instanceof byte[]) {
