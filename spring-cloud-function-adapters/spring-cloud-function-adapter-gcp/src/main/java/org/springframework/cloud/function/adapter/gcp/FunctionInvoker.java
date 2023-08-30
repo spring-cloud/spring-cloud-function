@@ -121,6 +121,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 
 		if (result != null) {
 			MessageHeaders headers = result.getHeaders();
+			httpResponse.setContentType(result.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
 			httpResponse.getWriter().write(new String(result.getPayload(), StandardCharsets.UTF_8));
 			for (Entry<String, Object> header : headers.entrySet()) {
 				Object values = header.getValue();

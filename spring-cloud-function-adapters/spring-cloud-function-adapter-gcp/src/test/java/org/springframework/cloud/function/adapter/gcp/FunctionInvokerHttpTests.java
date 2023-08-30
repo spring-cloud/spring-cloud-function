@@ -89,6 +89,7 @@ public class FunctionInvokerHttpTests {
 
 	}
 
+
 	@Test
 	public void testJsonInputFunction() throws Exception {
 
@@ -103,8 +104,22 @@ public class FunctionInvokerHttpTests {
 
 
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+	}
+
+	@Test
+	public void testWithKanji() throws Exception {
+
+		FunctionInvoker handler = new FunctionInvoker(JsonInputFunction.class);
+
+		String expectedOutput = "Thank you for sending the message: 森林";
+		IncomingRequest input = new IncomingRequest("森林");
+
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		handler.service(request, response);
+		bufferedWriter.close();
 
 
+		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
 
 	@Test
