@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -40,6 +43,28 @@ public class JsonMapperTests {
 
 	public static Stream<JsonMapper> params() {
 		return Stream.of(new GsonMapper(new Gson()), new JacksonMapper(new ObjectMapper()));
+	}
+
+	@Test
+	public void objectNode_isJsonStringRepresentsCollection() {
+		ObjectNode node = JsonNodeFactory.instance.objectNode();
+		node.put("id", "1234ab");
+		node.put("foo", "bar");
+
+		/*
+		 * Passing the ObjectNode directly results in a positive identification as
+		 * a collection, as its distant parent JsonNode implements Iterable.
+		 */
+		assertThat(JsonMapper.isJsonStringRepresentsCollection(node)).isFalse();
+
+		String nodeAsString = node.toString();
+
+		/*
+		 * Sending the node as a string returns false, however, as the line
+		 * isJsonString(value) && str.startsWith("[") && str.endsWith("]")
+		 * will not be true.
+		 */
+		assertThat(JsonMapper.isJsonStringRepresentsCollection(nodeAsString)).isFalse();
 	}
 
 	@ParameterizedTest
