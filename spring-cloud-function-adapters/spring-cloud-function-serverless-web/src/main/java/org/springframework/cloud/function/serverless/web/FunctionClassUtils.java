@@ -46,6 +46,8 @@ public final class FunctionClassUtils {
 
 	private static Log logger = LogFactory.getLog(FunctionClassUtils.class);
 
+	private static Class<?> MAIN_CLASS;
+
 	private FunctionClassUtils() {
 
 	}
@@ -59,8 +61,11 @@ public final class FunctionClassUtils {
 	 * @return instance of Class which represent the start class of the application.
 	 */
 	public static Class<?> getStartClass() {
-		ClassLoader classLoader = FunctionClassUtils.class.getClassLoader();
-		return getStartClass(classLoader);
+		if (MAIN_CLASS == null) {
+			ClassLoader classLoader = FunctionClassUtils.class.getClassLoader();
+			MAIN_CLASS = getStartClass(classLoader);
+		}
+		return MAIN_CLASS;
 	}
 
 	static Class<?> getStartClass(ClassLoader classLoader) {
