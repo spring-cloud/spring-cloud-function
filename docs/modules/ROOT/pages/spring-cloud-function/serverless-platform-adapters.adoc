@@ -1,5 +1,6 @@
 [[serverless-platform-adapters]]
 = Serverless Platform Adapters
+:page-section-summary-toc: 1
 
 As well as being able to run as a standalone process, a Spring Cloud
 Function application can be adapted to run one of the existing

@@ -1,5 +1,6 @@
 [[spring-cloud-function-reference-documentation]]
 = Spring Cloud Function Reference Documentation
+:page-section-summary-toc: 1
 Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra, Dan Dobrin, Chris Bono, Artem Bilan
 
 *{project-version}*
