@@ -1,0 +1,5 @@
+[[getting-started]]
+= Getting Started
+
+include:../:getting-started.adoc[]
+
