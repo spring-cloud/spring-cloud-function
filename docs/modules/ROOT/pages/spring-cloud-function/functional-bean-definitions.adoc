@@ -1,0 +1,5 @@
+[[functional-bean-definitions]]
+= Functional Bean Definitions
+
+include:../:functional.adoc[leveloffset=+1]
+
