@@ -1,5 +1,6 @@
 :branch: master
 
+[[microsoft-azure-functions]]
 == Microsoft Azure Functions
 :sectnums:
 
@@ -19,10 +20,12 @@ With the Azure Web Adapter you can deploy any Spring Web application as an Azure
 This adapter hides the Azure annotations complexity and uses the familiar https://docs.spring.io/spring-boot/docs/current/reference/html/web.html[Spring Web] programming model instead.
 For further information follow the <<azure.web.adapter,Azure Web Adapter>> section below.
 
+[[azure-adapter]]
 == Azure Adapter
 
 Provides `Spring` & `Spring Cloud Function` integration for Azure Functions.
 
+[[dependencies]]
 === Dependencies
 
 In order to enable the Azure Function integration add the azure adapter dependency to your `pom.xml` or `build.gradle`
@@ -127,6 +130,7 @@ public class HttpTriggerDemoApplication {
 <1> The `@SpringBootApplication` annotated class is used as a `Main-Class` as explained in <<star-class-configuration, main class configuration>>.
 <2> Functions auto-wired and used in the Azure function handlers.
 
+[[function-catalog]]
 ==== Function Catalog
 
 The Spring Cloud Function supports a range of type signatures for user-defined functions, while providing a consistent execution model.
@@ -137,6 +141,7 @@ But those are treated as plain Java class instances, not as a canonical Spring C
 
 To leverage Spring Cloud Function and have access to the canonical function representations, you need to auto-wire the `FunctionCatalog` and use it in your handler, like the `functionCatalog` instance the `springCloudFunction()` handler above.
 
+[[accessing-azure-executioncontext]]
 ==== Accessing Azure ExecutionContext
 
 Some time there is a need to access the target execution context provided by the Azure runtime in the form of `com.microsoft.azure.functions.ExecutionContext`.
@@ -186,6 +191,7 @@ Usually the Azure Maven (or Gradle) plugins are used to generate the necessary c
 IMPORTANT: The Azure https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#folder-structure[packaging format] is not compatible with the default Spring Boot packaging (e.g. `uber jar`).
 The <<disable.spring.boot.plugin,Disable Spring Boot Plugin>> section below explains how to handle this.
 
+[[azure-maven/gradle-plugins]]
 ==== Azure Maven/Gradle Plugins
 
 Azure provides https://github.com/microsoft/azure-maven-plugins/tree/develop/azure-functions-maven-plugin[Maven] and https://github.com/microsoft/azure-gradle-plugins/tree/master/azure-functions-gradle-plugin[Gradle] plugins to process the annotated classes, generate the necessary configurations and produce the expected package layout.
@@ -327,6 +333,7 @@ For local runs, add the `MAIN_CLASS` variable to your `local.settings.json` file
 
 IMPORTANT: If the `MAIN_CLASS` variable is not set, the Azure adapter lookups the `MANIFEST/META-INFO` attributes from the jars found on the classpath and selects the first `Main-Class:` annotated with either a `@SpringBootApplication` or `@SpringBootConfiguration` annotation.
 
+[[metadata-configuration]]
 ==== Metadata Configuration
 
 You can use a shared https://learn.microsoft.com/en-us/azure/azure-functions/functions-host-json[host.json] file to configure the function app.
@@ -346,6 +353,7 @@ The host.json metadata file contains configuration options that affect all funct
 
 TIP: If the file is not in the project top folder you need to configure your plugins accordingly (like `hostJson` maven attribute).
 
+[[samples]]
 === Samples
 
 Here is a list of various Spring Cloud Function Azure Adapter samples you can explore:
@@ -389,6 +397,7 @@ dependencies {
 The same <<azure.configuration, Configuration>> and <<azure.usage,Usage>> instructions apply to the `Azure Web Adapter` as well.
 
 
+[[samples]]
 === Samples
 
 For further information, explore the following, Azure Web Adapter, sample:
@@ -400,6 +409,7 @@ For further information, explore the following, Azure Web Adapter, sample:
 
 Common instructions for building and deploying both, `Azure Adapter` and `Azure Web Adapter` type of applications.
 
+[[build]]
 === Build
 
 ====
@@ -416,6 +426,7 @@ Common instructions for building and deploying both, `Azure Adapter` and `Azure 
 ----
 ====
 
+[[running-locally]]
 === Running locally
 
 To run locally on top of `Azure Functions`, and to deploy to your live Azure environment, you will need `Azure Functions Core Tools` installed along with the Azure CLI (see https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-java?tabs=bash%2Cazure-cli%2Cbrowser#configure-your-local-environment[here]).
@@ -437,6 +448,7 @@ Then run the sample:
 ----
 ====
 
+[[running-on-azure]]
 === Running on Azure
 
 Make sure you are logged in your Azure account.
@@ -461,6 +473,7 @@ and deploy
 ----
 ====
 
+[[debug-locally]]
 === Debug locally
 
 Run the function in debug mode.
@@ -516,12 +529,14 @@ Here is snippet for a `VSCode` remote debugging configuration:
 }
 ----
 
+[[functioninvoker-deprecated]]
 == FunctionInvoker (deprecated)
 
 WARNING: The legacy `FunctionInvoker` programming model is deprecated and will not be supported going forward.
 
 For additional documentation and samples about the Function Integration approach follow the https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-azure/[azure-sample] README and code.
 
+[[relevant-links]]
 == Relevant Links
 
 - https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/getting-started-with-spring-cloud-function-in-azure[Spring Cloud Function in Azure]

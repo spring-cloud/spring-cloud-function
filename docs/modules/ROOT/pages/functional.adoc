@@ -1,5 +1,6 @@
 Spring Cloud Function supports a "functional" style of bean declarations for small apps where you need fast startup. The functional style of bean declaration was a feature of Spring Framework 5.0 with significant enhancements in 5.1.
 
+[[comparing-functional-with-traditional-bean-definitions]]
 == Comparing Functional with Traditional Bean Definitions
 
 Here's a vanilla Spring Cloud Function application from with the
@@ -113,6 +114,7 @@ public void initialize(GenericApplicationContext context) {
 }
 ----
 
+[[limitations-of-functional-bean-declaration]]
 == Limitations of Functional Bean Declaration
 
 Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot,
@@ -128,6 +130,7 @@ functional mode" using `spring.functional.enabled=false` so that Spring Boot can
 
 Spring Cloud Function supports visualization of functions available in `FunctionCatalog` through Actuator endpoints as well as programmatic way.
 
+[[programmatic-way]]
 ==== Programmatic way
 
 To see function available within your application context programmatically all you need is access to `FunctionCatalog`. There you can 
@@ -143,6 +146,7 @@ Set<String> names = functionCatalog.getNames(null); will list the names of all t
 . . .
 ----
 
+[[actuator]]
 ==== Actuator
 Since actuator and web are optional, you must first add one of the web dependencies as well as add the actuator dependency manually.
 The following example shows how to add the dependency for the Web framework:
@@ -198,6 +202,7 @@ Your output should look something like this:
  	{"type":"SUPPLIER","output-type":"string"}. . .
 ----
 
+[[testing-functional-applications]]
 = Testing Functional Applications
 
 Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users.
