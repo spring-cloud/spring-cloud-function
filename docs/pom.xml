@@ -10,7 +10,7 @@
 		<artifactId>spring-cloud-function-parent</artifactId>
 		<version>4.1.0-SNAPSHOT</version>
 	</parent>
-	<packaging>pom</packaging>
+	<packaging>jar</packaging>
 	<name>Spring Cloud Function Docs</name>
 	<description>Spring Cloud Function Docs</description>
 	<properties>
@@ -20,9 +20,6 @@
 		<!-- Don't upload docs jar to central / repo.spring.io -->
 		<maven-deploy-plugin-default.phase>none</maven-deploy-plugin-default.phase>
 	</properties>
-	<dependencies>
-		<!-- Dependencies needed for config props -->
-	</dependencies>
 	<build>
 		<sourceDirectory>src/main/asciidoc</sourceDirectory>
 	</build>

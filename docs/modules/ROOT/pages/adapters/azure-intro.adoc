@@ -31,9 +31,11 @@ Provides `Spring` & `Spring Cloud Function` integration for Azure Functions.
 In order to enable the Azure Function integration add the azure adapter dependency to your `pom.xml` or `build.gradle`
 files:
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 <dependencies>
 	<dependency>
@@ -43,14 +45,15 @@ files:
 </dependencies>
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 dependencies {
     implementation 'org.springframework.cloud:spring-cloud-function-adapter-azure'
 }
 ----
-====
+======
 
 NOTE: version `4.0.0+` is required. Having the adapter on the classpath activates the Azure Java Worker integration.
 
@@ -105,8 +108,8 @@ TIP: Use the Java annotations included in the https://learn.microsoft.com/en-us/
 
 The implementation of the business logic used inside the Azure handlers looks like a common Spring application:
 
-[[HttpTriggerDemoApplication]]
 
+[[HttpTriggerDemoApplication]]
 [source,java]
 ----
 @SpringBootApplication // <1>
@@ -197,9 +200,11 @@ The xref:adapters/azure-intro.adoc#disable.spring.boot.plugin[Disable Spring Boo
 Azure provides https://github.com/microsoft/azure-maven-plugins/tree/develop/azure-functions-maven-plugin[Maven] and https://github.com/microsoft/azure-gradle-plugins/tree/master/azure-functions-gradle-plugin[Gradle] plugins to process the annotated classes, generate the necessary configurations and produce the expected package layout.
 Plugins are used to set the platform, runtime and app-settings properties like this:
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 <plugin>
 	<groupId>com.microsoft.azure</groupId>
@@ -238,8 +243,9 @@ Plugins are used to set the platform, runtime and app-settings properties like t
 </plugin>
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 plugins {
     id "com.microsoft.azure.azurefunctions" version "1.11.0"
@@ -271,7 +277,7 @@ azurefunctions {
     // localDebug = "transport=dt_socket,server=y,suspend=n,address=5005"
 }
 ----
-====
+======
 
 More information about the runtime configurations: https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#java-versions[Java Versions], https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#specify-the-deployment-os[Deployment OS].
 
@@ -304,9 +310,11 @@ Specify the `Main-Class`/`Start-Class` to point to your Spring application entry
 
 You can use the Maven `start-class` property or set the `Main-Class` attribute of your `MANIFEST/META-INFO`:
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 <properties>
 	<start-class>YOUR APP MAIN CLASS</start-class>
@@ -314,8 +322,9 @@ You can use the Maven `start-class` property or set the `Main-Class` attribute o
 </properties>
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 jar {
     manifest {
@@ -325,7 +334,7 @@ jar {
     }
 }
 ----
-====
+======
 
 TIP: Alternatively you can use the `MAIN_CLASS` environment variable to set the  class name explicitly.
 For local runs, add the `MAIN_CLASS` variable to your `local.settings.json` file and for Azure portal deployment set the variable in the https://learn.microsoft.com/en-us/azure/azure-functions/functions-how-to-use-azure-function-app-settings?tabs=portal#get-started-in-the-azure-portal[App Settings].
@@ -373,9 +382,11 @@ It hides the Azure annotations complexity and relies on the familiar https://doc
 
 To enable the Azure Web Adapter, add the adapter dependency to your `pom.xml` or `build.gradle` files:
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 <dependencies>
 	<dependency>
@@ -385,14 +396,15 @@ To enable the Azure Web Adapter, add the adapter dependency to your `pom.xml` or
 </dependencies>
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 dependencies {
     implementation 'org.springframework.cloud:spring-cloud-function-adapter-azure-web'
 }
 ----
-====
+======
 
 The same xref:adapters/azure-intro.adoc#azure.configuration[Configuration] and xref:adapters/azure-intro.adoc#azure.usage[Usage] instructions apply to the `Azure Web Adapter` as well.
 
@@ -412,19 +424,22 @@ Common instructions for building and deploying both, `Azure Adapter` and `Azure 
 [[build]]
 == Build
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 ./mvnw -U clean package
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 ./gradlew azureFunctionsPackage
 ----
-====
+======
 
 [[running-locally]]
 == Running locally
@@ -434,19 +449,22 @@ For some configuration you would need the https://learn.microsoft.com/en-us/azur
 
 Then run the sample:
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 ./mvnw azure-functions:run
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 ./gradlew azureFunctionsRun
 ----
-====
+======
 
 [[running-on-azure]]
 == Running on Azure
@@ -459,34 +477,40 @@ az login
 
 and deploy
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 ./mvnw azure-functions:deploy
 ----
 
+Gradle::
++
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 ----
 ./gradlew azureFunctionsDeploy
 ----
-====
+======
 
 [[debug-locally]]
 == Debug locally
 
 Run the function in debug mode.
 
-====
+[tabs]
+======
+Maven::
++
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
-.Maven
 ----
 ./mvnw azure-functions:run -DenableDebug
 ----
-[source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
-.Gradle
 
+Gradle::
++
+[source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
 ----
 // If you want to debug your functions, please add the following line
 // to the azurefunctions section of your build.gradle.
@@ -495,7 +519,7 @@ azurefunctions {
   localDebug = "transport=dt_socket,server=y,suspend=n,address=5005"
 }
 ----
-====
+======
 
 Alternatively and the `JAVA_OPTS` value to your `local.settings.json` like this:
 
