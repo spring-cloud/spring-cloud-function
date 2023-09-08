@@ -5,12 +5,10 @@ image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={bran
 [[introduction]]
 = Introduction
 
-include::_intro.adoc[]
 
 [[getting-started]]
 = Getting Started
 
-include::getting-started.adoc[]
 
 [[building]]
 = Building
