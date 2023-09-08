@@ -1,5 +1,6 @@
 :branch: master
 
+[[aws-lambda]]
 === AWS Lambda
 
 The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.
@@ -7,6 +8,7 @@ The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and c
 The details of how to get stared with AWS Lambda is out of scope of this document, so the expectation is that user has some familiarity with
 AWS and AWS Lambda and wants to learn what additional value spring provides.
 
+[[getting-started]]
 ==== Getting Started
 
 One of the goals of Spring Cloud Function framework is to provide necessary infrastructure elements to enable a _simple function application_
@@ -56,6 +58,7 @@ isolating you from the specifics of AWS Lambda API, for some cases you may want 
 to use. The next section will explain you how you can accomplish just that.
 
 
+[[aws-request-handlers]]
 ==== AWS Request Handlers
 
 The adapter has a couple of generic request handlers that you can use. The most generic is (and the one we used in the Getting Started section)
@@ -69,6 +72,7 @@ property or environment variable. The functions are extracted from the Spring Cl
 the framework will attempt to find a default following the search order where it searches first for `Function` then `Consumer` and finally `Supplier`).
 
 
+[[aws-function-routing]]
 ==== AWS Function Routing
 
 One of the core features of Spring Cloud Function is https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[routing] 
@@ -90,10 +94,12 @@ Also, note that since AWS does not allow dots `.` and/or hyphens`-` in the name 
 dots with underscores and hyphens with camel case.  So for example `spring.cloud.function.definition` becomes `spring_cloud_function_definition`
 and `spring.cloud.function.routing-expression` becomes `spring_cloud_function_routingExpression`. 
 
+[[aws-function-routing-with-custom-runtime]]
 ===== AWS Function Routing with Custom Runtime
 
 When using <<Custom Runtime>> Function Routing works the same way. All you need is to specify `functionRouter` as AWS Handler the same way you would use the name of the function as handler. 
 
+[[notes-on-jar-layout]]
 ==== Notes on JAR Layout
 
 You don't need the Spring Cloud Function Web or Stream adapter at runtime in Lambda, so you might
@@ -158,12 +164,14 @@ then additional transformers must be configured as part of the maven-shade-plugi
 </plugin>
 ----
 
+[[build-file-setup]]
 ==== Build file setup
 
 In order to run Spring Cloud Function applications on AWS Lambda, you can leverage Maven or Gradle
  plugins offered by the cloud platform provider.
 
 
+[[maven]]
 ===== Maven
 
 In order to use the adapter plugin for Maven, add the plugin dependency to your `pom.xml`
@@ -202,6 +210,7 @@ You can use the Spring Boot Maven Plugin to generate the <<thin-jar>>.
 You can find the entire sample `pom.xml` file for deploying Spring Cloud Function
 applications to AWS Lambda with Maven https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/pom.xml[here].
 
+[[gradle]]
 ===== Gradle
 
 In order to use the adapter plugin for Gradle, add the dependency to your `build.gradle` file:
@@ -270,6 +279,7 @@ assemble.dependsOn = [thinJar]
 You can find the entire sample `build.gradle` file for deploying Spring Cloud Function
 applications to AWS Lambda with Gradle https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/build.gradle[here].
 
+[[upload]]
 ==== Upload
 
 Build the sample under `spring-cloud-function-samples/function-sample-aws` and upload the `-aws` jar file to Lambda. The handler can be `example.Handler` or `org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler` (FQN of the class, _not_ a method reference, although Lambda does accept method references).
@@ -295,6 +305,7 @@ The input type for the function in the AWS sample is a Foo with a single propert
 NOTE: The AWS sample app is written in the "functional" style (as an `ApplicationContextInitializer`). This is much faster on startup in Lambda than the traditional `@Bean` style, so if you don't need `@Beans` (or `@EnableAutoConfiguration`) it's a good choice. Warm starts are not affected.
 
 
+[[type-conversion]]
 ==== Type Conversion
 
 Spring Cloud Function will attempt to transparently handle type conversion between the raw
@@ -306,6 +317,7 @@ incoming stream event to an instance of `Foo`.
 In the event type is not known or can not be determined (e.g., `Function<?, ?>`) we will attempt to
 convert an incoming stream event to a generic `Map`.
 
+[[raw-input]]
 ====== Raw Input
 
 There are times when you may want to have access to a raw input. In this case all you need is to declare your

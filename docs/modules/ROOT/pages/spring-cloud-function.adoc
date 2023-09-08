@@ -1,3 +1,4 @@
+[[spring-cloud-function]]
 = Spring Cloud Function
 
 Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra, Dan Dobrin
@@ -12,20 +13,24 @@ Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra, Dan Dobrin
 :nofooter:
 :branch: master
 
+[[introduction]]
 == Introduction
 
 include::_intro.adoc[]
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing-docs.adoc[]
 
+[[getting-started]]
 == Getting Started
 
 include::getting-started.adoc[]
 
+[[programming-model]]
 == Programming model
 
 [[function.catalog]]
 
+[[function-catalog-and-flexible-function-signatures]]
 === Function Catalog and Flexible Function Signatures
 
 One of the main features of Spring Cloud Function is to adapt and support a range of type signatures for user-defined functions,
@@ -42,6 +47,7 @@ your function implementation.
 Reactive programming model also enables functional support for features that would be otherwise difficult to impossible to implement
 using imperative programming style. For more on this please read <<Function Arity>> section.
 
+[[java-8-function-support]]
 === Java 8 function support
 
 Spring Cloud Function embraces and builds on top of the 3 core functional interfaces defined by Java
@@ -80,6 +86,7 @@ adapters as well as other frameworks using Spring Cloud Function as the core pro
 So in summary Spring Cloud Function instruments java functions with additional features to be utilised in variety of execution contexts.
 
 
+[[function-definition]]
 ==== Function definition
 While the previous example shows you how to lookup function in FunctionCatalog programmatically, in a typical integration case where Spring Cloud Function used as programming model by another framework (e.fg. Spring Cloud Stream), you declare which functions to use via `spring.cloud.function.definition` property. Knowing that it is  important to understand some default behaviour when it comes to discovering functions in `FunctionCatalog`. For example, if you only have one Functional bean in your `ApplicationContext`,  the `spring.cloud.function.definition` property typically will not be required, since a single function in `FunctionCatalog` can be looked up by an empty name or any name. For example, assuming that `uppercase` is the only function in your catalog, it can be looked up as `catalog.lookup(null)`, `catalog.lookup(“”)`, `catalog.lookup(“foo”)`
 That said, for cases where you are using framework such as Spring Cloud Stream which uses `spring.cloud.function.definition` it is best practice and recommended to always use `spring.cloud.function.definition` property.
@@ -91,6 +98,7 @@ For example,
 spring.cloud.function.definition=uppercase
 ----
 
+[[filtering-ineligible-functions]]
 ==== Filtering ineligible functions
 A typical Application Context may include beans that are valid java functions, but not intended to be candidates to be registered with `FunctionCatalog`.
 Such beans could be auto-configurations from other projects or any other beans that qualify to be Java functions.
@@ -105,6 +113,7 @@ For example,
 spring.cloud.function.ineligible-definitions=foo,bar
 ----
 
+[[supplier]]
 ==== Supplier
 Supplier can be _reactive_ - `Supplier<Flux<T>>`
 or _imperative_ - `Supplier<T>`. From the invocation standpoint this should make no difference
@@ -138,23 +147,27 @@ public Supplier<Flux<String>> someSupplier() {
 }
 ----
 
+[[function]]
 ==== Function
 Function can also be written in imperative or reactive way, yet unlike Supplier and Consumer there are
 no special considerations for the implementor other then understanding that when used within frameworks
 such as https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream] and others, reactive function is
 invoked only once to pass a reference to the stream (Flux or Mono) and imperative is invoked once per event.
 
+[[consumer]]
 ==== Consumer
 Consumer is a little bit special because it has a `void` return type,
 which implies blocking, at least potentially. Most likely you will not
 need to write `Consumer<Flux<?>>`, but if you do need to do that,
 remember to subscribe to the input flux.
 
+[[function-composition]]
 === Function Composition
 Function Composition is a feature that allows one to compose several functions into one.
 The core support is based on function composition feature available with https://docs.oracle.com/javase/8/docs/api/java/util/function/Function.html#andThen-java.util.function.Function-[Function.andThen(..)]
 support available since Java 8. However on top of it, we provide few additional features.
 
+[[declarative-function-composition]]
 ==== Declarative Function Composition
 
 This feature allows you to provide composition instruction in a declarative way using `|` (pipe) or `,` (comma) delimiter
@@ -169,6 +182,7 @@ function `uppercase` and function `reverse`. In fact that is one of the reasons 
 since the definition of a function can be a composition of several named functions.
 And as mentioned you can use `,` instead of pipe (such as `...definition=uppercase,reverse`).
 
+[[composing-non-functions]]
 ==== Composing non-Functions
 Spring Cloud Function also supports composing Supplier with `Consumer` or `Function` as well as `Function` with `Consumer`.
 What's important here is to understand the end product of such definitions.
@@ -178,6 +192,7 @@ Following the same logic composing Function with Consumer will result in Consume
 And of course you can't compose uncomposable such as Consumer and Function, Consumer and Supplier etc.
 
 
+[[function-routing-and-filtering]]
 === Function Routing and Filtering
 
 Since version 2.2 Spring Cloud Function provides routing feature allowing
@@ -199,6 +214,7 @@ public class RoutingFunction implements Function<Object, Object> {
 The routing instructions could be communicated in several ways. We support providing instructions via Message headers, System
 properties as well as pluggable strategy. So let's look at some of the details
 
+[[messageroutingcallback]]
 ==== MessageRoutingCallback
 
 The `MessageRoutingCallback` is a strategy to assist with determining the name of the route-to function definition.
@@ -299,6 +315,7 @@ public DefaultMessageRoutingHandler defaultRoutingHandler() {
 }
 ----
 
+[[function-filtering]]
 ==== Function Filtering
 Filtering is the type of routing where there are only two paths - 'go' or 'discard'. In terms of functions it mean
 you only want to invoke a certain function if some condition returns 'true', otherwise you want to discard input.
@@ -329,6 +346,7 @@ due to the nature of the reactive functions which are invoked only once to pass 
 is handled by the reactor, hence we can not access and/or rely on the routing instructions communicated via individual
 values (e.g., Message).
 
+[[multiple-routers]]
 ==== Multiple Routers
 
 By default the framework will always have a single routing function configured as described in previous sections. However, there are times when you may need more than one routing function.
@@ -381,6 +399,7 @@ public void testMultipleRouters() {
 }
 ----
 
+[[input/output-enrichment]]
 === Input/Output Enrichment
 
 There are often times when you need to modify or refine an incoming or outgoing Message and to keep your code clean of non-functional concerns. You don’t want to do it inside of your business logic.
@@ -461,6 +480,7 @@ In the event you are dealing with functions that have multiple inputs (next sect
 --spring.cloud.function.configuration.echo.input-header-mapping-expression[1].key2='hello2'
 ----
 
+[[function-arity]]
 === Function Arity
 
 There are times when a stream of data needs to be categorized and organized. For example,
@@ -496,6 +516,7 @@ IMPORTANT: IMPORTANT: At the moment, function arity is *only* supported for reac
 where evaluation and computation on confluence of events typically requires view into a
 stream of events rather than single event.
 
+[[input-header-propagation]]
 === Input Header propagation
 
 In a typical scenario input Message headers are not propagated to output and rightfully so, since the output of a function may be an input to something else requiring it's own set of Message headers.
@@ -531,6 +552,7 @@ Message<byte[]> result = uppercase.apply(MessageBuilder.withPayload("bob").setHe
 assertThat(result.getHeaders()).containsKey("foo");
 ----
 
+[[type-conversion-content-type-negotiation]]
 === Type conversion (Content-Type negotiation)
 
 Content-Type negotiation is one of the core features of Spring Cloud Function as it allows to not only transform the incoming data to the types declared
@@ -569,6 +591,7 @@ For example, HTTP POST request will have its content-type HTTP header copied to 
 For cases when such header does not exist framework relies on the default content type as `application/json`.
 
 
+[[content-type-versus-argument-type]]
 ==== Content Type versus Argument Type
 
 As mentioned earlier, for the framework to select the appropriate `MessageConverter`, it requires argument type and, optionally, content type information.
@@ -586,6 +609,7 @@ NOTE: Do not expect `Message` to be converted into some other type based only on
 Remember that the `contentType` is complementary to the target type.
 It is a hint, which `MessageConverter` may or may not take into consideration.
 
+[[message-converters]]
 ==== Message Converters
 
 `MessageConverters` define two methods:
@@ -604,6 +628,7 @@ The payload of the `Message` could be any type, and it is
 up to the actual implementation of the `MessageConverter` to support multiple types.
 
 
+[[provided-messageconverters]]
 ==== Provided MessageConverters
 
 As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
@@ -662,6 +687,7 @@ public class MyCustomMessageConverter extends AbstractMessageConverter {
 }
 ----
 
+[[note-on-json-options]]
 ==== Note on JSON options
 
 In Spring Cloud Function we support Jackson and Gson mechanisms to deal with JSON.
@@ -677,6 +703,7 @@ That said, the type conversion is usually transparent to the developer, however 
 you can easily inject it into your code if needed.
 
 
+[[kotlin-lambda-support]]
 === Kotlin Lambda support
 
 We also provide support for Kotlin lambdas (since v2.0).
@@ -708,12 +735,14 @@ same rules for signature transformation outlined in "Java 8 function support" se
 To enable Kotlin support all you need is to add Kotlin SDK libraries on the classpath which will trigger appropriate
 autoconfiguration and supporting classes.
 
+[[function-component-scan]]
 === Function Component Scan
 
 Spring Cloud Function will scan for implementations of `Function`, `Consumer` and `Supplier` in a package called `functions` if it exists. Using this
 feature you can write functions that have no dependencies on Spring - not even the `@Component` annotation is needed. If you want to use a different
 package, you can set `spring.cloud.function.scan.packages`. You can also use `spring.cloud.function.scan.enabled=false` to switch off the scan completely.
 
+[[standalone-web-applications]]
 == Standalone Web Applications
 
 Functions could be automatically exported as HTTP endpoints.
@@ -756,6 +785,7 @@ When POSTing text the response format might be different with Spring Boot 2.0 an
 
 See <<Testing Functional Applications>> to see the details and example on how to test such application.
 
+[[http-request-parameters]]
 ==== HTTP Request Parameters
 As you have noticed from the previous table, you can pass an argument to a function as path variable (i.e., `/{function}/{item}`).
 For example, `http://localhost:8080/uppercase/foo` will result in calling `uppercase` function with its input parameter being `foo`.
@@ -764,6 +794,7 @@ While this is the recommended approach and the one that fits most use cases case
 The framework will treat HTTP request parameters similar to the HTTP headers by storing them in the `Message` headers under the header key `http_request_param`
 with its value being a `Map` of request parameters, so in order to access them your function input signature should accept `Message` type (e.g., `Function<Message<String>, String>`). For convenience we provide `HeaderUtils.HTTP_REQUEST_PARAM` constant.
 
+[[function-mapping-rules]]
 === Function Mapping rules
 
 If there is only a single function (consumer etc.) in the catalog, the name in the path is optional.
@@ -790,6 +821,7 @@ However there are function `foo` and `bar`. So, in this case `localhost:8080/upp
 This could be useful especially for cases when URL is used to communicate certain information since there will be Message header called `uri` with the value
 of the actual URL, giving user ability to use it for evaluation and computation.
 
+[[function-filtering-rules]]
 === Function Filtering rules
 
 In situations where there are more than one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
@@ -810,6 +842,7 @@ This will only export function `foo` and function `bar` regardless how many func
 
 This will only export function composition `foo|bar` and function `baz` regardless how many functions are available in catalog (e.g., `localhost:8080/foo,bar`).
 
+[[crud-rest-with-spring-cloud-function]]
 === CRUD REST with Spring Cloud Function
 
 By now it should be clear that functions are exported as REST endpoints and can be invoked using various HTTP methods. In other words a single
@@ -829,11 +862,13 @@ spring.cloud.function.http.DELETE=deleteById
 
 As you can see, here we’re mapping functions to various HTTP methods using the same rules as `spring.cloud.function.definition` property where “;” allows us to define several functions and “|” signifies function composition.
 
+[[standalone-streaming-applications]]
 == Standalone Streaming Applications
 
 To send or receive messages from a broker (such as RabbitMQ or Kafka) you can leverage `spring-cloud-stream` project and it's integration with Spring Cloud Function.
 Please refer to https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring_cloud_function[Spring Cloud Function] section of the https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream] reference manual for more details and examples.
 
+[[deploying-a-packaged-function]]
 == Deploying a Packaged Function
 
 Spring Cloud Function provides a "deployer" library that allows you to launch a jar file (or exploded archive, or set of jar files) with an isolated class loader and expose the functions defined in it. This is quite a powerful tool that would allow you to, for instance, adapt a function to a range of different input-output adapters without changing the target jar file. Serverless platforms often have this kind of feature built in, so you could see it as a building block for a function invoker in such a platform (indeed the https://projectriff.io[Riff] Java function invoker uses this library).
@@ -907,10 +942,12 @@ public MavenProperties mavenProperties() {
 }
 ```
 
+[[supported-packaging-scenarios]]
 === Supported Packaging Scenarios
 
 Currently Spring Cloud Function supports several packaging scenarios to give you the most flexibility when it comes to deploying functions.
 
+[[simple-jar]]
 ==== Simple JAR
 
 This packaging option implies no dependency on anything related to Spring.
@@ -954,6 +991,7 @@ package named `functions`, you can omit `spring.cloud.function.function-class` p
 Keep in mind the naming convention to follow when doing function lookup. For example function class `functions.UpperCaseFunction` will be available in `FunctionCatalog`
 under the name `upperCaseFunction`.
 
+[[spring-boot-jar]]
 ==== Spring Boot JAR
 
 This packaging option implies there is a dependency on Spring Boot and that the JAR was generated as Spring Boot JAR. That said, given that the deployed JAR
@@ -978,6 +1016,7 @@ As before all you need to do is specify `location` and `function-class` properti
 For more details please reference the complete sample available https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-deployer/src/it/bootjar[here].
 You can also find a corresponding test in https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-deployer/src/test/java/org/springframework/cloud/function/deployer/FunctionDeployerTests.java#L50[FunctionDeployerTests].
 
+[[spring-boot-application]]
 ==== Spring Boot Application
 
 This packaging option implies your JAR is complete stand alone Spring Boot application with functions as managed Spring beans.
@@ -1012,10 +1051,12 @@ You can also find a corresponding test in https://github.com/spring-cloud/spring
 
 NOTE: This particular deployment option may or may not have Spring Cloud Function on it's classpath. From the deployer perspective this doesn't matter.
 
+[[functional-bean-definitions]]
 == Functional Bean Definitions
 
 include::functional.adoc[leveloffset=+1]
 
+[[serverless-platform-adapters]]
 == Serverless Platform Adapters
 
 As well as being able to run as a standalone process, a Spring Cloud

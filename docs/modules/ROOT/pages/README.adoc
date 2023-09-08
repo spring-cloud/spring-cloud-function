@@ -2,18 +2,22 @@
 
 image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={branch}[Build Status, link=https://travis-ci.org/spring-cloud/spring-cloud-function]
 
+[[introduction]]
 == Introduction
 
 include::_intro.adoc[]
 
+[[getting-started]]
 == Getting Started
 
 include::getting-started.adoc[]
 
+[[building]]
 == Building
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/building.adoc[]
 
+[[contributing]]
 == Contributing
 
 include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing.adoc[]
