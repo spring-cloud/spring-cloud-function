@@ -1,5 +1,6 @@
 [[spring-cloud-function]]
 = Spring Cloud Function
+:page-section-summary-toc: 1
 
 Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra, Dan Dobrin
 

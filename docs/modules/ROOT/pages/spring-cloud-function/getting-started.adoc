@@ -1,5 +1,6 @@
 [[getting-started]]
 = Getting Started
+:page-section-summary-toc: 1
 
 include:../:getting-started.adoc[]
 
