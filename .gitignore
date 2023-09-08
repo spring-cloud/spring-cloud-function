@@ -30,3 +30,9 @@ coverage-error.log
 credentials.yml
 .flattened-pom.xml
 pom.xml.versionsBackup
+
+node
+node_modules
+build
+package.json
+package-lock.json
