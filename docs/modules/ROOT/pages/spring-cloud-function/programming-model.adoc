@@ -576,7 +576,7 @@ pre-configured `MessageConverters` to see if any one of them can convert the pay
 The combination of `contentType` and argument type is the mechanism by which framework determines if message can be converted to a target type by locating
 the appropriate `MessageConverter`.
 If no appropriate `MessageConverter` is found, an exception is thrown, which you can handle by adding a custom `MessageConverter`
-(see `<<user-defined-message-converters>>`).
+(see `xref:spring-cloud-function/programming-model.adoc#user-defined-message-converters[User-defined Message Converters]`).
 
 NOTE: Do not expect `Message` to be converted into some other type based only on the `contentType`.
 Remember that the `contentType` is complementary to the target type.
@@ -614,7 +614,7 @@ The following list describes the provided `MessageConverters`, in order of prece
 When no appropriate converter is found, the framework throws an exception. When that happens, you should check your code and configuration and ensure you did
 not miss anything (that is, ensure that you provided a `contentType` by using a binding or a header).
 However, most likely, you found some uncommon case (such as a custom `contentType` perhaps) and the current stack of provided `MessageConverters`
-does not know how to convert. If that is the case, you can add custom `MessageConverter`. See <<user-defined-message-converters>>.
+does not know how to convert. If that is the case, you can add custom `MessageConverter`. See xref:spring-cloud-function/programming-model.adoc#user-defined-message-converters[User-defined Message Converters].
 
 [[user-defined-message-converters]]
 === User-defined Message Converters

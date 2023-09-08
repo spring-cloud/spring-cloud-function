@@ -189,7 +189,7 @@ file:
 
 As pointed out in the <<Notes on JAR Layout>>, you will need a shaded jar in order to upload it
 to AWS Lambda. You can use the https://maven.apache.org/plugins/maven-shade-plugin/[Maven Shade Plugin] for that.
-The example of the <<shade-plugin-setup,setup>> can be found above.
+The example of the xref:adapters/aws-intro.adoc#shade-plugin-setup[setup] can be found above.
 
 You can use the Spring Boot Maven Plugin to generate the <<thin-jar>>.
 [source,xml]
