@@ -1,6 +1,0 @@
-[[functional-bean-definitions]]
-= Functional Bean Definitions
-:page-section-summary-toc: 1
-
-include:../:functional.adoc[leveloffset=+1]
-

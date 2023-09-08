@@ -1,4 +1,0 @@
-org.springframework.cloud.function.context.WrapperDetector=\
-org.springframework.cloud.function.context.config.FluxWrapperDetector
-org.springframework.context.ApplicationContextInitializer=\
-org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer

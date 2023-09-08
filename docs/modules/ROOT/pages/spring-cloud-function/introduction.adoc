@@ -1,8 +1,0 @@
-[[introduction]]
-= Introduction
-:page-section-summary-toc: 1
-
-include:../:_intro.adoc[]
-
-include:../:https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/master/docs/src/main/asciidoc/contributing-docs.adoc[]
-

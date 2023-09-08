@@ -1,177 +1,58 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xmlns="http://maven.apache.org/POM/4.0.0"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>spring-cloud-function-parent</artifactId>
-	<name>Spring Cloud Function Parent</name>
-	<version>4.1.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-function-docs-build</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
 
-	<parent>
-		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-build</artifactId>
-		<version>4.1.0-SNAPSHOT</version>
-		<relativePath/>
-	</parent>
+	<name>Spring Cloud Function Docs Build</name>
+	<description>Builds Spring Cloud Function Docs.</description>
+	<url>https://spring.io/projects/spring-cloud-function</url>
+	<scm>
+		<connection>scm:git:https://github.com/spring-cloud/spring-cloud-function.git
+		</connection>
+		<developerConnection>
+			scm:git:git@github.com:spring-cloud/spring-cloud-function.git
+		</developerConnection>
+		<url>https://github.com/spring-cloud/spring-cloud-function</url>
+	</scm>
+	<issueManagement>
+		<url>https://github.com/spring-cloud/spring-cloud-function/issues</url>
+	</issueManagement>
 
 	<properties>
-		<java.version>17</java.version>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<wrapper.version>1.0.27.RELEASE</wrapper.version>
-		<docs.main>spring-cloud-function</docs.main>
-		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
-		<maven-checkstyle-plugin.failsOnViolation>true
-		</maven-checkstyle-plugin.failsOnViolation>
-		<maven-checkstyle-plugin.includeTestSourceDirectory>true
-		</maven-checkstyle-plugin.includeTestSourceDirectory>
+		<io.spring.maven.antora-version>0.0.3</io.spring.maven.antora-version>
 	</properties>
-	
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-function-dependencies</artifactId>
-				<version>${project.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
-	
+
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
+				<groupId>io.spring.maven.antora</groupId>
+				<artifactId>antora-maven-plugin</artifactId>
+				<version>${io.spring.maven.antora-version}</version>
+				<extensions>true</extensions>
+				<configuration>
+					<options>
+						<option>--to-dir=target/antora/site</option>
+						<option>--stacktrace</option>
+						<option>--fetch</option>
+					</options>
+					<environment>
+						<ALGOLIA_API_KEY>9d489079e5ec46dbb238909fee5c9c29</ALGOLIA_API_KEY>
+						<ALGOLIA_APP_ID>WB1FQYI187</ALGOLIA_APP_ID>
+						<ALGOLIA_INDEX_NAME>springcloudfunction</ALGOLIA_INDEX_NAME>
+					</environment>
+				</configuration>
 			</plugin>
-			<plugin>
-		       <groupId>org.apache.maven.plugins</groupId>
-		       <artifactId>maven-surefire-plugin</artifactId>
-		       <configuration>
-		            <argLine>--add-opens java.base/java.util=ALL-UNNAMED</argLine>
-		       </configuration>
-		     </plugin>
 		</plugins>
-		<pluginManagement>
-			
-			<plugins>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>flatten-maven-plugin</artifactId>
-				</plugin>
-				<plugin>
-					<artifactId>maven-javadoc-plugin</artifactId>
-					<inherited>false</inherited>
-					<configuration>
-						<aggregate>true</aggregate>
-						<excludePackageNames>com.example,functions,example
-						</excludePackageNames>
-					</configuration>
-					<executions>
-						<execution>
-							<id>aggregate</id>
-							<goals>
-								<goal>aggregate-jar</goal>
-							</goals>
-							<phase>package</phase>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-maven-plugin</artifactId>
-					<version>${spring-boot.version}</version>
-					<dependencies>
-						<dependency>
-							<groupId>org.springframework.boot.experimental</groupId>
-							<artifactId>spring-boot-thin-layout</artifactId>
-							<version>${wrapper.version}</version>
-						</dependency>
-					</dependencies>
-				</plugin>
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.codehaus.mojo
-										</groupId>
-										<artifactId>
-											flatten-maven-plugin
-										</artifactId>
-										<versionRange>
-											[1.0.0,)
-										</versionRange>
-										<goals>
-											<goal>flatten</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 	</build>
 
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</reporting>
-
-	<profiles>
-		<profile>
-			<id>core</id>
-			<modules>
-				<module>spring-cloud-function-dependencies</module>
-				<module>spring-cloud-function-core</module>
-				<module>spring-cloud-function-context</module>
-				<module>spring-cloud-function-web</module>
-			</modules>
-		</profile>
-		<profile>
-			<id>all</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<modules>
-				<module>spring-cloud-function-dependencies</module>
-				<module>spring-cloud-function-core</module>
-				<module>spring-cloud-function-context</module>
-				<module>spring-cloud-function-web</module>
-				<module>spring-cloud-starter-function-web</module>
-				<module>spring-cloud-starter-function-webflux</module>
-				<module>spring-cloud-function-samples</module>
-				<module>spring-cloud-function-deployer</module>
-				<module>spring-cloud-function-adapters</module>
-				<module>spring-cloud-function-integration</module>
-				<module>spring-cloud-function-rsocket</module>
-				<module>spring-cloud-function-kotlin</module>
-				<module>docs</module>
-			</modules>
-		</profile>
-	</profiles>
 	<repositories>
 		<repository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
+			<id>spring-snapshot</id>
 			<url>https://repo.spring.io/snapshot</url>
 			<snapshots>
 				<enabled>true</enabled>
@@ -181,49 +62,9 @@
 			</releases>
 		</repository>
 		<repository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
+			<id>spring-milestone</id>
 			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>spring-releases</id>
-			<name>Spring Releases</name>
-			<url>https://repo.spring.io/release</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
 		</repository>
 	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</pluginRepository>
-		<pluginRepository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-		<pluginRepository>
-			<id>spring-releases</id>
-			<name>Spring Releases</name>
-			<url>https://repo.spring.io/release</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
+
 </project>

@@ -1,1 +1,0 @@
-org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor=org.springframework.cloud.function.context.FunctionTypeProcessor

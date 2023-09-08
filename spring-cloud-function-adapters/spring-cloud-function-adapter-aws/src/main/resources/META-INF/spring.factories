@@ -1,2 +1,0 @@
-org.springframework.context.ApplicationContextInitializer=\
-org.springframework.cloud.function.adapter.aws.CustomRuntimeInitializer

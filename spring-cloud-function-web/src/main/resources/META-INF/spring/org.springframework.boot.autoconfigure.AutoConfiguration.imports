@@ -1,3 +1,0 @@
-org.springframework.cloud.function.web.flux.ReactorAutoConfiguration
-org.springframework.cloud.function.web.mvc.ReactorAutoConfiguration
-org.springframework.cloud.function.web.source.FunctionExporterAutoConfiguration

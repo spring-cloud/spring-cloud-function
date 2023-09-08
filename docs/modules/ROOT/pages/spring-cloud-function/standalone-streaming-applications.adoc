@@ -1,7 +1,0 @@
-[[standalone-streaming-applications]]
-= Standalone Streaming Applications
-:page-section-summary-toc: 1
-
-To send or receive messages from a broker (such as RabbitMQ or Kafka) you can leverage `spring-cloud-stream` project and it's integration with Spring Cloud Function.
-Please refer to https://cloud.spring.io/spring-cloud-static/spring-cloud-stream/current/reference/html/spring-cloud-stream.html#spring_cloud_function[Spring Cloud Function] section of the https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream] reference manual for more details and examples.
-

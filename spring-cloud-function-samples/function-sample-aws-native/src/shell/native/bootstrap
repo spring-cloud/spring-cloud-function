@@ -1,5 +1,0 @@
-#!/bin/sh
-
-cd ${LAMBDA_TASK_ROOT:-.}
-
-./function-sample-aws-native -Dlogging.level.org.springframework=DEBUG
