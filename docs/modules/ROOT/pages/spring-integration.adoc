@@ -1,5 +1,5 @@
 [[spring-integration]]
-== Spring Integration Interaction
+= Spring Integration Interaction
 
 https://spring.io/projects/spring-integration[Spring Integration Framework] extends the Spring programming model to support the well-known Enterprise Integration Patterns.
 It enables lightweight messaging within Spring-based applications and supports integration with external systems via declarative adapters.
