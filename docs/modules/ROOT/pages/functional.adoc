@@ -1,7 +1,8 @@
+= Functional Bean Definitions
+
 Spring Cloud Function supports a "functional" style of bean declarations for small apps where you need fast startup. The functional style of bean declaration was a feature of Spring Framework 5.0 with significant enhancements in 5.1.
 
-[[comparing-functional-with-traditional-bean-definitions]]
-= Comparing Functional with Traditional Bean Definitions
+== Comparing Functional with Traditional Bean Definitions
 
 Here's a vanilla Spring Cloud Function application from with the
 familiar `@Configuration` and `@Bean` declaration style:
@@ -115,7 +116,7 @@ public void initialize(GenericApplicationContext context) {
 ----
 
 [[limitations-of-functional-bean-declaration]]
-= Limitations of Functional Bean Declaration
+== Limitations of Functional Bean Declaration
 
 Most Spring Cloud Function apps have a relatively small scope compared to the whole of Spring Boot,
 so we are able to adapt it to these functional bean definitions easily. If you step outside that limited scope,
@@ -126,7 +127,7 @@ declarations if you want (i.e. the "hybrid" style), but in that case you will ne
 functional mode" using `spring.functional.enabled=false` so that Spring Boot can take back control.
 
 [[function_visualization]]
-= Function visualization and control
+== Function visualization and control
 
 Spring Cloud Function supports visualization of functions available in `FunctionCatalog` through Actuator endpoints as well as programmatic way.
 
@@ -203,7 +204,7 @@ Your output should look something like this:
 ----
 
 [[testing-functional-applications]]
-= Testing Functional Applications
+== Testing Functional Applications
 
 Spring Cloud Function also has some utilities for integration testing that will be very familiar to Spring Boot users.
 

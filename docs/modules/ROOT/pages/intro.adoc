@@ -1,3 +1,5 @@
+= Introduction
+
 Spring Cloud Function is a project with the following high-level goals:
 
 * Promote the implementation of business logic via functions.

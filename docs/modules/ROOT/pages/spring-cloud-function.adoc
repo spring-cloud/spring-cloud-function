@@ -1,16 +1,18 @@
 [[spring-cloud-function]]
 = Spring Cloud Function
-:page-section-summary-toc: 1
 
-Mark Fisher, Dave Syer, Oleg Zhurakousky, Anshul Mehra, Dan Dobrin
+* xref:spring-cloud-function/introduction.adoc[]
+** xref:spring-cloud-function/programming-model.adoc[]
+** xref:spring-cloud-function/standalone-web-applications.adoc[]
+** xref:spring-cloud-function/standalone-streaming-applications.adoc[]
+** xref:spring-cloud-function/deploying-a-packaged.adoc[]
+** xref:spring-cloud-function/functional-bean-definitions.adoc[]
+** xref:spring-cloud-function/serverless-platform-adapters.adoc[]
 
-*{project-version}*
-
----
-
-:github: https://github.com/spring-cloud/spring-cloud-function
-:githubmaster: {github}/tree/master
-:docslink: {githubmaster}/docs/src/main/asciidoc
-:nofooter:
-:branch: master
-
+** xref:spring-cloud-function/getting-started.adoc[]
+** xref:spring-cloud-function/programming-model.adoc[]
+#** xref:spring-cloud-function/standalone-web-applications.adoc[]
+#** xref:spring-cloud-function/standalone-streaming-applications.adoc[]
+#** xref:spring-cloud-function/deploying-a-packaged.adoc[]
+#** xref:spring-cloud-function/functional-bean-definitions.adoc[]
+#** xref:spring-cloud-function/serverless-platform-adapters.adoc[]

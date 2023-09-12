@@ -1,5 +1,3 @@
-:branch: master
-
 [[google-cloud-functions]]
 = Google Cloud Functions
 
@@ -7,7 +5,7 @@ The Google Cloud Functions adapter enables Spring Cloud Function apps to run on 
 You can either run the function locally using the open source https://github.com/GoogleCloudPlatform/functions-framework-java[Google Functions Framework for Java] or on GCP.
 
 [[project-dependencies]]
-== Project Dependencies
+=== Project Dependencies
 
 Start by adding the `spring-cloud-function-adapter-gcp` dependency to your project.
 
@@ -65,7 +63,7 @@ NOTE: The function target should always be set to `org.springframework.cloud.fun
 A full example of a working `pom.xml` can be found in the https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-gcp-http/pom.xml[Spring Cloud Functions GCP sample].
 
 [[http-functions]]
-== HTTP Functions
+=== HTTP Functions
 
 Google Cloud Functions supports deploying https://cloud.google.com/functions/docs/writing/http[HTTP Functions], which are functions that are invoked by HTTP request. The sections below describe instructions for deploying a Spring Cloud Function as an HTTP Function.
 

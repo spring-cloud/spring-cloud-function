@@ -1,8 +1,6 @@
-:branch: master
-
 [[microsoft-azure-functions]]
 = Microsoft Azure Functions
-:sectnums:
+
 
 https://azure.microsoft.com[Azure] function adapter for deploying `Spring Cloud Function` applications as native Azure Java Functions.
 
@@ -13,7 +11,7 @@ The Azure annotations are just a type-safe way to configure your java function t
 The https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[spring-cloud-function-adapter-azure] extends the basic programming model to provide Spring and Spring Cloud Function support.
 With the adapter you can build your Spring Cloud Function application using dependency injections and then auto-wire the necessary services into your Azure handler methods.
 
-image::../images/scf-azure-adapter.svg[width=800,scaledwidth="75%",align="center"]
+image::{github-raw}/docs/src/main/asciidoc/images/scf-azure-adapter.svg[width=800,scaledwidth="75%",align="center"]
 
 TIP: For Web-based function applications, you can replace the generic `adapter-azure` with the specialized https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-azure-web[spring-cloud-function-adapter-azure-web].
 With the Azure Web Adapter you can deploy any Spring Web application as an Azure, HttpTrigger, function.
@@ -21,12 +19,12 @@ This adapter hides the Azure annotations complexity and uses the familiar https:
 For further information follow the xref:adapters/azure-intro.adoc#azure.web.adapter[Azure Web Adapter] section below.
 
 [[azure-adapter]]
-= Azure Adapter
+== Azure Adapter
 
 Provides `Spring` & `Spring Cloud Function` integration for Azure Functions.
 
 [[dependencies]]
-== Dependencies
+=== Dependencies
 
 In order to enable the Azure Function integration add the azure adapter dependency to your `pom.xml` or `build.gradle`
 files:
@@ -58,7 +56,7 @@ dependencies {
 NOTE: version `4.0.0+` is required. Having the adapter on the classpath activates the Azure Java Worker integration.
 
 [[azure.development.guidelines]]
-== Development Guidelines
+=== Development Guidelines
 
 Use the `@Component` (or `@Service`) annotation to turn any exiting Azure Function class (e.g. with `@FunctionName` handlers) into a Spring component.
 Then you can auto-wire the required dependencies (or the xref:spring-cloud-function/programming-model.adoc#function.catalog[Function Catalog] for Spring Cloud Function composition) and use those inside the Azure function handlers.
@@ -409,8 +407,7 @@ dependencies {
 The same xref:adapters/azure-intro.adoc#azure.configuration[Configuration] and xref:adapters/azure-intro.adoc#azure.usage[Usage] instructions apply to the `Azure Web Adapter` as well.
 
 
-[[samples]]
-== Samples
+== Azure Samples
 
 For further information, explore the following, Azure Web Adapter, sample:
 
