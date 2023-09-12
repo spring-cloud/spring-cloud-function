@@ -5,7 +5,7 @@ The Google Cloud Functions adapter enables Spring Cloud Function apps to run on 
 You can either run the function locally using the open source https://github.com/GoogleCloudPlatform/functions-framework-java[Google Functions Framework for Java] or on GCP.
 
 [[project-dependencies]]
-=== Project Dependencies
+== Project Dependencies
 
 Start by adding the `spring-cloud-function-adapter-gcp` dependency to your project.
 
@@ -63,12 +63,12 @@ NOTE: The function target should always be set to `org.springframework.cloud.fun
 A full example of a working `pom.xml` can be found in the https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-gcp-http/pom.xml[Spring Cloud Functions GCP sample].
 
 [[http-functions]]
-=== HTTP Functions
+== HTTP Functions
 
 Google Cloud Functions supports deploying https://cloud.google.com/functions/docs/writing/http[HTTP Functions], which are functions that are invoked by HTTP request. The sections below describe instructions for deploying a Spring Cloud Function as an HTTP Function.
 
 [[getting-started]]
-=== Getting Started
+== Getting Started
 
 Let’s start with a simple Spring Cloud Function example:
 
@@ -108,8 +108,8 @@ Invoke the HTTP function:
 curl http://localhost:8080/ -d "hello"
 ----
 
-[[deploy-to-gcp]]
-=== Deploy to GCP
+
+== Buikd & Deploy to GCP
 
 Start by packaging your application.
 
@@ -171,8 +171,8 @@ The `spring-cloud-function-adapter-gcp` allows for functions to be deployed as b
 The sections below describe the process for writing a Cloud Pub/Sub topic background function.
 However, there are a number of different event types that can trigger a background function to execute which are not discussed here; these are described in the https://cloud.google.com/functions/docs/calling[Background Function triggers documentation].
 
-[[getting-started]]
-=== Getting Started
+
+== GCP Getting Started
 
 Let’s start with a simple Spring Cloud Function which will run as a GCF background function:
 
@@ -265,7 +265,7 @@ curl localhost:8080 -H "Content-Type: application/json" -d '{"data":"hello"}'
 Verify that the function was invoked by viewing the logs.
 
 [[deploy-to-gcp]]
-=== Deploy to GCP
+== Deploy to GCP
 
 In order to deploy your background function to GCP, first package your application.
 

@@ -7,7 +7,9 @@ Spring Cloud Function supports a "functional" style of bean declarations for sma
 Here's a vanilla Spring Cloud Function application from with the
 familiar `@Configuration` and `@Bean` declaration style:
 
-```java
+[source,json]
+----
+
 @SpringBootApplication
 public class DemoApplication {
 
@@ -21,12 +23,13 @@ public class DemoApplication {
   }
 
 }
-```
+----
 
 Now for the functional beans: the user application code can be recast into "functional"
 form, like this:
 
-```java
+[source,json]
+----
 @SpringBootConfiguration
 public class DemoApplication implements ApplicationContextInitializer<GenericApplicationContext> {
 
@@ -46,7 +49,7 @@ public class DemoApplication implements ApplicationContextInitializer<GenericApp
   }
 
 }
-```
+----
 
 The main differences are:
 
@@ -71,7 +74,8 @@ it is lost unless we use a `FunctionRegistration`.
 An alternative to using an `ApplicationContextInitializer` and `FunctionRegistration` is to make the application
 itself implement `Function` (or `Consumer` or `Supplier`). Example (equivalent to the above):
 
-```java
+[source,json]
+----
 @SpringBootConfiguration
 public class DemoApplication implements Function<String, String> {
 
@@ -85,7 +89,7 @@ public class DemoApplication implements Function<String, String> {
   }
 
 }
-```
+----
 
 It would also work if you add a separate, standalone class of type `Function` and register it with
 the `SpringApplication` using an alternative form of the `run()` method. The main thing is that the generic
@@ -276,7 +280,6 @@ And to help with correct dependencies here is the excerpt from POM
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>{spring-boot-version}</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     . . . .

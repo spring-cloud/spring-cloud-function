@@ -9,7 +9,7 @@
 *** xref:adapters/aws-intro.adoc[]
 *** xref:adapters/azure-intro.adoc[]
 *** xref:adapters/gcp-intro.adoc[]
-** xref:spring-cloud-function/apendix.adoc[]
+** xref:spring-cloud-function/appendix.adoc[]
 *** https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-cloudevent[Cloud Events support]
 *** https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-rsocket[RSocket support]
 *** xref:spring-integration.adoc[Spring Integration]

@@ -5,5 +5,5 @@
 As well as being able to run as standalone process, Spring Cloud
 Function application can be adapted to run one of the existing
 serverless platforms. In the project there are adapters for
-https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS
-Lambda], and https://github.com/spring-cloud/spring-cloud-function/tree/{branch}/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure]. 
+https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-aws[AWS
+Lambda], and https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-azure[Azure]. 

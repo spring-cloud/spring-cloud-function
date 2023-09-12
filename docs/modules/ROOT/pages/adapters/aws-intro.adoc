@@ -259,7 +259,7 @@ You can use the Spring Boot Maven Plugin to generate the <<thin-jar>>.
 ----
 
 You can find the entire sample `pom.xml` file for deploying Spring Cloud Function
-applications to AWS Lambda with Maven https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/pom.xml[here].
+applications to AWS Lambda with Maven https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws/pom.xml[here].
 
 [[gradle]]
 === Gradle
@@ -328,4 +328,4 @@ assemble.dependsOn = [thinJar]
 ----
 
 You can find the entire sample `build.gradle` file for deploying Spring Cloud Function
-applications to AWS Lambda with Gradle https://github.com/spring-cloud/spring-cloud-function/blob/{branch}/spring-cloud-function-samples/function-sample-aws/build.gradle[here].
+applications to AWS Lambda with Gradle https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws/build.gradle[here].

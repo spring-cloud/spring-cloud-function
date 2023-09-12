@@ -202,6 +202,7 @@ Plugins are used to set the platform, runtime and app-settings properties like t
 ======
 Maven::
 +
+
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
 ----
 <plugin>
@@ -243,6 +244,7 @@ Maven::
 
 Gradle::
 +
+
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
 ----
 plugins {
@@ -312,6 +314,7 @@ You can use the Maven `start-class` property or set the `Main-Class` attribute o
 ======
 Maven::
 +
+
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
 ----
 <properties>
@@ -322,6 +325,7 @@ Maven::
 
 Gradle::
 +
+
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
 ----
 jar {
@@ -372,7 +376,7 @@ Here is a list of various Spring Cloud Function Azure Adapter samples you can ex
 - https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-azure-kafka-trigger[ Kafka Trigger & Output Binding (Maven)].
 
 [[azure.web.adapter]]
-= Azure Web Adapter
+== Azure Web Adapter
 
 For, pure, Web-based function applications, you can replace the generic `adapter-azure` with the specialized https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-adapters/spring-cloud-function-adapter-azure-web[spring-cloud-function-adapter-azure-web].
 The Azure Web Adapter can deploy any Spring Web application as a native Azure function, using the HttpTrigger internally.
@@ -414,7 +418,7 @@ For further information, explore the following, Azure Web Adapter, sample:
 - https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-azure-web[ Azure Web Adapter (Maven)].
 
 [[azure.usage]]
-= Usage
+== Usage
 
 Common instructions for building and deploying both, `Azure Adapter` and `Azure Web Adapter` type of applications.
 
@@ -485,6 +489,7 @@ Maven::
 
 Gradle::
 +
+
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
 ----
 ./gradlew azureFunctionsDeploy
@@ -500,6 +505,7 @@ Run the function in debug mode.
 ======
 Maven::
 +
+
 [source,xml,indent=0,subs="verbatim,attributes",role="primary"]
 ----
 ./mvnw azure-functions:run -DenableDebug
@@ -507,6 +513,7 @@ Maven::
 
 Gradle::
 +
+
 [source,groovy,indent=0,subs="verbatim,attributes",role="secondary"]
 ----
 // If you want to debug your functions, please add the following line
@@ -551,14 +558,14 @@ Here is snippet for a `VSCode` remote debugging configuration:
 ----
 
 [[functioninvoker-deprecated]]
-= FunctionInvoker (deprecated)
+== FunctionInvoker (deprecated)
 
 WARNING: The legacy `FunctionInvoker` programming model is deprecated and will not be supported going forward.
 
 For additional documentation and samples about the Function Integration approach follow the https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-azure/[azure-sample] README and code.
 
 [[relevant-links]]
-= Relevant Links
+== Relevant Links
 
 - https://learn.microsoft.com/en-us/azure/developer/java/spring-framework/getting-started-with-spring-cloud-function-in-azure[Spring Cloud Function in Azure]
 - https://spring.io/blog/2023/02/24/spring-cloud-function-for-azure-function[Spring Cloud Function for Azure Function (blog)]

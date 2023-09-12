@@ -1,5 +1,5 @@
-[[apendix]]
-= Apendix
+[[appendix]]
+= Appendix	
 :page-section-summary-toc: 1
 
 Relevant Links:
