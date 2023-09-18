@@ -7,6 +7,25 @@ plugins {
 	id 'org.springframework.boot.experimental.thin-launcher' version "1.0.30.RELEASE"
 }
 
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+	mavenLocal()
+	maven { url 'https://repo.spring.io/milestone' }
+}
+
+ext {
+	set('springCloudVersion', "2023.0.0-M1")
+}
+
+assemble.dependsOn = [thinJar, shadowJar]
+
 publishing {
 	publications {
 		maven(MavenPublication) {
@@ -24,35 +43,17 @@ publishing {
 }
 
 thinPom.mustRunAfter resolveMainClassName, test
-
-group = 'com.example'
-version = '0.0.1-SNAPSHOT'
-
-java {
-	sourceCompatibility = '17'
-}
-
-repositories {
-	mavenCentral()
-	maven { url 'https://repo.spring.io/milestone' }
-}
-
-ext {
-	set('springCloudVersion', "2023.0.0-M1")
-}
-
-assemble.dependsOn = [shadowJar, thinJar]
+shadowJar.mustRunAfter thinJar
 
 
 import com.github.jengelman.gradle.plugins.shadow.transformers.*
 
 shadowJar {
 	archiveClassifier = 'aws'
-	dependencies {
-		exclude(
-			dependency("org.springframework.cloud:spring-cloud-function-web:4.1.0-SNAPSHOT"))
-	}
-	// Required for Spring
+	manifest {
+    	inheritFrom(project.tasks.thinJar.manifest)
+  	}
+  	// Required for Spring
 	mergeServiceFiles()
 	append 'META-INF/spring.handlers'
 	append 'META-INF/spring.schemas'
@@ -65,9 +66,9 @@ shadowJar {
 	}
 }
 
-
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.cloud:spring-cloud-function-adapter-aws'
 	implementation 'org.springframework.cloud:spring-cloud-function-context'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
