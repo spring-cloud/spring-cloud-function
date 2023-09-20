@@ -53,9 +53,9 @@
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>build-helper-maven-plugin</artifactId>
 					</plugin>
-	                <plugin>
-	                    <artifactId>maven-deploy-plugin</artifactId>
-	                </plugin>
+<!--	                <plugin>-->
+<!--	                    <artifactId>maven-deploy-plugin</artifactId>-->
+<!--	                </plugin>-->
 				</plugins>
 			</build>
 		</profile>
