@@ -56,7 +56,6 @@ public class RequestResponseTests {
 	}
 
 	@Test
-	@Disabled
 	public void validateAccessDeniedWithCustomHandler() throws Exception {
 		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/foo");
 		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
