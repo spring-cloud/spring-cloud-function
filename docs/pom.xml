@@ -16,7 +16,6 @@
 		<docs.main>spring-cloud-function</docs.main>
 		<main.basedir>${basedir}/..</main.basedir>
 		<maven.plugin.plugin.version>3.4</maven.plugin.plugin.version>
-		<upload-docs-zip.phase>deploy</upload-docs-zip.phase>
 	</properties>
 	<profiles>
 		<profile>
@@ -53,9 +52,6 @@
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>build-helper-maven-plugin</artifactId>
 					</plugin>
-<!--	                <plugin>-->
-<!--	                    <artifactId>maven-deploy-plugin</artifactId>-->
-<!--	                </plugin>-->
 				</plugins>
 			</build>
 		</profile>
