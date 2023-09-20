@@ -75,27 +75,27 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public ServletContext getContext(String uripath) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container1");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public int getMajorVersion() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container2");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public int getMinorVersion() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container3");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public int getEffectiveMajorVersion() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container4");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public int getEffectiveMinorVersion() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container5");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -105,12 +105,12 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public Set<String> getResourcePaths(String path) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container6");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public URL getResource(String path) throws MalformedURLException {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container7");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -120,12 +120,12 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public RequestDispatcher getRequestDispatcher(String path) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container8");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public RequestDispatcher getNamedDispatcher(String name) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container9");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -140,7 +140,7 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public String getRealPath(String path) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container10");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -158,7 +158,7 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public boolean setInitParameter(String name, String value) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container11");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -172,17 +172,17 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public void removeAttribute(String name) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container12");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public String getServletContextName() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container13");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public Dynamic addServlet(String servletName, String className) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container14");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	Map<String, ServletRegistration> registrations = new HashMap<>();
@@ -197,17 +197,17 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public Dynamic addServlet(String servletName, Class<? extends Servlet> servletClass) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container15");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public Dynamic addJspFile(String jspName, String jspFile) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container16");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public <T extends Servlet> T createServlet(Class<T> c) throws ServletException {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container17");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -217,12 +217,12 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public Map<String, ? extends ServletRegistration> getServletRegistrations() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		return this.registrations;
 	}
 
 	@Override
 	public FilterRegistration.Dynamic addFilter(String filterName, String className) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container18");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -249,7 +249,7 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public <T extends Filter> T createFilter(Class<T> c) throws ServletException {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container19");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -264,27 +264,27 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public SessionCookieConfig getSessionCookieConfig() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container20");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public void setSessionTrackingModes(Set<SessionTrackingMode> sessionTrackingModes) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container21");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public Set<SessionTrackingMode> getDefaultSessionTrackingModes() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container22");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public Set<SessionTrackingMode> getEffectiveSessionTrackingModes() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container23");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public void addListener(String className) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container24");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
@@ -295,61 +295,61 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public void addListener(Class<? extends EventListener> listenerClass) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container25");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public <T extends EventListener> T createListener(Class<T> c) throws ServletException {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container26");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public JspConfigDescriptor getJspConfigDescriptor() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container27");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public ClassLoader getClassLoader() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container28");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public void declareRoles(String... roleNames) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container29");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public String getVirtualServerName() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container30");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public int getSessionTimeout() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container31");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public void setSessionTimeout(int sessionTimeout) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container32");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public String getRequestCharacterEncoding() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container33");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public void setRequestCharacterEncoding(String encoding) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container34");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public String getResponseCharacterEncoding() {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container35");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 
 	@Override
 	public void setResponseCharacterEncoding(String encoding) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container36");
+		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
 }
