@@ -277,26 +277,68 @@ dependencies {
 As pointed out in <<Notes on JAR Layout>>, you will need a shaded jar in order to upload it
 to AWS Lambda. You can use the https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow/[Gradle Shadow Plugin] for that:
 
+You can use the Spring Boot Gradle Plugin and Spring Boot Thin Gradle Plugin to generate
+the <<thin-jar>>.
+
+Below is a complete gradle file
+
 [source,groovy]
 ----
-buildscript {
-	dependencies {
-		classpath "com.github.jengelman.gradle.plugins:shadow:${shadowPluginVersion}"
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.0-M2'
+	id 'io.spring.dependency-management' version '1.1.3'
+	id 'com.github.johnrengelman.shadow' version '8.1.1'
+	id 'maven-publish'
+	id 'org.springframework.boot.experimental.thin-launcher' version "1.0.31.RELEASE"
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+	mavenLocal()
+	maven { url 'https://repo.spring.io/milestone' }
+}
+
+ext {
+	set('springCloudVersion', "2023.0.0-M1")
+}
+
+assemble.dependsOn = [thinJar, shadowJar]
+
+publishing {
+	publications {
+		maven(MavenPublication) {
+			from components.java
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
+				}
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+		}
 	}
 }
-apply plugin: 'com.github.johnrengelman.shadow'
 
-assemble.dependsOn = [shadowJar]
+shadowJar.mustRunAfter thinJar
+
 
 import com.github.jengelman.gradle.plugins.shadow.transformers.*
 
 shadowJar {
-	classifier = 'aws'
-	dependencies {
-		exclude(
-			dependency("org.springframework.cloud:spring-cloud-function-web:${springCloudFunctionVersion}"))
-	}
-	// Required for Spring
+	archiveClassifier = 'aws'
+	manifest {
+    	inheritFrom(project.tasks.thinJar.manifest)
+  	}
+  	// Required for Spring
 	mergeServiceFiles()
 	append 'META-INF/spring.handlers'
 	append 'META-INF/spring.schemas'
@@ -309,22 +351,22 @@ shadowJar {
 	}
 }
 
-----
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.cloud:spring-cloud-function-adapter-aws'
+	implementation 'org.springframework.cloud:spring-cloud-function-context'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
 
-You can use the Spring Boot Gradle Plugin and Spring Boot Thin Gradle Plugin to generate
-the <<thin-jar>>.
-
-[source,groovy]
-----
-buildscript {
-	dependencies {
-		classpath("org.springframework.boot.experimental:spring-boot-thin-gradle-plugin:${wrapperVersion}")
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
 	}
 }
-apply plugin: 'org.springframework.boot'
-apply plugin: 'org.springframework.boot.experimental.thin-launcher'
-assemble.dependsOn = [thinJar]
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
 ----
 
 You can find the entire sample `build.gradle` file for deploying Spring Cloud Function
