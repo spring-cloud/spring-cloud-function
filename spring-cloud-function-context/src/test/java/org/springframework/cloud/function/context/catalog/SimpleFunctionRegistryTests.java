@@ -59,6 +59,7 @@ import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
@@ -550,6 +551,14 @@ public class SimpleFunctionRegistryTests {
 		assertThat(FunctionTypeUtils.isMono(function.getOutputType()));
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testHeaderPropagationInComposedFunction() {
+		FunctionCatalog catalog = this.configureCatalog(GH_1063_Configuration.class);
+		Consumer function = catalog.lookup("uppercase|reverse|print");
+		function.accept("hello");
+	}
+
 	@Test
 	public void testFunctionCompositionWithReactiveSupplierAndConsumer() {
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
@@ -817,6 +826,26 @@ public class SimpleFunctionRegistryTests {
 		@Override
 		public String apply(byte[] t) {
 			return new String(t);
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class GH_1063_Configuration {
+
+		@Bean
+		Function<String, Message<String>> uppercase() {
+			return input -> MessageBuilder.withPayload(input).setHeader("FOO", "BAR").build();
+		}
+
+		@Bean
+		Function<String, String> reverse() {
+			return payload -> new StringBuilder(payload).reverse().toString();
+		}
+
+		@Bean
+		Consumer<Message<String>> print() {
+			return msg -> assertThat(msg.getHeaders().get("FOO")).isEqualTo("BAR");
 		}
 	}
 

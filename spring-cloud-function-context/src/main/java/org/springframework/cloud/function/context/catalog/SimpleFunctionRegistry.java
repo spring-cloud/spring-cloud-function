@@ -636,6 +636,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		@Override
 		public <V> Function<Object, V> andThen(Function<? super Object, ? extends V> after) {
 			Assert.isTrue(after instanceof FunctionInvocationWrapper, "Composed function must be an instanceof FunctionInvocationWrapper.");
+
 			if (FunctionTypeUtils.isMultipleArgumentType(this.inputType)
 					|| FunctionTypeUtils.isMultipleArgumentType(this.outputType)
 					|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).inputType)
@@ -643,6 +644,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				throw new UnsupportedOperationException("Composition of functions with multiple arguments is not supported at the moment");
 			}
 
+			this.setSkipOutputConversion(true);
+			((FunctionInvocationWrapper) after).setSkipOutputConversion(true);
 			Function rawComposedFunction = v -> ((FunctionInvocationWrapper) after).doApply(doApply(v));
 
 			FunctionInvocationWrapper afterWrapper = (FunctionInvocationWrapper) after;
