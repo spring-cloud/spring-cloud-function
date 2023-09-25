@@ -78,6 +78,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
+	private FunctionInvocationWrapper routingFunction;
+
 	public CustomRuntimeEventLoop(ConfigurableApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
@@ -202,6 +204,9 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 	private FunctionInvocationWrapper locateFunction(Environment environment, FunctionCatalog functionCatalog,
 			HttpHeaders httpHeaders) {
+		if (this.routingFunction != null) {
+			return this.routingFunction;
+		}
 		MediaType contentType = httpHeaders.getContentType();
 		String handlerName = environment.getProperty("DEFAULT_HANDLER");
 		if (logger.isDebugEnabled()) {
@@ -241,12 +246,13 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		}
 
 		if (function == null) {
-			function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
-			if (function != null && logger.isInfoEnabled()) {
+			this.routingFunction = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+			if (this.routingFunction != null && logger.isInfoEnabled()) {
 				logger.info("Will default to RoutingFunction, since multiple functions available in FunctionCatalog."
 								+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
 								+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
 			}
+			function = this.routingFunction;
 		}
 
 		Assert.notNull(function, "Failed to locate function. Tried locating default function, "
