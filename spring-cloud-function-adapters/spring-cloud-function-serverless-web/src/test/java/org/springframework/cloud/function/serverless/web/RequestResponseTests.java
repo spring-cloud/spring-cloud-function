@@ -46,6 +46,7 @@ public class RequestResponseTests {
 
 	@BeforeEach
 	public void before() {
+		System.setProperty("spring.main.banner-mode", "off");
 		this.mvc = ProxyMvc.INSTANCE(ProxyErrorController.class, PetStoreSpringAppConfig.class);
 	}
 
@@ -136,6 +137,7 @@ public class RequestResponseTests {
 
 	@Test
 	public void validatePostAsyncWithBody() throws Exception {
+//		System.setProperty("spring.main.banner-mode", "off");
 		ProxyHttpServletRequest request = new ProxyHttpServletRequest(null, "POST", "/petsAsync/");
 		String jsonPet = "{\n"
 				+ "   \"id\":\"1234\",\n"
