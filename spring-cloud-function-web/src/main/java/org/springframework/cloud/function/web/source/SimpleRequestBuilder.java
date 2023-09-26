@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
@@ -30,6 +31,7 @@ import org.springframework.messaging.MessageHeaders;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurkousky
  *
  */
 class SimpleRequestBuilder implements RequestBuilder {
@@ -38,10 +40,13 @@ class SimpleRequestBuilder implements RequestBuilder {
 
 	private Map<String, String> headers = new LinkedHashMap<>();
 
-	private Environment environment;
+	private final Environment environment;
 
-	SimpleRequestBuilder(Environment environment) {
+	private final FunctionHttpProperties httpProperties;
+
+	SimpleRequestBuilder(Environment environment, FunctionHttpProperties httpProperties) {
 		this.environment = environment;
+		this.httpProperties = httpProperties;
 	}
 
 	@Override
@@ -51,7 +56,7 @@ class SimpleRequestBuilder implements RequestBuilder {
 			Message<?> message = (Message<?>) value;
 			incoming = message.getHeaders();
 		}
-		HttpHeaders result = HeaderUtils.fromMessage(incoming);
+		HttpHeaders result = HeaderUtils.fromMessage(incoming, this.httpProperties.getIgnoredHeaders());
 		for (String key : this.headers.keySet()) {
 			String header = this.headers.get(key);
 			header = header.replace("${destination}", destination);

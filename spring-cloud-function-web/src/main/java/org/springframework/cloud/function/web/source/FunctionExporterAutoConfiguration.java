@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 
 import reactor.core.publisher.Flux;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -31,11 +30,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.source.FunctionExporterAutoConfiguration.SourceActiveCondition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.ResolvableType;
 import org.springframework.core.env.Environment;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -46,14 +45,16 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(WebClient.class)
 @Conditional(SourceActiveCondition.class)
-@EnableConfigurationProperties(ExporterProperties.class)
+@EnableConfigurationProperties({ExporterProperties.class, FunctionHttpProperties.class})
 public class FunctionExporterAutoConfiguration {
 
-	private ExporterProperties props;
+	private final ExporterProperties props;
 
-	@Autowired
-	FunctionExporterAutoConfiguration(ExporterProperties props) {
+	private final FunctionHttpProperties httpProps;
+
+	FunctionExporterAutoConfiguration(ExporterProperties props, FunctionHttpProperties httpProps) {
 		this.props = props;
+		this.httpProps = httpProps;
 	}
 
 	@Bean
@@ -66,14 +67,8 @@ public class FunctionExporterAutoConfiguration {
 	@Bean
 	@ConditionalOnProperty(prefix = "spring.cloud.function.web.export.source", name = "url")
 	public FunctionRegistration<Supplier<Flux<?>>> origin(WebClient.Builder builder) {
-		HttpSupplier supplier = new HttpSupplier(builder.build(), this.props);
+		HttpSupplier supplier = new HttpSupplier(builder.build(), this.props, this.httpProps);
 		FunctionRegistration<Supplier<Flux<?>>> registration = new FunctionRegistration<>(supplier);
-		Type rawType = ResolvableType.forClassWithGenerics(Supplier.class, this.props.getSource().getType()).getType();
-//		FunctionType functionType = FunctionType.supplier(this.props.getSource().getType()).wrap(Flux.class);
-//		FunctionType type = FunctionType.of(rawType);
-//		if (this.props.getSource().isIncludeHeaders()) {
-////			type = type.message();
-//		}
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(HttpSupplier.class);
 		registration = registration.type(type);
 		return registration;
@@ -81,7 +76,7 @@ public class FunctionExporterAutoConfiguration {
 
 	@Bean
 	public RequestBuilder simpleRequestBuilder(Environment environment) {
-		SimpleRequestBuilder builder = new SimpleRequestBuilder(environment);
+		SimpleRequestBuilder builder = new SimpleRequestBuilder(environment, httpProps);
 		if (this.props.getSink().getUrl() != null) {
 			builder.setTemplateUrl(this.props.getSink().getUrl());
 		}

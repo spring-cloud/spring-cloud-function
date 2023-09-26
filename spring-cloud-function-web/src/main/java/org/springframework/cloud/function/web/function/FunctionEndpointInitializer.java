@@ -42,6 +42,7 @@ import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
+import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.cloud.function.web.util.FunctionWebRequestProcessingHelper;
 import org.springframework.cloud.function.web.util.FunctionWrapper;
@@ -105,9 +106,10 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 	}
 
 	private void registerEndpoint(GenericApplicationContext context) {
+		context.registerBean(FunctionHttpProperties.class, () -> new FunctionHttpProperties());
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionProperties.class), context.getBean(FunctionCatalog.class),
-						context.getEnvironment()));
+						context.getEnvironment(), context.getBean(FunctionHttpProperties.class)));
 		RouterFunctionRegister.register(context);
 	}
 
@@ -208,7 +210,9 @@ class FunctionEndpointFactory {
 
 	private final FunctionProperties functionProperties;
 
-	FunctionEndpointFactory(FunctionProperties functionProperties, FunctionCatalog functionCatalog, Environment environment) {
+	private final FunctionHttpProperties functionHttpProperties;
+
+	FunctionEndpointFactory(FunctionProperties functionProperties, FunctionCatalog functionCatalog, Environment environment, FunctionHttpProperties functionHttpProperties) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
 			handler = null;
@@ -216,6 +220,7 @@ class FunctionEndpointFactory {
 		this.functionCatalog = functionCatalog;
 		this.handler = handler;
 		this.functionProperties = functionProperties;
+		this.functionHttpProperties = functionHttpProperties;
 	}
 
 	private FunctionInvocationWrapper extract(ServerRequest request) {
@@ -241,7 +246,8 @@ class FunctionEndpointFactory {
 					: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
 			FunctionWrapper wrapper = new FunctionWrapper(funcWrapper);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
-					.flatMap(content -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, content, false));
+					.flatMap(content -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, content, false,
+							functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders()));
 
 			return stream.flatMap(entity -> {
 				BodyBuilder builder = status(entity.getStatusCode()).headers(headers -> headers.addAll(entity.getHeaders()));

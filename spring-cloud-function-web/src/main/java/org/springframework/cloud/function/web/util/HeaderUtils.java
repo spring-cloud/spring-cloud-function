@@ -18,6 +18,7 @@ package org.springframework.cloud.function.web.util;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,12 +55,12 @@ public final class HeaderUtils {
 		throw new IllegalStateException("Can't instantiate a utility class");
 	}
 
-	public static HttpHeaders fromMessage(MessageHeaders headers) {
+	public static HttpHeaders fromMessage(MessageHeaders headers, List<String> ignoredHeders) {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : headers.keySet()) {
 			Object value = headers.get(name);
 			name = name.toLowerCase();
-			if (!IGNORED.containsKey(name)) {
+			if (!IGNORED.containsKey(name) && !ignoredHeders.contains(name)) {
 				Collection<?> values = multi(value);
 				for (Object object : values) {
 					result.set(name, object.toString());
@@ -69,16 +70,27 @@ public final class HeaderUtils {
 		return result;
 	}
 
-	public static HttpHeaders sanitize(HttpHeaders request) {
+	@SuppressWarnings("unchecked")
+	public static HttpHeaders fromMessage(MessageHeaders headers) {
+		return fromMessage(headers, Collections.EMPTY_LIST);
+	}
+
+
+	public static HttpHeaders sanitize(HttpHeaders request, List<String> ignoredHeders, List<String> requestOnlyHeaders) {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : request.keySet()) {
 			List<String> value = request.get(name);
 			name = name.toLowerCase();
-			if (!IGNORED.containsKey(name) && !REQUEST_ONLY.containsKey(name)) {
+			if (!IGNORED.containsKey(name) && !REQUEST_ONLY.containsKey(name) && !ignoredHeders.contains(name) && !requestOnlyHeaders.contains(name)) {
 				result.put(name, value);
 			}
 		}
 		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static HttpHeaders sanitize(HttpHeaders request) {
+		return sanitize(request, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
 	}
 
 	public static MessageHeaders fromHttp(HttpHeaders headers) {
