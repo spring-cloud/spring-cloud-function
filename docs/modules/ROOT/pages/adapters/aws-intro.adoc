@@ -150,6 +150,24 @@ and not doing any work in custom `@PostConstruct` initializers.
 
 When using <<Custom Runtime>> Function Routing works the same way. All you need is to specify `functionRouter` as AWS Handler the same way you would use the name of the function as handler. 
 
+
+=== Deploying Container images
+
+Custom Runtime is also responsible for handling of container image deployments.
+When deploying container images in a way similar to the one described https://github.com/spring-cloud/spring-cloud-function/issues/1021[here], it is important 
+to remember to set and environment variable `DEFAULT_HANDLER` with the name of the function.
+
+For example, for function bean shown below the `DEFAULT_HANDLER` value would be `readMessageFromSQS`.
+[source, java]
+----
+@Bean
+public Consumer<Message<SQSMessageEvent>> readMessageFromSQS() {
+	return incomingMessage -> {..}
+}
+----
+
+Also, it is important to remember to ensure tht `spring_cloud_function_web_export_enabled` is also set to `false`. It is by default.
+
 [[notes-on-jar-layout]]
 == Notes on JAR Layout
 
