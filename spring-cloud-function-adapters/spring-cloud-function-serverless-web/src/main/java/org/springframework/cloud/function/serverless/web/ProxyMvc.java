@@ -24,6 +24,9 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
 
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.Filter;
@@ -63,37 +66,53 @@ import org.springframework.web.servlet.DispatcherServlet;
  */
 public final class ProxyMvc {
 
+	/**
+	 * Name of the property to specify application context initialization timeout. Default is 20 sec.
+	 */
+	public static String INIT_TIMEOUT = "spring.cloud.function.serverless.web.init-timeout";
+
 	private static Log LOG = LogFactory.getLog(ProxyMvc.class);
 
-	private final DispatcherServlet dispatcher;
+	private volatile DispatcherServlet dispatcher;
 
-	private final ConfigurableWebApplicationContext applicationContext;
+	private volatile ConfigurableWebApplicationContext applicationContext;
 
 	private ServletContext servletContext;
 
-	public ConfigurableWebApplicationContext getApplicationContext() {
-		return this.applicationContext;
-	}
+	private final CountDownLatch contextStartupLatch = new CountDownLatch(1);
 
-	public ServletContext getServletContext() {
-		return this.servletContext;
-	}
-
-	public static ProxyMvc INSTANCE(ConfigurableWebApplicationContext applpicationContext) {
-		return new ProxyMvc(applpicationContext);
-	}
+	private final long initializatioinTimeout;
 
 	public static ProxyMvc INSTANCE(Class<?>... componentClasses) {
-		ConfigurableWebApplicationContext applpicationContext = ServerlessWebApplication.run(componentClasses, new String[] {});
-		return INSTANCE(applpicationContext);
+		ProxyMvc mvc = new ProxyMvc();
+		mvc.initializeContextAsync(componentClasses);
+		return mvc;
 	}
 
+	private ProxyMvc() {
+		String timeoutValue = System.getenv(INIT_TIMEOUT);
+		this.initializatioinTimeout = StringUtils.hasText(timeoutValue) ? Long.valueOf(timeoutValue) : 20000;
+	}
 
-	/**
-	 * Private constructor, not for direct instantiation.
-	 */
-	ProxyMvc(ConfigurableWebApplicationContext applicationContext) {
-		this.applicationContext = applicationContext;
+	private void initializeContextAsync(Class<?>... componentClasses) {
+		new Thread(() -> {
+			try {
+				LOG.info("Starting application with the following configuration classes:");
+				Stream.of(componentClasses).forEach(clazz -> LOG.info(clazz.getSimpleName()));
+				initContext(componentClasses);
+			}
+			catch (Exception e) {
+				throw new IllegalStateException(e);
+			}
+			finally {
+				contextStartupLatch.countDown();
+				LOG.info("Application is started successfully.");
+			}
+		}).start();
+	}
+
+	private void initContext(Class<?>... componentClasses) {
+		this.applicationContext = ServerlessWebApplication.run(componentClasses, new String[] {});
 		ProxyServletContext servletContext = new ProxyServletContext();
 		this.applicationContext.setServletContext(servletContext);
 		this.applicationContext.refresh();
@@ -119,6 +138,14 @@ public final class ProxyMvc {
 		}
 	}
 
+	public ConfigurableWebApplicationContext getApplicationContext() {
+		return this.applicationContext;
+	}
+
+	public ServletContext getServletContext() {
+		return this.servletContext;
+	}
+
 	public void stop() {
 		this.applicationContext.stop();
 	}
@@ -135,6 +162,12 @@ public final class ProxyMvc {
 	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		try {
+			contextStartupLatch.await(this.initializatioinTimeout, TimeUnit.MILLISECONDS);
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 		this.service(request, response, (CountDownLatch) null);
 	}
 
