@@ -69,7 +69,7 @@ public final class ProxyMvc {
 	/**
 	 * Name of the property to specify application context initialization timeout. Default is 20 sec.
 	 */
-	public static String INIT_TIMEOUT = "spring.cloud.function.serverless.web.init-timeout";
+	public static String INIT_TIMEOUT = "contextInitTimeout";
 
 	private static Log LOG = LogFactory.getLog(ProxyMvc.class);
 
@@ -91,6 +91,9 @@ public final class ProxyMvc {
 
 	private ProxyMvc() {
 		String timeoutValue = System.getenv(INIT_TIMEOUT);
+		if (!StringUtils.hasText(timeoutValue)) {
+			timeoutValue = System.getProperty(INIT_TIMEOUT);
+		}
 		this.initializatioinTimeout = StringUtils.hasText(timeoutValue) ? Long.valueOf(timeoutValue) : 20000;
 	}
 
@@ -164,6 +167,8 @@ public final class ProxyMvc {
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		try {
 			contextStartupLatch.await(this.initializatioinTimeout, TimeUnit.MILLISECONDS);
+			Assert.state(this.dispatcher != null, "Failed to initialize Application within the specified time of " + this.initializatioinTimeout + " milliseconds. "
+					+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
