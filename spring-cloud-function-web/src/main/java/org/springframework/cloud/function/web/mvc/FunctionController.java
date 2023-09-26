@@ -95,7 +95,8 @@ public class FunctionController {
 					return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 				}
 			}
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getParams(), false);
+			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getParams(), false,
+					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 		}
 		else {
 			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
@@ -110,7 +111,8 @@ public class FunctionController {
 		String argument = StringUtils.hasText(body) ? body : "";
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, argument, true)).map(response -> ResponseEntity.ok()
+			return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, argument, true,
+					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders())).map(response -> ResponseEntity.ok()
 					.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 		}
 		else {
@@ -123,7 +125,8 @@ public class FunctionController {
 	public Publisher<?> getStream(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true);
+			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true,
+					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 		}
 		else {
 			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("GET", wrapper.getFunction().getFunctionDefinition()));
@@ -136,7 +139,8 @@ public class FunctionController {
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			Assert.isTrue(!wrapper.getFunction().isSupplier(), "'POST' can only be mapped to Function or Consumer");
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
+			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false,
+					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 		}
 		else {
 			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
@@ -148,7 +152,8 @@ public class FunctionController {
 	public Object put(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("PUT", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false);
+			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false,
+					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 		}
 		else {
 			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("PUT", wrapper.getFunction().getFunctionDefinition()));
@@ -161,7 +166,8 @@ public class FunctionController {
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
 			Assert.isTrue(wrapper.getFunction().isConsumer(), "'DELETE' can only be mapped to Consumer");
-			FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
+			FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
+					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 		}
 		else {
 			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("DELETE", wrapper.getFunction().getFunctionDefinition()));
@@ -173,7 +179,8 @@ public class FunctionController {
 	public Object get(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
 		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false);
+			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
+					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 		}
 		else {
 			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("GET", wrapper.getFunction().getFunctionDefinition()));

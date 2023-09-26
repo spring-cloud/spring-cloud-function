@@ -54,7 +54,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
 		"spring.main.web-application-type=servlet",
 		"spring.cloud.function.web.path=/functions",
-		"spring.cloud.function.routing.enabled=true"})
+		"spring.cloud.function.routing.enabled=true",
+		"spring.cloud.function.http.ignored-headers=abc,xyz"})
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 public class RoutingFunctionTests {
 
@@ -73,11 +74,16 @@ public class RoutingFunctionTests {
 				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
 						.contentType(MediaType.APPLICATION_JSON)
 						.header("spring.cloud.function.definition", "employee")
+						.header("abc", "abc")
+						.header("xyz", "xyz")
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
 		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
 		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
 				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().containsKey("spring.cloud.function.definition")).isTrue();
+		assertThat(postForEntity.getHeaders().containsKey("abc")).isFalse();
+		assertThat(postForEntity.getHeaders().containsKey("xyz")).isFalse();
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 	}
 

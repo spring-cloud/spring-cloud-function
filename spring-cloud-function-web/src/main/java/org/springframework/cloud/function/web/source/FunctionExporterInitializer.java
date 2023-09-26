@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.springframework.boot.web.reactive.context.ReactiveWebApplicationConte
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;
+import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.ClassUtils;
@@ -33,6 +34,7 @@ import org.springframework.web.reactive.function.client.WebClient.Builder;
 
 /**
  * @author Dave Syer
+ * @author Oleg Zhurakousky
  * @since 2.0
  *
  */
@@ -82,7 +84,7 @@ class FunctionExporterInitializer implements ApplicationContextInitializer<Gener
 	private void registerExport(GenericApplicationContext context) {
 		context.registerBean(ExporterProperties.class, () -> new ExporterProperties());
 		context.registerBean(FunctionExporterAutoConfiguration.class,
-				() -> new FunctionExporterAutoConfiguration(context.getBean(ExporterProperties.class)));
+				() -> new FunctionExporterAutoConfiguration(context.getBean(ExporterProperties.class), context.getBean(FunctionHttpProperties.class)));
 		if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
 			context.registerBean(DestinationResolver.class,
 					() -> context.getBean(FunctionExporterAutoConfiguration.class).simpleDestinationResolver());

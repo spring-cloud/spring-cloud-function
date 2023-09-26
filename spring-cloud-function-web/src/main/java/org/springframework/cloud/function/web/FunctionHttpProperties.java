@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.function.web;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionProperties;
 
@@ -49,6 +52,17 @@ public class FunctionHttpProperties {
 	 */
 	public String delete;
 
+
+	/**
+	 * List of headers to be ignored when generating HttpHeaders (request or response).
+	 */
+	public List<String> ignoredHeaders = Collections.emptyList();
+
+	/**
+	 * List of headers that must remain only in the request.
+	 */
+	public List<String> requestOnlyHeaders = Collections.emptyList();
+
 	public String getGet() {
 		return this.get;
 	}
@@ -79,5 +93,21 @@ public class FunctionHttpProperties {
 
 	public void setDelete(String delete) {
 		this.delete = delete;
+	}
+
+	public List<String> getIgnoredHeaders() {
+		return ignoredHeaders;
+	}
+
+	public void setIgnoredHeaders(List<String> ignoredHeaders) {
+		this.ignoredHeaders = ignoredHeaders;
+	}
+
+	public List<String> getRequestOnlyHeaders() {
+		return requestOnlyHeaders;
+	}
+
+	public void setRequestOnlyHeaders(List<String> requestOnlyHeaders) {
+		this.requestOnlyHeaders = requestOnlyHeaders;
 	}
 }

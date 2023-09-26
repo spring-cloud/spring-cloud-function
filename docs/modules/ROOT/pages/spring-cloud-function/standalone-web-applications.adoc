@@ -98,6 +98,11 @@ This will only export function `foo` and function `bar` regardless how many func
 
 This will only export function composition `foo|bar` and function `baz` regardless how many functions are available in catalog (e.g., `localhost:8080/foo,bar`).
 
+== Http Headers propagation
+
+By default most request `HttpHeaders` are copied into the response `HttpHeaders`. If you require to filter out certain headers you can provide the names of those headers using  
+`spring.cloud.function.http.ignored-headers` delimited by comas. For example, `spring.cloud.function.http.ignored-headers=foo,bar`
+
 [[crud-rest-with-spring-cloud-function]]
 == CRUD REST with Spring Cloud Function
 

@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.util.HeaderUtils;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.messaging.support.MessageBuilder;
@@ -44,15 +45,18 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 
 	private WebClient client;
 
-	private ExporterProperties props;
+	private final ExporterProperties props;
+
+	private final FunctionHttpProperties httpProperties;
 
 	/**
 	 * @param client the WebClient to use. The baseUrl should be set.
 	 * @param props the ExporterProperties to use to parameterize the requests.
 	 */
-	public HttpSupplier(WebClient client, ExporterProperties props) {
+	public HttpSupplier(WebClient client, ExporterProperties props, FunctionHttpProperties httpProperties) {
 		this.client = client;
 		this.props = props;
+		this.httpProperties = httpProperties;
 	}
 
 	@Override
@@ -87,7 +91,7 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 		}
 		return MessageBuilder.withPayload(payload)
 				.copyHeaders(HeaderUtils.fromHttp(
-						HeaderUtils.sanitize(response.headers().asHttpHeaders())))
+						HeaderUtils.sanitize(response.headers().asHttpHeaders(), this.httpProperties.getIgnoredHeaders(), this.httpProperties.getRequestOnlyHeaders())))
 				.setHeader("scf-sink-url", this.props.getSink().getUrl())
 				.setHeader("scf-func-name", this.props.getSink().getName())
 				.build();
