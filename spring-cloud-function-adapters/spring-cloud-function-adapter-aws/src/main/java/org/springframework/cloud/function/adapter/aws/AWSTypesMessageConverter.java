@@ -63,7 +63,8 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 			return ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_EVENT));
 		}
 		//TODO Do we really need the ^^ above? It seems like the line below dows the trick
-		else if (targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
+		else if (targetClass.getPackage() != null &&
+				targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
 			return true;
 		}
 		return false;
@@ -75,7 +76,8 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 			return message.getPayload();
 		}
 
-		if (targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
+		if (targetClass.getPackage() != null &&
+				targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
 			PojoSerializer<?> serializer = LambdaEventSerializers.serializerFor(targetClass, Thread.currentThread().getContextClassLoader());
 			Object event = serializer.fromJson(new ByteArrayInputStream((byte[]) message.getPayload()));
 			return event;

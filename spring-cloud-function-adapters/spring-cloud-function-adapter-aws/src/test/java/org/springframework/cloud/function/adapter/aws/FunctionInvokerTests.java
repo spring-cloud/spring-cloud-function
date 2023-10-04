@@ -1407,6 +1407,21 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"olleh\"");
 	}
 
+	@Test
+	public void testPrimitiveMessage() throws Exception {
+		System.setProperty("MAIN_CLASS", PrimitiveConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "returnByteArrayAsMessage");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		String testString = "{ \"message\": \"Hello, world!\" }";
+		InputStream targetStream = new ByteArrayInputStream(testString.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		String result = output.toString();
+		assertThat(result).isEqualTo(testString);
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class AuthorizerConfiguration {
@@ -1807,6 +1822,17 @@ public class FunctionInvokerTests {
 			return v -> {
 				String body = (String) v.get("body");
 				return body;
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class PrimitiveConfiguration {
+		@Bean
+		public Function<Message<byte[]>, byte[]> returnByteArrayAsMessage() {
+			return v -> {
+				return v.getPayload();
 			};
 		}
 	}
