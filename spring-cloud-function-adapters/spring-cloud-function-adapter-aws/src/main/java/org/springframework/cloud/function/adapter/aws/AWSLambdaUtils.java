@@ -74,7 +74,9 @@ public final class AWSLambdaUtils {
 		if (FunctionTypeUtils.isMessage(inputType) || FunctionTypeUtils.isPublisher(inputType)) {
 			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
 		}
-		return FunctionTypeUtils.getRawType(inputType).getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events");
+		return FunctionTypeUtils.getRawType(inputType).getPackage() != null &&
+				FunctionTypeUtils.getRawType(inputType).getPackage().getName().startsWith(
+						"com.amazonaws.services.lambda.runtime.events");
 	}
 
 	@SuppressWarnings("rawtypes")
