@@ -27,7 +27,7 @@ import org.springframework.boot.loader.jar.JarFile;
 
 /**
  * The launcher class written at the top-level of the output JAR to be deployed to
- * Google Cloud Functions. This is the entry point to the function when run from JAR.
+ * Google Cloud Functions. This	 is the entry point to the function when run from JAR.
  *
  * @author Ray Tsang
  * @author Daniel Zou
