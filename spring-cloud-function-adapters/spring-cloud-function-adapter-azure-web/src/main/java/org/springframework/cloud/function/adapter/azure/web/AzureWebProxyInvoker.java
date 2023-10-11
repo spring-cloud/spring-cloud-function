@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.adapter.azure.web;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map.Entry;
 import java.util.Optional;
 
@@ -89,8 +91,12 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(servletContext,
 				request.getHttpMethod().toString(), path);
 
+
 		request.getBody().ifPresent(body -> {
-			httpRequest.setContent(body.getBytes());
+			Charset charsetEncoding = request.getHeaders().containsKey("content-encoding")
+					? Charset.forName(request.getHeaders().get("content-encoding"))
+							: StandardCharsets.UTF_8;
+			httpRequest.setContent(body.getBytes(charsetEncoding));
 		});
 
 		if (!CollectionUtils.isEmpty(request.getQueryParameters())) {
@@ -125,7 +131,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 				responseBuilder.header(headerName, httpResponse.getHeader(headerName));
 			}
 
-			String responseString = httpResponse.getContentAsString();
+			String responseString = httpResponse.getContentAsString(StandardCharsets.UTF_8);
 			if (StringUtils.hasText(responseString)) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Response: " + responseString);
