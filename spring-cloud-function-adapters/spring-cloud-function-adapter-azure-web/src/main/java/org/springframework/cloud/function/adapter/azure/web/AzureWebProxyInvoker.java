@@ -93,7 +93,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 
 		request.getBody().ifPresent(body -> {
-			Charset charsetEncoding = request.getHeaders().containsKey("content-encoding")
+			Charset charsetEncoding = request.getHeaders() != null && request.getHeaders().containsKey("content-encoding")
 					? Charset.forName(request.getHeaders().get("content-encoding"))
 							: StandardCharsets.UTF_8;
 			httpRequest.setContent(body.getBytes(charsetEncoding));
