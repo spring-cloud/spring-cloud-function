@@ -463,7 +463,7 @@ This is where function arity (functions with multiple inputs and outputs) suppor
 comes to play.
 
 Let’s look at an example of such a function (full implementation details are available
-https://github.com/spring-cloud/spring-cloud-stream/blob/master/spring-cloud-stream/src/test/java/org/springframework/cloud/stream/function/MultipleInputOutputFunctionTests.java#L342[here]),
+https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-context/src/test/java/org/springframework/cloud/function/context/catalog/BeanFactoryAwareFunctionRegistryMultiInOutTests.java[here]),
 
 [source, java]
 ----
