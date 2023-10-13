@@ -1316,16 +1316,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		/*
 		 *
 		 */
-		private boolean isConversionHintRequired(Type actualType, Class<?> rawType) {
-			if (Collection.class.isAssignableFrom(rawType) || Map.class.isAssignableFrom(rawType)) {
-				return true;
-			}
-			return rawType != actualType && !FunctionTypeUtils.isMessage(actualType);
-		}
-
-		/*
-		 *
-		 */
 		private Object convertInputMessageIfNecessary(Message message, Type type) {
 			if (type == null) {
 				return null;
@@ -1350,7 +1340,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			Class<?> rawType = FunctionTypeUtils.isMessage(type)
 					? FunctionTypeUtils.getRawType(itemType)
 					: FunctionTypeUtils.getRawType(type);
-			convertedInput = this.isConversionHintRequired(type, rawType)
+			convertedInput = type instanceof ParameterizedType
 					? SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType, itemType)
 					: SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType);
 
