@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
@@ -34,6 +36,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
+
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +68,26 @@ public class UserIssuesTests {
 				new GenericMessage<String>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
 		assertThat(result).isEqualTo(3);
 	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testIssue1075() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(Issue1075StreamConfiguration.class);
+
+
+		List<Object> list = Arrays.asList(new Product[] {new Product("foo"), new Product("bar")});
+		Event event = new Event(list);
+		EventHolder eventHolder = new EventHolder(event);
+		ObjectMapper mapper = new ObjectMapper();
+		String message = mapper.writeValueAsString(eventHolder);
+		Function function = catalog.lookup("somethingYouShouldNeverDo");
+		boolean result = (boolean) function.apply(
+				new GenericMessage<String>(message));
+		assertThat(result).isTrue();
+	}
+
+
+
 
 	@Test
 	public void testIssue602asPOJO() throws Exception {
@@ -130,6 +153,59 @@ public class UserIssuesTests {
 
 	@EnableAutoConfiguration
 	@Configuration
+	public static class Issue1075StreamConfiguration {
+		@Bean
+		public Function<Message<EventHolder<Event<List<Product>>>>, Boolean> somethingYouShouldNeverDo() {
+			return message -> {
+				List<Product> products = message.getPayload().getPayload().getPayload();
+				assertThat(products.get(0).getName()).isEqualTo("foo");
+				assertThat(products.get(1).getName()).isEqualTo("bar");
+				return true;
+			};
+		}
+	}
+
+	public static class EventHolder<T> {
+		private T payload;
+
+		public EventHolder() {
+		}
+
+		public EventHolder(T payload) {
+			this.payload = payload;
+		}
+
+		public T getPayload() {
+			return payload;
+		}
+
+		public void setPayload(T payload) {
+			this.payload = payload;
+		}
+
+	}
+
+	public static class Event<T> {
+		private T payload;
+
+		public Event() {
+		}
+
+		public Event(T payload) {
+			this.payload = payload;
+		}
+
+		public T getPayload() {
+			return payload;
+		}
+
+		public void setPayload(T payload) {
+			this.payload = payload;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
 	public static class Issue601Configuration {
 		@Bean
 		public Uppercase uppercase() {
@@ -147,6 +223,13 @@ public class UserIssuesTests {
 
 	public static class Product {
 		private String name;
+
+		public Product() {
+		}
+
+		public Product(String name) {
+			this.name = name;
+		}
 
 		public String getName() {
 			return name;
