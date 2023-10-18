@@ -201,10 +201,7 @@ public final class AWSLambdaUtils {
 		Class<?> outputClass = FunctionTypeUtils.getRawType(functionOutputType);
 		if (outputClass != null) {
 			String outputClassName = outputClass.getName();
-			if (outputClassName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse") ||
-				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent") ||
-				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerResponseEvent") ||
-				outputClassName.equals("com.amazonaws.services.lambda.runtime.events.IamPolicyResponse")) {
+			if (outputClassName.startsWith("com.amazonaws.services.lambda.runtime.events.")) {
 				return extractPayload((Message<Object>) responseMessage, objectMapper);
 			}
 		}
