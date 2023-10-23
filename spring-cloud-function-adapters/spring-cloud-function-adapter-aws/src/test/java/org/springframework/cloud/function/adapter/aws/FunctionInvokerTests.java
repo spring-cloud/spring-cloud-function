@@ -1225,6 +1225,7 @@ public class FunctionInvokerTests {
 		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
 		Map resultMap = mapper.fromJson(result, Map.class);
 		assertThat((boolean) resultMap.get(AWSLambdaUtils.IS_BASE64_ENCODED)).isTrue();
+		assertThat((int) resultMap.get(AWSLambdaUtils.STATUS_CODE)).isEqualTo(201);
 		String body = new String(Base64.getDecoder().decode((String) resultMap.get(AWSLambdaUtils.BODY)), StandardCharsets.UTF_8);
 		assertThat(body).isEqualTo("hello");
 	}
@@ -1694,7 +1695,10 @@ public class FunctionInvokerTests {
 		public Function<Message<String>, Message<String>> echoStringMessage() {
 			return m -> {
 				String encodedPayload = Base64.getEncoder().encodeToString(m.getPayload().getBytes(StandardCharsets.UTF_8));
-				return MessageBuilder.withPayload(encodedPayload).setHeader("isBase64Encoded", true).build();
+				return MessageBuilder.withPayload(encodedPayload)
+						.setHeader("isBase64Encoded", true)
+						.setHeader("statusCode", 201)
+						.build();
 			};
 		}
 
