@@ -33,6 +33,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.rsocket.RSocketRequester;
+import org.springframework.test.util.TestSocketUtils;
 
 /**
  * @author Spencer Gibb
