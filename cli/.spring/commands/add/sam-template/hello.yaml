@@ -1,4 +1,0 @@
-actions:
-  - generate:
-      to: hello.txt
-      text: Hello {{greeting}} on {{os-name}}.

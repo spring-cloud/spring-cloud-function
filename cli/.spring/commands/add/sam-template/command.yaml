@@ -1,9 +1,0 @@
-command:
-  description: Generate a new file with a hello message
-  options:
-    #
-    - name: greeting
-      description: who or what to say hello to
-      dataType: string
-      defaultValue: World
-      inputType: text     # TEXT
