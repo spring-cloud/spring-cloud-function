@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class FunctionConfiguration {
+public class FunctionRoutingConfiguration {
 
 	@Bean
 	public Function<String, String> uppercase() {

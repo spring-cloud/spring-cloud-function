@@ -13,7 +13,7 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class FunctionAwsApplicationTests {
+public class FunctionAwsRoutingApplicationTests {
 	
 	@Test
 	void validateFunctionRouting() throws Exception {
