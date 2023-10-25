@@ -101,21 +101,23 @@ public final class AWSLambdaUtils {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper, Context context) {
+	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier,
+			JsonMapper jsonMapper, Context context) {
 		if (logger.isInfoEnabled()) {
 			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
 		}
 
-
 		Object structMessage = jsonMapper.fromJson(payload, Object.class);
 		boolean isApiGateway = structMessage instanceof Map
-				&& (((Map<String, Object>) structMessage).containsKey("httpMethod") ||
-						(((Map<String, Object>) structMessage).containsKey("routeKey") && ((Map) structMessage).containsKey("version")));
+				&& (((Map<String, Object>) structMessage).containsKey("httpMethod")
+						|| (((Map<String, Object>) structMessage).containsKey("routeKey")
+								&& ((Map) structMessage).containsKey("version")));
 
 		Message<byte[]> requestMessage;
-		
-		MessageBuilder builder = MessageBuilder.withPayload(structMessage instanceof Map msg && msg.containsKey("payload") 
-				? ((String) msg.get("payload")).getBytes(StandardCharsets.UTF_8) 
+
+		MessageBuilder builder = MessageBuilder
+				.withPayload(structMessage instanceof Map msg && msg.containsKey("payload")
+						? ((String) msg.get("payload")).getBytes(StandardCharsets.UTF_8)
 						: payload);
 		if (isApiGateway) {
 			builder.setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true);
