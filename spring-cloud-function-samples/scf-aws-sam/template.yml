@@ -22,7 +22,7 @@ Resources:
       Timeout: 30
       Environment:
         Variables:
-          MAIN_CLASS: io.spring.sample.FunctionConfiguration
+          MAIN_CLASS: oz.spring.aws.FunctionAwsApplication
       Events:
         HttpApiEvent:
           Type: HttpApi
