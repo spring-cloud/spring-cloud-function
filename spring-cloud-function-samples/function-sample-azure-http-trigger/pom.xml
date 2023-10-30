@@ -24,7 +24,7 @@
 		<start-class>com.example.azure.di.httptriggerdemo.HttpTriggerDemoApplication</start-class>
 
 		<!-- AZURE FUNCTION CONFIG -->
-		<azure.functions.maven.plugin.version>1.22.0</azure.functions.maven.plugin.version>
+		<azure.functions.maven.plugin.version>1.28.0</azure.functions.maven.plugin.version>
 		<functionAppName>spring-cloud-function-samples</functionAppName>
 		<functionAppRegion>westus</functionAppRegion>
 		<functionResourceGroup>java-functions-group</functionResourceGroup>
@@ -69,6 +69,7 @@
 					<pricingTier>${functionPricingTier}</pricingTier>
 
 					<hostJson>${project.basedir}/src/main/resources/host.json</hostJson>
+					<localSettingsJson>${project.basedir}/src/main/resources/local.settings.json</localSettingsJson>
 
 					<runtime>
 						<os>linux</os>
