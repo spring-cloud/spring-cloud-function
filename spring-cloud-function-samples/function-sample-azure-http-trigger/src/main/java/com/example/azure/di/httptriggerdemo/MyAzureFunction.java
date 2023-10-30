@@ -53,7 +53,8 @@ public class MyAzureFunction {
 
     @FunctionName("bean")
     public String plainBeans(
-            @HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+            @HttpTrigger(name = "req", methods = {
+                    HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
             ExecutionContext context) {
 
         return echo.andThen(uppercase).apply(request.getBody().get());
@@ -61,7 +62,8 @@ public class MyAzureFunction {
 
     @FunctionName("scf")
     public String springCloudFunction(
-            @HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+            @HttpTrigger(name = "req", methods = {
+                    HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
             ExecutionContext context) {
 
         // Use SCF composition. Composed functions are not just spring beans but SCF such.

@@ -74,15 +74,19 @@ public class MyAzureFunction {
 
 	@FunctionName("spring") // <3>
 	public String plainBean( // <4>
-			@HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
-			ExecutionContext context) {
+			@HttpTrigger(name = "req",
+				methods = { HttpMethod.POST },
+				authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+				ExecutionContext context) {
 
 		return this.uppercase.apply(request.getBody().get());
 	}
 
 	@FunctionName("scf") // <3>
 	public String springCloudFunction( // <5>
-			@HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+			@HttpTrigger(name = "req",
+			methods = { HttpMethod.POST },
+			authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 			ExecutionContext context) {
 
 		// Use SCF composition. Composed functions are not just spring beans but SCF such.
@@ -154,8 +158,10 @@ For that purpose the `AzureFunctionUtil.enhanceInputIfNecessary` allow you to ad
 ----
 @FunctionName("myfunction")
 public String execute(
-	@HttpTrigger(name = "req", authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
-	ExecutionContext context) {
+	@HttpTrigger(name = "req",
+		methods = { HttpMethod.POST },
+		authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+		ExecutionContext context) {
 
 	Message message =
 		(Message) AzureFunctionUtil.enhanceInputIfNecessary(request.getBody().get(), context); // <1>
