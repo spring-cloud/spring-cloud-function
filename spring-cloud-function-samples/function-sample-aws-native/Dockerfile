@@ -25,7 +25,7 @@ RUN rm -rf $MVN_FOLDERNAME
 ENV GRADLE_VERSION 7.4.1
 ENV GRADLE_FOLDERNAME gradle-${GRADLE_VERSION}
 ENV GRADLE_FILENAME gradle-${GRADLE_VERSION}-bin.zip
-RUN curl -LO https://downloads.gradle-dn.com/distributions/gradle-${GRADLE_VERSION}-bin.zip
+RUN curl -LO https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip
 RUN unzip gradle-${GRADLE_VERSION}-bin.zip
 RUN mv $GRADLE_FOLDERNAME /usr/lib/gradle
 RUN rm -rf $GRADLE_FOLDERNAME
