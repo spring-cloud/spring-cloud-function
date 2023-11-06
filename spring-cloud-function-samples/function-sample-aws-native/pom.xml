@@ -79,7 +79,7 @@
 <!--						<version>${native.buildtools.version}</version>-->
 						<configuration>
 							<buildArgs>
-								<buildArg>--enable-url-protocols=http</buildArg>
+								<buildArg>--enable-url-protocols=http --enable-preview</buildArg>
 							</buildArgs>
 						</configuration>
 						<executions>
@@ -127,6 +127,12 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+                <jvmArguments>-agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image/ --enable-preview
+                    </jvmArguments>
+                <compilerArguments>--enable-preview
+                    </compilerArguments>
+            </configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
