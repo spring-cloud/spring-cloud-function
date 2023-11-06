@@ -17,7 +17,7 @@ RUN rm -rf $GRAAL_FOLDERNAME
 ENV MVN_VERSION 3.6.3
 ENV MVN_FOLDERNAME apache-maven-${MVN_VERSION}
 ENV MVN_FILENAME apache-maven-${MVN_VERSION}-bin.tar.gz
-RUN curl -4 -L https://mirrors.ukfast.co.uk/sites/ftp.apache.org/maven/maven-3/${MVN_VERSION}/binaries/${MVN_FILENAME} | tar -xvz
+RUN curl -4 -L https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MVN_VERSION}/binaries/${MVN_FILENAME} | tar -xvz
 RUN mv $MVN_FOLDERNAME /usr/lib/maven
 RUN rm -rf $MVN_FOLDERNAME
 
