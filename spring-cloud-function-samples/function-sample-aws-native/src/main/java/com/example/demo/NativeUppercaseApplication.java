@@ -20,16 +20,16 @@ public class NativeUppercaseApplication {
 		SpringApplication.run(NativeUppercaseApplication.class, args);
 	}
 
-	@Bean
-	public MessageRoutingCallback customRouter() {
-		return new MessageRoutingCallback() {
-			@Override
-			public String routingResult(Message<?> message) {
-				logger.info("Received message: " + message);
-				return (String) message.getHeaders().get("spring.cloud.function.definition");
-			}
-		};
-	}
+//	@Bean
+//	public MessageRoutingCallback customRouter() {
+//		return new MessageRoutingCallback() {
+//			@Override
+//			public String routingResult(Message<?> message) {
+//				logger.info("Received message: " + message);
+//				return (String) message.getHeaders().get("spring.cloud.function.definition");
+//			}
+//		};
+//	}
 
 	@Bean
 	public Function<String, String> uppercase() {
@@ -40,10 +40,10 @@ public class NativeUppercaseApplication {
 	}
 
 	@Bean
-	public Function<String, String> lowercase() {
+	public Function<String, String> reverse() {
 		return v -> {
-			System.out.println("Lowercasing " + v);
-			return v.toUpperCase();
+			System.out.println("Reversing " + v);
+			return new StringBuilder(v).reverse().toString();
 		};
 	}
 
