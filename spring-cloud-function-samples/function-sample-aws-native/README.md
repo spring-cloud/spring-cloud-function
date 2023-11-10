@@ -12,13 +12,13 @@ You first need to build a Docker image where you will actually build project.
 To do that execute the following command form [project directory
 
 ```
-$ docker build -t "al2-graalvm19:native-uppercase" .
+docker build -t "al2-graalvm19:native-uppercase" .
 ```
 Start the container
 
 ```
-$ docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-uppercase
- ```
+docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-uppercase
+```
  
 Now navigate to the image terminal. Your working directory is alredy set for the root of the project. You can verify it by executing `ls`.
 
