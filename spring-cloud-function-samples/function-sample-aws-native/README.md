@@ -1,44 +1,95 @@
-# Introduction
+In this sample, you'll build a native GraalVM image with `spring-cloud-function` and set it up to run in AWS Lambda.
 
-This example shows GraaalVM native spring-cloud-function application. The application itself is very simple and contains two functions - `uppercase` & `lowercase`.
-Unless specific value is specified as `handler`, the application will fall back on `RoutingFunction` where you can pass the routing instruction 
-via `spring.cloud.function.definition` Message header. If using API Gateway you can pass such header as HTTP header.
+The sample contains two functions - `uppercase` and `reverse` - so you can see how to route requests. A provided `RoutingFunction` will send messages to a handler function specified in a header named: `spring.cloud.function.definition` (demonstrated in the test section). The routing value can also be passed as an environment variable. If using API Gateway, you can pass this value as an HTTP header. 
 
-# To run
-
-## If you are on OSX Apple M1 Pro (arch64)
-
-You first need to build a Docker image where you will actually build project.
-To do that execute the following command form [project directory
-
+**Example function definition**
 ```
-docker build -t "al2-graalvm19:native-uppercase" .
-```
-Start the container
-
-```
-docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-uppercase
-```
- 
-Now navigate to the image terminal. Your working directory is alredy set for the root of the project. You can verify it by executing `ls`.
-
-Build the project:
-
-```
-./mvnw clean -Pnative native:compile -DskipTests
+@Bean
+public Function<String, String> uppercase() {
+  return v -> {
+    System.out.println("Uppercasing " + v);
+    return v.toUpperCase();
+  };
+}
 ```
 
-Once the build finishes, you can deploy it. 
+> Note: If your function takes a Spring Message as an input parameter (e.g., Function<Message, ..>), the Lambda Context object will be available in the message header `aws-context`. See [AWSLambdaUtils.java](https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/springframework/cloud/function/adapter/aws/AWSLambdaUtils.java#L67C44-L67C55) for details.
 
-## Deploying to AWS LAmbda
 
-Start *AWS Dashboard* and navigate to **AWS Lambda** Services
+## To run the sample on macOS (Apple silicon arch64)
 
-Click on `Create Function`.  Enter `uppercase` for *function name*. For the runtime select `Provide your own bootstrap on Amazon Linux 2`. 
-Make sure you select the proper architecture (`x86_64` or `arm64`). 
+You first need to build the function, then you will deploy it to AWS Lambda.
 
-Click on `Create Function` again.
+### Step 1 - Build the native image
 
-Next you need to upload your project, so click on `Upload From` and point to the ZIP file that was created by the build process (in the `target` directory).
+Before starting the build, you must clone or download the code in **function-sample-aws-native**.
 
-Once the file is uploaded navigate to the `Test` tab. You can change the input data or use the default. Basically you need to pas a String in a JSON format such as `"hello"` and you should see the output `"HELLO"`. 
+1. Change into the project directory: `spring-cloud-function-samples/function-sample-aws-native`
+2. Run the following to build a Docker containter image which will be used to create the Lambda function zip file. 
+   ```
+   docker build -t "al2-graalvm19:native-uppercase" .
+   ```
+3. Start the container
+   ```
+   docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-uppercase
+   ```
+4. In Docker, open the image terminal. 
+
+   > Your working directory should default to the project root. Verify by running `ls` to view the files.
+
+6. From inside the container, build the Lambda function:
+   ```
+   ./mvnw clean -Pnative native:compile -DskipTests
+   ```
+
+After the build finishes, you need to deploy the function.
+
+
+### Step 2 - Deploy your function
+
+You will first create the function, and then you will upload the zipped native image from the build process.
+
+**Create the function**
+1. Login to the **Amazon Web Services console**.
+2. Navigate to the **Lambda service**.
+3. Choose `Create Function`.
+4. For **function name**, enter `uppercase`.
+5. For runtime, select `Provide your own bootstrap on Amazon Linux 2`.
+6. For architecture, select `arm64`.
+7. Choose `Create Function` again.
+
+**Upload the zip image**
+1. Choose `Upload From` and choose the zip file created by the build, located in the `target` directory.
+2. Wait for the image to upload.
+
+### Step 3 - Test your function
+
+Your test event will provide the information needed to select the `uppercase` or `reverse` handler functions.
+
+1. From the Lambda console, navigate to the `Test` tab. 
+2. For test data, enter the following JSON:
+   ```JSON
+   {
+       "payload": "hello",
+       "headers": {
+           "spring.cloud.function.definition": "uppercase"
+       }
+   }
+   ```
+3. Choose **Test**.
+   You should see uppercased output for the payload value: "HELLO" 
+
+4. Change the test data to the following JSON:
+   ```JSON
+   {
+       "payload": "hello",
+       "headers": {
+           "spring.cloud.function.definition": "reverse"
+       }
+   }
+   ```
+5. Choose **Test**.
+   You should see reversed output for the payload value: "OLLEH" 
+
+
+**Congratulations!** You have built and deployed a Graal native image to AWS Lambda.  
