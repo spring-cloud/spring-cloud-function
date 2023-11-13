@@ -53,7 +53,7 @@ You will first create the function, and then you will upload the zipped native i
 1. Login to the **Amazon Web Services console**.
 2. Navigate to the **Lambda service**.
 3. Choose `Create Function`.
-4. For **function name**, enter `uppercase`.
+4. For **function name**, enter `native-func-sample`.
 5. For runtime, select `Provide your own bootstrap on Amazon Linux 2`.
 6. For architecture, select `arm64`.
 7. Choose `Create Function` again.
