@@ -25,13 +25,13 @@ You first need to build the function, then you will deploy it to AWS Lambda.
 Before starting the build, you must clone or download the code in **function-sample-aws-native**.
 
 1. Change into the project directory: `spring-cloud-function-samples/function-sample-aws-native`
-2. Run the following to build a Docker containter image which will be used to create the Lambda function zip file. 
+2. Run the following to build a Docker container image which will be used to create the Lambda function zip file. 
    ```
-   docker build -t "al2-graalvm19:native-uppercase" .
+   docker build -t "al2-graalvm19:native-function" .
    ```
 3. Start the container
    ```
-   docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-uppercase
+   docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-function
    ```
 4. In Docker, open the image terminal. 
 
@@ -59,8 +59,9 @@ You will first create the function, and then you will upload the zipped native i
 7. Choose `Create Function` again.
 
 **Upload the zip image**
-1. Choose `Upload From` and choose the zip file created by the build, located in the `target` directory.
-2. Wait for the image to upload.
+1. Choose `Upload from`, then `.zip file`.
+2. From the `target` directory, select the .zip file created by the build.
+3. Wait for the image to upload.
 
 ### Step 3 - Test your function
 
