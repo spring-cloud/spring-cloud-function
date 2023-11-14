@@ -6,18 +6,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.function.context.DefaultMessageRoutingHandler;
-import org.springframework.cloud.function.context.MessageRoutingCallback;
 import org.springframework.context.annotation.Bean;
-import org.springframework.messaging.Message;
+// import org.springframework.cloud.function.context.DefaultMessageRoutingHandler;
+// import org.springframework.cloud.function.context.MessageRoutingCallback;
+// import org.springframework.messaging.Message;
 
 @SpringBootApplication
-public class NativeUppercaseApplication {
+public class NativeFunctionApplication {
 
-	Log logger = LogFactory.getLog(NativeUppercaseApplication.class);
+	Log logger = LogFactory.getLog(NativeFunctionApplication.class);
 
 	public static void main(String[] args) {
-		SpringApplication.run(NativeUppercaseApplication.class, args);
+		SpringApplication.run(NativeFunctionApplication.class, args);
 	}
 
 //	@Bean
