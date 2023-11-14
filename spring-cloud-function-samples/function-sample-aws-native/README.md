@@ -16,7 +16,7 @@ public Function<String, String> uppercase() {
 > Note: If your function takes a Spring Message as an input parameter (e.g., Function<Message, ..>), the Lambda Context object will be available in the message header `aws-context`. See [AWSLambdaUtils.java](https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/springframework/cloud/function/adapter/aws/AWSLambdaUtils.java#L67C44-L67C55) for details.
 
 
-## To run the sample on macOS (Apple silicon arch64)
+## To build the sample on macOS (Apple silicon arm64)
 
 You first need to build the function, then you will deploy it to AWS Lambda.
 
