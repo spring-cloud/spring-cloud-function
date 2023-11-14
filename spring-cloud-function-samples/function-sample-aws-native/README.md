@@ -90,7 +90,7 @@ Your test event will provide the information needed to select the `uppercase` or
    }
    ```
 5. Choose **Test**.
-   You should see reversed output for the payload value: "OLLEH" 
+   You should see reversed output for the payload value: "olleh" 
 
 
 **Congratulations!** You have built and deployed a Graal native image to AWS Lambda.  
