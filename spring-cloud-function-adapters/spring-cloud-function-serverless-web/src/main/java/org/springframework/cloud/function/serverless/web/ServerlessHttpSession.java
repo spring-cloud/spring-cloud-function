@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpSession;
  *
  *
  */
-public class ProxyHttpSession implements HttpSession {
+public class ServerlessHttpSession implements HttpSession {
 
 	private final long creationTime;
 
@@ -43,7 +43,7 @@ public class ProxyHttpSession implements HttpSession {
 
 	private final Map<String, Object> attributes = new HashMap<>();
 
-	public ProxyHttpSession(ServletContext servletContext) {
+	public ServerlessHttpSession(ServletContext servletContext) {
 		this.creationTime = new Date().getTime();
 		this.sessionId = UUID.randomUUID().toString();
 		this.servletContext = servletContext;

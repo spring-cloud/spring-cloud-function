@@ -495,44 +495,44 @@ public class FunctionInvokerTests {
 			"    \"isBase64Encoded\": false\n" +
 			"}";
 
-	String s3Event = "{\n" +
-			"   \"Records\":[\n" +
-			"      {\n" +
-			"         \"eventVersion\":\"2.1\",\n" +
-			"         \"eventSource\":\"aws:s3\",\n" +
-			"         \"awsRegion\":\"us-east-2\",\n" +
-			"         \"eventTime\":\"2020-07-15T21:29:41.365Z\",\n" +
-			"         \"eventName\":\"ObjectCreated:Put\",\n" +
-			"         \"userIdentity\":{\n" +
-			"            \"principalId\":\"AWS:AIxxx\"\n" +
-			"         },\n" +
-			"         \"requestParameters\":{\n" +
-			"            \"sourceIPAddress\":\"xxxx\"\n" +
-			"         },\n" +
-			"         \"responseElements\":{\n" +
-			"            \"x-amz-request-id\":\"xxxx\",\n" +
-			"            \"x-amz-id-2\":\"xxx/=\"\n" +
-			"         },\n" +
-			"         \"s3\":{\n" +
-			"            \"s3SchemaVersion\":\"1.0\",\n" +
-			"            \"configurationId\":\"New Data Delivery\",\n" +
-			"            \"bucket\":{\n" +
-			"               \"name\":\"bucket\",\n" +
-			"               \"ownerIdentity\":{\n" +
-			"                  \"principalId\":\"xxx\"\n" +
-			"               },\n" +
-			"               \"arn\":\"arn:aws:s3:::bucket\"\n" +
-			"            },\n" +
-			"            \"object\":{\n" +
-			"               \"key\":\"test/file.geojson\",\n" +
-			"               \"size\":32711,\n" +
-			"               \"eTag\":\"aaaa\",\n" +
-			"               \"sequencer\":\"aaaa\"\n" +
-			"            }\n" +
-			"         }\n" +
-			"      }\n" +
-			"   ]\n" +
-			"}";
+	String s3Event = "{\n"
+			+ "    \"Records\": [\n"
+			+ "        {\n"
+			+ "            \"eventVersion\": \"2.1\",\n"
+			+ "            \"eventSource\": \"aws:s3\",\n"
+			+ "            \"awsRegion\": \"eu-central-1\",\n"
+			+ "            \"eventTime\": \"2023-11-04T23:44:23.905Z\",\n"
+			+ "            \"eventName\": \"ObjectCreated:Put\",\n"
+			+ "            \"userIdentity\": {\n"
+			+ "                \"principalId\": \"AWS:xxxxxxxxxxxxxxxxxxx\"\n"
+			+ "            },\n"
+			+ "            \"requestParameters\": {\n"
+			+ "                \"sourceIPAddress\": \"x.x.x.x\"\n"
+			+ "            },\n"
+			+ "            \"responseElements\": {\n"
+			+ "                \"x-amz-request-id\": \"xxxxxxxxxxxxxxxx\",\n"
+			+ "                \"x-amz-id-2\": \"xxxxxxxxxxxxxxxxxxxx\"\n"
+			+ "            },\n"
+			+ "            \"s3\": {\n"
+			+ "                \"s3SchemaVersion\": \"1.0\",\n"
+			+ "                \"configurationId\": \"xxxxxxxxxxxxxxxxxxxxxxxx\",\n"
+			+ "                \"bucket\": {\n"
+			+ "                    \"name\": \"xxxxxxxxxxxxxxx\",\n"
+			+ "                    \"ownerIdentity\": {\n"
+			+ "                        \"principalId\": \"xxxxxxxxxxxxxxxxxx\"\n"
+			+ "                    },\n"
+			+ "                    \"arn\": \"arn:aws:s3:::xxxxxxxxxxxxxxxxx\"\n"
+			+ "                },\n"
+			+ "                \"object\": {\n"
+			+ "                    \"key\": \"xxxxxxxxxxxxxxxx\",\n"
+			+ "                    \"size\": 6064,\n"
+			+ "                    \"eTag\": \"xxxxxxxxxxxxx\",\n"
+			+ "                    \"sequencer\": \"xxxxxxxxxxxxxx\"\n"
+			+ "                }\n"
+			+ "            }\n"
+			+ "        }\n"
+			+ "    ]\n"
+			+ "}";
 
 	String apiGatewayEventWithStructuredBody = "{\n" +
 			"    \"resource\": \"/uppercase2\",\n" +
@@ -1187,6 +1187,7 @@ public class FunctionInvokerTests {
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayV2Event() throws Exception {
+		System.out.println(this.apiGatewayV2Event);
 		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputApiV2Event");
 		FunctionInvoker invoker = new FunctionInvoker();

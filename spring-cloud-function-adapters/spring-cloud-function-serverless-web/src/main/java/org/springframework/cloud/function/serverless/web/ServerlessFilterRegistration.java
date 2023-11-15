@@ -31,7 +31,7 @@ import jakarta.servlet.FilterRegistration;
  * @since 4.x
  *
  */
-public class ProxyFilterRegistration implements FilterRegistration, FilterRegistration.Dynamic {
+public class ServerlessFilterRegistration implements FilterRegistration, FilterRegistration.Dynamic {
 
 	public Filter getFilter() {
 		return filter;
@@ -41,7 +41,7 @@ public class ProxyFilterRegistration implements FilterRegistration, FilterRegist
 
 	private final Filter filter;
 
-	public ProxyFilterRegistration(String name, Filter filter) {
+	public ServerlessFilterRegistration(String name, Filter filter) {
 		this.name = name;
 		this.filter = filter;
 	}

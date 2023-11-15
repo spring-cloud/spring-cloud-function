@@ -42,12 +42,12 @@ public class RequestResponseTests {
 
 	private ObjectMapper mapper = new ObjectMapper();
 
-	private ProxyMvc mvc;
+	private ServerlessMVC mvc;
 
 	@BeforeEach
 	public void before() {
 		System.setProperty("spring.main.banner-mode", "off");
-		this.mvc = ProxyMvc.INSTANCE(ProxyErrorController.class, PetStoreSpringAppConfig.class);
+		this.mvc = ServerlessMVC.INSTANCE(PetStoreSpringAppConfig.class);
 	}
 
 	@AfterEach
@@ -57,8 +57,8 @@ public class RequestResponseTests {
 
 	@Test
 	public void validateAccessDeniedWithCustomHandler() throws Exception {
-		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/foo");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/foo");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		assertThat(response.getErrorMessage()).isEqualTo("Can't touch this");
 		assertThat(response.getStatus()).isEqualTo(403);
@@ -66,8 +66,8 @@ public class RequestResponseTests {
 
 	@Test
 	public void validateGetListOfPojos() throws Exception {
-		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		TypeReference<List<Pet>> tr = new TypeReference<List<Pet>>() {
 		};
@@ -78,9 +78,9 @@ public class RequestResponseTests {
 
 	@Test
 	public void validateGetListOfPojosWithParam() throws Exception {
-		ProxyHttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets");
+		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets");
 		request.setParameter("limit", "5");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		TypeReference<List<Pet>> tr = new TypeReference<List<Pet>>() {
 		};
@@ -92,8 +92,8 @@ public class RequestResponseTests {
 	@WithMockUser("spring")
 	@Test
 	public void validateGetPojo() throws Exception {
-		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets/6e3cc370-892f-4efe-a9eb-82926ff8cc5b");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets/6e3cc370-892f-4efe-a9eb-82926ff8cc5b");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		Pet pet = mapper.readValue(response.getContentAsByteArray(), Pet.class);
 		assertThat(pet).isNotNull();
@@ -102,8 +102,8 @@ public class RequestResponseTests {
 
 	@Test
 	public void errorThrownFromMethod() throws Exception {
-		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets/2");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets/2");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		assertThat(response.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
 		assertThat(response.getErrorMessage()).isEqualTo("No such Dog");
@@ -111,15 +111,15 @@ public class RequestResponseTests {
 
 	@Test
 	public void errorUnexpectedWhitelabel() throws Exception {
-		HttpServletRequest request = new ProxyHttpServletRequest(null, "GET", "/pets/2/3/4");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets/2/3/4");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		assertThat(response.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
 	}
 
 	@Test
 	public void validatePostWithBody() throws Exception {
-		ProxyHttpServletRequest request = new ProxyHttpServletRequest(null, "POST", "/pets/");
+		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/pets/");
 		String jsonPet = "{\n"
 				+ "   \"id\":\"1234\",\n"
 				+ "   \"breed\":\"Canish\",\n"
@@ -128,7 +128,7 @@ public class RequestResponseTests {
 				+ "}";
 		request.setContent(jsonPet.getBytes());
 		request.setContentType("application/json");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		Pet pet = mapper.readValue(response.getContentAsByteArray(), Pet.class);
 		assertThat(pet).isNotNull();
@@ -138,7 +138,7 @@ public class RequestResponseTests {
 	@Test
 	public void validatePostAsyncWithBody() throws Exception {
 //		System.setProperty("spring.main.banner-mode", "off");
-		ProxyHttpServletRequest request = new ProxyHttpServletRequest(null, "POST", "/petsAsync/");
+		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/petsAsync/");
 		String jsonPet = "{\n"
 				+ "   \"id\":\"1234\",\n"
 				+ "   \"breed\":\"Canish\",\n"
@@ -147,7 +147,7 @@ public class RequestResponseTests {
 				+ "}";
 		request.setContent(jsonPet.getBytes());
 		request.setContentType("application/json");
-		ProxyHttpServletResponse response = new ProxyHttpServletResponse();
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		Pet pet = mapper.readValue(response.getContentAsByteArray(), Pet.class);
 		assertThat(pet).isNotNull();

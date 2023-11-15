@@ -37,7 +37,6 @@ import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRegistration;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,8 +44,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletAutoConfiguration;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -64,18 +64,18 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author Oleg Zhurakousky
  *
  */
-public final class ProxyMvc {
+public final class ServerlessMVC {
 
 	/**
 	 * Name of the property to specify application context initialization timeout. Default is 20 sec.
 	 */
 	public static String INIT_TIMEOUT = "contextInitTimeout";
 
-	private static Log LOG = LogFactory.getLog(ProxyMvc.class);
+	private static Log LOG = LogFactory.getLog(ServerlessMVC.class);
 
 	private volatile DispatcherServlet dispatcher;
 
-	private volatile ConfigurableWebApplicationContext applicationContext;
+	private volatile ServletWebServerApplicationContext applicationContext;
 
 	private ServletContext servletContext;
 
@@ -83,13 +83,21 @@ public final class ProxyMvc {
 
 	private final long initializatioinTimeout;
 
-	public static ProxyMvc INSTANCE(Class<?>... componentClasses) {
-		ProxyMvc mvc = new ProxyMvc();
+	public static ServerlessMVC INSTANCE(Class<?>... componentClasses) {
+		ServerlessMVC mvc = new ServerlessMVC();
 		mvc.initializeContextAsync(componentClasses);
 		return mvc;
 	}
 
-	private ProxyMvc() {
+	public static ServerlessMVC INSTANCE(ServletWebServerApplicationContext applicationContext) {
+		ServerlessMVC mvc = new ServerlessMVC();
+		mvc.applicationContext = applicationContext;
+		mvc.dispatcher = mvc.applicationContext.getBean(DispatcherServlet.class);
+		mvc.contextStartupLatch.countDown();
+		return mvc;
+	}
+
+	private ServerlessMVC() {
 		String timeoutValue = System.getenv(INIT_TIMEOUT);
 		if (!StringUtils.hasText(timeoutValue)) {
 			timeoutValue = System.getProperty(INIT_TIMEOUT);
@@ -115,41 +123,24 @@ public final class ProxyMvc {
 	}
 
 	private void initContext(Class<?>... componentClasses) {
-		this.applicationContext = ServerlessWebApplication.run(componentClasses, new String[] {});
-		ProxyServletContext servletContext = new ProxyServletContext();
-		this.applicationContext.setServletContext(servletContext);
-		this.applicationContext.refresh();
-
+		this.applicationContext = (ServletWebServerApplicationContext) SpringApplication.run(componentClasses, new String[] {});
 		if (this.applicationContext.containsBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
 			this.dispatcher = this.applicationContext.getBean(DispatcherServlet.class);
-		}
-		else {
-			this.dispatcher = new DispatcherServlet(this.applicationContext);
-			this.dispatcher.setDetectAllHandlerMappings(false);
-			((GenericApplicationContext) this.applicationContext).registerBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME,
-					DispatcherServlet.class, () -> this.dispatcher);
-		}
-
-		ServletRegistration.Dynamic reg = servletContext.addServlet(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME, dispatcher);
-		reg.setLoadOnStartup(1);
-		this.servletContext = applicationContext.getServletContext();
-		try {
-			this.dispatcher.init(new ProxyServletConfig(this.servletContext));
-		}
-		catch (Exception e) {
-			throw new IllegalStateException("Faild to create Spring MVC DispatcherServlet proxy", e);
 		}
 	}
 
 	public ConfigurableWebApplicationContext getApplicationContext() {
+		this.waitForContext();
 		return this.applicationContext;
 	}
 
 	public ServletContext getServletContext() {
+		this.waitForContext();
 		return this.servletContext;
 	}
 
 	public void stop() {
+		this.waitForContext();
 		this.applicationContext.stop();
 	}
 
@@ -165,17 +156,12 @@ public final class ProxyMvc {
 	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		try {
-			contextStartupLatch.await(this.initializatioinTimeout, TimeUnit.MILLISECONDS);
-			Assert.state(this.dispatcher != null, "Failed to initialize Application within the specified time of " + this.initializatioinTimeout + " milliseconds. "
-					+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
-		}
-		catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
+		//this.waitForContext();
+		//contextStartupLatch.await(this.initializatioinTimeout, TimeUnit.MILLISECONDS);
+		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializatioinTimeout + " milliseconds. "
+				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
 		this.service(request, response, (CountDownLatch) null);
 	}
-
 
 	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
@@ -184,7 +170,7 @@ public final class ProxyMvc {
 		AsyncContext asyncContext = request.getAsyncContext();
 		if (asyncContext != null) {
 			filterChain = new ProxyFilterChain(this.dispatcher);
-			if (asyncContext instanceof ProxyAsyncContext proxyAsyncContext) {
+			if (asyncContext instanceof ServerlessAsyncContext proxyAsyncContext) {
 				proxyAsyncContext.addDispatchHandler(() -> {
 					try {
 						new ProxyFilterChain(this.dispatcher).doFilter(request, response);
@@ -200,6 +186,16 @@ public final class ProxyMvc {
 		if (latch != null) {
 			latch.countDown();
 		}
+	}
+
+	private boolean waitForContext() {
+		try {
+			return contextStartupLatch.await(initializatioinTimeout, TimeUnit.MILLISECONDS);
+		}
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		return false;
 	}
 
 	private static class ProxyFilterChain implements FilterChain {
@@ -225,7 +221,7 @@ public final class ProxyMvc {
 		 */
 		ProxyFilterChain(DispatcherServlet servlet) {
 			List<Filter> filters = new ArrayList<>();
-			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ProxyFilterRegistration) fr).getFilter()));
+			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ServerlessFilterRegistration) fr).getFilter()));
 			Assert.notNull(filters, "filters cannot be null");
 			Assert.noNullElements(filters, "filters cannot contain null values");
 			this.filters = initFilterList(servlet, filters.toArray(new Filter[] {}));
@@ -292,12 +288,12 @@ public final class ProxyMvc {
 					throws IOException, ServletException {
 
 				try {
-					if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value() && request instanceof ProxyHttpServletRequest) {
+					if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value() && request instanceof ServerlessHttpServletRequest) {
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, ((HttpServletResponse) response).getStatus());
-						this.setErrorMessageAttribute((ProxyHttpServletRequest) request, (ProxyHttpServletResponse) response, null);
+						this.setErrorMessageAttribute((ServerlessHttpServletRequest) request, (ServerlessHttpServletResponse) response, null);
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
 
-						((ProxyHttpServletRequest) request).setRequestURI("/error");
+						((ServerlessHttpServletRequest) request).setRequestURI("/error");
 						this.delegateServlet.service(request, response);
 					}
 					else {
@@ -305,12 +301,12 @@ public final class ProxyMvc {
 					}
 				}
 				catch (Exception e) {
-					if (request instanceof ProxyHttpServletRequest) {
+					if (request instanceof ServerlessHttpServletRequest) {
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.INTERNAL_SERVER_ERROR.value());
 						this.setErrorMessageAttribute((HttpServletRequest) request, (HttpServletResponse) response, e);
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, e);
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
-						((ProxyHttpServletRequest) request).setRequestURI("/error");
+						((ServerlessHttpServletRequest) request).setRequestURI("/error");
 					}
 
 					LOG.error("Failed processing the request to: " + ((HttpServletRequest) request).getRequestURI(), e);
@@ -323,7 +319,7 @@ public final class ProxyMvc {
 				if (exception != null && StringUtils.hasText(exception.getMessage())) {
 					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, exception.getMessage());
 				}
-				else if (response instanceof ProxyHttpServletResponse proxyResponse && StringUtils.hasText(proxyResponse.getErrorMessage())) {
+				else if (response instanceof ServerlessHttpServletResponse proxyResponse && StringUtils.hasText(proxyResponse.getErrorMessage())) {
 					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, proxyResponse.getErrorMessage());
 				}
 				else {
@@ -347,11 +343,11 @@ public final class ProxyMvc {
 		}
 	}
 
-	private static class ProxyServletConfig implements ServletConfig {
+	public static class ProxyServletConfig implements ServletConfig {
 
 		private final ServletContext servletContext;
 
-		ProxyServletConfig(ServletContext servletContext) {
+		public ProxyServletConfig(ServletContext servletContext) {
 			this.servletContext = servletContext;
 		}
 

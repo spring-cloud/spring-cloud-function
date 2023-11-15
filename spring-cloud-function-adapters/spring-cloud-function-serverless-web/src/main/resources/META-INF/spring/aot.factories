@@ -1,0 +1,1 @@
+org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor=org.springframework.cloud.function.serverless.web.AWSTypesProcessor

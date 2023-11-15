@@ -48,7 +48,7 @@ import org.springframework.web.util.WebUtils;
  * @since 4.x
  *
  */
-public class ProxyHttpServletResponse implements HttpServletResponse {
+public class ServerlessHttpServletResponse implements HttpServletResponse {
 
 	private static final String DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
 

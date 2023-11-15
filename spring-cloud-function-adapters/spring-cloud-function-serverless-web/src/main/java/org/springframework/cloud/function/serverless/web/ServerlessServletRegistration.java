@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import jakarta.servlet.ServletSecurityElement;
  * @since 4.x
  *
  */
-public class ProxyServletRegistration implements ServletRegistration, ServletRegistration.Dynamic, Comparable<ProxyServletRegistration> {
+public class ServerlessServletRegistration implements ServletRegistration, ServletRegistration.Dynamic, Comparable<ServerlessServletRegistration> {
 
 	private final String servletName;
 
@@ -43,7 +43,7 @@ public class ProxyServletRegistration implements ServletRegistration, ServletReg
 
 	private int loadOnStartup;
 
-	public ProxyServletRegistration(String servletName, Servlet servlet, ServletContext servletContext) {
+	public ServerlessServletRegistration(String servletName, Servlet servlet, ServletContext servletContext) {
 		this.servlet = servlet;
 		this.servletName = servletName;
 		this.servletContext = servletContext;
@@ -54,9 +54,15 @@ public class ProxyServletRegistration implements ServletRegistration, ServletReg
 		return this.servletName;
 	}
 
+	public ServletContext getServletContext() {
+		return this.servletContext;
+	}
+
 	@Override
 	public String getClassName() {
-		// TODO Auto-generated method stub
+		if (this.servlet != null) {
+			return this.servletName.getClass().getName();
+		}
 		return null;
 	}
 
@@ -136,7 +142,7 @@ public class ProxyServletRegistration implements ServletRegistration, ServletReg
 	}
 
 	@Override
-	public int compareTo(ProxyServletRegistration o) {
+	public int compareTo(ServerlessServletRegistration o) {
 		return Integer.compare(this.loadOnStartup, o.getLoadOnStartup());
 	}
 

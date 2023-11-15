@@ -71,7 +71,7 @@ import org.springframework.util.MultiValueMap;
  * @author Oleg Zhurakousky
  *
  */
-public class ProxyHttpServletRequest implements HttpServletRequest {
+public class ServerlessHttpServletRequest implements HttpServletRequest {
 
 	private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
@@ -165,11 +165,16 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 
 	private AsyncContext asyncContext;
 
-	public ProxyHttpServletRequest(ServletContext servletContext, String method, String requestURI) {
+	public ServerlessHttpServletRequest(ServletContext servletContext, String method, String requestURI) {
 		this.servletContext = servletContext;
 		this.method = method;
 		this.requestURI = requestURI;
 		this.locales.add(Locale.ENGLISH);
+	}
+
+	@Override
+	public String toString() {
+		return "Method: " + this.method + ", RequestURI: " + this.requestURI;
 	}
 
 	/**
@@ -636,7 +641,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 		Assert.state(this.asyncSupported, "Async not supported");
 		this.dispatcherType = DispatcherType.ASYNC;
 		this.asyncStarted = true;
-		this.asyncContext = this.asyncContext == null ? new ProxyAsyncContext(request, response) : this.asyncContext;
+		this.asyncContext = this.asyncContext == null ? new ServerlessAsyncContext(request, response) : this.asyncContext;
 		return this.asyncContext;
 	}
 
@@ -909,7 +914,7 @@ public class ProxyHttpServletRequest implements HttpServletRequest {
 	@Nullable
 	public HttpSession getSession(boolean create) {
 		if (this.session == null) {
-			this.session = new ProxyHttpSession(this.servletContext);
+			this.session = new ServerlessHttpSession(this.servletContext);
 		}
 		return this.session;
 	}
