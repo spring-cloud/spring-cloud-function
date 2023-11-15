@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.CollectionUtils;
 
@@ -31,7 +32,8 @@ import org.springframework.util.CollectionUtils;
  * @since 3.2
  *
  */
-public class AWSCompanionAutoConfiguration  {
+@Configuration
+public class AWSCompanionAutoConfiguration {
 
 	@Bean
 	public AWSTypesMessageConverter awsTypesMessageConverter(GenericApplicationContext applicationContext) {

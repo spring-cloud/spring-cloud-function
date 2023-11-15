@@ -71,7 +71,7 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
  * @author Oleg Zhurakousky
  *
  */
-class ServerlessWebApplication extends SpringApplication {
+public class ServerlessWebApplication extends SpringApplication {
 
 	private static final Log logger = LogFactory.getLog(ServerlessWebApplication.class);
 
@@ -118,6 +118,7 @@ class ServerlessWebApplication extends SpringApplication {
 			throw new IllegalStateException(ex);
 		}
 
+		//throw new AbandonedRunException();
 		return context;
 	}
 

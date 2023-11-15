@@ -76,7 +76,6 @@
 					<plugin>
 						<groupId>org.graalvm.buildtools</groupId>
 						<artifactId>native-maven-plugin</artifactId>
-<!--						<version>${native.buildtools.version}</version>-->
 						<configuration>
 							<buildArgs>
 								<buildArg>--enable-url-protocols=http --enable-preview</buildArg>

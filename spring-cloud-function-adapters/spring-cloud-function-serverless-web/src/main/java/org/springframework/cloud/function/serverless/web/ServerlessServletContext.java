@@ -45,16 +45,20 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.util.ClassUtils;
 
 /**
- * Empty no-op representation of {@link ServletContext} to satisfy required dependencies to
- * successfully proxy incoming web requests to target web application.
+ * Stub representation of {@link ServletContext} to satisfy required dependencies to
+ * successfully proxy incoming web requests directly (serverlessely) to target web application.
  * Most methods are not implemented.
  *
  * @author Oleg Zhurakousky
  *
  */
-public class ProxyServletContext implements ServletContext {
+public class ServerlessServletContext implements ServletContext {
 
-	private Log logger = LogFactory.getLog(ProxyServletContext.class);
+	private Log logger = LogFactory.getLog(ServerlessServletContext.class);
+
+	private HashMap<String, Object> attributes = new HashMap<>();
+
+	private Map<String, FilterRegistration> filterRegistrations = new HashMap<>();
 
 	private static Enumeration<String> EMPTY_ENUM = Collections.enumeration(new ArrayList<String>());
 
@@ -65,7 +69,7 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public Enumeration<String> getAttributeNames() {
-		return EMPTY_ENUM;
+		return Collections.enumeration(this.attributes.keySet());
 	}
 
 	@Override
@@ -163,11 +167,12 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public Object getAttribute(String name) {
-		return null;
+		return this.attributes.get(name);
 	}
 
 	@Override
 	public void setAttribute(String name, Object object) {
+		this.attributes.put(name, object);
 	}
 
 	@Override
@@ -190,7 +195,7 @@ public class ProxyServletContext implements ServletContext {
 	@Override
 	public Dynamic addServlet(String servletName, Servlet servlet) {
 
-		ProxyServletRegistration registration = new ProxyServletRegistration(servletName, servlet, this);
+		ServerlessServletRegistration registration = new ServerlessServletRegistration(servletName, servlet, this);
 		this.registrations.put(servletName, registration);
 		return registration;
 	}
@@ -227,18 +232,16 @@ public class ProxyServletContext implements ServletContext {
 
 	@Override
 	public FilterRegistration.Dynamic addFilter(String filterName, Filter filter) {
-		ProxyFilterRegistration registration = new ProxyFilterRegistration(filterName, filter);
+		ServerlessFilterRegistration registration = new ServerlessFilterRegistration(filterName, filter);
 		filterRegistrations.put(filterName, registration);
 		return registration;
 	}
-
-	Map<String, FilterRegistration> filterRegistrations = new HashMap<>();
 
 	@Override
 	public FilterRegistration.Dynamic addFilter(String filterName, Class<? extends Filter> filterClass) {
 		try {
 			Filter filter = filterClass.getDeclaredConstructor().newInstance();
-			ProxyFilterRegistration registration = new ProxyFilterRegistration(filterName, filter);
+			ServerlessFilterRegistration registration = new ServerlessFilterRegistration(filterName, filter);
 			filterRegistrations.put(filterName, registration);
 			return registration;
 		}

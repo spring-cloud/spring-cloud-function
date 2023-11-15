@@ -37,9 +37,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.function.serverless.web.ProxyHttpServletRequest;
-import org.springframework.cloud.function.serverless.web.ProxyHttpServletResponse;
-import org.springframework.cloud.function.serverless.web.ProxyMvc;
+import org.springframework.cloud.function.serverless.web.ServerlessHttpServletRequest;
+import org.springframework.cloud.function.serverless.web.ServerlessHttpServletResponse;
+import org.springframework.cloud.function.serverless.web.ServerlessMVC;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -58,10 +58,11 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 	private static final String AZURE_WEB_ADAPTER_ROUTE = AZURE_WEB_ADAPTER_NAME
 			+ "/{e?}/{e2?}/{e3?}/{e4?}/{e5?}/{e6?}/{e7?}/{e8?}/{e9?}/{e10?}/{e11?}/{e12?}/{e13?}/{e14?}/{e15?}";
 
-	private ProxyMvc mvc;
+	private ServerlessMVC mvc;
 
 	private ServletContext servletContext;
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
 		this.initialize();
@@ -77,7 +78,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 		synchronized (AzureWebProxyInvoker.class.getName()) {
 			if (mvc == null) {
 				Class<?> startClass = FunctionClassUtils.getStartClass();
-				this.mvc = ProxyMvc.INSTANCE(startClass);
+				this.mvc = ServerlessMVC.INSTANCE(startClass);
 			}
 		}
 	}
@@ -88,7 +89,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 		String path = request.getUri().getPath().substring(pathOffset);
 
-		ProxyHttpServletRequest httpRequest = new ProxyHttpServletRequest(servletContext,
+		ServerlessHttpServletRequest httpRequest = new ServerlessHttpServletRequest(servletContext,
 				request.getHttpMethod().toString(), path);
 
 
@@ -122,7 +123,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 		HttpServletRequest httpRequest = this.prepareRequest(request);
 
-		ProxyHttpServletResponse httpResponse = new ProxyHttpServletResponse();
+		ServerlessHttpServletResponse httpResponse = new ServerlessHttpServletResponse();
 		try {
 			this.mvc.service(httpRequest, httpResponse);
 

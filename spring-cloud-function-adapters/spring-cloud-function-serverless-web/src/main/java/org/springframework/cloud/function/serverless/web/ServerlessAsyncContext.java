@@ -36,11 +36,11 @@ import org.springframework.util.Assert;
 import org.springframework.web.util.WebUtils;
 
 /**
- * Implementation of Async context for {@link ProxyMvc}.
+ * Implementation of Async context for {@link ServerlessMVC}.
  *
  * @author Oleg Zhurakousky
  */
-public class ProxyAsyncContext implements AsyncContext {
+public class ServerlessAsyncContext implements AsyncContext {
 	private final HttpServletRequest request;
 
 	@Nullable
@@ -56,7 +56,7 @@ public class ProxyAsyncContext implements AsyncContext {
 	private final List<Runnable> dispatchHandlers = new ArrayList<>();
 
 
-	public ProxyAsyncContext(ServletRequest request, @Nullable ServletResponse response) {
+	public ServerlessAsyncContext(ServletRequest request, @Nullable ServletResponse response) {
 		this.request = (HttpServletRequest) request;
 		this.response = (HttpServletResponse) response;
 	}
@@ -87,7 +87,7 @@ public class ProxyAsyncContext implements AsyncContext {
 
 	@Override
 	public boolean hasOriginalRequestAndResponse() {
-		return (this.request instanceof ProxyHttpServletRequest && this.response instanceof ProxyHttpServletResponse);
+		return (this.request instanceof ServerlessHttpServletRequest && this.response instanceof ServerlessHttpServletResponse);
 	}
 
 	@Override
@@ -115,7 +115,7 @@ public class ProxyAsyncContext implements AsyncContext {
 
 	@Override
 	public void complete() {
-		ProxyHttpServletRequest mockRequest = WebUtils.getNativeRequest(this.request, ProxyHttpServletRequest.class);
+		ServerlessHttpServletRequest mockRequest = WebUtils.getNativeRequest(this.request, ServerlessHttpServletRequest.class);
 		if (mockRequest != null) {
 			mockRequest.setAsyncStarted(false);
 		}
