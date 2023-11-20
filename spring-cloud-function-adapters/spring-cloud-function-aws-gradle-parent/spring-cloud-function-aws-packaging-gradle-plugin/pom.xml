@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://maven.apache.org/POM/4.0.0"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>spring-cloud-function-aws-packaging-gradle-plugin</artifactId>
+	<packaging>jar</packaging>
+
+	<name>spring-cloud-function-aws-packaging-gradle-plugin</name>
+	<description>Gradle Plugin to assist with packaging Spring Cloud Function based AWS Lambda application</description>
+
+	<parent>
+		<groupId>org.springframework.cloud.function.aws-lambda.packaging</groupId>
+		<artifactId>spring-cloud-function-aws-gradle-parent</artifactId>
+		<version>1.0.0</version>
+	</parent>
+
+	<properties>
+		<java.version>17</java.version>
+		<maven.compiler.target>17</maven.compiler.target>
+    	<maven.compiler.source>17</maven.compiler.source>
+	</properties>
+
+	<dependencies>
+		<!-- Provided -->
+		<dependency>
+			<groupId>org.codehaus.groovy</groupId>
+			<artifactId>groovy</artifactId>
+			<scope>provided</scope>
+			<version>2.4.21</version>
+		</dependency>
+		<dependency>
+			<groupId>org.gradle</groupId>
+			<artifactId>gradle-tooling-api</artifactId>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.gradle</groupId>
+			<artifactId>gradle-core</artifactId>
+			<version>3.0</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		
+		<dependency>
+			<groupId>org.springframework.boot.experimental</groupId>
+			<artifactId>spring-boot-thin-gradle-plugin</artifactId>
+			<version>1.0.31.RELEASE</version>
+<!--			<scope>provided</scope>-->
+		</dependency>
+		<dependency>
+		    <groupId>com.github.johnrengelman.shadow</groupId>
+		    <artifactId>com.github.johnrengelman.shadow.gradle.plugin</artifactId>
+		    <version>8.1.1</version>
+		    <type>pom</type>
+<!--		    <scope>provided</scope>-->
+		</dependency>
+		<dependency>
+		    <groupId>io.spring.dependency-management</groupId>
+		    <artifactId>io.spring.dependency-management.gradle.plugin</artifactId>
+		    <version>1.1.4</version>
+		    <type>pom</type>
+		</dependency>
+		
+		<dependency>
+		    <groupId>dev.gradleplugins</groupId>
+		    <artifactId>gradle-api</artifactId>
+		    <version>8.4</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		
+		
+	</dependencies>
+	<repositories>
+		<repository>
+			<id>repo.gradle.org</id>
+			<url>https://repo.gradle.org/gradle/libs-releases-local/</url>
+		</repository>
+		<repository>
+			<id>plugins.gradle.org</id>
+			<url>https://plugins.gradle.org/m2/</url>
+		</repository>
+	</repositories>
+</project>

@@ -1,0 +1,70 @@
+plugins {
+	id 'java-gradle-plugin'
+	id 'eclipse'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation fileTree(dir: 'target/dependencies/compile', include: '*.jar')
+	testImplementation gradleTestKit()
+	testImplementation fileTree(dir: 'target/dependencies/test', include: '*.jar')
+}
+
+jar {
+	manifest {
+		attributes 'Implementation-Version': (version ? version : 'unknown')
+	}
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events "passed", "skipped", "failed"
+	}
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+eclipseJdt {
+	inputFile = rootProject.file('../../.eclipse/org.eclipse.jdt.core.prefs')
+	doLast {
+		project.file('.settings/org.eclipse.jdt.ui.prefs').withWriter { writer ->
+			writer << file('../../.eclipse/org.eclipse.jdt.ui.prefs').text
+		}
+	}
+}
+
+eclipse.classpath.file.whenMerged { classpath ->
+	classpath.entries.each { entry ->
+		if (entry.kind == "src" && entry.path.endsWith("/resources")) {
+			entry.excludes = [ "**" ]
+		}
+	}
+}
+
+task sourcesJar(type: Jar) {
+	//classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar) {
+	//classifier = "javadoc"
+	from javadoc
+}
+
+artifacts {
+	archives sourcesJar
+	archives javadocJar
+}
+
+tasks.withType(JavaCompile) {
+	options.compilerArgs.add("-Werror")
+	options.compilerArgs.add("-Xlint:deprecation")
+	options.compilerArgs.add("-Xlint:rawtypes")
+	options.compilerArgs.add("-Xlint:unchecked")
+	options.compilerArgs.add("-Xlint:varargs")
+}
