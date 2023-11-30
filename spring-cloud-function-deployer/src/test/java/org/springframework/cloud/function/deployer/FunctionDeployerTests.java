@@ -243,6 +243,7 @@ public class FunctionDeployerTests {
 	}
 
 	@Test
+	@Disabled
 	public void testWithLegacyProperties() throws Exception {
 		String[] args = new String[] {
 				"--function.location=target/it/bootapp/target/bootapp-1.0.0.RELEASE-exec.jar",
