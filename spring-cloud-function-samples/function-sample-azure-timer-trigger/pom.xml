@@ -16,7 +16,7 @@
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>1.8</java.version>
-		<spring-cloud.version>2021.0.9</spring-cloud.version>
+		<spring-cloud.version>2021.0.9-SNAPSHOT</spring-cloud.version>
 		<azure.functions.java.core.version>2.1.0</azure.functions.java.core.version>
 
 		<start-class>example.TimerTriggerDemoApplication</start-class>
