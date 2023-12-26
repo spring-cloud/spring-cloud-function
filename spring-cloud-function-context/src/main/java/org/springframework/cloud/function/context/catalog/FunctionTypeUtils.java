@@ -146,7 +146,7 @@ public final class FunctionTypeUtils {
 	 */
 	public static Class<?> getRawType(Type type) {
 		return type != null ? TypeResolver
-			.resolveRawClass(type instanceof GenericArrayType ? type : TypeResolver.reify(type), null) : null;
+				.resolveRawClass(type instanceof GenericArrayType ? type : TypeResolver.reify(type), null) : null;
 	}
 
 	/**
