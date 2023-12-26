@@ -1860,8 +1860,7 @@ public class FunctionInvokerTests {
 									.withResource(
 										List.of(v)).withEffect("Allow").build()
 							)
-						)
-						.build()
+						).build()
 					).build()
 				);
 		}
