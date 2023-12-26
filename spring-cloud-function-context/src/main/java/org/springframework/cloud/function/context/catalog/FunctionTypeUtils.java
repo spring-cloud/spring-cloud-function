@@ -148,7 +148,7 @@ public final class FunctionTypeUtils {
 		if (type == null) {
 			return null;
 		}
-		if (isPublisher(type) || isMessage(type)) {
+		if (isPublisher(type)) {
 			type = getImmediateGenericType(type, 0);
 		}
 		return TypeResolver.resolveRawClass(type instanceof GenericArrayType ? type : TypeResolver.reify(type), null);
