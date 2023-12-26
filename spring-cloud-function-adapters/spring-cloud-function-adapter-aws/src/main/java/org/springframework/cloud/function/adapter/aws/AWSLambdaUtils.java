@@ -70,12 +70,13 @@ public final class AWSLambdaUtils {
 
 	}
 
-	static boolean isSupportedAWSType(Type inputType) {
-		if (FunctionTypeUtils.isMessage(inputType) || FunctionTypeUtils.isPublisher(inputType)) {
-			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
+	static boolean isSupportedAWSType(Type type) {
+		if (FunctionTypeUtils.isMessage(type) || FunctionTypeUtils.isPublisher(type)) {
+			type = FunctionTypeUtils.getImmediateGenericType(type, 0);
 		}
-		return FunctionTypeUtils.getRawType(inputType).getPackage() != null &&
-				FunctionTypeUtils.getRawType(inputType).getPackage().getName().startsWith(
+		Class<?> rawType = FunctionTypeUtils.getRawType(type);
+		return rawType != null && rawType.getPackage() != null &&
+			rawType.getPackage().getName().startsWith(
 						"com.amazonaws.services.lambda.runtime.events");
 	}
 
@@ -203,12 +204,8 @@ public final class AWSLambdaUtils {
 	public static byte[] generateOutput(Message requestMessage, Message<?> responseMessage,
 			JsonMapper objectMapper, Type functionOutputType) {
 
-		Class<?> outputClass = FunctionTypeUtils.getRawType(functionOutputType);
-		if (outputClass != null) {
-			String outputClassName = outputClass.getName();
-			if (outputClassName.startsWith("com.amazonaws.services.lambda.runtime.events.")) {
-				return extractPayload((Message<Object>) responseMessage, objectMapper);
-			}
+		if (isSupportedAWSType(functionOutputType)) {
+			return extractPayload((Message<Object>) responseMessage, objectMapper);
 		}
 
 		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : extractPayload((Message<Object>) responseMessage, objectMapper);
