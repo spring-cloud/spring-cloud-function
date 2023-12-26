@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -38,6 +39,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.ApplicationLoadBalancerResponseEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.services.lambda.runtime.events.IamPolicyResponse;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
@@ -1347,6 +1349,21 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
+	@Test
+	public void testShouldNotWrapIamPolicyResponse() throws Exception {
+		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "outputPolicyResponse");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.apiGatewayEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result.get("body")).isNull();
+		assertThat(result.get("principalId")).isNotNull();
+	}
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayEventConsumer() throws Exception {
@@ -1828,6 +1845,24 @@ public class FunctionInvokerTests {
 				String body = (String) v.get("body");
 				return body;
 			};
+		}
+
+		@Bean
+		public Function<Mono<String>, Mono<IamPolicyResponse>> outputPolicyResponse() {
+			return input ->
+				input.map(v -> IamPolicyResponse.builder()
+					.withPrincipalId("principalId")
+					.withPolicyDocument(IamPolicyResponse.PolicyDocument.builder()
+						.withVersion("2012-10-17")
+						.withStatement(
+							List.of(
+								IamPolicyResponse.Statement.builder().withAction("execute-api:Invoke")
+									.withResource(
+										List.of(v)).withEffect("Allow").build()
+							)
+						).build()
+					).build()
+				);
 		}
 	}
 
