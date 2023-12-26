@@ -1359,7 +1359,6 @@ public class FunctionInvokerTests {
 		invoker.handleRequest(targetStream, output, null);
 
 		Map result = mapper.readValue(output.toByteArray(), Map.class);
-		System.out.println(result);
 		assertThat(result.get("body")).isNull();
 		assertThat(result.get("principalId")).isNotNull();
 	}
