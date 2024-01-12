@@ -4,6 +4,7 @@ asciidoctor.css
 *~
 .#*
 *#
+src/main/resources/META-INF/native-image
 target/
 build/
 bin/
