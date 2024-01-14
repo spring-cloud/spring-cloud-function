@@ -40,7 +40,10 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
-			<optional>true</optional>
+<!--			// SmartB Modification-->
+<!--			// Fix test-->
+<!--			<optional>true</optional>-->
+<!--			// SmartB End Of Modification-->
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.module</groupId>

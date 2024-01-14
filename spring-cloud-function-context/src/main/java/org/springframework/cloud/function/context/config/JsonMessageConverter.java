@@ -20,11 +20,14 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -32,6 +35,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation of {@link MessageConverter} which uses Jackson or Gson libraries to do the
@@ -118,6 +122,12 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 				if (message.getPayload() instanceof byte[] && String.class.isAssignableFrom(targetClass)) {
 					return new String((byte[]) message.getPayload(), StandardCharsets.UTF_8);
 				}
+				// SmartB Modification
+				// force message conversion error propagation
+				else if ("application/json".equals(message.getHeaders().get("Content-Type")) && e.getCause() instanceof JsonMappingException) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error parsing json", e.getCause());
+				}
+				// SmartB End Of Modification
 				else if (logger.isDebugEnabled()) {
 					Object payload = message.getPayload();
 					if (payload instanceof byte[]) {

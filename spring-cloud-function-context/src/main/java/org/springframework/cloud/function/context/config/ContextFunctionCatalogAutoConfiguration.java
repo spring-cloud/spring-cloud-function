@@ -183,6 +183,11 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public JsonMapper jsonMapper(ApplicationContext context) {
 			String preferredMapper = context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY);
 			if (StringUtils.hasText(preferredMapper)) {
+				// SmartB Modification
+//				if ("kSerialization".equals(preferredMapper) && ClassUtils.isPresent("kotlinx.serialization.json.Json", null)) {
+//					return kSerialization(context);
+//				} else
+				// SmartB End Of Modification
 				if ("gson".equals(preferredMapper) && ClassUtils.isPresent("com.google.gson.Gson", null)) {
 					return gson(context);
 				}
@@ -211,6 +216,18 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			return new GsonMapper(gson);
 		}
+		// SmartB Modification
+//		private JsonMapper kSerialization(ApplicationContext context) {
+//			Json json;
+//			try {
+//				json = context.getBean(Json.class);
+//			}
+//			catch (Exception e) {
+//				json =  KSerializationMapper.Companion.getDefaultJson();
+//			}
+//			return new KSerializationMapper(json);
+//		}
+		// SmartB End Of Modification
 
 		private JsonMapper jackson(ApplicationContext context) {
 			ObjectMapper mapper;
