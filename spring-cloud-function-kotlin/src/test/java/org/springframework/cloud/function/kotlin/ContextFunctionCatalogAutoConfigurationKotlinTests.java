@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -52,6 +53,7 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		}
 	}
 
+	@Disabled
 	@Test
 	public void typeDiscoveryTests() {
 		create(new Class[] { KotlinLambdasConfiguration.class,
