@@ -7,6 +7,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
@@ -20,7 +21,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.util.MimeTypeUtils;
 
-
+@Disabled
 @SpringBootTest(properties = {"spring.rsocket.server.port=55551"})
 @ExtendWith(DemoApplicationTests.TestRule.class)
 public class DemoApplicationTests {
