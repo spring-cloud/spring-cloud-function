@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.kotlin;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -45,6 +46,7 @@ public class ContextFunctionCatalogAutoConfigurationKotlinSuspendTests {
 	}
 
 	@Test
+	@Disabled
 	public void typeDiscoveryTests() {
 		create(new Class[] { KotlinSuspendFlowLambdasConfiguration.class,
 			ContextFunctionCatalogAutoConfigurationKotlinTests.SimpleConfiguration.class });

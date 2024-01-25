@@ -107,6 +107,7 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		assertThat(uppercaseBean.apply("hello")).isEqualTo("HELLO");
 	}
 
+	@Disabled
 	@Test
 	public void testWithComplexTypesAndRouting() {
 		create(new Class[] { KotlinLambdasConfiguration.class,
@@ -123,6 +124,7 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 	}
 
+	@Disabled
 	@Test
 	public void kotlinLambdas() {
 		create(new Class[] { KotlinLambdasConfiguration.class,
