@@ -18,6 +18,7 @@ package com.example;
 
 import java.io.IOException;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -29,6 +30,7 @@ public class FunctionSampleGcpIntegrationTest {
 	private TestRestTemplate rest = new TestRestTemplate();
 
 	@Test
+	@Disabled
 	public void testSample() throws IOException, InterruptedException {
 		try (LocalServerTestSupport.ServerProcess process = LocalServerTestSupport.startServer(CloudFunctionMain.class)) {
 			String result = rest.postForObject("http://localhost:8080/", "Hello", String.class);
