@@ -78,7 +78,7 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	private boolean canDiscoverConvertToType(Message<?> message, Class<?> targetClass) {
 		if (targetClass == null || targetClass == Object.class) {
 			MimeType mimeType = getMimeType(message.getHeaders());
-			if (StringUtils.hasText(mimeType.getParameter("type"))) {
+			if (mimeType != null && StringUtils.hasText(mimeType.getParameter("type"))) {
 				return true;
 			}
 			return false;

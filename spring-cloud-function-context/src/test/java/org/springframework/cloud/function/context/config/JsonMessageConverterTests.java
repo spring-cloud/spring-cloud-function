@@ -40,6 +40,8 @@ public class JsonMessageConverterTests {
 
 		Message<String> message = MessageBuilder.withPayload("{\"name\":\"bill\"}").build();
 		assertThat(converter.canConvertFrom(message, Person.class)).isTrue();
+		assertThat(converter.canConvertFrom(message, Object.class)).isFalse();
+		assertThat(converter.canConvertFrom(message, null)).isFalse();
 
 		message = MessageBuilder.withPayload("{\"name\":\"bill\"}").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
 		assertThat(converter.canConvertFrom(message, Person.class)).isTrue();
