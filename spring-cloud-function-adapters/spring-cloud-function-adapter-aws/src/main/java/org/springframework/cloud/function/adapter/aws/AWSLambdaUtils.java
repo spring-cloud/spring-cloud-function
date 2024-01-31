@@ -43,6 +43,7 @@ import org.springframework.util.StreamUtils;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Anton Barkan
  *
  */
 public final class AWSLambdaUtils {
