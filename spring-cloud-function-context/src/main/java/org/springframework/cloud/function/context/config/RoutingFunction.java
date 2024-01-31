@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.config;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -133,14 +134,8 @@ public class RoutingFunction implements Function<Object, Object> {
 				}
 			}
 			if (function == null) {
-				if (StringUtils.hasText((String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION))) {
-					function = functionFromDefinition((String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION));
-					if (function.isInputTypePublisher()) {
-						this.assertOriginalInputIsNotPublisher(originalInputIsPublisher);
-					}
-				}
-				else if (StringUtils.hasText((String) message.getHeaders().get(FunctionProperties.ROUTING_EXPRESSION))) {
-					function = this.functionFromExpression((String) message.getHeaders().get(FunctionProperties.ROUTING_EXPRESSION), message, true);
+				function = this.locateFunctionFromDefinitionOrExpression(message);
+				if (function != null) {
 					if (function.isInputTypePublisher()) {
 						this.assertOriginalInputIsNotPublisher(originalInputIsPublisher);
 					}
@@ -194,6 +189,18 @@ public class RoutingFunction implements Function<Object, Object> {
 		}
 
 		return function.apply(input);
+	}
+
+	private FunctionInvocationWrapper locateFunctionFromDefinitionOrExpression(Message<?> message) {
+		for (Entry<String, Object> headerEntry : message.getHeaders().entrySet()) {
+			if (headerEntry.getKey().equalsIgnoreCase(FunctionProperties.FUNCTION_DEFINITION)) {
+				return functionFromDefinition((String) headerEntry.getValue());
+			}
+			else if (headerEntry.getKey().equalsIgnoreCase(FunctionProperties.ROUTING_EXPRESSION)) {
+				return this.functionFromExpression((String) headerEntry.getValue(), message, true);
+			}
+		}
+		return null;
 	}
 
 	private void assertOriginalInputIsNotPublisher(boolean originalInputIsPublisher) {

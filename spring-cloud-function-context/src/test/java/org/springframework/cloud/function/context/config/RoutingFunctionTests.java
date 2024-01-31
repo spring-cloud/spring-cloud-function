@@ -266,6 +266,16 @@ public class RoutingFunctionTests {
 		assertThat(function.apply(message)).isEqualTo("olleh");
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testMultipleRoutersCaseInsensitiveKeys() {
+		FunctionCatalog functionCatalog = this.configureCatalog(MultipleRouterConfiguration.class);
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello").setHeader(FunctionProperties.PREFIX + ".DeFiNition", "uppercase").build();
+		assertThat(function.apply(message)).isEqualTo("HELLO");
+	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class RoutingFunctionConfiguration {
