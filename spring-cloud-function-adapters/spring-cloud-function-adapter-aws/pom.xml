@@ -19,8 +19,12 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<aws-lambda-events.version>3.9.0</aws-lambda-events.version>
+		<aws-lambda-events.version>3.11.4</aws-lambda-events.version>
 		<aws-java-sdk.version>1.12.29</aws-java-sdk.version>
+		<aws-lambda-java-log4j.version>1.0.1</aws-lambda-java-log4j.version>
+		<aws-lambda-java-serialization.version>1.1.5</aws-lambda-java-serialization.version>
+		<aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
+		<amazon-kinesis-client.version>1.15.1</amazon-kinesis-client.version>
 		<aws-kinesis-deaggregator.version>1.0.3</aws-kinesis-deaggregator.version>
 		<aws-kinesis-aggregator.version>1.0.3</aws-kinesis-aggregator.version>
 	</properties>
@@ -37,25 +41,25 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-log4j</artifactId>
-			<version>1.0.0</version>
+			<version>${aws-lambda-java-log4j.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-serialization</artifactId>
-			<version>1.0.0</version>
+			<version>${aws-lambda-java-serialization.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-lambda-java-core</artifactId>
-			<version>1.2.1</version>
+			<version>${aws-lambda-java-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 		    <groupId>com.amazonaws</groupId>
 		    <artifactId>amazon-kinesis-client</artifactId>
-		    <version>1.14.4</version>
+		    <version>${amazon-kinesis-client.version}</version>
 		    <scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -84,11 +88,6 @@
 			<optional>true</optional>
 			<scope>provided</scope>
 		</dependency>
-		
-<!--		<dependency>-->
-<!--			<groupId>org.springframework</groupId>-->
-<!--			<artifactId>spring-web</artifactId>-->
-<!--		</dependency>-->
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-webmvc</artifactId>
@@ -121,42 +120,4 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<repositories>
-		<repository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</pluginRepository>
-		<pluginRepository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-	</pluginRepositories>
-
 </project>

@@ -15,7 +15,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>17</java.version>
-		<azure.functions.java.core.version>3.0.0</azure.functions.java.core.version>
+		<azure.functions.java.core.version>3.1.0</azure.functions.java.core.version>
 		<azure.functions.java.spi.version>1.0.0</azure.functions.java.spi.version>
 	</properties>
 	<dependencies>
