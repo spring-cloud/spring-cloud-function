@@ -25,11 +25,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-
 import org.springframework.cloud.function.test.app.Pet;
 import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig;
+import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig.AnotherFilter;
+import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig.SimpleFilter;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.test.context.support.WithMockUser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,6 +47,8 @@ public class RequestResponseTests {
 	@BeforeEach
 	public void before() {
 		System.setProperty("spring.main.banner-mode", "off");
+		System.setProperty("trace", "true");
+		System.setProperty("contextInitTimeout", "20000");
 		this.mvc = ServerlessMVC.INSTANCE(PetStoreSpringAppConfig.class);
 	}
 
@@ -57,11 +59,15 @@ public class RequestResponseTests {
 
 	@Test
 	public void validateAccessDeniedWithCustomHandler() throws Exception {
-		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/foo");
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/foo/deny");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		assertThat(response.getErrorMessage()).isEqualTo("Can't touch this");
 		assertThat(response.getStatus()).isEqualTo(403);
+		SimpleFilter simpleFilter = this.mvc.getApplicationContext().getBean(SimpleFilter.class);
+		assertThat(simpleFilter.invoked).isTrue();
+		AnotherFilter anotherFilter = this.mvc.getApplicationContext().getBean(AnotherFilter.class);
+		assertThat(anotherFilter.invoked).isTrue();
 	}
 
 	@Test
@@ -89,7 +95,7 @@ public class RequestResponseTests {
 		assertThat(pets.get(0)).isInstanceOf(Pet.class);
 	}
 
-	@WithMockUser("spring")
+	//@WithMockUser("spring")
 	@Test
 	public void validateGetPojo() throws Exception {
 		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets/6e3cc370-892f-4efe-a9eb-82926ff8cc5b");

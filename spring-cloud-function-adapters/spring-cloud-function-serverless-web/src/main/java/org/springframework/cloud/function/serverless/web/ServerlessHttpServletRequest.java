@@ -169,6 +169,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 		this.servletContext = servletContext;
 		this.method = method;
 		this.requestURI = requestURI;
+		this.pathInfo = requestURI;
 		this.locales.add(Locale.ENGLISH);
 	}
 
