@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -94,7 +95,7 @@ public class PetsController {
 		return newPet;
 	}
 
-	@RequestMapping(path = "/foo", method = RequestMethod.GET)
+	@GetMapping("/foo/deny")
 	public Pet foo() {
 		Pet newPet = new Pet();
 		newPet.setId(UUID.randomUUID().toString());

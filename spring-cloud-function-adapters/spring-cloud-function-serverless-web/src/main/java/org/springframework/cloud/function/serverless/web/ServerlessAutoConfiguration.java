@@ -16,17 +16,18 @@
 
 package org.springframework.cloud.function.serverless.web;
 
-import jakarta.servlet.Filter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.web.servlet.DispatcherServletRegistrationBean;
 import org.springframework.boot.web.context.ConfigurableWebServerApplicationContext;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.server.WebServerException;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.boot.web.servlet.ServletContextInitializerBeans;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
 import org.springframework.cloud.function.serverless.web.ServerlessMVC.ProxyServletConfig;
@@ -96,9 +97,11 @@ public class ServerlessAutoConfiguration {
 				logger.info("Configuring Serverless Web Container");
 				ServerlessServletContext servletContext = new ServerlessServletContext();
 				servletApplicationContet.setServletContext(servletContext);
-				this.applicationContext.getBeansOfType(Filter.class).entrySet().forEach(entry -> {
-					servletContext.addFilter(entry.getKey(), entry.getValue());
-				});
+				for (ServletContextInitializer beans : new ServletContextInitializerBeans(this.applicationContext)) {
+					if (!(beans instanceof DispatcherServletRegistrationBean)) {
+						beans.onStartup(servletContext);
+					}
+				}
 			}
 		}
 	}
