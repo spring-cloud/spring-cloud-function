@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -28,6 +30,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -37,6 +40,7 @@ import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.google.protobuf.StringValue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -72,12 +76,14 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.ProtobufMessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * @author Oleg Zhurakousky
@@ -97,6 +103,7 @@ public class SimpleFunctionRegistryTests {
 		messageConverters.add(new JsonMessageConverter(jsonMapper));
 		messageConverters.add(new ByteArrayMessageConverter());
 		messageConverters.add(new StringMessageConverter());
+		messageConverters.add(new ProtobufMessageConverter());
 		this.messageConverter = new SmartCompositeMessageConverter(messageConverters);
 
 		this.conversionService = new DefaultConversionService();
@@ -205,6 +212,37 @@ public class SimpleFunctionRegistryTests {
 				.build();
 		var functionResult = lookedUpFunction.apply(inputMessage);
 		assertThat(functionResult).isEqualTo(inputMessagePayloadValue);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {
+		"aaaaaaaaaa", // no problem
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]" // protobuf encoder prepends '[' for length (91 bytes)
+	})
+	public void testSCF1094(String stringValue) throws IOException {
+
+		Function<StringValue, String> getValue = msg -> msg != null ? msg.getValue() : null;
+		Type functionType = ResolvableType.forClassWithGenerics(Function.class, ResolvableType.forClass(StringValue.class), ResolvableType.forClass(String.class)).getType();
+
+		var catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter, new JacksonMapper(new ObjectMapper()));
+		catalog.register(new FunctionRegistration<>(getValue, "getValue").type(functionType));
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("getValue");
+
+		ByteArrayOutputStream payload = new ByteArrayOutputStream();
+		StringValue.newBuilder()
+			.setValue(stringValue)
+			.build()
+			.writeTo(payload);
+
+		var inputMessage = MessageBuilder.withPayload(payload.toByteArray())
+			.setHeader("contentType", "application/x-protobuf")
+			.build();
+
+		final AtomicReference<Object> result = new AtomicReference<>();
+		assertThatNoException().isThrownBy(() -> {
+			result.set(lookedUpFunction.apply(inputMessage));
+		});
+		assertThat(result.get()).isEqualTo(stringValue);
 	}
 
 	@SuppressWarnings("unchecked")
