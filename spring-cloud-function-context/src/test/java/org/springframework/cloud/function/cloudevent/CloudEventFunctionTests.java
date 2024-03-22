@@ -18,6 +18,7 @@ package org.springframework.cloud.function.cloudevent;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -58,7 +59,7 @@ public class CloudEventFunctionTests {
 			.withData("{\"name\":\"Ricky\"}")
 			.setId(id)
 			.setSource("https://spring.io/")
-			.setType("org.springframework")
+			.setType("org.springframework.cloud.function.cloudevent.CloudEventFunctionTests$Person")
 			.build();
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();
@@ -73,7 +74,7 @@ public class CloudEventFunctionTests {
 		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("https://spring.io/"));
 	}
 
 	/*
@@ -204,7 +205,8 @@ public class CloudEventFunctionTests {
 			.withData("{\"name\":\"Ricky\"}")
 			.setHeader("ce_id", id)
 			.setHeader("ce_source", "https://spring.io/")
-			.setHeader("ce_type", "org.springframework")
+			.setHeader("ce_type", "org.springframework.cloud.function.cloudevent.CloudEventFunctionTests$Person")
+			.setHeader("ce_time", "2024-03-22T03:56:24Z")
 			.build();
 
 		Message<Person> resultMessage = (Message<Person>) function.apply(inputMessage);
@@ -216,7 +218,8 @@ public class CloudEventFunctionTests {
 		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
+		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("https://spring.io/"));
+		assertThat(CloudEventMessageUtils.getTime(resultMessage)).isEqualTo(OffsetDateTime.parse("2024-03-22T03:56:24Z"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -341,7 +344,7 @@ public class CloudEventFunctionTests {
 	@Configuration
 	public static class TestConfiguration {
 		@Bean
-		Function<Person, Person> echo() {
+		Function<Message<Person>, Message<Person>> echo() {
 			return Function.identity();
 		}
 
