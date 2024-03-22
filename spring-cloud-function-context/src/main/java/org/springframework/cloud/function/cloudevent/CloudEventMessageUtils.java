@@ -205,7 +205,8 @@ public final class CloudEventMessageUtils {
 
 	public static OffsetDateTime getTime(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
-		return (OffsetDateTime) message.getHeaders().get(prefix + _TIME);
+		Object time = message.getHeaders().get(prefix + _TIME);
+		return time instanceof String ? OffsetDateTime.parse((String) time) : null;
 	}
 
 	@SuppressWarnings("unchecked")
