@@ -64,10 +64,7 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
-		if (!supportsMimeType(headers)) {
-			return false;
-		}
-		return true;
+		return supportsMimeType(headers);
 	}
 
 	@Override
@@ -78,10 +75,7 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	private boolean canDiscoverConvertToType(Message<?> message, Class<?> targetClass) {
 		if (targetClass == null || targetClass == Object.class) {
 			MimeType mimeType = getMimeType(message.getHeaders());
-			if (mimeType != null && StringUtils.hasText(mimeType.getParameter("type"))) {
-				return true;
-			}
-			return false;
+			return mimeType != null && StringUtils.hasText(mimeType.getParameter("type"));
 		}
 		return true;
 	}
@@ -123,13 +117,7 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 					if (payload instanceof byte[]) {
 						payload = new String((byte[]) payload, StandardCharsets.UTF_8);
 					}
-
-					if (logger.isDebugEnabled()) {
-						logger.debug("Failed to convert value: " + payload + " to: " + targetClass, e);
-					}
-					else {
-						logger.warn("Failed to convert value: " + payload + " to: " + targetClass);
-					}
+					logger.debug("Failed to convert value: " + payload + " to: " + targetClass, e);
 				}
 			}
 		}

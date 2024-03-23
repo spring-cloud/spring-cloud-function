@@ -88,7 +88,10 @@ final public class LocalServerTestSupport {
 		File javaHome = new File(System.getProperty("java.home"));
 		assertThat(javaHome.exists()).isTrue();
 		File javaBin = new File(javaHome, "bin");
-		File javaCommand = new File(javaBin, "java");
+		File javaCommand = new File(javaBin, "java.exe");
+		if (!javaCommand.exists()) {
+			javaCommand = new File(javaBin, "java");
+		}
 		assertThat(javaCommand.exists()).isTrue();
 		String myClassPath = System.getProperty("java.class.path");
 		assertThat(myClassPath).isNotNull();
