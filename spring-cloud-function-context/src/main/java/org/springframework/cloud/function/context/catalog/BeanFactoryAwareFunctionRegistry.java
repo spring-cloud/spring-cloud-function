@@ -44,6 +44,7 @@ import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionA
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
@@ -147,6 +148,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 						logger.debug("Skipping function '" + functionName + "' since it is already present");
 					}
 					else {
+
 						Object functionCandidate = this.discoverFunctionInBeanFactory(functionName);
 						if (functionCandidate != null) {
 							Type functionType = null;
@@ -157,7 +159,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
 								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
 							}
-							else if (KotlinDetector.isKotlinType(functionCandidate.getClass())) {
+							//else if (KotlinDetector.isKotlinType(functionCandidate.getClass())) {
+							else if (KotlinUtils.isKotlinType(functionCandidate)) {
 								KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper wrapper =
 									new KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper(functionCandidate);
 								wrapper.setName(functionName);
