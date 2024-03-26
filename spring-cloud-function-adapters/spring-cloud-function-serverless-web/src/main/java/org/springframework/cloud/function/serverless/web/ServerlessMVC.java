@@ -188,7 +188,7 @@ public final class ServerlessMVC {
 		}
 	}
 
-	private boolean waitForContext() {
+	public boolean waitForContext() {
 		try {
 			return contextStartupLatch.await(initializatioinTimeout, TimeUnit.MILLISECONDS);
 		}
