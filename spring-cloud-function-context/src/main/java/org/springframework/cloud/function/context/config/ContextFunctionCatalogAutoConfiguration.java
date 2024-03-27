@@ -219,8 +219,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			catch (Exception e) {
 				mapper = new ObjectMapper();
-				mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			}
+			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			return new JacksonMapper(mapper);
 		}
 	}

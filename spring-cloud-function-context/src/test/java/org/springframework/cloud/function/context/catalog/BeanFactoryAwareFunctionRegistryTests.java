@@ -106,6 +106,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testEmptyPojoConversion() {
+		FunctionCatalog catalog = this.configureCatalog(EmptyPojoConfiguratioin.class);
+		Function function = catalog.lookup("echo");
+		String result = (String) function.apply(MessageBuilder.withPayload(new EmptyPojo()).build());
+		assertThat(result).isEqualTo("{}");
+	}
+
 	@Test
 	public void testFunctionEligibilityFiltering() {
 		System.setProperty("spring.cloud.function.ineligible-definitions", "asJsonNode");
@@ -1432,5 +1441,18 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public void setData(V data) {
 			this.data = data;
 		}
+	}
+	@EnableAutoConfiguration
+	@Configuration
+	public static class EmptyPojoConfiguratioin {
+
+		@Bean
+		public Function<String, String> echo() {
+			return v -> v;
+		}
+	}
+
+	public static class EmptyPojo {
+
 	}
 }
