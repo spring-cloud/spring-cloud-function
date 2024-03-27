@@ -209,15 +209,15 @@ For example:
 public MessageRoutingCallback customRouter() {
 	return new MessageRoutingCallback() {
 		@Override
-		public FunctionRoutingResult routingResult(Message<?> message) {
-			return new FunctionRoutingResult((String) message.getHeaders().get("func_name"));
+		public String routingResult(Message<?> message) {
+			return (String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION);
 		}
 	};
 }
 ----
 
 In the preceding example you can see a very simple implementation of `MessageRoutingCallback` which determines the function definition from
-`func_name` Message header of the incoming Message and returns the instance of `FunctionRoutingResult` containing the definition of function to invoke.
+`FunctionProperties.FUNCTION_DEFINITION` Message header of the incoming Message and returns the instance of `String` representing the definition of function to invoke.
 
 *Message Headers*
 
