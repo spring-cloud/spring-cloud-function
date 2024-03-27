@@ -51,7 +51,7 @@ public class ServerlessAutoConfiguration {
 		return new ServerlessServletWebServerFactory();
 	}
 
-	private static class ServerlessServletWebServerFactory
+	public static class ServerlessServletWebServerFactory
 			implements ServletWebServerFactory, ApplicationContextAware, InitializingBean {
 
 		private ConfigurableWebServerApplicationContext applicationContext;
