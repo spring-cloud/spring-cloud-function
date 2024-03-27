@@ -213,8 +213,8 @@ public class RoutingFunction implements Function<Object, Object> {
 		FunctionInvocationWrapper function = this.resolveFunction(definition);
 		Assert.notNull(function, "Failed to lookup function to route based on the value of 'spring.cloud.function.definition' property '"
 				+ definition + "'");
-		if (logger.isInfoEnabled()) {
-			logger.info("Resolved function from provided [definition] property " + definition);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Resolved function from provided [definition] property " + definition);
 		}
 		return function;
 	}
@@ -234,8 +234,8 @@ public class RoutingFunction implements Function<Object, Object> {
 		FunctionInvocationWrapper function = this.resolveFunction(definition);
 		Assert.notNull(function, "Failed to lookup function to route to based on the expression '"
 				+ functionProperties.getRoutingExpression() + "' which resolved to '" + definition + "' function definition.");
-		if (logger.isInfoEnabled()) {
-			logger.info("Resolved function from provided [routing-expression]  " + routingExpression);
+		if (logger.isDebugEnabled()) {
+			logger.debug("Resolved function from provided [routing-expression]  " + routingExpression);
 		}
 		return function;
 	}
