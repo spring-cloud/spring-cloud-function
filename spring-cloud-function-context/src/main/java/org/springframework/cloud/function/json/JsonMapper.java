@@ -24,10 +24,17 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+
+
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -35,6 +42,10 @@ import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 public abstract class JsonMapper {
 
 	private static Log logger = LogFactory.getLog(JsonMapper.class);
+
+	// we need this just to validate is String is JSON
+	private static final ObjectMapper mapper = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+
 
 	@SuppressWarnings("unchecked")
 	public <T> T fromJson(Object json, Type type) {
@@ -99,44 +110,61 @@ public abstract class JsonMapper {
 	 * @return true if and object appears to be a valid JSON string, otherwise false.
 	 */
 	public static boolean isJsonString(Object value) {
-		boolean isJson = false;
 		if (value instanceof byte[]) {
 			value = new String((byte[]) value, StandardCharsets.UTF_8);
 		}
 		if (value instanceof String) {
-			String str = ((String) value).trim();
-			isJson = (str.startsWith("\"") && str.endsWith("\"")) ||
-					(str.startsWith("{") && str.endsWith("}")) ||
-					(str.startsWith("[") && str.endsWith("]"));
+			try {
+				mapper.readTree((String) value);
+				try {
+					Integer.parseInt((String) value);
+					return false;
+				}
+				catch (Exception e) {
+					return true;
+				}
+			}
+			catch (Exception e) {
+				return false;
+			}
 		}
 
-		return isJson;
+		return false;
 	}
 
 	public static boolean isJsonStringRepresentsCollection(Object value) {
-		boolean isJson = false;
-		if (value instanceof Collection && !value.getClass().getPackage().getName().startsWith("reactor.util.function")) {
+		if (value instanceof Collection
+				&& !value.getClass().getPackage().getName().startsWith("reactor.util.function")) {
 			return true;
 		}
 		if (value instanceof byte[]) {
 			value = new String((byte[]) value, StandardCharsets.UTF_8);
 		}
 		if (value instanceof String) {
-			String str = ((String) value).trim();
-			isJson = isJsonString(value) && str.startsWith("[") && str.endsWith("]");
+			try {
+				new JSONArray((String) value);
+			}
+			catch (JSONException e) {
+				return false;
+			}
+			return true;
 		}
-		return isJson;
+		return false;
 	}
 
 	public static boolean isJsonStringRepresentsMap(Object value) {
-		boolean isJson = false;
 		if (value instanceof byte[]) {
 			value = new String((byte[]) value, StandardCharsets.UTF_8);
 		}
 		if (value instanceof String) {
-			String str = ((String) value).trim();
-			isJson = isJsonString(value) && str.startsWith("{") && str.endsWith("}");
+			try {
+				new JSONObject(value);
+			}
+			catch (JSONException e) {
+				return false;
+			}
+			return true;
 		}
-		return isJson;
+		return false;
 	}
 }

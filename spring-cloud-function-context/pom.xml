@@ -18,7 +18,6 @@
 	<properties>
 		<avro.version>1.10.2</avro.version>
 	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>net.jodah</groupId>
@@ -78,6 +77,12 @@
 			<artifactId>reactor-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>3.25.1</version>
+			<scope>test</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -107,6 +112,12 @@
 			<artifactId>cloudevents-spring</artifactId>
 			<version>2.2.0</version>
 			<optional>true</optional>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.json</groupId>
+		    <artifactId>json</artifactId>
+		    <version>20240303</version>
 		</dependency>
 
 		<!-- Actuator -->
@@ -146,6 +157,16 @@
 
 	<build>
 		<plugins>
+<!--			<plugin>-->
+<!--	            <groupId>org.apache.maven.plugins</groupId>-->
+<!--	            <artifactId>maven-checkstyle-plugin</artifactId>-->
+<!--	            <executions>-->
+<!--	                <execution>-->
+<!--	                    <id>checkstyle-validation</id>-->
+<!--	                    <phase>none</phase>-->
+<!--	                </execution>-->
+<!--	            </executions>-->
+<!--	        </plugin>-->
 			<plugin>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<groupId>org.jetbrains.kotlin</groupId>
