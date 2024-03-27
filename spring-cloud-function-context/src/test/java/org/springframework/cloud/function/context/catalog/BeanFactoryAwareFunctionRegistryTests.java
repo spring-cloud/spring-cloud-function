@@ -115,6 +115,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result).isEqualTo("{}");
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testCompositionWithNullReturnInBetween() {
+		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
+		Function function = catalog.lookup("echo1|echo2");
+		String result = (String) function.apply(MessageBuilder.withPayload(new EmptyPojo()).build());
+		assertThat(result).isEqualTo("null");
+	}
+
 	@Test
 	public void testFunctionEligibilityFiltering() {
 		System.setProperty("spring.cloud.function.ineligible-definitions", "asJsonNode");
@@ -1455,4 +1464,24 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public static class EmptyPojo {
 
 	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class CompositionWithNullReturnInBetween {
+
+		@Bean
+		public Function<String, String> echo1() {
+			return v -> null;
+		}
+		@Bean
+		public Function<String, String> echo2() {
+			return v -> {
+				if (v == null) {
+					return "null";
+				}
+				return v;
+			};
+		}
+	}
+
 }

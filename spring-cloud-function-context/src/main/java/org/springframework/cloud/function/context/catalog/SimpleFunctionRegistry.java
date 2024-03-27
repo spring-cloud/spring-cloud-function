@@ -725,7 +725,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 			input = this.fluxifyInputIfNecessary(input);
 
-			Object convertedInput = this.convertInputIfNecessary(input, this.inputType);
+			Object convertedInput = input == null ? null : this.convertInputIfNecessary(input, this.inputType);
 
 			if (this.isRoutingFunction() || this.isComposed()) {
 				result = ((Function) this.target).apply(convertedInput);
