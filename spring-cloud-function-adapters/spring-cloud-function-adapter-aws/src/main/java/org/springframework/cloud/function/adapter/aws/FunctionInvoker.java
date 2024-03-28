@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.boot.SpringApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
@@ -99,7 +99,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 		String[] properties = new String[] {"--spring.cloud.function.web.export.enabled=false", "--spring.main.web-application-type=none"};
 		ConfigurableApplicationContext context = ApplicationContextInitializer.class.isAssignableFrom(startClass)
 				? FunctionalSpringApplication.run(new Class[] {startClass, AWSCompanionAutoConfiguration.class}, properties)
-						: SpringApplication.run(new Class[] {startClass, AWSCompanionAutoConfiguration.class}, properties);
+						: new SpringApplicationBuilder().main(startClass).sources(new Class[] {startClass, AWSCompanionAutoConfiguration.class}).run(properties);
 
 		Environment environment = context.getEnvironment();
 		if (!StringUtils.hasText(this.functionDefinition)) {
