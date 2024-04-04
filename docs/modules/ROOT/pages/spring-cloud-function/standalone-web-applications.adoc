@@ -46,7 +46,7 @@ See <<Testing Functional Applications>> to see the details and example on how to
 As you have noticed from the previous table, you can pass an argument to a function as path variable (i.e., `/\{function}/\{item}`).
 For example, `http://localhost:8080/uppercase/foo` will result in calling `uppercase` function with its input parameter being `foo`.
 
-While this is the recommended approach and the one that fits most use cases cases, there are times when you have to deal with HTTP request parameters (e.g., `http://localhost:8080/uppercase/foo?name=Bill`)
+While this is the recommended approach and the one that fits most use cases cases, there are times when you have to deal with HTTP request parameters (e.g., `http://localhost:8080/uppercase/foo?name=Bill`).
 The framework will treat HTTP request parameters similar to the HTTP headers by storing them in the `Message` headers under the header key `http_request_param`
 with its value being a `Map` of request parameters, so in order to access them your function input signature should accept `Message` type (e.g., `Function<Message<String>, String>`). For convenience we provide `HeaderUtils.HTTP_REQUEST_PARAM` constant.
 
@@ -82,7 +82,7 @@ of the actual URL, giving user ability to use it for evaluation and computation.
 
 In situations where there are more than one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
 the same `spring.cloud.function.definition` property listing functions you intend to export delimited by `;`.
-Note that in this case nothing will be mapped to the root path and functions that are not listed (including compositions) are not going to be exported
+Note that in this case nothing will be mapped to the root path and functions that are not listed (including compositions) are not going to be exported.
 
 For example,
 
@@ -101,7 +101,7 @@ This will only export function composition `foo|bar` and function `baz` regardle
 == Http Headers propagation
 
 By default most request `HttpHeaders` are copied into the response `HttpHeaders`. If you require to filter out certain headers you can provide the names of those headers using  
-`spring.cloud.function.http.ignored-headers` delimited by comas. For example, `spring.cloud.function.http.ignored-headers=foo,bar`
+`spring.cloud.function.http.ignored-headers` delimited by comas. For example, `spring.cloud.function.http.ignored-headers=foo,bar`.
 
 [[crud-rest-with-spring-cloud-function]]
 == CRUD REST with Spring Cloud Function

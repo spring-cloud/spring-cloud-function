@@ -55,13 +55,13 @@ Function uppercase =  catalog.lookup(“uppercase”);
 ----
 
 Important to understand that given that `uppercase` is a bean, you can certainly get it form the `ApplicationContext` directly, but all you will get is just your bean as you declared it without any extra features provided by SCF. When you do lookup of a function via `FunctionCatalog`, the instance you will receive is wrapped (instrumented) with additional features (i.e., type conversion, composition etc.) described in this manual. Also, it is important to understand that a typical user does not use Spring Cloud Function directly. Instead a typical user implements Java `Function/Supplier/Consumer` with the idea of using it in different execution contexts without additional work. For example the same java function could be represented as _REST endpoint_ or _Streaming message handler_ or _AWS Lambda_ and more via Spring Cloud Function provided
-adapters as well as other frameworks using Spring Cloud Function as the core programming model (e.g., https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream])
+adapters as well as other frameworks using Spring Cloud Function as the core programming model (e.g., https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream]).
 So in summary Spring Cloud Function instruments java functions with additional features to be utilised in variety of execution contexts.
 
 
 [[function-definition]]
 === Function definition
-While the previous example shows you how to lookup function in FunctionCatalog programmatically, in a typical integration case where Spring Cloud Function used as programming model by another framework (e.fg. Spring Cloud Stream), you declare which functions to use via `spring.cloud.function.definition` property. Knowing that it is  important to understand some default behaviour when it comes to discovering functions in `FunctionCatalog`. For example, if you only have one Functional bean in your `ApplicationContext`,  the `spring.cloud.function.definition` property typically will not be required, since a single function in `FunctionCatalog` can be looked up by an empty name or any name. For example, assuming that `uppercase` is the only function in your catalog, it can be looked up as `catalog.lookup(null)`, `catalog.lookup(“”)`, `catalog.lookup(“foo”)`
+While the previous example shows you how to lookup function in FunctionCatalog programmatically, in a typical integration case where Spring Cloud Function used as programming model by another framework (e.g., https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream]), you declare which functions to use via `spring.cloud.function.definition` property. Knowing that it is  important to understand some default behaviour when it comes to discovering functions in `FunctionCatalog`. For example, if you only have one Functional bean in your `ApplicationContext`,  the `spring.cloud.function.definition` property typically will not be required, since a single function in `FunctionCatalog` can be looked up by an empty name or any name. For example, assuming that `uppercase` is the only function in your catalog, it can be looked up as `catalog.lookup(null)`, `catalog.lookup(“”)`, `catalog.lookup(“foo”)`.
 That said, for cases where you are using framework such as Spring Cloud Stream which uses `spring.cloud.function.definition` it is best practice and recommended to always use `spring.cloud.function.definition` property.
 
 For example,
@@ -169,7 +169,7 @@ And of course you can't compose uncomposable such as Consumer and Function, Cons
 == Function Routing and Filtering
 
 Since version 2.2 Spring Cloud Function provides routing feature allowing
-you to invoke a single function which acts as a router to an actual function you wish to invoke
+you to invoke a single function which acts as a router to an actual function you wish to invoke.
 This feature is very useful in certain FAAS environments where maintaining configurations
 for several functions could be cumbersome or exposing more than one function is not possible.
 

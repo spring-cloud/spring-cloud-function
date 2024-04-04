@@ -19,7 +19,7 @@ the functions. It can optionally use a `maven:` prefix to locate the artifact vi
 for complete details). A Spring Boot application is bootstrapped from the jar file, using the `MANIFEST.MF` to locate a start class, so
 that a standard Spring Boot fat jar works well, for example. If the target jar can be launched successfully then the result is a function
 registered in the main application's `FunctionCatalog`. The registered function can be applied by code in the main application, even though
-it was created in an isolated class loader (by deault).
+it was created in an isolated class loader (by default).
 
 Here is the example of deploying a JAR which contains an 'uppercase' function and invoking it .
 
