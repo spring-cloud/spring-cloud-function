@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 the original author or authors.
+ * Copyright 2019-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1163,14 +1163,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (ObjectUtils.isArray(payload)) {
 				payload = CollectionUtils.arrayToList(payload);
 			}
-			if (payload instanceof Collection && !CollectionUtils.isEmpty((Collection<?>) payload)
-					&& Message.class.isAssignableFrom(CollectionUtils.findCommonElementType((Collection<?>) payload))) {
-				return true;
+			if (payload instanceof Collection && !CollectionUtils.isEmpty((Collection<?>) payload)) {
+				Class<?> commonElementType = CollectionUtils.findCommonElementType((Collection<?>) payload);
+				if (commonElementType != null && Message.class.isAssignableFrom(commonElementType)) {
+					return true;
+				}
 			}
-			if (this.containsRetainMessageSignalInHeaders(message)) {
-				return false;
-			}
-			return true;
+			return !this.containsRetainMessageSignalInHeaders(message);
 		}
 
 		/**
