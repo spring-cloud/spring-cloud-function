@@ -96,7 +96,6 @@ public class ServerlessAutoConfiguration {
 					throw new IllegalStateException("Faild to create Spring MVC DispatcherServlet proxy", e);
 				}
 				for (ServletContextInitializer initializer : new ServletContextInitializerBeans(this.applicationContext)) {
-					System.out.println("==> INITIALIZING  " + initializer);
 					initializer.onStartup(servletContext);
 				}
 			}
