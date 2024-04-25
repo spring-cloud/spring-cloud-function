@@ -53,7 +53,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 
 @Configuration
-@Import({ PetsController.class })
+@Import({ PetsController.class, FreemarkerController.class })
 @EnableWebSecurity
 @EnableAutoConfiguration
 public class PetStoreSpringAppConfig {

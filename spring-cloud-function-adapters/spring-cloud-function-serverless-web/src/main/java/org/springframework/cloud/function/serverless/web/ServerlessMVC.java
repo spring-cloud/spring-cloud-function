@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 
 import jakarta.servlet.AsyncContext;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
@@ -156,8 +157,6 @@ public final class ServerlessMVC {
 	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		//this.waitForContext();
-		//contextStartupLatch.await(this.initializatioinTimeout, TimeUnit.MILLISECONDS);
 		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializatioinTimeout + " milliseconds. "
 				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
 		this.service(request, response, (CountDownLatch) null);
@@ -269,6 +268,10 @@ public final class ServerlessMVC {
 
 			this.request = request;
 			this.response = response;
+
+			if (!response.isCommitted() && request.getDispatcherType() != DispatcherType.ASYNC) {
+				response.flushBuffer();
+			}
 		}
 
 		/**

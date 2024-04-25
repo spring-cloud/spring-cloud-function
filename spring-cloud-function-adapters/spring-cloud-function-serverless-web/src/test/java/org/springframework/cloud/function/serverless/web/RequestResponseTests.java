@@ -58,6 +58,14 @@ public class RequestResponseTests {
 	}
 
 	@Test
+	public void validateFreemarker() throws Exception {
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/index");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
+		mvc.service(request, response);
+		assertThat(response.getContentAsString()).contains("<h1> hello from freemarker </h1>");
+	}
+
+	@Test
 	public void validateAccessDeniedWithCustomHandler() throws Exception {
 		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/foo/deny");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
