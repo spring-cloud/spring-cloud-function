@@ -109,7 +109,7 @@ curl http://localhost:8080/ -d "hello"
 ----
 
 
-== Buikd & Deploy to GCP
+== Build & Deploy to GCP
 
 Start by packaging your application.
 

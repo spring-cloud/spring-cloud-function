@@ -47,7 +47,7 @@ appropriate AWS deployable JAR file. (You can read more details about JAR layout
 
 Then you have to upload the JAR file (via AWS dashboard or AWS CLI) to AWS.
 
-When ask about _handler_ you specify `org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest` which is a generic request handler.
+When asked about _handler_ you specify `org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest` which is a generic request handler.
 
 image::AWS-deploy.png[width=800,scaledwidth="75%",align="center"]
 
@@ -65,7 +65,7 @@ to use. The next section will explain you how you can accomplish just that.
 The adapter has a couple of generic request handlers that you can use. The most generic is (and the one we used in the Getting Started section)
 is `org.springframework.cloud.function.adapter.aws.FunctionInvoker` which is the implementation of AWS's `RequestStreamHandler`.
 User doesn't need to do anything other then specify it as 'handler' on AWS dashboard when deploying function.
-It will handle most of the case including Kinesis, streaming etc. .
+It will handle most of the cases including Kinesis, streaming etc.
 
 
 If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `spring.cloud.function.definition` 
@@ -143,10 +143,10 @@ java -Dspring.main.web-application-type=none -Dspring.jmx.enabled=false \
 ```
 The `com.example.LambdaApplication` represents your application which contains function beans.
 
-Set the handler name in AWS to the name of your function. You can use function composition here as well (e.g., `uppecrase|reverse`).
+Set the handler name in AWS to the name of your function. You can use function composition here as well (e.g., `uppercase|reverse`).
 That is pretty much all. Once you upload your zip/jar to AWS your function will run in custom runtime.
 We provide a https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws-custom-new[sample project] 
-where you can also see how to configure yoru POM to properly generate the zip file.
+where you can also see how to configure your POM to properly generate the zip file.
 
 The functional bean definition style works for custom runtimes as well, and is 
 faster than the `@Bean` style. A custom runtime can start up much quicker even than a functional bean implementation 
