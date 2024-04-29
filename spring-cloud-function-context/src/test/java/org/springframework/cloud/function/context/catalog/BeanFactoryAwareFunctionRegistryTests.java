@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -113,6 +114,30 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		Function function = catalog.lookup("echo");
 		String result = (String) function.apply(MessageBuilder.withPayload(new EmptyPojo()).build());
 		assertThat(result).isEqualTo("{}");
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testCompositionWithNonExistingFunction() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
+		for (int i = 0; i < 10; i++) {
+			catalog.lookup("echo1|any");
+		}
+		Field functionRegistrationsField =  ReflectionUtils.findField(catalog.getClass(), "functionRegistrations");
+		functionRegistrationsField.setAccessible(true);
+		Set<FunctionRegistration> functionRegistrations = (Set) functionRegistrationsField.get(catalog);
+		assertThat(functionRegistrations.size()).isEqualTo(1);
+		FunctionRegistration registration = functionRegistrations.iterator().next();
+		assertThat(registration.getNames().size()).isEqualTo(1);
+		assertThat(registration.getNames().iterator().next()).isEqualTo("echo1");
+
+		for (int i = 0; i < 10; i++) {
+			catalog.lookup("echo1|any|foo|bar|bye");
+		}
+		assertThat(functionRegistrations.size()).isEqualTo(1);
+		registration = functionRegistrations.iterator().next();
+		assertThat(registration.getNames().size()).isEqualTo(1);
+		assertThat(registration.getNames().iterator().next()).isEqualTo("echo1");
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
