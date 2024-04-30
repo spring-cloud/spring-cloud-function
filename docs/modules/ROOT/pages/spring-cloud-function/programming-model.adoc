@@ -715,3 +715,28 @@ Spring Cloud Function will scan for implementations of `Function`, `Consumer` an
 feature you can write functions that have no dependencies on Spring - not even the `@Component` annotation is needed. If you want to use a different
 package, you can set `spring.cloud.function.scan.packages`. You can also use `spring.cloud.function.scan.enabled=false` to switch off the scan completely.
 
+
+== Data Masking
+
+A typical application comes with several levels of logging. Certain cloud/serverless platforms may include sensitive data in the packets that are being logged for everyone to see. 
+While it is the responsibility of individual developer to inspect the data that is being logged, so logging comes from the framework itself, so since version 4.1 we have introduced `JsonMasker` to initially help with masking sensitive data in AWS Lambda payloads. However, the `JsonMasker` is generic and is available to any module. At the moment it will only work with structured data such as JSON. All you need is to specify the keys you want to mask and it will take care of the rest.
+Keys should be specified in the file `META-INF/mask.keys`. The format of the file is very simple where you can delimit several keys by commas or new line or both.
+
+Here is the example of the contents of such file:
+
+----
+eventSourceARN
+asdf1, SS
+----
+
+Here you see three keys are defined
+Once such file exists, the JsonMasker will use it to mask values of the keys specified.
+
+And here is the sample code that shows the usage
+
+----
+private final static JsonMasker masker = JsonMasker.INSTANCE();
+. . .
+
+logger.info("Received: " + masker.mask(new String(payload, StandardCharsets.UTF_8)));
+----

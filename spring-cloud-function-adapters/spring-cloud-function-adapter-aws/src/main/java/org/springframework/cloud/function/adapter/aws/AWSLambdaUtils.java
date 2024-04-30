@@ -34,6 +34,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.utils.JsonMasker;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -66,6 +67,8 @@ public final class AWSLambdaUtils {
 	 * The name of the headers that stores AWS Context object.
 	 */
 	public static final String AWS_CONTEXT = "aws-context";
+
+	private final static JsonMasker masker = JsonMasker.INSTANCE();
 
 	private AWSLambdaUtils() {
 
@@ -102,11 +105,15 @@ public final class AWSLambdaUtils {
 		return generateMessage(payload, inputType, isSupplier, jsonMapper, null);
 	}
 
+	private static String mask(String value) {
+		return masker.mask(value);
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier,
 			JsonMapper jsonMapper, Context context) {
 		if (logger.isInfoEnabled()) {
-			logger.info("Received: " + new String(payload, StandardCharsets.UTF_8));
+			logger.info("Received: " + mask(new String(payload, StandardCharsets.UTF_8)));
 		}
 
 		Object structMessage = jsonMapper.fromJson(payload, Object.class);
