@@ -78,6 +78,35 @@ public class FunctionInvokerTests {
 
 	String jsonPojoCollection = "[{\"name\":\"Ricky\"},{\"name\":\"Julien\"},{\"name\":\"Julien\"}]";
 
+	String someEvent = "{\n"
+			+ "    \"payload\": {\n"
+			+ "        \"headers\": {\n"
+			+ "            \"businessUnit\": \"1\"\n"
+			+ "        }\n"
+			+ "    },\n"
+			+ "    \"headers\": {\n"
+			+ "        \"aws-context\": {\n"
+			+ "            \"memoryLimit\": 1024,\n"
+			+ "            \"awsRequestId\": \"87a211bf-540f-4f9f-a218-d096a0099999\",\n"
+			+ "            \"functionName\": \"myfunction\",\n"
+			+ "            \"functionVersion\": \"278\",\n"
+			+ "            \"invokedFunctionArn\": \"arn:aws:lambda:us-east-1:xxxxxxx:function:xxxxx:snapstart\",\n"
+			+ "            \"deadlineTimeInMs\": 1712717704761,\n"
+			+ "            \"logger\": {\n"
+			+ "                \"logFiltering\": {\n"
+			+ "                    \"minimumLogLevel\": \"UNDEFINED\"\n"
+			+ "                },\n"
+			+ "                \"logFormatter\": {},\n"
+			+ "                \"logFormat\": \"TEXT\"\n"
+			+ "            }\n"
+			+ "        },\n"
+			+ "        \"businessUnit\": \"1\",\n"
+			+ "        \"id\": \"xxxx\",\n"
+			+ "        \"aws-event\": true,\n"
+			+ "        \"timestamp\": 1712716805129\n"
+			+ "    }\n"
+			+ "}";
+
 	String dynamoDbEvent = "{\n"
 			+ "  \"Records\": [\n"
 			+ "    {\n"
@@ -704,6 +733,22 @@ public class FunctionInvokerTests {
 		System.clearProperty("spring.cloud.function.routing-expression");
 		System.clearProperty("spring.cloud.function.definition");
 		//this.getEnvironment().clear();
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
+	public void testConversionWhenPayloadExists() throws Exception {
+		System.setProperty("MAIN_CLASS", BasicConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "uppercase");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.someEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+
+		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		assertThat(result).containsKey("HEADERS");
+
 	}
 
 	@Test
@@ -1439,6 +1484,17 @@ public class FunctionInvokerTests {
 
 		String result = output.toString();
 		assertThat(result).isEqualTo(testString);
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	public static class BasicConfiguration {
+		@Bean
+		public Function<Message<String>, Message<String>> uppercase() {
+			return v -> {
+				return MessageBuilder.withPayload(v.getPayload().toUpperCase()).build();
+			};
+		}
 	}
 
 	@EnableAutoConfiguration

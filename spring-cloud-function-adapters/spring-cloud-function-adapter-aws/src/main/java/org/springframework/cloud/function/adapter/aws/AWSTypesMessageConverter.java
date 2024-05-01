@@ -89,11 +89,11 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 			}
 			else {
 				Object body;
-				if (message.getHeaders().containsKey("payload")) {
-					body = message.getPayload();
+				if (structMessage.containsKey("body")) {
+					body = structMessage.get("body");
 				}
 				else {
-					body = structMessage.get("body");
+					body = message.getPayload();
 				}
 				Object convertedResult = this.jsonMapper.fromJson(body, targetClass);
 				return convertedResult;

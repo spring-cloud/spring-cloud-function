@@ -126,7 +126,7 @@ public final class AWSLambdaUtils {
 
 		MessageBuilder builder = MessageBuilder
 				.withPayload(structMessage instanceof Map msg && msg.containsKey("payload")
-						? ((String) msg.get("payload")).getBytes(StandardCharsets.UTF_8)
+						? (msg.get("payload"))
 						: payload);
 		if (isApiGateway) {
 			builder.setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true);
