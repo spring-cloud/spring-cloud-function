@@ -3,7 +3,7 @@
 
 The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.
 
-The details of how to get stared with AWS Lambda is out of scope of this document, so the expectation is that user has some familiarity with
+The details of how to get started with AWS Lambda is out of scope of this document, so the expectation is that user has some familiarity with
 AWS and AWS Lambda and wants to learn what additional value spring provides.
 
 [[getting-started]]
