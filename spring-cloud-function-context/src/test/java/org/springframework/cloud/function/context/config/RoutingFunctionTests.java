@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.config;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -98,13 +99,64 @@ public class RoutingFunctionTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
-	public void testInvocationWithMessageAndHeader() {
+	public void testInvocationWithMessageAndStringHeader() {
 		FunctionCatalog functionCatalog = this.configureCatalog();
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
 				.setHeader(FunctionProperties.PREFIX + ".definition", "reverse").build();
 		assertThat(function.apply(message)).isEqualTo("olleh");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testInvocationWithMessageAndListOfSingleElementHeader() {
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".definition", List.of("reverse"))
+				.build();
+		assertThat(function.apply(message)).isEqualTo("olleh");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testCompositionWithMessageAndListOfMultipleElementsHeader() {
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".definition",
+						List.of("reverse", "uppercase"))
+				.build();
+		assertThat(function.apply(message)).isEqualTo("OLLEH");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testInvocationWithMessageAndListOfSingleRoutingExpression() {
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".routing-expression",
+						List.of("'reverse'"))
+				.build();
+		assertThat(function.apply(message)).isEqualTo("olleh");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testInvocationWithMessageAndListOfMultipleRoutingExpressions() {
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		assertThat(function).isNotNull();
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".routing-expression",
+						List.of("'uppercase'", "'reverse'"))
+				.build();
+		assertThat(function.apply(message)).isEqualTo("HELLO");
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

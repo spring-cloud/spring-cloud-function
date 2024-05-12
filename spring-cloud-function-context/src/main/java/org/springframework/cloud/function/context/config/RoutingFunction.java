@@ -16,9 +16,11 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -193,11 +195,31 @@ public class RoutingFunction implements Function<Object, Object> {
 
 	private FunctionInvocationWrapper locateFunctionFromDefinitionOrExpression(Message<?> message) {
 		for (Entry<String, Object> headerEntry : message.getHeaders().entrySet()) {
-			if (headerEntry.getKey().equalsIgnoreCase(FunctionProperties.FUNCTION_DEFINITION)) {
-				return functionFromDefinition((String) headerEntry.getValue());
+			String headerKey = headerEntry.getKey();
+			Object headerValue = headerEntry.getValue();
+
+			if (headerKey == null || headerValue == null) {
+				continue;
 			}
-			else if (headerEntry.getKey().equalsIgnoreCase(FunctionProperties.ROUTING_EXPRESSION)) {
-				return this.functionFromExpression((String) headerEntry.getValue(), message, true);
+
+			boolean isFunctionDefinition = FunctionProperties.FUNCTION_DEFINITION.equalsIgnoreCase(headerKey);
+			boolean isRoutingExpression = FunctionProperties.ROUTING_EXPRESSION.equalsIgnoreCase(headerKey);
+
+			if (isFunctionDefinition) {
+				if (headerValue instanceof String definition) {
+					return functionFromDefinition(definition);
+				}
+				else if (headerValue instanceof List<?> definitions && !definitions.isEmpty()) {
+					return functionFromDefinition(definitions.stream().map(Object::toString).collect(Collectors.joining(",")));
+				}
+			}
+			else if (isRoutingExpression) {
+				if (headerValue instanceof String expression) {
+					return functionFromExpression(expression, message, true);
+				}
+				else if (headerValue instanceof List<?> expressions && !expressions.isEmpty()) {
+					return functionFromExpression(expressions.get(0).toString(), message, true);
+				}
 			}
 		}
 		return null;
