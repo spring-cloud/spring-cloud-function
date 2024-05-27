@@ -422,6 +422,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private PostProcessingFunction postProcessor;
 
+		private Consumer<Boolean> skipInputConversionCallback;
+
 		/*
 		 * This is primarily to support Stream's ability to access
 		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
@@ -483,6 +485,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return skipOutputConversion;
 		}
 
+		public boolean isSkipInputConversion() {
+			return skipInputConversion;
+		}
 
 		public boolean isPrototype() {
 			return !this.isSingleton;
@@ -493,6 +498,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				logger.debug("'skipInputConversion' was explicitely set to true. No input conversion will be attempted");
 			}
 			this.skipInputConversion = skipInputConversion;
+			if (this.skipInputConversionCallback != null) {
+				this.skipInputConversionCallback.accept(skipInputConversion);
+			}
+		}
+
+		void setSkipInputConversionCallback(Consumer<Boolean> skipInputConversionCallback) {
+			this.skipInputConversionCallback = skipInputConversionCallback;
 		}
 
 		public void setSkipOutputConversion(boolean skipOutputConversion) {
@@ -684,6 +696,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 			String composedName = this.functionDefinition + "|" + afterWrapper.functionDefinition;
 			FunctionInvocationWrapper composedFunction = invocationWrapperInstance(composedName, rawComposedFunction, composedFunctionType);
+			composedFunction.setSkipInputConversionCallback((skipInputConversion) -> {
+				this.setSkipInputConversion(skipInputConversion);
+				afterWrapper.setSkipInputConversion(skipInputConversion);
+			});
 			composedFunction.composed = true;
 			if (((FunctionInvocationWrapper) after).target instanceof PostProcessingFunction) {
 				composedFunction.postProcessor = (PostProcessingFunction) ((FunctionInvocationWrapper) after).target;
@@ -836,7 +852,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				if ((!treatPayloadAsPlainText && JsonMapper.isJsonStringRepresentsCollection(payload))
 						&& !FunctionTypeUtils.isTypeCollection(this.inputType)
 						&& !FunctionTypeUtils.isTypeArray(this.inputType)) {
-					MessageHeaders headers = ((Message) input).getHeaders();
+					MessageHeaders headers = input instanceof Message ? ((Message) input).getHeaders() : new MessageHeaders(Collections.emptyMap());
 					Collection collectionPayload = jsonMapper.fromJson(payload, Collection.class);
 					Class inputClass = FunctionTypeUtils.getRawType(this.inputType);
 					if (this.isInputTypeMessage()) {
@@ -1103,6 +1119,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				convertedInput = Tuples.fromArray(convertedInputs);
 			}
 			else if (this.skipInputConversion) {
+				if (!(input instanceof Message)) {
+					input = MessageBuilder.withPayload(input).build();
+				}
 				convertedInput = this.isInputTypeMessage()
 						? input
 						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);

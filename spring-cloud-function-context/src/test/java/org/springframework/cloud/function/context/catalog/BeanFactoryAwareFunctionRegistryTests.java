@@ -142,6 +142,20 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testMessageWithArrayAsPayload() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(MessageWithArrayAsPayload.class);
+		FunctionInvocationWrapper function = catalog.lookup("myFunction");
+
+		List payload = List.of("Ricky", "Julien", "Bubbles");
+
+		Message result = (Message) function.apply(MessageBuilder.withPayload(payload).build());
+
+		assertThat(((Collection) result.getPayload())).isNotEmpty();
+
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testCompositionWithNullReturnInBetween() {
 		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
 		Function function = catalog.lookup("echo1|echo2");
@@ -325,7 +339,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 
 	@Test
-	public void testComposition() {
+	public void testComposition() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Flux<String>, Flux<String>> fluxFunction = catalog.lookup("uppercase|reverseFlux");
 
@@ -348,8 +362,24 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.get(0)).isEqualTo("OLLEH");
 		assertThat(result.get(1)).isEqualTo("EYB");
 
-		Function<String, String> function = catalog.lookup("uppercase|reverse");
+		FunctionInvocationWrapper function = catalog.lookup("uppercase|reverse");
 		assertThat(function.apply("foo")).isEqualTo("OOF");
+
+		Object target =  function.getTarget();
+		Field arg1Field = ReflectionUtils.findField(target.getClass(), "arg$1");
+		arg1Field.setAccessible(true);
+		FunctionInvocationWrapper functionUppercase = (FunctionInvocationWrapper) arg1Field.get(target);
+
+		Field arg2Field = ReflectionUtils.findField(target.getClass(), "arg$2");
+		arg2Field.setAccessible(true);
+		FunctionInvocationWrapper functionReverse = (FunctionInvocationWrapper) arg2Field.get(target);
+
+		assertThat(functionUppercase.isSkipInputConversion()).isFalse();
+		assertThat(functionReverse.isSkipInputConversion()).isFalse();
+
+		function.setSkipInputConversion(true);
+		assertThat(functionUppercase.isSkipInputConversion()).isTrue();
+		assertThat(functionReverse.isSkipInputConversion()).isTrue();
 	}
 
 	@Test
@@ -1509,4 +1539,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 	}
 
+	@EnableAutoConfiguration
+	@Configuration
+	public static class MessageWithArrayAsPayload {
+
+		@Bean
+		public Function<Message<?>, Message<?>> myFunction() {
+			return msg -> msg;
+		}
+	}
 }
