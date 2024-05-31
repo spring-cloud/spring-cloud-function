@@ -123,7 +123,11 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 			if (this.kotlinLambdaTarget instanceof Function1) {
 				return ((Function1) this.kotlinLambdaTarget).invoke(arg0);
 			}
-			return ((Function) this.kotlinLambdaTarget).apply(arg0);
+			else if (this.kotlinLambdaTarget instanceof Function) {
+				return ((Function) this.kotlinLambdaTarget).apply(arg0);
+			}
+			((Consumer) this.kotlinLambdaTarget).accept(arg0);
+			return null;
 		}
 
 		@Override
