@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.gson.Gson;
@@ -213,14 +214,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private JsonMapper jackson(ApplicationContext context) {
-			ObjectMapper mapper;
-			try {
-				mapper = context.getBean(ObjectMapper.class);
-			}
-			catch (Exception e) {
-				mapper = new ObjectMapper();
-			}
+			ObjectMapper mapper = new ObjectMapper();
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
 			return new JacksonMapper(mapper);
 		}
 	}

@@ -140,6 +140,37 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(registration.getNames().iterator().next()).isEqualTo("echo1");
 	}
 
+	@Test
+	public void testCompositionReactiveSupplierWithImplicitConsumer() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(CompositionReactiveSupplierWithConsumer.class);
+		FunctionInvocationWrapper function = catalog.lookup("supplyPrimitive|consume");
+		function.apply(null);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo(1);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo(2);
+		CompositionReactiveSupplierWithConsumer.results.clear();
+
+		function = catalog.lookup("supplyMessage|consume");
+		function.apply(null);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo(1);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo(2);
+		CompositionReactiveSupplierWithConsumer.results.clear();
+
+		function = catalog.lookup("functionMessage|consume");
+		function.apply(Flux.fromArray(new Message[] {MessageBuilder.withPayload("ricky").build(), MessageBuilder.withPayload("bubbles").build()}));
+		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo("RICKY");
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo("BUBBLES");
+		CompositionReactiveSupplierWithConsumer.results.clear();
+
+		function = catalog.lookup("functionPrimitive|consume");
+		function.apply(Flux.fromArray(new String[] {"ricky", "bubbles"}));
+		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo("RICKY");
+		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo("BUBBLES");
+	}
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testMessageWithArrayAsPayload() throws Exception {
@@ -1535,6 +1566,49 @@ public class BeanFactoryAwareFunctionRegistryTests {
 					return "null";
 				}
 				return v;
+			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration // s-c-f-1141
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static class CompositionReactiveSupplierWithConsumer {
+		private static List results = new ArrayList<>();
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> functionPrimitive() {
+			return flux -> flux.map(v -> v.toUpperCase());
+		}
+
+		@Bean
+		public Function<Flux<Message<String>>, Flux<Message<String>>> functionMessage() {
+			return flux -> flux.map(v -> MessageBuilder.withPayload(v.getPayload().toUpperCase()).build());
+		}
+
+		@Bean
+		public Supplier<Flux<Message<Integer>>> supplyMessage() {
+			return () -> {
+				return Flux.fromArray(
+						new Message[] { MessageBuilder.withPayload(1).build(), MessageBuilder.withPayload(2).build() });
+			};
+		}
+
+		@Bean
+		public Supplier<Flux<Integer>> supplyPrimitive() {
+			return () -> {
+				return Flux.fromArray(
+						new Integer[] { 1, 2});
+			};
+		}
+
+		@Bean
+		public Consumer consume() {
+			return v -> {
+				if (v instanceof Message vMessage) {
+					v = vMessage.getPayload();
+				}
+				results.add(v);
 			};
 		}
 	}

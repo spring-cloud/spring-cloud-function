@@ -394,7 +394,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	@SuppressWarnings("rawtypes")
 	public class FunctionInvocationWrapper implements Function<Object, Object>, Consumer<Object>, Supplier<Object>, Runnable {
 
-		private final Object target;
+		private Object target;
 
 		private Type inputType;
 
@@ -658,12 +658,20 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).outputType)) {
 				throw new UnsupportedOperationException("Composition of functions with multiple arguments is not supported at the moment");
 			}
+			FunctionInvocationWrapper afterWrapper = (FunctionInvocationWrapper) after;
+
+			//see GH-1141 for this code snippet
+			if ((this.getTarget() instanceof Supplier || this.getTarget() instanceof Function) && FunctionTypeUtils.isPublisher(this.getOutputType())
+					&& afterWrapper.getTarget() instanceof Consumer && !FunctionTypeUtils.isPublisher(afterWrapper.getInputType())) {
+				Consumer wrapper = new ConsumerWrapper((Consumer) afterWrapper.getTarget());
+				afterWrapper.target = wrapper;
+				afterWrapper.inputType = this.outputType;
+			}
+			//
 
 			this.setSkipOutputConversion(true);
 			((FunctionInvocationWrapper) after).setSkipOutputConversion(true);
 			Function rawComposedFunction = v -> ((FunctionInvocationWrapper) after).doApply(doApply(v));
-
-			FunctionInvocationWrapper afterWrapper = (FunctionInvocationWrapper) after;
 
 			Type composedFunctionType;
 			if (afterWrapper.outputType == null) {
@@ -1550,5 +1558,21 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		public Object apply(Object t) {
 			return t;
 		}
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static class ConsumerWrapper implements Consumer<Flux<Object>> {
+
+		private final Consumer targetConsumer;
+
+		ConsumerWrapper(Consumer targetConsumer) {
+			this.targetConsumer = targetConsumer;
+		}
+
+		@Override
+		public void accept(Flux messageFlux) {
+			messageFlux.doOnNext(this.targetConsumer).subscribe();
+		}
+
 	}
 }
