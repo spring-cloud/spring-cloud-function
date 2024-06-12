@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
 
@@ -215,6 +216,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		private JsonMapper jackson(ApplicationContext context) {
 			ObjectMapper mapper = new ObjectMapper();
+			mapper.registerModule(new JavaTimeModule());
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
 			return new JacksonMapper(mapper);
