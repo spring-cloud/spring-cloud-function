@@ -44,7 +44,7 @@
 			<version>${spring-cloud-function-adapter-azure-web.version}</version>
 		</dependency>
 
-		<!-- rping Web Application common dependecies -->
+		<!-- Spring Web Application common dependecies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
