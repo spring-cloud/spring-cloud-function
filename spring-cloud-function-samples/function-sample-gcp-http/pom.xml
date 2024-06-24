@@ -27,7 +27,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-gcp</artifactId>
-			<version>4.1.0-SNAPSHOT</version>
+			<version>${spring-cloud-function.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->
