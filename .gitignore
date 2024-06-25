@@ -35,7 +35,7 @@ pom.xml.versionsBackup
 node
 node_modules
 build
-package.json
+/package.json
 package-lock.json
 *samconfig.toml
 *.aws-sam/
