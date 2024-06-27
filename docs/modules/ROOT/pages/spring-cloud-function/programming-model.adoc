@@ -196,8 +196,8 @@ The `MessageRoutingCallback` is a strategy to assist with determining the name o
 ----
 public interface MessageRoutingCallback {
     default String routingResult(Message<?> message) {
-        return (String) message.getHeaders().get("spring.cloud.function.definition");
-    }
+		return (String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION);
+	}
 }
 ----
 
