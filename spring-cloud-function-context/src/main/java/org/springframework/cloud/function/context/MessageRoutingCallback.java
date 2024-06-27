@@ -33,7 +33,7 @@ import org.springframework.messaging.Message;
 public interface MessageRoutingCallback {
 
 	/**
-	 * Computes and returns the instance of {@link FunctionRoutingResult} which encapsulates,
+	 * Computes and returns the instance of {@link String} which encapsulates,
 	 * at the very minimum, function definition.
 	 * <br><br>
 	 * Providing such message is primarily an optimization feature. It could be useful for cases
@@ -42,7 +42,7 @@ public interface MessageRoutingCallback {
 	 * message for downstream use didn't exist, resulting in repeated transformation, type conversion etc.
 	 *
 	 * @param message input message
-	 * @return instance of {@link FunctionRoutingResult} containing the result of the routing computation
+	 * @return instance of {@link String} containing the result of the routing computation
 	 */
 	default String routingResult(Message<?> message) {
 		return (String) message.getHeaders().get(FunctionProperties.FUNCTION_DEFINITION);
