@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -53,7 +52,7 @@ public final class JsonMasker {
 
 	private JsonMasker() {
 		this.keysToMask = loadKeys();
-		this.mapper = new JacksonMapper(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT));
+		this.mapper = new JacksonMapper(new ObjectMapper());
 
 	}
 
