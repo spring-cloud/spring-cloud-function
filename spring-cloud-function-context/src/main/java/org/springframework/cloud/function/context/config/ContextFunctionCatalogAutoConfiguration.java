@@ -84,7 +84,6 @@ import org.springframework.util.StringUtils;
  * @author Chris Bono
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnMissingBean(FunctionCatalog.class)
 @EnableConfigurationProperties(FunctionProperties.class)
 @AutoConfigureAfter(name = {"org.springframework.cloud.function.deployer.FunctionDeployerConfiguration"})
 public class ContextFunctionCatalogAutoConfiguration {

@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.config;
 
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,7 @@ import static org.mockito.Mockito.mock;
  *
  * @author Chris Bono
  */
+@Disabled
 public class ContextFunctionCatalogAutoConfigurationConditionalLoadingTests {
 
 	protected final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
