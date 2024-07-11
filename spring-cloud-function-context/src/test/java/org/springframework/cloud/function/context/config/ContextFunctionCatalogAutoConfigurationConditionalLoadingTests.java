@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2022 the original author or authors.
+ * Copyright 2022-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.cloud.function.context.config;
 
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +26,8 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.scan.TestFunction;
+import org.springframework.cloud.function.json.JacksonMapper;
+import org.springframework.cloud.function.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -36,7 +37,6 @@ import static org.mockito.Mockito.mock;
  *
  * @author Chris Bono
  */
-@Disabled
 public class ContextFunctionCatalogAutoConfigurationConditionalLoadingTests {
 
 	protected final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
@@ -46,6 +46,16 @@ public class ContextFunctionCatalogAutoConfigurationConditionalLoadingTests {
 	void autoConfigDisabledWhenCustomFunctionCatalogExists() {
 		contextRunner.withBean(FunctionCatalog.class, () -> mock(FunctionCatalog.class))
 			.run((context) -> assertThat(context).doesNotHaveBean(FunctionRegistry.class));
+	}
+
+	@Test
+	void customJsonMapperBeanIsRespected() {
+		JsonMapper jsonMapper = mock(JsonMapper.class);
+		contextRunner.withBean(JsonMapper.class, () -> jsonMapper)
+			.run(context -> {
+				assertThat(context).doesNotHaveBean(JacksonMapper.class);
+				assertThat(context).getBean(JsonMapper.class).isEqualTo(jsonMapper);
+			});
 	}
 
 	@Nested

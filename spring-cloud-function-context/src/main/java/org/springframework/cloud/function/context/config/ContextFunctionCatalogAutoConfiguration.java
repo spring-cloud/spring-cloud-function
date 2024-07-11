@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022 the original author or authors.
+ * Copyright 2016-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 	public static final String JSON_MAPPER_PROPERTY = "spring.cloud.function.preferred-json-mapper";
 
 	@Bean
-	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper,
+	@ConditionalOnMissingBean
+	public FunctionCatalog functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper,
 											ConfigurableApplicationContext context, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
 		if (conversionService == null) {
@@ -181,6 +182,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	public static class JsonMapperConfiguration {
 		@Bean
+		@ConditionalOnMissingBean
 		public JsonMapper jsonMapper(ApplicationContext context) {
 			String preferredMapper = context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY);
 			if (StringUtils.hasText(preferredMapper)) {
