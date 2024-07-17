@@ -128,6 +128,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 			@Nullable Object conversionHint) {
+		if (payload.getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
+			return payload;
+		}
 		return jsonMapper.toJson(payload);
 	}
 
