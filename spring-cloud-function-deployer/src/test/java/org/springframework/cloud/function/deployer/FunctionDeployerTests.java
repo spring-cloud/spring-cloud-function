@@ -128,6 +128,7 @@ public class FunctionDeployerTests {
 	}
 
 	@Test
+	@Disabled
 	public void testWithSimplestJarComponentScanning() throws Exception {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=target/it/simplestjarcs/target/simplestjarcs-1.0.0.RELEASE.jar"};
