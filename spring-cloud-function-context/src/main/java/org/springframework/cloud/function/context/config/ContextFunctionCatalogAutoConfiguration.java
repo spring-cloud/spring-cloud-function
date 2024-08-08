@@ -214,7 +214,13 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private JsonMapper jackson(ApplicationContext context) {
-			ObjectMapper mapper = new ObjectMapper();
+			ObjectMapper mapper;
+			try {
+				mapper = context.getBean(ObjectMapper.class).copy();
+			}
+			catch (Exception e) {
+				mapper = new ObjectMapper();
+			}
 			mapper.registerModule(new JavaTimeModule());
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
