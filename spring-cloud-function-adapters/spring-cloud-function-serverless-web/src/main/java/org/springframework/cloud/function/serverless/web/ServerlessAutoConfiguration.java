@@ -22,7 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.web.context.ConfigurableWebServerApplicationContext;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.server.WebServerException;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
@@ -53,7 +52,7 @@ public class ServerlessAutoConfiguration {
 	public static class ServerlessServletWebServerFactory
 			implements ServletWebServerFactory, ApplicationContextAware, InitializingBean {
 
-		private ConfigurableWebServerApplicationContext applicationContext;
+		private ApplicationContext applicationContext;
 
 		@Override
 		public WebServer getWebServer(ServletContextInitializer... initializers) {
@@ -77,27 +76,30 @@ public class ServerlessAutoConfiguration {
 
 		@Override
 		public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-			this.applicationContext = (ConfigurableWebServerApplicationContext) applicationContext;
+			this.applicationContext = applicationContext;
 		}
 
 		@Override
 		public void afterPropertiesSet() throws Exception {
-			if (applicationContext instanceof ServletWebServerApplicationContext servletApplicationContet) {
+			if (applicationContext instanceof ServletWebServerApplicationContext servletApplicationContext) {
 				logger.info("Configuring Serverless Web Container");
 				ServerlessServletContext servletContext = new ServerlessServletContext();
-				servletApplicationContet.setServletContext(servletContext);
+				servletApplicationContext.setServletContext(servletContext);
 				DispatcherServlet dispatcher = applicationContext.getBean(DispatcherServlet.class);
 				try {
 					logger.info("Initializing DispatcherServlet");
-					dispatcher.init(new ProxyServletConfig(servletApplicationContet.getServletContext()));
-					logger.info("Initalized DispatcherServlet");
+					dispatcher.init(new ProxyServletConfig(servletApplicationContext.getServletContext()));
+					logger.info("Initialized DispatcherServlet");
 				}
 				catch (Exception e) {
-					throw new IllegalStateException("Faild to create Spring MVC DispatcherServlet proxy", e);
+					throw new IllegalStateException("Failed to create Spring MVC DispatcherServlet proxy", e);
 				}
 				for (ServletContextInitializer initializer : new ServletContextInitializerBeans(this.applicationContext)) {
 					initializer.onStartup(servletContext);
 				}
+			}
+			else {
+				logger.debug("Skipping Serverless configuration for " + this.applicationContext);
 			}
 		}
 	}
