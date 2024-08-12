@@ -75,6 +75,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.messaging.converter.ProtobufMessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
@@ -115,7 +116,7 @@ public class SimpleFunctionRegistryTests {
 		Function<StringValue, String> getValue = msg -> msg != null ? msg.getValue() : null;
 		Type functionType = ResolvableType.forClassWithGenerics(Function.class, ResolvableType.forClass(StringValue.class), ResolvableType.forClass(String.class)).getType();
 
-		var catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter, new JacksonMapper(new ObjectMapper()));
+		var catalog = new SimpleFunctionRegistry(this.conversionService, new CompositeMessageConverter(List.of(new ProtobufMessageConverter())), new JacksonMapper(new ObjectMapper()));
 		catalog.register(new FunctionRegistration<>(getValue, "getValue").type(functionType));
 		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("getValue");
 
@@ -129,22 +130,7 @@ public class SimpleFunctionRegistryTests {
 			.setHeader("contentType", "application/x-protobuf")
 			.build();
 
-		if (stringValue.equals("aaaaaaaaaa")) {
-			try {
-				lookedUpFunction.apply(inputMessage);
-			}
-			catch (Exception ex) {
-				assertThat(ex).isInstanceOf(ClassCastException.class);
-			}
-		}
-		else {
-			try {
-				lookedUpFunction.apply(inputMessage);
-			}
-			catch (Exception ex) {
-				assertThat(ex).isInstanceOf(IllegalStateException.class);
-			}
-		}
+		assertThat(lookedUpFunction.apply(inputMessage)).isEqualTo(stringValue);
 	}
 
 	@SuppressWarnings("rawtypes")
