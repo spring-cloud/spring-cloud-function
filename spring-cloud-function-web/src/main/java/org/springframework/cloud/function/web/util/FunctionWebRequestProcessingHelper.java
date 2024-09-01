@@ -58,6 +58,11 @@ public final class FunctionWebRequestProcessingHelper {
 
 	public static FunctionInvocationWrapper findFunction(FunctionProperties functionProperties, HttpMethod method, FunctionCatalog functionCatalog,
 											Map<String, Object> attributes, String path) {
+		// FIX KOMUNE - For web browser we need to answer empty OPTIONS REQUEST -
+		// TODO Try to replace it with OptionFunctionController
+		if (method.equals(HttpMethod.OPTIONS)) {
+			return null;
+		}
 		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.DELETE)) {
 			return doFindFunction(functionProperties.getDefinition(), method, functionCatalog, attributes, path);
 		}
@@ -148,9 +153,11 @@ public final class FunctionWebRequestProcessingHelper {
 			}
 
 			if (pResult instanceof Flux) {
-				pResult = ((Flux) pResult).onErrorContinue((e, v) -> {
-					logger.error("Failed to process value: " + v, (Throwable) e);
-				}).collectList();
+				// FIX KOMUNE force message conversion error propagation
+				pResult = ((Flux) pResult).collectList();
+//                pResult = ((Flux) pResult).onErrorContinue((e, v) -> {
+//                    logger.error("Failed to process value: " + v, (Throwable) e);
+//                }).collectList();
 			}
 			pResult = Mono.from(pResult);
 		}

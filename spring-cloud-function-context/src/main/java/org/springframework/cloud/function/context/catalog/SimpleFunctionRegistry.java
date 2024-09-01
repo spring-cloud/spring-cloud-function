@@ -74,6 +74,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 
 /**
@@ -861,7 +862,19 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 						&& !FunctionTypeUtils.isTypeCollection(this.inputType)
 						&& !FunctionTypeUtils.isTypeArray(this.inputType)) {
 					MessageHeaders headers = input instanceof Message ? ((Message) input).getHeaders() : new MessageHeaders(Collections.emptyMap());
-					Collection collectionPayload = jsonMapper.fromJson(payload, Collection.class);
+					// Original version
+//                     Collection collectionPayload = jsonMapper.fromJson(payload, Collection.class);
+					// Fix for KOMUNE
+					// Collection Type is needed by kotlin serializer to deserialize object
+					Type genType = FunctionTypeUtils.getGenericType(this.inputType);
+					ResolvableType resolvableType = ResolvableType.forType(genType);
+					if (resolvableType.toClass() == Message.class) {
+						resolvableType = resolvableType.getGeneric(0);
+					}
+					ResolvableType listType = ResolvableType.forClassWithGenerics(List.class, resolvableType);
+					Collection collectionPayload = jsonMapper.fromJson(payload, listType.getType());
+					// KOMUNE End Of Modification
+
 					Class inputClass = FunctionTypeUtils.getRawType(this.inputType);
 					if (this.isInputTypeMessage()) {
 						inputClass = FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.inputType, 0));
@@ -1516,6 +1529,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 						try {
 							return this.convertOutputIfNecessary(v, type, expectedOutputContentType);
 						}
+						// KOMUNE Modification
+						// FIX force message conversion error propagation
+						catch (ResponseStatusException e) {
+							throw e;
+						}
+						// KOMUNE End Of Modification
 						catch (Exception e) {
 							throw new IllegalStateException("Failed to convert output", e);
 						}
@@ -1524,6 +1543,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 						try {
 							return this.convertOutputIfNecessary(v, type, expectedOutputContentType);
 						}
+						// KOMUNE Modification
+						// FIX force message conversion error propagation
+						catch (ResponseStatusException e) {
+							throw e;
+						}
+						// KOMUNE End Of Modification
 						catch (Exception e) {
 							throw new IllegalStateException("Failed to convert output", e);
 						}
