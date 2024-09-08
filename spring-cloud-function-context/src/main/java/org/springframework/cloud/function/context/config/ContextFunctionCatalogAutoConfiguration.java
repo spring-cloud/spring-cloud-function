@@ -181,6 +181,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 	@Configuration(proxyBeanMethods = false)
 	public static class JsonMapperConfiguration {
 		@Bean
+		@ConditionalOnMissingBean(JsonMapper.class)
 		public JsonMapper jsonMapper(ApplicationContext context) {
 			String preferredMapper = context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY);
 			if (StringUtils.hasText(preferredMapper)) {
