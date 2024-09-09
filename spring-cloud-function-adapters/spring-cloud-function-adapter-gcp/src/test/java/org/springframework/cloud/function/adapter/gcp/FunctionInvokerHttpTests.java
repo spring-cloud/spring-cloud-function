@@ -42,6 +42,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static java.util.Arrays.asList;
@@ -165,7 +166,7 @@ public class FunctionInvokerHttpTests {
 		bufferedWriter.close();
 
 		verify(response).setStatusCode(404);
-
+		verify(response).setContentType("text/plain");
 	}
 
 	@Test
@@ -200,7 +201,7 @@ public class FunctionInvokerHttpTests {
 
 			String payload = "hello";
 
-			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("statusCode", 404)
+			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("statusCode", 404).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
 				.build();
 
 			return x -> msg;

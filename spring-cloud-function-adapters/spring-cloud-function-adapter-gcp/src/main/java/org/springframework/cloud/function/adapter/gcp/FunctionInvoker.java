@@ -121,7 +121,15 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 
 		if (result != null) {
 			MessageHeaders headers = result.getHeaders();
-			httpResponse.setContentType(result.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
+			if (result.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+				httpResponse.setContentType(result.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
+			}
+			else if (result.getHeaders().containsKey("Content-Type")) {
+				httpResponse.setContentType(result.getHeaders().get("Content-Type").toString());
+			}
+			else {
+				httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
+			}
 			httpResponse.getWriter().write(new String(result.getPayload(), StandardCharsets.UTF_8));
 			for (Entry<String, Object> header : headers.entrySet()) {
 				Object values = header.getValue();
@@ -133,7 +141,6 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 					httpResponse.appendHeader(header.getKey(), header.getValue().toString());
 				}
 			}
-			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
 
 			if (headers.containsKey(HTTP_STATUS_CODE)) {
 				if (headers.get(HTTP_STATUS_CODE) instanceof Integer) {

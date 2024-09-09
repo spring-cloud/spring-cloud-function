@@ -129,6 +129,9 @@ public class PetStoreSpringAppConfig {
 	}
 
 	public static class SimpleFilter extends OncePerRequestFilter {
+		/**
+		 *
+		 */
 		public boolean invoked;
 
 		@Override
@@ -146,6 +149,10 @@ public class PetStoreSpringAppConfig {
 	}
 
 	public static class AnotherFilter extends OncePerRequestFilter {
+
+		/**
+		 *
+		 */
 		public boolean invoked;
 		@Override
 		protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
