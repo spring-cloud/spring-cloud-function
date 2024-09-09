@@ -24,8 +24,13 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class PetData {
+public final class PetData {
 	private static List<String> breeds = new ArrayList<>();
+
+	private PetData() {
+
+	}
+
 	static {
 		breeds.add("Afghan Hound");
 		breeds.add("Beagle");

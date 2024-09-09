@@ -1438,9 +1438,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 */
 		@SuppressWarnings("unchecked")
 		private Object convertOutputMessageIfNecessary(Object output, String expectedOutputContetntType) {
-			String contentType = ((Message) output).getHeaders().containsKey(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
-					? (String) ((Message) output).getHeaders().get(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
-							: expectedOutputContetntType;
+			String contentType;
+			if (((Message) output).getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+				contentType = ((Message) output).getHeaders().get(MessageHeaders.CONTENT_TYPE).toString();
+			}
+			else {
+				contentType = ((Message) output).getHeaders().containsKey(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
+						? (String) ((Message) output).getHeaders().get(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
+								: expectedOutputContetntType;
+			}
 
 			if (StringUtils.hasText(contentType)) {
 				Map<String, Object> headersMap = new HashMap(((Message) output).getHeaders());
