@@ -129,7 +129,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 		mcList.add(new StringMessageConverter());
 		mcList.add(new PrimitiveTypesFromStringMessageConverter(conversionService));
 
-		messageConverter = new SmartCompositeMessageConverter(mcList);
+		messageConverter = new SmartCompositeMessageConverter(mcList, () -> {
+			return context.getBeansOfType(MessageConverterHelper.class).values();
+		});
 		if (functionInvocationHelper instanceof CloudEventsFunctionInvocationHelper) {
 			((CloudEventsFunctionInvocationHelper) functionInvocationHelper).setMessageConverter(messageConverter);
 		}

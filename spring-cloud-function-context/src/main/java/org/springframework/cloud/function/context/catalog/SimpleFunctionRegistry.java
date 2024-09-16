@@ -1439,7 +1439,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		@SuppressWarnings("unchecked")
 		private Object convertOutputMessageIfNecessary(Object output, String expectedOutputContetntType) {
 			String contentType;
-			if (((Message) output).getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+			if (this.isOutputTypeMessage() && ((Message) output).getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				contentType = ((Message) output).getHeaders().get(MessageHeaders.CONTENT_TYPE).toString();
 			}
 			else {
