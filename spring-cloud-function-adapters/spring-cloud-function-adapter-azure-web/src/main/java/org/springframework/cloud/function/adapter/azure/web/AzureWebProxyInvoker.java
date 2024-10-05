@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
@@ -48,6 +49,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Christian Tzolov
  * @author Oleg Zhurakousky
+ * @author Omer Celik
  *
  */
 public class AzureWebProxyInvoker implements FunctionInstanceInjector {
@@ -62,6 +64,8 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 	private ServletContext servletContext;
 
+	private static final ReentrantLock globalLock = new ReentrantLock();
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
@@ -72,13 +76,20 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 	/**
 	 * Because the getInstance is called by Azure Java Function on every function request we need to cache the Spring
 	 * context initialization on the first function call.
+	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
 	 * @throws ServletException error.
 	 */
 	private void initialize() throws ServletException {
-		synchronized (AzureWebProxyInvoker.class.getName()) {
-			if (mvc == null) {
-				Class<?> startClass = FunctionClassUtils.getStartClass();
-				this.mvc = ServerlessMVC.INSTANCE(startClass);
+		if (mvc == null) {
+			try {
+				globalLock.lock();
+				if (mvc == null) {
+					Class<?> startClass = FunctionClassUtils.getStartClass();
+					this.mvc = ServerlessMVC.INSTANCE(startClass);
+				}
+			}
+			finally {
+				globalLock.unlock();
 			}
 		}
 	}

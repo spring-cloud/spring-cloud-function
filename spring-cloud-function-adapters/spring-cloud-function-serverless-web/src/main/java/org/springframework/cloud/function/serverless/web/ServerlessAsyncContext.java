@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.springframework.cloud.function.serverless.web;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.AsyncEvent;
@@ -39,6 +40,7 @@ import org.springframework.web.util.WebUtils;
  * Implementation of Async context for {@link ServerlessMVC}.
  *
  * @author Oleg Zhurakousky
+ * @author Omer Celik
  */
 public class ServerlessAsyncContext implements AsyncContext {
 	private final HttpServletRequest request;
@@ -55,6 +57,8 @@ public class ServerlessAsyncContext implements AsyncContext {
 
 	private final List<Runnable> dispatchHandlers = new ArrayList<>();
 
+	private static final ReentrantLock globalLock = new ReentrantLock();
+
 
 	public ServerlessAsyncContext(ServletRequest request, @Nullable ServletResponse response) {
 		this.request = (HttpServletRequest) request;
@@ -64,13 +68,17 @@ public class ServerlessAsyncContext implements AsyncContext {
 
 	public void addDispatchHandler(Runnable handler) {
 		Assert.notNull(handler, "Dispatch handler must not be null");
-		synchronized (this) {
+		try {
+			globalLock.lock();
 			if (this.dispatchedPath == null) {
 				this.dispatchHandlers.add(handler);
 			}
 			else {
 				handler.run();
 			}
+		}
+		finally {
+			globalLock.unlock();
 		}
 	}
 
@@ -102,9 +110,13 @@ public class ServerlessAsyncContext implements AsyncContext {
 
 	@Override
 	public void dispatch(@Nullable ServletContext context, String path) {
-		synchronized (this) {
+		try {
+			globalLock.lock();
 			this.dispatchedPath = path;
 			this.dispatchHandlers.forEach(Runnable::run);
+		}
+		finally {
+			globalLock.unlock();
 		}
 	}
 
