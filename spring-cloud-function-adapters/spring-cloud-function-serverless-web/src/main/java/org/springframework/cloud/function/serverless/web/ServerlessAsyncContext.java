@@ -57,7 +57,7 @@ public class ServerlessAsyncContext implements AsyncContext {
 
 	private final List<Runnable> dispatchHandlers = new ArrayList<>();
 
-	private static final ReentrantLock globalLock = new ReentrantLock();
+	private final ReentrantLock globalLock = new ReentrantLock();
 
 
 	public ServerlessAsyncContext(ServletRequest request, @Nullable ServletResponse response) {
@@ -69,7 +69,7 @@ public class ServerlessAsyncContext implements AsyncContext {
 	public void addDispatchHandler(Runnable handler) {
 		Assert.notNull(handler, "Dispatch handler must not be null");
 		try {
-			globalLock.lock();
+			this.globalLock.lock();
 			if (this.dispatchedPath == null) {
 				this.dispatchHandlers.add(handler);
 			}
@@ -78,7 +78,7 @@ public class ServerlessAsyncContext implements AsyncContext {
 			}
 		}
 		finally {
-			globalLock.unlock();
+			this.globalLock.unlock();
 		}
 	}
 
@@ -111,12 +111,12 @@ public class ServerlessAsyncContext implements AsyncContext {
 	@Override
 	public void dispatch(@Nullable ServletContext context, String path) {
 		try {
-			globalLock.lock();
+			this.globalLock.lock();
 			this.dispatchedPath = path;
 			this.dispatchHandlers.forEach(Runnable::run);
 		}
 		finally {
-			globalLock.unlock();
+			this.globalLock.unlock();
 		}
 	}
 
