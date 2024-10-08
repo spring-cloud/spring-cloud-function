@@ -125,7 +125,39 @@ public Supplier<Flux<String>> someSupplier() {
 Function can also be written in imperative or reactive way, yet unlike Supplier and Consumer there are
 no special considerations for the implementor other then understanding that when used within frameworks
 such as https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream] and others, reactive function is
-invoked only once to pass a reference to the stream (Flux or Mono) and imperative is invoked once per event.
+invoked only once to pass a reference to the stream (i.e., Flux or Mono) and imperative is invoked once per event.
+
+[source, java]
+----
+public Function<String, String> uppercase() {
+    . . . .
+}
+----
+
+[[bifunction]]
+=== BiFunction
+In the event you need to receive some additional data (metadata) with your payload you can always make your function 
+signature to receive a Message which contains a map of headers containing such additional information.
+
+[source, java]
+----
+public Function<Message<String>, String> uppercase() {
+    . . . .
+}
+----
+
+To make your function signature a bit lighter and more POJO like there is another approach. You can use `BiFunction`.
+[source, java]
+----
+public BiFunction<String, Map, String> uppercase() {
+    . . . .
+}
+----
+
+Given that a `Message` only contains two attributes (payload and headers) and `BiFunction` requiring two input parameters the framework will automatically recognise this paradigm and will extract payload from the `Message` passing it as a first argument and the map of headers as the second. 
+In this case your functions is also not coupled to Spring’s messaging API. 
+Keep in mind that BiFunction requires a strict signature where second argument *must* be a Map. 
+The same rule applies to `BiConsumer`.
 
 [[consumer]]
 === Consumer
