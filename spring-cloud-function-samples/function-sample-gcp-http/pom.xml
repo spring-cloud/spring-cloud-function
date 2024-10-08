@@ -15,12 +15,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.0-M3</version>
+		<version>3.4.0-M2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<properties>
-		<spring-cloud-function.version>4.2.0-M2</spring-cloud-function.version>
+		<spring-cloud-function.version>4.2.0-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
