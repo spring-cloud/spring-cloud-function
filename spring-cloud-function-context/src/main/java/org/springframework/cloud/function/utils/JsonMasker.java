@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
@@ -39,6 +40,7 @@ import org.springframework.util.ClassUtils;
 
 /**
  * @author Oleg Zhurakousky
+ * @author Omer Celik
  */
 public final class JsonMasker {
 
@@ -50,22 +52,41 @@ public final class JsonMasker {
 
 	private final Set<String> keysToMask;
 
+	private static final ReentrantLock globalLock = new ReentrantLock();
+
 	private JsonMasker() {
 		this.keysToMask = loadKeys();
 		this.mapper = new JacksonMapper(new ObjectMapper());
 
 	}
 
-	public synchronized static JsonMasker INSTANCE() {
+	/**
+	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 */
+	public static JsonMasker INSTANCE() {
 		if (jsonMasker == null) {
-			jsonMasker = new JsonMasker();
+			try {
+				globalLock.lock();
+				if (jsonMasker == null) {
+					jsonMasker = new JsonMasker();
+				}
+			}
+			finally {
+				globalLock.unlock();
+			}
 		}
 		return jsonMasker;
 	}
 
-	public synchronized static JsonMasker INSTANCE(Set<String> keysToMask) {
-		INSTANCE().addKeys(keysToMask);
-		return jsonMasker;
+	public static JsonMasker INSTANCE(Set<String> keysToMask) {
+		try {
+			globalLock.lock();
+			INSTANCE().addKeys(keysToMask);
+			return jsonMasker;
+		}
+		finally {
+			globalLock.unlock();
+		}
 	}
 
 	public String[] getKeysToMask() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.integration.dsl;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -28,6 +29,7 @@ import org.springframework.util.Assert;
  * The helper class to lookup functions from the catalog in lazy manner and cache their instances.
  *
  * @author Artem Bilan
+ * @author Omer Celik
  *
  * @since 4.0.3
  */
@@ -72,15 +74,20 @@ public class FunctionLookupHelper {
 	 */
 	private static <T> Supplier<T> memoize(Supplier<? extends T> delegate) {
 		AtomicReference<T> value = new AtomicReference<>();
+		ReentrantLock lock = new ReentrantLock();
 		return () -> {
 			T val = value.get();
 			if (val == null) {
-				synchronized (value) {
+				try {
+					lock.lock();
 					val = value.get();
 					if (val == null) {
 						val = delegate.get();
 						value.set(val);
 					}
+				}
+				finally {
+					lock.unlock();
 				}
 			}
 			return val;

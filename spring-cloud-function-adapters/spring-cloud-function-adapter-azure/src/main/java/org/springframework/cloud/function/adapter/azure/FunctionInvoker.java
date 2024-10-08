@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -66,6 +67,7 @@ import org.springframework.util.StringUtils;
  * @author Oleg Zhurakousky
  * @author Chris Bono
  * @author Christian Tzolov
+ * @author Omer Celik
  *
  * @since 3.2
  *
@@ -84,6 +86,8 @@ public class FunctionInvoker<I, O> {
 	private static ConfigurableApplicationContext APPLICATION_CONTEXT;
 
 	private static JsonMapper OBJECT_MAPPER;
+
+	private static final ReentrantLock globalLock = new ReentrantLock();
 
 	public FunctionInvoker(Class<?> configurationClass) {
 		try {
@@ -355,30 +359,38 @@ public class FunctionInvoker<I, O> {
 		return new MessageHeaders(headers);
 	}
 
+	/**
+	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 */
 	private static void initialize(Class<?> configurationClass) {
-		synchronized (FunctionInvoker.class.getName()) {
-			if (FUNCTION_CATALOG == null) {
-				logger.info("Initializing: " + configurationClass);
-				SpringApplication builder = springApplication(configurationClass);
-				APPLICATION_CONTEXT = builder.run();
+		if (FUNCTION_CATALOG == null) {
+			try {
+				globalLock.lock();
+				if (FUNCTION_CATALOG == null) {
+					logger.info("Initializing: " + configurationClass);
+					SpringApplication builder = springApplication(configurationClass);
+					APPLICATION_CONTEXT = builder.run();
 
-				Map<String, FunctionCatalog> mf = APPLICATION_CONTEXT.getBeansOfType(FunctionCatalog.class);
-				if (CollectionUtils.isEmpty(mf)) {
-					OBJECT_MAPPER = new JacksonMapper(new ObjectMapper());
-					JsonMessageConverter jsonConverter = new JsonMessageConverter(OBJECT_MAPPER);
-					SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(
+					Map<String, FunctionCatalog> mf = APPLICATION_CONTEXT.getBeansOfType(FunctionCatalog.class);
+					if (CollectionUtils.isEmpty(mf)) {
+						OBJECT_MAPPER = new JacksonMapper(new ObjectMapper());
+						JsonMessageConverter jsonConverter = new JsonMessageConverter(OBJECT_MAPPER);
+						SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(
 							Collections.singletonList(jsonConverter));
-					FUNCTION_CATALOG = new SimpleFunctionRegistry(
+						FUNCTION_CATALOG = new SimpleFunctionRegistry(
 							APPLICATION_CONTEXT.getBeanFactory().getConversionService(),
 							messageConverter, OBJECT_MAPPER);
-				}
-				else {
-					OBJECT_MAPPER = APPLICATION_CONTEXT.getBean(JsonMapper.class);
-					FUNCTION_CATALOG = mf.values().iterator().next();
+					}
+					else {
+						OBJECT_MAPPER = APPLICATION_CONTEXT.getBean(JsonMapper.class);
+						FUNCTION_CATALOG = mf.values().iterator().next();
+					}
 				}
 			}
+			finally {
+				globalLock.unlock();
+			}
 		}
-
 	}
 
 	private static SpringApplication springApplication(Class<?> configurationClass) {

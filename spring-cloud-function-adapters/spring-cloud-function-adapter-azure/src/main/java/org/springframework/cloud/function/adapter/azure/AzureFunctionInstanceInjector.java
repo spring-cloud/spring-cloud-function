@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 the original author or authors.
+ * Copyright 2021-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.adapter.azure;
 
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector;
 import org.apache.commons.logging.Log;
@@ -37,6 +38,7 @@ import org.springframework.util.CollectionUtils;
  * hook. The Azure Java Worker delegates scans the classpath for service definition and delegates the function class
  * creation to this instance factory.
  * @author Christian Tzolov
+ * @author Omer Celik
  * @since 3.2.9
  */
 public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
@@ -44,6 +46,8 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 	private static Log logger = LogFactory.getLog(AzureFunctionInstanceInjector.class);
 
 	private static ConfigurableApplicationContext APPLICATION_CONTEXT;
+
+	private static final ReentrantLock globalLock = new ReentrantLock();
 
 	/**
 	 * This method is called by the Azure Java Worker on every function invocation. The Worker sends in the classes
@@ -83,13 +87,20 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 
 	/**
 	 * Create a static Application Context instance shared between multiple function invocations.
+	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
 	 */
 	private static void initialize() {
-		synchronized (AzureFunctionInstanceInjector.class.getName()) {
-			if (APPLICATION_CONTEXT == null) {
-				Class<?> springConfigurationClass = FunctionClassUtils.getStartClass();
-				logger.info("Initializing: " + springConfigurationClass);
-				APPLICATION_CONTEXT = springApplication(springConfigurationClass).run();
+		if (APPLICATION_CONTEXT == null) {
+			try {
+				globalLock.lock();
+				if (APPLICATION_CONTEXT == null) {
+					Class<?> springConfigurationClass = FunctionClassUtils.getStartClass();
+					logger.info("Initializing: " + springConfigurationClass);
+					APPLICATION_CONTEXT = springApplication(springConfigurationClass).run();
+				}
+			}
+			finally {
+				globalLock.unlock();
 			}
 		}
 	}
