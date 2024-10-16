@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.function.utils;
 
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -27,9 +30,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +72,16 @@ public class JsonMapperTests {
 		 * will not be true.
 		 */
 		assertThat(JsonMapper.isJsonStringRepresentsCollection(nodeAsString)).isFalse();
+	}
+
+	// see https://github.com/spring-cloud/spring-cloud-function/issues/1189
+	@Test
+	public void testJsonDateTimeConversion() {
+		ApplicationContext context = SpringApplication.run(EmptyConfiguration.class);
+		JsonMapper jsonMapper = context.getBean(JsonMapper.class);
+		StringVsTimestamp dom = new StringVsTimestamp("2024-10-16T16:13:29.964361+02:00");
+		String convertedJson = new String(jsonMapper.toJson(dom), StandardCharsets.UTF_8);
+		assertThat(convertedJson).contains("\"zonedDateTime\":\"2024-10-16T16:13:29.964361+02:00\"");
 	}
 
 	@ParameterizedTest
@@ -140,4 +157,48 @@ public class JsonMapperTests {
 
 	}
 
+	@EnableAutoConfiguration
+	@Configuration
+	static class EmptyConfiguration {
+
+	}
+
+	static class StringVsTimestamp {
+
+		private String type;
+
+		private Date date;
+
+		private ZonedDateTime zonedDateTime;
+
+		StringVsTimestamp(String zonedDate) {
+			type = "StringVsTimestamp";
+			date = new Date();
+			zonedDateTime = ZonedDateTime.parse(zonedDate);
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public Date getDate() {
+			return date;
+		}
+
+		public void setDate(Date date) {
+			this.date = date;
+		}
+
+		public ZonedDateTime getZonedDateTime() {
+			return zonedDateTime;
+		}
+
+		public void setZonedDateTime(ZonedDateTime zonedDateTime) {
+			this.zonedDateTime = zonedDateTime;
+		}
+	}
 }
