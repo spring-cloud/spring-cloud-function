@@ -223,8 +223,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			catch (Exception e) {
 				mapper = new ObjectMapper();
+				mapper.registerModule(new JavaTimeModule());
 			}
-			mapper.registerModule(new JavaTimeModule());
+
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
