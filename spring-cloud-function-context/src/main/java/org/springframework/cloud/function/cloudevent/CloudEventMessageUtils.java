@@ -455,7 +455,7 @@ public final class CloudEventMessageUtils {
 
 	private static URI safeGetURI(Map<String, Object> map, String key) {
 		Object uri = map.get(key);
-		if (uri != null && uri instanceof String) {
+		if (uri != null) {
 			if (uri instanceof String) {
 				uri = URI.create((String) uri);
 			}
