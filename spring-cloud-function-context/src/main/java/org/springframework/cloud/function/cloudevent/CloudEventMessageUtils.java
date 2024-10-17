@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.cloudevent;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
@@ -170,7 +171,11 @@ public final class CloudEventMessageUtils {
 
 	public static String getId(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
-		return (String) message.getHeaders().get(prefix + MessageHeaders.ID);
+		Object value = message.getHeaders().get(prefix + MessageHeaders.ID);
+		if (value instanceof byte[] v) {
+			value = toString(v);
+		}
+		return (String) value;
 	}
 
 	public static URI getSource(Message<?> message) {
@@ -180,17 +185,29 @@ public final class CloudEventMessageUtils {
 
 	public static String getSpecVersion(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
-		return (String) message.getHeaders().get(prefix + _SPECVERSION);
+		Object value = message.getHeaders().get(prefix + _SPECVERSION);
+		if (value instanceof byte[] v) {
+			value = toString(v);
+		}
+		return (String) value;
 	}
 
 	public static String getType(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
-		return (String) message.getHeaders().get(prefix + _TYPE);
+		Object value = message.getHeaders().get(prefix + _TYPE);
+		if (value instanceof byte[] v) {
+			value = toString(v);
+		}
+		return (String) value;
 	}
 
 	public static String getDataContentType(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
-		return (String) message.getHeaders().get(prefix + _DATACONTENTTYPE);
+		Object value = message.getHeaders().get(prefix + _DATACONTENTTYPE);
+		if (value instanceof byte[] v) {
+			value = toString(v);
+		}
+		return (String) value;
 	}
 
 	public static URI getDataSchema(Message<?> message) {
@@ -200,7 +217,11 @@ public final class CloudEventMessageUtils {
 
 	public static String getSubject(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
-		return (String) message.getHeaders().get(prefix + _SUBJECT);
+		Object value = message.getHeaders().get(prefix + _SUBJECT);
+		if (value instanceof byte[] v) {
+			value = toString(v);
+		}
+		return (String) value;
 	}
 
 	public static OffsetDateTime getTime(Message<?> message) {
@@ -435,9 +456,18 @@ public final class CloudEventMessageUtils {
 	private static URI safeGetURI(Map<String, Object> map, String key) {
 		Object uri = map.get(key);
 		if (uri != null && uri instanceof String) {
-			uri = URI.create((String) uri);
+			if (uri instanceof String) {
+				uri = URI.create((String) uri);
+			}
+			else if (uri instanceof byte[] u) {
+				uri = URI.create(toString(u));
+			}
 		}
 		return (URI) uri;
+	}
+
+	private static String toString(byte[] value) {
+		return new String(value, StandardCharsets.UTF_8);
 	}
 
 	public static class Protocols {
