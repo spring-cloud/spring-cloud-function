@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -192,7 +193,12 @@ public final class FunctionTypeUtils {
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
 		if (KotlinDetector.isKotlinPresent()) {
 			if (Function1.class.isAssignableFrom(functionalClass)) {
-				return TypeResolver.reify(Function1.class, (Class<Function1<?, ?>>) functionalClass);
+				try {
+					return TypeResolver.reify(Function1.class, (Class<Function1<?, ?>>) functionalClass);
+				} 
+				catch (Exception e) {
+					return discoverFunctionTypeFromFunctionMethod(discoverFunctionalMethod(functionalClass));
+				}
 			}
 			else if (Function0.class.isAssignableFrom(functionalClass)) {
 				return TypeResolver.reify(Function0.class, (Class<Function0<?>>) functionalClass);
@@ -252,10 +258,11 @@ public final class FunctionTypeUtils {
 		Assert.isTrue(
 				functionMethod.getName().equals("apply") ||
 				functionMethod.getName().equals("accept") ||
-				functionMethod.getName().equals("get"),
+				functionMethod.getName().equals("get") ||
+				functionMethod.getName().equals("invoke"),
 				"Only Supplier, Function or Consumer supported at the moment. Was " + functionMethod.getDeclaringClass());
 
-		if (functionMethod.getName().equals("apply")) {
+		if (functionMethod.getName().equals("apply") || functionMethod.getName().equals("invoke")) {
 			return ResolvableType.forClassWithGenerics(Function.class,
 					ResolvableType.forMethodParameter(functionMethod, 0),
 					ResolvableType.forMethodReturnType(functionMethod)).getType();
