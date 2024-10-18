@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -195,7 +194,7 @@ public final class FunctionTypeUtils {
 			if (Function1.class.isAssignableFrom(functionalClass)) {
 				try {
 					return TypeResolver.reify(Function1.class, (Class<Function1<?, ?>>) functionalClass);
-				} 
+				}
 				catch (Exception e) {
 					return discoverFunctionTypeFromFunctionMethod(discoverFunctionalMethod(functionalClass));
 				}
