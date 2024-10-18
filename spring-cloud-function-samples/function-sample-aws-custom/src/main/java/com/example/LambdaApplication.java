@@ -1,5 +1,6 @@
 package com.example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -24,7 +25,7 @@ public class LambdaApplication
 			if (value.equals("error")) {
 				throw new IllegalArgumentException("Intentional");
 			}
-			return value.toUpperCase();
+			return value.toUpperCase(Locale.ROOT);
 		};
 	}
 

@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.function;
 
 import java.net.URI;
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ public class UserSubmittedTests {
 
 		@Bean
 		public Function<String, String> echo() {
-			return s -> s.toUpperCase();
+			return s -> s.toUpperCase(Locale.ROOT);
 		}
 	}
 

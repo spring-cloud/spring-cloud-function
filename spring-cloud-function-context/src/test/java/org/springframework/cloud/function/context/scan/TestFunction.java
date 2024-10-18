@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.scan;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 /**
@@ -26,7 +27,7 @@ public class TestFunction implements Function<String, String> {
 
 	@Override
 	public String apply(String t) {
-		return t.toUpperCase();
+		return t.toUpperCase(Locale.ROOT);
 	}
 
 }

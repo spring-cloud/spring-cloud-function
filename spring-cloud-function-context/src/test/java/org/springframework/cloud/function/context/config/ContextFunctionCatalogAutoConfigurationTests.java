@@ -22,6 +22,7 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -476,7 +477,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<String, String> function() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -543,7 +544,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<String, Foo> foos(String foo) {
-			return value -> new Foo(foo + ": " + value.toUpperCase());
+			return value -> new Foo(foo + ": " + value.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -560,7 +561,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Override
 		public Flux<Foo> apply(Flux<String> flux) {
-			return flux.map(foo -> new Foo(value() + ": " + foo.toUpperCase()));
+			return flux.map(foo -> new Foo(value() + ": " + foo.toUpperCase(Locale.ROOT)));
 		}
 
 		@Bean
@@ -588,7 +589,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<String, Foo> foos() {
-			return value -> new Foo(value.toUpperCase());
+			return value -> new Foo(value.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -605,7 +606,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<String, Foo> foos() {
-			return value -> new Foo(value.toUpperCase());
+			return value -> new Foo(value.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -632,7 +633,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Function<Map<String, String>, Map<String, String>> function() {
 			return m -> m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
-					e -> e.getValue().toString().toUpperCase()));
+					e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
 		}
 
 	}
@@ -726,7 +727,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Function<Flux<Map<String, String>>, Flux<Map<String, String>>> function() {
 			return flux -> flux.map(m -> m.entrySet().stream().collect(Collectors
-					.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase())));
+					.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase(Locale.ROOT))));
 		}
 
 	}
@@ -738,7 +739,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Function<Flux<Message<String>>, Flux<Message<String>>> function() {
 			return flux -> flux.map(m -> MessageBuilder
-					.withPayload(m.getPayload().toUpperCase()).build());
+					.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).build());
 		}
 
 	}
@@ -750,7 +751,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Function<Publisher<Message<String>>, Publisher<Message<String>>> function() {
 			return flux -> Flux.from(flux).map(m -> MessageBuilder
-					.withPayload(m.getPayload().toUpperCase()).build());
+					.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).build());
 		}
 
 	}
@@ -784,7 +785,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<Message<String>, Message<String>> function() {
-			return m -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).build();
+			return m -> MessageBuilder.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).build();
 		}
 
 	}
@@ -796,7 +797,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		@Qualifier("other")
 		public Function<String, String> function() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 	}
@@ -807,7 +808,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean({ "function", "other" })
 		public Function<String, String> function() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 	}
@@ -824,7 +825,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<String, String> function() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 	}
@@ -861,7 +862,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Override
 		protected Function<String, String> createInstance() throws Exception {
-			return s -> s.toUpperCase() + "-bar";
+			return s -> s.toUpperCase(Locale.ROOT) + "-bar";
 		}
 
 	}

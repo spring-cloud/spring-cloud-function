@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -219,7 +220,7 @@ public class CustomRuntimeEventLoopTest {
 	protected static class SingleFunctionConfiguration {
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 	}
 
@@ -236,7 +237,7 @@ public class CustomRuntimeEventLoopTest {
 	protected static class MultipleFunctionConfiguration {
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -246,7 +247,7 @@ public class CustomRuntimeEventLoopTest {
 
 		@Bean
 		public Function<Person, Person> uppercasePerson() {
-			return p -> new Person(p.getName().toUpperCase());
+			return p -> new Person(p.getName().toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -267,7 +268,7 @@ public class CustomRuntimeEventLoopTest {
 
 		@Override
 		public Person apply(Person input) {
-			return new Person(input.getName().toUpperCase());
+			return new Person(input.getName().toUpperCase(Locale.ROOT));
 		}
 	}
 

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.test;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ public class ImplicitNonFunctionalTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 	}

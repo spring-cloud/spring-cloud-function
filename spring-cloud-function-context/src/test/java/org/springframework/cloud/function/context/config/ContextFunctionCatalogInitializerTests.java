@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -235,7 +236,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Bean
 		public Function<String, String> function() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 	}
@@ -264,7 +265,7 @@ public class ContextFunctionCatalogInitializerTests {
 		public Function<Person, Person> function() {
 			return person -> {
 				Person p = new Person();
-				p.setName(person.getName().toUpperCase());
+				p.setName(person.getName().toUpperCase(Locale.ROOT));
 				return p;
 			};
 		}
@@ -359,7 +360,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Bean
 		public Function<String, Foo> foos(String foo) {
-			return value -> new Foo(foo + ": " + value.toUpperCase());
+			return value -> new Foo(foo + ": " + value.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -383,7 +384,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Override
 		public Flux<Foo> apply(Flux<String> flux) {
-			return flux.map(foo -> new Foo(value() + ": " + foo.toUpperCase()));
+			return flux.map(foo -> new Foo(value() + ": " + foo.toUpperCase(Locale.ROOT)));
 		}
 
 		@Bean

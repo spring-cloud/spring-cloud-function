@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Disabled;
@@ -77,7 +78,7 @@ public class DefaultRouteTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercase() {
-			return flux -> flux.map(value -> value.toUpperCase());
+			return flux -> flux.map(value -> value.toUpperCase(Locale.ROOT));
 		}
 
 	}

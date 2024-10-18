@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.test;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,7 @@ public class PojoTests {
 
 		@Override
 		public Foo apply(Foo value) {
-			return new Foo(value.getValue().toUpperCase());
+			return new Foo(value.getValue().toUpperCase(Locale.ROOT));
 		}
 
 	}

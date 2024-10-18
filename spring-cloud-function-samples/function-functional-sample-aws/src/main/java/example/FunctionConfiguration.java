@@ -1,5 +1,6 @@
 package example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringBootConfiguration;
@@ -25,7 +26,7 @@ public class FunctionConfiguration implements ApplicationContextInitializer<Gene
 
     @Override
     public void initialize(GenericApplicationContext context) {
-    	Function<String, String> function = (str) -> str + str.toUpperCase();
+    	Function<String, String> function = (str) -> str + str.toUpperCase(Locale.ROOT);
     	
     	context.registerBean("uppercase", FunctionRegistration.class,
 				() -> new FunctionRegistration<>(function).type(FunctionTypeUtils.functionType(String.class, String.class)));

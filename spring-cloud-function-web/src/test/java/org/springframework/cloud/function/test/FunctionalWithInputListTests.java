@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.test;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,7 +55,7 @@ public class FunctionalWithInputListTests {
 
 		@Override
 		public Foo apply(List<Foo> value) {
-			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase())
+			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase(Locale.ROOT))
 					.collect(Collectors.joining()));
 		}
 

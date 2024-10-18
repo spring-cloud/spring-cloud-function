@@ -15,6 +15,7 @@
  */
 package example;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -45,7 +46,7 @@ public class KafkaTriggerDemoApplication {
 				Map<String, Object> valueMap = mapper.fromJson(kafkaEntity.getValue(), Map.class);
 				if (valueMap != null) {
 					valueMap.forEach((k, v) -> valueMap.put(k,
-							v != null && v instanceof String ? ((String) v).toUpperCase() : null));
+							v != null && v instanceof String ? ((String) v).toUpperCase(Locale.ROOT) : null));
 					return mapper.toString(valueMap);
 				}
 			}

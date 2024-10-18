@@ -16,6 +16,7 @@
 
 package com.example.azure.di.httptriggerdemo;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -32,7 +33,7 @@ public class HttpTriggerDemoApplication {
 
 	@Bean
 	public Function<String, String> uppercase() {
-		return payload -> payload.toUpperCase();
+		return payload -> payload.toUpperCase(Locale.ROOT);
 	}
 
 	@Bean

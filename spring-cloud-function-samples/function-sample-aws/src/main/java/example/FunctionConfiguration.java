@@ -1,5 +1,6 @@
 package example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -24,7 +25,7 @@ public class FunctionConfiguration {
 				throw new RuntimeException("Intentional exception");
 			}
 			else {
-				return value.toUpperCase();
+				return value.toUpperCase(Locale.ROOT);
 			}
 		};
 	}

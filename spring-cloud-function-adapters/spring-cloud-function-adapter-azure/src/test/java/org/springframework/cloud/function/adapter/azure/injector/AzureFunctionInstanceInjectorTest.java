@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.adapter.azure.injector;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -106,7 +107,7 @@ public class AzureFunctionInstanceInjectorTest {
 				Assertions.assertThat(context).isNotNull();
 				Assertions.assertThat(context.getFunctionName()).isEqualTo("hello");
 
-				return message.getPayload().toUpperCase();
+				return message.getPayload().toUpperCase(Locale.ROOT);
 			};
 
 		}

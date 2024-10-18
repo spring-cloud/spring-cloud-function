@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -210,7 +211,7 @@ public class RoutingFunctionTests {
 		public Function<Flux<String>, Flux<String>> fluxuppercase() {
 			return v -> v.map(s -> {
 				System.out.println(s);
-				return s.toUpperCase();
+				return s.toUpperCase(Locale.ROOT);
 			});
 		}
 

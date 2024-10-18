@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -117,22 +118,22 @@ public class MessageRoutingCallbackRSocketTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
 		public Function<Message<String>, Message<String>> uppercaseMessage() {
-			return m  -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).copyHeaders(m.getHeaders()).build();
+			return m  -> MessageBuilder.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).copyHeaders(m.getHeaders()).build();
 		}
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercaseReactive() {
-			return flux -> flux.map(v -> v.toUpperCase());
+			return flux -> flux.map(v -> v.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
 		public Function<Flux<Message<String>>, Flux<Message<String>>> uppercaseReactiveMessage() {
-			return flux -> flux.map(m  -> MessageBuilder.withPayload(m.getPayload().toUpperCase()).copyHeaders(m.getHeaders()).build());
+			return flux -> flux.map(m  -> MessageBuilder.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).copyHeaders(m.getHeaders()).build());
 		}
 
 		@Bean

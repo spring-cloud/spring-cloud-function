@@ -3,6 +3,7 @@ package com.example.grpc.demo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -55,7 +56,7 @@ public class DemoGrpcApplication  {
 	@Bean
 	public Function<Message<String>, Message<String>> uppercase() {
 		return message -> {
-			return MessageBuilder.withPayload(message.getPayload().toUpperCase())
+			return MessageBuilder.withPayload(message.getPayload().toUpperCase(Locale.ROOT))
 					.copyHeaders(message.getHeaders())
 					.setHeader("uppercased", "true")
 					.build();

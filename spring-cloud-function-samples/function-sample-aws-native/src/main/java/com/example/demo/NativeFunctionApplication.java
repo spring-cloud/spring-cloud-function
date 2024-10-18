@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -35,7 +36,7 @@ public class NativeFunctionApplication {
 	public Function<String, String> uppercase() {
 		return v -> {
 			System.out.println("Uppercasing " + v);
-			return v.toUpperCase();
+			return v.toUpperCase(Locale.ROOT);
 		};
 	}
 

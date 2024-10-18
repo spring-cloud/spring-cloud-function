@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.test;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ public class HeadersToMessageTests {
 		@Override
 		public Message<String> apply(Message<String> request) {
 			Message<String> message = MessageBuilder
-					.withPayload(request.getPayload().toUpperCase())
+					.withPayload(request.getPayload().toUpperCase(Locale.ROOT))
 					.setHeader("X-Content-Type", "application/xml")
 					.setHeader("foo", "bar").build();
 			return message;

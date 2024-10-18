@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.rsocket;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -155,7 +156,7 @@ public class MessagingTests {
 			Message<Person> message = MessageBuilder.withPayload(p).setHeader("someHeader", "foo").build();
 
 			Person result = new Person();
-			result.setName(p.getName().toUpperCase());
+			result.setName(p.getName().toUpperCase(Locale.ROOT));
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("pojoMessageToPojo")
 				.data(message)
@@ -190,7 +191,7 @@ public class MessagingTests {
 			Map map = jsonMapper.fromJson(message, Map.class);
 
 			Person result = new Person();
-			result.setName(p.getName().toUpperCase());
+			result.setName(p.getName().toUpperCase(Locale.ROOT));
 			rsocketRequesterBuilder.tcp("localhost", port)
 				.route("pojoMessageToPojo")
 				.data(map)
@@ -330,7 +331,7 @@ public class MessagingTests {
 		@Bean
 		public Function<Person, String> pojoToString() {
 			return v -> {
-				return v.getName().toUpperCase();
+				return v.getName().toUpperCase(Locale.ROOT);
 			};
 		}
 
@@ -355,7 +356,7 @@ public class MessagingTests {
 			return p -> {
 				assertThat(p.getHeaders().get("someHeader").equals("foo"));
 				Person newPerson = new Person();
-				newPerson.setName(p.getPayload().getName().toUpperCase());
+				newPerson.setName(p.getPayload().getName().toUpperCase(Locale.ROOT));
 				return newPerson;
 			};
 		}
@@ -365,7 +366,7 @@ public class MessagingTests {
 			return p -> {
 				assertThat(p.getHeaders().get("someHeader").equals("foo"));
 				Person newPerson = new Person();
-				newPerson.setName(p.getPayload().getName().toUpperCase());
+				newPerson.setName(p.getPayload().getName().toUpperCase(Locale.ROOT));
 				return MessageBuilder.withPayload(newPerson).copyHeaders(p.getHeaders()).setHeader("xyz", "hello").build();
 			};
 		}

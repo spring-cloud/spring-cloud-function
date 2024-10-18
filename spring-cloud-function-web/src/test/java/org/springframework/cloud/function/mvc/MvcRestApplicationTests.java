@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -289,18 +290,18 @@ public class MvcRestApplicationTests {
 		@PostMapping({ "/uppercase", "/transform", "/post/more" })
 		public Flux<?> uppercase(@RequestBody List<String> flux) {
 			return Flux.fromIterable(flux).log()
-					.map(value -> "[" + value.trim().toUpperCase() + "]");
+					.map(value -> "[" + value.trim().toUpperCase(Locale.ROOT) + "]");
 		}
 
 		@PostMapping("/upFoos")
 		public Flux<Foo> upFoos(@RequestBody List<Foo> list) {
 			return Flux.fromIterable(list).log()
-					.map(value -> new Foo(value.getValue().trim().toUpperCase()));
+					.map(value -> new Foo(value.getValue().trim().toUpperCase(Locale.ROOT)));
 		}
 
 		@GetMapping("/uppercase/{id}")
 		public Mono<?> uppercaseGet(@PathVariable String id) {
-			return Mono.just(id).map(value -> "[" + value.trim().toUpperCase() + "]");
+			return Mono.just(id).map(value -> "[" + value.trim().toUpperCase(Locale.ROOT) + "]");
 		}
 
 		@GetMapping("/wrap/{id}")
@@ -318,7 +319,7 @@ public class MvcRestApplicationTests {
 		public Flux<Map<String, String>> maps(
 				@RequestBody List<Map<String, String>> flux) {
 			return Flux.fromIterable(flux).map(value -> {
-				value.put("value", value.get("value").trim().toUpperCase());
+				value.put("value", value.get("value").trim().toUpperCase(Locale.ROOT));
 				return value;
 			});
 		}

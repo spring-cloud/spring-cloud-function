@@ -18,6 +18,7 @@ package org.springframework.cloud.function.adapter.azure;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -184,7 +185,7 @@ class CustomFunctionInvokerTests {
 
 		@Bean
 		public Function<String, String> imperativeUppercase() {
-			return (s) -> s.toUpperCase();
+			return (s) -> s.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean

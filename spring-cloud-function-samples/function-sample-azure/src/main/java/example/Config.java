@@ -16,6 +16,7 @@
 
 package example;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -54,7 +55,7 @@ public class Config {
 				Map<String, String> map = mapper.fromJson(value, Map.class);
 
 				if(map != null)
-					map.forEach((k, v) -> map.put(k, v != null ? v.toUpperCase() : null));
+					map.forEach((k, v) -> map.put(k, v != null ? v.toUpperCase(Locale.ROOT) : null));
 
 				if(context != null)
 					context.getLogger().info(new StringBuilder().append("Function: ")
@@ -73,12 +74,12 @@ public class Config {
 
 	@Bean
 	public Function<Mono<String>, Mono<String>> uppercaseReactive() {
-		return mono -> mono.map(value -> value.toUpperCase());
+		return mono -> mono.map(value -> value.toUpperCase(Locale.ROOT));
 	}
 
 	@Bean
 	public Function<Flux<String>, Flux<String>> echoStream() {
-		return flux -> flux.map(value -> value.toUpperCase());
+		return flux -> flux.map(value -> value.toUpperCase(Locale.ROOT));
 	}
 }
 

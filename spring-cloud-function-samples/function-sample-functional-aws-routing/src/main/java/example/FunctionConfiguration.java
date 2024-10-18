@@ -1,5 +1,6 @@
 package example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -23,7 +24,7 @@ public class FunctionConfiguration implements ApplicationContextInitializer<Gene
 	}
 
 	public Function<String, String> uppercase() {
-		return value -> value.toUpperCase();
+		return value -> value.toUpperCase(Locale.ROOT);
 	}
 
 	public Function<String, String> reverse() {

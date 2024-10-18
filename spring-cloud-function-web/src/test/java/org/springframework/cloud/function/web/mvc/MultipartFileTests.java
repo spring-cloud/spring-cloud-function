@@ -18,6 +18,7 @@ package org.springframework.cloud.function.web.mvc;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -93,7 +94,7 @@ public class MultipartFileTests {
 		@Bean
 		public Function<MultipartFile, String> uppercase() {
 			return value -> {
-				return value.getOriginalFilename().toUpperCase();
+				return value.getOriginalFilename().toUpperCase(Locale.ROOT);
 			};
 		}
 	}

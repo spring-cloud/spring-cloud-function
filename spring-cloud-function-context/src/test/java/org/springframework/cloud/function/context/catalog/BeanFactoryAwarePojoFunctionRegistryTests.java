@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -123,7 +124,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	// POJO Function that implements Function
 	private static class MyFunction implements Function<String, String> {
 		public String uppercase(String value) {
-			return value.toUpperCase();
+			return value.toUpperCase(Locale.ROOT);
 		}
 
 		@Override
@@ -135,7 +136,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	// POJO Function
 	public static class MyFunctionLike {
 		public String uppercase(String value) {
-			return value.toUpperCase();
+			return value.toUpperCase(Locale.ROOT);
 		}
 	}
 }

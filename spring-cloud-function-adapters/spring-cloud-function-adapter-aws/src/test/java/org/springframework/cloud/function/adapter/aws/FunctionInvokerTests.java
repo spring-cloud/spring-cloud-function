@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -1492,7 +1493,7 @@ public class FunctionInvokerTests {
 		@Bean
 		public Function<Message<String>, Message<String>> uppercase() {
 			return v -> {
-				return MessageBuilder.withPayload(v.getPayload().toUpperCase()).build();
+				return MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT)).build();
 			};
 		}
 	}
@@ -1525,7 +1526,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -1784,7 +1785,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -1795,7 +1796,7 @@ public class FunctionInvokerTests {
 		@Bean
 		public Function<Person, String> uppercasePojo() {
 			return v -> {
-				return v.getName().toUpperCase();
+				return v.getName().toUpperCase(Locale.ROOT);
 			};
 		}
 
@@ -1803,7 +1804,7 @@ public class FunctionInvokerTests {
 		public Function<Person, Person> uppercasePojoReturnPojo() {
 			return v -> {
 				Person p = new Person();
-				p.setName(v.getName().toUpperCase());
+				p.setName(v.getName().toUpperCase(Locale.ROOT));
 				return p;
 			};
 		}
@@ -1812,7 +1813,7 @@ public class FunctionInvokerTests {
 		public Function<Flux<Person>, Flux<Person>> uppercasePojoReturnPojoReactive() {
 			return flux -> flux.map(v -> {
 				Person p = new Person();
-				p.setName(v.getName().toUpperCase());
+				p.setName(v.getName().toUpperCase(Locale.ROOT));
 				return p;
 			});
 		}

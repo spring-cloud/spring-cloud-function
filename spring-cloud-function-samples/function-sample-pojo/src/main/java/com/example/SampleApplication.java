@@ -17,6 +17,7 @@
 package com.example;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -71,11 +72,11 @@ class Foo {
 	}
 
 	public String lowercase() {
-		return this.value.toLowerCase();
+		return this.value.toLowerCase(Locale.ROOT);
 	}
 
 	public String uppercase() {
-		return this.value.toUpperCase();
+		return this.value.toUpperCase(Locale.ROOT);
 	}
 
 	public String getValue() {
