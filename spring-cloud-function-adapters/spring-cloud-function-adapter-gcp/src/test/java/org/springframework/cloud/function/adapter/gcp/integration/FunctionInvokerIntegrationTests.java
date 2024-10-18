@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.adapter.gcp.integration;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -98,7 +99,7 @@ public class FunctionInvokerIntegrationTests {
 
 		@Bean
 		Function<String, String> uppercase() {
-			return input -> input.toUpperCase();
+			return input -> input.toUpperCase(Locale.ROOT);
 		}
 
 	}
@@ -109,7 +110,7 @@ public class FunctionInvokerIntegrationTests {
 
 		@Bean
 		Function<String, String> uppercase() {
-			return input -> input.toUpperCase();
+			return input -> input.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean

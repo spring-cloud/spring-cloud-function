@@ -16,6 +16,7 @@
 
 package com.example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -31,6 +32,6 @@ public class CloudFunctionMain {
 
 	@Bean
 	public Function<String, String> function() {
-		return value -> value.toUpperCase();
+		return value -> value.toUpperCase(Locale.ROOT);
 	}
 }

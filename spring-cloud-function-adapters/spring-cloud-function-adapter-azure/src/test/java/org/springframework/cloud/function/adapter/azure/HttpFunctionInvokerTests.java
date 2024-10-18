@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -122,7 +123,7 @@ public class HttpFunctionInvokerTests {
 			return (foo -> {
 				Map<String, Object> headers = new HashMap<>();
 				return new GenericMessage<>(
-						new Bar(foo.getPayload().getValue().toUpperCase()), headers);
+						new Bar(foo.getPayload().getValue().toUpperCase(Locale.ROOT)), headers);
 			});
 		}
 

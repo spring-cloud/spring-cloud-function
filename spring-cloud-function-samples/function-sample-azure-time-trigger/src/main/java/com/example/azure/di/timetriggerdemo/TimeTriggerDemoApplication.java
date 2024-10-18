@@ -16,6 +16,7 @@
 
 package com.example.azure.di.timetriggerdemo;
 
+import java.util.Locale;
 import java.util.function.Consumer;
 
 import com.microsoft.azure.functions.ExecutionContext;
@@ -40,7 +41,7 @@ public class TimeTriggerDemoApplication {
 	public Consumer<Message<String>> uppercase() {
 		return message -> {
 			String timeInfo = message.getPayload();
-			String value = timeInfo.toUpperCase();
+			String value = timeInfo.toUpperCase(Locale.ROOT);
 
 			logger.info("Timer is triggered with TimeInfo: " + value);
 

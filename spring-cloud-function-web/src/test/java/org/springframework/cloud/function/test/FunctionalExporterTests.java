@@ -19,6 +19,7 @@ package org.springframework.cloud.function.test;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -111,7 +112,7 @@ public class FunctionalExporterTests {
 		Function<Message<Person>, Message<String>> uppercase() {
 			return value -> {
 				headers.putAll(value.getHeaders());
-				return MessageBuilder.withPayload(value.getPayload().getName().toUpperCase())
+				return MessageBuilder.withPayload(value.getPayload().getName().toUpperCase(Locale.ROOT))
 					.copyHeaders(value.getHeaders()).build();
 			};
 		}

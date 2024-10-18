@@ -19,6 +19,7 @@ package org.springframework.cloud.function.adapter.azure;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -195,7 +196,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<Mono<String>, Mono<String>> uppercaseMono() {
-			return f -> f.map(v -> v.toUpperCase());
+			return f -> f.map(v -> v.toUpperCase(Locale.ROOT));
 		}
 
 	}
@@ -241,7 +242,7 @@ public class FunctionInvokerTests {
 
 		@Bean("uppercase")
 		public Function<Flux<Foo>, Flux<Bar>> function() {
-			return foos -> foos.map(foo -> new Bar(foo.getValue().toUpperCase()));
+			return foos -> foos.map(foo -> new Bar(foo.getValue().toUpperCase(Locale.ROOT)));
 		}
 
 	}
@@ -256,7 +257,7 @@ public class FunctionInvokerTests {
 				Foo foo = message.getPayload();
 				ExecutionContext targetContext = (ExecutionContext) message.getHeaders().get("executionContext");
 				targetContext.getLogger().info("Invoking 'uppercase' on " + foo.getValue());
-				return new Bar(foo.getValue().toUpperCase());
+				return new Bar(foo.getValue().toUpperCase(Locale.ROOT));
 			};
 		}
 
@@ -269,7 +270,7 @@ public class FunctionInvokerTests {
 		@Bean
 		public Function<List<Foo>, List<Bar>> uppercase() {
 			return foos -> {
-				List<Bar> bars = foos.stream().map(foo -> new Bar(foo.getValue().toUpperCase()))
+				List<Bar> bars = foos.stream().map(foo -> new Bar(foo.getValue().toUpperCase(Locale.ROOT)))
 						.collect(Collectors.toList());
 				return bars;
 			};
@@ -283,7 +284,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<List<Foo>, Bar> uppercase() {
-			return foos -> new Bar(foos.stream().map(foo -> foo.getValue().toUpperCase())
+			return foos -> new Bar(foos.stream().map(foo -> foo.getValue().toUpperCase(Locale.ROOT))
 					.collect(Collectors.joining(",")));
 		}
 
@@ -300,7 +301,7 @@ public class FunctionInvokerTests {
 				ExecutionContext context = (ExecutionContext) message.getHeaders().get("executionContext");
 				Foo foo = message.getPayload();
 				context.getLogger().info("Executing uppercase function");
-				return new Bar(foo.getValue().toUpperCase());
+				return new Bar(foo.getValue().toUpperCase(Locale.ROOT));
 			};
 		}
 
@@ -310,7 +311,7 @@ public class FunctionInvokerTests {
 				ExecutionContext context = (ExecutionContext) message.getHeaders().get("executionContext");
 				Bar bar = message.getPayload();
 				context.getLogger().info("Executing lowercase function");
-				return new Foo(bar.getValue().toLowerCase());
+				return new Foo(bar.getValue().toLowerCase(Locale.ROOT));
 			};
 		}
 
@@ -330,11 +331,11 @@ class Foo {
 	}
 
 	public String lowercase() {
-		return this.value.toLowerCase();
+		return this.value.toLowerCase(Locale.ROOT);
 	}
 
 	public String uppercase() {
-		return this.value.toUpperCase();
+		return this.value.toUpperCase(Locale.ROOT);
 	}
 
 	public String getValue() {

@@ -1,5 +1,6 @@
 package example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -19,7 +20,7 @@ public class FunctionConfiguration {
 
 	@Bean
 	public Function<String, String> uppercase() {
-		return value -> value.toUpperCase();
+		return value -> value.toUpperCase(Locale.ROOT);
 	}
 
 	@Bean

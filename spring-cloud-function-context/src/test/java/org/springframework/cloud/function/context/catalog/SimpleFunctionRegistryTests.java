@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -651,7 +652,7 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	public Function<String, String> uppercase() {
-		return v -> v.toUpperCase();
+		return v -> v.toUpperCase(Locale.ROOT);
 	}
 
 
@@ -765,7 +766,7 @@ public class SimpleFunctionRegistryTests {
 
 		@Override
 		public String apply(String t) {
-			return t.toUpperCase();
+			return t.toUpperCase(Locale.ROOT);
 		}
 
 	}
@@ -784,7 +785,7 @@ public class SimpleFunctionRegistryTests {
 
 		@Override
 		public Message<String> apply(Message<String> t) {
-			return MessageBuilder.withPayload(t.getPayload().toUpperCase())
+			return MessageBuilder.withPayload(t.getPayload().toUpperCase(Locale.ROOT))
 					.copyHeaders(t.getHeaders()).build();
 		}
 

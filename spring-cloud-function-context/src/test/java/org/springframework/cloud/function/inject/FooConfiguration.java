@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.inject;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfigurationTests.Foo;
@@ -27,7 +28,7 @@ public class FooConfiguration {
 
 	@Bean
 	public Function<String, Foo> foos(String foo) {
-		return value -> new Foo(foo + ": " + value.toUpperCase());
+		return value -> new Foo(foo + ": " + value.toUpperCase(Locale.ROOT));
 	}
 
 }

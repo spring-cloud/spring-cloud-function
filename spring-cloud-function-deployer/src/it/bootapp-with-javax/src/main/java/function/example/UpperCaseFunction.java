@@ -1,5 +1,6 @@
 package function.example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import javax.mail.Address;
@@ -17,7 +18,7 @@ public class UpperCaseFunction implements Function<String, String> {
 		catch (AddressException e) {
 			throw new IllegalStateException("Failed to create and address: ", e);
 		}
-		return value.toUpperCase();
+		return value.toUpperCase(Locale.ROOT);
 	}
 
 }

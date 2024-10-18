@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -916,7 +917,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -931,7 +932,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<Message<Person>, String> uppercasePerson() {
-			return v -> v.getPayload().getName().toUpperCase();
+			return v -> v.getPayload().getName().toUpperCase(Locale.ROOT);
 		}
 	}
 
@@ -1121,7 +1122,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	protected static class WrappedWithAroundAdviseConfiguration {
 		@Bean
 		public Function<Message<String>, Message<String>> uppercase() {
-			return v -> MessageBuilder.withPayload(v.getPayload().toUpperCase()).copyHeaders(v.getHeaders()).build();
+			return v -> MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT)).copyHeaders(v.getHeaders()).build();
 		}
 
 		@Bean
@@ -1148,7 +1149,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return x -> x.toUpperCase();
+			return x -> x.toUpperCase(Locale.ROOT);
 		}
 	}
 
@@ -1166,7 +1167,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<Person, Person> uppercasePerson() {
 			return person -> {
-				return new Person(person.getName().toUpperCase(), person.getId());
+				return new Person(person.getName().toUpperCase(Locale.ROOT), person.getId());
 			};
 		}
 
@@ -1178,7 +1179,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public BiFunction<String, Map, String> biFuncUpperCase() {
 			return (p, h) -> {
-				return p.toUpperCase();
+				return p.toUpperCase(Locale.ROOT);
 			};
 		}
 
@@ -1192,7 +1193,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -1214,7 +1215,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercaseFlux() {
-			return flux -> flux.map(v -> v.toUpperCase());
+			return flux -> flux.map(v -> v.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -1499,7 +1500,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public static class ComplexTypeFunctionConfiguration {
 		@Bean
 		public Function<Event<String, Product>, String> function() {
-			return v -> v.getData().getName().toUpperCase();
+			return v -> v.getData().getName().toUpperCase(Locale.ROOT);
 		}
 	}
 
@@ -1578,12 +1579,12 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> functionPrimitive() {
-			return flux -> flux.map(v -> v.toUpperCase());
+			return flux -> flux.map(v -> v.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
 		public Function<Flux<Message<String>>, Flux<Message<String>>> functionMessage() {
-			return flux -> flux.map(v -> MessageBuilder.withPayload(v.getPayload().toUpperCase()).build());
+			return flux -> flux.map(v -> MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT)).build());
 		}
 
 		@Bean

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.scan;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public class ScannedFunction
 	@Override
 	public Map<String, String> apply(Map<String, String> m) {
 		return m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
-				e -> e.getValue().toString().toUpperCase()));
+				e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
 	}
 
 }

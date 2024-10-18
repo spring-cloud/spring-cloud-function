@@ -1,5 +1,6 @@
 package org.scf.azure.gradle;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -49,11 +50,11 @@ public class GradleDemoApplication {
 		return message -> {
 			ExecutionContext context = (ExecutionContext) message.getHeaders().get(AzureFunctionUtil.EXECUTION_CONTEXT);
 
-			String updatedPayload = message.getPayload().toUpperCase();
+			String updatedPayload = message.getPayload().toUpperCase(Locale.ROOT);
 
 			context.getLogger().info("Azure Test: " + updatedPayload);
 
-			return message.getPayload().toUpperCase();
+			return message.getPayload().toUpperCase(Locale.ROOT);
 		};
 	}
 

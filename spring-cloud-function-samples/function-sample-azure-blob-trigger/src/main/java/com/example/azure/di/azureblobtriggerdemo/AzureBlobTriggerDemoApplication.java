@@ -16,6 +16,7 @@
 
 package com.example.azure.di.azureblobtriggerdemo;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -31,6 +32,6 @@ public class AzureBlobTriggerDemoApplication {
 
 	@Bean
 	public Function<byte[], byte[]> uppercase() {
-		return payload -> new String(payload).toUpperCase().getBytes();
+		return payload -> new String(payload).toUpperCase(Locale.ROOT).getBytes();
 	}
 }

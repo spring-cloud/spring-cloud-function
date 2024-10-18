@@ -1,5 +1,6 @@
 package function.example;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.boot.SpringApplication;
@@ -25,7 +26,7 @@ public class SimpleFunctionAppApplication {
 		return person -> {
 			Person p = new Person();
 			p.setId(person.getId());
-			p.setName(person.getName().toUpperCase());
+			p.setName(person.getName().toUpperCase(Locale.ROOT));
 			return p;
 		};
 	}

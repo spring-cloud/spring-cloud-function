@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.rsocket;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.function.Function;
 
 import io.rsocket.broker.client.spring.BrokerMetadata;
@@ -139,7 +140,7 @@ public class RoutingBrokerTests {
 	public static class SampleFunctionConfiguration {
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 	}
 }

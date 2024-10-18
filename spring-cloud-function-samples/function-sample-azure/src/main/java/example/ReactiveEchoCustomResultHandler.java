@@ -17,6 +17,7 @@
 package example;
 
 import java.util.List;
+import java.util.Locale;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
@@ -54,7 +55,7 @@ public class ReactiveEchoCustomResultHandler extends FunctionInvoker<List<String
 	) {
 		functionResult
 			.doFirst(() -> executionContext.getLogger().info("BEGIN echo post-processing work ..."))
-			.mapNotNull((v) -> v.toString().toUpperCase())
+			.mapNotNull((v) -> v.toString().toUpperCase(Locale.ROOT))
 			.doFinally((signalType) -> executionContext.getLogger().info("END echo post-processing work"))
 			.subscribe((v) -> executionContext.getLogger().info("   " + v));
 		return "Kicked off job for " + rawInputs;

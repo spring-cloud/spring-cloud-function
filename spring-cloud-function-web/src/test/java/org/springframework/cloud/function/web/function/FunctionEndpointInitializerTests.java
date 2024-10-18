@@ -19,6 +19,7 @@ package org.springframework.cloud.function.web.function;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -196,11 +197,11 @@ public class FunctionEndpointInitializerTests {
 		}
 
 		public Function<String, String> uppercase() {
-			return s -> s.toUpperCase();
+			return s -> s.toUpperCase(Locale.ROOT);
 		}
 
 		public Function<String, String> lowercase() {
-			return s -> s.toLowerCase();
+			return s -> s.toLowerCase(Locale.ROOT);
 		}
 
 		public Function<String, String> reverse() {

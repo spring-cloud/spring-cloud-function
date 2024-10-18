@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.test;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public class GenericFunction {
 	@Bean
 	public Function<Map<String, String>, Map<String, String>> function() {
 		return m -> m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
-				e -> e.getValue().toString().toUpperCase()));
+				e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
 	}
 
 }

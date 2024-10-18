@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.test;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -54,7 +55,7 @@ public class ExplicitNonFunctionalTests {
 
 		@Override
 		public String apply(String value) {
-			return value.toUpperCase();
+			return value.toUpperCase(Locale.ROOT);
 		}
 
 	}

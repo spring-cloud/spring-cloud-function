@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -908,7 +909,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (contentType == null) {
 				contentType = msg.getHeaders().get(HttpHeaders.CONTENT_TYPE);
 				if (contentType == null) {
-					contentType = msg.getHeaders().get(HttpHeaders.CONTENT_TYPE.toLowerCase());
+					contentType = msg.getHeaders().get(HttpHeaders.CONTENT_TYPE.toLowerCase(Locale.ROOT));
 				}
 			}
 			return Objects.toString(contentType);

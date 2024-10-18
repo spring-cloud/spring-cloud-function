@@ -1,6 +1,7 @@
 package com.example;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -30,7 +31,7 @@ public class LambdaApplication {
 	public Function<String, String> uppercase() {
 		return value -> {
 			logger.info("UPPERCASING: " + value);
-			return value.toUpperCase();
+			return value.toUpperCase(Locale.ROOT);
 		};
 	}
 

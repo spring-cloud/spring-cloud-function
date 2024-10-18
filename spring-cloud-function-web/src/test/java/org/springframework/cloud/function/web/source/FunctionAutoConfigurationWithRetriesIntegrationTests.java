@@ -18,6 +18,7 @@ package org.springframework.cloud.function.web.source;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.apache.commons.logging.Log;
@@ -96,7 +97,7 @@ public class FunctionAutoConfigurationWithRetriesIntegrationTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return value -> value.toUpperCase();
+			return value -> value.toUpperCase(Locale.ROOT);
 		}
 
 	}

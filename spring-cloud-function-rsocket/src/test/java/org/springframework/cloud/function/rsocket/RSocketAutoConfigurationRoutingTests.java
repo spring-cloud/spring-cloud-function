@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.rsocket;
 
 
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -183,7 +184,7 @@ public class RSocketAutoConfigurationRoutingTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -193,7 +194,7 @@ public class RSocketAutoConfigurationRoutingTests {
 						.get(DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER)).toString().equals("uppercase");
 				assertThat(msg.getHeaders()
 						.get(FunctionRSocketMessageHandler.RECONCILED_LOOKUP_DESTINATION_HEADER)).toString().equals(RoutingFunction.FUNCTION_NAME);
-				return msg.getPayload().toUpperCase();
+				return msg.getPayload().toUpperCase(Locale.ROOT);
 			};
 		}
 
@@ -211,7 +212,7 @@ public class RSocketAutoConfigurationRoutingTests {
 		public Function<Flux<String>, Flux<String>> uppercaseReactive() {
 			return flux -> flux.map(v -> {
 				System.out.println("Uppercasing: " + v);
-				return v.toUpperCase();
+				return v.toUpperCase(Locale.ROOT);
 			});
 		}
 

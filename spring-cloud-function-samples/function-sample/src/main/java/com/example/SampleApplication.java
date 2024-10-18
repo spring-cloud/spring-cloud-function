@@ -17,6 +17,7 @@
 package com.example;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -38,17 +39,17 @@ public class SampleApplication {
 
 	@Bean
 	public Function<String, String> uppercase() {
-		return value -> value.toUpperCase();
+		return value -> value.toUpperCase(Locale.ROOT);
 	}
 
 	@Bean
 	public Function<Message<String>, Integer> uppercaseMessage() {
-		return value -> value.getPayload().toUpperCase().length();
+		return value -> value.getPayload().toUpperCase(Locale.ROOT).length();
 	}
 
 	@Bean
 	public Function<Flux<String>, Flux<String>> lowercase() {
-		return flux -> flux.map(value -> value.toLowerCase());
+		return flux -> flux.map(value -> value.toLowerCase(Locale.ROOT));
 	}
 
 	@Bean

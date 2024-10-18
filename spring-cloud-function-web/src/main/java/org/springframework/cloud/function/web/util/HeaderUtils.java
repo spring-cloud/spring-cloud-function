@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
@@ -59,7 +60,7 @@ public final class HeaderUtils {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : headers.keySet()) {
 			Object value = headers.get(name);
-			name = name.toLowerCase();
+			name = name.toLowerCase(Locale.ROOT);
 			if (!IGNORED.containsKey(name) && !ignoredHeders.contains(name)) {
 				Collection<?> values = multi(value);
 				for (Object object : values) {
@@ -80,7 +81,7 @@ public final class HeaderUtils {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : request.keySet()) {
 			List<String> value = request.get(name);
-			name = name.toLowerCase();
+			name = name.toLowerCase(Locale.ROOT);
 			if (!IGNORED.containsKey(name) && !REQUEST_ONLY.containsKey(name) && !ignoredHeders.contains(name) && !requestOnlyHeaders.contains(name)) {
 				result.put(name, value);
 			}
@@ -97,10 +98,10 @@ public final class HeaderUtils {
 		Map<String, Object> map = new LinkedHashMap<>();
 		for (String name : headers.keySet()) {
 			Collection<?> values = multi(headers.get(name));
-			name = name.toLowerCase();
+			name = name.toLowerCase(Locale.ROOT);
 			Object value = values == null ? null
 					: (values.size() == 1 ? values.iterator().next() : values);
-			if (name.toLowerCase().equals(HttpHeaders.CONTENT_TYPE.toLowerCase())) {
+			if (name.toLowerCase(Locale.ROOT).equals(HttpHeaders.CONTENT_TYPE.toLowerCase(Locale.ROOT))) {
 				name = MessageHeaders.CONTENT_TYPE;
 			}
 			map.put(name, value);

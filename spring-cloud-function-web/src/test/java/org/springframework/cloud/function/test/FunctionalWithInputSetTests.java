@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.test;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -62,7 +63,7 @@ public class FunctionalWithInputSetTests {
 
 		@Override
 		public Foo apply(Set<Foo> value) {
-			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase())
+			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase(Locale.ROOT))
 					.collect(Collectors.joining()));
 		}
 

@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.test;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ public class FunctionalTests {
 
 		@Override
 		public String apply(String value) {
-			return value.toUpperCase();
+			return value.toUpperCase(Locale.ROOT);
 		}
 
 	}

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -157,7 +158,7 @@ public class ServerlessWebApplication extends SpringApplication {
 		ResourceLoader resourceLoader = (this.getResourceLoader() != null) ? this.getResourceLoader()
 				: new DefaultResourceLoader(null);
 		Banner.Mode  bannerMode = environment.containsProperty("spring.main.banner-mode")
-				? Banner.Mode.valueOf(environment.getProperty("spring.main.banner-mode").trim().toUpperCase())
+				? Banner.Mode.valueOf(environment.getProperty("spring.main.banner-mode").trim().toUpperCase(Locale.ROOT))
 						: Banner.Mode.CONSOLE;
 
 		if (bannerMode == Banner.Mode.OFF) {

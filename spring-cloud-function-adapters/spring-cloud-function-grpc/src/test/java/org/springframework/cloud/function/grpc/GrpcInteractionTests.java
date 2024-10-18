@@ -19,6 +19,7 @@ package org.springframework.cloud.function.grpc;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.function.Function;
 
@@ -323,17 +324,17 @@ public class GrpcInteractionTests {
 
 		@Bean
 		public Function<String, String> uppercase() {
-			return v -> v.toUpperCase();
+			return v -> v.toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
 		public Function<String, Mono<String>> uppercaseMonoReturn() {
-			return v -> Mono.just(v.toUpperCase());
+			return v -> Mono.just(v.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
 		public Function<String, Flux<String>> uppercaseFluxReturn() {
-			return v -> Flux.just(v.toUpperCase(), v.toUpperCase() + "-1", v.toUpperCase() + "-2");
+			return v -> Flux.just(v.toUpperCase(Locale.ROOT), v.toUpperCase(Locale.ROOT) + "-1", v.toUpperCase(Locale.ROOT) + "-2");
 		}
 
 		@Bean
@@ -343,7 +344,7 @@ public class GrpcInteractionTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> uppercaseReactive() {
-			return flux -> flux.map(v -> v.toUpperCase());
+			return flux -> flux.map(v -> v.toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -360,7 +361,7 @@ public class GrpcInteractionTests {
 
 		@Bean
 		public Function<String, Flux<String>> stringInStreamOut() {
-			return value -> Flux.just(value, value.toUpperCase());
+			return value -> Flux.just(value, value.toUpperCase(Locale.ROOT));
 		}
 	}
 }

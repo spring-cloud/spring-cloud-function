@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -410,37 +411,37 @@ public class HttpPostIntegrationTests {
 		@Bean({ "uppercase", "transform", "post/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
 			return flux -> flux.log()
-					.map(value -> "(" + value.trim().toUpperCase() + ")");
+					.map(value -> "(" + value.trim().toUpperCase(Locale.ROOT) + ")");
 		}
 
 		@Bean
 		public Function<String, String> bareUppercase() {
-			return value -> "(" + value.trim().toUpperCase() + ")";
+			return value -> "(" + value.trim().toUpperCase(Locale.ROOT) + ")";
 		}
 
 		@Bean
 		public Function<Message<String>, Message<String>> messages() {
 			return value -> MessageBuilder
-					.withPayload("(" + value.getPayload().trim().toUpperCase() + ")")
+					.withPayload("(" + value.getPayload().trim().toUpperCase(Locale.ROOT) + ")")
 					.copyHeaders(value.getHeaders()).build();
 		}
 
 		@Bean
 		public Function<Flux<Message<String>>, Flux<Message<String>>> headers() {
 			return flux -> flux.map(value -> MessageBuilder
-					.withPayload("(" + value.getPayload().trim().toUpperCase() + ")")
+					.withPayload("(" + value.getPayload().trim().toUpperCase(Locale.ROOT) + ")")
 					.setHeader("foo", "bar").build());
 		}
 
 		@Bean
 		public Function<Flux<Foo>, Flux<Foo>> upFoos() {
 			return flux -> flux.log()
-					.map(value -> new Foo(value.getValue().trim().toUpperCase()));
+					.map(value -> new Foo(value.getValue().trim().toUpperCase(Locale.ROOT)));
 		}
 
 		@Bean
 		public Function<Foo, Foo> bareUpFoos() {
-			return value -> new Foo(value.getValue().trim().toUpperCase());
+			return value -> new Foo(value.getValue().trim().toUpperCase(Locale.ROOT));
 		}
 
 		@Bean
@@ -464,7 +465,7 @@ public class HttpPostIntegrationTests {
 		@Bean
 		public Function<Flux<HashMap<String, String>>, Flux<Map<String, String>>> maps() {
 			return flux -> flux.map(value -> {
-				value.put("value", value.get("value").trim().toUpperCase());
+				value.put("value", value.get("value").trim().toUpperCase(Locale.ROOT));
 				return value;
 			});
 		}
@@ -473,7 +474,7 @@ public class HttpPostIntegrationTests {
 		@Qualifier("foos")
 		public Function<String, Foo> qualifier() {
 			return value -> {
-				return new Foo("[" + value.trim().toUpperCase() + "]");
+				return new Foo("[" + value.trim().toUpperCase(Locale.ROOT) + "]");
 			};
 		}
 

@@ -1,5 +1,6 @@
 package oz.spring.aws.functions;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.springframework.context.annotation.Bean;
@@ -10,7 +11,7 @@ public class FunctionRoutingConfiguration {
 
 	@Bean
 	public Function<String, String> lowercase() {
-		return value -> value.toLowerCase();
+		return value -> value.toLowerCase(Locale.ROOT);
 	}
 	
 	@Bean

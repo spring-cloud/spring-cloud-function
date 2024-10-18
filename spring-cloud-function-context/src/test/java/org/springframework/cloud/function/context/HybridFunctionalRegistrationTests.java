@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -90,7 +91,7 @@ public class HybridFunctionalRegistrationTests {
 
 		@Override
 		public String apply(String t) {
-			return t.toUpperCase();
+			return t.toUpperCase(Locale.ROOT);
 		}
 	}
 
@@ -105,7 +106,7 @@ public class HybridFunctionalRegistrationTests {
 		public String apply(Message<String> message) {
 			assertThat(message.getHeaders().get("foo")).isEqualTo("foo");
 			assertThat(message.getHeaders().get("blah")).isEqualTo("blah");
-			return message.getPayload().toUpperCase();
+			return message.getPayload().toUpperCase(Locale.ROOT);
 		}
 	}
 
@@ -118,7 +119,7 @@ public class HybridFunctionalRegistrationTests {
 
 		@Override
 		public Flux<String> apply(Flux<String> flux) {
-			return flux.map(v -> v.toUpperCase());
+			return flux.map(v -> v.toUpperCase(Locale.ROOT));
 		}
 
 
