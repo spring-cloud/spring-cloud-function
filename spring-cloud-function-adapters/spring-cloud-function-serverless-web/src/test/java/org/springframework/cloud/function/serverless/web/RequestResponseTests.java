@@ -150,6 +150,21 @@ public class RequestResponseTests {
 	}
 
 	@Test
+	public void validatePostWithoutBody() throws Exception {
+		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/pets/");
+		request.setContentType("application/json");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
+		try {
+			mvc.service(request, response);
+		}
+		catch (jakarta.servlet.ServletException e) {
+			assertThat(e.getCause()).isNotInstanceOf(NullPointerException.class);
+		}
+
+		assertThat(response.getStatus()).isEqualTo(400); // application fail because the pet is empty ;)
+	}
+
+	@Test
 	public void validatePostAsyncWithBody() throws Exception {
 //		System.setProperty("spring.main.banner-mode", "off");
 		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/petsAsync/");
