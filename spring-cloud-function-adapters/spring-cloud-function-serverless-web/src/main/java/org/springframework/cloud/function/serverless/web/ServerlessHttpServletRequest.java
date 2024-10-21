@@ -77,6 +77,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 
 	private static final BufferedReader EMPTY_BUFFERED_READER = new BufferedReader(new StringReader(""));
 
+	private static final InputStream EMPTY_INPUT_STREAM = new ByteArrayInputStream(new byte[0]);
 	/**
 	 * Date formats as specified in the HTTP RFC.
 	 *
@@ -283,7 +284,15 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 
 	@Override
 	public ServletInputStream getInputStream() {
-		InputStream stream = new ByteArrayInputStream(this.content);
+
+		InputStream stream;
+		if (this.content == null) {
+			stream = EMPTY_INPUT_STREAM;
+		}
+		else {
+			stream = new ByteArrayInputStream(this.content);
+		}
+
 		return new ServletInputStream() {
 
 			boolean finished = false;
