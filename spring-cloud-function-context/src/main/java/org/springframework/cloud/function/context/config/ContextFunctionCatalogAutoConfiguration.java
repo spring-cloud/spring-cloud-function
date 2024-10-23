@@ -25,12 +25,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -59,6 +61,7 @@ import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.core.KotlinDetector;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
@@ -216,6 +219,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return new GsonMapper(gson);
 		}
 
+		@SuppressWarnings("unchecked")
 		private JsonMapper jackson(ApplicationContext context) {
 			ObjectMapper mapper;
 			try {
@@ -226,6 +230,19 @@ public class ContextFunctionCatalogAutoConfiguration {
 				mapper.registerModule(new JavaTimeModule());
 			}
 
+			if (KotlinDetector.isKotlinPresent()) {
+				try {
+					if (!mapper.getRegisteredModuleIds().contains("com.fasterxml.jackson.module.kotlin.KotlinModule")) {
+						Class<? extends Module> kotlinModuleClass = (Class<? extends Module>)
+								ClassUtils.forName("com.fasterxml.jackson.module.kotlin.KotlinModule", ClassUtils.getDefaultClassLoader());
+						Module kotlinModule = BeanUtils.instantiateClass(kotlinModuleClass);
+						mapper.registerModule(kotlinModule);
+					}
+				}
+				catch (ClassNotFoundException ex) {
+					// jackson-module-kotlin not available
+				}
+			}
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
@@ -37,14 +36,10 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -61,19 +56,6 @@ import org.springframework.util.ObjectUtils;
 public class KotlinLambdaToFunctionAutoConfiguration {
 
 	protected final Log logger = LogFactory.getLog(getClass());
-
-	@Bean
-	@ConditionalOnMissingBean
-	@ConditionalOnClass(name = {"org.springframework.http.converter.json.Jackson2ObjectMapperBuilder",
-			"com.fasterxml.jackson.module.kotlin.KotlinModule"})
-	Jackson2ObjectMapperBuilderCustomizer customizer() {
-		return new Jackson2ObjectMapperBuilderCustomizer() {
-			@Override
-			public void customize(Jackson2ObjectMapperBuilder jacksonObjectMapperBuilder) {
-				jacksonObjectMapperBuilder.modulesToInstall(KotlinModule.class);
-			}
-		};
-	}
 
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

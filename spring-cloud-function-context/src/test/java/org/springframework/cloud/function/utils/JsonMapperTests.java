@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.utils;
 
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -38,6 +39,7 @@ import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -82,6 +84,16 @@ public class JsonMapperTests {
 		StringVsTimestamp dom = new StringVsTimestamp("2024-10-16T16:13:29.964361+02:00");
 		String convertedJson = new String(jsonMapper.toJson(dom), StandardCharsets.UTF_8);
 		assertThat(convertedJson).contains("\"zonedDateTime\":\"2024-10-16T16:13:29.964361+02:00\"");
+	}
+
+	@Test
+	public void testKotlinModuleRegistration() throws Exception {
+		ApplicationContext context = SpringApplication.run(EmptyConfiguration.class);
+		JsonMapper jsonMapper = context.getBean(JsonMapper.class);
+		Field mapperField = ReflectionUtils.findField(jsonMapper.getClass(), "mapper");
+		mapperField.setAccessible(true);
+		ObjectMapper mapper = (ObjectMapper) mapperField.get(jsonMapper);
+		assertThat(mapper.getRegisteredModuleIds()).contains("com.fasterxml.jackson.module.kotlin.KotlinModule");
 	}
 
 	@ParameterizedTest
