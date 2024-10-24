@@ -85,6 +85,9 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (!this.started) {
 			this.start();
 		}
+		if (context == null) {
+			logger.warn("Lambda is invoked with null Context");
+		}
 		Message requestMessage = AWSLambdaUtils
 				.generateMessage(input, this.function.getInputType(), this.function.isSupplier(), jsonMapper, context);
 
