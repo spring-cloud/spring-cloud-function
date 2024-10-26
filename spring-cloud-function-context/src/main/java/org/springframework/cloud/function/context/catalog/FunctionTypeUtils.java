@@ -27,8 +27,20 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleFunction;
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
+import java.util.function.IntSupplier;
+import java.util.function.LongConsumer;
+import java.util.function.LongFunction;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -540,10 +552,23 @@ public final class FunctionTypeUtils {
 		Class<?> candidateType = (Class<?>) type;
 
 		Assert.isTrue(Supplier.class.isAssignableFrom(candidateType)
-				|| Function.class.isAssignableFrom(candidateType)
-				|| Consumer.class.isAssignableFrom(candidateType)
-				|| FunctionRegistration.class.isAssignableFrom(candidateType)
-				|| type.getTypeName().startsWith("org.springframework.context.annotation.ConfigurationClassEnhancer"), "Must be one of Supplier, Function, Consumer"
+						|| Function.class.isAssignableFrom(candidateType)
+						|| Consumer.class.isAssignableFrom(candidateType)
+						|| FunctionRegistration.class.isAssignableFrom(candidateType)
+						|| IntConsumer.class.isAssignableFrom(candidateType)
+						|| IntSupplier.class.isAssignableFrom(candidateType)
+						|| IntFunction.class.isAssignableFrom(candidateType)
+						|| ToIntFunction.class.isAssignableFrom(candidateType)
+						|| LongConsumer.class.isAssignableFrom(candidateType)
+						|| LongSupplier.class.isAssignableFrom(candidateType)
+						|| LongFunction.class.isAssignableFrom(candidateType)
+						|| ToLongFunction.class.isAssignableFrom(candidateType)
+						|| DoubleConsumer.class.isAssignableFrom(candidateType)
+						|| DoubleSupplier.class.isAssignableFrom(candidateType)
+						|| DoubleFunction.class.isAssignableFrom(candidateType)
+						|| ToDoubleFunction.class.isAssignableFrom(candidateType)
+						|| type.getTypeName().startsWith("org.springframework.context.annotation.ConfigurationClassEnhancer"),
+				"Must be one of Supplier, Function, Consumer"
 						+ " or FunctionRegistration. Was " + type);
 	}
 
