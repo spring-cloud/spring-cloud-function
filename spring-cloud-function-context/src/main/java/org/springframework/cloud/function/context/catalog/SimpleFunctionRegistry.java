@@ -417,7 +417,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private boolean propagateInputHeaders;
 
-		private boolean wrapped;
+		protected boolean wrapped;
 
 		private final ThreadLocal<Message<Object>> unconvertedResult = new ThreadLocal<>();
 

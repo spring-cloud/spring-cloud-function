@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.context.catalog;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -37,14 +35,15 @@ import org.springframework.util.StringUtils;
  */
 public abstract class FunctionAroundWrapper {
 
-	private static final Log log = LogFactory.getLog(FunctionAroundWrapper.class);
-
 	public final Object apply(Object input, FunctionInvocationWrapper targetFunction) {
+
 		String functionalTracingEnabledStr = System.getProperty("spring.cloud.function.observability.enabled");
 		boolean functionalTracingEnabled = !StringUtils.hasText(functionalTracingEnabledStr)
 				|| Boolean.parseBoolean(functionalTracingEnabledStr);
 		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message && !FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
-			return this.doApply(input, targetFunction);
+			Object result = this.doApply(input, targetFunction);
+			targetFunction.wrapped = false;
+			return result;
 		}
 		else {
 			return targetFunction.apply(input);
