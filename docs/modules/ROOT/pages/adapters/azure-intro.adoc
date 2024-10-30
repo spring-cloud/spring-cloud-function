@@ -198,7 +198,7 @@ Usually the Azure Maven (or Gradle) plugins are used to generate the necessary c
 IMPORTANT: The Azure https://learn.microsoft.com/en-us/azure/azure-functions/functions-reference-java?tabs=bash%2Cconsumption#folder-structure[packaging format] is not compatible with the default Spring Boot packaging (e.g. `uber jar`).
 The xref:adapters/azure-intro.adoc#disable.spring.boot.plugin[Disable Spring Boot Plugin] section below explains how to handle this.
 
-[[azure-maven/gradle-plugins]]
+[[azure-maven-gradle-plugins]]
 === Azure Maven/Gradle Plugins
 
 Azure provides https://github.com/microsoft/azure-maven-plugins/tree/develop/azure-functions-maven-plugin[Maven] and https://github.com/microsoft/azure-gradle-plugins/tree/master/azure-functions-gradle-plugin[Gradle] plugins to process the annotated classes, generate the necessary configurations and produce the expected package layout.
