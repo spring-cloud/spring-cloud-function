@@ -25,8 +25,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleFunction;
+import java.util.function.DoubleSupplier;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
+import java.util.function.IntSupplier;
+import java.util.function.LongConsumer;
+import java.util.function.LongFunction;
+import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
@@ -111,6 +123,86 @@ public class FunctionTypeUtilsTests<T> {
 		MethodParameter methodParameter = MethodParameter.forExecutable(methodUnderTest, 0);
 
 		assertThat(FunctionTypeUtils.isMessage(methodParameter.getGenericParameterType())).isFalse();
+	}
+
+	@Test
+	public void testPrimitiveFunctionInputTypes() {
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(IntConsumer.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(IntSupplier.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(IntFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToIntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(ToIntFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(LongConsumer.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(LongSupplier.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(LongFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToLongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(ToLongFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(DoubleConsumer.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(DoubleSupplier.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(DoubleFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToDoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(ToDoubleFunction.class);
+	}
+
+
+	@Test
+	public void testPrimitiveFunctionOutputTypes() {
+		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(IntConsumer.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(IntSupplier.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(IntFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToIntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(ToIntFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(LongConsumer.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(LongSupplier.class);
+
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(LongFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToLongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(ToLongFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(DoubleConsumer.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(DoubleSupplier.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(DoubleFunction.class);
+
+		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToDoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(ToDoubleFunction.class);
 	}
 
 	void notAMessageMethod(AtomicReference<T> payload) {
