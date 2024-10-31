@@ -75,7 +75,6 @@ public class FunctionTypeUtilsTests<T> {
 
 		Type targetType = ((ParameterizedType) innerWrapperType).getActualTypeArguments()[0];
 		assertThat(targetType).isEqualTo(String.class);
-		System.out.println();
 	}
 
 	@Test
