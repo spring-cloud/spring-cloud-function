@@ -82,7 +82,7 @@ public class HybridFunctionalRegistrationTests {
 		assertThat((Function) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFluxFunction")).isNotNull();
 	}
 
-	@SpringBootConfiguration
+	@SpringBootConfiguration(proxyBeanMethods = false)
 	@ImportAutoConfiguration({
 		ContextFunctionCatalogAutoConfiguration.class,
 		JacksonAutoConfiguration.class }
@@ -95,7 +95,7 @@ public class HybridFunctionalRegistrationTests {
 		}
 	}
 
-	@SpringBootConfiguration
+	@SpringBootConfiguration(proxyBeanMethods = false)
 	@ImportAutoConfiguration({
 		ContextFunctionCatalogAutoConfiguration.class,
 		JacksonAutoConfiguration.class }
@@ -110,7 +110,7 @@ public class HybridFunctionalRegistrationTests {
 		}
 	}
 
-	@SpringBootConfiguration
+	@SpringBootConfiguration(proxyBeanMethods = false)
 	@ImportAutoConfiguration({
 		ContextFunctionCatalogAutoConfiguration.class,
 		JacksonAutoConfiguration.class }

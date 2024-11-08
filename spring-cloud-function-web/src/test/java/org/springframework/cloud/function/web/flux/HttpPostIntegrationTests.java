@@ -45,6 +45,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.flux.HttpPostIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -399,6 +400,7 @@ public class HttpPostIntegrationTests {
 	}
 
 	@EnableAutoConfiguration
+	@Configuration(proxyBeanMethods = false)
 	public static class ApplicationConfiguration {
 
 		private List<String> list = new ArrayList<>();

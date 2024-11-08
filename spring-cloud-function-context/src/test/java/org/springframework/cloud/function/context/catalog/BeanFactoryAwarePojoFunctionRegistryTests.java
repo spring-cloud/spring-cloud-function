@@ -102,7 +102,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 
 
 	@EnableAutoConfiguration
-	@Configuration
+	@Configuration(proxyBeanMethods = false)
 	protected static class SampleFunctionConfiguration {
 
 		@Bean

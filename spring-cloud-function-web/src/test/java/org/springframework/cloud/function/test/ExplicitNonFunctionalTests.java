@@ -27,6 +27,7 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -36,7 +37,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  */
 @SpringBootTest({ "spring.main.web-application-type=REACTIVE",
 		"spring.functional.enabled=false" })
-@AutoConfigureWebTestClient
+@AutoConfigureWebTestClient(timeout = "10000")
 @DirtiesContext
 public class ExplicitNonFunctionalTests {
 
@@ -45,12 +46,14 @@ public class ExplicitNonFunctionalTests {
 
 	@Test
 	public void words() throws Exception {
-		this.client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
+		this.client
+				.post().uri("/").body(Mono.just("foo"), String.class).exchange()
 				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
 	}
 
 	@SpringBootConfiguration
 	@EnableAutoConfiguration
+	@Configuration(proxyBeanMethods = false)
 	protected static class TestConfiguration implements Function<String, String> {
 
 		@Override
