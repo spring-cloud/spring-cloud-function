@@ -80,7 +80,7 @@ public final class ServerlessMVC {
 
 	private final CountDownLatch contextStartupLatch = new CountDownLatch(1);
 
-	private final long initializatioinTimeout;
+	private final long initializationTimeout;
 
 	public static ServerlessMVC INSTANCE(Class<?>... componentClasses) {
 		ServerlessMVC mvc = new ServerlessMVC();
@@ -101,7 +101,7 @@ public final class ServerlessMVC {
 		if (!StringUtils.hasText(timeoutValue)) {
 			timeoutValue = System.getProperty(INIT_TIMEOUT);
 		}
-		this.initializatioinTimeout = StringUtils.hasText(timeoutValue) ? Long.valueOf(timeoutValue) : 20000;
+		this.initializationTimeout = StringUtils.hasText(timeoutValue) ? Long.valueOf(timeoutValue) : 20000;
 	}
 
 	private void initializeContextAsync(Class<?>... componentClasses) {
@@ -155,7 +155,7 @@ public final class ServerlessMVC {
 	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializatioinTimeout + " milliseconds. "
+		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializationTimeout + " milliseconds. "
 				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
 		this.service(request, response, (CountDownLatch) null);
 	}
@@ -187,7 +187,7 @@ public final class ServerlessMVC {
 
 	public boolean waitForContext() {
 		try {
-			return contextStartupLatch.await(initializatioinTimeout, TimeUnit.MILLISECONDS);
+			return contextStartupLatch.await(initializationTimeout, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -213,7 +213,6 @@ public final class ServerlessMVC {
 		 * Create a {@code FilterChain} with Filter's and a Servlet.
 		 *
 		 * @param servlet the {@link Servlet} to invoke in this {@link FilterChain}
-		 * @param filters the {@link Filter}'s to invoke in this {@link FilterChain}
 		 * @since 4.0.x
 		 */
 		ProxyFilterChain(DispatcherServlet servlet) {
