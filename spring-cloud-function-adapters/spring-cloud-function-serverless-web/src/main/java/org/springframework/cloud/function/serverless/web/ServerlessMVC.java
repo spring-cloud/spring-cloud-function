@@ -78,8 +78,6 @@ public final class ServerlessMVC {
 
 	private volatile ServletWebServerApplicationContext applicationContext;
 
-	private ServletContext servletContext;
-
 	private final CountDownLatch contextStartupLatch = new CountDownLatch(1);
 
 	private final long initializatioinTimeout;
@@ -137,7 +135,7 @@ public final class ServerlessMVC {
 
 	public ServletContext getServletContext() {
 		this.waitForContext();
-		return this.servletContext;
+		return this.dispatcher.getServletContext();
 	}
 
 	public void stop() {
