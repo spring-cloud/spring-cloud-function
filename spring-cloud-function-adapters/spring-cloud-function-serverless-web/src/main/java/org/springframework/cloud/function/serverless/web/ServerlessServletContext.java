@@ -16,9 +16,13 @@
 
 package org.springframework.cloud.function.serverless.web;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -104,7 +108,14 @@ public class ServerlessServletContext implements ServletContext {
 
 	@Override
 	public String getMimeType(String file) {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		String mimeType = null;
+		try {
+			mimeType = Files.probeContentType(Paths.get(file));
+		}
+		catch (IOException | InvalidPathException e) {
+			log("unable to probe for content type " + file, e);
+		}
+		return mimeType;
 	}
 
 	@Override
