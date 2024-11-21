@@ -125,12 +125,12 @@ public class ServerlessServletContext implements ServletContext {
 
 	@Override
 	public URL getResource(String path) throws MalformedURLException {
-		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
+		return ServerlessServletContext.class.getResource(path);
 	}
 
 	@Override
 	public InputStream getResourceAsStream(String path) {
-		return null;
+		return ServerlessServletContext.class.getResourceAsStream(path);
 	}
 
 	@Override
