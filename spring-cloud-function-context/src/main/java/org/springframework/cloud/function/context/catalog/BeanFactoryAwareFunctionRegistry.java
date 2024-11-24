@@ -180,6 +180,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							else {
 								functionType = FunctionTypeUtils.discoverFunctionType(functionCandidate, functionName, this.applicationContext);
 							}
+
+							if (logger.isDebugEnabled()) {
+								logger.debug("Discovered function type for: " + functionDefinition + " - " + functionType);
+							}
 							if (functionRegistration == null) {
 								functionRegistration = new FunctionRegistration(functionCandidate, functionName).type(functionType);
 							}

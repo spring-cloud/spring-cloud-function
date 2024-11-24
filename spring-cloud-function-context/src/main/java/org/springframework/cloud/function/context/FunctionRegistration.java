@@ -121,7 +121,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 		if (KotlinDetector.isKotlinPresent() && this.target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) {
 			return this;
 		}
-		Type discoveredFunctionType = FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
+		Type discoveredFunctionType = type; //FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
 		if (discoveredFunctionType == null) { // only valid for Kafka Stream KStream[] return type.
 			return null;
 		}
@@ -145,7 +145,6 @@ public class FunctionRegistration<T> implements BeanNameAware {
 					"Discovered function type does not match provided function type. Discovered: "
 						+ discoveredFunctionType + "; Provided: " + type);
 		}
-
 
 		return this;
 	}

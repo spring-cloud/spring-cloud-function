@@ -371,7 +371,7 @@ public final class FunctionTypeUtils {
 		else {
 			inputType =  resolvableInputType.getType();
 		}
-		return inputType;
+		return inputType instanceof TypeVariable ? Object.class : inputType;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -465,7 +465,7 @@ public final class FunctionTypeUtils {
 		else {
 			outputType =  resolvableOutputType.getType();
 		}
-		return outputType;
+		return outputType instanceof TypeVariable ? Object.class : outputType;
 	}
 
 	public static Type getImmediateGenericType(Type type, int index) {
