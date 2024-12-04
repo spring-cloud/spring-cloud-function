@@ -21,13 +21,22 @@ package org.springframework.cloud.function.core;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author John Blum
  * @since 3.1
  *
  */
 public interface FunctionInvocationHelper<I> {
 
-	default boolean isRetainOuputAsMessage(I input) {
+	default boolean isRetainOutputAsMessage(I input) {
 		return true;
+	}
+
+	/**
+	 * @deprecated Use {@link #isRetainOutputAsMessage(I)}
+	 */
+	@Deprecated
+	default boolean isRetainOuputAsMessage(I input) {
+		return isRetainOutputAsMessage(input);
 	};
 
 	default I preProcessInput(I input, Object inputConverter) {
