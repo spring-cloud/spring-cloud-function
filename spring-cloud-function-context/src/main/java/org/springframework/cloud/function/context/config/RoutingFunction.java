@@ -45,10 +45,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * An implementation of Function which acts as a gateway/router by actually
+ * An implementation of {@link Function} which acts as a gateway/router by actually
  * delegating incoming invocation to a function specified .. .
  *
  * @author Oleg Zhurakousky
+ * @author John Blum
  * @since 2.1
  *
  */
@@ -127,8 +128,7 @@ public class RoutingFunction implements Function<Object, Object> {
 	private Object route(Object input, boolean originalInputIsPublisher) {
 		FunctionInvocationWrapper function = null;
 
-		if (input instanceof Message) {
-			Message<?> message = (Message<?>) input;
+		if (input instanceof Message<?> message) {
 			if (this.routingCallback != null) {
 				String functionDefinition = this.routingCallback.routingResult(message);
 				if (StringUtils.hasText(functionDefinition)) {
@@ -155,7 +155,7 @@ public class RoutingFunction implements Function<Object, Object> {
 				}
 			}
 		}
-		else if (input instanceof Publisher) {
+		else if (input instanceof Publisher<?> publisher) {
 			if (StringUtils.hasText(functionProperties.getDefinition())) {
 				function = functionFromDefinition(functionProperties.getDefinition());
 			}
@@ -163,9 +163,9 @@ public class RoutingFunction implements Function<Object, Object> {
 				function = this.functionFromExpression(functionProperties.getRoutingExpression(), input);
 			}
 			else {
-				return input instanceof Mono
-							? Mono.from((Publisher<?>) input).map(v -> route(v, originalInputIsPublisher))
-									: Flux.from((Publisher<?>) input).map(v -> route(v, originalInputIsPublisher));
+				return input instanceof Mono<?> mono
+							? Mono.from(mono).map(v -> route(v, originalInputIsPublisher))
+									: Flux.from(publisher).map(v -> route(v, originalInputIsPublisher));
 			}
 		}
 		else {
@@ -184,7 +184,7 @@ public class RoutingFunction implements Function<Object, Object> {
 			}
 		}
 
-		if (function.getTarget().equals(this)) {
+		if (this.equals(function.getTarget())) {
 			throw new IllegalStateException("Failed to establish route, and routing to itself is not allowed as it creates a loop. Please provide: "
 					+ "'spring.cloud.function.definition' as Message header or as application property or "
 					+ "'spring.cloud.function.routing-expression' as application property.");
