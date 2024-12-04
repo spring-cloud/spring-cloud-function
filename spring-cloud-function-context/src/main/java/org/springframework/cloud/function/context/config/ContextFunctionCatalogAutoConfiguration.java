@@ -31,6 +31,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactory;
@@ -91,6 +93,7 @@ import org.springframework.util.StringUtils;
 @AutoConfigureAfter(name = {"org.springframework.cloud.function.deployer.FunctionDeployerConfiguration"})
 public class ContextFunctionCatalogAutoConfiguration {
 
+	private static Log logger = LogFactory.getLog(ContextFunctionCatalogAutoConfiguration.class);
 	/**
 	 * The name of the property to specify desired JSON mapper. Available values are `jackson' and 'gson'.
 	 */
@@ -246,7 +249,44 @@ public class ContextFunctionCatalogAutoConfiguration {
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			if (logger.isDebugEnabled()) {
+				logger.debug("ObjectMapper configuration: " + getConfigDetails(mapper));
+			}
 			return new JacksonMapper(mapper);
+		}
+
+		private static String getConfigDetails(ObjectMapper mapper) {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append("Modules:\n");
+			if (mapper.getRegisteredModuleIds().isEmpty()) {
+				sb.append("\t").append("-none-").append("\n");
+			}
+			for (Object m : mapper.getRegisteredModuleIds()) {
+				sb.append("  ").append(m).append("\n");
+			}
+
+			sb.append("\nSerialization Features:\n");
+			for (SerializationFeature f : SerializationFeature.values()) {
+				sb.append("\t").append(f).append(" -> ")
+						.append(mapper.getSerializationConfig().hasSerializationFeatures(f.getMask()));
+				if (f.enabledByDefault()) {
+					sb.append(" (enabled by default)");
+				}
+				sb.append("\n");
+			}
+
+			sb.append("\nDeserialization Features:\n");
+			for (DeserializationFeature f : DeserializationFeature.values()) {
+				sb.append("\t").append(f).append(" -> ")
+						.append(mapper.getDeserializationConfig().hasDeserializationFeatures(f.getMask()));
+				if (f.enabledByDefault()) {
+					sb.append(" (enabled by default)");
+				}
+				sb.append("\n");
+			}
+
+			return sb.toString();
 		}
 	}
 }

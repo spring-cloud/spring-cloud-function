@@ -44,6 +44,8 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -59,6 +61,7 @@ import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.GenericTypeResolver;
+import org.springframework.core.KotlinDetector;
 import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
@@ -203,25 +206,40 @@ public final class FunctionTypeUtils {
 	}
 
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
-		Type t = discoverFunctionTypeFromFunctionMethod(discoverFunctionalMethod(functionalClass));
-		if (t == null) {
-			ResolvableType resolvableFunctionType = ResolvableType.forClass(functionalClass);
-			List<ResolvableType> resolvedGenerics = new ArrayList<>();
-			if (resolvableFunctionType.hasGenerics()) {
-				for (ResolvableType generic : resolvableFunctionType.getGenerics()) {
-					if (generic.getType() instanceof TypeVariable) {
-						resolvedGenerics.add(ResolvableType.forClass(Object.class));
-					}
-					else {
-						resolvedGenerics.add(generic);
+		if (KotlinDetector.isKotlinPresent()) {
+			if (Function1.class.isAssignableFrom(functionalClass)) {
+				ResolvableType kotlinType = ResolvableType.forClass(functionalClass).as(Function1.class);
+				return GenericTypeResolver.resolveType(kotlinType.getType(), functionalClass);
+			}
+			else if (Function0.class.isAssignableFrom(functionalClass)) {
+				ResolvableType kotlinType = ResolvableType.forClass(functionalClass).as(Function0.class);
+				return GenericTypeResolver.resolveType(kotlinType.getType(), functionalClass);
+			}
+		}
+		Type typeToReturn = null;
+		if (Function.class.isAssignableFrom(functionalClass)) {
+			for (Type superInterface : functionalClass.getGenericInterfaces()) {
+				if (superInterface != null && !superInterface.equals(Object.class)) {
+					if (superInterface.toString().contains("KStream") && ResolvableType.forType(superInterface).getGeneric(1).isArray()) {
+						return null;
 					}
 				}
 			}
-			ResolvableType[] generics = resolvedGenerics.toArray(new ResolvableType[] {});
-
-			t = ResolvableType.forClassWithGenerics(functionalClass, generics).getType();
+			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Function.class);
+			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
-		return t;
+		else if (Consumer.class.isAssignableFrom(functionalClass)) {
+			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Consumer.class);
+			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
+		}
+		else if (Supplier.class.isAssignableFrom(functionalClass)) {
+			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Supplier.class);
+			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
+		}
+//		else {
+//			typeToReturn = TypeResolver.reify(functionalClass);
+//		}
+		return typeToReturn;
 	}
 
 	/**
