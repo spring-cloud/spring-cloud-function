@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.context.catalog;
 
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -55,6 +56,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SuppressWarnings("unused")
 public class FunctionTypeUtilsTests {
+
+	@Test
+	public void testDiscoverFunctionalMethod() throws Exception {
+		Method method = FunctionTypeUtils.discoverFunctionalMethod(SampleEventConsumer.class);
+		assertThat(method.getName()).isEqualTo("accept");
+	}
 
 	@Test
 	public void testFunctionTypeFrom() throws Exception {
@@ -292,4 +299,29 @@ public class FunctionTypeUtilsTests {
 			return inFlux.map(v -> Integer.parseInt(v));
 		}
 	}
+
+	public static abstract class AbstractConsumer<C> implements Consumer<Message<C>> {
+
+		@Override
+		public final void accept(Message<C> message) {
+			if (message == null) {
+				return;
+			}
+
+			doAccept(message.getPayload());
+		}
+
+		protected abstract void doAccept(C payload);
+	}
+
+	public static class SampleEventConsumer extends AbstractConsumer<SampleData> {
+		@Override
+		protected void doAccept(SampleData data) {
+		}
+	}
+
+	public static class SampleData {
+
+	}
+
 }

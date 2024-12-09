@@ -18,7 +18,6 @@ package org.springframework.cloud.function.context.catalog;
 
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -27,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
@@ -42,6 +43,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import kotlin.jvm.functions.Function0;
@@ -179,18 +181,28 @@ public final class FunctionTypeUtils {
 	 * @return functional method
 	 */
 	public static Method discoverFunctionalMethod(Class<?> pojoFunctionClass) {
+		if (Supplier.class.isAssignableFrom(pojoFunctionClass)) {
+			return Stream.of(ReflectionUtils.getAllDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
+					&& m.getName().equals("get")).findFirst().get();
+		}
+		else if (Consumer.class.isAssignableFrom(pojoFunctionClass) || BiConsumer.class.isAssignableFrom(pojoFunctionClass)) {
+			return Stream.of(ReflectionUtils.getAllDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
+					&& m.getName().equals("accept")).findFirst().get();
+		}
+		else if (Function.class.isAssignableFrom(pojoFunctionClass) || BiFunction.class.isAssignableFrom(pojoFunctionClass)) {
+			return Stream.of(ReflectionUtils.getAllDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
+					&& m.getName().equals("apply")).findFirst().get();
+		}
+
 		List<Method> methods = new ArrayList<>();
 		ReflectionUtils.doWithMethods(pojoFunctionClass, method -> {
-			if (method.getDeclaringClass() == pojoFunctionClass
-					&& ((method.getParameterCount() == 1))
-							|| (method.getParameterCount() == 2 && method.getReturnType() != null)
-							|| (method.getParameterCount() == 0 && method.getReturnType() != null)) {
+			if (method.getDeclaringClass() == pojoFunctionClass) {
 				methods.add(method);
 			}
 
 		}, method ->
 			!method.getDeclaringClass().isAssignableFrom(Object.class)
-			&& !Modifier.isStatic(method.getModifiers()) && !method.isSynthetic() && !method.isBridge() && !method.isVarArgs());
+			&& !method.isSynthetic() && !method.isBridge() && !method.isVarArgs());
 
 		if (methods.size() > 1) {
 			for (Method candidadteMethod : methods) {
