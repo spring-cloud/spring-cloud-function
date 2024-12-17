@@ -1000,6 +1000,18 @@ public class FunctionInvokerTests {
 	}
 
 	@Test
+	public void testS3EventAsOutput() throws Exception {
+		System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "outputS3Event");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.s3Event.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		assertThat(output.toByteArray()).isNotNull();
+	}
+
+	@Test
 	public void testS3Event() throws Exception {
 		System.setProperty("MAIN_CLASS", S3Configuration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputS3Event");
@@ -1679,6 +1691,13 @@ public class FunctionInvokerTests {
 	@EnableAutoConfiguration
 	@Configuration
 	public static class S3Configuration {
+
+		@Bean
+		public Function<S3Event, S3Event> outputS3Event() {
+			return v -> {
+				return v;
+			};
+		}
 		@Bean
 		public Function<String, String> echoString() {
 			return v -> v;
