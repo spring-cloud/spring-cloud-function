@@ -1,0 +1,38 @@
+This is a basic sample of executing function on AWS.
+
+You can execute it locally or deploy it to the cloud - https://aws.amazon.com/pm/lambda/[AWS Lambda]
+
+
+To run this app locally please ensure that you have https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html[SAM] (Serverless Application Model) installed on your machine
+
+----
+> sam build
+----
+
+and then 
+
+----
+sam local invoke UppercaseFunction --event input.json
+----
+
+The `input.json` file contains a simple quoted string `"hello"` which will be uppercased and you should see the following in the output
+
+----
+...
+END RequestId: cd119d99-1325-4453-8456-97248dd12cc7
+REPORT RequestId: cd119d99-1325-4453-8456-97248dd12cc7	Init Duration: 1.03 ms	Duration: 17740.33 ms	Billed Duration: 17741 ms	Memory Size: 1024 MB	Max Memory Used: 1024 MB	
+"HELLO"
+...
+----
+
+
+To run this app in the cloud, make sure you have AWS Account
+
+-----
+
+> mvn clean install 
+-----
+
+This will generate the `function-sample-aws-0.0.1-SNAPSHOT-aws.jar` in the `target` directory.
+
+This is the file you will use to deploy following procedure described https://docs.spring.io/spring-cloud-function/reference/adapters/aws-intro.html[here]

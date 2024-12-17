@@ -8,7 +8,7 @@ Globals:
     EndpointConfiguration: REGIONAL
 
 Resources:
-  PetStoreMVC:
+  UppercaseFunction:
     Type: AWS::Serverless::Function
     Properties:
 #      AutoPublishAlias: bcn
@@ -32,7 +32,7 @@ Resources:
             PayloadFormatVersion: '1.0'
 
 Outputs:
-  PetStoreMVCApi:
+  UppercaseFunctionApi:
     Description: URL for application
     Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/uppercase'
     Export:
