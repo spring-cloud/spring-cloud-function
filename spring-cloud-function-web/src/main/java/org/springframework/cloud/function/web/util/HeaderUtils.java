@@ -45,6 +45,7 @@ public final class HeaderUtils {
 	static {
 		IGNORED.add(MessageHeaders.ID, "");
 		IGNORED.add(HttpHeaders.CONTENT_LENGTH, "0");
+		IGNORED.add(HttpHeaders.TRANSFER_ENCODING, "*");
 		// Headers that would typically be added by a downstream client
 		REQUEST_ONLY.add(HttpHeaders.ACCEPT, "");
 		REQUEST_ONLY.add(HttpHeaders.CONTENT_LENGTH, "");
