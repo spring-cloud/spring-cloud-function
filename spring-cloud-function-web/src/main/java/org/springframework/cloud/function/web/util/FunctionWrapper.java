@@ -39,16 +39,6 @@ public class FunctionWrapper {
 
 	private final String method;
 
-	/**
-	 *
-	 * @param function instance of {@link FunctionInvocationWrapper}
-	 * @deprecated since 4.0.4 in favor of the constructor that takes Http method as second argument.
-	 */
-	@Deprecated
-	public FunctionWrapper(FunctionInvocationWrapper function) {
-		this(function, null);
-	}
-
 	public FunctionWrapper(FunctionInvocationWrapper function, String method) {
 		this.function = function;
 		this.method = method;

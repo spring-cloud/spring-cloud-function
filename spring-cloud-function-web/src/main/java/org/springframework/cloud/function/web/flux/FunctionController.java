@@ -179,9 +179,9 @@ public class FunctionController {
 	private FunctionWrapper wrapper(ServerWebExchange request) {
 		FunctionInvocationWrapper function = (FunctionInvocationWrapper) request
 				.getAttribute(WebRequestConstants.HANDLER);
-		HttpHeaders headers = HttpHeaders.writableHttpHeaders(request.getRequest().getHeaders());
+		HttpHeaders headers = new HttpHeaders(request.getRequest().getHeaders());
 		headers.set("uri", request.getRequest().getURI().toString());
-		FunctionWrapper wrapper = new FunctionWrapper(function);
+		FunctionWrapper wrapper = new FunctionWrapper(function, null);
 		wrapper.setHeaders(headers);
 		wrapper.getParams().addAll(request.getRequest().getQueryParams());
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT);

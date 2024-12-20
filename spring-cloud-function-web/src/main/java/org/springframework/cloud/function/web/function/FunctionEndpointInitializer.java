@@ -244,7 +244,7 @@ class FunctionEndpointFactory {
 			FunctionInvocationWrapper funcWrapper = extract(request);
 			Class<?> outputType = funcWrapper == null ? Object.class
 					: FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
-			FunctionWrapper wrapper = new FunctionWrapper(funcWrapper);
+			FunctionWrapper wrapper = new FunctionWrapper(funcWrapper, null);
 			Mono<ResponseEntity<?>> stream = request.bodyToMono(String.class)
 					.flatMap(content -> (Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, content, false,
 							functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders()));
@@ -270,7 +270,7 @@ class FunctionEndpointFactory {
 				return ServerResponse.ok().body(result, outputType);
 			}
 			else {
-				FunctionWrapper wrapper = new FunctionWrapper(funcWrapper);
+				FunctionWrapper wrapper = new FunctionWrapper(funcWrapper, null);
 
 				wrapper.setHeaders(request.headers().asHttpHeaders());
 				String argument = (String) request.attribute(WebRequestConstants.ARGUMENT).get();
