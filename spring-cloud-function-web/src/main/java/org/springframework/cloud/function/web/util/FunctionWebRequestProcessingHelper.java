@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.web.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -233,15 +234,14 @@ public final class FunctionWebRequestProcessingHelper {
 		else if (result instanceof Mono) {
 			result = ((Mono) result).map(v -> postProcessResult(v, isMessage));
 		}
-		else if (result instanceof Message) {
-			if (((Message) result).getPayload() instanceof byte[]) {
-				String str = new String((byte[]) ((Message) result).getPayload());
-				result = MessageBuilder.withPayload(str).copyHeaders(((Message) result).getHeaders()).build();
+		else if (result instanceof Message messageResult) {
+			if (messageResult.getPayload() instanceof byte[]) {
+				//String str = new String((byte[]) messageResult.getPayload());
+				result = MessageBuilder.withPayload(messageResult.getPayload()).copyHeaders(((Message) result).getHeaders()).build();
 			}
 		}
-
-		if (result instanceof byte[]) {
-			result = new String((byte[]) result);
+		else if (result instanceof byte[]) {
+			result = new String((byte[]) result, StandardCharsets.UTF_8);
 		}
 		return result;
 	}

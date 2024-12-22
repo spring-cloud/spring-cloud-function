@@ -160,7 +160,6 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
 								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
 							}
-							//else if (KotlinDetector.isKotlinType(functionCandidate.getClass())) {
 							else if (KotlinUtils.isKotlinType(functionCandidate)) {
 								KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper wrapper =
 									new KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper(functionCandidate);
