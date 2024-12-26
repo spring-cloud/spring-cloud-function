@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 the original author or authors.
+ * Copyright 2019-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Oleg Zhurakousky
  * @author Andrey Shlykov
+ * @author Artem Bilan
  *
  * @since 3.0
  */
@@ -442,6 +443,12 @@ public final class FunctionTypeUtils {
 				if (StringUtils.hasText(beanDefinitionName)) {
 					type = FunctionContextUtils.findType(applicationContext.getBeanFactory(), beanDefinitionName);
 				}
+			}
+		}
+		else if (type instanceof ParameterizedType) {
+			ResolvableType resolvableType = ResolvableType.forType(type);
+			if (FactoryBean.class.isAssignableFrom(resolvableType.toClass())) {
+				return resolvableType.getGeneric(0).getType();
 			}
 		}
 		return type;
