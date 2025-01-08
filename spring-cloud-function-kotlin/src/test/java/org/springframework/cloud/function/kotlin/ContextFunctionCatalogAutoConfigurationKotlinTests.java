@@ -32,6 +32,8 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.ResolvableType;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,7 +59,8 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		create(new Class[] { KotlinLambdasConfiguration.class,
 				SimpleConfiguration.class,
 				KotlinComponentFunction.class,
-				ComponentUppercase.class});
+				ComponentUppercase.class,
+				ComponentWithUnitReturn.class});
 
 		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
 
@@ -71,6 +74,10 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		assertThat(kotlinFunction.isFunction()).isTrue();
 		assertThat(kotlinFunction.getInputType()).isEqualTo(String.class);
 		assertThat(kotlinFunction.getOutputType()).isEqualTo(String.class);
+
+		FunctionInvocationWrapper componentWithUnitReturn = functionCatalog.lookup("componentWithUnitReturn");
+		assertThat(componentWithUnitReturn.isConsumer()).isTrue();
+		assertThat(componentWithUnitReturn.getInputType()).isEqualTo(ResolvableType.forClassWithGenerics(Message.class, String.class).getType());
 
 		FunctionInvocationWrapper kotlinConsumer = functionCatalog.lookup("kotlinConsumer");
 		assertThat(kotlinConsumer.isConsumer()).isTrue();
