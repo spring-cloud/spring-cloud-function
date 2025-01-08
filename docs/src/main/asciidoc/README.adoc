@@ -16,7 +16,7 @@ image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={bran
 = Building
 :page-section-summary-toc: 1
 
-include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/main/docs/modules/ROOT/partials/contributing.adoc[]
+include::https://raw.githubusercontent.com/spring-cloud/spring-cloud-build/main/docs/modules/ROOT/partials/building.adoc[]
 
 [[contributing]]
 = Contributing
