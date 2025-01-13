@@ -31,7 +31,13 @@ Before starting the build, you must clone or download the code in **function-sam
    ```
 3. Start the container
    ```
-   docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-function
+   docker run -dit -v `pwd`:`pwd` -w `pwd` -v ~/.m2:/root/.m2 al2-graalvm19:native-function 
+   ```
+   
+   or 
+   
+   ```
+   docker run -dit -v $(pwd):$(pwd) -w $(pwd) -v ~/.m2:/root/.m2 al2-graalvm19:native-function
    ```
 4. In Docker, open the image terminal. 
 
