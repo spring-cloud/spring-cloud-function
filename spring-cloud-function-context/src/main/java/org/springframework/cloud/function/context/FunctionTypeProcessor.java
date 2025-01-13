@@ -31,9 +31,6 @@ import org.springframework.beans.factory.aot.BeanFactoryInitializationAotContrib
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationCode;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
-import org.springframework.boot.web.server.Ssl;
-import org.springframework.boot.web.server.Ssl.ServerNameSslBundle;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -107,15 +104,6 @@ public class FunctionTypeProcessor implements BeanFactoryInitializationAotProces
 
 			// known static types
 			runtimeHints.reflection().registerType(MessageUtils.MessageStructureWithCaseInsensitiveHeaderKeys.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-
-
-			// temporary due to bug in boot
-			runtimeHints.reflection().registerType(ClientHttpRequestFactorySettings.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-			runtimeHints.reflection().registerType(Ssl.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-			runtimeHints.reflection().registerType(ServerNameSslBundle.class,
 					MemberCategory.INVOKE_PUBLIC_METHODS);
 		}
 
