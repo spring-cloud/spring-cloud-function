@@ -59,7 +59,6 @@
 					<artifactId>spring-boot-starter-tomcat</artifactId>
 				</exclusion>
 			</exclusions>
-			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>
