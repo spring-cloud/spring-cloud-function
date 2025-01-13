@@ -7,10 +7,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.function.adapter.aws.AWSLambdaUtils;
 import org.springframework.context.annotation.Bean;
 // import org.springframework.cloud.function.context.DefaultMessageRoutingHandler;
 // import org.springframework.cloud.function.context.MessageRoutingCallback;
 // import org.springframework.messaging.Message;
+import org.springframework.messaging.Message;
+
+import com.amazonaws.services.lambda.runtime.Context;
 
 @SpringBootApplication
 public class NativeFunctionApplication {
@@ -33,10 +37,11 @@ public class NativeFunctionApplication {
 //	}
 
 	@Bean
-	public Function<String, String> uppercase() {
-		return v -> {
-			System.out.println("Uppercasing " + v);
-			return v.toUpperCase(Locale.ROOT);
+	public Function<Message<String>, String> uppercase() {
+		return message -> {
+			System.out.println("AWS Context: " + message.getHeaders().get(AWSLambdaUtils.AWS_CONTEXT));
+			System.out.println("Uppercasing " + message.getPayload());
+			return message.getPayload().toUpperCase(Locale.ROOT);
 		};
 	}
 
