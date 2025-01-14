@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
@@ -228,7 +229,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				mapper = new ObjectMapper();
 				mapper.registerModule(new JavaTimeModule());
 			}
-
+			mapper.registerModule(new JodaModule());
 			if (KotlinDetector.isKotlinPresent()) {
 				try {
 					if (!mapper.getRegisteredModuleIds().contains("com.fasterxml.jackson.module.kotlin.KotlinModule")) {
