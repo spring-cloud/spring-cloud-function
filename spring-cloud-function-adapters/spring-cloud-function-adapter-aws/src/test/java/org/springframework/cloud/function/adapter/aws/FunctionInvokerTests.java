@@ -45,6 +45,7 @@ import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -107,6 +108,36 @@ public class FunctionInvokerTests {
 			+ "        \"timestamp\": 1712716805129\n"
 			+ "    }\n"
 			+ "}";
+	
+	String scheduleEvent = "{\n"
+			+ "  \"version\": \"0\",\n"
+			+ "  \"id\": \"17793124-05d4-b198-2fde-7ededc63b103\",\n"
+			+ "  \"detail-type\": \"Object Created\",\n"
+			+ "  \"source\": \"aws.s3\",\n"
+			+ "  \"account\": \"111122223333\",\n"
+			+ "  \"time\": \"2021-11-12T00:00:00Z\",\n"
+			+ "  \"region\": \"ca-central-1\",\n"
+			+ "  \"resources\": [\n"
+			+ "    \"arn:aws:s3:::amzn-s3-demo-bucket1\"\n"
+			+ "  ],\n"
+			+ "  \"detail\": {\n"
+			+ "    \"version\": \"0\",\n"
+			+ "    \"bucket\": {\n"
+			+ "      \"name\": \"amzn-s3-demo-bucket1\"\n"
+			+ "    },\n"
+			+ "    \"object\": {\n"
+			+ "      \"key\": \"example-key\",\n"
+			+ "      \"size\": 5,\n"
+			+ "      \"etag\": \"b1946ac92492d2347c6235b4d2611184\",\n"
+			+ "      \"version-id\": \"IYV3p45BT0ac8hjHg1houSdS1a.Mro8e\",\n"
+			+ "      \"sequencer\": \"617f08299329d189\"\n"
+			+ "    },\n"
+			+ "    \"request-id\": \"N4N7GDK58NMKJ12R\",\n"
+			+ "    \"requester\": \"123456789012\",\n"
+			+ "    \"source-ip-address\": \"1.2.3.4\",\n"
+			+ "    \"reason\": \"PutObject\"\n"
+			+ "  }\n"
+			+ "}  ";
 
 	String dynamoDbEvent = "{\n"
 			+ "  \"Records\": [\n"
@@ -734,6 +765,20 @@ public class FunctionInvokerTests {
 		System.clearProperty("spring.cloud.function.routing-expression");
 		System.clearProperty("spring.cloud.function.definition");
 		//this.getEnvironment().clear();
+	}
+	
+	@Test
+	public void testScheduledEvent() throws Exception {
+		System.setProperty("MAIN_CLASS", ScheduledEventConfiguration.class.getName());
+		System.setProperty("spring.cloud.function.definition", "event");
+		FunctionInvoker invoker = new FunctionInvoker();
+
+		InputStream targetStream = new ByteArrayInputStream(this.scheduleEvent.getBytes());
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		invoker.handleRequest(targetStream, output, null);
+		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
+		System.out.println("Result: " + result);
+		//assertThat(result).contains("APIGatewayCustomAuthorizerEvent(version=null, type=TOKEN");
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -1967,6 +2012,19 @@ public class FunctionInvokerTests {
 		@Override
 		public String toString() {
 			return this.name;
+		}
+	}
+	
+	@EnableAutoConfiguration
+	@Configuration
+	public static class ScheduledEventConfiguration {
+		
+		@Bean
+		public Function<ScheduledEvent, ScheduledEvent> event() {
+			return event -> {
+				System.out.println("Event: " + event);
+				return event;
+			};
 		}
 	}
 }
