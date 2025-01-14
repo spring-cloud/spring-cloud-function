@@ -108,7 +108,7 @@ public class FunctionInvokerTests {
 			+ "        \"timestamp\": 1712716805129\n"
 			+ "    }\n"
 			+ "}";
-	
+
 	String scheduleEvent = "{\n"
 			+ "  \"version\": \"0\",\n"
 			+ "  \"id\": \"17793124-05d4-b198-2fde-7ededc63b103\",\n"
@@ -766,7 +766,7 @@ public class FunctionInvokerTests {
 		System.clearProperty("spring.cloud.function.definition");
 		//this.getEnvironment().clear();
 	}
-	
+
 	@Test
 	public void testScheduledEvent() throws Exception {
 		System.setProperty("MAIN_CLASS", ScheduledEventConfiguration.class.getName());
@@ -777,8 +777,7 @@ public class FunctionInvokerTests {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		invoker.handleRequest(targetStream, output, null);
 		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
-		System.out.println("Result: " + result);
-		//assertThat(result).contains("APIGatewayCustomAuthorizerEvent(version=null, type=TOKEN");
+		assertThat(result).contains("IYV3p45BT0ac8hjHg1houSdS1a.Mro8e");
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -2014,11 +2013,11 @@ public class FunctionInvokerTests {
 			return this.name;
 		}
 	}
-	
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class ScheduledEventConfiguration {
-		
+
 		@Bean
 		public Function<ScheduledEvent, ScheduledEvent> event() {
 			return event -> {
