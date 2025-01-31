@@ -4,16 +4,21 @@
 
 The https://aws.amazon.com/[AWS] adapter takes a Spring Cloud Function app and converts it to a form that can run in AWS Lambda.
 
-The details of how to get started with AWS Lambda is out of scope of this document, so the expectation is that user has some familiarity with
-AWS and AWS Lambda and wants to learn what additional value spring provides.
+
+In general, there are two ways to run Spring applications on AWS Lambda:
+
+1. Use the AWS Lambda adapter via Spring Cloud functions to implement a functional approach as outlined below. This is a good fit for single responsibility APIs and event & messaging-based systems such as handling messages from an Amazon SQS or Amazon MQ queue, an Apache Kafka stream, or reacting to file uploads in Amazon S3.
+2. Run a Spring Boot Web application on AWS Lambda via the https://github.com/aws/serverless-java-container[Serverless Java container project]. This is a good fit for migrations of existing Spring applications to AWS Lambda or if you build sophisticated APIs with multiple API endpoints and want to maintain the familiar RestController approach. This approach is outlined in more detail in <<serverless-java-container>>.
+
+
+The following guide expects that you have a basic understanding of AWS and AWS Lambda and focuses on the additional value that Spring provides. The details on how to get started with AWS Lambda are out of scope of this document. If you want to learn more, you can navigate to https://docs.aws.amazon.com/lambda/latest/dg/concepts-basics.html[basic AWS Lambda concepts] or a complete https://catalog.workshops.aws/java-on-aws/en-US[Java on AWS overview].
 
 [[getting-started]]
 == Getting Started
 
-One of the goals of Spring Cloud Function framework is to provide necessary infrastructure elements to enable a _simple function application_
-to interact in a certain way in a particular environment.
-A simple function application (in context or Spring) is an application that contains beans of type Supplier, Function or Consumer.
-So, with AWS it means that a simple function bean should somehow be recognised and executed in AWS Lambda environment.
+One of the goals of Spring Cloud Function framework is to provide the necessary infrastructure elements to enable a _simple functional application_ to be compatible with a particular environment (such as AWS Lambda).
+
+In the context of Spring, a simple functional application contains beans of type Supplier, Function or Consumer.
 
 Let’s look at the example:
 
@@ -33,90 +38,237 @@ public class FunctionConfiguration {
 }
 ----
 
-It shows a complete Spring Boot application with a function bean defined in it. What’s interesting is that on the surface this is just
-another boot app, but in the context of AWS Adapter it is also a perfectly valid AWS Lambda application. No other code or configuration
-is required. All you need to do is package it and deploy it, so let’s look how we can do that.
+You can see a complete Spring Boot application with a function bean defined in it. On the surface this is just another Spring Boot app. However, when adding the Spring Cloud Function AWS Adapter to the project it will become a perfectly valid AWS Lambda application:
 
-To make things simpler we’ve provided a sample project ready to be built and deployed and you can access it
-https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws[here].
+[source, xml]
+----
 
-You simply execute `./mvnw clean package` to generate JAR file. All the necessary maven plugins have already been setup to generate
-appropriate AWS deployable JAR file. (You can read more details about JAR layout in <<Notes on JAR Layout>>).
+<dependencies>
+ <dependency>
+     <groupId>org.springframework.cloud</groupId>
+     <artifactId>spring-cloud-function-adapter-aws</artifactId>
+ </dependency>
+</dependencies>
+----
 
-Then you have to upload the JAR file (via AWS dashboard or AWS CLI) to AWS.
+No other code or configuration is required. We’ve provided a sample project ready to be built and deployed. You can access it https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws[in the official Spring Cloud function example repository].
 
-When asked about _handler_ you specify `org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest` which is a generic request handler.
+You simply execute `mvn clean package` to generate the JAR file. All the necessary maven plugins have already been setup to generate
+an appropriate AWS deployable JAR file. (You can read more details about the JAR layout in <<Notes on JAR Layout>>).
 
-image::AWS-deploy.png[width=800,scaledwidth="75%",align="center"]
+[[aws-function-handlers]]
+=== AWS Lambda Function Handler
 
-That is all. Save and execute the function with some sample data which for this function is expected to be a
-String which function will uppercase and return back.
+In contrast to traditional web applications that expose their functionality via a listener on a given HTTP port (80, 443), AWS Lambda functions are invoked at a predefined entry point, called the Lambda https://docs.aws.amazon.com/lambda/latest/dg/java-handler.html[function handler].
 
-While `org.springframework.cloud.function.adapter.aws.FunctionInvoker` is a general purpose AWS's `RequestHandler` implementation aimed at completely
-isolating you from the specifics of AWS Lambda API, for some cases you may want to specify which specific AWS's `RequestHandler` you want
-to use. The next section will explain you how you can accomplish just that.
+We recommend using the built-in `org.springframework.cloud.function.adapter.aws.FunctionInvoker`  handler to streamline the integration with AWS Lambda. It provides advanced features such as multi-function routing, decoupling from AWS specifics, and POJO serialization out of the box. Please refer to the <<AWS Request Handlers>> and <<AWS Function Routing>> sections to learn more.
 
+[[deployment-options]]
+=== Deployment
+
+After building the application, you can deploy the JAR file either manually via the AWS console, the AWS Command Line Interface (CLI), or Infrastructure as Code (IaC) tools such as AWS Serverless Application Model (AWS SAM), AWS Cloud Development Kit (AWS CDK), AWS CloudFormation, or Terraform.
+
+To create a Hello world Lambda function with the AWS console
+
+1. Open the https://console.aws.amazon.com/lambda/home#/functions[Functions page of the Lambda console].
+2. Choose Create function.
+3. Select Author from scratch.
+4. For Function name, enter `MySpringLambdaFunction`.
+5. For Runtime, choose either Java 21.
+6. Choose Create function.
+
+To upload your code and test the function
+
+1. Upload the previously created JAR file for example `target/function-sample-aws-0.0.1-SNAPSHOT-aws.jar`.
+
+2. Provide the entry handler method `org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest`.
+
+3. Navigate to the "Test" tab and click the "Test" button. The function should return with the provided JSON payload in uppercase.
+
+image::aws_spring_lambda_edit.png[width=800,scaledwidth="75%",align="center"]
+
+image::aws_spring_lambda_test.png[width=800,scaledwidth="75%",align="center"]
+
+To automate your deployment with Infrastructure as Code (IaC) tools please refer to https://docs.aws.amazon.com/lambda/latest/dg/foundation-iac.html[the official AWS documentation].
 
 [[aws-request-handlers]]
-=== AWS Request Handlers
+== AWS Request Handlers
 
-While AWS Lambda allows you to implement various `RequestHandlers`, with Spring Cloud Function you don't need to implement any, and instead use the provided
- `org.springframework.cloud.function.adapter.aws.FunctionInvoker` which is the implementation of AWS's `RequestStreamHandler`.
-User doesn't need to do anything other then specify it as 'handler' on AWS dashboard when deploying function.
-It will handle most of the cases including Kinesis, streaming etc.
+As discussed in the getting started section, AWS Lambda functions are invoked at a predefined entry point, called the https://docs.aws.amazon.com/lambda/latest/dg/java-handler.html[Lambda function handler]. In its simplest form this can be a Java method reference. In the above example that would be `com.my.package.FunctionConfiguration::uppercase`. This configuration is needed to advise AWS Lambda which Java method to call in the provided JAR.
 
+When a Lambda function is invoked, it passes an additional request payload and context object to this handler method. The request payload varies based on the AWS service (Amazon API Gateway, Amazon S3, Amazon SQS, Apache Kafka etc.) that triggered the function. The context object provides additional information about the Lambda function, the invocation and the environment, for example a unique request id. (https://docs.aws.amazon.com/lambda/latest/dg/java-context.html).
 
-If your app has more than one `@Bean` of type `Function` etc. then you can choose the one to use by configuring `spring.cloud.function.definition` 
-property or environment variable. The functions are extracted from the Spring Cloud `FunctionCatalog`. In the event you don't specify `spring.cloud.function.definition`
-the framework will attempt to find a default following the search order where it searches first for `Function` then `Consumer` and finally `Supplier`).
+AWS provides predefined handler interfaces (called RequestHandler or RequestStreamHandler) to deal with payload and context objects via the aws-lambda-java-events and aws-lambda-java-core libraries.
+
+Spring Cloud Function already implements these interfaces and provides a `org.springframework.cloud.function.adapter.aws.FunctionInvoker` to completely abstract your function code
+from the specifics of AWS Lambda. This allows you to just switch the entry point depending on which platform you run your functions.
+
+However, for some use cases you want to integrate deeply with  the AWS environment. For example, when your function is triggered by an Amazon S3 file upload you might want to access specific Amazon S3 properties. Or, if you want to return a partial batch response when processing items from an Amazon SQS queue. In that case you can still leverage the generic `org.springframework.cloud.function.adapter.aws.FunctionInvoker` but you will work with the dedicated AWS objects from within your function code:
+
+[source, java]
+----
+@Bean
+public Function<S3Event, String> processS3Event() {}
+
+@Bean
+public Function<SQSEvent, SQSBatchResponse> processSQSEvent() {}
+
+----
 
 [[type-conversion]]
 === Type Conversion
 
-Spring Cloud Function will attempt to transparently handle type conversion between the raw
+Another benefit of leveraging the built-in `FunctionInvoker` is that Spring Cloud Function will attempt to transparently handle type conversion between the raw
 input stream and types declared by your function.
 
-For example, if your function signature is as such `Function<Foo, Bar>` we will attempt to convert
-incoming stream event to an instance of `Foo`.
+For example, if your function signature is  `Function<Foo, Bar>` it will attempt to convert the incoming stream event to an instance of `Foo`. This is especially helpful in API triggered Lambda functions where the request body represents a business object and is not tied to AWS specifics.
 
-In the event type is not known or can not be determined (e.g., `Function<?, ?>`) we will attempt to
+If the event type is not known or can not be determined (e.g., `Function<?, ?>`) Spring Cloud Function will attempt to
 convert an incoming stream event to a generic `Map`.
 
 [[raw-input]]
 === Raw Input
 
 There are times when you may want to have access to a raw input. In this case all you need is to declare your
-function signature to accept `InputStream`. For example, `Function<InputStream, ?>`. In this case
-we will not attempt any conversion and will pass the raw input directly to a function.
-
+function signature to accept `InputStream`. For example, `Function<InputStream, ?>`.
+If specified, Spring Cloud function will not attempt any conversion and will pass the raw input directly to the function.
 
 [[aws-function-routing]]
-=== AWS Function Routing
+== AWS Function Routing
 
-One of the core features of Spring Cloud Function is https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[routing] 
-- an ability to have one special function to delegate to other functions based on the user provided routing instructions.
+One of the core features of Spring Cloud Function is https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[routing]
+. This capability allows you to have one special Java method (acting as a https://docs.aws.amazon.com/lambda/latest/dg/java-handler.html[Lambda function handler]) to delegate to other internal methods. You have already seen this in action when the generic `FunctionInvoker` automatically routed the requests to your `uppercase` function in the <<Getting Started>> section.
 
-In AWS Lambda environment this feature provides one additional benefit, as it allows you to bind a single function (Routing Function) 
-as AWS Lambda and thus a single HTTP endpoint for API Gateway. So in the end you only manage one function and one endpoint, while benefiting 
-from many function that can be part of your application.
+By default, if your app has more than one `@Bean` of type `Function` etc. they are extracted from the Spring Cloud `FunctionCatalog` and the framework will attempt to find a default following the search order where it searches first for `Function` then `Consumer` and finally `Supplier`. These default routing capabilities are needed because `FunctionInvoker` can not determine which function to bind, so it defaults internally to `RoutingFunction`. It is recommended to provide additional routing instructions https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[using several mechanisms] (see https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-routing[sample] for more details).
 
-More details are available in the provided https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-routing[sample],
-yet few general things worth mentioning.
+The right routing mechanism depends on if you prefer to deploy your Spring Cloud Function project as a single or multiple Lambda functions.
 
-Routing capabilities will be enabled by default whenever there is more then one function in your application as `org.springframework.cloud.function.adapter.aws.FunctionInvoker`
-can not determine which function to bind as AWS Lambda, so it defaults to `RoutingFunction`.
-This means that all you need to do is provide routing instructions which you can do https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[using several mechanisms] 
-(see https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-routing[sample] for more details).
+[[aws-function-routing-single-multi]]
+=== Single Function vs. Multiple Functions
 
-Also, note that since AWS does not allow dots `.` and/or hyphens`-` in the name of the environment variable, you can benefit from boot support and simply substitute
-dots with underscores and hyphens with camel case.  So for example `spring.cloud.function.definition` becomes `spring_cloud_function_definition`
-and `spring.cloud.function.routing-expression` becomes `spring_cloud_function_routingExpression`. 
+If you implement multiple Java methods in the same Spring Cloud Function project, for example `uppercase` and `lowercase`, you either deploy two separate Lambda functions with static routing information or you provide a dynamic routing method that decides which method to call during runtime. Let's look at both approaches.
+
+1. Deploying two separate AWS Lambda functions makes sense if you have different scaling, configuration or permission requirements per function. For example, if you create two Java methods `readObjectFromAmazonS3` and `writeToAmazonDynamoDB` in the same Spring Cloud Function project, you might want to create two separate Lambda functions. This is because they need different permissions to talk to either S3 or DynamoDB or their load pattern and memory configurations highly vary. In general, this approach is also recommended for messaging based applications where you read from a stream or a queue since you have a dedicated configuration per https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventsourcemapping.html[Lambda Event Source mapping].
+
+2. A single Lambda function is a valid approach when multiple Java methods share the same permission set or provide a cohesive business functionality. For example a CRUD-based Spring Cloud Function project with `createPet`, `updatePet`, `readPet` and `deletePet` methods that all talk to the same DynamoDB table and have a similar usage pattern. Using a single Lambda function will improve deployment simplicity, cohesion and code reuse for shared classes (PetEntity). In addition, it can result in less cold starts between sequential invocations because a `readPet` followed by `writePet` will most likely hit an already running https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html[Lambda execution environment]. When you build more sophisticated APIs however or you want to leverage a @RestController approach you may also want to evaluate the <<serverless-java-container>> option.
+
+If you favor the first approach you can also create two separate Spring Cloud Function projects and deploy them individually. This can be beneficial if different teams are responsible for maintaining and deploying the functions. However, in that case you need to deal with sharing cross-cutting concerns such as helper methods or entity classes between them. In general, we advise applying the same software modularity principles to your functional projects as you do for traditional web-based applications. For additional information on how to choose the right approach you can refer to https://aws.amazon.com/blogs/compute/comparing-design-approaches-for-building-serverless-microservices/[Comparing design approaches for serverless microservices]
+
+After the decision has been made you can benefit from the following routing mechanisms.
+
+[[aws-function-routing-multi]]
+=== Routing for multiple Lambda functions
+
+If you have decided to deploy your single Spring Cloud Function project (JAR) to multiple Lambda functions you need to provide a hint on which specific method to call, for example `uppercase` or `lowercase`. You can use https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html[AWS Lambda environment variables] to provide the routing instructions.
+
+Note that AWS does not allow dots `.` and/or hyphens`-` in the name of the environment variable, you can benefit from Spring Boot support and simply substitute dots with underscores and hyphens with camel case.  So for example `spring.cloud.function.definition` becomes `spring_cloud_function_definition` and `spring.cloud.function.routing-expression` becomes `spring_cloud_function_routingExpression`.
+
+Therefore, a configuration for a single Spring Cloud Project with two methods deployed to separate AWS Lambda functions can look like this:
+
+[source, java]
+----
+@SpringBootApplication
+public class FunctionConfiguration {
+
+	public static void main(String[] args) {
+		SpringApplication.run(FunctionConfiguration.class, args);
+	}
+
+	@Bean
+	public Function<String, String> uppercase() {
+		return value -> value.toUpperCase();
+	}
+
+    @Bean
+	public Function<String, String> lowercase() {
+		return value -> value.toLowerCase();
+	}
+}
+----
+
+[source, yaml]
+----
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  MyUpperCaseLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker
+      Runtime: java21
+      MemorySize: 512
+      CodeUri: target/function-sample-aws-0.0.1-SNAPSHOT-aws.jar
+      Environment:
+        Variables:
+          spring_cloud_function_definition: uppercase
+
+  MyLowerCaseLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: org.springframework.cloud.function.adapter.aws.FunctionInvoker
+      Runtime: java21
+      MemorySize: 512
+      CodeUri: target/function-sample-aws-0.0.1-SNAPSHOT-aws.jar
+      Environment:
+        Variables:
+          spring_cloud_function_definition: lowercase
+
+----
+
+You may ask - why not use the Lambda function handler and point the entry method directly to `uppercase` and `lowercase`? In a Spring Cloud Function project it is recommended to use the built-in `FunctionInvoker` as outlined in <<AWS Request Handlers>>. Therefore, we provide the routing definition via the environment variables.
+
+
+[[aws-function-routing-single]]
+=== Routing within a single Lambda function
+
+If you have decided to deploy your Spring Cloud Function project with multiple methods (`uppercase` or `lowercase`) to a single Lambda function you need a more dynamic routing approach. Since `application.properties` and environment variables are defined at build or deployment time you can't use them for a single function scenario. In this case you can leverage `MessagingRoutingCallback` or `Message Headers` as outlined in the https://docs.spring.io/spring-cloud-function/docs/{project-version}/reference/html/spring-cloud-function.html#_function_routing_and_filtering[Spring Cloud Function Routing section].
+
+More details are available in the provided https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-routing[sample]
+
+[[performance]]
+== Performance considerations
+
+One core characteristic of Serverless Functions is the ability to scale to 0 and handle sudden traffic spikes. To handle requests AWS Lambda spins up https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html[new execution environments]. These environments need to be initialized, your code needs to be downloaded and a JVM + your application needs to start. This is also known as a cold-start. To reduce this cold-start time you can rely on the following mechanisms to optimize performance.
+
+1. Leverage AWS Lambda SnapStart to start your Lambda function from pre-initialized snapshots
+2. Tune the Memory Configuration via AWS Lambda Power Tuning to find the best tradeoff between performance and cost
+3. Follow AWS SDK Best Practices such as defining SDK clients outside the handler code or leverage more advanced priming techniques
+4. Implement additional Spring mechanisms to reduce Spring startup & initialization time such as https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-samples/function-functional-sample-aws/src/main/java/example/FunctionConfiguration.java[functional bean registration]
+
+Please refer to the official guidance for more information.
+
+[[graalvm]]
+== GraalVM Native Image
+
+Spring Cloud Function provides GraalVM Native Image support for functions running on AWS Lambda. Since GraalVM native images do not run on a traditional Java Virtual Machine (JVM) you need to deploy your native Spring Cloud Function to an AWS Lambda custom runtime. The most notable difference is that you no longer provide a JAR file but the native-image + a bootstrap file with starting instructions bundled in a zip package:
+
+[source, text]
+----
+lambda-custom-runtime.zip
+  |-- bootstrap
+  |-- function-sample-aws-native
+----
+
+Bootstrap file:
+
+[source, text]
+----
+#!/bin/sh
+
+cd ${LAMBDA_TASK_ROOT:-.}
+
+./function-sample-aws-native
+----
+
+You can find a full GraalVM native-image example with Spring Cloud Function on https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws-native[Github]. For a deep dive you can also refer to the https://catalog.workshops.aws/java-on-aws-lambda/en-US/02-accelerate/graal-plain-java[GraalVM modules of the Java on AWS Lambda workshop].
 
 [[custom-runtime]]
-=== Custom Runtime
+== Custom Runtime
 
-You can also benefit from https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html[AWS Lambda custom runtime] feature of AWS Lambda 
-and Spring Cloud Function provides all the necessary components to make it easy.
+Lambda focuses on providing stable long-term support (LTS) versions. The official Lambda runtimes are built around a combination of operating system, programming language, and software libraries that are subject to maintenance and security updates. For example, the Lambda runtime for Java supports the LTS versions such as Java 17 Corretto and Java 21 Corretto. You can find the full list https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html[here]. There is no provided runtime for non LTS versions like Java 22, Java 23 or Java 24.
+
+To use other language versions, JVMs or GraalVM native-images, Lambda allows you to https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html[create custom runtimes]. Custom runtimes allow you to provide and configure your own runtimes for running their application code. Spring Cloud Function provides all the necessary components to make it easy.
 
 From the code perspective the application should look no different then any other Spring Cloud Function application.
 The only thing you need to do is to provide a `bootstrap` script in the root of your zip/jar that runs the Spring Boot application.
@@ -136,26 +288,27 @@ The `com.example.LambdaApplication` represents your application which contains f
 
 Set the handler name in AWS to the name of your function. You can use function composition here as well (e.g., `uppercase|reverse`).
 That is pretty much all. Once you upload your zip/jar to AWS your function will run in custom runtime.
-We provide a https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws-custom-new[sample project] 
+We provide a https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-aws-custom-new[sample project]
 where you can also see how to configure your POM to properly generate the zip file.
 
-The functional bean definition style works for custom runtimes as well, and is 
-faster than the `@Bean` style. A custom runtime can start up much quicker even than a functional bean implementation 
-of a Java lambda - it depends mostly on the number of classes you need to load at runtime. 
-Spring doesn't do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance, 
+The functional bean definition style works for custom runtimes as well, and is
+faster than the `@Bean` style. A custom runtime can start up much quicker even than a functional bean implementation
+of a Java lambda - it depends mostly on the number of classes you need to load at runtime.
+Spring doesn't do very much here, so you can reduce the cold start time by only using primitive types in your function, for instance,
 and not doing any work in custom `@PostConstruct` initializers.
 
 
 [[aws-function-routing-with-custom-runtime]]
 === AWS Function Routing with Custom Runtime
 
-When using <<Custom Runtime>> Function Routing works the same way. All you need is to specify `functionRouter` as AWS Handler the same way you would use the name of the function as handler. 
+When using <<Custom Runtime>> Function Routing works the same way. All you need is to specify `functionRouter` as AWS Handler the same way you would use the name of the function as handler.
 
 
-=== Deploying Container images
+== Deploying Lambda functions as container images
 
-Custom Runtime is also responsible for handling of container image deployments.
-When deploying container images in a way similar to the one described https://github.com/spring-cloud/spring-cloud-function/issues/1021[here], it is important 
+In contrast to JAR or ZIP based deployments you can also deploy your Lambda functions as a container image via an image registry. For additional details please refer to the https://docs.aws.amazon.com/lambda/latest/dg/images-create.html[official AWS Lambda documentation].
+
+When deploying container images in a way similar to the one described https://github.com/spring-cloud/spring-cloud-function/issues/1021[here], it is important
 to remember to set and environment variable `DEFAULT_HANDLER` with the name of the function.
 
 For example, for function bean shown below the `DEFAULT_HANDLER` value would be `readMessageFromSQS`.
@@ -238,7 +391,7 @@ then additional transformers must be configured as part of the maven-shade-plugi
 == Build file setup
 
 In order to run Spring Cloud Function applications on AWS Lambda, you can leverage Maven or Gradle
- plugins offered by the cloud platform provider.
+plugins offered by the cloud platform provider.
 
 
 [[maven]]
@@ -390,3 +543,60 @@ tasks.named('test') {
 
 You can find the entire sample `build.gradle` file for deploying Spring Cloud Function
 applications to AWS Lambda with Gradle https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples/function-sample-aws/build.gradle[here].
+
+[[serverless-java-container]]
+== Serverless Java container for Spring Boot Web
+
+You can use the https://github.com/aws/serverless-java-container[aws-serverless-java-container] library to run a Spring Boot 3 applications in AWS Lambda. This is a good fit for migrations of existing Spring applications to AWS Lambda or if you build sophisticated APIs with multiple API endpoints and want to maintain the familiar RestController approach. The following section provides a high-level overview of the process. Please refer to the https://github.com/aws/serverless-java-container/wiki/Quick-start---Spring-Boot3[official sample code for additional information].
+
+1. Import the Serverless Java Container library to your existing Spring Boot 3 web app
++
+[source, java]
+----
+<dependency>
+ <groupId>com.amazonaws.serverless</groupId>
+ <artifactId>aws-serverless-java-container-springboot3</artifactId>
+ <version>2.0.1</version>
+</dependency>
+----
+
+2. Use the built-in Lambda function handler that serves as an entrypoint
++
+`com.amazonaws.serverless.proxy.spring.SpringDelegatingLambdaContainerHandler`
+
+3. Configure an environment variable named `MAIN_CLASS` to let the generic handler know where to find your original application main class. Usually that is the class annotated with @SpringBootApplication.
+
+`MAIN_CLAS = com.my.package.MySpringBootApplication`
+
+Below you can see an example deployment configuration:
+
+[source, yaml]
+----
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  MySpringBootLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: com.amazonaws.serverless.proxy.spring.SpringDelegatingLambdaContainerHandler
+      Runtime: java21
+      MemorySize: 1024
+      CodeUri: target/lambda-spring-boot-app-0.0.1-SNAPSHOT.jar #Must be a shaded Jar
+      Environment:
+        Variables:
+          MAIN_CLASS: com.amazonaws.serverless.sample.springboot3.Application #Class annotated with @SpringBootApplication
+
+----
+
+Please find all the examples including GraalVM native-image https://github.com/aws/serverless-java-container/tree/main/samples/springboot3[here].
+
+
+[[resources]]
+== Additional resources
+
+- https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples[Official Example Repositories on Github]
+- https://catalog.workshops.aws/java-on-aws-lambda/en-US/01-migration/architecture-overview[Java on AWS Lambda workshop with dedicated Spring examples]
+- https://catalog.workshops.aws/java-on-aws/en-US[Java on AWS Immersion Day]
+- https://serverlessland.com/content/service/lambda/paved-path/java-replatforming/introduction[Java Replatforming Guide]
+- https://www.youtube.com/watch?v=AFIHug_HujI[Talk: Spring I/O 2024 - Serverless Java with Spring]
