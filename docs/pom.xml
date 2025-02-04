@@ -53,6 +53,11 @@
 					<plugin>
 						<groupId>org.antora</groupId>
 						<artifactId>antora-maven-plugin</artifactId>
+						<configuration>
+							<additionalOptions>
+								<option>redirect-facility static</option>
+							</additionalOptions>
+						</configuration>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
