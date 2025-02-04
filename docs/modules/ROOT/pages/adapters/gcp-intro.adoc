@@ -1,5 +1,6 @@
 [[google-cloud-functions]]
 = Google Cloud Functions
+:page-aliases: adapters/gcp.adoc
 
 The Google Cloud Functions adapter enables Spring Cloud Function apps to run on the https://cloud.google.com/functions[Google Cloud Functions] serverless platform.
 You can either run the function locally using the open source https://github.com/GoogleCloudPlatform/functions-framework-java[Google Functions Framework for Java] or on GCP.
