@@ -15,7 +15,7 @@
 	<description>Demo project for Spring Cloud Function with custom AWS Lambda runtime</description>
 
 	<properties>
-		<wrapper.version>1.0.27.RELEASE</wrapper.version>
+		<wrapper.version>1.0.31.RELEASE</wrapper.version>
 		<spring-cloud-function.version>4.3.0-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
