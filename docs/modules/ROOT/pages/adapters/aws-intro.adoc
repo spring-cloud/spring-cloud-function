@@ -389,7 +389,7 @@ then additional transformers must be configured as part of the maven-shade-plugi
 == Build file setup
 
 In order to run Spring Cloud Function applications on AWS Lambda, you can leverage Maven or Gradle
-plugins offered by the cloud platform provider.
+plugins.
 
 
 [[maven]]
