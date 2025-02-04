@@ -1,6 +1,6 @@
 [[microsoft-azure-functions]]
 = Microsoft Azure Functions
-
+:page-aliases: adapters/azure.adoc
 
 https://azure.microsoft.com[Azure] function adapter for deploying `Spring Cloud Function` applications as native Azure Java Functions.
 
