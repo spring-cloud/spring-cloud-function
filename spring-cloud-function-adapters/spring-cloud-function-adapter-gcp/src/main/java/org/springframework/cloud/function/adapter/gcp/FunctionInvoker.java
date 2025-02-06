@@ -117,7 +117,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		Message<BufferedReader> message = this.functionWrapped.getInputType() == Void.class || this.functionWrapped.getInputType() == null ? null
 			: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
 
-		Message<byte[]> result = function.apply(message);
+		Message<?> result = function.apply(message);
 
 		if (result != null) {
 			MessageHeaders headers = result.getHeaders();
@@ -130,7 +130,8 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 			else {
 				httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
 			}
-			httpResponse.getWriter().write(new String(result.getPayload(), StandardCharsets.UTF_8));
+			String content = result.getPayload() instanceof String strPayload ? strPayload : new String((byte[]) result.getPayload(), StandardCharsets.UTF_8);
+			httpResponse.getWriter().write(content);
 			for (Entry<String, Object> header : headers.entrySet()) {
 				Object values = header.getValue();
 				if (values instanceof Collection<?>) {
