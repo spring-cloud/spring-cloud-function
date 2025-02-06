@@ -55,7 +55,6 @@ import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
-import org.springframework.cloud.function.utils.PrimitiveTypesFromStringMessageConverter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -71,13 +70,17 @@ import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.InvalidMimeTypeException;
+import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
@@ -133,8 +136,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		mcList.add(new JsonMessageConverter(jsonMapper));
 		mcList.add(new ByteArrayMessageConverter());
-		mcList.add(new StringMessageConverter());
-		mcList.add(new PrimitiveTypesFromStringMessageConverter(conversionService));
+		StringMessageConverter stringConverter = new StringMessageConverter();
+		stringConverter.setSerializedPayloadClass(String.class);
+		stringConverter.setContentTypeResolver(new ContentTypeResolver() {
+			@Override
+			public MimeType resolve(MessageHeaders headers) throws InvalidMimeTypeException {
+				if (headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
+					if (headers.get(MessageHeaders.CONTENT_TYPE).toString().startsWith("text")) {
+						return MimeType.valueOf("text/plain");
+					}
+					else {
+						return MimeType.valueOf(headers.get(MessageHeaders.CONTENT_TYPE).toString());
+					}
+				}
+				return null;
+			}
+		});
+		mcList.add(stringConverter);
 
 		messageConverter = new SmartCompositeMessageConverter(mcList, () -> {
 			return context.getBeansOfType(MessageConverterHelper.class).values();
