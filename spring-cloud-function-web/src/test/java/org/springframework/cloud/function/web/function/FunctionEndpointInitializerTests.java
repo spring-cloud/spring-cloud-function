@@ -126,7 +126,6 @@ public class FunctionEndpointInitializerTests {
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		ResponseEntity<String> response = testRestTemplate
 				.getForEntity(new URI("http://localhost:" + port + "/reverse/stressed"), String.class);
-		System.out.println();
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
