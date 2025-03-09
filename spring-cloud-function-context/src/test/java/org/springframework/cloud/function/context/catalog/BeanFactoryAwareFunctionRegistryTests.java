@@ -880,6 +880,38 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(counter.get()).isEqualTo(100);
 	}
 
+	@SuppressWarnings("rawtypes")
+	@Test
+	void useBatchMessageSplitterTest() {
+		FunctionCatalog functionCatalog = this.configureCatalog(BatchMessageSplitterConfiguration.class);
+		FunctionInvocationWrapper function = functionCatalog.lookup("upperCase", "application/json");
+
+		function.setEnableSplitting(true);
+
+		List payload = List.of("2tsumo", "-", "hitori");
+
+		List result = (List) function.apply(MessageBuilder.withPayload(payload).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+
+		assertThat(((Collection) result)).isNotEmpty();
+		assertThat(((Message) (result.get(0))).getPayload()).isEqualTo("\"2TSUMO\"".getBytes(StandardCharsets.UTF_8));
+		assertThat(((Message) (result.get(1))).getPayload()).isEqualTo("\"-\"".getBytes(StandardCharsets.UTF_8));
+		assertThat(((Message) (result.get(2))).getPayload()).isEqualTo("\"HITORI\"".getBytes(StandardCharsets.UTF_8));
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Test
+	void noUseBatchMessageSplitterTest() {
+		FunctionCatalog functioncatalog = this.configureCatalog(BatchMessageSplitterConfiguration.class);
+		FunctionInvocationWrapper function = functioncatalog.lookup("upperCase", "application/json");
+
+		function.setEnableSplitting(false);
+
+		List payload = List.of("2tsumo", "-", "hitori");
+
+		Message result = (Message) function.apply(MessageBuilder.withPayload(payload).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+		assertThat(result.getPayload()).isEqualTo("[\"2TSUMO\",\"-\",\"HITORI\"]".getBytes(StandardCharsets.UTF_8));
+	}
+
 	@EnableAutoConfiguration
 	public static class PojoToMessageFunctionCompositionConfiguration {
 
@@ -1606,6 +1638,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<Message<?>, Message<?>> myFunction() {
 			return msg -> msg;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class BatchMessageSplitterConfiguration {
+
+		@Bean
+		public Function<Message<List<String>>, List<String>> upperCase() {
+			return messages -> messages.getPayload().stream().map(String::toUpperCase).toList();
 		}
 	}
 }

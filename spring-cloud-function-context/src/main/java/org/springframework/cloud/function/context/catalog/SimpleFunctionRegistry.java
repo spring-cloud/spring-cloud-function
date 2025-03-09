@@ -87,6 +87,7 @@ import org.springframework.util.StringUtils;
  * @author Roman Samarev
  * @author Soby Chacko
  * @author Chris Bono
+ * @author 2tsumo-hitori
  */
 public class SimpleFunctionRegistry implements FunctionRegistry {
 	protected Log logger = LogFactory.getLog(this.getClass());
@@ -419,6 +420,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		protected boolean wrapped;
 
+		private boolean enableSplitting = false;
+
 		private final ThreadLocal<Message<Object>> unconvertedResult = new ThreadLocal<>();
 
 		private PostProcessingFunction postProcessor;
@@ -573,6 +576,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		public Class<?> getRawInputType() {
 			return this.inputType == null ? null : FunctionTypeUtils.getRawType(this.inputType);
+		}
+
+		public boolean isEnableSplitting() {
+			return enableSplitting;
+		}
+
+		public void setEnableSplitting(boolean enableSplitting) {
+			this.enableSplitting = enableSplitting;
 		}
 
 		/**
@@ -814,6 +825,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				else {
 					if (functionInvocationHelper != null && CloudEventMessageUtils.isCloudEvent(((Message) input))) {
 						result = functionInvocationHelper.postProcessResult(result, (Message) input);
+					}
+					else if (this.enableSplitting && !FunctionTypeUtils.isCollectionOfMessage(this.outputType)) {
+						result = ((Collection<?>) result).stream().map(it -> MessageBuilder.withPayload(it).copyHeaders(sanitizeHeaders(((Message) input).getHeaders())).build()).toList();
 					}
 					else if (!FunctionTypeUtils.isCollectionOfMessage(this.outputType)) {
 						result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
@@ -1264,6 +1278,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				convertedOutput = this.convertOutputMessageIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
 			}
 			else if (convertedOutput instanceof Collection && this.isOutputTypeMessage()) {
+				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType);
+			}
+			else if (convertedOutput instanceof Collection && this.isEnableSplitting()) {
 				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType);
 			}
 			else if (ObjectUtils.isArray(convertedOutput) && !(convertedOutput instanceof byte[])) {
