@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Oleg Zhurakousky
  * @author Chris Bono
  */
-@Disabled
+//@Disabled
 public class GrpcInteractionTests {
 
 	@BeforeEach
@@ -211,6 +211,7 @@ public class GrpcInteractionTests {
 	}
 
 	@Test
+	@Disabled
 	public void testClientStreaming() throws Exception {
 		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
 				SampleConfiguration.class).web(WebApplicationType.NONE).run(

@@ -32,36 +32,11 @@
 
 package org.springframework.cloud.function.grpc;
 
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-//
-import io.grpc.Status;
-import io.grpc.stub.ServerCallStreamObserver;
-import io.grpc.stub.StreamObserver;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
-import reactor.core.publisher.Sinks.Many;
-//
-import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.FunctionProperties;
-import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.grpc.MessagingServiceGrpc.MessagingServiceImplBase;
-import org.springframework.context.SmartLifecycle;
-import org.springframework.messaging.Message;
-import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
 import com.google.protobuf.GeneratedMessageV3;
-//
-//import com.google.protobuf.GeneratedMessage;
 
+import io.grpc.stub.StreamObserver;
 
 /**
  *
@@ -72,11 +47,7 @@ import com.google.protobuf.GeneratedMessageV3;
 @SuppressWarnings("rawtypes")
 public class GrpcServerMessageHandler extends MessagingServiceImplBase {
 
-	private Log logger = LogFactory.getLog(GrpcServerMessageHandler.class);
-
 	private final MessageHandlingHelper helper;
-
-	private boolean running;
 
 	public GrpcServerMessageHandler(MessageHandlingHelper<GeneratedMessageV3> helper) {
 		this.helper = helper;

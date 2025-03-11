@@ -1,1 +1,2 @@
 org.springframework.cloud.function.grpc.GrpcAutoConfiguration
+org.springframework.cloud.function.grpc.GrpcFunctionAutoConfiguration

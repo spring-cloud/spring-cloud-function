@@ -61,6 +61,11 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	public final static String FUNCTION_DEFINITION = PREFIX + ".definition";
 
 	/**
+	 * Key for the proxy name.
+	 */
+	public final static String PROXY = "proxy";
+
+	/**
 	 * Definition of the function to be used. This could be function name (e.g., 'myFunction')
 	 * or function composition definition (e.g., 'myFunction|yourFunction')
 	 */
