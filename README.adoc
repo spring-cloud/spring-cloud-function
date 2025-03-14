@@ -5,19 +5,19 @@ Edit the files in the src/main/asciidoc/ directory instead.
 ////
 
 
-:branch: main
+:branch: master
 
 image::https://travis-ci.org/spring-cloud/spring-cloud-function.svg?branch={branch}[Build Status, link=https://travis-ci.org/spring-cloud/spring-cloud-function]
 
 [[introduction]]
 = Introduction
 :page-section-summary-toc: 1
-Visit the https://spring.io/projects/spring-cloud-function[Spring Cloud Function project page] to get an overview about this project. The https://docs.spring.io/spring-cloud-function/reference/spring-cloud-function/introduction.html[Reference Documentation] provides more details how you can use the project.
+
 
 [[getting-started]]
 = Getting Started
 :page-section-summary-toc: 1
-https://start.spring.io/#!type=maven-project&language=java&packaging=jar&jvmVersion=21&dependencies=cloud-function[Start a new project using Spring Initializr] or try https://github.com/spring-cloud/spring-cloud-function/tree/main/spring-cloud-function-samples[existing samples].
+
 
 [[building]]
 = Building
@@ -51,7 +51,7 @@ build succeed, please raise a ticket to get the settings added to
 source control.
 
 The projects that require middleware (i.e. Redis) for testing generally
-require that a local instance of https://www.docker.com/get-started[Docker] is installed and running.
+require that a local instance of [Docker](https://www.docker.com/get-started) is installed and running.
 
 [[documentation]]
 == Documentation
