@@ -138,7 +138,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 							+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
 				}
 				else {
-					logger.info("More then one function is available in FunctionCatalog. " + names
+					logger.info("More than one function is available in FunctionCatalog. " + names
 							+ " Will default to RoutingFunction, "
 							+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
 							+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
