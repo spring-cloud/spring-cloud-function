@@ -483,7 +483,6 @@ public class HttpPostIntegrationTests {
 		@Bean
 		public Consumer<Flux<String>> updates() {
 			return flux -> flux.subscribe(value -> {
-				System.out.println();
 					this.list.add(value);
 				});
 		}
