@@ -37,11 +37,23 @@ public class GrpcFunctionAutoConfiguration {
 	public static String GRPC_INVOKER_FUNCTION = "grpcInvokerFunction";
 	
 	public static String GRPC = "grpc";
+	
+	public static String GRPC_HOST = "grpcHost";
+	
+	public static String GRPC_PORT = "grpcPort";
 
 	@Bean
 	public Function<Message<byte[]>, Message<?>> grpcInvokerFunction() {
-		return input -> {
-			return GrpcUtils.requestReply(input);
+		return message -> {
+			if (message.getHeaders().containsKey(GRPC_HOST)) {
+				String host = (String) message.getHeaders().get(GRPC_HOST);
+				int port  = message.getHeaders().get(GRPC_PORT) instanceof String stringPort 
+						? Integer.parseInt(stringPort) 
+								: (int)message.getHeaders().get(GRPC_PORT);
+				
+				return GrpcUtils.requestReply(host, port, message);
+			}
+			return GrpcUtils.requestReply(message);
 		};
 	}
 	
