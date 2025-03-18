@@ -1,6 +1,4 @@
 {
-	"hints": [],
-	"groups": [],
 	"properties": [
 		{
 			"name": "spring.cloud.function.scan.packages",
