@@ -124,6 +124,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		if (!this.applicationContext.containsBean(functionDefinition) || !KotlinDetector.isKotlinType(this.applicationContext.getBean(functionDefinition).getClass())) {
 			functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		}
+		if (!isFunctionDefinitionEligible(functionDefinition)) {
+			return null;
+		}
 		if (!StringUtils.hasText(functionDefinition)) {
 			Collection<Object> functionalBeans = this.getNames(null).stream()
 					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
@@ -134,9 +137,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 					+ "use 'spring.cloud.function.definition' property to explicitly define it. ");
 			}
 		}
-		if (!isFunctionDefinitionEligible(functionDefinition)) {
-			return null;
-		}
+
 		FunctionInvocationWrapper function = this.doLookup(type, functionDefinition, expectedOutputMimeTypes);
 		Object syncInstance = functionDefinition == null ? this : functionDefinition;
 		synchronized (syncInstance) {
