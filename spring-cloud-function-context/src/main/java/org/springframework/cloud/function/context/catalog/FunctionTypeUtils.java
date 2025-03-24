@@ -378,7 +378,7 @@ public final class FunctionTypeUtils {
 		}
 
 		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
-		
+
 		ResolvableType resolvableInputType;
 		if (FunctionTypeUtils.isFunction(functionType)) {
 			resolvableInputType = resolvableFunctionType.as(Function.class);
