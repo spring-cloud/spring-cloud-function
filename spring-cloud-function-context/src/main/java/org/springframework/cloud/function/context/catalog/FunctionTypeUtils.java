@@ -249,9 +249,6 @@ public final class FunctionTypeUtils {
 			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Supplier.class);
 			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
-//		else {
-//			typeToReturn = TypeResolver.reify(functionalClass);
-//		}
 		return typeToReturn;
 	}
 
@@ -381,7 +378,7 @@ public final class FunctionTypeUtils {
 		}
 
 		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
-
+		
 		ResolvableType resolvableInputType;
 		if (FunctionTypeUtils.isFunction(functionType)) {
 			resolvableInputType = resolvableFunctionType.as(Function.class);
@@ -389,20 +386,12 @@ public final class FunctionTypeUtils {
 		else {
 			resolvableInputType = resolvableFunctionType.as(Consumer.class);
 		}
-
-		ResolvableType genericClass0 = resolvableInputType.getGeneric(0);
-		Type inputType;
-		if (functionType instanceof Class functionTypeClass) {
-			inputType = genericClass0.getType();
-			inputType = (inputType instanceof TypeVariable) ? Object.class : GenericTypeResolver.resolveType(inputType, functionTypeClass);
-		}
-		else if (functionType instanceof ParameterizedType) {
-			inputType = GenericTypeResolver.resolveType(genericClass0.getType(), getRawType(functionType));
+		if (resolvableInputType.getType() instanceof ParameterizedType) {
+			return resolvableInputType.getGeneric(0).getType();
 		}
 		else {
-			inputType =  resolvableInputType.getType();
+			return Object.class;
 		}
-		return inputType instanceof TypeVariable ? Object.class : inputType;
 	}
 
 	@SuppressWarnings("rawtypes")
