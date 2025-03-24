@@ -85,12 +85,18 @@ public abstract class FunctionContextUtils {
 		return param;
 	}
 
+	@Deprecated(since = "4.2.3", forRemoval = true)
 	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
 			AbstractBeanDefinition definition) {
+		return getParamTypesFromBeanDefinitionFactory(factory, definition, null);
+	}
+
+	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
+			AbstractBeanDefinition definition, String methodName) {
 		if (definition instanceof RootBeanDefinition) {
 			RootBeanDefinition root = (RootBeanDefinition) definition;
 			for (Method method : getCandidateMethods(factory, root)) {
-				if (root.isFactoryMethod(method)) {
+				if (method.getName().equals(methodName)) {
 					return method.getParameterTypes();
 				}
 			}
@@ -114,7 +120,7 @@ public abstract class FunctionContextUtils {
 
 	private static Type findBeanType(AbstractBeanDefinition definition, String declaringClassName, String methodName) {
 		Class<?> factory = ClassUtils.resolveClassName(declaringClassName, null);
-		Class<?>[] params = getParamTypesFromBeanDefinitionFactory(factory, definition);
+		Class<?>[] params = getParamTypesFromBeanDefinitionFactory(factory, definition, methodName);
 		Method method = ReflectionUtils.findMethod(factory, methodName,
 				params);
 		Type type = method.getGenericReturnType();
