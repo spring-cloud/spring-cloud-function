@@ -129,7 +129,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 			if (logger.isInfoEnabled()) {
 				if (!StringUtils.hasText(this.functionDefinition)) {
 					logger.info("Failed to determine default function. Please use 'spring.cloud.function.definition' property "
-							+ "or pass function definition as a constructir argument to this FunctionInvoker");
+							+ "or pass function definition as a constructor argument to this FunctionInvoker");
 				}
 				Set<String> names = functionCatalog.getNames(null);
 				if (names.size() == 1) {
