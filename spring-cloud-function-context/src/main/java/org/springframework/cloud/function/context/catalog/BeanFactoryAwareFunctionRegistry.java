@@ -48,7 +48,6 @@ import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.KotlinDetector;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.lang.Nullable;
@@ -121,7 +120,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		functionDefinition = StringUtils.hasText(functionDefinition)
 				? functionDefinition
 						: this.applicationContext.getEnvironment().getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
-		if (!this.applicationContext.containsBean(functionDefinition) || !KotlinDetector.isKotlinType(this.applicationContext.getBean(functionDefinition).getClass())) {
+		if (!this.applicationContext.containsBean(functionDefinition) || !KotlinUtils.isKotlinType(this.applicationContext.getBean(functionDefinition))) {
 			functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		}
 		if (!isFunctionDefinitionEligible(functionDefinition)) {
