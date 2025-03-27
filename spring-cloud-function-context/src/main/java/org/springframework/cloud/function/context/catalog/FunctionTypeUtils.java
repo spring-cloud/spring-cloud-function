@@ -379,18 +379,25 @@ public final class FunctionTypeUtils {
 
 		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
 
-		ResolvableType resolvableInputType;
-		if (FunctionTypeUtils.isFunction(functionType)) {
-			resolvableInputType = resolvableFunctionType.as(Function.class);
-		}
-		else {
-			resolvableInputType = resolvableFunctionType.as(Consumer.class);
-		}
+		ResolvableType resolvableInputType = resolvableFunctionType.as(resolvableFunctionType.getRawClass());
+
 		if (resolvableInputType.getType() instanceof ParameterizedType) {
 			return resolvableInputType.getGeneric(0).getType();
 		}
 		else {
-			return Object.class;
+			// will try another way. See GH-1251
+			if (FunctionTypeUtils.isFunction(functionType)) {
+				resolvableInputType = resolvableFunctionType.as(Function.class);
+			}
+			else {
+				resolvableInputType = resolvableFunctionType.as(Consumer.class);
+			}
+			if (resolvableInputType.getType() instanceof ParameterizedType) {
+				return resolvableInputType.getGeneric(0).getType();
+			}
+			else  {
+				return Object.class;
+			}
 		}
 	}
 
