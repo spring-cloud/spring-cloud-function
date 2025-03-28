@@ -138,7 +138,8 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 		try {
 			this.mvc.service(httpRequest, httpResponse);
 
-			Builder responseBuilder = request.createResponseBuilder(HttpStatus.OK);
+			HttpStatus status = HttpStatus.valueOf(httpResponse.getStatus());
+			Builder responseBuilder = request.createResponseBuilder(status);
 			for (String headerName : httpResponse.getHeaderNames()) {
 				responseBuilder.header(headerName, httpResponse.getHeader(headerName));
 			}
