@@ -266,7 +266,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
+//			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 			if (logger.isDebugEnabled()) {
 				logger.debug("ObjectMapper configuration: " + getConfigDetails(mapper));
