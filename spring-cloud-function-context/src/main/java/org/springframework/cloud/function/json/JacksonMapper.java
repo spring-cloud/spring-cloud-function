@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
 public class JacksonMapper extends JsonMapper {
+
+	private static Log logger = LogFactory.getLog(JacksonMapper.class);
 
 	private final ObjectMapper mapper;
 
@@ -75,7 +80,9 @@ public class JacksonMapper extends JsonMapper {
 				jsonBytes = this.mapper.writeValueAsBytes(value);
 			}
 			catch (Exception e) {
-				//ignore and let other converters have a chance
+				if (logger.isTraceEnabled()) {
+					logger.trace("Failed to writeValueAsBytes: " + value, e);
+				}
 			}
 		}
 		return jsonBytes;
