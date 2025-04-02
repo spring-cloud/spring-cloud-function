@@ -50,23 +50,24 @@ public class FunctionsEndpoint {
 		Set<String> names = functionCatalog.getNames(null);
 		for (String name : names) {
 			FunctionInvocationWrapper function = functionCatalog.lookup(name);
-			Map<String, Object> functionMap = new LinkedHashMap<>();
-			if (function.isFunction()) {
-				functionMap.put("type", "FUNCTION");
-				functionMap.put("input-type", this.toSimplePolyIn(function));
-				functionMap.put("output-type", this.toSimplePolyOut(function));
+			if (function != null) {
+				Map<String, Object> functionMap = new LinkedHashMap<>();
+				if (function.isFunction()) {
+					functionMap.put("type", "FUNCTION");
+					functionMap.put("input-type", this.toSimplePolyIn(function));
+					functionMap.put("output-type", this.toSimplePolyOut(function));
+				}
+				else if (function.isConsumer()) {
+					functionMap.put("type", "CONSUMER");
+					functionMap.put("input-type", this.toSimplePolyIn(function));
+				}
+				else {
+					functionMap.put("type", "SUPPLIER");
+					functionMap.put("output-type", this.toSimplePolyOut(function));
+				}
+				allFunctions.put(name, functionMap);
 			}
-			else if (function.isConsumer()) {
-				functionMap.put("type", "CONSUMER");
-				functionMap.put("input-type", this.toSimplePolyIn(function));
-			}
-			else {
-				functionMap.put("type", "SUPPLIER");
-				functionMap.put("output-type", this.toSimplePolyOut(function));
-			}
-			allFunctions.put(name, functionMap);
 		}
-
 
 		return allFunctions;
 	}
