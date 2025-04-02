@@ -29,6 +29,7 @@ import org.springframework.cloud.function.test.app.Pet;
 import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig;
 import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig.AnotherFilter;
 import org.springframework.cloud.function.test.app.PetStoreSpringAppConfig.SimpleFilter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,6 +56,18 @@ public class RequestResponseTests {
 	@AfterEach
 	public void after() {
 		this.mvc.stop();
+	}
+	
+	@Test
+	public void validateCaseInsensitiveHeaders() throws Exception {
+		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/index");
+		request.setHeader("User-Agent", "iOS");
+		request.setHeader("uSer-Agent", "FOO");
+		request.setContentType("application/json");
+		request.setHeader("CoNteNt-tYpe", "text/plain");
+		
+		assertThat(request.getHeader("content-TYPE")).isEqualTo("application/json");
+		assertThat(request.getHeader("user-agenT")).isEqualTo("iOS");
 	}
 
 	@Test
