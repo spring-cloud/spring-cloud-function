@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 the original author or authors.
+ * Copyright 2015-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,19 @@ public interface MessageConverterHelper {
 	 * @return true if conversion failure must be considered fatal.
 	 */
 	default boolean shouldFailIfCantConvert(Message<?> message) {
+		return false;
+	}
+
+
+	/**
+	 * This method will be called by the framework in cases when a message failed to convert.
+	 * It allows you to signal to the framework if such failure should be considered fatal or not.
+	 *
+	 * @param message failed message
+	 * @param t exception (coudl be null)
+	 * @return true if conversion failure must be considered fatal.
+	 */
+	default boolean shouldFailIfCantConvert(Message<?> message, Throwable t) {
 		return false;
 	}
 

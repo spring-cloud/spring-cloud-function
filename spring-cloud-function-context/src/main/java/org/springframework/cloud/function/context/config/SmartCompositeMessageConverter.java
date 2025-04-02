@@ -81,9 +81,10 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 				if (logger.isWarnEnabled()) {
 					logger.warn("Failure during type conversion by " + converter + ". Will try the next converter.", e);
 				}
+				this.failConversionIfNecessary(message, messageConverterHelpers, e);
 			}
 		}
-		this.failConversionIfNecessary(message, messageConverterHelpers);
+
 		return null;
 	}
 
@@ -122,7 +123,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 				}
 				if (!isConverted) {
 					this.postProcessBatchMessage(message, messageConverterHelpers, resultList.size());
-					this.failConversionIfNecessary(message, messageConverterHelpers);
+					this.failConversionIfNecessary(message, messageConverterHelpers, null);
 				}
 			}
 			return resultList;
@@ -139,13 +140,13 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 				}
 			}
 		}
-		this.failConversionIfNecessary(message, messageConverterHelpers);
+		this.failConversionIfNecessary(message, messageConverterHelpers, null);
 		return result;
 	}
 
-	private void failConversionIfNecessary(Message<?> message, Collection<MessageConverterHelper> messageConverterHelpers) {
+	private void failConversionIfNecessary(Message<?> message, Collection<MessageConverterHelper> messageConverterHelpers, Throwable t) {
 		for (MessageConverterHelper messageConverterHelper : messageConverterHelpers) {
-			if (messageConverterHelper.shouldFailIfCantConvert(message)) {
+			if (messageConverterHelper.shouldFailIfCantConvert(message, t)) {
 				throw new MessageConversionException("Failed to convert Message: " + message
 						+ ". None of the available Message converters were able to convert this Message");
 			}
