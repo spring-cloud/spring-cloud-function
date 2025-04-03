@@ -1,19 +1,18 @@
 plugins {
-	id 'org.springframework.cloud.function.aws-lambda.packaging' version '1.0.0'
-	//id 'java'
-	id 'org.springframework.boot' version '3.4.0'
-	//id 'io.spring.dependency-management' version '1.1.3'
-	//id 'com.github.johnrengelman.shadow' version '8.1.1'
-	//id 'maven-publish'
-	//	id 'org.springframework.boot.experimental.thin-launcher' version "1.0.31.RELEASE"
+	id 'java'
+	id 'org.springframework.boot' version '3.4.4'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.github.johnrengelman.shadow' version '8.1.1'
+	id 'maven-publish'
+	id 'org.springframework.boot.experimental.thin-launcher' version "1.0.31.RELEASE"
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
 
-//java {
-//	sourceCompatibility = '17'
-//}
+java {
+	sourceCompatibility = '17'
+}
 
 repositories {
 	mavenCentral()
@@ -22,53 +21,53 @@ repositories {
 }
 
 ext {
-	set('springCloudVersion', "2024.0.1-SNAPSHOT")
+	set('springCloudVersion', "2024.0.1")
 }
 
-//assemble.dependsOn = [thinJar, shadowJar]
+assemble.dependsOn = [thinJar, shadowJar]
 
-//publishing {
-//	publications {
-//		maven(MavenPublication) {
-//			from components.java
-//			versionMapping {
-//				usage('java-api') {
-//					fromResolutionOf('runtimeClasspath')
-//				}
-//				usage('java-runtime') {
-//					fromResolutionResult()
-//				}
-//			}
-//		}
-//	}
-//}
+publishing {
+	publications {
+		maven(MavenPublication) {
+			from components.java
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
+				}
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+		}
+	}
+}
 
-//shadowJar.mustRunAfter thinJar
+shadowJar.mustRunAfter thinJar
 
+import com.github.jengelman.gradle.plugins.shadow.transformers.*
 
-//import com.github.jengelman.gradle.plugins.shadow.transformers.*
-
-//shadowJar {
-	//archiveClassifier = 'aws'
-	//manifest {
-    //	inheritFrom(project.tasks.thinJar.manifest)
-  	//}
-  	// Required for Spring
-	//mergeServiceFiles()
-	//append 'META-INF/spring.handlers'
-	//append 'META-INF/spring.schemas'
-	//append 'META-INF/spring.tooling'
-	//append 'META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports'
-	//append 'META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports'
-	//transform(PropertiesFileTransformer) {
-	//	paths = ['META-INF/spring.factories']
-	//	mergeStrategy = "append"
-	//}
-//}
+shadowJar {
+	archiveClassifier = 'aws'
+	manifest {
+		inheritFrom(project.tasks.thinJar.manifest)
+	}
+	// Required for Spring
+	mergeServiceFiles()
+	append 'META-INF/spring.handlers'
+	append 'META-INF/spring.schemas'
+	append 'META-INF/spring.tooling'
+	append 'META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports'
+	append 'META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports'
+	transform(PropertiesFileTransformer) {
+		paths = ['META-INF/spring.factories']
+		mergeStrategy = "append"
+	}
+}
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.cloud:spring-cloud-function-adapter-aws'
+	implementation 'org.springframework.cloud:spring-cloud-function-context'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
