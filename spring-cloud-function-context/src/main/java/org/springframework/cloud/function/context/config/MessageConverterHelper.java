@@ -44,6 +44,9 @@ public interface MessageConverterHelper {
 	 * @return true if conversion failure must be considered fatal.
 	 */
 	default boolean shouldFailIfCantConvert(Message<?> message, Throwable t) {
+		if (t == null) {
+			return this.shouldFailIfCantConvert(message);
+		}
 		return false;
 	}
 
