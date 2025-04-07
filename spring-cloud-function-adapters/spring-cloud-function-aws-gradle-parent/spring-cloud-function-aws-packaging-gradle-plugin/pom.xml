@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.cloud.function.aws-lambda.packaging</groupId>
 		<artifactId>spring-cloud-function-aws-gradle-parent</artifactId>
-		<version>4.3.0-SNAPSHOT</version>
+		<version>4.3.0-M3</version>
 	</parent>
 
 	<properties>
