@@ -27,8 +27,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.gson.Gson;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
@@ -116,14 +116,13 @@ public class ContextFunctionCatalogInitializerTests {
 
 	@Test
 	public void missingType() {
-		Assertions.assertThrows(BeanCreationException.class, () -> {
+		try {
 			create(MissingTypeConfiguration.class);
-			assertThat(this.context.getBean("function"))
-				.isInstanceOf(FunctionRegistration.class);
-			assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
-			// TODO: support for type inference from functional bean registrations
-		});
+			Assertions.fail();
+		}
+		catch (BeanCreationException e) {
+			// ignore, the test call must fail
+		}
 	}
 
 	@Test

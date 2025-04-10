@@ -46,6 +46,7 @@ import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SNSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -64,7 +65,6 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StreamUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -1450,7 +1450,7 @@ public class FunctionInvokerTests {
 
 		try {
 			invoker.handleRequest(targetStream, output, null);
-			fail();
+			Assertions.fail();
 		}
 		catch (Exception e) {
 			// TODO: handle exception
