@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.serverless.web;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -25,7 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+
+
 
 /**
  * @author Oleg Zhurakousky
@@ -55,7 +57,7 @@ public class AsyncStartTests {
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		try {
 			mvc.service(request, response);
-			fail();
+			Assertions.fail();
 		}
 		catch (Exception e) {
 			assertThat(e).isInstanceOf(IllegalStateException.class);

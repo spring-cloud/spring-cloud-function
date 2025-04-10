@@ -41,7 +41,7 @@ import java.util.stream.IntStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.protobuf.StringValue;
-import org.junit.jupiter.api.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -491,7 +491,8 @@ public class SimpleFunctionRegistryTests {
 				.build()
 			));
 
-		Assertions.assertIterableEquals(result.blockFirst(), Arrays.asList("item1", "item2"));
+		List<String> blockFirst = result.blockFirst();
+		Assertions.assertThatIterable(blockFirst).isEqualTo(Arrays.asList("item1", "item2"));
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
