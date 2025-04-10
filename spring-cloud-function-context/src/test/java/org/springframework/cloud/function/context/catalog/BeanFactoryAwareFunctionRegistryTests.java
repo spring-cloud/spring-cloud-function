@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -433,9 +433,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public void testReactiveFunctionWithImperativeInputAndOutputFail() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<String, String> reverse = catalog.lookup("reverseFlux");
-		Assertions.assertThrows(ClassCastException.class, () -> {
+		try {
 			String result = reverse.apply("reverseFlux");
-		});
+			Assertions.fail();
+		}
+		catch (ClassCastException e) {
+			// ignore
+		}
 	}
 
 	@Test

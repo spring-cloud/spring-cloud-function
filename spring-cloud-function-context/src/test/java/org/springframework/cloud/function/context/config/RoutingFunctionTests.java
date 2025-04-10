@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -43,7 +43,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -83,7 +82,7 @@ public class RoutingFunctionTests {
 		assertThat(function).isNotNull();
 		try {
 			function.apply(message);
-			fail();
+			Assertions.fail();
 		}
 		catch (Exception e) {
 			// Good
@@ -207,7 +206,7 @@ public class RoutingFunctionTests {
 				.build();
 		try {
 			function.apply(message);
-			fail();
+			Assertions.fail();
 		}
 		catch (Exception e) {
 			assertThat(e.getMessage()).isEqualTo("EL1005E: Type cannot be found 'java.lang.Runtime'");

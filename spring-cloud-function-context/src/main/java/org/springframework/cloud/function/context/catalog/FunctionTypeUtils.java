@@ -166,6 +166,8 @@ public final class FunctionTypeUtils {
 	 * @return instance of {@link Class} as raw representation of the provided {@link Type}
 	 */
 	public static Class<?> getRawType(Type type) {
+//		((WildcardType) type).getUpperBounds();
+//		Class cazz = ResolvableType.forType(type).getRawClass();
 		if (type instanceof WildcardType) {
 			return Object.class;
 		}
