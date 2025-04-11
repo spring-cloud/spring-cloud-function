@@ -68,6 +68,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -166,10 +167,13 @@ public final class FunctionTypeUtils {
 	 * @return instance of {@link Class} as raw representation of the provided {@link Type}
 	 */
 	public static Class<?> getRawType(Type type) {
-//		((WildcardType) type).getUpperBounds();
-//		Class cazz = ResolvableType.forType(type).getRawClass();
 		if (type instanceof WildcardType) {
-			return Object.class;
+			Type[] upperbounds = ((WildcardType) type).getUpperBounds();
+			/*
+			 * Kotlin may have something like this <? extends Message> which is technically a whildcard yet it has upper/lower types.
+			 * See GH-1260
+			 */
+			return ObjectUtils.isEmpty(upperbounds) ? Object.class : getRawType(upperbounds[0]);
 		}
 		return ResolvableType.forType(type).getRawClass();
 	}
@@ -392,7 +396,12 @@ public final class FunctionTypeUtils {
 				resolvableInputType = resolvableFunctionType.as(Function.class);
 			}
 			else {
-				resolvableInputType = resolvableFunctionType.as(Consumer.class);
+				if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
+					return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
+				}
+				else {
+					resolvableInputType = resolvableFunctionType.as(Consumer.class);
+				}
 			}
 			if (resolvableInputType.getType() instanceof ParameterizedType) {
 				return resolvableInputType.getGeneric(0).getType();
@@ -477,7 +486,12 @@ public final class FunctionTypeUtils {
 			resolvableOutputType = resolvableFunctionType.as(Function.class);
 		}
 		else {
-			resolvableOutputType = resolvableFunctionType.as(Supplier.class);
+			if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
+				return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
+			}
+			else {
+				resolvableOutputType = resolvableFunctionType.as(Supplier.class);
+			}
 		}
 
 		Type outputType;
@@ -629,6 +643,7 @@ public final class FunctionTypeUtils {
 		Class<?> candidateType = (Class<?>) type;
 
 		Assert.isTrue(Supplier.class.isAssignableFrom(candidateType)
+						|| (KotlinDetector.isKotlinPresent() && (Function0.class.isAssignableFrom(candidateType) || Function1.class.isAssignableFrom(candidateType)))
 						|| Function.class.isAssignableFrom(candidateType)
 						|| Consumer.class.isAssignableFrom(candidateType)
 						|| FunctionRegistration.class.isAssignableFrom(candidateType)
