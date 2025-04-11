@@ -27,6 +27,8 @@ import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.ClassUtils;
@@ -96,7 +98,7 @@ public abstract class FunctionContextUtils {
 		if (definition instanceof RootBeanDefinition) {
 			RootBeanDefinition root = (RootBeanDefinition) definition;
 			for (Method method : getCandidateMethods(factory, root)) {
-				if (method.getName().equals(methodName)) {
+				if (method.getName().equals(methodName) && AnnotationUtils.findAnnotation(method, Bean.class) != null) {
 					return method.getParameterTypes();
 				}
 			}
