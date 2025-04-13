@@ -17,11 +17,14 @@
 package org.springframework.cloud.function.adapter.aws;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.amazonaws.services.lambda.runtime.serialization.PojoSerializer;
 import com.amazonaws.services.lambda.runtime.serialization.events.LambdaEventSerializers;
+import com.amazonaws.services.lambda.runtime.serialization.events.serializers.S3EventSerializer;
 
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
@@ -30,6 +33,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 
 /**
@@ -43,6 +47,9 @@ import org.springframework.util.MimeType;
 class AWSTypesMessageConverter extends JsonMessageConverter {
 
 	private final JsonMapper jsonMapper;
+
+	@SuppressWarnings("rawtypes")
+	private final AtomicReference<S3EventSerializer> s3EventSerializer = new AtomicReference<>();
 
 	AWSTypesMessageConverter(JsonMapper jsonMapper) {
 		this(jsonMapper, new MimeType("application", "json"), new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
@@ -75,7 +82,6 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 		if (message.getPayload().getClass().isAssignableFrom(targetClass)) {
 			return message.getPayload();
 		}
-
 		if (targetClass.getPackage() != null &&
 				targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
 			PojoSerializer<?> serializer = LambdaEventSerializers.serializerFor(targetClass, Thread.currentThread().getContextClassLoader());
@@ -110,12 +116,23 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 	}
 
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 			@Nullable Object conversionHint) {
 		if (payload instanceof String && headers.containsKey(AWSLambdaUtils.IS_BASE64_ENCODED)  && (boolean) headers.get(AWSLambdaUtils.IS_BASE64_ENCODED)) {
 			return ((String) payload).getBytes(StandardCharsets.UTF_8);
 		}
+		if (payload.getClass().getName().equals("com.amazonaws.services.lambda.runtime.events.S3Event")) {
+			if (this.s3EventSerializer.get() == null) {
+				this.s3EventSerializer.set(new S3EventSerializer<>().withClassLoader(ClassUtils.getDefaultClassLoader()));
+			}
+			ByteArrayOutputStream stream = new ByteArrayOutputStream();
+			this.s3EventSerializer.get().toJson(payload, stream);
+			return stream.toByteArray();
+		}
+
+
 		return jsonMapper.toJson(payload);
 	}
 

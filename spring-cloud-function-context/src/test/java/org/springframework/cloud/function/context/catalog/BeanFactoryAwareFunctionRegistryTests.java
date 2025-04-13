@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2019-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -85,6 +86,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Artem Bilan
  *
  */
 public class BeanFactoryAwareFunctionRegistryTests {
@@ -896,6 +898,14 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
+	void functionFromFactoryBeanIsProperlyResolved() {
+		FunctionCatalog catalog = configureCatalog();
+		Function<Number, String> numberToStringFactoryBean = catalog.lookup("numberToStringFactoryBean");
+		assertThat(numberToStringFactoryBean).isNotNull();
+		assertThat(numberToStringFactoryBean.apply(1)).isEqualTo("1");
+	}
+
+	@Test
 	// see GH-707
 	public void testConcurrencyOnLookup() throws Exception {
 		AtomicInteger counter = new AtomicInteger();
@@ -1345,6 +1355,23 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		// Perhaps it should not be allowed. Recommend Function<Flux, Mono<Void>>
 		public Consumer<Flux<Person>> reactivePojoConsumer() {
 			return flux -> flux.subscribe(v -> consumerInputRef.set(v));
+		}
+
+		@Bean
+		FactoryBean<Function<Number, String>> numberToStringFactoryBean() {
+			return new FactoryBean<>() {
+
+				@Override
+				public Function<Number, String> getObject() {
+					return Number::toString;
+				}
+
+				@Override
+				public Class<?> getObjectType() {
+					return Function.class;
+				}
+
+			};
 		}
 	}
 

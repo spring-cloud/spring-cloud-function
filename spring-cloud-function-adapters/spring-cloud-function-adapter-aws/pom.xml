@@ -13,13 +13,13 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-function-adapter-parent</artifactId>
-		<version>4.1.4-SNAPSHOT</version>
+		<version>4.1.6-SNAPSHOT</version>
 	</parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<aws-lambda-events.version>3.11.4</aws-lambda-events.version>
+		<aws-lambda-events.version>3.14.0</aws-lambda-events.version>
 		<aws-java-sdk.version>1.12.29</aws-java-sdk.version>
 		<aws-lambda-java-log4j.version>1.0.1</aws-lambda-java-log4j.version>
 		<aws-lambda-java-serialization.version>1.1.5</aws-lambda-java-serialization.version>

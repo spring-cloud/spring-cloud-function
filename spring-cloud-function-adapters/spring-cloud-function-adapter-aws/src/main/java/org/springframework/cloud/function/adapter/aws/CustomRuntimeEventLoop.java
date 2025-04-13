@@ -28,9 +28,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.amazonaws.services.lambda.runtime.ClientContext;
+import com.amazonaws.services.lambda.runtime.CognitoIdentity;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
+import com.amazonaws.services.lambda.runtime.LambdaRuntime;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
@@ -130,6 +134,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			logger.debug("Attempting to get new event");
 			ResponseEntity<String> response = this.pollForData(rest, requestEntity);
 
+			Context clientContext = generateClientContext(response.getHeaders());
+
 			if (logger.isDebugEnabled()) {
 				logger.debug("New Event received: " + response);
 			}
@@ -140,9 +146,9 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 					FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
 
 					ByteArrayInputStream is = new ByteArrayInputStream(response.getBody().getBytes(StandardCharsets.UTF_8));
-					Message<?> requestMessage = AWSLambdaUtils.generateMessage(is, function.getInputType(), function.isSupplier(), mapper, null);
-
+					Message<?> requestMessage = AWSLambdaUtils.generateMessage(is, function.getInputType(), function.isSupplier(), mapper, clientContext);
 					Object functionResponse = function.apply(requestMessage);
+
 					byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, functionResponse, mapper, function.getOutputType());
 
 					String invocationUrl = MessageFormat
@@ -157,10 +163,89 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 					}
 				}
 				catch (Exception e) {
+					e.printStackTrace();
 					this.propagateAwsError(requestId, e, mapper, runtimeApi, rest);
 				}
 			}
 		}
+	}
+
+	private Context generateClientContext(HttpHeaders headers) {
+
+		Map<String, String> environment = System.getenv();
+
+		Context context = new Context() {
+
+			@Override
+			public int getRemainingTimeInMillis() {
+				long now = System.currentTimeMillis();
+				if (!headers.containsKey("Lambda-Runtime-Deadline-Ms")) {
+					return 0;
+				}
+				int delta = (int) (Long.parseLong(headers.getFirst("Lambda-Runtime-Deadline-Ms")) - now);
+				return delta > 0 ? delta : 0;
+			}
+
+			@Override
+			public int getMemoryLimitInMB() {
+				if (!environment.containsKey("AWS_LAMBDA_FUNCTION_MEMORY_SIZE")) {
+					return 128;
+				}
+				return Integer.parseInt(environment.getOrDefault("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "128"));
+			}
+
+			@Override
+			public LambdaLogger getLogger() {
+				return LambdaRuntime.getLogger();
+			}
+
+			@Override
+			public String getLogStreamName() {
+				return environment.get("LOG_STREAM_NAME");
+			}
+
+			@Override
+			public String getLogGroupName() {
+				return environment.get("LOG_GROUP_NAME");
+			}
+
+			@Override
+			public String getInvokedFunctionArn() {
+				return headers.getFirst("Lambda-Runtime-Invoked-Function-Arn");
+			}
+
+			@Override
+			public CognitoIdentity getIdentity() {
+				return null;
+			}
+
+			@Override
+			public String getFunctionVersion() {
+				return environment.get("FUNCTION_VERSION");
+			}
+
+			@Override
+			public String getFunctionName() {
+				return environment.get("FUNCTION_NAME");
+			}
+
+			@Override
+			public ClientContext getClientContext() {
+				return null;
+			}
+
+			@Override
+			public String getAwsRequestId() {
+				return headers.getFirst("Lambda-Runtime-Aws-Request-Id");
+			}
+
+			public String toString() {
+				return "FUNCTION NAME: " + getFunctionName() + ", FUNCTION VERSION: " + getFunctionVersion()
+						+ ", FUNCTION ARN: " + getInvokedFunctionArn() + ", FUNCTION MEM LIMIT: " + getMemoryLimitInMB()
+						+ ", FUNCTION DEADLINE: " + getRemainingTimeInMillis();
+			}
+		};
+		return context;
 	}
 
 	private void propagateAwsError(String requestId, Exception e, JsonMapper mapper, String runtimeApi, RestTemplate rest) {

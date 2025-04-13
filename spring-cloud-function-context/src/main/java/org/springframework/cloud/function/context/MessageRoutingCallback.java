@@ -21,21 +21,22 @@ import org.springframework.messaging.Message;
 
 /**
  * Java-based strategy to assist with determining the name of the route-to function definition.
- * Once implementation is registered as a bean in application context
+ * Once an implementation is registered as a bean in application context
  * it will be picked up by the {@link RoutingFunction}.
- *
+ * <p/>
  * While {@link RoutingFunction} provides several mechanisms to determine the route-to function definition
  * this callback takes precedence over all of them.
  *
  * @author Oleg Zhurakousky
+ * @author John Blum
  * @since 3.1
  */
 public interface MessageRoutingCallback {
 
 	/**
-	 * Computes and returns the instance of {@link String} which encapsulates,
-	 * at the very minimum, function definition.
-	 * <br><br>
+	 * Computes and returns an instance of {@link String}, which encapsulates,
+	 * at the very minimum, a function definition.
+	 * <p/>
 	 * Providing such message is primarily an optimization feature. It could be useful for cases
 	 * where routing procedure is complex and results in, let's say, conversion of the payload to
 	 * the target type, which would effectively be thrown away if the ability to modify the target
