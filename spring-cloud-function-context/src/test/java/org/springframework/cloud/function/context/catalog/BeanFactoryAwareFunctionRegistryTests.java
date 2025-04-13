@@ -43,7 +43,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.assertj.core.api.Assertions;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -81,7 +81,8 @@ import org.springframework.util.ReflectionUtils;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Fail.fail;
+
 
 /**
  *
@@ -437,7 +438,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		Function<String, String> reverse = catalog.lookup("reverseFlux");
 		try {
 			String result = reverse.apply("reverseFlux");
-			Assertions.fail();
+			fail("The function should return a Flux");
 		}
 		catch (ClassCastException e) {
 			// ignore
