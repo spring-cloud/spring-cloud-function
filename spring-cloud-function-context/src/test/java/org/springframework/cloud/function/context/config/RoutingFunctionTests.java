@@ -82,7 +82,7 @@ public class RoutingFunctionTests {
 		assertThat(function).isNotNull();
 		try {
 			function.apply(message);
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (Exception e) {
 			// Good
@@ -206,7 +206,7 @@ public class RoutingFunctionTests {
 				.build();
 		try {
 			function.apply(message);
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (Exception e) {
 			assertThat(e.getMessage()).isEqualTo("EL1005E: Type cannot be found 'java.lang.Runtime'");
@@ -270,7 +270,7 @@ public class RoutingFunctionTests {
 		// no function.definition header or function property
 		try {
 			function.apply(MessageBuilder.withPayload("hello").build());
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (Exception e) {
 			// ignore
@@ -280,7 +280,7 @@ public class RoutingFunctionTests {
 		try {
 			function.apply(MessageBuilder.withPayload("hello")
 					.setHeader(FunctionProperties.PREFIX + ".definition", "blah").build());
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (Exception e) {
 			// ignore

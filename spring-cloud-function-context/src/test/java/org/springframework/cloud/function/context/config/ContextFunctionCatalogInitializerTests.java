@@ -118,7 +118,7 @@ public class ContextFunctionCatalogInitializerTests {
 	public void missingType() {
 		try {
 			create(MissingTypeConfiguration.class);
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (BeanCreationException e) {
 			// ignore, the test call must fail

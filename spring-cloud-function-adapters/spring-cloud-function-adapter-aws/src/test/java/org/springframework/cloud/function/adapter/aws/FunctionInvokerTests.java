@@ -1462,7 +1462,7 @@ public class FunctionInvokerTests {
 
 		try {
 			invoker.handleRequest(targetStream, output, null);
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (Exception e) {
 			// TODO: handle exception

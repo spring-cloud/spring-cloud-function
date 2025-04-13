@@ -57,7 +57,7 @@ public class AsyncStartTests {
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		try {
 			mvc.service(request, response);
-			Assertions.fail();
+			Assertions.fail("");
 		}
 		catch (Exception e) {
 			assertThat(e).isInstanceOf(IllegalStateException.class);
