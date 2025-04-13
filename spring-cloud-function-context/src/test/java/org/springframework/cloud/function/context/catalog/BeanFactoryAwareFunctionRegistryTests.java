@@ -688,7 +688,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "a")
 					.type(FunctionTypeUtils.functionType(Integer.class, String.class));
 			registry.register(registration);
-			fail();
+			fail("");
 		}
 		catch (IllegalArgumentException e) {
 			// good as we expect it to fail
@@ -698,7 +698,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			FunctionRegistration registration = new FunctionRegistration(new MyFunction(), "b")
 					.type(FunctionTypeUtils.functionType(String.class, Integer.class));
 			registry.register(registration);
-			fail();
+			fail("");
 		}
 		catch (IllegalArgumentException e) {
 			// good as we expect it to fail

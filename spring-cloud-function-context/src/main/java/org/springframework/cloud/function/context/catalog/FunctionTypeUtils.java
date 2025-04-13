@@ -145,7 +145,7 @@ public final class FunctionTypeUtils {
 	 * @param type actual {@link Type} instance
 	 * @return instance of {@link Class} as raw representation of the provided {@link Type}
 	 */
-	public static Class<?> getRawType(Type type) {
+	public static Class<?> getRawType(Type type) {		
 		return type != null ? TypeResolver
 				.resolveRawClass(type instanceof GenericArrayType ? type : TypeResolver.reify(type), null) : null;
 	}
