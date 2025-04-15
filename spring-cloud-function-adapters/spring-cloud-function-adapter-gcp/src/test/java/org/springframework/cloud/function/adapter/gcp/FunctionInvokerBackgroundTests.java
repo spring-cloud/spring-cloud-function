@@ -22,6 +22,10 @@ import java.util.function.Supplier;
 
 import com.github.blindpirate.extensions.CaptureSystemOutput;
 import com.google.gson.Gson;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +59,18 @@ public class FunctionInvokerBackgroundTests {
 	@Test
 	public void testJsonInputFunction_Background(CaptureSystemOutput.OutputCapture outputCapture) {
 		testBackgroundFunction(outputCapture, JsonInputFunction.class, new IncomingRequest("hello"),
+				"Thank you for sending the message: hello", null, null);
+	}
+
+	@Test
+	public void testJsonInputFunction_BackgroundMono(CaptureSystemOutput.OutputCapture outputCapture) {
+		testBackgroundFunction(outputCapture, JsonInputFunctionMono.class, new IncomingRequest("hello"),
+				"Thank you for sending the message: hello", null, null);
+	}
+
+	@Test
+	public void testJsonInputFunction_BackgroundFlux(CaptureSystemOutput.OutputCapture outputCapture) {
+		testBackgroundFunction(outputCapture, JsonInputFunctionFlux.class, new IncomingRequest("hello"),
 				"Thank you for sending the message: hello", null, null);
 	}
 
@@ -145,6 +161,28 @@ public class FunctionInvokerBackgroundTests {
 		@Bean
 		public Function<IncomingRequest, String> function() {
 			return (in) -> "Thank you for sending the message: " + in.message;
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputFunctionMono {
+
+		@Bean
+		public Function<Mono<IncomingRequest>, Mono<String>> function() {
+			return (in) -> in.map(o -> "Thank you for sending the message: " + o.message);
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputFunctionFlux {
+
+		@Bean
+		public Function<Flux<IncomingRequest>, Flux<String>> function() {
+			return (in) -> in.map(o -> "Thank you for sending the message: " + o.message);
 		}
 
 	}
