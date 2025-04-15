@@ -30,6 +30,10 @@ import java.util.function.Supplier;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.gson.Gson;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -90,6 +94,36 @@ public class FunctionInvokerHttpTests {
 
 	}
 
+	@Test
+	public void testJsonInputFunctionMono() throws Exception {
+
+		FunctionInvoker handler = new FunctionInvoker(JsonInputFunctionMono.class);
+
+		String expectedOutput = "Thank you for sending the message: hello";
+		IncomingRequest input = new IncomingRequest("hello");
+
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
+		handler.service(request, response);
+		bufferedWriter.close();
+
+
+		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+	}
+
+	@Test
+	public void testJsonInputFunctionFlux() throws Exception {
+
+		FunctionInvoker handler = new FunctionInvoker(JsonInputFunctionFlux.class);
+
+		String expectedOutput = "hello!!!";
+
+		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("hello")));
+		handler.service(request, response);
+		bufferedWriter.close();
+
+
+		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
+	}
 
 	@Test
 	public void testJsonInputFunction() throws Exception {
@@ -234,6 +268,28 @@ public class FunctionInvokerHttpTests {
 		@Bean
 		public Function<IncomingRequest, String> function() {
 			return (in) -> "Thank you for sending the message: " + in.message;
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputFunctionMono {
+
+		@Bean
+		public Function<Mono<IncomingRequest>, Mono<String>> function() {
+			return (in) -> in.map(o -> "Thank you for sending the message: " + o.message);
+		}
+
+	}
+
+	@Configuration
+	@Import({ ContextFunctionCatalogAutoConfiguration.class })
+	protected static class JsonInputFunctionFlux {
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> function() {
+			return (in) -> in.map(word -> word + "!!!");
 		}
 
 	}

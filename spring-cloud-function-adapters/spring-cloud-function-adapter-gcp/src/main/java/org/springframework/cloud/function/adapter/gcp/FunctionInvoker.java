@@ -17,8 +17,11 @@
 package org.springframework.cloud.function.adapter.gcp;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -30,9 +33,12 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.cloud.functions.RawBackgroundFunction;
+
+import reactor.core.publisher.Flux;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.reactivestreams.Publisher;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -40,6 +46,7 @@ import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.function.context.config.RoutingFunction;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.messaging.Message;
@@ -76,6 +83,8 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 
 	private ConfigurableApplicationContext context;
 
+	private JsonMapper jsonMapper;
+
 	public FunctionInvoker() {
 		this(FunctionClassUtils.getStartClass());
 	}
@@ -90,18 +99,19 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 			System.setProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY, "gson");
 		}
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
-			.setContextClassLoader(FunctionInvoker.class.getClassLoader());
+				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 
 		log.info("Initializing: " + configurationClass);
 		SpringApplication springApplication = springApplication(configurationClass);
 		this.context = springApplication.run();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
+		this.jsonMapper = this.context.getBean(JsonMapper.class);
 		initFunctionConsumerOrSupplierFromCatalog();
 	}
 
 	private <I> Function<Message<I>, Message<byte[]>> lookupFunction() {
 		Function<Message<I>, Message<byte[]>> function = this.catalog.lookup(functionName,
-			MimeTypeUtils.APPLICATION_JSON.toString());
+				MimeTypeUtils.APPLICATION_JSON.toString());
 		Assert.notNull(function, "'function' with name '" + functionName + "' must not be null");
 		return function;
 	}
@@ -114,43 +124,22 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	public void service(HttpRequest httpRequest, HttpResponse httpResponse) throws Exception {
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
-		Message<BufferedReader> message = this.functionWrapped.getInputType() == Void.class || this.functionWrapped.getInputType() == null ? null
-			: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders()).build();
+		Message<BufferedReader> message = this.functionWrapped.getInputType() == Void.class
+				|| this.functionWrapped.getInputType() == null ? null
+						: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders())
+								.build();
 
-		Message<?> result = function.apply(message);
+		Object resultObject = function.apply(message);
 
-		if (result != null) {
-			MessageHeaders headers = result.getHeaders();
-			if (result.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
-				httpResponse.setContentType(result.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
-			}
-			else if (result.getHeaders().containsKey("Content-Type")) {
-				httpResponse.setContentType(result.getHeaders().get("Content-Type").toString());
-			}
-			else {
-				httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
-			}
-			String content = result.getPayload() instanceof String strPayload ? strPayload : new String((byte[]) result.getPayload(), StandardCharsets.UTF_8);
-			httpResponse.getWriter().write(content);
-			for (Entry<String, Object> header : headers.entrySet()) {
-				Object values = header.getValue();
-				if (values instanceof Collection<?>) {
-					String headerValue = ((Collection<?>) values).stream().map(item -> item.toString()).collect(Collectors.joining(","));
-					httpResponse.appendHeader(header.getKey(), headerValue);
-				}
-				else {
-					httpResponse.appendHeader(header.getKey(), header.getValue().toString());
-				}
+		if (resultObject != null) {
+			Message<?> result = null;
+			if (resultObject instanceof Publisher<?>) {
+				result = getResultFromPublisher(resultObject);
+			} else {
+				result = (Message<?>) resultObject;
 			}
 
-			if (headers.containsKey(HTTP_STATUS_CODE)) {
-				if (headers.get(HTTP_STATUS_CODE) instanceof Integer) {
-					httpResponse.setStatusCode((int) headers.get(HTTP_STATUS_CODE));
-				}
-				else {
-					log.warn("The statusCode should be an Integer value");
-				}
-			}
+			buildHttpResponse(httpRequest, httpResponse, result);
 		}
 	}
 
@@ -162,17 +151,107 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	 * @param context event context.
 	 * @since 3.0.5
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void accept(String json, Context context) {
 		Function<Message<String>, Message<byte[]>> function = lookupFunction();
 		Message<String> message = this.functionWrapped.getInputType() == Void.class ? null
-			: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
+				: MessageBuilder.withPayload(json).setHeader("gcf_context", context).build();
 
-		Message<byte[]> result = function.apply(message);
+		Object resultObject = function.apply(message);
+
+		Message<byte[]> result = null;
+		if (resultObject instanceof Publisher<?>) {
+			result = getResultFromPublisher(resultObject);
+		} else {
+			result = (Message<byte[]>) resultObject;
+		}
 
 		if (result != null) {
 			log.info("Dropping background function result: " + new String(result.getPayload()));
 		}
+	}
+
+	/**
+	 * This method build the http response from service
+	 * 
+	 * @throws IOException
+	 */
+	private void buildHttpResponse(HttpRequest httpRequest, HttpResponse httpResponse, Message<?> result)
+			throws IOException {
+		MessageHeaders headers = result.getHeaders();
+		if (result.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+			httpResponse.setContentType(result.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
+		} else if (result.getHeaders().containsKey("Content-Type")) {
+			httpResponse.setContentType(result.getHeaders().get("Content-Type").toString());
+		} else {
+			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
+		}
+		String content = result.getPayload() instanceof String strPayload ? strPayload
+				: new String((byte[]) result.getPayload(), StandardCharsets.UTF_8);
+		httpResponse.getWriter().write(content);
+		for (Entry<String, Object> header : headers.entrySet()) {
+			Object values = header.getValue();
+			if (values instanceof Collection<?>) {
+				String headerValue = ((Collection<?>) values).stream().map(item -> item.toString())
+						.collect(Collectors.joining(","));
+				httpResponse.appendHeader(header.getKey(), headerValue);
+			} else {
+				httpResponse.appendHeader(header.getKey(), header.getValue().toString());
+			}
+		}
+
+		if (headers.containsKey(HTTP_STATUS_CODE)) {
+			if (headers.get(HTTP_STATUS_CODE) instanceof Integer) {
+				httpResponse.setStatusCode((int) headers.get(HTTP_STATUS_CODE));
+			} else {
+				log.warn("The statusCode should be an Integer value");
+			}
+		}
+	}
+
+	/**
+	 * This methd get the result from reactor's publisher 
+	 * 
+	 * For reference: https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/springframework/cloud/function/adapter/aws/AWSLambdaUtils.java
+	 */
+	private Message<byte[]> getResultFromPublisher(Object resultObject) {
+		List<Object> results = new ArrayList<>();
+		Message<?> lastMessage = null;
+		for (Object item : Flux.from((Publisher<?>) resultObject).toIterable()) {
+			log.info("Response value: " + item);
+			if (item instanceof Message<?> messageItem) {
+				results.add(convertFromJsonIfNecessary(messageItem.getPayload()));
+				lastMessage = messageItem;
+			} else {
+				results.add(convertFromJsonIfNecessary(item));
+			}
+		}
+
+		byte[] resultsPayload;
+		if (results.size() == 1) {
+			resultsPayload = jsonMapper.toJson(results.get(0));
+		} else if (results.size() > 1) {
+			resultsPayload = jsonMapper.toJson(results);
+		} else {
+			resultsPayload = null;
+		}
+
+		Assert.notNull(resultsPayload, "Couldn't resolve payload result");
+
+		MessageBuilder<byte[]> messageBuilder = MessageBuilder.withPayload(resultsPayload);
+		if (lastMessage != null) {
+			messageBuilder.copyHeaders(lastMessage.getHeaders());
+		}
+		return messageBuilder.build();
+	}
+
+	private Object convertFromJsonIfNecessary(Object value) {
+		if (JsonMapper.isJsonString(value)) {
+			return jsonMapper.fromJson(value, Object.class);
+		}
+
+		return value;
 	}
 
 	private void initFunctionConsumerOrSupplierFromCatalog() {
