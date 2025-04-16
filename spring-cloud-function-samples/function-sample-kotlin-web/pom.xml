@@ -31,17 +31,12 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-kotlin</artifactId>
-			<version>4.1.1-SNAPSHOT</version>
+			<version>4.2.3-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-web</artifactId>
-			<version>4.1.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-function-context</artifactId>
-			<version>4.1.0-SNAPSHOT</version>
+			<version>4.2.3-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
