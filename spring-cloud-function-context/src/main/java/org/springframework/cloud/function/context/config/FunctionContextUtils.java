@@ -87,12 +87,6 @@ public abstract class FunctionContextUtils {
 		return param;
 	}
 
-	@Deprecated(since = "4.2.3", forRemoval = true)
-	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
-			AbstractBeanDefinition definition) {
-		return getParamTypesFromBeanDefinitionFactory(factory, definition, null);
-	}
-
 	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
 			AbstractBeanDefinition definition, String methodName) {
 		if (definition instanceof RootBeanDefinition) {

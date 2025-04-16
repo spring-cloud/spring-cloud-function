@@ -31,14 +31,6 @@ public interface FunctionInvocationHelper<I> {
 		return true;
 	}
 
-	/**
-	 * @deprecated Use {@link #isRetainOutputAsMessage(I)}
-	 */
-	@Deprecated
-	default boolean isRetainOuputAsMessage(I input) {
-		return isRetainOutputAsMessage(input);
-	};
-
 	default I preProcessInput(I input, Object inputConverter) {
 		return input;
 	}
