@@ -808,7 +808,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				if (functionInvocationHelper != null && CloudEventMessageUtils.isCloudEvent(((Message) input))) {
 					result = functionInvocationHelper.postProcessResult(result, (Message) input);
 				}
-				if (!FunctionTypeUtils.isCollectionOfMessage(this.outputType)) {
+				if (!(result instanceof Message) && !FunctionTypeUtils.isCollectionOfMessage(this.outputType)) {
 					result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
 				}
 			}
