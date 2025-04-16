@@ -33,12 +33,11 @@ import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
 import com.google.cloud.functions.RawBackgroundFunction;
-
-import reactor.core.publisher.Flux;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -132,12 +131,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		Object resultObject = function.apply(message);
 
 		if (resultObject != null) {
-			Message<?> result = null;
-			if (resultObject instanceof Publisher<?>) {
-				result = getResultFromPublisher(resultObject);
-			} else {
-				result = (Message<?>) resultObject;
-			}
+			Message<?> result = resultObject instanceof Publisher<?> ? getResultFromPublisher(resultObject) : (Message<?>) resultObject;
 
 			buildHttpResponse(httpRequest, httpResponse, result);
 		}
@@ -163,7 +157,8 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		Message<byte[]> result = null;
 		if (resultObject instanceof Publisher<?>) {
 			result = getResultFromPublisher(resultObject);
-		} else {
+		}
+		else {
 			result = (Message<byte[]>) resultObject;
 		}
 
@@ -172,19 +167,19 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		}
 	}
 
-	/**
-	 * This method build the http response from service
-	 * 
-	 * @throws IOException
+	/*
+	 * This method build the http response from service.
 	 */
 	private void buildHttpResponse(HttpRequest httpRequest, HttpResponse httpResponse, Message<?> result)
 			throws IOException {
 		MessageHeaders headers = result.getHeaders();
 		if (result.getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 			httpResponse.setContentType(result.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
-		} else if (result.getHeaders().containsKey("Content-Type")) {
+		}
+		else if (result.getHeaders().containsKey("Content-Type")) {
 			httpResponse.setContentType(result.getHeaders().get("Content-Type").toString());
-		} else {
+		}
+		else {
 			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
 		}
 		String content = result.getPayload() instanceof String strPayload ? strPayload
@@ -196,7 +191,8 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 				String headerValue = ((Collection<?>) values).stream().map(item -> item.toString())
 						.collect(Collectors.joining(","));
 				httpResponse.appendHeader(header.getKey(), headerValue);
-			} else {
+			}
+			else {
 				httpResponse.appendHeader(header.getKey(), header.getValue().toString());
 			}
 		}
@@ -204,15 +200,16 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		if (headers.containsKey(HTTP_STATUS_CODE)) {
 			if (headers.get(HTTP_STATUS_CODE) instanceof Integer) {
 				httpResponse.setStatusCode((int) headers.get(HTTP_STATUS_CODE));
-			} else {
+			}
+			else {
 				log.warn("The statusCode should be an Integer value");
 			}
 		}
 	}
 
-	/**
-	 * This methd get the result from reactor's publisher 
-	 * 
+	/*
+	 * This methd get the result from reactor's publisher.
+	 *
 	 * For reference: https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/springframework/cloud/function/adapter/aws/AWSLambdaUtils.java
 	 */
 	private Message<byte[]> getResultFromPublisher(Object resultObject) {
@@ -223,7 +220,8 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 			if (item instanceof Message<?> messageItem) {
 				results.add(convertFromJsonIfNecessary(messageItem.getPayload()));
 				lastMessage = messageItem;
-			} else {
+			}
+			else {
 				results.add(convertFromJsonIfNecessary(item));
 			}
 		}
@@ -231,9 +229,11 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		byte[] resultsPayload;
 		if (results.size() == 1) {
 			resultsPayload = jsonMapper.toJson(results.get(0));
-		} else if (results.size() > 1) {
+		}
+		else if (results.size() > 1) {
 			resultsPayload = jsonMapper.toJson(results);
-		} else {
+		}
+		else {
 			resultsPayload = null;
 		}
 

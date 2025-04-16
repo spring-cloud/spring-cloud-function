@@ -22,12 +22,10 @@ import java.util.function.Supplier;
 
 import com.github.blindpirate.extensions.CaptureSystemOutput;
 import com.google.gson.Gson;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.cloud.function.json.JsonMapper;
