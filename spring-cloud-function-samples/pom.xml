@@ -31,6 +31,10 @@
  		<module>function-sample-cloudevent</module>
  		<module>function-sample-cloudevent-stream</module>
  		<module>function-sample-cloudevent-sdk</module>
+<<<<<<< HEAD
+=======
+ 		<module>function-sample-kotlin-web</module>
+>>>>>>> d5e57421 (The changes enhance the Kotlin function support by adding better handling for coroutine and flux types, allowing for more flexible function definitions. The validation logic is refactored into a new utility class for better organization and maintainability. Comprehensive tests are added to ensure the correctness of the new features and existing functionality. Additionally, dependencies are updated to the latest version to leverage improvements and bug fixes.)
 		<module>function-sample-grpc-cloudevent</module>
 	</modules>
 

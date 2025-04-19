@@ -28,6 +28,7 @@ import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
+import reactor.core.publisher.Mono
 
 /**
  * @author Adrien Poupard
@@ -69,13 +70,17 @@ fun isContinuationType(type: Type): Boolean {
 	return type.typeName.startsWith(Continuation::class.qualifiedName!!)
 }
 
+fun isUnitType(type: Type): Boolean {
+	return isTypeRepresentedByClass(type, Unit::class.java)
+}
+
 fun isContinuationUnitType(type: Type): Boolean {
 	return isContinuationType(type) && type.typeName.contains(Unit::class.qualifiedName!!)
 }
 
-fun isContinuationFlowType(type: Type): Boolean {
-	return isContinuationType(type) && type.typeName.contains(Flow::class.qualifiedName!!)
-}
+//fun isContinuationFlowType(type: Type): Boolean {
+//	return isContinuationType(type) && type.typeName.contains(Flow::class.qualifiedName!!)
+//}
 
 private fun getContinuationTypeArguments(type: Type): Type {
 	if(!isContinuationType(type)) {
@@ -86,26 +91,62 @@ private fun getContinuationTypeArguments(type: Type): Type {
 	return wildcardType.lowerBounds[0]
 }
 
-fun invokeSuspendingFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
+fun invokeSuspendingFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
 	val function = kotlinLambdaTarget as SuspendFunction
 	val flux = arg0 as Flux<Any>
 	return mono(Dispatchers.Unconfined) {
-		suspendCoroutineUninterceptedOrReturn<Flow<Any>> {
+		suspendCoroutineUninterceptedOrReturn<Any> {
 			function.invoke(flux.asFlow(), it)
 		}
 	}.flatMapMany {
-		it.asFlux()
+		if(it is Flow<*>) {
+			(it as Flow<Any>).asFlux()
+		} else  {
+			Flux.just(it)
+		}
+	}
+}
+fun invokeSuspendingSingleFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
+	val function = kotlinLambdaTarget as SuspendFunction
+	return mono(Dispatchers.Unconfined) {
+		suspendCoroutineUninterceptedOrReturn<Any> {
+			function.invoke(arg0, it)
+		}
+	}.flatMapMany {
+		if(it is Flow<*>) {
+			(it as Flow<Any>).asFlux()
+		} else  {
+			Flux.just(it)
+		}
+	}
+}
+fun invokeFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
+	val function = kotlinLambdaTarget as Function
+	val flux = arg0 as Flux<Any>
+	return mono(Dispatchers.Unconfined) {
+		function.invoke(flux.asFlow())
+	}.flatMapMany {
+		if(it is Flow<*>) {
+			(it as Flow<Any>).asFlux()
+		} else  {
+			Flux.just(it)
+		}
 	}
 }
 
 fun invokeSuspendingSupplier(kotlinLambdaTarget: Any): Flux<Any> {
 	val supplier = kotlinLambdaTarget as SuspendSupplier
 	return mono(Dispatchers.Unconfined) {
-		suspendCoroutineUninterceptedOrReturn<Flow<Any>> {
+		suspendCoroutineUninterceptedOrReturn {
 			supplier.invoke(it)
 		}
 	}.flatMapMany {
-		it.asFlux()
+		if(it is Flow<*>) {
+			(it as Flow<Any>).asFlux()
+		} else  {
+			Flux.just(it)
+		}
+
 	}
 }
 
@@ -119,14 +160,36 @@ fun invokeSuspendingConsumer(kotlinLambdaTarget: Any, arg0: Any) {
 	}.subscribe()
 }
 
+fun invokeFluxConsumer(kotlinLambdaTarget: Any, arg0: Any) {
+	val consumer = kotlinLambdaTarget as Consumer
+	val flux = arg0 as Flux<Any>
+	mono(Dispatchers.Unconfined) {
+		consumer.invoke(flux.asFlow())
+	}.subscribe()
+}
+
 fun isValidSuspendingFunction(kotlinLambdaTarget: Any, arg0: Any): Boolean {
-	return arg0 is Flux<*> && kotlinLambdaTarget is Function2<*, *, *>
+//	return isValidFluxFunction(kotlinLambdaTarget, arg0) && kotlinLambdaTarget is Function2<*, *, *>
+	return kotlinLambdaTarget is Function2<*, *, *>
+}
+
+fun isValidFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Boolean {
+	return arg0 is Flux<*>
+}
+
+fun isValidFluxConsumer(kotlinLambdaTarget: Any, arg0: Any): Boolean {
+	return arg0 is Flux<*>
 }
 
 fun isValidSuspendingSupplier(kotlinLambdaTarget: Any): Boolean {
 	return kotlinLambdaTarget is Function1<*, *>
 }
 
-private typealias SuspendFunction = (Any?, Any?) -> Any?
-private typealias SuspendConsumer = (Any?, Any?) -> Unit?
-private typealias SuspendSupplier = (Any?) -> Any?
+private typealias Function = (Any?) -> Any?
+private typealias SuspendFunction = (Any?, Continuation<Any>) -> Any?
+
+private typealias Consumer = (Any?) -> Unit?
+private typealias SuspendConsumer = (Any?, Continuation<Unit>) -> Unit?
+
+private typealias Supplier = () -> Any?
+private typealias SuspendSupplier = (Continuation<Any>) -> Any?
