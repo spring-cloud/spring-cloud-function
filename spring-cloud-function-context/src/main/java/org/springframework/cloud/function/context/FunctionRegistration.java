@@ -27,11 +27,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionWrapper;
 import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
 import org.springframework.core.KotlinDetector;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -118,7 +118,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 
 	public FunctionRegistration<T> type(Type type) {
 		this.type = type;
-		if (KotlinDetector.isKotlinPresent() && this.target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) {
+		if (KotlinDetector.isKotlinPresent() && this.target instanceof KotlinFunctionWrapper) {
 			return this;
 		}
 		Type discoveredFunctionType = type; //FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());

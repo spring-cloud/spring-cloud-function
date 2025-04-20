@@ -28,6 +28,7 @@ import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
+import org.springframework.core.ResolvableType
 import reactor.core.publisher.Mono
 
 /**
@@ -35,8 +36,13 @@ import reactor.core.publisher.Mono
  *
  */
 
-fun getSuspendingFunctionArgType(type: Type): Type {
-	return getFlowTypeArguments(type)
+fun getSuspendingFunctionArgType(type: Type): ResolvableType {
+	return  ResolvableType.forType(getFlowTypeArguments(type))
+}
+
+fun getSuspendingFunctionReturnType(type: Type): ResolvableType {
+	val lower = getContinuationTypeArguments(type)
+	return ResolvableType.forType(getFlowTypeArguments(lower))
 }
 
 fun getFlowTypeArguments(type: Type): Type {
@@ -61,10 +67,6 @@ fun isFlowType(type: Type): Boolean {
 	return type.typeName.startsWith(Flow::class.qualifiedName!!)
 }
 
-fun getSuspendingFunctionReturnType(type: Type): Type {
-	val lower = getContinuationTypeArguments(type)
-	return getFlowTypeArguments(lower)
-}
 
 fun isContinuationType(type: Type): Boolean {
 	return type.typeName.startsWith(Continuation::class.qualifiedName!!)
@@ -91,12 +93,16 @@ private fun getContinuationTypeArguments(type: Type): Type {
 	return wildcardType.lowerBounds[0]
 }
 
-fun invokeSuspendingFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
+fun invokeSuspendingFluxFunction(kotlinLambdaTarget: Any, arg0: Any, shouldConvertFlowAsFlux: Boolean): Flux<Any> {
 	val function = kotlinLambdaTarget as SuspendFunction
 	val flux = arg0 as Flux<Any>
 	return mono(Dispatchers.Unconfined) {
 		suspendCoroutineUninterceptedOrReturn<Any> {
-			function.invoke(flux.asFlow(), it)
+			if(shouldConvertFlowAsFlux) {
+				function.invoke(flux.asFlow(), it)
+			} else {
+				function.invoke(flux, it)
+			}
 		}
 	}.flatMapMany {
 		if(it is Flow<*>) {
@@ -106,6 +112,7 @@ fun invokeSuspendingFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> 
 		}
 	}
 }
+
 fun invokeSuspendingSingleFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
 	val function = kotlinLambdaTarget as SuspendFunction
 	return mono(Dispatchers.Unconfined) {
@@ -120,14 +127,23 @@ fun invokeSuspendingSingleFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any
 		}
 	}
 }
-fun invokeFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
+fun invokeFluxFunction(kotlinLambdaTarget: Any, arg0: Any, shouldConvertFlowAsFlux: Boolean): Flux<Any> {
 	val function = kotlinLambdaTarget as Function
+	println(arg0::class.java)
 	val flux = arg0 as Flux<Any>
 	return mono(Dispatchers.Unconfined) {
-		function.invoke(flux.asFlow())
+		if(shouldConvertFlowAsFlux) {
+			function.invoke(flux.asFlow())
+		} else {
+			function.invoke(flux)
+		}
 	}.flatMapMany {
 		if(it is Flow<*>) {
 			(it as Flow<Any>).asFlux()
+		} else if(it is Flux<*>) {
+			it
+		} else if(it is Mono<*>) {
+			it
 		} else  {
 			Flux.just(it)
 		}
@@ -143,6 +159,8 @@ fun invokeSuspendingSupplier(kotlinLambdaTarget: Any): Flux<Any> {
 	}.flatMapMany {
 		if(it is Flow<*>) {
 			(it as Flow<Any>).asFlux()
+		} else if(it is Flux<*>) {
+			it
 		} else  {
 			Flux.just(it)
 		}

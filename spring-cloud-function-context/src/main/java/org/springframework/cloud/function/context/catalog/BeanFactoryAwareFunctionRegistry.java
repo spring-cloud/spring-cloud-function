@@ -40,7 +40,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
-import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
+import org.springframework.cloud.function.context.config.KotlinFunctionWrapperFactory;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -161,11 +161,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
 							}
 							else if (KotlinUtils.isKotlinType(functionCandidate)) {
-								KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper wrapper =
-									new KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper(functionCandidate);
-								wrapper.setName(functionName);
-								wrapper.setBeanFactory(this.applicationContext.getBeanFactory());
-								functionRegistration = wrapper.getFunctionRegistration();
+								KotlinFunctionWrapperFactory wrapper = new KotlinFunctionWrapperFactory(functionCandidate, this.applicationContext.getBeanFactory());
+								functionRegistration = wrapper.getFunctionRegistration(functionName);
 							}
 							else if (this.isFunctionPojo(functionCandidate, functionName)) {
 								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());

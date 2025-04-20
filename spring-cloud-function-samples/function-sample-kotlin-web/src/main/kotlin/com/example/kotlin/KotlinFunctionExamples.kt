@@ -7,52 +7,47 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.messaging.Message
+import org.springframework.messaging.support.MessageBuilder
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import java.time.Duration
 
 /**
  * ## List of Combinations Tested (in requested order):
- *
- *  1. **(T) -> R**                   -> functionSingleToSingle
- *  2. **(T) -> Flow<R>**             -> functionSingleToFlow
- *  3. **(Flow<T>) -> R**             -> functionFlowToSingle
- *  4. **(Flow<T>) -> Flow<R>**       -> functionFlowToFlow
- *  5. **suspend (T) -> R**           -> suspendFunctionSingleToSingle
- *  6. **suspend (T) -> Flow<R>**     -> suspendFunctionSingleToFlow
- *  7. **suspend (Flow<T>) -> R**     -> suspendFunctionFlowToSingle   <-- Changed here
- *  8. **suspend (Flow<T>) -> Flow<R>** -> suspendFunctionFlowToFlow
- *  9. **() -> R**                    -> supplierSingle
- *  10. **() -> Flow<R>**             -> supplierFlow
- *  11. **suspend () -> R**           -> suspendSupplier
- *  12. **suspend () -> Flow<R>**     -> suspendSupplierFlow
- *  13. **(T) -> Unit**               -> consumerSingle
- *  14. **(Flow<T>) -> Unit**         -> consumerFlow
- *  15. **suspend (T) -> Unit**       -> suspendConsumer
- *  16. **suspend (Flow<T>) -> Unit** -> suspendConsumerFlow
- *
+ * --- Coroutine ---
+ * 1. (T) -> R                     -> functionSingleToSingle
+ * 2. (T) -> Flow<R>               -> functionSingleToFlow
+ * 3. (Flow<T>) -> R               -> functionFlowToSingle
+ * 4. (Flow<T>) -> Flow<R>         -> functionFlowToFlow
+ * 5. suspend (T) -> R             -> functionSuspendSingleToSingle
+ * 6. suspend (T) -> Flow<R>       -> functionSuspendSingleToFlow
+ * 7. suspend (Flow<T>) -> R       -> functionSuspendFlowToSingle
+ * 8. suspend (Flow<T>) -> Flow<R> -> functionSuspendFlowToFlow
+ * --- Reactor ---
+ * 9. (T) -> Mono<R>               -> functionSingleToMono
+ * 10. (T) -> Flux<R>              -> functionSingleToFlux
+ * 11. (Mono<T>) -> Mono<R>        -> functionMonoToMono
+ * 12. (Flux<T>) -> Flux<R>        -> functionFluxToFlux
+ * 13. (Flux<T>) -> Mono<R>        -> functionFluxToMono
+ * --- Message<T> ---
+ * 14. (Message<T>) -> Message<R>  -> functionMessageToMessage
+ * 15. suspend (Message<T>) -> Message<R> -> functionSuspendMessageToMessage
+ * 16. (Mono<Message<T>>) -> Mono<Message<R>> -> functionMonoMessageToMonoMessage
+ * 17. (Flux<Message<T>>) -> Flux<Message<R>> -> functionFluxMessageToFluxMessage
+ * 18. (Flow<Message<T>>) -> Flow<Message<R>> -> functionFlowMessageToFlowMessage
+ * 19. suspend (Flow<Message<T>>) -> Flow<Message<R>> -> functionSuspendFlowMessageToFlowMessage
  */
 @Configuration
 class KotlinFunctionExamples {
 
-	// 1) (T) -> R
-	/**
-	 * Takes a String and returns its length (Int).
-	 *
-	 * **Example:**
-	 * Input: "Hello"
-	 * Output: 5
-	 */
+	/** 1) (T) -> R */
 	@Bean
 	fun functionSingleToSingle(): (String) -> Int = { input ->
 		input.length
 	}
 
-	// 2) (T) -> Flow<R>
-	/**
-	 * Takes a String and returns a Flow of its characters.
-	 *
-	 * **Example:**
-	 * Input: "test"
-	 * Output: Flow("t","e","s","t")
-	 */
+	/** 2) (T) -> Flow<R> */
 	@Bean
 	fun functionSingleToFlow(): (String) -> Flow<String> = { input ->
 		flow {
@@ -60,14 +55,7 @@ class KotlinFunctionExamples {
 		}
 	}
 
-	// 3) (Flow<T>) -> R
-	/**
-	 * Takes a Flow<String> and returns an Int count of elements (blocking).
-	 *
-	 * **Example:**
-	 * Input: Flow("one","two","three")
-	 * Output: 3
-	 */
+	/** 3) (Flow<T>) -> R */
 	@Bean
 	fun functionFlowToSingle(): (Flow<String>) -> Int = { flowInput ->
 		var count = 0
@@ -77,192 +65,141 @@ class KotlinFunctionExamples {
 		count
 	}
 
-	// 4) (Flow<T>) -> Flow<R>
-	/**
-	 * Takes a Flow<Int> and returns a Flow<String>.
-	 *
-	 * **Example:**
-	 * Input: Flow(1,2,3)
-	 * Output: Flow("1","2","3")
-	 */
+	/** 4) (Flow<T>) -> Flow<R> */
 	@Bean
 	fun functionFlowToFlow(): (Flow<Int>) -> Flow<String> = { flowInput ->
 		flowInput.map { it.toString() }
 	}
 
-	// 5) suspend (T) -> R
-	/**
-	 * Suspending function that takes a String and returns its length (Int).
-	 *
-	 * **Example:**
-	 * Input: "kotlin"
-	 * Output: 6
-	 */
+	/** 5) suspend (T) -> R */
 	@Bean
-	fun suspendFunctionSingleToSingle(): suspend (String) -> Int = { input ->
+	fun functionSuspendSingleToSingle(): suspend (String) -> Int = { input ->
 		delay(100)
 		input.length
 	}
 
-	// 6) suspend (T) -> Flow<R>
-	/**
-	 * Suspending function that takes a String, returns a Flow of its characters.
-	 *
-	 * **Example:**
-	 * Input: "demo"
-	 * Output: Flow("d","e","m","o")
-	 */
+	/** 6) suspend (T) -> Flow<R> */
 	@Bean
-	fun suspendFunctionSingleToFlow(): suspend (String) -> Flow<String> = { input ->
+	fun functionSuspendSingleToFlow(): suspend (String) -> Flow<String> = { input ->
 		flow {
 			delay(100)
 			input.forEach { c -> emit(c.toString()) }
 		}
 	}
 
-	// 7) suspend (Flow<T>) -> R
-	/**
-	 * Suspending function that takes a Flow<String> and returns an Int (count of items).
-	 *
-	 * **Example:**
-	 * Input: Flow("alpha","beta")
-	 * Output: 2
-	 */
+	/** 7) suspend (Flow<T>) -> R */
 	@Bean
-	fun suspendFunctionFlowToSingle(): suspend (Flow<String>) -> Int = { flowInput ->
+	fun functionSuspendFlowToSingle(): suspend (Flow<String>) -> Int = { flowInput ->
 		var count = 0
 		flowInput.collect { count++ }
 		count
 	}
 
-	// 8) suspend (Flow<T>) -> Flow<R>
-	/**
-	 * Suspending function that takes a Flow<String> and returns another Flow<String>.
-	 *
-	 * **Example:**
-	 * Input: Flow("abc","xyz")
-	 * Output: Flow("ABC","XYZ") (uppercase)
-	 */
+	/** 8) suspend (Flow<T>) -> Flow<R> */
 	@Bean
-	fun suspendFunctionFlowToFlow(): suspend (Flow<String>) -> Flow<String> = { incomingFlow ->
+	fun functionSuspendFlowToFlow(): suspend (Flow<String>) -> Flow<String> = { incomingFlow ->
 		flow {
 			delay(100)
-			incomingFlow.collect { item ->
-				emit(item.uppercase())
+			incomingFlow.collect { item -> emit(item.uppercase()) }
+		}
+	}
+
+	/** 9) (T) -> Mono<R> */
+	@Bean
+	fun functionSingleToMono(): (String) -> Mono<Int> = { input ->
+		Mono.just(input.length).delayElement(Duration.ofMillis(50))
+	}
+
+	/** 10) (T) -> Flux<R> */
+	@Bean
+	fun functionSingleToFlux(): (String) -> Flux<String> = { input ->
+		Flux.fromIterable(input.toList()).map { it.toString() }
+	}
+
+	/** 11) (Mono<T>) -> Mono<R> */
+	@Bean
+	fun functionMonoToMono(): (Mono<String>) -> Mono<String> = { monoInput ->
+		monoInput.map { it.uppercase() }.delayElement(Duration.ofMillis(50))
+	}
+
+	/** 12) (Flux<T>) -> Flux<R> */
+	@Bean
+	fun functionFluxToFlux(): (Flux<String>) -> Flux<Int> = { fluxInput ->
+		fluxInput.map { it.length }
+	}
+
+	/** 13) (Flux<T>) -> Mono<R> */
+	@Bean
+	fun functionFluxToMono(): (Flux<String>) -> Mono<Int> = { fluxInput ->
+		fluxInput.count().map { it.toInt() }
+	}
+
+	/** 14) (Message<T>) -> Message<R> */
+	@Bean
+	fun functionMessageToMessage(): (Message<String>) -> Message<Int> = { message ->
+		MessageBuilder.withPayload(message.payload.length)
+			.copyHeaders(message.headers)
+			.setHeader("processed", "true")
+			.build()
+	}
+
+	/** 15) suspend (Message<T>) -> Message<R> */
+	@Bean
+	fun functionSuspendMessageToMessage(): suspend (Message<String>) -> Message<Int> = { message ->
+		delay(50)
+		MessageBuilder.withPayload(message.payload.length * 2)
+			.copyHeaders(message.headers)
+			.setHeader("suspend-processed", "true")
+			.setHeader("original-id", message.headers.id ?: "N/A")
+			.build()
+	}
+
+	/** 16) (Mono<Message<T>>) -> Mono<Message<R>> */
+	@Bean
+	fun functionMonoMessageToMonoMessage(): (Mono<Message<String>>) -> Mono<Message<Int>> = { monoMsgInput ->
+		monoMsgInput.map { message ->
+			MessageBuilder.withPayload(message.payload.hashCode())
+				.copyHeaders(message.headers)
+				.setHeader("mono-processed", "true")
+				.build()
+		}
+	}
+
+	/** 17) (Flux<Message<T>>) -> Flux<Message<R>> */
+	@Bean
+	fun functionFluxMessageToFluxMessage(): (Flux<Message<String>>) -> Flux<Message<String>> = { fluxMsgInput ->
+		fluxMsgInput.map { message ->
+			MessageBuilder.withPayload(message.payload.uppercase())
+				.copyHeaders(message.headers)
+				.setHeader("flux-processed", "true")
+				.build()
+		}
+	}
+
+	/** 18) (Flow<Message<T>>) -> Flow<Message<R>> */
+	@Bean
+	fun functionFlowMessageToFlowMessage(): (Flow<Message<String>>) -> Flow<Message<String>> = { flowMsgInput ->
+		flowMsgInput.map { message ->
+			MessageBuilder.withPayload(message.payload.reversed())
+				.copyHeaders(message.headers)
+				.setHeader("flow-processed", "true")
+				.build()
+		}
+	}
+
+	/** 19) suspend (Flow<Message<T>>) -> Flow<Message<R>> */
+	@Bean
+	fun functionSuspendFlowMessageToFlowMessage(): suspend (Flow<Message<String>>) -> Flow<Message<String>> = { flowMsgInput ->
+		flow {
+			flowMsgInput.collect { message ->
+				delay(20)
+				emit(
+					MessageBuilder.withPayload(message.payload.plus(" SUSPEND"))
+						.copyHeaders(message.headers)
+						.setHeader("suspend-flow-processed", "true")
+						.build()
+				)
 			}
-		}
-	}
-
-	// 9) () -> R
-	/**
-	 * Supplier that returns an Int (no input).
-	 *
-	 * **Example:**
-	 * Output: 42
-	 */
-	@Bean
-	fun supplierSingle(): () -> Int = {
-		42
-	}
-
-	// 10) () -> Flow<R>
-	/**
-	 * Supplier that returns a Flow of Strings (no input).
-	 *
-	 * **Example:**
-	 * Output: Flow("A","B","C")
-	 */
-	@Bean
-	fun supplierFlow(): () -> Flow<String> = {
-		flow {
-			emit("A")
-			emit("B")
-			emit("C")
-		}
-	}
-
-	// 11) suspend () -> R
-	/**
-	 * Suspending supplier that returns a String (no input).
-	 *
-	 * **Example:**
-	 * Output: "Hello from suspend"
-	 */
-	@Bean
-	fun suspendSupplier(): suspend () -> String = {
-		delay(100)
-		"Hello from suspend"
-	}
-
-	// 12) suspend () -> Flow<R>
-	/**
-	 * Suspending supplier that returns a Flow of Strings (no input).
-	 *
-	 * **Example:**
-	 * Output: Flow("x","y","z")
-	 */
-	@Bean
-	fun suspendSupplierFlow(): suspend () -> Flow<String> = {
-		flow {
-			delay(100)
-			emit("x")
-			emit("y")
-			emit("z")
-		}
-	}
-
-	// 13) (T) -> Unit
-	/**
-	 * Consumer that takes a String (side-effect only).
-	 *
-	 * **Example:**
-	 * Input: "Log me"
-	 * Output: (prints "Consumed: Log me")
-	 */
-	@Bean
-	fun consumerSingle(): (String) -> Unit = { input ->
-		println("Consumed: $input")
-	}
-
-	// 14) (Flow<T>) -> Unit
-	/**
-	 * Consumer that takes a Flow<String> (side-effect only).
-	 *
-	 * **Example:**
-	 * Input: Flow("one","two")
-	 * Output: (collects and logs each element)
-	 */
-	@Bean
-	fun consumerFlow(): (Flow<String>) -> Unit = { flowInput ->
-		println("Received flow: $flowInput (would collect in coroutine)")
-	}
-
-	// 15) suspend (T) -> Unit
-	/**
-	 * Suspending consumer that takes a String (side-effect only).
-	 *
-	 * **Example:**
-	 * Input: "test"
-	 * Output: (logs after some delay)
-	 */
-	@Bean
-	fun suspendConsumer(): suspend (String) -> Unit = { input ->
-		delay(100)
-		println("Suspend consumed: $input")
-	}
-
-	// 16) suspend (Flow<T>) -> Unit
-	/**
-	 * Suspending consumer that takes a Flow<String> (side-effect: collects & logs).
-	 *
-	 * **Example:**
-	 * Input: Flow("foo","bar")
-	 * Output: (logs each item in a suspending context)
-	 */
-	@Bean
-	fun suspendConsumerFlow(): suspend (Flow<String>) -> Unit = { flowInput ->
-		flowInput.collect { item ->
-			println("Flow item: $item")
 		}
 	}
 }

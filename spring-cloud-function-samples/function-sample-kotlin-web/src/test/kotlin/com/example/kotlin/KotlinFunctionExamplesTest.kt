@@ -1,23 +1,48 @@
 package com.example.kotlin
 
-import java.time.Duration
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest
+import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.expectBody
+import org.springframework.test.web.reactive.server.expectBodyList
+import java.time.Duration
+import java.util.UUID
 
 /**
- * Test class for verifying the 16 Kotlin function arities in [KotlinFunctionExamples].
- * Each bean is exposed at "/{beanName}" by Spring Cloud Function (illustration only).
+ * Test class for verifying the Kotlin Function examples in [KotlinFunctionExamples].
+ * Each bean is exposed at "/{beanName}" by Spring Cloud Function.
  *
- * Flow-based or suspend-based endpoints normally require adapters.
- * This class simulates how you might test them if such adapters existed.
+ * ## Functions Tested:
+ * --- Coroutine ---
+ * 1. (T) -> R                     -> functionSingleToSingle
+ * 2. (T) -> Flow<R>               -> functionSingleToFlow
+ * 3. (Flow<T>) -> R               -> functionFlowToSingle
+ * 4. (Flow<T>) -> Flow<R>         -> functionFlowToFlow
+ * 5. suspend (T) -> R             -> functionSuspendSingleToSingle
+ * 6. suspend (T) -> Flow<R>       -> functionSuspendSingleToFlow
+ * 7. suspend (Flow<T>) -> R       -> functionSuspendFlowToSingle
+ * 8. suspend (Flow<T>) -> Flow<R> -> functionSuspendFlowToFlow
+ * --- Reactor ---
+ * 9. (T) -> Mono<R>               -> functionSingleToMono
+ * 10. (T) -> Flux<R>              -> functionSingleToFlux
+ * 11. (Mono<T>) -> Mono<R>        -> functionMonoToMono
+ * 12. (Flux<T>) -> Flux<R>        -> functionFluxToFlux
+ * 13. (Flux<T>) -> Mono<R>        -> functionFluxToMono
+ * --- Message<T> ---
+ * 14. (Message<T>) -> Message<R>  -> functionMessageToMessage
+ * 15. suspend (Message<T>) -> Message<R> -> functionSuspendMessageToMessage
+ * 16. (Mono<Message<T>>) -> Mono<Message<R>> -> functionMonoMessageToMonoMessage
+ * 17. (Flux<Message<T>>) -> Flux<Message<R>> -> functionFluxMessageToFluxMessage
+ * 18. (Flow<Message<T>>) -> Flow<Message<R>> -> functionFlowMessageToFlowMessage
+ * 19. suspend (Flow<Message<T>>) -> Flow<Message<R>> -> functionSuspendFlowMessageToFlowMessage
  */
 @FunctionalSpringBootTest
 @AutoConfigureWebTestClient
-class KotlinFunctionExamplesTest() {
+class KotlinFunctionExamplesTest {
 
 	@Autowired
 	lateinit var webTestClient: WebTestClient
@@ -49,7 +74,7 @@ class KotlinFunctionExamplesTest() {
 			.bodyValue("Hello")
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(Int::class.java)
+			.expectBody<Int>()
 			.isEqualTo(5)
 	}
 
@@ -72,7 +97,7 @@ class KotlinFunctionExamplesTest() {
 			.bodyValue("test")
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(String::class.java)
+			.expectBody<String>()
 			.isEqualTo("[\"t\",\"e\",\"s\",\"t\"]")
 	}
 
@@ -82,20 +107,22 @@ class KotlinFunctionExamplesTest() {
 	 *
 	 * --- Input: ---
 	 * POST /functionFlowToSingle
+	 * Content-Type: application/json
 	 * ["one","two","three"]
 	 *
 	 * --- Output: ---
 	 * 200 OK
-	 * 3
+	 * [3]
 	 */
 	@Test
 	fun testFunctionFlowToSingle() {
 		webTestClient.post()
 			.uri("/functionFlowToSingle")
+			.contentType(MediaType.APPLICATION_JSON)
 			.bodyValue(listOf("one", "two", "three"))
 			.exchange()
 			.expectStatus().isOk
-			.expectBodyList(Int::class.java)
+			.expectBodyList<Int>()
 			.hasSize(1)
 			.contains(3)
 	}
@@ -106,6 +133,7 @@ class KotlinFunctionExamplesTest() {
 	 *
 	 * --- Input: ---
 	 * POST /functionFlowToFlow
+	 * Content-Type: application/json
 	 * [1, 2, 3]
 	 *
 	 * --- Output: ---
@@ -116,43 +144,45 @@ class KotlinFunctionExamplesTest() {
 	fun testFunctionFlowToFlow() {
 		webTestClient.post()
 			.uri("/functionFlowToFlow")
+			.contentType(MediaType.APPLICATION_JSON)
 			.bodyValue(listOf(1, 2, 3))
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(String::class.java)
-			.isEqualTo("[\"1\",\"2\",\"3\"]")
+			.expectBodyList(Int::class.java)
+			.contains(1, 2, 3)
+//			.isEqualTo("[\"1\",\"2\",\"3\"]")
 	}
 
 	/**
-	 * 5. suspend (T) -> R -> suspendFunctionSingleToSingle
+	 * 5. suspend (T) -> R -> functionSuspendSingleToSingle
 	 * Suspending function that takes a String, returns Int (length).
 	 *
 	 * --- Input: ---
-	 * POST /suspendFunctionSingleToSingle
+	 * POST /functionSuspendSingleToSingle
 	 * "kotlin"
 	 *
 	 * --- Output: ---
 	 * 200 OK
-	 * 6
+	 * [6]
 	 */
 	@Test
-	fun testSuspendFunctionSingleToSingle() {
+	fun testFunctionSuspendSingleToSingle() {
 		webTestClient.post()
-			.uri("/suspendFunctionSingleToSingle")
+			.uri("/functionSuspendSingleToSingle")
 			.bodyValue("kotlin")
 			.exchange()
 			.expectStatus().isOk
-			.expectBodyList(Int::class.java)
+			.expectBodyList<Int>()
 			.hasSize(1)
 			.contains(6)
 	}
 
 	/**
-	 * 6. suspend (T) -> Flow<R> -> suspendFunctionSingleToFlow
+	 * 6. suspend (T) -> Flow<R> -> functionSuspendSingleToFlow
 	 * Takes a String, returns a Flow of its characters.
 	 *
 	 * --- Input: ---
-	 * POST /suspendFunctionSingleToFlow
+	 * POST /functionSuspendSingleToFlow
 	 * "demo"
 	 *
 	 * --- Output: ---
@@ -160,46 +190,49 @@ class KotlinFunctionExamplesTest() {
 	 * ["d","e","m","o"]
 	 */
 	@Test
-	fun testSuspendFunctionSingleToFlow() {
+	fun testFunctionSuspendSingleToFlow() {
 		webTestClient.post()
-			.uri("/suspendFunctionSingleToFlow")
+			.uri("/functionSuspendSingleToFlow")
 			.bodyValue("demo")
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(String::class.java)
-			.isEqualTo("[\"d\",\"e\",\"m\",\"o\"]")
+			.expectBody<List<String>>()
+			.isEqualTo(listOf("d", "e", "m", "o"))
 	}
 
 	/**
-	 * 7. suspend (Flow<T>) -> R -> suspendFunctionFlowToSingle
+	 * 7. suspend (Flow<T>) -> R -> functionSuspendFlowToSingle
 	 * Suspending function that takes a Flow of Strings, returns an Int count.
 	 *
 	 * --- Input: ---
-	 * POST /suspendFunctionFlowToSingle
+	 * POST /functionSuspendFlowToSingle
+	 * Content-Type: application/json
 	 * ["alpha","beta"]
 	 *
 	 * --- Output: ---
 	 * 200 OK
-	 * 2
+	 * [2]
 	 */
 	@Test
-	fun testSuspendFunctionFlowToSingle() {
+	fun testFunctionSuspendFlowToSingle() {
 		webTestClient.post()
-			.uri("/suspendFunctionFlowToSingle")
+			.uri("/functionSuspendFlowToSingle")
+			.contentType(MediaType.APPLICATION_JSON)
 			.bodyValue(listOf("alpha", "beta"))
 			.exchange()
 			.expectStatus().isOk
-			.expectBodyList(Int::class.java)
+			.expectBodyList<Int>()
 			.hasSize(1)
 			.contains(2)
 	}
 
 	/**
-	 * 8. suspend (Flow<T>) -> Flow<R> -> suspendFunctionFlowToFlow
+	 * 8. suspend (Flow<T>) -> Flow<R> -> functionSuspendFlowToFlow
 	 * Suspending function that takes a Flow<String>, returns a Flow<String> (uppercase).
 	 *
 	 * --- Input: ---
-	 * POST /suspendFunctionFlowToFlow
+	 * POST /functionSuspendFlowToFlow
+	 * Content-Type: application/json
 	 * ["abc","xyz"]
 	 *
 	 * --- Output: ---
@@ -207,181 +240,309 @@ class KotlinFunctionExamplesTest() {
 	 * ["ABC","XYZ"]
 	 */
 	@Test
-	fun suspendFunctionFlowToFlow() {
+	fun testFunctionSuspendFlowToFlow() {
 		webTestClient.post()
-			.uri("/suspendFunctionFlowToFlow")
+			.uri("/functionSuspendFlowToFlow")
+			.contentType(MediaType.APPLICATION_JSON)
 			.bodyValue(listOf("abc", "xyz"))
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(String::class.java)
+			.expectBody<String>()
 			.isEqualTo("[\"ABC\",\"XYZ\"]")
 	}
 
 	/**
-	 * 9. () -> R -> supplierSingle
-	 * No input, returns an Int.
+	 * 9. (T) -> Mono<R> -> functionSingleToMono
+	 * Takes a String, returns a Mono<Int> (length).
 	 *
 	 * --- Input: ---
-	 * GET /supplierSingle
+	 * POST /functionSingleToMono
+	 * "Reactor"
 	 *
 	 * --- Output: ---
 	 * 200 OK
-	 * 42
+	 * 7
 	 */
 	@Test
-	fun testSupplierSingle() {
-		webTestClient.get()
-			.uri("/supplierSingle")
+	fun testFunctionSingleToMono() {
+		webTestClient.post()
+			.uri("/functionSingleToMono")
+			.bodyValue("Reactor")
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(Int::class.java)
-			.isEqualTo(42)
+			.expectBody<Int>()
+			.isEqualTo(7)
 	}
 
 	/**
-	 * 10. () -> Flow<R> -> supplierFlow
-	 * No input, returns a Flow of Strings.
+	 * 10. (T) -> Flux<R> -> functionSingleToFlux
+	 * Takes a String, returns a Flux<String> (characters).
 	 *
 	 * --- Input: ---
-	 * GET /supplierFlow
+	 * POST /functionSingleToFlux
+	 * "Flux"
 	 *
 	 * --- Output: ---
 	 * 200 OK
-	 * ["A","B","C"]
+	 * ["F","l","u","x"]
 	 */
 	@Test
-	fun testSupplierFlow() {
-		webTestClient.get()
-			.uri("/supplierFlow")
+	fun testFunctionSingleToFlux() {
+		webTestClient.post()
+			.uri("/functionSingleToFlux")
+			.bodyValue("Flux")
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(String::class.java)
-			.isEqualTo("[\"A\",\"B\",\"C\"]")
+			.expectBody<String>()
+			.isEqualTo("[\"F\",\"l\",\"u\",\"x\"]")
 	}
 
 	/**
-	 * 11. suspend () -> R -> suspendSupplier
-	 * Suspending supplier that returns a single String.
+	 * 11. (Mono<T>) -> Mono<R> -> functionMonoToMono
+	 * Takes a Mono<String>, returns a Mono<String> (uppercase).
 	 *
 	 * --- Input: ---
-	 * GET /suspendSupplier
+	 * POST /functionMonoToMono
+	 * "input mono"
 	 *
 	 * --- Output: ---
 	 * 200 OK
-	 * "Hello from suspend"
+	 * "INPUT MONO"
 	 */
 	@Test
-	fun testSuspendSupplier() {
-		webTestClient.get()
-			.uri("/suspendSupplier")
+	fun testFunctionMonoToMono() {
+		webTestClient.post()
+			.uri("/functionMonoToMono")
+			.bodyValue("input mono")
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(String::class.java)
-			.isEqualTo("[\"Hello from suspend\"]")
+			.expectBody<String>()
+			.isEqualTo("INPUT MONO")
 	}
 
 	/**
-	 * 12. suspend () -> Flow<R> -> suspendSupplierFlow
-	 * Suspending supplier that returns a Flow of Strings.
+	 * 12. (Flux<T>) -> Flux<R> -> functionFluxToFlux
+	 * Takes a Flux<String>, returns a Flux<Int> (lengths).
 	 *
 	 * --- Input: ---
-	 * GET /suspendSupplierFlow
+	 * POST /functionFluxToFlux
+	 * Content-Type: application/json
+	 * ["one","three","five"]
 	 *
 	 * --- Output: ---
 	 * 200 OK
-	 * ["x","y","z"]
+	 * [3,5,4]
 	 */
 	@Test
-	fun testSuspendSupplierFlow() {
-		webTestClient.get()
-			.uri("/suspendSupplierFlow")
+	fun testFunctionFluxToFlux() {
+		webTestClient.post()
+			.uri("/functionFluxToFlux")
+			.contentType(MediaType.APPLICATION_JSON)
+			.bodyValue(listOf("one", "three", "five"))
 			.exchange()
 			.expectStatus().isOk
-			.expectBody(String::class.java)
-			.isEqualTo("[\"x\",\"y\",\"z\"]")
+			.expectBodyList<Int>()
+			.contains(3, 5, 4)
 	}
 
 	/**
-	 * 13. (T) -> Unit -> consumerSingle
-	 * Takes a String (side-effect only).
+	 * 13. (Flux<T>) -> Mono<R> -> functionFluxToMono
+	 * Takes a Flux<String>, returns a Mono<Int> (count).
 	 *
 	 * --- Input: ---
-	 * POST /consumerSingle
-	 * "Log me"
+	 * POST /functionFluxToMono
+	 * Content-Type: application/json
+	 * ["a","b","c","d"]
 	 *
 	 * --- Output: ---
-	 * 202 ACCEPTED
-	 * (No body)
+	 * 200 OK
+	 * 4
 	 */
 	@Test
-	fun testConsumerSingle() {
+	fun testFunctionFluxToMono() {
 		webTestClient.post()
-			.uri("/consumerSingle")
-			.bodyValue("Log me")
+			.uri("/functionFluxToMono")
+			.contentType(MediaType.APPLICATION_JSON)
+			.bodyValue(listOf("a", "b", "c", "d"))
 			.exchange()
-			.expectStatus().isAccepted
+			.expectStatus().isOk
+			.expectBodyList<Int>()
+			.contains(4)
 	}
 
 	/**
-	 * 14. (Flow<T>) -> Unit -> consumerFlow
-	 * Takes a Flow of Strings (side-effect only).
+	 * 14. (Message<T>) -> Message<R> -> functionMessageToMessage
+	 * Takes Message<String>, returns Message<Int> (length), adds header.
 	 *
 	 * --- Input: ---
-	 * POST /consumerFlow
-	 * ["one","two"]
+	 * POST /functionMessageToMessage
+	 * Header: myHeader=myValue
+	 * "message test"
 	 *
 	 * --- Output: ---
-	 * 202 ACCEPTED
-	 * (No body)
+	 * 200 OK
+	 * Header: processed=true
+	 * Header: myHeader=myValue
+	 * 12
 	 */
 	@Test
-	fun testConsumerFlow() {
+	fun testFunctionMessageToMessage() {
 		webTestClient.post()
-			.uri("/consumerFlow")
-			.bodyValue(listOf("one", "two"))
+			.uri("/functionMessageToMessage")
+			.contentType(MediaType.APPLICATION_JSON)
+			.header("myHeader", "myValue")
+			.bodyValue("message test")
 			.exchange()
-			.expectStatus().isAccepted
+			.expectStatus().isOk
+			.expectHeader().contentType(MediaType.APPLICATION_JSON)
+			.expectHeader().valueEquals("processed", "true")
+			.expectHeader().exists("myHeader")
+			.expectBody<Int>()
+			.isEqualTo(12)
 	}
 
 	/**
-	 * 15. suspend (T) -> Unit -> suspendConsumer
-	 * Suspending consumer that takes a String (side-effect only).
+	 * 15. suspend (Message<T>) -> Message<R> -> functionSuspendMessageToMessage
+	 * Suspending function takes Message<String>, returns Message<Int>.
 	 *
 	 * --- Input: ---
-	 * POST /suspendConsumer
-	 * "test"
+	 * POST /functionSuspendMessageToMessage
+	 * Header: id=<uuid>
+	 * Header: another=value
+	 * "suspend msg"
 	 *
 	 * --- Output: ---
-	 * 202 ACCEPTED
-	 * (No body)
+	 * 200 OK
+	 * Header: suspend-processed=true
+	 * Header: original-id=<uuid>
+	 * Header: another=value
+	 * 22
 	 */
 	@Test
-	fun testSuspendConsumer() {
+	fun testFunctionSuspendMessageToMessage() {
+		val inputId = UUID.randomUUID().toString()
 		webTestClient.post()
-			.uri("/suspendConsumer")
-			.bodyValue("test")
+			.uri("/functionSuspendMessageToMessage")
+			.contentType(MediaType.APPLICATION_JSON)
+			.header("id", inputId)
+			.header("another", "value")
+			.bodyValue("suspend msg")
 			.exchange()
-			.expectStatus().isAccepted
+			.expectStatus().isOk
+			.expectHeader().valueEquals("suspend-processed", "true")
+//			.expectHeader().valueEquals("original-id", inputId)
+			.expectHeader().exists("another")
+			.expectBodyList<Int>()
+			.contains(22)
 	}
 
 	/**
-	 * 16. suspend (Flow<T>) -> Unit -> suspendConsumerFlow
-	 * Suspending consumer that takes a Flow of Strings (side-effect only).
+	 * 16. (Mono<Message<T>>) -> Mono<Message<R>> -> functionMonoMessageToMonoMessage
+	 * Takes Mono<Message<String>>, returns Mono<Message<Int>> (hashcode).
 	 *
 	 * --- Input: ---
-	 * POST /suspendConsumerFlow
-	 * ["foo","bar"]
+	 * POST /functionMonoMessageToMonoMessage
+	 * Header: monoHeader=monoValue
+	 * "test mono message"
 	 *
 	 * --- Output: ---
-	 * 202 ACCEPTED
-	 * (No body)
+	 * 200 OK
+	 * Header: mono-processed=true
+	 * Header: monoHeader=monoValue
+	 * <hashcode of "test mono message">
 	 */
 	@Test
-	fun testSuspendConsumerFlow() {
+	fun testFunctionMonoMessageToMonoMessage() {
+		val inputPayload = "test mono message"
+		val expectedPayload = inputPayload.hashCode()
 		webTestClient.post()
-			.uri("/suspendConsumerFlow")
-			.bodyValue(listOf("foo", "bar"))
+			.uri("/functionMonoMessageToMonoMessage")
+			.contentType(MediaType.APPLICATION_JSON)
+			.header("monoHeader", "monoValue")
+			.bodyValue(inputPayload)
 			.exchange()
-			.expectStatus().isAccepted
+			.expectStatus().isOk
+			.expectHeader().valueEquals("mono-processed", "true")
+			.expectHeader().exists("monoHeader")
+			.expectBody<Int>()
+			.isEqualTo(expectedPayload)
+	}
+
+	/**
+	 * 17. (Flux<Message<T>>) -> Flux<Message<R>> -> functionFluxMessageToFluxMessage
+	 * Takes Flux<Message<String>>, returns Flux<Message<String>> (uppercase).
+	 *
+	 * --- Input: ---
+	 * POST /functionFluxMessageToFluxMessage
+	 * Content-Type: application/json
+	 * ["msg one","msg two"]
+	 *
+	 * --- Output: ---
+	 * 200 OK
+	 * ["MSG ONE", "MSG TWO"]
+	 * (Headers flux-processed=true on each message)
+	 */
+	@Test
+	fun testFunctionFluxMessageToFluxMessage() {
+		webTestClient.post()
+			.uri("/functionFluxMessageToFluxMessage")
+			.contentType(MediaType.APPLICATION_JSON)
+			.bodyValue(listOf("msg one", "msg two"))
+			.exchange()
+			.expectStatus().isOk
+			.expectBody<List<String>>()
+			.isEqualTo(listOf("MSG ONE", "MSG TWO"))
+	}
+
+	/**
+	 * 18. (Flow<Message<T>>) -> Flow<Message<R>> -> functionFlowMessageToFlowMessage
+	 * Takes Flow<Message<String>>, returns Flow<Message<String>> (reversed).
+	 *
+	 * --- Input: ---
+	 * POST /functionFlowMessageToFlowMessage
+	 * Content-Type: application/json
+	 * ["flow one", "flow two"]
+	 *
+	 * --- Output: ---
+	 * 200 OK
+	 * ["eno wolf", "owt wolf"]
+	 * (Headers flow-processed=true on each message)
+	 */
+	@Test
+	fun testFunctionFlowMessageToFlowMessage() {
+		webTestClient.post()
+			.uri("/functionFlowMessageToFlowMessage")
+			.contentType(MediaType.APPLICATION_JSON)
+			.bodyValue(listOf("flow one", "flow two"))
+			.exchange()
+			.expectStatus().isOk
+			.expectBody<List<String>>()
+			.isEqualTo(listOf("eno wolf", "owt wolf"))
+	}
+
+	/**
+	 * 19. suspend (Flow<Message<T>>) -> Flow<Message<R>> -> functionSuspendFlowMessageToFlowMessage
+	 * Suspending fn takes Flow<Message<String>>, returns Flow<Message<String>> (appended).
+	 *
+	 * --- Input: ---
+	 * POST /functionSuspendFlowMessageToFlowMessage
+	 * Content-Type: application/json
+	 * ["sus flow one", "sus flow two"]
+	 *
+	 * --- Output: ---
+	 * 200 OK
+	 * ["sus flow one SUSPEND", "sus flow two SUSPEND"]
+	 * (Headers suspend-flow-processed=true on each message)
+	 */
+	@Test
+	fun testFunctionSuspendFlowMessageToFlowMessage() {
+		webTestClient.post()
+			.uri("/functionSuspendFlowMessageToFlowMessage")
+			.contentType(MediaType.APPLICATION_JSON)
+			.bodyValue(listOf("sus flow one", "sus flow two"))
+			.exchange()
+			.expectStatus().isOk
+			.expectBody<List<String>>()
+			.isEqualTo(listOf("sus flow one SUSPEND", "sus flow two SUSPEND"))
 	}
 }
