@@ -28,6 +28,7 @@ import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
+import org.reactivestreams.Publisher
 import org.springframework.core.ResolvableType
 import reactor.core.publisher.Mono
 
@@ -50,8 +51,8 @@ fun getFlowTypeArguments(type: Type): Type {
 		return type
 	}
 	val parameterizedLowerType = type as ParameterizedType
- 	if(parameterizedLowerType.actualTypeArguments.isEmpty()) {
-		 return parameterizedLowerType
+	if(parameterizedLowerType.actualTypeArguments.isEmpty()) {
+		return parameterizedLowerType
 	}
 
 	val actualTypeArgument = parameterizedLowerType.actualTypeArguments[0]
@@ -80,9 +81,6 @@ fun isContinuationUnitType(type: Type): Boolean {
 	return isContinuationType(type) && type.typeName.contains(Unit::class.qualifiedName!!)
 }
 
-//fun isContinuationFlowType(type: Type): Boolean {
-//	return isContinuationType(type) && type.typeName.contains(Flow::class.qualifiedName!!)
-//}
 
 private fun getContinuationTypeArguments(type: Type): Type {
 	if(!isContinuationType(type)) {
@@ -93,88 +91,74 @@ private fun getContinuationTypeArguments(type: Type): Type {
 	return wildcardType.lowerBounds[0]
 }
 
+private inline fun <T, R> executeInCoroutineAndConvertToFlux(crossinline block: (Continuation<T>) -> R): Flux<Any> {
+	return mono(Dispatchers.Unconfined) {
+		suspendCoroutineUninterceptedOrReturn { continuation ->
+			block(continuation)
+		}
+	}.flatMapMany {
+		asFlux(it)
+	}
+}
+
+/**
+ * Convert a value to a Flux, handling different types appropriately
+ *
+ * @param value The value to convert
+ * @return The value as a Flux
+ */
+private fun asFlux(value: Any?): Flux<Any> {
+	return when (value) {
+		is Flow<*> -> (value as Flow<Any>).asFlux()
+		is Flux<*> -> value as Flux<Any>
+		is Mono<*> -> value.flatMapMany { Flux.just(it) }
+		else -> Flux.just(value)
+	}
+}
+
 fun invokeSuspendingFluxFunction(kotlinLambdaTarget: Any, arg0: Any, shouldConvertFlowAsFlux: Boolean): Flux<Any> {
 	val function = kotlinLambdaTarget as SuspendFunction
 	val flux = arg0 as Flux<Any>
-	return mono(Dispatchers.Unconfined) {
-		suspendCoroutineUninterceptedOrReturn<Any> {
-			if(shouldConvertFlowAsFlux) {
-				function.invoke(flux.asFlow(), it)
-			} else {
-				function.invoke(flux, it)
-			}
-		}
-	}.flatMapMany {
-		if(it is Flow<*>) {
-			(it as Flow<Any>).asFlux()
-		} else  {
-			Flux.just(it)
+	return executeInCoroutineAndConvertToFlux { continuation ->
+		if(shouldConvertFlowAsFlux) {
+			function.invoke(flux.asFlow(), continuation)
+		} else {
+			function.invoke(flux, continuation)
 		}
 	}
 }
 
 fun invokeSuspendingSingleFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any> {
 	val function = kotlinLambdaTarget as SuspendFunction
-	return mono(Dispatchers.Unconfined) {
-		suspendCoroutineUninterceptedOrReturn<Any> {
-			function.invoke(arg0, it)
-		}
-	}.flatMapMany {
-		if(it is Flow<*>) {
-			(it as Flow<Any>).asFlux()
-		} else  {
-			Flux.just(it)
-		}
+	return executeInCoroutineAndConvertToFlux { continuation ->
+		function.invoke(arg0, continuation)
 	}
 }
+
+
 fun invokeFluxFunction(kotlinLambdaTarget: Any, arg0: Any, shouldConvertFlowAsFlux: Boolean): Flux<Any> {
-	val function = kotlinLambdaTarget as Function
-	println(arg0::class.java)
+	val function = kotlinLambdaTarget as Function // (Any?) -> Any?
 	val flux = arg0 as Flux<Any>
-	return mono(Dispatchers.Unconfined) {
-		if(shouldConvertFlowAsFlux) {
-			function.invoke(flux.asFlow())
-		} else {
-			function.invoke(flux)
-		}
-	}.flatMapMany {
-		if(it is Flow<*>) {
-			(it as Flow<Any>).asFlux()
-		} else if(it is Flux<*>) {
-			it
-		} else if(it is Mono<*>) {
-			it
-		} else  {
-			Flux.just(it)
-		}
+	val actualArg: Any? = if (shouldConvertFlowAsFlux) flux.asFlow() else flux
+	return try {
+		asFlux(function.invoke(actualArg))
+	} catch (e: Exception) {
+		Flux.error(e)
 	}
 }
 
 fun invokeSuspendingSupplier(kotlinLambdaTarget: Any): Flux<Any> {
 	val supplier = kotlinLambdaTarget as SuspendSupplier
-	return mono(Dispatchers.Unconfined) {
-		suspendCoroutineUninterceptedOrReturn {
-			supplier.invoke(it)
-		}
-	}.flatMapMany {
-		if(it is Flow<*>) {
-			(it as Flow<Any>).asFlux()
-		} else if(it is Flux<*>) {
-			it
-		} else  {
-			Flux.just(it)
-		}
-
+	return executeInCoroutineAndConvertToFlux {  continuation ->
+		supplier.invoke(continuation)
 	}
 }
 
 fun invokeSuspendingConsumer(kotlinLambdaTarget: Any, arg0: Any) {
 	val consumer = kotlinLambdaTarget as SuspendConsumer
 	val flux = arg0 as Flux<Any>
-	mono(Dispatchers.Unconfined) {
-		suspendCoroutineUninterceptedOrReturn<Unit> {
-			consumer.invoke(flux.asFlow(), it)
-		}
+	executeInCoroutineAndConvertToFlux { continuation ->
+		consumer.invoke(flux.asFlow(), continuation)
 	}.subscribe()
 }
 
