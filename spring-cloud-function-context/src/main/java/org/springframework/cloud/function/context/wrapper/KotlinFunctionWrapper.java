@@ -86,14 +86,6 @@ public final class KotlinFunctionWrapper implements Function<Object, Object>, Fu
 
 	@Override
 	public Object invoke(Object arg0) {
-		if (CoroutinesUtils.isValidSuspendingFunction(kotlinLambdaTarget, arg0)) {
-			if (CoroutinesUtils.isValidFluxFunction(kotlinLambdaTarget, arg0)) {
-				return CoroutinesUtils.invokeSuspendingFluxFunction(kotlinLambdaTarget, arg0, shouldConvertFlowAsFlux);
-			}
-			else {
-				return CoroutinesUtils.invokeSuspendingSingleFunction(kotlinLambdaTarget, arg0);
-			}
-		}
 		if (CoroutinesUtils.isValidFluxFunction(kotlinLambdaTarget, arg0)) {
 			return CoroutinesUtils.invokeFluxFunction(kotlinLambdaTarget, arg0, shouldConvertFlowAsFlux);
 		}

@@ -70,6 +70,5 @@ public final class KotlinConsumerSuspendWrapper implements Consumer<Object> {
 	@Override
 	public void accept(Object input) {
 		CoroutinesUtils.invokeSuspendingConsumer(kotlinLambdaTarget, input);
-		return;
 	}
 }

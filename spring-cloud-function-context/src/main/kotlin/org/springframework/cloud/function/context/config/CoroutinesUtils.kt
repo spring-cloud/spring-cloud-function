@@ -170,10 +170,6 @@ fun invokeFluxConsumer(kotlinLambdaTarget: Any, arg0: Any) {
 	}.subscribe()
 }
 
-fun isValidSuspendingFunction(kotlinLambdaTarget: Any, arg0: Any): Boolean {
-//	return isValidFluxFunction(kotlinLambdaTarget, arg0) && kotlinLambdaTarget is Function2<*, *, *>
-	return kotlinLambdaTarget is Function2<*, *, *>
-}
 
 fun isValidFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Boolean {
 	return arg0 is Flux<*>
@@ -183,9 +179,6 @@ fun isValidFluxConsumer(kotlinLambdaTarget: Any, arg0: Any): Boolean {
 	return arg0 is Flux<*>
 }
 
-fun isValidSuspendingSupplier(kotlinLambdaTarget: Any): Boolean {
-	return kotlinLambdaTarget is Function1<*, *>
-}
 
 private typealias Function = (Any?) -> Any?
 private typealias SuspendFunction = (Any?, Continuation<Any>) -> Any?
