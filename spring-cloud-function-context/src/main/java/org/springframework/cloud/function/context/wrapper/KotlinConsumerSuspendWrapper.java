@@ -20,6 +20,7 @@ package org.springframework.cloud.function.context.wrapper;
 import java.lang.reflect.Type;
 import java.util.function.Consumer;
 
+import org.springframework.cloud.function.context.config.TypeUtils;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -41,7 +42,7 @@ public final class KotlinConsumerSuspendWrapper implements Consumer<Object> {
 		KotlinConsumerSuspendWrapper wrapper = new KotlinConsumerSuspendWrapper(kotlinLambdaTarget, functionName);
 		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
 
-		ResolvableType continuationArgType = CoroutinesUtils.getSuspendingFunctionArgType(propsTypes[0]);
+		ResolvableType continuationArgType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
 		registration.type(
 			ResolvableType.forClassWithGenerics(
 				Consumer.class,

@@ -19,6 +19,7 @@ package org.springframework.cloud.function.context.wrapper;
 import java.lang.reflect.Type;
 import java.util.function.Supplier;
 
+import org.springframework.cloud.function.context.config.TypeUtils;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -41,7 +42,7 @@ public final class KotlinSupplierSuspendWrapper implements Supplier<Object> {
 	) {
 		KotlinSupplierSuspendWrapper wrapper = new KotlinSupplierSuspendWrapper(kotlinLambdaTarget, functionName);
 		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
-		ResolvableType returnType = CoroutinesUtils.getSuspendingFunctionReturnType(propsTypes[0]);
+		ResolvableType returnType = TypeUtils.getSuspendingFunctionReturnType(propsTypes[0]);
 		registration.type(
 			ResolvableType.forClassWithGenerics(
 				Supplier.class,

@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import kotlin.jvm.functions.Function1;
 import kotlin.jvm.functions.Function2;
+import org.springframework.cloud.function.context.config.TypeUtils;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -42,7 +43,7 @@ public final class KotlinFunctionWrapper implements Function<Object, Object>, Fu
 		Object kotlinLambdaTarget,
 		Type[] propsTypes
 	) {
-		Boolean shouldConvertFlowAsFlux = CoroutinesUtils.isFlowType(propsTypes[0]);
+		Boolean shouldConvertFlowAsFlux = TypeUtils.isFlowType(propsTypes[0]);
 		KotlinFunctionWrapper wrapper = new KotlinFunctionWrapper(kotlinLambdaTarget, functionName, shouldConvertFlowAsFlux);
 		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
 		if (shouldConvertFlowAsFlux) {

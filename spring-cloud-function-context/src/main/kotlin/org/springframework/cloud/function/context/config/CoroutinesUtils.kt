@@ -23,74 +23,14 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.reactor.mono
 import reactor.core.publisher.Flux
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.lang.reflect.WildcardType
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
-import org.reactivestreams.Publisher
-import org.springframework.core.ResolvableType
 import reactor.core.publisher.Mono
 
 /**
  * @author Adrien Poupard
  *
  */
-
-fun getSuspendingFunctionArgType(type: Type): ResolvableType {
-	return  ResolvableType.forType(getFlowTypeArguments(type))
-}
-
-fun getSuspendingFunctionReturnType(type: Type): ResolvableType {
-	val lower = getContinuationTypeArguments(type)
-	return ResolvableType.forType(getFlowTypeArguments(lower))
-}
-
-fun getFlowTypeArguments(type: Type): Type {
-	if(!isFlowType(type)) {
-		return type
-	}
-	val parameterizedLowerType = type as ParameterizedType
-	if(parameterizedLowerType.actualTypeArguments.isEmpty()) {
-		return parameterizedLowerType
-	}
-
-	val actualTypeArgument = parameterizedLowerType.actualTypeArguments[0]
-	return if(actualTypeArgument is WildcardType) {
-		val wildcardTypeLower = parameterizedLowerType.actualTypeArguments[0] as WildcardType
-		wildcardTypeLower.upperBounds[0]
-	} else {
-		actualTypeArgument
-	}
-}
-
-fun isFlowType(type: Type): Boolean {
-	return type.typeName.startsWith(Flow::class.qualifiedName!!)
-}
-
-
-fun isContinuationType(type: Type): Boolean {
-	return type.typeName.startsWith(Continuation::class.qualifiedName!!)
-}
-
-fun isUnitType(type: Type): Boolean {
-	return isTypeRepresentedByClass(type, Unit::class.java)
-}
-
-fun isContinuationUnitType(type: Type): Boolean {
-	return isContinuationType(type) && type.typeName.contains(Unit::class.qualifiedName!!)
-}
-
-
-private fun getContinuationTypeArguments(type: Type): Type {
-	if(!isContinuationType(type)) {
-		return type
-	}
-	val parameterizedType = type as ParameterizedType
-	val wildcardType = parameterizedType.actualTypeArguments[0] as WildcardType
-	return wildcardType.lowerBounds[0]
-}
-
 private inline fun <T, R> executeInCoroutineAndConvertToFlux(crossinline block: (Continuation<T>) -> R): Flux<Any> {
 	return mono(Dispatchers.Unconfined) {
 		suspendCoroutineUninterceptedOrReturn { continuation ->

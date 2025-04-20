@@ -21,6 +21,8 @@ import java.util.function.Function;
 
 import kotlin.jvm.functions.Function1;
 import kotlin.jvm.functions.Function2;
+import kotlin.reflect.jvm.internal.impl.types.typeUtil.TypeUtilsKt;
+import org.springframework.cloud.function.context.config.TypeUtils;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -40,9 +42,9 @@ public final class KotlinFunctionSuspendWrapper implements Function<Object, Obje
 		Object kotlinLambdaTarget,
 		Type[] propsTypes
 	) {
-		ResolvableType agType = CoroutinesUtils.getSuspendingFunctionArgType(propsTypes[0]);
-		ResolvableType returnType = CoroutinesUtils.getSuspendingFunctionReturnType(propsTypes[1]);
-		Boolean shouldConvertFlowAsFlux = CoroutinesUtils.isFlowType(propsTypes[0]);
+		ResolvableType agType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
+		ResolvableType returnType = TypeUtils.getSuspendingFunctionReturnType(propsTypes[1]);
+		Boolean shouldConvertFlowAsFlux = TypeUtils.isFlowType(propsTypes[0]);
 		KotlinFunctionSuspendWrapper wrapper = new KotlinFunctionSuspendWrapper(kotlinLambdaTarget, functionName, shouldConvertFlowAsFlux);
 		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
 		if (shouldConvertFlowAsFlux) {

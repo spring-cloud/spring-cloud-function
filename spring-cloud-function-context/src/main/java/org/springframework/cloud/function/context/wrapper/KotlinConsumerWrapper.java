@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import kotlin.jvm.functions.Function1;
+import org.springframework.cloud.function.context.config.TypeUtils;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -42,7 +43,7 @@ public final class KotlinConsumerWrapper implements Consumer<Object> {
 		KotlinConsumerWrapper wrapper = new KotlinConsumerWrapper(kotlinLambdaTarget, functionName);
 		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
 
-		if (CoroutinesUtils.isFlowType(propsTypes[0])) {
+		if (TypeUtils.isFlowType(propsTypes[0])) {
 			registration.type(
 				ResolvableType.forClassWithGenerics(
 					Consumer.class,
