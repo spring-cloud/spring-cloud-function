@@ -37,7 +37,7 @@ private inline fun <T, R> executeInCoroutineAndConvertToFlux(crossinline block: 
 			block(continuation)
 		}
 	}.flatMapMany {
-		asFlux(it)
+		it.asFlux()
 	}
 }
 
@@ -47,24 +47,19 @@ private inline fun <T, R> executeInCoroutineAndConvertToFlux(crossinline block: 
  * @param value The value to convert
  * @return The value as a Flux
  */
-private fun asFlux(value: Any?): Flux<Any> {
-	return when (value) {
-		is Flow<*> -> (value as Flow<Any>).asFlux()
-		is Flux<*> -> value as Flux<Any>
-		is Mono<*> -> value.flatMapMany { Flux.just(it) }
-		else -> Flux.just(value)
+private fun Any?.asFlux(): Flux<Any> {
+	return when (this) {
+		is Flow<*> -> (this as Flow<Any>).asFlux()
+		is Flux<*> -> this as Flux<Any>
+		is Mono<*> -> this.flatMapMany { Flux.just(it) }
+		else -> Flux.just(this)
 	}
 }
 
-fun invokeSuspendingFluxFunction(kotlinLambdaTarget: Any, arg0: Any, shouldConvertFlowAsFlux: Boolean): Flux<Any> {
+fun invokeSuspendingFlowFunction(kotlinLambdaTarget: Any, arg0: Flow<Any>): Flux<Any> {
 	val function = kotlinLambdaTarget as SuspendFunction
-	val flux = arg0 as Flux<Any>
 	return executeInCoroutineAndConvertToFlux { continuation ->
-		if(shouldConvertFlowAsFlux) {
-			function.invoke(flux.asFlow(), continuation)
-		} else {
-			function.invoke(flux, continuation)
-		}
+		function.invoke(arg0, continuation)
 	}
 }
 
@@ -75,17 +70,6 @@ fun invokeSuspendingSingleFunction(kotlinLambdaTarget: Any, arg0: Any): Flux<Any
 	}
 }
 
-
-fun invokeFluxFunction(kotlinLambdaTarget: Any, arg0: Any, shouldConvertFlowAsFlux: Boolean): Flux<Any> {
-	val function = kotlinLambdaTarget as Function // (Any?) -> Any?
-	val flux = arg0 as Flux<Any>
-	val actualArg: Any? = if (shouldConvertFlowAsFlux) flux.asFlow() else flux
-	return try {
-		asFlux(function.invoke(actualArg))
-	} catch (e: Exception) {
-		Flux.error(e)
-	}
-}
 
 fun invokeSuspendingSupplier(kotlinLambdaTarget: Any): Flux<Any> {
 	val supplier = kotlinLambdaTarget as SuspendSupplier
@@ -102,29 +86,8 @@ fun invokeSuspendingConsumer(kotlinLambdaTarget: Any, arg0: Any) {
 	}.subscribe()
 }
 
-fun invokeFluxConsumer(kotlinLambdaTarget: Any, arg0: Any) {
-	val consumer = kotlinLambdaTarget as Consumer
-	val flux = arg0 as Flux<Any>
-	mono(Dispatchers.Unconfined) {
-		consumer.invoke(flux.asFlow())
-	}.subscribe()
-}
-
-
-fun isValidFluxFunction(kotlinLambdaTarget: Any, arg0: Any): Boolean {
-	return arg0 is Flux<*>
-}
-
-fun isValidFluxConsumer(kotlinLambdaTarget: Any, arg0: Any): Boolean {
-	return arg0 is Flux<*>
-}
-
-
-private typealias Function = (Any?) -> Any?
 private typealias SuspendFunction = (Any?, Continuation<Any>) -> Any?
 
-private typealias Consumer = (Any?) -> Unit?
 private typealias SuspendConsumer = (Any?, Continuation<Unit>) -> Unit?
 
-private typealias Supplier = () -> Any?
 private typealias SuspendSupplier = (Continuation<Any>) -> Any?

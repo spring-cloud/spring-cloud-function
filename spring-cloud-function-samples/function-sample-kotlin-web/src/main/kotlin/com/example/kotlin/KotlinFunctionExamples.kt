@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.example.kotlin
 
 import kotlinx.coroutines.delay
@@ -16,17 +32,17 @@ import java.time.Duration
 /**
  * ## List of Combinations Tested (in requested order):
  * --- Coroutine ---
- * 1. (T) -> R                     -> functionSingleToSingle
- * 2. (T) -> Flow<R>               -> functionSingleToFlow
- * 3. (Flow<T>) -> R               -> functionFlowToSingle
+ * 1. (T) -> R                     -> functionPlainToPlain
+ * 2. (T) -> Flow<R>               -> functionPlainToFlow
+ * 3. (Flow<T>) -> R               -> functionFlowToPlain
  * 4. (Flow<T>) -> Flow<R>         -> functionFlowToFlow
- * 5. suspend (T) -> R             -> functionSuspendSingleToSingle
- * 6. suspend (T) -> Flow<R>       -> functionSuspendSingleToFlow
- * 7. suspend (Flow<T>) -> R       -> functionSuspendFlowToSingle
+ * 5. suspend (T) -> R             -> functionSuspendPlainToPlain
+ * 6. suspend (T) -> Flow<R>       -> functionSuspendPlainToFlow
+ * 7. suspend (Flow<T>) -> R       -> functionSuspendFlowToPlain
  * 8. suspend (Flow<T>) -> Flow<R> -> functionSuspendFlowToFlow
  * --- Reactor ---
- * 9. (T) -> Mono<R>               -> functionSingleToMono
- * 10. (T) -> Flux<R>              -> functionSingleToFlux
+ * 9. (T) -> Mono<R>               -> functionPlainToMono
+ * 10. (T) -> Flux<R>              -> functionPlainToFlux
  * 11. (Mono<T>) -> Mono<R>        -> functionMonoToMono
  * 12. (Flux<T>) -> Flux<R>        -> functionFluxToFlux
  * 13. (Flux<T>) -> Mono<R>        -> functionFluxToMono
@@ -43,13 +59,13 @@ class KotlinFunctionExamples {
 
 	/** 1) (T) -> R */
 	@Bean
-	fun functionSingleToSingle(): (String) -> Int = { input ->
+	fun functionPlainToPlain(): (String) -> Int = { input ->
 		input.length
 	}
 
 	/** 2) (T) -> Flow<R> */
 	@Bean
-	fun functionSingleToFlow(): (String) -> Flow<String> = { input ->
+	fun functionPlainToFlow(): (String) -> Flow<String> = { input ->
 		flow {
 			input.forEach { c -> emit(c.toString()) }
 		}
@@ -57,7 +73,7 @@ class KotlinFunctionExamples {
 
 	/** 3) (Flow<T>) -> R */
 	@Bean
-	fun functionFlowToSingle(): (Flow<String>) -> Int = { flowInput ->
+	fun functionFlowToPlain(): (Flow<String>) -> Int = { flowInput ->
 		var count = 0
 		runBlocking {
 			flowInput.collect { count++ }
@@ -73,14 +89,14 @@ class KotlinFunctionExamples {
 
 	/** 5) suspend (T) -> R */
 	@Bean
-	fun functionSuspendSingleToSingle(): suspend (String) -> Int = { input ->
+	fun functionSuspendPlainToPlain(): suspend (String) -> Int = { input ->
 		delay(100)
 		input.length
 	}
 
 	/** 6) suspend (T) -> Flow<R> */
 	@Bean
-	fun functionSuspendSingleToFlow(): suspend (String) -> Flow<String> = { input ->
+	fun functionSuspendPlainToFlow(): suspend (String) -> Flow<String> = { input ->
 		flow {
 			delay(100)
 			input.forEach { c -> emit(c.toString()) }
@@ -89,7 +105,7 @@ class KotlinFunctionExamples {
 
 	/** 7) suspend (Flow<T>) -> R */
 	@Bean
-	fun functionSuspendFlowToSingle(): suspend (Flow<String>) -> Int = { flowInput ->
+	fun functionSuspendFlowToPlain(): suspend (Flow<String>) -> Int = { flowInput ->
 		var count = 0
 		flowInput.collect { count++ }
 		count
@@ -106,13 +122,13 @@ class KotlinFunctionExamples {
 
 	/** 9) (T) -> Mono<R> */
 	@Bean
-	fun functionSingleToMono(): (String) -> Mono<Int> = { input ->
+	fun functionPlainToMono(): (String) -> Mono<Int> = { input ->
 		Mono.just(input.length).delayElement(Duration.ofMillis(50))
 	}
 
 	/** 10) (T) -> Flux<R> */
 	@Bean
-	fun functionSingleToFlux(): (String) -> Flux<String> = { input ->
+	fun functionPlainToFlux(): (String) -> Flux<String> = { input ->
 		Flux.fromIterable(input.toList()).map { it.toString() }
 	}
 
@@ -150,7 +166,7 @@ class KotlinFunctionExamples {
 		MessageBuilder.withPayload(message.payload.length * 2)
 			.copyHeaders(message.headers)
 			.setHeader("suspend-processed", "true")
-			.setHeader("original-id", message.headers.id ?: "N/A")
+			.setHeader("original-id", message.headers["original-id"] ?: "N/A")
 			.build()
 	}
 

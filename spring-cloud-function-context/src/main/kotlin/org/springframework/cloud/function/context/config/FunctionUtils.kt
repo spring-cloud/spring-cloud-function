@@ -19,6 +19,7 @@
 package org.springframework.cloud.function.context.config
 
 import java.lang.reflect.Type
+import java.util.function.Function
 
 fun isValidKotlinConsumer(functionType: Type, type: Array<Type>): Boolean {
 	return isTypeRepresentedByClass(functionType, Function1::class.java) &&
@@ -34,7 +35,8 @@ fun isValidKotlinSuspendConsumer(functionType: Type, type: Array<Type>): Boolean
 
 
 fun isValidKotlinFunction(functionType: Type, type: Array<Type>): Boolean {
-	return isTypeRepresentedByClass(functionType, Function1::class.java) &&
+	return (isTypeRepresentedByClass(functionType, Function1::class.java) ||
+		isTypeRepresentedByClass(functionType, Function::class.java)) &&
 		type.size == 2 && !isContinuationType(type[0]) &&
 		!isUnitType(type[1])
 }
@@ -54,7 +56,6 @@ fun isValidKotlinSuspendSupplier(functionType: Type, type: Array<Type>): Boolean
 	return isTypeRepresentedByClass(functionType, Function1::class.java) && type.size == 2 &&
 		isContinuationType(type[0])
 }
-
 
 fun isTypeRepresentedByClass(type: Type, clazz: Class<*>): Boolean {
 	return type.typeName.contains(clazz.name)

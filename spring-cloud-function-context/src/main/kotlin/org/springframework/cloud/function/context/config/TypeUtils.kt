@@ -22,7 +22,10 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.lang.reflect.WildcardType
 import kotlin.coroutines.Continuation
+import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactor.asFlux
 import org.springframework.core.ResolvableType
+import reactor.core.publisher.Flux
 
 /**
  * @author Adrien Poupard
@@ -71,6 +74,10 @@ fun isContinuationUnitType(type: Type): Boolean {
 	return isContinuationType(type) && type.typeName.contains(Unit::class.qualifiedName!!)
 }
 
+fun isContinuationFlowType(type: Type): Boolean {
+	return isContinuationType(type) && type.typeName.contains(Flow::class.qualifiedName!!)
+}
+
 
 private fun getContinuationTypeArguments(type: Type): Type {
 	if(!isContinuationType(type)) {
@@ -79,4 +86,13 @@ private fun getContinuationTypeArguments(type: Type): Type {
 	val parameterizedType = type as ParameterizedType
 	val wildcardType = parameterizedType.actualTypeArguments[0] as WildcardType
 	return wildcardType.lowerBounds[0]
+}
+
+
+fun asFlow(arg0: Flux<*>): Flow<Any> {
+	return arg0.asFlow()
+}
+
+fun asFlux(arg0: Flow<Any>): Flux<Any> {
+	return arg0.asFlux()
 }

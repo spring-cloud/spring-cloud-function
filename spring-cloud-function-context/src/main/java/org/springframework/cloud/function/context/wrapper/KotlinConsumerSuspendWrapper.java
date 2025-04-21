@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2025-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,53 +20,61 @@ package org.springframework.cloud.function.context.wrapper;
 import java.lang.reflect.Type;
 import java.util.function.Consumer;
 
-import org.springframework.cloud.function.context.config.TypeUtils;
 import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
+import org.springframework.cloud.function.context.config.TypeUtils;
 import org.springframework.core.ResolvableType;
 
-public final class KotlinConsumerSuspendWrapper implements Consumer<Object> {
+/**
+ * @author Adrien Poupard
+ *
+ */
+public final class KotlinConsumerSuspendWrapper implements KotlinFunctionWrapper, Consumer<Object> {
 
-	public static Boolean isValidSuspendConsumer(Type functionType, Type[] types) {
+	public static Boolean isValid(Type functionType, Type[] types) {
 		return FunctionUtils.isValidKotlinSuspendConsumer(functionType, types);
 	}
 
-	public static FunctionRegistration asRegistrationFunction(
+	public static KotlinConsumerSuspendWrapper asRegistrationFunction(
 		String functionName,
 		Object kotlinLambdaTarget,
 		Type[] propsTypes
 	) {
-		KotlinConsumerSuspendWrapper wrapper = new KotlinConsumerSuspendWrapper(kotlinLambdaTarget, functionName);
-		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
-
 		ResolvableType continuationArgType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
-		registration.type(
-			ResolvableType.forClassWithGenerics(
-				Consumer.class,
-				ResolvableType.forClassWithGenerics(Flux.class, continuationArgType)
-			).getType()
+		ResolvableType functionType = ResolvableType.forClassWithGenerics(
+			Consumer.class,
+			ResolvableType.forClassWithGenerics(Flux.class, continuationArgType)
 		);
-
-		return registration;
+		return new KotlinConsumerSuspendWrapper(kotlinLambdaTarget, functionType, functionName);
 	}
-
 
 	private final Object kotlinLambdaTarget;
 	private String name;
+	private final ResolvableType type;
 
 	public KotlinConsumerSuspendWrapper(Object kotlinLambdaTarget, String functionName) {
 		this.name = functionName;
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.type = null;
 	}
 
+	public KotlinConsumerSuspendWrapper(Object kotlinLambdaTarget, ResolvableType type, String functionName) {
+		this.name = functionName;
+		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.type = type;
+	}
 
+	@Override
+	public ResolvableType getResolvableType() {
+		return type;
+	}
+
+	@Override
 	public String getName() {
 		return this.name;
 	}
-
 
 	@Override
 	public void accept(Object input) {

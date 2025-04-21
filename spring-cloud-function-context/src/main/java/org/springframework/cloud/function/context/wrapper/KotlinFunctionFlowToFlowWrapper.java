@@ -17,37 +17,42 @@
 package org.springframework.cloud.function.context.wrapper;
 
 import java.lang.reflect.Type;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
+import kotlin.jvm.functions.Function1;
+import kotlinx.coroutines.flow.Flow;
 import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.cloud.function.context.config.TypeUtils;
 import org.springframework.core.ResolvableType;
-import org.springframework.util.ObjectUtils;
 
 /**
  * @author Adrien Poupard
  *
  */
-public final class KotlinSupplierSuspendWrapper implements KotlinFunctionWrapper, Supplier<Object> {
+public final class KotlinFunctionFlowToFlowWrapper implements KotlinFunctionWrapper, Function<Flux<Object>, Flux<Object>>, Function1<Flux<Object>, Flux<Object>> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSuspendSupplier(functionType, types);
+		return FunctionUtils.isValidKotlinFunction(functionType, types) &&
+				types.length == 2 &&
+				TypeUtils.isFlowType(types[0]) &&
+				TypeUtils.isFlowType(types[1]);
 	}
 
-	public static KotlinSupplierSuspendWrapper asRegistrationFunction(
+	public static KotlinFunctionFlowToFlowWrapper asRegistrationFunction(
 		String functionName,
 		Object kotlinLambdaTarget,
 		Type[] propsTypes
 	) {
-		ResolvableType returnType = TypeUtils.getSuspendingFunctionReturnType(propsTypes[0]);
+		ResolvableType props = ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(propsTypes[0]));
+		ResolvableType result = ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(propsTypes[1]));
 		ResolvableType functionType = ResolvableType.forClassWithGenerics(
-			Supplier.class,
-			ResolvableType.forClassWithGenerics(Flux.class, returnType)
+			Function.class,
+			props,
+			result
 		);
-		return new KotlinSupplierSuspendWrapper(kotlinLambdaTarget, functionType, functionName);
+		return new KotlinFunctionFlowToFlowWrapper(kotlinLambdaTarget, functionType, functionName);
 	}
 
 
@@ -55,28 +60,27 @@ public final class KotlinSupplierSuspendWrapper implements KotlinFunctionWrapper
 	private final String name;
 	private final ResolvableType type;
 
-	public KotlinSupplierSuspendWrapper(Object kotlinLambdaTarget, String functionName) {
-		this.name = functionName;
+	public KotlinFunctionFlowToFlowWrapper(Object kotlinLambdaTarget, String functionName) {
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.name = functionName;
 		this.type = null;
 	}
 
-	public KotlinSupplierSuspendWrapper(Object kotlinLambdaTarget, ResolvableType type, String functionName) {
-		this.name = functionName;
+	public KotlinFunctionFlowToFlowWrapper(Object kotlinLambdaTarget, ResolvableType type, String functionName) {
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.name = functionName;
 		this.type = type;
 	}
 
-	public Object apply(Object input) {
-		if (ObjectUtils.isEmpty(input)) {
-			return this.get();
+	@Override
+	public Flux<Object> invoke(Flux<Object> arg0) {
+		Flow<Object> flow = TypeUtils.asFlow(arg0);
+		if (kotlinLambdaTarget instanceof Function1) {
+			Function1<Flow<Object>, Flow<Object>> target = (Function1<Flow<Object>, Flow<Object>>) kotlinLambdaTarget;
+			Flow<Object> result = target.invoke(flow);
+			return TypeUtils.asFlux(result);
 		}
 		return null;
-	}
-
-	@Override
-	public Object get() {
-		return CoroutinesUtils.invokeSuspendingSupplier(kotlinLambdaTarget);
 	}
 
 	@Override
@@ -87,6 +91,11 @@ public final class KotlinSupplierSuspendWrapper implements KotlinFunctionWrapper
 	@Override
 	public String getName() {
 		return this.name;
+	}
+
+	@Override
+	public Flux<Object> apply(Flux<Object> input) {
+		return this.invoke(input);
 	}
 
 }

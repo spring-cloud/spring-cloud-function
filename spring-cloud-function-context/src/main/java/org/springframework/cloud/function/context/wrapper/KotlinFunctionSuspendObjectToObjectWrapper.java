@@ -17,66 +17,56 @@
 package org.springframework.cloud.function.context.wrapper;
 
 import java.lang.reflect.Type;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
+import kotlin.jvm.functions.Function1;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.cloud.function.context.config.TypeUtils;
 import org.springframework.core.ResolvableType;
-import org.springframework.util.ObjectUtils;
 
 /**
  * @author Adrien Poupard
  *
  */
-public final class KotlinSupplierSuspendWrapper implements KotlinFunctionWrapper, Supplier<Object> {
+public final class KotlinFunctionSuspendObjectToObjectWrapper implements KotlinFunctionWrapper, Function<Object, Object>, Function1<Object, Object> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSuspendSupplier(functionType, types);
+		return FunctionUtils.isValidKotlinSuspendFunction(functionType, types);
 	}
 
-	public static KotlinSupplierSuspendWrapper asRegistrationFunction(
+	public static KotlinFunctionSuspendObjectToObjectWrapper asRegistrationFunction(
 		String functionName,
 		Object kotlinLambdaTarget,
 		Type[] propsTypes
 	) {
-		ResolvableType returnType = TypeUtils.getSuspendingFunctionReturnType(propsTypes[0]);
+		ResolvableType agType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
+		ResolvableType returnType = TypeUtils.getSuspendingFunctionReturnType(propsTypes[1]);
 		ResolvableType functionType = ResolvableType.forClassWithGenerics(
-			Supplier.class,
+			Function.class,
+			agType,
 			ResolvableType.forClassWithGenerics(Flux.class, returnType)
 		);
-		return new KotlinSupplierSuspendWrapper(kotlinLambdaTarget, functionType, functionName);
+		return new KotlinFunctionSuspendObjectToObjectWrapper(kotlinLambdaTarget, functionType, functionName);
 	}
 
 
 	private final Object kotlinLambdaTarget;
-	private final String name;
+	private String name;
 	private final ResolvableType type;
 
-	public KotlinSupplierSuspendWrapper(Object kotlinLambdaTarget, String functionName) {
+	public KotlinFunctionSuspendObjectToObjectWrapper(Object kotlinLambdaTarget, String functionName) {
 		this.name = functionName;
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
 		this.type = null;
 	}
 
-	public KotlinSupplierSuspendWrapper(Object kotlinLambdaTarget, ResolvableType type, String functionName) {
+	public KotlinFunctionSuspendObjectToObjectWrapper(Object kotlinLambdaTarget, ResolvableType type, String functionName) {
 		this.name = functionName;
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
 		this.type = type;
-	}
-
-	public Object apply(Object input) {
-		if (ObjectUtils.isEmpty(input)) {
-			return this.get();
-		}
-		return null;
-	}
-
-	@Override
-	public Object get() {
-		return CoroutinesUtils.invokeSuspendingSupplier(kotlinLambdaTarget);
 	}
 
 	@Override
@@ -85,8 +75,17 @@ public final class KotlinSupplierSuspendWrapper implements KotlinFunctionWrapper
 	}
 
 	@Override
+	public Object invoke(Object arg0) {
+		return CoroutinesUtils.invokeSuspendingSingleFunction(kotlinLambdaTarget, arg0);
+	}
+
+	@Override
 	public String getName() {
 		return this.name;
 	}
 
+	@Override
+	public Object apply(Object input) {
+		return this.invoke(input);
+	}
 }

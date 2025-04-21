@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.example.kotlin
 
 import java.time.Duration
@@ -7,11 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.messaging.Message
-import org.springframework.messaging.support.MessageBuilder
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
-import org.springframework.test.web.reactive.server.expectBodyList
 
 /**
  * Test class for verifying the Kotlin Supplier examples in [KotlinSupplierExamples].
@@ -19,9 +32,9 @@ import org.springframework.test.web.reactive.server.expectBodyList
  *
  * ## Suppliers Tested:
  * --- Coroutine ---
- * 1. () -> R                      -> supplierSingle
+ * 1. () -> R                      -> supplierPlain
  * 2. () -> Flow<R>               -> supplierFlow
- * 3. suspend () -> R             -> supplierSuspendSingle
+ * 3. suspend () -> R             -> supplierSuspendPlain
  * 4. suspend () -> Flow<R>       -> supplierSuspendFlow
  * --- Reactor ---
  * 5. () -> Mono<R>               -> supplierMono
@@ -49,20 +62,20 @@ class KotlinSupplierExamplesTest {
 	}
 
 	/**
-	 * 1. () -> R -> supplierSingle
+	 * 1. () -> R -> supplierPlain
 	 * No input, returns an Int.
 	 *
 	 * --- Input: ---
-	 * GET /supplierSingle
+	 * GET /supplierPlain
 	 *
 	 * --- Output: ---
 	 * 200 OK
 	 * 42
 	 */
 	@Test
-	fun testSupplierSingle() {
+	fun testSupplierPlain() {
 		webTestClient.get()
-			.uri("/supplierSingle")
+			.uri("/supplierPlain")
 			.exchange()
 			.expectStatus().isOk
 			.expectBody<Int>()
@@ -91,20 +104,20 @@ class KotlinSupplierExamplesTest {
 	}
 
 	/**
-	 * 3. suspend () -> R -> supplierSuspendSingle
+	 * 3. suspend () -> R -> supplierSuspendPlain
 	 * Suspending supplier that returns a single String.
 	 *
 	 * --- Input: ---
-	 * GET /supplierSuspendSingle
+	 * GET /supplierSuspendPlain
 	 *
 	 * --- Output: ---
 	 * 200 OK
 	 * ["Hello from suspend"]
 	 */
 	@Test
-	fun testSupplierSuspendSingle() {
+	fun testSupplierSuspendPlain() {
 		webTestClient.get()
-			.uri("/supplierSuspendSingle")
+			.uri("/supplierSuspendPlain")
 			.exchange()
 			.expectStatus().isOk
 			.expectBody<String>()
@@ -289,11 +302,11 @@ class KotlinSupplierExamplesTest {
 			.accept(MediaType.APPLICATION_JSON)
 			.exchange()
 			.expectStatus().isOk
-			.expectBody<List<SimpleMessage>>()
+			.expectBody<List<String>>()
 			.isEqualTo(
 				listOf(
-					SimpleMessage("FlowMsg1"),
-					SimpleMessage("FlowMsg2")
+					"FlowMsg1",
+					"FlowMsg2"
 				)
 			)
 
@@ -321,7 +334,3 @@ class KotlinSupplierExamplesTest {
 			.isEqualTo(listOf("SuspendFlowMsg1", "SuspendFlowMsg2"))
 	}
 }
-
-data class SimpleMessage(
-	val payload: String,
-)

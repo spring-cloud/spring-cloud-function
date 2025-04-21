@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2025-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,39 +21,43 @@ import java.util.function.Supplier;
 
 import kotlin.jvm.functions.Function0;
 
-import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
 
+/**
+ * @author Adrien Poupard
+ *
+ */
+public final class KotlinSupplierPlainWrapper implements KotlinFunctionWrapper, Supplier<Object> {
 
-
-public final class KotlinSupplierWrapper implements Supplier<Object> {
-
-	public static Boolean isValidSupplier(Type functionType, Type[] types) {
+	public static Boolean isValid(Type functionType, Type[] types) {
 		return FunctionUtils.isValidKotlinSupplier(functionType);
 	}
 
-	public static FunctionRegistration asRegistrationFunction(
+	public static KotlinSupplierPlainWrapper asRegistrationFunction(
 		String functionName,
 		Object kotlinLambdaTarget,
 		Type[] propsTypes
 	) {
-		KotlinSupplierWrapper wrapper = new KotlinSupplierWrapper(kotlinLambdaTarget, functionName);
-		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
-		registration.type(
-			ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(propsTypes[0]))
-			.getType()
-		);
-		return registration;
+		ResolvableType functionType = ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(propsTypes[0]));
+		return new KotlinSupplierPlainWrapper(kotlinLambdaTarget, functionType, functionName);
 	}
 
 	private final Object kotlinLambdaTarget;
 	private final String name;
+	private final ResolvableType type;
 
-	public KotlinSupplierWrapper(Object kotlinLambdaTarget, String functionName) {
+	public KotlinSupplierPlainWrapper(Object kotlinLambdaTarget, String functionName) {
 		this.name = functionName;
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.type = null;
+	}
+
+	public KotlinSupplierPlainWrapper(Object kotlinLambdaTarget, ResolvableType type, String functionName) {
+		this.name = functionName;
+		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.type = type;
 	}
 
 	public Object apply(Object input) {
@@ -71,6 +75,12 @@ public final class KotlinSupplierWrapper implements Supplier<Object> {
 		return ((Supplier) this.kotlinLambdaTarget).get();
 	}
 
+	@Override
+	public ResolvableType getResolvableType() {
+		return type;
+	}
+
+	@Override
 	public String getName() {
 		return this.name;
 	}

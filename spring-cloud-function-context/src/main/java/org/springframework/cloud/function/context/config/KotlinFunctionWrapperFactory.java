@@ -21,50 +21,89 @@ import java.lang.reflect.Type;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.function.context.FunctionRegistration;
+import org.springframework.cloud.function.context.wrapper.KotlinConsumerFlowWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinConsumerPlainWrapper;
 import org.springframework.cloud.function.context.wrapper.KotlinConsumerSuspendWrapper;
-import org.springframework.cloud.function.context.wrapper.KotlinConsumerWrapper;
-import org.springframework.cloud.function.context.wrapper.KotlinFunctionSuspendWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionFlowToFlowWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionFlowToPlainWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionObjectToObjectWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionPlainToFlowWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionSuspendFlowToFlowWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionSuspendFlowToPlainWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionSuspendObjectToObjectWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionSuspendPlainToFlowWrapper;
 import org.springframework.cloud.function.context.wrapper.KotlinFunctionWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinSupplierFlowWrapper;
+import org.springframework.cloud.function.context.wrapper.KotlinSupplierPlainWrapper;
 import org.springframework.cloud.function.context.wrapper.KotlinSupplierSuspendWrapper;
-import org.springframework.cloud.function.context.wrapper.KotlinSupplierWrapper;
+
 
 public final class KotlinFunctionWrapperFactory {
-	private final Object kotlinLambdaTarget;
 
-	private ConfigurableListableBeanFactory beanFactory;
+	private final Object kotlinLambdaTarget;
+	private final ConfigurableListableBeanFactory beanFactory;
 
 	public KotlinFunctionWrapperFactory(Object kotlinLambdaTarget, ConfigurableListableBeanFactory beanFactory) {
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
 		this.beanFactory = beanFactory;
 	}
 
-	public FunctionRegistration getFunctionRegistration(String functionName) {
+	public FunctionRegistration<KotlinFunctionWrapper> getFunctionRegistration(String functionName) {
 		String name = functionName.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX)
 			? functionName.replace(FunctionRegistration.REGISTRATION_NAME_SUFFIX, "")
 			: functionName;
 		Type functionType = FunctionContextUtils.findType(name, beanFactory);
-
 		Type[] types = ((ParameterizedType) functionType).getActualTypeArguments();
+		KotlinFunctionWrapper wrapper = null;
+		if (KotlinConsumerFlowWrapper.isValid(functionType, types)) {
+			wrapper = KotlinConsumerFlowWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinFunctionFlowToFlowWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionFlowToFlowWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinFunctionSuspendFlowToFlowWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionSuspendFlowToFlowWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinFunctionFlowToPlainWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionFlowToPlainWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinFunctionSuspendFlowToPlainWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionSuspendFlowToPlainWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinFunctionPlainToFlowWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionPlainToFlowWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinFunctionSuspendPlainToFlowWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionSuspendPlainToFlowWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinSupplierFlowWrapper.isValid(functionType, types)) {
+			wrapper = KotlinSupplierFlowWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinSupplierPlainWrapper.isValid(functionType, types)) {
+			wrapper = KotlinSupplierPlainWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinSupplierSuspendWrapper.isValid(functionType, types)) {
+			wrapper = KotlinSupplierSuspendWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinConsumerPlainWrapper.isValid(functionType, types)) {
+			wrapper = KotlinConsumerPlainWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinConsumerSuspendWrapper.isValid(functionType, types)) {
+			wrapper = KotlinConsumerSuspendWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		else if (KotlinFunctionObjectToObjectWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionObjectToObjectWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, functionType, types);
+		}
+		else if (KotlinFunctionSuspendObjectToObjectWrapper.isValid(functionType, types)) {
+			wrapper = KotlinFunctionSuspendObjectToObjectWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
+		}
+		if (wrapper == null) {
+			throw new IllegalStateException("Unable to create function wrapper for " + functionName);
+		}
 
-		if (KotlinSupplierWrapper.isValidSupplier(functionType, types)) {
-			return KotlinSupplierWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
-		}
-		else if (KotlinSupplierSuspendWrapper.isValidSuspendSupplier(functionType, types)) {
-			return KotlinSupplierSuspendWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
-		}
-		else if (KotlinConsumerWrapper.isValidConsumer(functionType, types)) {
-			return KotlinConsumerWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
-		}
-		else if (KotlinConsumerSuspendWrapper.isValidSuspendConsumer(functionType, types)) {
-			return KotlinConsumerSuspendWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
-		}
-		else if (KotlinFunctionWrapper.isValidFunction(functionType, types)) {
-			return KotlinFunctionWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
-		}
-		else if (KotlinFunctionSuspendWrapper.isValidSuspendFunction(functionType, types)) {
-			return KotlinFunctionSuspendWrapper.asRegistrationFunction(functionName, kotlinLambdaTarget, types);
-		}
-		throw new UnsupportedOperationException("Multi argument Kotlin functions are not currently supported");
+		FunctionRegistration<KotlinFunctionWrapper> registration = new FunctionRegistration<>(wrapper, wrapper.getName());
+		registration.type(wrapper.getResolvableType().getType());
+		return registration;
 	}
 
 }

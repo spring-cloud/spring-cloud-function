@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2025-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,66 +21,60 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import kotlin.jvm.functions.Function1;
-import org.springframework.cloud.function.context.config.TypeUtils;
-import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.function.context.FunctionRegistration;
-import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
+import org.springframework.cloud.function.context.config.TypeUtils;
 import org.springframework.core.ResolvableType;
 
-public final class KotlinConsumerWrapper implements Consumer<Object> {
+/**
+ * @author Adrien Poupard
+ *
+ */
+public final class KotlinConsumerPlainWrapper implements KotlinFunctionWrapper, Consumer<Object> {
 
-	public static Boolean isValidConsumer(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinConsumer(functionType, types);
+	public static Boolean isValid(Type functionType, Type[] types) {
+		return FunctionUtils.isValidKotlinConsumer(functionType, types)
+			&& !TypeUtils.isFlowType(types[0]);
 	}
 
-	public static FunctionRegistration asRegistrationFunction(
+	public static KotlinConsumerPlainWrapper asRegistrationFunction(
 		String functionName,
 		Object kotlinLambdaTarget,
 		Type[] propsTypes
 	) {
-		KotlinConsumerWrapper wrapper = new KotlinConsumerWrapper(kotlinLambdaTarget, functionName);
-		FunctionRegistration<?> registration = new FunctionRegistration<>(wrapper, functionName);
-
-		if (TypeUtils.isFlowType(propsTypes[0])) {
-			registration.type(
-				ResolvableType.forClassWithGenerics(
-					Consumer.class,
-					ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(propsTypes[0]))
-				).getType()
-			);
-		}
-		else {
-			registration.type(
-				ResolvableType.forClassWithGenerics(Consumer.class, ResolvableType.forType(propsTypes[0]))
-				.getType()
-			);
-		}
-
-		return registration;
+		ResolvableType functionType = ResolvableType.forClassWithGenerics(Consumer.class, ResolvableType.forType(propsTypes[0]));
+		return new KotlinConsumerPlainWrapper(kotlinLambdaTarget, functionType, functionName);
 	}
 
 
 	private final Object kotlinLambdaTarget;
 	private final String name;
+	private final ResolvableType type;
 
-	public KotlinConsumerWrapper(Object kotlinLambdaTarget, String functionName) {
+	public KotlinConsumerPlainWrapper(Object kotlinLambdaTarget, String functionName) {
 		this.name = functionName;
 		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.type = null;
 	}
 
+	public KotlinConsumerPlainWrapper(Object kotlinLambdaTarget, ResolvableType type, String functionName) {
+		this.name = functionName;
+		this.kotlinLambdaTarget = kotlinLambdaTarget;
+		this.type = type;
+	}
 
+	@Override
+	public ResolvableType getResolvableType() {
+		return type;
+	}
+
+	@Override
 	public String getName() {
 		return this.name;
 	}
 
 	@Override
 	public void accept(Object input) {
-		if (CoroutinesUtils.isValidFluxConsumer(kotlinLambdaTarget, input)) {
-			CoroutinesUtils.invokeFluxConsumer(kotlinLambdaTarget, input);
-			return;
-		}
 		if (this.kotlinLambdaTarget instanceof Function1) {
 			((Function1) this.kotlinLambdaTarget).invoke(input);
 		}

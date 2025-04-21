@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.example.kotlin
 
 import org.junit.jupiter.api.BeforeEach
@@ -18,17 +34,17 @@ import java.util.UUID
  *
  * ## Functions Tested:
  * --- Coroutine ---
- * 1. (T) -> R                     -> functionSingleToSingle
- * 2. (T) -> Flow<R>               -> functionSingleToFlow
- * 3. (Flow<T>) -> R               -> functionFlowToSingle
+ * 1. (T) -> R                     -> functionPlainToPlain
+ * 2. (T) -> Flow<R>               -> functionPlainToFlow
+ * 3. (Flow<T>) -> R               -> functionFlowToPlain
  * 4. (Flow<T>) -> Flow<R>         -> functionFlowToFlow
- * 5. suspend (T) -> R             -> functionSuspendSingleToSingle
- * 6. suspend (T) -> Flow<R>       -> functionSuspendSingleToFlow
- * 7. suspend (Flow<T>) -> R       -> functionSuspendFlowToSingle
+ * 5. suspend (T) -> R             -> functionSuspendPlainToPlain
+ * 6. suspend (T) -> Flow<R>       -> functionSuspendPlainToFlow
+ * 7. suspend (Flow<T>) -> R       -> functionSuspendFlowToPlain
  * 8. suspend (Flow<T>) -> Flow<R> -> functionSuspendFlowToFlow
  * --- Reactor ---
- * 9. (T) -> Mono<R>               -> functionSingleToMono
- * 10. (T) -> Flux<R>              -> functionSingleToFlux
+ * 9. (T) -> Mono<R>               -> functionPlainToMono
+ * 10. (T) -> Flux<R>              -> functionPlainToFlux
  * 11. (Mono<T>) -> Mono<R>        -> functionMonoToMono
  * 12. (Flux<T>) -> Flux<R>        -> functionFluxToFlux
  * 13. (Flux<T>) -> Mono<R>        -> functionFluxToMono
@@ -55,11 +71,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 1. (T) -> R -> functionSingleToSingle
+	 * 1. (T) -> R -> functionPlainToPlain
 	 * Takes a String, returns its length (Int).
 	 *
 	 * --- Input: ---
-	 * POST /functionSingleToSingle
+	 * POST /functionPlainToPlain
 	 * Content-type: application/json
 	 * "Hello"
 	 *
@@ -68,9 +84,9 @@ class KotlinFunctionExamplesTest {
 	 * 5
 	 */
 	@Test
-	fun testFunctionSingleToSingle() {
+	fun testFunctionPlainToPlain() {
 		webTestClient.post()
-			.uri("/functionSingleToSingle")
+			.uri("/functionPlainToPlain")
 			.bodyValue("Hello")
 			.exchange()
 			.expectStatus().isOk
@@ -79,11 +95,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 2. (T) -> Flow<R> -> functionSingleToFlow
+	 * 2. (T) -> Flow<R> -> functionPlainToFlow
 	 * Takes a String, returns a Flow of its characters.
 	 *
 	 * --- Input: ---
-	 * POST /functionSingleToFlow
+	 * POST /functionPlainToFlow
 	 * "test"
 	 *
 	 * --- Output: ---
@@ -91,9 +107,9 @@ class KotlinFunctionExamplesTest {
 	 * ["t","e","s","t"]
 	 */
 	@Test
-	fun testFunctionSingleToFlow() {
+	fun testFunctionPlainToFlow() {
 		webTestClient.post()
-			.uri("/functionSingleToFlow")
+			.uri("/functionPlainToFlow")
 			.bodyValue("test")
 			.exchange()
 			.expectStatus().isOk
@@ -102,11 +118,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 3. (Flow<T>) -> R -> functionFlowToSingle
+	 * 3. (Flow<T>) -> R -> functionFlowToPlain
 	 * Takes a Flow of Strings, returns an Int count of items.
 	 *
 	 * --- Input: ---
-	 * POST /functionFlowToSingle
+	 * POST /functionFlowToPlain
 	 * Content-Type: application/json
 	 * ["one","two","three"]
 	 *
@@ -115,9 +131,9 @@ class KotlinFunctionExamplesTest {
 	 * [3]
 	 */
 	@Test
-	fun testFunctionFlowToSingle() {
+	fun testFunctionFlowToPlain() {
 		webTestClient.post()
-			.uri("/functionFlowToSingle")
+			.uri("/functionFlowToPlain")
 			.contentType(MediaType.APPLICATION_JSON)
 			.bodyValue(listOf("one", "two", "three"))
 			.exchange()
@@ -154,11 +170,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 5. suspend (T) -> R -> functionSuspendSingleToSingle
+	 * 5. suspend (T) -> R -> functionSuspendPlainToPlain
 	 * Suspending function that takes a String, returns Int (length).
 	 *
 	 * --- Input: ---
-	 * POST /functionSuspendSingleToSingle
+	 * POST /functionSuspendPlainToPlain
 	 * "kotlin"
 	 *
 	 * --- Output: ---
@@ -166,9 +182,9 @@ class KotlinFunctionExamplesTest {
 	 * [6]
 	 */
 	@Test
-	fun testFunctionSuspendSingleToSingle() {
+	fun testFunctionSuspendPlainToPlain() {
 		webTestClient.post()
-			.uri("/functionSuspendSingleToSingle")
+			.uri("/functionSuspendPlainToPlain")
 			.bodyValue("kotlin")
 			.exchange()
 			.expectStatus().isOk
@@ -178,11 +194,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 6. suspend (T) -> Flow<R> -> functionSuspendSingleToFlow
+	 * 6. suspend (T) -> Flow<R> -> functionSuspendPlainToFlow
 	 * Takes a String, returns a Flow of its characters.
 	 *
 	 * --- Input: ---
-	 * POST /functionSuspendSingleToFlow
+	 * POST /functionSuspendPlainToFlow
 	 * "demo"
 	 *
 	 * --- Output: ---
@@ -190,9 +206,9 @@ class KotlinFunctionExamplesTest {
 	 * ["d","e","m","o"]
 	 */
 	@Test
-	fun testFunctionSuspendSingleToFlow() {
+	fun testFunctionSuspendPlainToFlow() {
 		webTestClient.post()
-			.uri("/functionSuspendSingleToFlow")
+			.uri("/functionSuspendPlainToFlow")
 			.bodyValue("demo")
 			.exchange()
 			.expectStatus().isOk
@@ -201,11 +217,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 7. suspend (Flow<T>) -> R -> functionSuspendFlowToSingle
+	 * 7. suspend (Flow<T>) -> R -> functionSuspendFlowToPlain
 	 * Suspending function that takes a Flow of Strings, returns an Int count.
 	 *
 	 * --- Input: ---
-	 * POST /functionSuspendFlowToSingle
+	 * POST /functionSuspendFlowToPlain
 	 * Content-Type: application/json
 	 * ["alpha","beta"]
 	 *
@@ -214,9 +230,9 @@ class KotlinFunctionExamplesTest {
 	 * [2]
 	 */
 	@Test
-	fun testFunctionSuspendFlowToSingle() {
+	fun testFunctionSuspendFlowToPlain() {
 		webTestClient.post()
-			.uri("/functionSuspendFlowToSingle")
+			.uri("/functionSuspendFlowToPlain")
 			.contentType(MediaType.APPLICATION_JSON)
 			.bodyValue(listOf("alpha", "beta"))
 			.exchange()
@@ -252,11 +268,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 9. (T) -> Mono<R> -> functionSingleToMono
+	 * 9. (T) -> Mono<R> -> functionPlainToMono
 	 * Takes a String, returns a Mono<Int> (length).
 	 *
 	 * --- Input: ---
-	 * POST /functionSingleToMono
+	 * POST /functionPlainToMono
 	 * "Reactor"
 	 *
 	 * --- Output: ---
@@ -264,9 +280,9 @@ class KotlinFunctionExamplesTest {
 	 * 7
 	 */
 	@Test
-	fun testFunctionSingleToMono() {
+	fun testFunctionPlainToMono() {
 		webTestClient.post()
-			.uri("/functionSingleToMono")
+			.uri("/functionPlainToMono")
 			.bodyValue("Reactor")
 			.exchange()
 			.expectStatus().isOk
@@ -275,11 +291,11 @@ class KotlinFunctionExamplesTest {
 	}
 
 	/**
-	 * 10. (T) -> Flux<R> -> functionSingleToFlux
+	 * 10. (T) -> Flux<R> -> functionPlainToFlux
 	 * Takes a String, returns a Flux<String> (characters).
 	 *
 	 * --- Input: ---
-	 * POST /functionSingleToFlux
+	 * POST /functionPlainToFlux
 	 * "Flux"
 	 *
 	 * --- Output: ---
@@ -287,9 +303,9 @@ class KotlinFunctionExamplesTest {
 	 * ["F","l","u","x"]
 	 */
 	@Test
-	fun testFunctionSingleToFlux() {
+	fun testFunctionPlainToFlux() {
 		webTestClient.post()
-			.uri("/functionSingleToFlux")
+			.uri("/functionPlainToFlux")
 			.bodyValue("Flux")
 			.exchange()
 			.expectStatus().isOk
@@ -424,16 +440,16 @@ class KotlinFunctionExamplesTest {
 		webTestClient.post()
 			.uri("/functionSuspendMessageToMessage")
 			.contentType(MediaType.APPLICATION_JSON)
-			.header("id", inputId)
+			.header("original-id", inputId)
 			.header("another", "value")
 			.bodyValue("suspend msg")
 			.exchange()
 			.expectStatus().isOk
 			.expectHeader().valueEquals("suspend-processed", "true")
-//			.expectHeader().valueEquals("original-id", inputId)
+			.expectHeader().valueEquals("original-id", inputId)
 			.expectHeader().exists("another")
-			.expectBodyList<Int>()
-			.contains(22)
+			.expectBody<List<Int>>()
+			.isEqualTo(listOf(22))
 	}
 
 	/**

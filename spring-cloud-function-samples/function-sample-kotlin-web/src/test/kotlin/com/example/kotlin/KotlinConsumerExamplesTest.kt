@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.example.kotlin
 
 import java.time.Duration
@@ -15,9 +31,9 @@ import org.springframework.test.web.reactive.server.WebTestClient
  *
  * ## Consumers Tested:
  * --- Coroutine ---
- * 1. (T) -> Unit                 -> consumerSingle
+ * 1. (T) -> Unit                 -> consumerPlain
  * 2. (Flow<T>) -> Unit           -> consumerFlow
- * 3. suspend (T) -> Unit         -> consumerSuspendSingle
+ * 3. suspend (T) -> Unit         -> consumerSuspendPlain
  * 4. suspend (Flow<T>) -> Unit   -> consumerSuspendFlow
  * --- Reactor ---
  * 5. (T) -> Mono<Void>           -> consumerMonoInput
@@ -46,11 +62,11 @@ class KotlinConsumerExamplesTest {
 	}
 
 	/**
-	 * 1. (T) -> Unit -> consumerSingle
+	 * 1. (T) -> Unit -> consumerPlain
 	 * Takes a String (side-effect only).
 	 *
 	 * --- Input: ---
-	 * POST /consumerSingle
+	 * POST /consumerPlain
 	 * "Log me"
 	 *
 	 * --- Output: ---
@@ -58,9 +74,9 @@ class KotlinConsumerExamplesTest {
 	 * (No body)
 	 */
 	@Test
-	fun testConsumerSingle() {
+	fun testConsumerPlain() {
 		webTestClient.post()
-			.uri("/consumerSingle")
+			.uri("/consumerPlain")
 			.bodyValue("Log me")
 			.exchange()
 			.expectStatus().isAccepted
@@ -90,11 +106,11 @@ class KotlinConsumerExamplesTest {
 	}
 
 	/**
-	 * 3. suspend (T) -> Unit -> consumerSuspendSingle
+	 * 3. suspend (T) -> Unit -> consumerSuspendPlain
 	 * Suspending consumer that takes a String (side-effect only).
 	 *
 	 * --- Input: ---
-	 * POST /consumerSuspendSingle
+	 * POST /consumerSuspendPlain
 	 * "test"
 	 *
 	 * --- Output: ---
@@ -102,9 +118,9 @@ class KotlinConsumerExamplesTest {
 	 * (No body)
 	 */
 	@Test
-	fun testConsumerSuspendSingle() {
+	fun testConsumerSuspendPlain() {
 		webTestClient.post()
-			.uri("/consumerSuspendSingle")
+			.uri("/consumerSuspendPlain")
 			.bodyValue("test")
 			.exchange()
 			.expectStatus().isAccepted
