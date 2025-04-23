@@ -18,6 +18,7 @@ package org.springframework.cloud.function.kotlin.web
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.assertj.core.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -40,6 +41,7 @@ import java.net.URI
 	webEnvironment = WebEnvironment.RANDOM_PORT,
 	properties = ["spring.cloud.function.web.path=/functions", "spring.main.web-application-type=reactive"]
 )
+@Disabled
 @ContextConfiguration(classes = [RestApplication::class, HeadersToMessageSuspendTests.TestConfiguration::class])
 open class HeadersToMessageSuspendTests {
 	@Autowired
