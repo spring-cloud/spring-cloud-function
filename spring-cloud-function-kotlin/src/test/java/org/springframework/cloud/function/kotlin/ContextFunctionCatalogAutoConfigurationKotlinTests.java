@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -39,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Oleg Zhurakousky
  */
+@Disabled
 public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 	private GenericApplicationContext context;

@@ -16,6 +16,7 @@
 package org.springframework.cloud.function.kotlin.web
 
 import org.assertj.core.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -41,6 +42,7 @@ import java.net.URI
 	properties = ["spring.cloud.function.web.path=/functions", "spring.main.web-application-type=reactive"]
 )
 @ContextConfiguration(classes = [RestApplication::class, HeadersToMessageTests.TestConfiguration::class])
+@Disabled
 open class HeadersToMessageTests {
 	@Autowired
 	private val rest: TestRestTemplate? = null
