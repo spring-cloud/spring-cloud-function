@@ -1,0 +1,61 @@
+## Examples of Cloud Events with Spring via RSocket and Apache Kafka
+
+### Introduction
+The current example uses spring-cloud-function framework as its core which allows users to only worry about functional aspects of 
+their requirement while taking care-off non-functional aspects. For more information on Spring Cloud Function please visit 
+our https://spring.io/projects/spring-cloud-function[project page].
+
+The example consists of a Spring boot configuration class 
+https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent-rsocket/src/main/java/io/spring/cloudevent/DemoApplication.java[DemoApplication]
+which contains a sample function which you can interact with following via RSocket and Apache Kafka.
+
+### From RSocket to Apache Kafka
+
+While very similar to https://github.com/spring-cloud/spring-cloud-function/tree/master/spring-cloud-function-samples/function-sample-cloudevent-stream[spring-cloud-function-stream] example 
+there are few interesting variants here worth discussing.
+Here we’re introducing a different delivery mechanism. But what really makes it even more interesting is the fact that unlike Apache Kafka or AMQP there is no protocol 
+binding defined for RSocket. So we will communicate Cloud Event in a structured-mode where the entire event is encoded into some type of structure (e.g., JSON).
+
+Few implementation details are also defer in this example from the others. However these details are not relevant in any way to Cloud Event, rather 
+demonstration of other mechanisms you may chose to write your code. For example we’ll be using `Consumer` instead of a `Function` and will be manually 
+sending an output message using `StreamBridge` component provided by Spring Cloud Stream framework.
+
+So, here is our application code
+
+```
+@Bean
+public Consumer<Person> hire(StreamBridge streamBridge) {
+  return person -> {
+    Employee employee = new Employee(person);
+    streamBridge.send("hire-out-0", CloudEventMessageBuilder.withData(employee)
+	.setSource("http://spring.io/rsocket")
+	.setId("1234567890")
+	.build());
+  };
+}
+```
+Note how we’re utiliziing CloudEventMessageBuilder to generate output Message as Cloud Event.
+
+What we will be sending over RSocket is structured representation of Cloud Event:
+```
+String payload = "{\n" +
+	"    \"specversion\" : \"1.0\",\n" +
+	"    \"type\" : \"org.springframework\",\n" +
+	"    \"source\" : \"https://spring.io/\",\n" +
+	"    \"id\" : \"A234-1234-1234\",\n" +
+	"    \"datacontenttype\" : \"application/json\",\n" +
+	"    \"data\" : {\n" +
+	"        \"firstName\" : \"John\",\n" +
+	"        \"lastName\" : \"Doe\"\n" +
+	"    }\n" +
+	"}";
+```
+So, the entire Cloud Event is represented as JSON sent over RSocket to the hire() function.
+
+```
+rsocketRequesterBuilder.tcp("localhost", 55555)
+	.route("hire")        // target function
+	.data(payload).       // data we're sending
+	.send()
+```
+You can run the demo using https://github.com/spring-cloud/spring-cloud-function/blob/master/spring-cloud-function-samples/function-sample-cloudevent-rsocket/src/test/java/io/spring/cloudevent/DemoApplicationTests.java[DemoApplicationTests]
