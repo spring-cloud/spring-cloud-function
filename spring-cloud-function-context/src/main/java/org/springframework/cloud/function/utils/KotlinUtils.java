@@ -16,9 +16,13 @@
 
 package org.springframework.cloud.function.utils;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 
+import org.springframework.cloud.function.context.config.TypeUtils;
 import org.springframework.core.KotlinDetector;
 
 /**
@@ -29,10 +33,20 @@ public final class KotlinUtils {
 
 	}
 
-	public static boolean isKotlinType(Object object) {
+	public static boolean isKotlinType(Object object, Type functionType) {
 		if (KotlinDetector.isKotlinPresent()) {
-			return KotlinDetector.isKotlinType(object.getClass()) || object instanceof Function0<?>
+			boolean isKotlinObject = KotlinDetector.isKotlinType(object.getClass())
+					|| object instanceof Function0<?>
 					|| object instanceof Function1<?, ?>;
+			if (isKotlinObject) {
+				return true;
+			}
+			// Check if there is a flow type in the functionType it will be converted to a Flux
+			else if (functionType instanceof ParameterizedType) {
+				Type[] types = ((ParameterizedType) functionType).getActualTypeArguments();
+				return TypeUtils.hasFlowType(types);
+			}
+			return false;
 		}
 		return false;
 	}
