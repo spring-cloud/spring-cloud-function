@@ -36,11 +36,12 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
-import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
+import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionFactory;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -120,7 +121,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		functionDefinition = StringUtils.hasText(functionDefinition)
 				? functionDefinition
 						: this.applicationContext.getEnvironment().getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
-		if (!this.applicationContext.containsBean(functionDefinition) || !KotlinUtils.isKotlinType(this.applicationContext.getBean(functionDefinition))) {
+
+		if (!this.applicationContext.containsBean(functionDefinition) || !isKotlinType(functionDefinition)) {
 			functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		}
 		if (!isFunctionDefinitionEligible(functionDefinition)) {
@@ -160,12 +162,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
 								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
 							}
-							else if (KotlinUtils.isKotlinType(functionCandidate)) {
-								KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper wrapper =
-									new KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper(functionCandidate);
-								wrapper.setName(functionName);
-								wrapper.setBeanFactory(this.applicationContext.getBeanFactory());
-								functionRegistration = wrapper.getFunctionRegistration();
+							else if (isKotlinType(functionName, functionCandidate)) {
+								KotlinLambdaToFunctionFactory kotlinFactory = new KotlinLambdaToFunctionFactory(functionCandidate, this.applicationContext.getBeanFactory());
+								functionRegistration = kotlinFactory.getFunctionRegistration(functionName);
 							}
 							else if (this.isFunctionPojo(functionCandidate, functionName)) {
 								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
@@ -201,6 +200,17 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		}
 
 		return (T) function;
+	}
+
+	private boolean isKotlinType(String functionDefinition) {
+		Object fonctionBean = this.applicationContext.getBean(functionDefinition);
+		return isKotlinType(functionDefinition, fonctionBean);
+	}
+
+	private boolean isKotlinType(String functionDefinition, Object fonctionBean) {
+		ConfigurableListableBeanFactory beanFactory = this.applicationContext.getBeanFactory();
+		Type functionType = FunctionContextUtils.findType(functionDefinition, beanFactory);
+		return KotlinUtils.isKotlinType(fonctionBean, functionType);
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
