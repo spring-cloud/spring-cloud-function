@@ -23,7 +23,7 @@ import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
 
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -36,7 +36,7 @@ import org.springframework.core.ResolvableType;
 public final class KotlinConsumerPlainWrapper implements KotlinFunctionWrapper, Consumer<Object>, Function1<Object, Unit> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinConsumer(functionType, types) && !TypeUtils.isFlowType(types[0]);
+		return FunctionUtils.isValidKotlinConsumer(functionType, types) && !KotlinUtils.isFlowType(types[0]);
 	}
 
 	public static KotlinConsumerPlainWrapper asRegistrationFunction(String functionName, Object kotlinLambdaTarget,

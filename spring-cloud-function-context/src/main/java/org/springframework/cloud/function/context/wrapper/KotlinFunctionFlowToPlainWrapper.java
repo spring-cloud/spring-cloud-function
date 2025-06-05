@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.Flow;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -39,7 +39,7 @@ public final class KotlinFunctionFlowToPlainWrapper
 
 	public static Boolean isValid(Type functionType, Type[] types) {
 		return FunctionUtils.isValidKotlinFunction(functionType, types) && types.length == 2
-				&& TypeUtils.isFlowType(types[0]) && !TypeUtils.isFlowType(types[1]);
+				&& KotlinUtils.isFlowType(types[0]) && !KotlinUtils.isFlowType(types[1]);
 	}
 
 	public static KotlinFunctionFlowToPlainWrapper asRegistrationFunction(String functionName,
@@ -64,7 +64,7 @@ public final class KotlinFunctionFlowToPlainWrapper
 
 	@Override
 	public Object invoke(Flux<Object> arg0) {
-		Flow<Object> flow = TypeUtils.convertToFlow(arg0);
+		Flow<Object> flow = KotlinUtils.convertToFlow(arg0);
 		if (kotlinLambdaTarget instanceof Function<?, ?>) {
 			Function<Flow<Object>, Object> target = (Function<Flow<Object>, Object>) kotlinLambdaTarget;
 			return target.apply(flow);

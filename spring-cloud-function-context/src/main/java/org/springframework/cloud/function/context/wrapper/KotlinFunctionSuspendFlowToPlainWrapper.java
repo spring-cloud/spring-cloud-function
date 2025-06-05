@@ -25,7 +25,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -40,14 +40,14 @@ public final class KotlinFunctionSuspendFlowToPlainWrapper
 
 	public static Boolean isValid(Type functionType, Type[] types) {
 		return FunctionUtils.isValidKotlinSuspendFunction(functionType, types) && types.length == 3
-				&& TypeUtils.isFlowType(types[0]) && TypeUtils.isContinuationType(types[1])
-				&& !TypeUtils.isContinuationFlowType(types[1]);
+				&& KotlinUtils.isFlowType(types[0]) && KotlinUtils.isContinuationType(types[1])
+				&& !KotlinUtils.isContinuationFlowType(types[1]);
 	}
 
 	public static KotlinFunctionSuspendFlowToPlainWrapper asRegistrationFunction(String functionName,
 			Object kotlinLambdaTarget, Type[] propsTypes) {
-		ResolvableType argType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
-		ResolvableType result = TypeUtils.getSuspendingFunctionReturnType(propsTypes[1]);
+		ResolvableType argType = KotlinUtils.getSuspendingFunctionArgType(propsTypes[0]);
+		ResolvableType result = KotlinUtils.getSuspendingFunctionReturnType(propsTypes[1]);
 		ResolvableType functionType = ResolvableType.forClassWithGenerics(Function.class,
 				ResolvableType.forClassWithGenerics(Flux.class, argType), result);
 		return new KotlinFunctionSuspendFlowToPlainWrapper(kotlinLambdaTarget, functionType, functionName);
@@ -73,7 +73,7 @@ public final class KotlinFunctionSuspendFlowToPlainWrapper
 
 	@Override
 	public Object invoke(Flux<Object> arg0) {
-		Flow<Object> flow = TypeUtils.convertToFlow(arg0);
+		Flow<Object> flow = KotlinUtils.convertToFlow(arg0);
 		return CoroutinesUtils.invokeSuspendingFlowFunction(kotlinLambdaTarget, flow);
 	}
 

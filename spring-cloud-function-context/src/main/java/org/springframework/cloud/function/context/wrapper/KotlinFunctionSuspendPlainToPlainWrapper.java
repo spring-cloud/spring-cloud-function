@@ -24,7 +24,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -43,8 +43,8 @@ public final class KotlinFunctionSuspendPlainToPlainWrapper
 
 	public static KotlinFunctionSuspendPlainToPlainWrapper asRegistrationFunction(String functionName,
 			Object kotlinLambdaTarget, Type[] propsTypes) {
-		ResolvableType argType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
-		ResolvableType returnType = TypeUtils.getSuspendingFunctionReturnType(propsTypes[1]);
+		ResolvableType argType = KotlinUtils.getSuspendingFunctionArgType(propsTypes[0]);
+		ResolvableType returnType = KotlinUtils.getSuspendingFunctionReturnType(propsTypes[1]);
 		ResolvableType functionType = ResolvableType.forClassWithGenerics(Function.class, argType,
 				ResolvableType.forClassWithGenerics(Flux.class, returnType));
 		return new KotlinFunctionSuspendPlainToPlainWrapper(kotlinLambdaTarget, functionType, functionName);

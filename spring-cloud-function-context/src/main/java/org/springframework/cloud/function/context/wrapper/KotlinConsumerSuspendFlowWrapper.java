@@ -25,7 +25,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -38,12 +38,12 @@ import org.springframework.core.ResolvableType;
 public final class KotlinConsumerSuspendFlowWrapper implements KotlinFunctionWrapper, Consumer<Flux<Object>>, Function1<Flux<Object>, Unit> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSuspendConsumer(functionType, types) && TypeUtils.isFlowType(types[0]);
+		return FunctionUtils.isValidKotlinSuspendConsumer(functionType, types) && KotlinUtils.isFlowType(types[0]);
 	}
 
 	public static KotlinConsumerSuspendFlowWrapper asRegistrationFunction(String functionName,
 			Object kotlinLambdaTarget, Type[] propsTypes) {
-		ResolvableType continuationArgType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
+		ResolvableType continuationArgType = KotlinUtils.getSuspendingFunctionArgType(propsTypes[0]);
 		ResolvableType functionType = ResolvableType.forClassWithGenerics(Consumer.class,
 				ResolvableType.forClassWithGenerics(Flux.class, continuationArgType));
 		return new KotlinConsumerSuspendFlowWrapper(kotlinLambdaTarget, functionType, functionName);

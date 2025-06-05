@@ -22,34 +22,38 @@ import java.lang.reflect.Type
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Supplier
+import kotlin.jvm.functions.Function0
+import kotlin.jvm.functions.Function1
+import kotlin.jvm.functions.Function2
+import org.springframework.cloud.function.utils.KotlinUtils
 
 fun isValidKotlinConsumer(functionType: Type, type: Array<Type>): Boolean {
 	return isTypeRepresentedByClass(functionType, Consumer::class.java) || (
 		isTypeRepresentedByClass(functionType, Function1::class.java) &&
 		type.size == 2 &&
-		!isContinuationType(type[0]) &&
-		(isUnitType(type[1]) || isVoidType(type[1]))
+		!KotlinUtils.isContinuationType(type[0]) &&
+		(KotlinUtils.isUnitType(type[1]) || KotlinUtils.isVoidType(type[1]))
 	)
 }
 
 fun isValidKotlinSuspendConsumer(functionType: Type, type: Array<Type>): Boolean {
 	return isTypeRepresentedByClass(functionType, Function2::class.java) && type.size == 3 &&
-		isContinuationUnitType(type[1])
+		KotlinUtils.isContinuationUnitType(type[1])
 }
 
 
 fun isValidKotlinFunction(functionType: Type, type: Array<Type>): Boolean {
 	return (isTypeRepresentedByClass(functionType, Function1::class.java) ||
 		isTypeRepresentedByClass(functionType, Function::class.java)) &&
-		type.size == 2 && !isContinuationType(type[0]) &&
-		!isUnitType(type[1])
+		type.size == 2 && !KotlinUtils.isContinuationType(type[0]) &&
+		!KotlinUtils.isUnitType(type[1])
 }
 
 
 fun isValidKotlinSuspendFunction(functionType: Type, type: Array<Type>): Boolean {
 	return isTypeRepresentedByClass(functionType, Function2::class.java) && type.size == 3 &&
-		isContinuationType(type[1]) &&
-		!isContinuationUnitType(type[1])
+		KotlinUtils.isContinuationType(type[1]) &&
+		!KotlinUtils.isContinuationUnitType(type[1])
 }
 
 fun isValidKotlinSupplier(functionType: Type): Boolean {
@@ -59,7 +63,7 @@ fun isValidKotlinSupplier(functionType: Type): Boolean {
 
 fun isValidKotlinSuspendSupplier(functionType: Type, type: Array<Type>): Boolean {
 	return isTypeRepresentedByClass(functionType, Function1::class.java) && type.size == 2 &&
-		isContinuationType(type[0])
+		KotlinUtils.isContinuationType(type[0])
 }
 
 fun isTypeRepresentedByClass(type: Type, clazz: Class<*>): Boolean {

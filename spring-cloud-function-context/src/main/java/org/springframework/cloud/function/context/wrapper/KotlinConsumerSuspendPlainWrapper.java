@@ -24,7 +24,7 @@ import kotlin.jvm.functions.Function1;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -37,12 +37,12 @@ import org.springframework.core.ResolvableType;
 public final class KotlinConsumerSuspendPlainWrapper implements KotlinFunctionWrapper, Consumer<Object>, Function1<Object, Unit> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSuspendConsumer(functionType, types) && !TypeUtils.isFlowType(types[0]);
+		return FunctionUtils.isValidKotlinSuspendConsumer(functionType, types) && !KotlinUtils.isFlowType(types[0]);
 	}
 
 	public static KotlinConsumerSuspendPlainWrapper asRegistrationFunction(String functionName,
 			Object kotlinLambdaTarget, Type[] propsTypes) {
-		ResolvableType continuationArgType = TypeUtils.getSuspendingFunctionArgType(propsTypes[0]);
+		ResolvableType continuationArgType = KotlinUtils.getSuspendingFunctionArgType(propsTypes[0]);
 		ResolvableType functionType = ResolvableType.forClassWithGenerics(Consumer.class, continuationArgType);
 		return new KotlinConsumerSuspendPlainWrapper(kotlinLambdaTarget, functionType, functionName);
 	}

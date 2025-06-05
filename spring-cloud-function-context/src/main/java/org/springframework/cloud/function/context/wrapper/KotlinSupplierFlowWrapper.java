@@ -24,10 +24,9 @@ import kotlinx.coroutines.flow.Flow;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
-import static org.springframework.cloud.function.context.config.TypeUtils.convertToFlux;
 
 /**
  * The KotlinSupplierFlowWrapper class serves as a wrapper to integrate Kotlin's Function0
@@ -41,7 +40,7 @@ public final class KotlinSupplierFlowWrapper
 		implements KotlinFunctionWrapper, Supplier<Flux<Object>>, Function0<Flow<Object>> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSupplier(functionType) && types.length == 1 && TypeUtils.isFlowType(types[0]);
+		return FunctionUtils.isValidKotlinSupplier(functionType) && types.length == 1 && KotlinUtils.isFlowType(types[0]);
 	}
 
 	public static KotlinSupplierFlowWrapper asRegistrationFunction(String functionName, Object kotlinLambdaTarget,
@@ -78,7 +77,7 @@ public final class KotlinSupplierFlowWrapper
 	@Override
 	public Flux<Object> get() {
 		Flow<Object> result = invoke();
-		return convertToFlux(result);
+		return KotlinUtils.convertToFlux(result);
 	}
 
 	@Override

@@ -24,7 +24,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
 import org.springframework.cloud.function.context.config.FunctionUtils;
-import org.springframework.cloud.function.context.config.TypeUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
 
@@ -43,7 +43,7 @@ public final class KotlinSupplierSuspendWrapper implements KotlinFunctionWrapper
 
 	public static KotlinSupplierSuspendWrapper asRegistrationFunction(String functionName, Object kotlinLambdaTarget,
 			Type[] propsTypes) {
-		ResolvableType returnType = TypeUtils.getSuspendingFunctionReturnType(propsTypes[0]);
+		ResolvableType returnType = KotlinUtils.getSuspendingFunctionReturnType(propsTypes[0]);
 		ResolvableType functionType = ResolvableType.forClassWithGenerics(Supplier.class,
 				ResolvableType.forClassWithGenerics(Flux.class, returnType));
 		return new KotlinSupplierSuspendWrapper(kotlinLambdaTarget, functionType, functionName);
