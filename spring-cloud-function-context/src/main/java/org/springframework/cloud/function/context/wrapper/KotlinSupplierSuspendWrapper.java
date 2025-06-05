@@ -23,7 +23,6 @@ import kotlin.jvm.functions.Function0;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
-import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
@@ -38,7 +37,7 @@ import org.springframework.util.ObjectUtils;
 public final class KotlinSupplierSuspendWrapper implements KotlinFunctionWrapper, Supplier<Object>, Function0<Object> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSuspendSupplier(functionType, types);
+		return KotlinUtils.isValidKotlinSuspendSupplier(functionType, types);
 	}
 
 	public static KotlinSupplierSuspendWrapper asRegistrationFunction(String functionName, Object kotlinLambdaTarget,

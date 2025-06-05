@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import kotlin.jvm.functions.Function1;
 
-import org.springframework.cloud.function.context.config.FunctionUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
 /**
@@ -35,7 +35,7 @@ public final class KotlinFunctionPlainToPlainWrapper
 		implements KotlinFunctionWrapper, Function<Object, Object>, Function1<Object, Object> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinFunction(functionType, types);
+		return KotlinUtils.isValidKotlinFunction(functionType, types);
 	}
 
 	public static KotlinFunctionPlainToPlainWrapper asRegistrationFunction(String functionName,

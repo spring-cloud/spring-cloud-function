@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 
 import kotlin.jvm.functions.Function0;
 
-import org.springframework.cloud.function.context.config.FunctionUtils;
+import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
 
@@ -36,7 +36,7 @@ import org.springframework.util.ObjectUtils;
 public final class KotlinSupplierPlainWrapper implements KotlinFunctionWrapper, Supplier<Object>, Function0<Object> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSupplier(functionType);
+		return KotlinUtils.isValidKotlinSupplier(functionType);
 	}
 
 	public static KotlinSupplierPlainWrapper asRegistrationFunction(String functionName, Object kotlinLambdaTarget,

@@ -19,10 +19,14 @@ package org.springframework.cloud.function.utils;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import kotlin.coroutines.Continuation;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
+import kotlin.jvm.functions.Function2;
 import kotlinx.coroutines.flow.Flow;
 import kotlinx.coroutines.reactive.ReactiveFlowKt;
 import kotlinx.coroutines.reactor.ReactorFlowKt;
@@ -228,13 +232,91 @@ public final class KotlinUtils {
 	}
 
 	/**
+	 * Check if a type is a valid Kotlin consumer.
+	 *
+	 * @param functionType the function type to check
+	 * @param type the type arguments
+	 * @return true if the type is a valid Kotlin consumer
+	 */
+	public static boolean isValidKotlinConsumer(Type functionType, Type[] type) {
+		return isTypeRepresentedByClass(functionType, Consumer.class) || (
+			isTypeRepresentedByClass(functionType, Function1.class) &&
+			type.length == 2 &&
+			!isContinuationType(type[0]) &&
+			(isUnitType(type[1]) || isVoidType(type[1]))
+		);
+	}
+
+	/**
+	 * Check if a type is a valid Kotlin suspend consumer.
+	 *
+	 * @param functionType the function type to check
+	 * @param type the type arguments
+	 * @return true if the type is a valid Kotlin suspend consumer
+	 */
+	public static boolean isValidKotlinSuspendConsumer(Type functionType, Type[] type) {
+		return isTypeRepresentedByClass(functionType, Function2.class) && type.length == 3 &&
+			isContinuationUnitType(type[1]);
+	}
+
+	/**
+	 * Check if a type is a valid Kotlin function.
+	 *
+	 * @param functionType the function type to check
+	 * @param type the type arguments
+	 * @return true if the type is a valid Kotlin function
+	 */
+	public static boolean isValidKotlinFunction(Type functionType, Type[] type) {
+		return (isTypeRepresentedByClass(functionType, Function1.class) ||
+			isTypeRepresentedByClass(functionType, Function.class)) &&
+			type.length == 2 && !isContinuationType(type[0]) &&
+			!isUnitType(type[1]);
+	}
+
+	/**
+	 * Check if a type is a valid Kotlin suspend function.
+	 *
+	 * @param functionType the function type to check
+	 * @param type the type arguments
+	 * @return true if the type is a valid Kotlin suspend function
+	 */
+	public static boolean isValidKotlinSuspendFunction(Type functionType, Type[] type) {
+		return isTypeRepresentedByClass(functionType, Function2.class) && type.length == 3 &&
+			isContinuationType(type[1]) &&
+			!isContinuationUnitType(type[1]);
+	}
+
+	/**
+	 * Check if a type is a valid Kotlin supplier.
+	 *
+	 * @param functionType the function type to check
+	 * @return true if the type is a valid Kotlin supplier
+	 */
+	public static boolean isValidKotlinSupplier(Type functionType) {
+		return isTypeRepresentedByClass(functionType, Function0.class) ||
+			isTypeRepresentedByClass(functionType, Supplier.class);
+	}
+
+	/**
+	 * Check if a type is a valid Kotlin suspend supplier.
+	 *
+	 * @param functionType the function type to check
+	 * @param type the type arguments
+	 * @return true if the type is a valid Kotlin suspend supplier
+	 */
+	public static boolean isValidKotlinSuspendSupplier(Type functionType, Type[] type) {
+		return isTypeRepresentedByClass(functionType, Function1.class) && type.length == 2 &&
+			isContinuationType(type[0]);
+	}
+
+	/**
 	 * Check if a type is represented by a specific class.
 	 *
 	 * @param type the type to check
 	 * @param clazz the class to check against
 	 * @return true if the type is represented by the class
 	 */
-	private static boolean isTypeRepresentedByClass(Type type, Class<?> clazz) {
+	public static boolean isTypeRepresentedByClass(Type type, Class<?> clazz) {
 		return type.getTypeName().contains(clazz.getName());
 	}
 }

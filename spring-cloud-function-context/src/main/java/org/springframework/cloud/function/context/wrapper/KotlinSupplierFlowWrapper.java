@@ -23,7 +23,6 @@ import kotlin.jvm.functions.Function0;
 import kotlinx.coroutines.flow.Flow;
 import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
@@ -40,7 +39,7 @@ public final class KotlinSupplierFlowWrapper
 		implements KotlinFunctionWrapper, Supplier<Flux<Object>>, Function0<Flow<Object>> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSupplier(functionType) && types.length == 1 && KotlinUtils.isFlowType(types[0]);
+		return KotlinUtils.isValidKotlinSupplier(functionType) && types.length == 1 && KotlinUtils.isFlowType(types[0]);
 	}
 
 	public static KotlinSupplierFlowWrapper asRegistrationFunction(String functionName, Object kotlinLambdaTarget,

@@ -24,7 +24,6 @@ import kotlin.jvm.functions.Function1;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
-import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
@@ -38,7 +37,7 @@ import org.springframework.core.ResolvableType;
 public final class KotlinConsumerSuspendFlowWrapper implements KotlinFunctionWrapper, Consumer<Flux<Object>>, Function1<Flux<Object>, Unit> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSuspendConsumer(functionType, types) && KotlinUtils.isFlowType(types[0]);
+		return KotlinUtils.isValidKotlinSuspendConsumer(functionType, types) && KotlinUtils.isFlowType(types[0]);
 	}
 
 	public static KotlinConsumerSuspendFlowWrapper asRegistrationFunction(String functionName,

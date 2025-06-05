@@ -23,7 +23,6 @@ import kotlin.jvm.functions.Function1;
 import reactor.core.publisher.Flux;
 
 import org.springframework.cloud.function.context.config.CoroutinesUtils;
-import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
@@ -38,7 +37,7 @@ public final class KotlinFunctionSuspendPlainToPlainWrapper
 		implements KotlinFunctionWrapper, Function<Object, Object>, Function1<Object, Object> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinSuspendFunction(functionType, types);
+		return KotlinUtils.isValidKotlinSuspendFunction(functionType, types);
 	}
 
 	public static KotlinFunctionSuspendPlainToPlainWrapper asRegistrationFunction(String functionName,

@@ -23,7 +23,6 @@ import kotlin.jvm.functions.Function1;
 import kotlinx.coroutines.flow.Flow;
 import reactor.core.publisher.Flux;
 
-import org.springframework.cloud.function.context.config.FunctionUtils;
 import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.core.ResolvableType;
 
@@ -38,7 +37,7 @@ public final class KotlinFunctionFlowToPlainWrapper
 		implements KotlinFunctionWrapper, Function<Flux<Object>, Object>, Function1<Flux<Object>, Object> {
 
 	public static Boolean isValid(Type functionType, Type[] types) {
-		return FunctionUtils.isValidKotlinFunction(functionType, types) && types.length == 2
+		return KotlinUtils.isValidKotlinFunction(functionType, types) && types.length == 2
 				&& KotlinUtils.isFlowType(types[0]) && !KotlinUtils.isFlowType(types[1]);
 	}
 
