@@ -145,7 +145,7 @@ public class HttpPostIntegrationTests {
 				.accept(MediaType.valueOf("application/stream+json"))
 				.header("x-foo", "bar").body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getHeaders().getFirst("x-foo")).isEqualTo("bar");
-		assertThat(result.getHeaders()).doesNotContainKey("id");
+		assertThat(result.getHeaders().headerNames()).doesNotContain("id");
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
@@ -157,7 +157,7 @@ public class HttpPostIntegrationTests {
 				.accept(MediaType.valueOf("application/stream+json"))
 				.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getHeaders().getFirst("foo")).isEqualTo("bar");
-		assertThat(result.getHeaders()).doesNotContainKey("id");
+		assertThat(result.getHeaders().headerNames()).doesNotContain("id");
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 

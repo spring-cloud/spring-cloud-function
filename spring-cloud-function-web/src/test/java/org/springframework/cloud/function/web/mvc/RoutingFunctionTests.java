@@ -72,19 +72,18 @@ public class RoutingFunctionTests {
 	public void testFunctionMessage() throws Exception {
 
 		HttpEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.APPLICATION_JSON)
-						.header("spring.cloud.function.definition", "employee")
-						.header("abc", "abc")
-						.header("xyz", "xyz")
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.APPLICATION_JSON)
+				.header("spring.cloud.function.definition", "employee")
+				.header("abc", "abc")
+				.header("xyz", "xyz")
+				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
-		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
+		assertThat(postForEntity.getHeaders().headerNames()).contains("x-content-type");
 		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
-				.isEqualTo("application/xml");
-		assertThat(postForEntity.getHeaders().containsKey("spring.cloud.function.definition")).isTrue();
-		assertThat(postForEntity.getHeaders().containsKey("abc")).isFalse();
-		assertThat(postForEntity.getHeaders().containsKey("xyz")).isFalse();
+			.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().headerNames()).contains("spring.cloud.function.definition")
+			.doesNotContain("abc", "xyz");
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 	}
 

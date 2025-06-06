@@ -60,7 +60,7 @@ public class HeadersToMessageTests {
 						.contentType(MediaType.APPLICATION_JSON)
 						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
-		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
+		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
 		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
 				.isEqualTo("application/xml");
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
@@ -69,7 +69,7 @@ public class HeadersToMessageTests {
 		postForEntity = this.rest.postForEntity(new URI("/functions/string"),
 				"{\"name\":\"Bob\",\"age\":25}", String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
-		assertThat(postForEntity.getHeaders().containsKey("x-content-type")).isTrue();
+		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
 		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
 				.isEqualTo("application/xml");
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");

@@ -217,7 +217,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public boolean containsHeader(String name) {
-		return this.headers.containsKey(name);
+		return this.headers.containsHeader(name);
 	}
 
 	/**
@@ -231,7 +231,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 */
 	@Override
 	public Collection<String> getHeaderNames() {
-		return this.headers.keySet();
+		return this.headers.headerNames();
 	}
 
 	/**
@@ -249,7 +249,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	@Override
 	@Nullable
 	public String getHeader(String name) {
-		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
+		return this.headers.containsHeader(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	/**
@@ -265,7 +265,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 */
 	@Override
 	public List<String> getHeaders(String name) {
-		if (!this.headers.containsKey(name)) {
+		if (!this.headers.containsHeader(name)) {
 			return Collections.emptyList();
 		}
 		return this.headers.get(name);
@@ -281,7 +281,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 */
 	@Nullable
 	public Object getHeaderValue(String name) {
-		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
+		return this.headers.containsHeader(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	/**
@@ -327,6 +327,15 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 		Assert.notNull(url, "Redirect URL must not be null");
 		setHeader(HttpHeaders.LOCATION, url);
 		setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+	}
+
+	@Override
+	public void sendRedirect(String location, int statusCode, boolean clearBuffer) throws IOException {
+		Assert.state(!isCommitted(), "Cannot send redirect - response is already committed");
+		Assert.notNull(location, "Redirect URL must not be null");
+		setHeader(HttpHeaders.LOCATION, location);
+		setStatus(statusCode);
+		//TODO: deal with clearBuffer
 	}
 
 	@Nullable

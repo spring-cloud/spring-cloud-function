@@ -170,7 +170,7 @@ public class HttpPostIntegrationTests {
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
 				.header("x-foo", "bar").body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getHeaders().getFirst("x-foo")).isEqualTo("bar");
-		assertThat(result.getHeaders()).doesNotContainKey("id");
+		assertThat(result.getHeaders().headerNames()).doesNotContain("id");
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 

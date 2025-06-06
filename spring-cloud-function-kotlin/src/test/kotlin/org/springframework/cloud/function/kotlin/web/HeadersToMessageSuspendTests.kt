@@ -56,7 +56,7 @@ open class HeadersToMessageSuspendTests {
 			)
 
 		Assertions.assertThat(postForEntity.body).isEqualTo("[{\"name\":\"Bob\",\"age\":25}]")
-		Assertions.assertThat(postForEntity.headers.containsKey("x-content-type")).isTrue
+		Assertions.assertThat(postForEntity.headers.headerNames()).contains("x-content-type")
 		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
@@ -67,7 +67,7 @@ open class HeadersToMessageSuspendTests {
 			"HELLO", String::class.java
 		)
 		Assertions.assertThat(postForEntity.body).isEqualTo("[\"HELLO\"]")
-		Assertions.assertThat(postForEntity.headers.containsKey("x-content-type")).isTrue
+		Assertions.assertThat(postForEntity.headers.headerNames()).contains("x-content-type")
 		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")

@@ -81,7 +81,7 @@ public class FunctionController {
 															.getRequest()).getMultiFileMap();
 				if (!CollectionUtils.isEmpty(multiFileMap)) {
 					List<Message<MultipartFile>> files = multiFileMap.values().stream().flatMap(v -> v.stream())
-							.map(file -> MessageBuilder.withPayload(file).copyHeaders(wrapper.getHeaders()).build())
+							.map(file -> MessageBuilder.withPayload(file).copyHeaders(wrapper.getHeaders().asMultiValueMap()).build())
 							.collect(Collectors.toList());
 					FunctionInvocationWrapper function = wrapper.getFunction();
 
@@ -199,7 +199,7 @@ public class FunctionController {
 			wrapper.getHeaders().addAll(key, Arrays.asList(request.getHeaderValues(key)));
 		}
 
-		HttpHeaders headers = HttpHeaders.writableHttpHeaders(wrapper.getHeaders());
+		HttpHeaders headers = HttpHeaders.copyOf(wrapper.getHeaders());
 		headers.set("uri", ((ServletWebRequest) request).getRequest().getRequestURI());
 
 		String argument = (String) request.getAttribute(WebRequestConstants.ARGUMENT,

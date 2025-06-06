@@ -55,7 +55,7 @@ open class HeadersToMessageTests {
 					.body("{\"name\":\"Bob\",\"age\":25}"), String::class.java
 			)
 		Assertions.assertThat(postForEntity.body).isEqualTo("{\"name\":\"Bob\",\"age\":25}")
-		Assertions.assertThat(postForEntity.headers.containsKey("x-content-type")).isTrue
+		Assertions.assertThat(postForEntity.headers.headerNames()).contains("x-content-type")
 		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
@@ -66,7 +66,7 @@ open class HeadersToMessageTests {
 			"{\"name\":\"Bob\",\"age\":25}", String::class.java
 		)
 		Assertions.assertThat(postForEntity.body).isEqualTo("{\"name\":\"Bob\",\"age\":25}")
-		Assertions.assertThat(postForEntity.headers.containsKey("x-content-type")).isTrue
+		Assertions.assertThat(postForEntity.headers.headerNames().contains("x-content-type"))
 		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
@@ -76,9 +76,9 @@ open class HeadersToMessageTests {
 	@org.springframework.boot.test.context.TestConfiguration
 	open class TestConfiguration {
 		@Bean("string")
-		open fun functiono(): (message: Message<String?>) -> Message<String?> = { request: Message<String?> ->
-			val message =
-				MessageBuilder.withPayload(request.payload)
+		open fun functiono(): (message: Message<String>) -> Message<String> = { request: Message<String> ->
+			val message: Message<String> =
+				MessageBuilder.withPayload(request.payload as String)
 					.setHeader("X-Content-Type", "application/xml")
 					.setHeader("foo", "bar").build()
 			message
