@@ -705,31 +705,177 @@ However, given that `org.springframework.cloud.function.json.JsonMapper` is also
 [[kotlin-lambda-support]]
 == Kotlin Lambda support
 
-We also provide support for Kotlin lambdas (since v2.0).
-Consider the following:
+Spring Cloud Function provides first-class support for Kotlin, allowing developers to leverage idiomatic Kotlin features, including coroutines and Flow, alongside imperative and Reactor-based programming models.
 
-[source, java]
+=== Defining Functions in Kotlin
+
+You can define Suppliers, Functions, and Consumers in Kotlin and register them as Spring beans using several approaches:
+
+* **Kotlin Lambdas:** Define functions directly as lambda expressions within `@Bean` definitions. This is concise for simple functions.
+[source, kotlin]
+----
+@Configuration
+class MyKotlinConfiguration {
+
+        @Bean
+        fun kotlinSupplier(): () -> String = { "Hello from Kotlin Lambda" }
+
+        @Bean
+        fun kotlinFunction(): (String) -> String = { it.uppercase() }
+
+        @Bean
+        fun kotlinConsumer(): (String) -> Unit = { println("Consumed by Kotlin Lambda: $it") }
+    }
+----
+
+* **Kotlin Classes implementing Kotlin Functional Types:** Define a class that directly implements the desired Kotlin functional type (e.g., `(String) -> String`, `suspend () -> Flow<Int>`).
+[source, kotlin]
+----
+@Component
+class UppercaseFunction : (String) -> String {
+override fun invoke(p1: String): String = p1.uppercase()
+}
+
+    // Can also be registered via @Bean
+----
+
+* **Kotlin Classes implementing `java.util.function` Interfaces:** Define a Kotlin class that implements the standard Java `Supplier`, `Function`, or `Consumer` interfaces.
+[source, kotlin]
+----
+@Component
+class ReverseFunction : Function<String, String> {
+override fun apply(t: String): String = t.reversed()
+}
+----
+
+Regardless of the definition style, beans of these types are registered with the `FunctionCatalog`, benefiting from features like type conversion and composition.
+
+=== Coroutine Support (`suspend` and `Flow`)
+
+A key feature is the seamless integration with Kotlin Coroutines. You can use `suspend` functions and `kotlinx.coroutines.flow.Flow` directly in your function signatures. The framework automatically handles the coroutine context and reactive stream conversions.
+
+* **`suspend` Functions:** Functions marked with `suspend` can perform non-blocking operations using coroutine delays or other suspending calls.
+[source, kotlin]
 ----
 @Bean
-open fun kotlinSupplier(): () -> String {
-    return  { "Hello from Kotlin" }
+fun suspendingFunction(): suspend (String) -> Int = {
+delay(100) // Non-blocking delay
+it.length
 }
 
 @Bean
-open fun kotlinFunction(): (String) -> String {
-    return  { it.toUpperCase() }
+fun suspendingSupplier(): suspend () -> String = {
+	delay(50)
+	"Data from suspend"
 }
 
 @Bean
-open fun kotlinConsumer(): (String) -> Unit {
-    return  { println(it) }
+fun suspendingConsumer(): suspend (String) -> Unit = {
+	delay(20)
+	println("Suspend consumed: $it")
 }
-
 ----
-The above represents Kotlin lambdas configured as Spring beans. The signature of each maps to a Java equivalent of `Supplier`, `Function` and `Consumer`, and thus supported/recognized signatures by the framework.
-While mechanics of Kotlin-to-Java mapping are outside of the scope of this documentation, it is important to understand that the same rules for signature transformation outlined in "Java 8 function support" section are applied here as well.
 
-To enable Kotlin support all you need is to add Kotlin SDK libraries on the classpath which will trigger appropriate autoconfiguration and supporting classes.
+* **`Flow` Integration:** Kotlin `Flow` can be used for reactive stream processing, similar to Reactor's `Flux`.
+[source, kotlin]
+----
+@Bean
+fun flowFunction(): (Flow<String>) -> Flow<Int> = { flow ->
+flow.map { it.length } // Process the stream reactively
+}
+
+@Bean
+fun flowSupplier(): () -> Flow<String> = {
+	flow { // kotlinx.coroutines.flow.flow builder
+		emit("a")
+		delay(10)
+		emit("b")
+	}
+}
+
+// Consumer example taking a Flow
+@Bean
+fun flowConsumer(): suspend (Flow<String>) -> Unit = { flow ->
+	 flow.collect { item -> // Collect must happen within a coroutine scope
+		 println("Flow consumed: $item")
+	 }
+}
+----
+
+* **Combining `suspend` and `Flow`:** You can combine `suspend` and `Flow` for complex asynchronous and streaming logic.
+[source, kotlin]
+----
+ @Bean
+ fun suspendingFlowFunction(): suspend (Flow<String>) -> Flow<String> = { incoming ->
+	 flow {
+		 delay(50) // Initial suspend
+		 incoming.collect {
+			 emit(it.uppercase()) // Process and emit
+		 }
+	 }
+ }
+
+ @Bean
+ fun suspendingFlowSupplier(): suspend () -> Flow<Int> = {
+	 flow {
+		 repeat(3) {
+			 delay(100)
+			 emit(it)
+		 }
+	 }
+ }
+----
+
+=== Reactive Types (`Mono`/`Flux`)
+
+Kotlin functions can seamlessly use Reactor's `Mono` and `Flux` types, just like Java functions.
+[source, kotlin]
+----
+@Bean
+fun reactorFunction(): (Flux<String>) -> Mono<Int> = { flux ->
+    flux.map { it.length }.reduce(0) { acc, i -> acc + i }
+}
+
+@Bean
+fun monoSupplier(): () -> Mono<String> = {
+	Mono.just("Reactive Hello")
+}
+----
+
+=== `Message<T>` Support
+
+Kotlin functions can also operate directly on `org.springframework.messaging.Message<T>` to access headers, including combinations with `suspend` and `Flow`.
+[source, kotlin]
+----
+@Bean
+fun messageFunction(): (Message<String>) -> Message<Int> = { msg ->
+    MessageBuilder.withPayload(msg.payload.length)
+        .copyHeaders(msg.headers)
+        .setHeader("processed", true)
+        .build()
+}
+
+@Bean
+fun suspendMessageFunction(): suspend (Message<String>) -> Message<String> = { msg ->
+    delay(100)
+    MessageBuilder.withPayload(msg.payload.reversed())
+        .copyHeaders(msg.headers)
+        .build()
+}
+
+@Bean
+fun flowMessageFunction(): (Flow<Message<String>>) -> Flow<Message<Int>> = { flow ->
+    flow.map { msg ->
+         MessageBuilder.withPayload(msg.payload.hashCode())
+            .copyHeaders(msg.headers)
+            .build()
+    }
+}
+----
+
+=== Kotlin Sample Project
+
+For a comprehensive set of runnable examples showcasing these Kotlin features, please refer to the `src/test/kotlin/org/springframework/cloud/function/kotlin/arity` directory within the Spring Cloud Function repository. These examples demonstrate a wide range of function signatures with different arities, including regular functions, suspend functions (coroutines), and various reactive types (Flow, Mono, Flux).
 
 [[function-component-scan]]
 == Function Component Scan

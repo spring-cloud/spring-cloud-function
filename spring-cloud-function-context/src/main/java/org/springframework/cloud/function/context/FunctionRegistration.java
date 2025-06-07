@@ -31,7 +31,7 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
-import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
+import org.springframework.cloud.function.context.wrapper.KotlinFunctionWrapper;
 import org.springframework.core.KotlinDetector;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -118,7 +118,7 @@ public class FunctionRegistration<T> implements BeanNameAware {
 
 	public FunctionRegistration<T> type(Type type) {
 		this.type = type;
-		if (KotlinDetector.isKotlinPresent() && this.target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) {
+		if (KotlinDetector.isKotlinPresent() && this.target instanceof KotlinFunctionWrapper) {
 			return this;
 		}
 		Type discoveredFunctionType = type; //FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
@@ -173,15 +173,6 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	public FunctionRegistration<T> names(String... names) {
 		return this.names(Arrays.asList(names));
 	}
-
-	/**
-	 * Transforms (wraps) function identified by the 'target' to its {@code Flux}
-	 * equivalent unless it already is. For example, {@code Function<String, String>}
-	 * becomes {@code Function<Flux<String>, Flux<String>>}
-	 * @param <S> the expected target type of the function (e.g., FluxFunction)
-	 * @return {@code FunctionRegistration} with the appropriately wrapped target.
-	 *
-	 */
 
 	@Override
 	public void setBeanName(String name) {
