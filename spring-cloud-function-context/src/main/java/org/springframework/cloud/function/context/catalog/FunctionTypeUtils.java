@@ -48,6 +48,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.databind.JsonNode;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
+import kotlin.jvm.functions.Function2;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Publisher;
@@ -232,6 +233,10 @@ public final class FunctionTypeUtils {
 			}
 			else if (Function0.class.isAssignableFrom(functionalClass)) {
 				ResolvableType kotlinType = ResolvableType.forClass(functionalClass).as(Function0.class);
+				return GenericTypeResolver.resolveType(kotlinType.getType(), functionalClass);
+			}
+			else if (Function2.class.isAssignableFrom(functionalClass)) {
+				ResolvableType kotlinType = ResolvableType.forClass(functionalClass).as(Function2.class);
 				return GenericTypeResolver.resolveType(kotlinType.getType(), functionalClass);
 			}
 		}
