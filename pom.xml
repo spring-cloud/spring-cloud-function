@@ -21,7 +21,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<wrapper.version>1.0.31.RELEASE</wrapper.version>
-		<kotlin.version>2.1.10</kotlin.version>
+		<kotlin.version>2.1.0</kotlin.version>
 		<kotlinx.version>1.10.2</kotlinx.version>
 		<docs.main>spring-cloud-function</docs.main>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
