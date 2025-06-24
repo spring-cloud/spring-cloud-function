@@ -300,8 +300,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		for (String functionName : functionNames) {
 			FunctionInvocationWrapper function = this.findFunctionInFunctionRegistrations(functionName);
 			if (function == null) {
-				logger.warn("Failed to locate function '" + functionName + "' for function definition '"
+				if (logger.isDebugEnabled()) {
+					logger.debug("Failed to locate function '" + functionName + "' for function definition '"
 						+ functionDefinition + "'. Returning null.");
+				}
 				return null;
 			}
 			else {
