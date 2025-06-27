@@ -77,11 +77,13 @@ import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.InvalidMimeTypeException;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
+
 
 /**
  * @author Dave Syer
@@ -212,10 +214,10 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public JsonMapper jsonMapper(ApplicationContext context) {
 			String preferredMapper = context.getEnvironment().getProperty(JSON_MAPPER_PROPERTY);
 			if (StringUtils.hasText(preferredMapper)) {
-				if ("gson".equals(preferredMapper) && ClassUtils.isPresent("com.google.gson.Gson", null)) {
+				if ("gson".equals(preferredMapper)) {
 					return gson(context);
 				}
-				else if ("jackson".equals(preferredMapper) && ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", null)) {
+				else if ("jackson".equals(preferredMapper)) {
 					return jackson(context);
 				}
 			}
@@ -231,6 +233,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 
 		private JsonMapper gson(ApplicationContext context) {
+			Assert.state(ClassUtils.isPresent("com.google.gson.Gson", ClassUtils.getDefaultClassLoader()),
+				"Can not bootstrap Gson mapper since Gson is not on the classpath");
 			Gson gson;
 			try {
 				gson = context.getBean(Gson.class);
@@ -243,6 +247,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@SuppressWarnings("unchecked")
 		private JsonMapper jackson(ApplicationContext context) {
+			Assert.state(ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", ClassUtils.getDefaultClassLoader()),
+				"Can not bootstrap Jackson mapper since Jackson is not on the classpath");
 			ObjectMapper mapper;
 			try {
 				mapper = context.getBean(ObjectMapper.class).copy();
@@ -274,7 +280,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			return new JacksonMapper(mapper);
 		}
 
-		private static String getConfigDetails(ObjectMapper mapper) {
+		private String getConfigDetails(ObjectMapper mapper) {
 			StringBuilder sb = new StringBuilder();
 
 			sb.append("Modules:\n");
