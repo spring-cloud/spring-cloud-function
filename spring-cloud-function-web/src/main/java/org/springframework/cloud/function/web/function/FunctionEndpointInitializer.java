@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ import reactor.netty.http.server.HttpServer;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
 import org.springframework.boot.autoconfigure.web.WebProperties.Resources;
-import org.springframework.boot.autoconfigure.web.reactive.error.DefaultErrorWebExceptionHandler;
-import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
-import org.springframework.boot.web.reactive.error.ErrorAttributes;
+import org.springframework.boot.webflux.autoconfigure.error.DefaultErrorWebExceptionHandler;
+import org.springframework.boot.webflux.error.DefaultErrorAttributes;
+import org.springframework.boot.webflux.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
@@ -85,7 +85,8 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 public class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
 	private static boolean webflux = ClassUtils
-			.isPresent("org.springframework.web.reactive.function.server.RouterFunction", null);
+			.isPresent("org.springframework.web.reactive.function.server.RouterFunction", null) &&
+			ClassUtils.isPresent("org.springframework.boot.webflux.error.ErrorAttributes", null);
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
@@ -93,44 +94,53 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 				&& context.getEnvironment().getProperty(FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
 						WebApplicationType.class, WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
-			registerEndpoint(context);
-			registerWebFluxAutoConfiguration(context);
+			new WebFluxInitializer().initialize(context);
 		}
 	}
 
-	private void registerWebFluxAutoConfiguration(GenericApplicationContext context) {
-		context.registerBean(DefaultErrorWebExceptionHandler.class, () -> errorHandler(context));
-		context.registerBean(WebHttpHandlerBuilder.WEB_HANDLER_BEAN_NAME, HttpWebHandlerAdapter.class,
-				() -> httpHandler(context));
-		context.addApplicationListener(new ServerListener(context));
-	}
+	private static final class WebFluxInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
-	private void registerEndpoint(GenericApplicationContext context) {
-		context.registerBean(FunctionHttpProperties.class, () -> new FunctionHttpProperties());
-		context.registerBean(FunctionEndpointFactory.class,
-				() -> new FunctionEndpointFactory(context.getBean(FunctionProperties.class), context.getBean(FunctionCatalog.class),
-						context.getEnvironment(), context.getBean(FunctionHttpProperties.class)));
-		RouterFunctionRegister.register(context);
-	}
+		@Override
+		public void initialize(GenericApplicationContext context) {
+			registerEndpoint(context);
+			registerWebFluxAutoConfiguration(context);
+		}
 
-	private HttpWebHandlerAdapter httpHandler(GenericApplicationContext context) {
-		return (HttpWebHandlerAdapter) RouterFunctions.toHttpHandler(context.getBean(RouterFunction.class),
-				HandlerStrategies.empty().exceptionHandler(context.getBeansOfType(WebExceptionHandler.class).values().iterator().next())
-						.codecs(config -> config.registerDefaults(true)).build());
-	}
+		private void registerWebFluxAutoConfiguration(GenericApplicationContext context) {
+			context.registerBean(DefaultErrorWebExceptionHandler.class, () -> errorHandler(context));
+			context.registerBean(WebHttpHandlerBuilder.WEB_HANDLER_BEAN_NAME, HttpWebHandlerAdapter.class,
+					() -> httpHandler(context));
+			context.addApplicationListener(new ServerListener(context));
+		}
 
-	private DefaultErrorWebExceptionHandler errorHandler(GenericApplicationContext context) {
-		context.registerBean(ErrorAttributes.class, () -> new DefaultErrorAttributes());
-		context.registerBean(ErrorProperties.class, () -> new ErrorProperties());
+		private void registerEndpoint(GenericApplicationContext context) {
+			context.registerBean(FunctionHttpProperties.class, () -> new FunctionHttpProperties());
+			context.registerBean(FunctionEndpointFactory.class,
+					() -> new FunctionEndpointFactory(context.getBean(FunctionProperties.class), context.getBean(FunctionCatalog.class),
+							context.getEnvironment(), context.getBean(FunctionHttpProperties.class)));
+			RouterFunctionRegister.register(context);
+		}
 
-		context.registerBean(Resources.class, () -> new Resources());
-		DefaultErrorWebExceptionHandler handler = new DefaultErrorWebExceptionHandler(
-				context.getBeansOfType(ErrorAttributes.class).values().iterator().next(), context.getBean(Resources.class),
-				context.getBean(ErrorProperties.class), context);
-		ServerCodecConfigurer codecs = ServerCodecConfigurer.create();
-		handler.setMessageWriters(codecs.getWriters());
-		handler.setMessageReaders(codecs.getReaders());
-		return handler;
+		private HttpWebHandlerAdapter httpHandler(GenericApplicationContext context) {
+			return (HttpWebHandlerAdapter) RouterFunctions.toHttpHandler(context.getBean(RouterFunction.class),
+					HandlerStrategies.empty().exceptionHandler(context.getBeansOfType(WebExceptionHandler.class).values().iterator().next())
+							.codecs(config -> config.registerDefaults(true)).build());
+		}
+
+		private DefaultErrorWebExceptionHandler errorHandler(GenericApplicationContext context) {
+			context.registerBean(ErrorAttributes.class, () -> new DefaultErrorAttributes());
+			context.registerBean(ErrorProperties.class, () -> new ErrorProperties());
+
+			context.registerBean(Resources.class, () -> new Resources());
+			DefaultErrorWebExceptionHandler handler = new DefaultErrorWebExceptionHandler(
+					context.getBeansOfType(ErrorAttributes.class).values().iterator().next(), context.getBean(Resources.class),
+					context.getBean(ErrorProperties.class), context);
+			ServerCodecConfigurer codecs = ServerCodecConfigurer.create();
+			handler.setMessageWriters(codecs.getWriters());
+			handler.setMessageReaders(codecs.getReaders());
+			return handler;
+		}
+
 	}
 
 	private static class RouterFunctionRegister {

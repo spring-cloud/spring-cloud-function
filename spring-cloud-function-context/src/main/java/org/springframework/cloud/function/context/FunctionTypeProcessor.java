@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2022 the original author or authors.
+ * Copyright 2019-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,6 @@ import org.springframework.beans.factory.aot.BeanFactoryInitializationAotContrib
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationCode;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
-import org.springframework.boot.web.server.Ssl;
-import org.springframework.boot.web.server.Ssl.ServerNameSslBundle;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.message.MessageUtils;
@@ -107,15 +104,6 @@ public class FunctionTypeProcessor implements BeanFactoryInitializationAotProces
 
 			// known static types
 			runtimeHints.reflection().registerType(MessageUtils.MessageStructureWithCaseInsensitiveHeaderKeys.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-
-
-			// temporary due to bug in boot
-			runtimeHints.reflection().registerType(ClientHttpRequestFactorySettings.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-			runtimeHints.reflection().registerType(Ssl.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-			runtimeHints.reflection().registerType(ServerNameSslBundle.class,
 					MemberCategory.INVOKE_PUBLIC_METHODS);
 		}
 
