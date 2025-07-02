@@ -20,7 +20,6 @@ package org.springframework.cloud.function.utils;
 import java.util.Locale;
 
 import org.springframework.cloud.function.context.message.MessageUtils;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
 /**
@@ -34,14 +33,6 @@ public final class FunctionMessageUtils {
 
 	private FunctionMessageUtils() {
 
-	}
-
-	public static String getSourceType(String functionDefinition, Message<?> message) {
-		return determineSourceFromHeaders(message.getHeaders());
-	}
-
-	public static String getTargetType(String functionDefinition, Message<?> message) {
-		return message.getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL) ? (String) message.getHeaders().get(MessageUtils.TARGET_PROTOCOL) : "unknown";
 	}
 
 	private static String determineSourceFromHeaders(MessageHeaders headers) {

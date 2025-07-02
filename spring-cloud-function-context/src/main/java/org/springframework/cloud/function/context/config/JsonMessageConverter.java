@@ -31,6 +31,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -47,7 +48,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	private final JsonMapper jsonMapper;
 
 	public JsonMessageConverter(JsonMapper jsonMapper) {
-		this(jsonMapper, new MimeType("application", "json"), new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
+
+		this(jsonMapper, new MimeType(MimeTypeUtils.APPLICATION_JSON, StandardCharsets.UTF_8),
+			new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
 				CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype() + "+json"));
 	}
 
@@ -101,8 +104,8 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 				return message.getPayload();
 			}
 		}
-		if (targetClass == byte[].class && message.getPayload() instanceof String) {
-			return ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8);
+		if (targetClass == byte[].class && message.getPayload() instanceof String stringPayload) {
+			return stringPayload.getBytes(StandardCharsets.UTF_8);
 		}
 		else {
 			try {
@@ -114,8 +117,8 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 				}
 				else if (logger.isDebugEnabled()) {
 					Object payload = message.getPayload();
-					if (payload instanceof byte[]) {
-						payload = new String((byte[]) payload, StandardCharsets.UTF_8);
+					if (payload instanceof byte[] bytePayload) {
+						payload = new String(bytePayload, StandardCharsets.UTF_8);
 					}
 					logger.debug("Failed to convert value: " + payload + " to: " + targetClass, e);
 				}
