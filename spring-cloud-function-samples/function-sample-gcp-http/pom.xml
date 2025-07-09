@@ -20,7 +20,7 @@
 	</parent>
 
 	<properties>
-		<spring-cloud-function.version>4.2.3-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>4.2.3</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
