@@ -1260,6 +1260,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			else {
 				convertedOutput = messageConverter.toMessage(convertedOutput,
 						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType == null ? "application/json" : contentType[0])));
+				if (FunctionTypeUtils.isTypeCollection(this.outputType) && output instanceof Message<?>) {
+					convertedOutput = MessageBuilder.fromMessage((Message) convertedOutput).copyHeaders(((Message) output).getHeaders()).build();
+				}
 			}
 
 			return convertedOutput;

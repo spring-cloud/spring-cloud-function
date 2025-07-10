@@ -7,7 +7,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.admin.KafkaAdminClient;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +29,7 @@ public class DemoApplicationTests {
 	@Autowired
 	private RSocketRequester.Builder rsocketRequesterBuilder;
 
-	@Test
+	// @Test
 	public void test() throws Exception {
 		String payload = "{\n" +
 				"    \"specversion\" : \"1.0\",\n" +

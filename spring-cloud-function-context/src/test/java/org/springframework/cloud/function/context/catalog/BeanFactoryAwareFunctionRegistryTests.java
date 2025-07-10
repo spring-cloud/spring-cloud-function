@@ -613,6 +613,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(function).isNotNull();
 		result = function.apply(MessageBuilder.withPayload("1,2,3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
 		assertThat(result instanceof List).isTrue();
+		assertThat(((Message<?>) ((List<?>) result).get(0)).getHeaders()).containsKey("foo");
+		assertThat(((Message<?>) ((List<?>) result).get(1)).getHeaders()).containsKey("foo");
+		assertThat(((Message<?>) ((List<?>) result).get(2)).getHeaders()).containsKey("foo");
 	}
 
 	/**
@@ -956,7 +959,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<String, List<Message<String>>> parseToListOfMessages() {
 			return v -> {
 				List<Message<String>> list = Arrays.asList(v.split(",")).stream()
-						.map(value -> MessageBuilder.withPayload(value).build()).collect(Collectors.toList());
+						.map(value -> MessageBuilder.withPayload(value).setHeader("foo", "foo").build()).collect(Collectors.toList());
 				return list;
 			};
 		}
