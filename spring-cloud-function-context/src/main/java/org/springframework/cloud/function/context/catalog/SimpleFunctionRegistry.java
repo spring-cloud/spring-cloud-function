@@ -302,7 +302,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (function == null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Failed to locate function '" + functionName + "' for function definition '"
-						+ functionDefinition + "'. Returning null.");
+						+ functionDefinition + " amongst existing function registrations. Will check with the bean factory");
 				}
 				return null;
 			}
