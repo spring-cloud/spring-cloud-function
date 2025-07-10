@@ -7,14 +7,14 @@
 	<artifactId>spring-cloud-function-parent</artifactId>
 	<name>Spring Cloud Function Parent</name>
 	<description>Spring Cloud Function Parent</description>
-	<version>4.2.4-SNAPSHOT</version>
+	<version>4.2.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<url>https://github.com/spring-cloud/spring-cloud-function</url>
 
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>4.2.3-SNAPSHOT</version>
+		<version>4.2.2-SNAPSHOT</version>
 		<relativePath/>
 	</parent>
 
