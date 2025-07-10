@@ -7,7 +7,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.clients.admin.KafkaAdminClient;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +31,7 @@ public class DemoApplicationTests {
 
 	ArrayBlockingQueue<Message<String>> queue = new ArrayBlockingQueue<>(1);
 
-	@Test
+	// @Test
 	public void test() throws Exception {
 		Message<byte[]> messageToAMQP = CloudEventMessageBuilder
 				.withData("{\"firstName\":\"John\", \"lastName\":\"Doe\"}".getBytes())

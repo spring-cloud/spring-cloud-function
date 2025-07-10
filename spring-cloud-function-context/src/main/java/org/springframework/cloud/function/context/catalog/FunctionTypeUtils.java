@@ -117,6 +117,10 @@ public final class FunctionTypeUtils {
 	 * @return 'true' if this type represents a {@link Collection}. Otherwise 'false'.
 	 */
 	public static boolean isTypeCollection(Type type) {
+		Class rawClass = getRawType(type);
+		if (rawClass == null) {
+			return false;
+		}
 		if (Collection.class.isAssignableFrom(getRawType(type))) {
 			return true;
 		}
