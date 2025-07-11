@@ -169,6 +169,21 @@
 	<profiles>
 		<profile>
 			<id>central</id>
+			<modules>
+				<module>spring-cloud-function-dependencies</module>
+				<module>spring-cloud-function-core</module>
+				<module>spring-cloud-function-context</module>
+				<module>spring-cloud-function-web</module>
+				<module>spring-cloud-starter-function-web</module>
+				<module>spring-cloud-starter-function-webflux</module>
+				<module>spring-cloud-function-samples</module>
+				<module>spring-cloud-function-deployer</module>
+				<module>spring-cloud-function-adapters</module>
+				<module>spring-cloud-function-integration</module>
+				<module>spring-cloud-function-rsocket</module>
+				<module>spring-cloud-function-kotlin</module>
+				<module>docs</module>
+			</modules>
 			<build>
 				<plugins>
 					<plugin>
