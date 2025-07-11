@@ -236,14 +236,14 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
-		<repository>
+		<!--<repository>
 			<id>spring-releases</id>
 			<name>Spring Releases</name>
 			<url>https://repo.spring.io/release</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
-		</repository>
+		</repository>-->
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
@@ -265,13 +265,13 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</pluginRepository>
-		<pluginRepository>
+		<!--<pluginRepository>
 			<id>spring-releases</id>
 			<name>Spring Releases</name>
 			<url>https://repo.spring.io/release</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
-		</pluginRepository>
+		</pluginRepository>-->
 	</pluginRepositories>
 </project>

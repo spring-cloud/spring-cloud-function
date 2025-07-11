@@ -80,11 +80,11 @@
 			<name>Spring Milestones</name>
 			<url>https://repo.spring.io/libs-milestone-local</url>
 		</repository>
-		<repository>
+		<!--<repository>
 			<id>spring-releases</id>
 			<name>Spring Releases</name>
 			<url>https://repo.spring.io/release</url>
-		</repository>
+		</repository>-->
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
@@ -97,10 +97,10 @@
 			<name>Spring Milestones</name>
 			<url>https://repo.spring.io/libs-milestone-local</url>
 		</pluginRepository>
-		<pluginRepository>
+		<!--<pluginRepository>
 			<id>spring-releases</id>
 			<name>Spring Releases</name>
 			<url>https://repo.spring.io/libs-release-local</url>
-		</pluginRepository>
+		</pluginRepository>-->
 	</pluginRepositories>
 </project>
