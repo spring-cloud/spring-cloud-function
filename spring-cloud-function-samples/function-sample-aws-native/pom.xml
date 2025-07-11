@@ -164,11 +164,11 @@
 			<name>Spring Milestones</name>
 			<url>https://repo.spring.io/milestone</url>
 		</repository>
-		<!--<repository>
+		<repository>
 			<id>spring-releases</id>
 			<name>Spring Releases</name>
 			<url>https://repo.spring.io/release</url>
-		</repository>-->
+		</repository>
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
@@ -181,11 +181,11 @@
 			<name>Spring Milestones</name>
 			<url>https://repo.spring.io/milestone</url>
 		</pluginRepository>
-		<!--<pluginRepository>
+		<pluginRepository>
 			<id>spring-releases</id>
 			<name>Spring Releases</name>
 			<url>https://repo.spring.io/release</url>
-		</pluginRepository>-->
+		</pluginRepository>
 	</pluginRepositories>
 
 </project>
