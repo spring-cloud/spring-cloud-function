@@ -194,6 +194,7 @@
 						<configuration>
 							<excludeArtifacts>
 								<artifact>spring-cloud-function-samples</artifact>
+								<artifact>spring-cloud-function-parent</artifact>
 							</excludeArtifacts>
 						</configuration>
 					</plugin>
