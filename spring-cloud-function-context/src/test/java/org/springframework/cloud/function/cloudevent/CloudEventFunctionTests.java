@@ -29,7 +29,6 @@ import reactor.core.publisher.Mono;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
-import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -99,7 +98,7 @@ public class CloudEventFunctionTests {
 			.setId(id)
 			.setSource("https://spring.io/")
 			.setType("org.springframework")
-			.setHeader(MessageUtils.TARGET_PROTOCOL, CloudEventMessageUtils.Protocols.KAFKA)
+			.setHeader("kafka_foo", "blah")
 			.build(CloudEventMessageUtils.AMQP_ATTR_PREFIX);
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();
@@ -136,7 +135,7 @@ public class CloudEventFunctionTests {
 			.setId(id)
 			.setSource("https://spring.io/")
 			.setType("org.springframework")
-			.setHeader(MessageUtils.TARGET_PROTOCOL, CloudEventMessageUtils.Protocols.KAFKA)
+			.setHeader("kafka_foo", "blah")
 			.build(CloudEventMessageUtils.AMQP_ATTR_PREFIX);
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();
@@ -173,7 +172,7 @@ public class CloudEventFunctionTests {
 			.setId(id)
 			.setSource("https://spring.io/")
 			.setType("org.springframework")
-			.setHeader(MessageUtils.TARGET_PROTOCOL, CloudEventMessageUtils.Protocols.KAFKA)
+			.setHeader("kafka_foo", "blah")
 			.build(CloudEventMessageUtils.AMQP_ATTR_PREFIX);
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();

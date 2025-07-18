@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -361,8 +362,22 @@ public final class CloudEventMessageUtils {
 		return determinePrefixToUse(messageHeaders, false);
 	}
 
+	static String extractTargetProtocol(Map<String, Object> messageHeaders) {
+		Iterator<String> keyIterator = messageHeaders.keySet().iterator();
+		for (; keyIterator.hasNext();) {
+			String key = keyIterator.next();
+			if (key.startsWith("kafka_")) {
+				return Protocols.KAFKA;
+			}
+			else if (key.startsWith("amqp")) {
+				return Protocols.AMQP;
+			}
+		}
+		return null;
+	}
+
 	static String determinePrefixToUse(Map<String, Object> messageHeaders, boolean strict) {
-		String targetProtocol = (String) messageHeaders.get(MessageUtils.TARGET_PROTOCOL);
+		String targetProtocol = extractTargetProtocol(messageHeaders);
 		String prefix = determinePrefixToUse(targetProtocol);
 		if (StringUtils.hasText(prefix) && (strict || StringUtils.hasText((String) messageHeaders.get(prefix + _SPECVERSION)))) {
 			return prefix;
