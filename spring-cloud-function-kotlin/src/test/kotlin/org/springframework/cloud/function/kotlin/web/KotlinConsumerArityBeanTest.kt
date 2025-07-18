@@ -27,6 +27,7 @@ import org.springframework.cloud.function.context.test.FunctionalSpringBootTest
 import org.springframework.cloud.function.kotlin.arity.KotlinArityApplication
 import org.springframework.cloud.function.kotlin.arity.KotlinConsumerArityBean
 import org.springframework.http.MediaType
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.reactive.server.WebTestClient
 
 /**
@@ -58,6 +59,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 	classes = [KotlinArityApplication::class]
 )
 @AutoConfigureWebTestClient
+@DirtiesContext
 class KotlinConsumerArityBeanTest {
 
 	@Autowired

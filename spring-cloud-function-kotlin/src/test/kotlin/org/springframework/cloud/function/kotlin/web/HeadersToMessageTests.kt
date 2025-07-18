@@ -28,6 +28,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.RequestEntity
 import org.springframework.messaging.Message
 import org.springframework.messaging.support.MessageBuilder
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import java.lang.Exception
 import java.net.URI
@@ -41,6 +42,7 @@ import java.net.URI
 	properties = ["spring.cloud.function.web.path=/functions", "spring.main.web-application-type=reactive"]
 )
 @ContextConfiguration(classes = [RestApplication::class, HeadersToMessageTests.TestConfiguration::class])
+@DirtiesContext
 open class HeadersToMessageTests {
 	@Autowired
 	private val rest: TestRestTemplate? = null
