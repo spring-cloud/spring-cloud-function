@@ -31,12 +31,6 @@ public abstract class MessageUtils {
 	 * Value for 'message-type' typically use as header key.
 	 */
 	public static String MESSAGE_TYPE = "message-type";
-
-	/**
-	 * Value for 'target-protocol' typically use as header key.
-	 */
-	public static String TARGET_PROTOCOL = "target-protocol";
-
 	/**
 	 * Value for 'target-protocol' typically use as header key.
 	 */

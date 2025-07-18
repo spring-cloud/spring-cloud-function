@@ -47,7 +47,7 @@ public class CloudEventMessageUtilsAndBuilderTests {
 	@Test// see https://github.com/spring-cloud/spring-cloud-function/issues/680
 	public void testProperAttributeExtractionRegardlessOfTargetProtocol() {
 		Message<String> ceMessage = CloudEventMessageBuilder.withData("foo").build();
-		ceMessage = MessageBuilder.fromMessage(ceMessage).setHeader("target-protocol", "kafka").build();
+		ceMessage = MessageBuilder.fromMessage(ceMessage).setHeader("kafka_foo", "blah").build();
 
 		String prefix = CloudEventMessageUtils.determinePrefixToUse(ceMessage.getHeaders());
 		assertThat(prefix).isEqualTo("ce-");

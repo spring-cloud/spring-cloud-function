@@ -71,7 +71,7 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 
 	@Override
 	public boolean isRetainOutputAsMessage(Message<?> message) {
-		return message.getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL) || (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
+		return (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
 			&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE));
 	}
 
@@ -101,8 +101,8 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 		if (input != null) {
 			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders(), true);
 		}
-		else if (result instanceof Message) {
-			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(((Message<?>) result).getHeaders(), true);
+		else if (result instanceof Message resultMessage) {
+			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(resultMessage.getHeaders(), true);
 		}
 
 		Assert.hasText(targetPrefix, "Unable to determine prefix for Cloud Event atttributes, "
