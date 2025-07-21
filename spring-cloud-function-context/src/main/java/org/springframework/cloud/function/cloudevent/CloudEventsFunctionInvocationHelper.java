@@ -71,7 +71,7 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 
 	@Override
 	public boolean isRetainOutputAsMessage(Message<?> message) {
-		return (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
+		return message.getHeaders().containsKey("partitionKey") || (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
 			&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE));
 	}
 

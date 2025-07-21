@@ -1235,7 +1235,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				}
 				else {
 					enrichedMessage = MessageBuilder.withPayload(convertedOutput)
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType[0]).build();
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType[0])
+						.copyHeaders(((Message) output).getHeaders())
+						.build();
 				}
 				return messageConverter.toMessage(enrichedMessage.getPayload(), enrichedMessage.getHeaders());
 			}
