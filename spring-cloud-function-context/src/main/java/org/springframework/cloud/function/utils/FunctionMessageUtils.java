@@ -40,10 +40,6 @@ public final class FunctionMessageUtils {
 		return determineSourceFromHeaders(message.getHeaders());
 	}
 
-	public static String getTargetType(String functionDefinition, Message<?> message) {
-		return message.getHeaders().containsKey(MessageUtils.TARGET_PROTOCOL) ? (String) message.getHeaders().get(MessageUtils.TARGET_PROTOCOL) : "unknown";
-	}
-
 	private static String determineSourceFromHeaders(MessageHeaders headers) {
 		for (String key : headers.keySet()) {
 			if (key.equals(MessageUtils.SOURCE_TYPE)) {
