@@ -140,7 +140,8 @@ public final class FunctionTypeUtils {
 	}
 
 	public static boolean isTypeArray(Type type) {
-		return getRawType(type).isArray();
+		return type instanceof GenericArrayType;
+//		return getRawType(type).isArray();
 	}
 
 	public static boolean isJsonNode(Type type) {
@@ -537,8 +538,13 @@ public final class FunctionTypeUtils {
 	}
 
 	public static boolean isCollectionOfMessage(Type type) {
-		if (isMessage(type) && isTypeCollection(type)) {
-			return isMessage(getImmediateGenericType(type, 0));
+		if (isMessage(type) && (isTypeCollection(type) || isTypeArray(type))) {
+			if (isTypeCollection(type)) {
+				return isMessage(getImmediateGenericType(type, 0));
+			}
+			else if (type instanceof GenericArrayType arrayType) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -546,6 +552,9 @@ public final class FunctionTypeUtils {
 	public static boolean isMessage(Type type) {
 		if (isPublisher(type)) {
 			type = getImmediateGenericType(type, 0);
+		}
+		if (type instanceof GenericArrayType arrayType) {
+			type = arrayType.getGenericComponentType();
 		}
 
 		Class<?> resolveRawClass = FunctionTypeUtils.getRawType(type);

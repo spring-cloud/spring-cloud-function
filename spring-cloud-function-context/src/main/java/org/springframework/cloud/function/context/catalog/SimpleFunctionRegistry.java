@@ -452,6 +452,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				Map<String, FunctionConfigurationProperties> funcConfiguration = functionProperties.getConfiguration();
 				if (!CollectionUtils.isEmpty(funcConfiguration)) {
 					FunctionConfigurationProperties configuration = funcConfiguration.get(functionDefinition);
+					if (configuration == null) {
+						configuration = funcConfiguration.get("default");
+					}
 					if (configuration != null) {
 						propagateInputHeaders = configuration.isCopyInputHeaders();
 					}
@@ -1177,13 +1180,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 		private boolean isExtractPayload(Message<?> message, Type type) {
-			if (this.propagateInputHeaders || this.isRoutingFunction() || FunctionTypeUtils.isMessage(type)) {
-				return false;
-			}
 			if (FunctionTypeUtils.isCollectionOfMessage(type)) {
 				return true;
 			}
-
+			if (this.propagateInputHeaders || this.isRoutingFunction() || FunctionTypeUtils.isMessage(type)) {
+				return false;
+			}
 			Object payload = message.getPayload();
 			if ((payload instanceof byte[])) {
 				return false;
