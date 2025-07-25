@@ -74,5 +74,15 @@
 			<version>0.1.2</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-restclient</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webclient</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
