@@ -142,7 +142,6 @@ public final class FunctionTypeUtils {
 
 	public static boolean isTypeArray(Type type) {
 		return type instanceof GenericArrayType;
-//		return getRawType(type).isArray();
 	}
 
 	public static boolean isJsonNode(Type type) {

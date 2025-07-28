@@ -91,10 +91,6 @@ import org.springframework.util.StringUtils;
  */
 public class SimpleFunctionRegistry implements FunctionRegistry {
 	protected Log logger = LogFactory.getLog(this.getClass());
-	/*
-	 * - do we care about FunctionRegistration after it's been registered? What additional value does it bring?
-	 *
-	 */
 
 	private final Set<FunctionRegistration<?>> functionRegistrations = new CopyOnWriteArraySet<>();
 
