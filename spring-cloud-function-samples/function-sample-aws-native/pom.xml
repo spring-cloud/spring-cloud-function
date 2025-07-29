@@ -15,7 +15,7 @@
 	<description>Sample of AWS with Spring Native</description>
 	<properties>
 		<java.version>19</java.version>
-		<spring-cloud.version>2025.1.0-M1</spring-cloud.version><!-- @releaser:version-check-off -->
+		<spring-cloud.version>2025.1.0-SNAPSHOT</spring-cloud.version><!-- @releaser:version-check-off -->
 	</properties>
 	<dependencies>
 		<dependency>
