@@ -20,7 +20,7 @@
 	</parent>
 
 	<properties>
-		<spring-cloud-function.version>5.0.0-M1</spring-cloud-function.version>
+		<spring-cloud-function.version>5.0.0-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>

@@ -16,7 +16,7 @@
 
 	<properties>
 		<wrapper.version>1.0.31.RELEASE</wrapper.version>
-		<spring-cloud-function.version>5.0.0-M1</spring-cloud-function.version>
+		<spring-cloud-function.version>5.0.0-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>

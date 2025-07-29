@@ -16,7 +16,7 @@
 	<name>function-sample-grpc-cloudevent</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
-		<spring-cloud-function.version>5.0.0-M1</spring-cloud-function.version>
+		<spring-cloud-function.version>5.0.0-SNAPSHOT</spring-cloud-function.version>
 		<grpc.version>1.55.1</grpc.version>
 	</properties>
 	<dependencies>
