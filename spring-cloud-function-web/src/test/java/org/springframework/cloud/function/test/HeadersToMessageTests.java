@@ -46,7 +46,7 @@ public class HeadersToMessageTests {
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		this.client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
-		.expectStatus().isOk().expectHeader()
+		.expectStatus().is2xxSuccessful().expectHeader()
 		.valueEquals("x-content-type", "application/xml").expectHeader()
 		.valueEquals("foo", "bar").expectBody(String.class).isEqualTo("FOO");
 	}
