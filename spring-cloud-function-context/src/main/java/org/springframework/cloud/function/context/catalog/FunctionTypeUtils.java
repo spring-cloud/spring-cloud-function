@@ -385,31 +385,33 @@ public final class FunctionTypeUtils {
 
 		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
 
-		ResolvableType resolvableInputType = resolvableFunctionType.as(resolvableFunctionType.getRawClass());
+		if (FunctionTypeUtils.isFunction(functionType)) {
+			return extractInputType(resolvableFunctionType.as(Function.class).getGeneric(0));
+		}
+		if (FunctionTypeUtils.isConsumer(functionType)) {
+			return extractInputType(resolvableFunctionType.as(Consumer.class).getGeneric(0));
+		}
+		if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
+			return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
+		}
 
-		if (resolvableInputType.getType() instanceof ParameterizedType) {
-			return resolvableInputType.getGeneric(0).getType();
+		// no consumer or function
+		// might be one of the other supported types (as asserted in first line of method)
+		// for example FunctionRegistration or IntConsumer
+
+		// unclear what the contract is in such a case
+		// maybe returning null here might be "more" correct
+		return Object.class;
+	}
+
+	private static Type extractInputType(ResolvableType resolvableInputType) {
+		if (resolvableInputType.getType() instanceof TypeVariable) {
+			// In case the input type is a type variable (e.g. as in GH-1251) we need to resolve the type
+			// For the case that the type is unbound Object.class is used
+			return resolvableInputType.resolve(Object.class);
 		}
-		else {
-			// will try another way. See GH-1251
-			if (FunctionTypeUtils.isFunction(functionType)) {
-				resolvableInputType = resolvableFunctionType.as(Function.class);
-			}
-			else {
-				if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
-					return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
-				}
-				else {
-					resolvableInputType = resolvableFunctionType.as(Consumer.class);
-				}
-			}
-			if (resolvableInputType.getType() instanceof ParameterizedType) {
-				return resolvableInputType.getGeneric(0).getType();
-			}
-			else  {
-				return Object.class;
-			}
-		}
+
+		return resolvableInputType.getType();
 	}
 
 	@SuppressWarnings("rawtypes")
