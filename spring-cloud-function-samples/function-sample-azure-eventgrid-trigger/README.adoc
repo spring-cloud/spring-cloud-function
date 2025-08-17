@@ -1,0 +1,338 @@
+== Azure Event Grid with CloudEvents Sample
+
+IMPORTANT: For general information about building and deploying `Azure Functions` with Spring Cloud Function, consult the https://docs.spring.io/spring-cloud-function/docs/current/reference/html/azure.html[Azure Adapter] documentation.
+
+This sample demonstrates how to integrate Spring Cloud Function with Azure Event Grid using the CloudEvents v1.0 specification. Azure Event Grid natively supports CloudEvents format, providing a standardized way to handle events across different cloud platforms.
+
+=== Features
+
+* **CloudEvents v1.0 Support**: Handles events in both CloudEvents and Event Grid formats
+* **Webhook Validation**: Implements Azure Event Grid webhook validation according to CloudEvents webhook specification
+* **Automatic Format Conversion**: Converts Event Grid format events to CloudEvents for consistent processing
+* **Spring Cloud Function Integration**: Uses Spring Cloud Function framework for event processing
+* **Comprehensive Logging**: Detailed logging for debugging and monitoring
+
+=== Azure Event Grid CloudEvents Support
+
+Azure Event Grid supports CloudEvents v1.0 specification which provides:
+
+* **Interoperability**: Standard event schema across different platforms
+* **Extensibility**: Custom attributes and extensions
+* **Multiple Formats**: Both binary and structured content modes
+* **Protocol Agnostic**: Works with HTTP, AMQP, and other protocols
+
+For more information, see:
+- https://docs.microsoft.com/en-us/azure/event-grid/cloud-event-schema[Azure Event Grid CloudEvents Schema]
+- https://cloudevents.io/[CloudEvents Specification]
+
+=== Event Processing
+
+The sample includes two main Spring Cloud Functions:
+
+1. **processEvent**: Processes incoming CloudEvents and logs detailed information
+2. **createEvent**: Creates CloudEvents from simple payload maps
+
+Both functions are exposed through the Azure Function HTTP trigger endpoint.
+
+=== Usage
+
+==== Prerequisites
+
+* Azure CLI installed and configured
+* Azure Functions Core Tools v4.0.5030 or later
+* Java 17 or later
+* Maven 3.6 or later
+* An Azure subscription with Event Grid and Storage Account
+
+==== Setup Azure Resources
+
+Create required Azure resources:
+
+[source,shell]
+----
+# Use one region consistently (example: Korea Central)
+SUFFIX=$(date +%s)                # ensures global-unique names
+RG=java-functions-group           # or change if you prefer a new RG
+LOC=westus
+SA=azureeventgrid${SUFFIX}        # storage account names must be globally unique (3-24 lowercase letters/numbers)
+FUNC=spring-cloud-function-eventgrid-demo
+TOPIC=azure-eventgrid-topic
+
+# Create (or re-use) resource group in the chosen region
+az group create --name $RG --location $LOC
+
+# Create storage account (required for Azure Functions)
+az storage account create \
+  --name $SA \
+  --resource-group $RG \
+  --location $LOC \
+  --sku Standard_LRS \
+  --kind StorageV2
+
+# (Optional but recommended) Wait until provisioning completes
+until [ "$(az storage account show -n $SA -g $RG --query provisioningState -o tsv 2>/dev/null)" = "Succeeded" ]; do
+  echo "waiting for storage $SA to be provisioned..."
+  sleep 5
+done
+
+# Create Azure Function App (Consumption, Java 17)
+az functionapp create \
+  --name $FUNC \
+  --consumption-plan-location $LOC \
+  --functions-version 4 \
+  --resource-group $RG \
+  --runtime java \
+  --runtime-version 17 \
+  --os-type Linux \
+  --storage-account $SA
+
+# Create Event Grid custom topic (CloudEvents v1.0)
+# Ensure the provider is registered once per subscription:
+az provider register --namespace Microsoft.EventGrid --wait
+
+az eventgrid topic create \
+  --name $TOPIC \
+  --resource-group $RG \
+  --location $LOC \
+  --input-schema cloudeventschemav1_0
+----
+
+==== Configure Local Development
+
+Update `src/main/resources/local.settings.json` with your Azure Storage connection string:
+
+[source,json]
+----
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=azureeventgridstorage;AccountKey=<YOUR_STORAGE_ACCOUNT_KEY>;EndpointSuffix=core.windows.net",
+    "FUNCTIONS_WORKER_RUNTIME": "java"
+  }
+}
+----
+
+==== Build and Run Locally
+
+Build the application:
+
+[source,shell]
+----
+./mvnw clean package
+----
+
+Run locally using Azure Functions Core Tools:
+
+[source,shell]
+----
+./mvnw azure-functions:run
+----
+
+The function will be available at:
+- Webhook endpoint: `http://localhost:7071/api/eventgrid`
+
+==== Test the Function
+
+===== Test Webhook Validation
+
+[source,shell]
+----
+curl -X OPTIONS http://localhost:7071/api/eventgrid \
+  -H "WebHook-Request-Origin: https://eventgrid.azure.net"
+----
+
+Expected response: `200 OK` with `WebHook-Allowed-Origin` header.
+
+===== Test CloudEvent Processing
+
+[source,shell]
+----
+curl -X POST http://localhost:7071/api/eventgrid \
+  -H "Content-Type: application/cloudevents+json" \
+  -d '{
+    "specversion": "1.0",
+    "type": "com.example.demo.created",
+    "source": "https://example.com/demo",
+    "id": "test-event-001",
+    "time": "2024-01-01T12:00:00Z",
+    "subject": "demo/test",
+    "datacontenttype": "application/json",
+    "data": {
+      "message": "Hello CloudEvents!",
+      "timestamp": "2024-01-01T12:00:00Z"
+    }
+  }'
+----
+
+===== Test Event Grid Format Processing
+
+[source,shell]
+----
+curl -X POST http://localhost:7071/api/eventgrid \
+  -H "Content-Type: application/json" \
+  -d '[{
+    "id": "test-event-002",
+    "eventType": "Microsoft.Storage.BlobCreated",
+    "subject": "/blobServices/default/containers/test/blobs/example.txt",
+    "eventTime": "2024-01-01T12:00:00Z",
+    "topic": "/subscriptions/{subscription-id}/resourceGroups/test/providers/Microsoft.Storage/storageAccounts/test",
+    "data": {
+      "api": "PutBlob",
+      "contentType": "text/plain",
+      "contentLength": 1024,
+      "url": "https://test.blob.core.windows.net/test/example.txt"
+    },
+    "dataVersion": "1.0",
+    "metadataVersion": "1"
+  }]'
+----
+
+==== Deploy to Azure
+
+Update the `pom.xml` configuration with your Azure Function App details, then deploy:
+
+[source,shell]
+----
+./mvnw azure-functions:deploy
+----
+
+==== Create Event Grid Subscription
+
+After deployment, create an Event Grid subscription to route events to your function:
+
+[source,shell]
+----
+# Get function URL
+FUNCTION_URL=$(az functionapp function show \
+  --name spring-cloud-function-eventgrid-demo \
+  --resource-group java-functions-group \
+  --function-name eventGridWebhook \
+  --query "invokeUrlTemplate" -o tsv)
+
+# Create Event Grid subscription
+az eventgrid event-subscription create \
+  --name my-function-subscription \
+  --source-resource-id /subscriptions/{subscription-id}/resourceGroups/java-functions-group/providers/Microsoft.EventGrid/topics/azure-eventgrid-topic \
+  --endpoint "${FUNCTION_URL}" \
+  --event-delivery-schema cloudeventschemav1_0
+----
+
+==== Send Events to Event Grid
+
+[source,shell]
+----
+# Get Event Grid topic endpoint and key
+TOPIC_ENDPOINT=$(az eventgrid topic show \
+  --name azure-eventgrid-topic \
+  --resource-group java-functions-group \
+  --query "endpoint" -o tsv)
+
+TOPIC_KEY=$(az eventgrid topic key list \
+  --name azure-eventgrid-topic \
+  --resource-group java-functions-group \
+  --query "key1" -o tsv)
+
+# Send CloudEvent to Event Grid
+curl -X POST "${TOPIC_ENDPOINT}" \
+  -H "Content-Type: application/cloudevents+json" \
+  -H "aeg-sas-key: ${TOPIC_KEY}" \
+  -d '{
+    "specversion": "1.0",
+    "type": "com.example.production.created",
+    "source": "https://example.com/production",
+    "id": "prod-event-001",
+    "time": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+    "subject": "production/orders",
+    "datacontenttype": "application/json",
+    "data": {
+      "orderId": "12345",
+      "customerId": "customer-001",
+      "amount": 99.99
+    }
+  }'
+----
+
+=== Monitoring and Debugging
+
+==== Local Debugging
+
+The sample includes comprehensive logging. Check the console output when running locally to see detailed event processing information.
+
+==== Azure Monitoring
+
+When deployed to Azure, monitor your function using:
+
+* **Azure Portal**: Function App → Functions → eventGridWebhook → Monitor
+* **Application Insights**: Detailed telemetry and performance monitoring
+* **Azure Monitor**: Metrics and alerts
+
+==== Common Issues
+
+1. **Webhook Validation Fails**
+   - Ensure the `WebHook-Request-Origin` header is present in validation requests
+   - Check that the function responds with `WebHook-Allowed-Origin` header
+
+2. **CloudEvent Parsing Errors**
+   - Verify the CloudEvent format matches the CloudEvents v1.0 specification
+   - Check the `Content-Type` header is set correctly
+
+3. **Event Grid Subscription Issues**
+   - Ensure the function URL is accessible from Azure Event Grid
+   - Verify the Event Grid topic is configured with CloudEvents schema
+
+=== Configuration Options
+
+The sample supports the following configuration:
+
+* **CloudEvents Schema**: Set Event Grid topic input schema to `CloudEventSchemaV1_0`
+* **Event Delivery Schema**: Configure subscription delivery schema to `CloudEventSchemaV1_0`
+* **Custom Extensions**: Add custom CloudEvent extensions in the conversion logic
+* **Error Handling**: Customize error responses and retry policies
+
+=== Advanced Scenarios
+
+==== Custom Event Types
+
+Extend the `processEvent` function to handle specific event types:
+
+[source,java]
+----
+@Bean
+public Function<CloudEvent, String> processEvent() {
+    return event -> {
+        switch (event.getType()) {
+            case "Microsoft.Storage.BlobCreated":
+                return handleBlobCreated(event);
+            case "Microsoft.EventHub.CaptureFileCreated":
+                return handleEventHubCapture(event);
+            default:
+                return handleGenericEvent(event);
+        }
+    };
+}
+----
+
+==== Dead Letter Handling
+
+Configure dead letter destinations for failed event processing:
+
+[source,shell]
+----
+az eventgrid event-subscription create \
+  --name my-function-subscription \
+  --source-resource-id /subscriptions/{subscription-id}/resourceGroups/java-functions-group/providers/Microsoft.EventGrid/topics/azure-eventgrid-topic \
+  --endpoint "${FUNCTION_URL}" \
+  --event-delivery-schema cloudeventschemav1_0 \
+  --deadletter-endpoint /subscriptions/{subscription-id}/resourceGroups/java-functions-group/providers/Microsoft.Storage/storageAccounts/azureeventgridstorage/blobServices/default/containers/deadletter
+----
+
+=== Resources
+
+* https://docs.microsoft.com/en-us/azure/event-grid/[Azure Event Grid Documentation]
+* https://cloudevents.io/[CloudEvents Specification]
+* https://docs.spring.io/spring-cloud-function/docs/current/reference/html/[Spring Cloud Function Reference]
+* https://docs.microsoft.com/en-us/azure/azure-functions/[Azure Functions Documentation]
+
+=== Contributing
+
+This sample is part of the Spring Cloud Function project. To contribute improvements or report issues, please visit the https://github.com/spring-cloud/spring-cloud-function[GitHub repository].
