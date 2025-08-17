@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.0.0-SNAPSHOT</version>
+		<relativePath/>
+		<!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.example.azure.eventgrid</groupId>
+	<artifactId>azure-eventgrid-demo</artifactId>
+	<version>0.0.1-SNAPSHOT</version><!-- @releaser:version-check-off -->
+	<name>azure-eventgrid-demo</name>
+
+	<description>Demo Spring Boot, Azure Function - Event Grid Trigger with CloudEvents</description>
+
+	<properties>
+		<java.version>17</java.version>
+		<spring-boot-thin-layout.version>1.0.31.RELEASE</spring-boot-thin-layout.version>
+
+		<!-- Spring Boot start class! WARNING: correct class must be set! -->
+		<start-class>com.example.azure.eventgrid.EventGridDemoApplication</start-class>
+
+		<!-- AZURE FUNCTION CONFIG -->
+		<azure.functions.maven.plugin.version>1.28.0</azure.functions.maven.plugin.version>
+		<functionAppName>spring-cloud-function-eventgrid-demo</functionAppName>
+		<functionAppRegion>westus</functionAppRegion>
+		<functionResourceGroup>java-functions-group</functionResourceGroup>
+		<functionPricingTier>Y1</functionPricingTier>
+	</properties>
+	<dependencies>
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-function-adapter-azure</artifactId>
+			<version>4.1.0-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- For CloudEvents support -->
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-core</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-json-jackson</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.microsoft.azure</groupId>
+				<artifactId>azure-functions-maven-plugin</artifactId>
+				<version>${azure.functions.maven.plugin.version}</version>
+
+				<configuration>
+					<appName>${functionAppName}</appName>
+					<resourceGroup>${functionResourceGroup}</resourceGroup>
+					<region>${functionAppRegion}</region>
+					<pricingTier>${functionPricingTier}</pricingTier>
+
+					<hostJson>${project.basedir}/src/main/resources/host.json</hostJson>
+					<localSettingsJson>${project.basedir}/src/main/resources/local.settings.json</localSettingsJson>
+
+					<runtime>
+						<os>linux</os>
+						<javaVersion>17</javaVersion>
+					</runtime>
+
+                    <funcPort>7071</funcPort>
+
+					<appSettings>
+						<property>
+							<name>FUNCTIONS_EXTENSION_VERSION</name>
+							<value>~4</value>
+						</property>
+					</appSettings>
+				</configuration>
+				<executions>
+					<execution>
+						<id>package-functions</id>
+						<goals>
+							<goal>package</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>repackage</id>
+						<phase>none</phase>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.boot.experimental</groupId>
+						<artifactId>spring-boot-thin-layout</artifactId>
+						<version>${spring-boot-thin-layout.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
