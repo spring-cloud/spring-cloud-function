@@ -34,6 +34,7 @@
  		<module>function-sample-cloudevent-sdk</module>
 <!-- 		<module>function-sample-kotlin-web</module>-->
 		<module>function-sample-grpc-cloudevent</module>
+		<module>function-sample-azure-eventgrid-trigger</module>
 	</modules>
 
 	<build>
