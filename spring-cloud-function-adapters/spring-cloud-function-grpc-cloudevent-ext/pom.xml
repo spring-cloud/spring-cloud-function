@@ -11,7 +11,7 @@
 	<name>spring-cloud-function-grpc-cloudevent-ext</name>
 	<description>CloudEvent extension for spring-cloud-function-grpc</description>
 	<properties>
-		<java.version>1.8</java.version>
+		<grpc.version>1.55.1</grpc.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -23,7 +23,11 @@
 			<artifactId>spring-cloud-function-grpc</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-
+		<dependency>
+			<groupId>io.grpc</groupId>
+			<artifactId>grpc-stub</artifactId>
+			<version>${grpc.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -41,16 +45,26 @@
 		</extensions>
 		<plugins>
 			<plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-checkstyle-plugin</artifactId>
+	            <executions>
+	                <execution>
+	                    <id>checkstyle-validation</id>
+	                    <phase>none</phase>
+	                </execution>
+	            </executions>
+	        </plugin>
+			<plugin>
 		      <groupId>org.xolstice.maven.plugins</groupId>
 		      <artifactId>protobuf-maven-plugin</artifactId>
 		      <version>0.6.1</version>
 		      <configuration>
 		        <protocArtifact>     
-		          com.google.protobuf:protoc:3.3.0:exe:${os.detected.classifier}
+		          com.google.protobuf:protoc:3.23.0:exe:${os.detected.classifier}
 		        </protocArtifact>
 		        <pluginId>grpc-java</pluginId>
 		        <pluginArtifact>
-		          io.grpc:protoc-gen-grpc-java:1.4.0:exe:${os.detected.classifier}
+		          io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
 		        </pluginArtifact>
 		      </configuration>
 		      <executions>
@@ -64,41 +78,4 @@
 		    </plugin>
 		</plugins>
 	</build>
-	<repositories>
-		<repository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>spring-milestones</id>
-			<name>Spring Milestones</name>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</pluginRepository>
-		<pluginRepository>
-			<id>spring-snapshots</id>
-			<name>Spring Snapshots</name>
-			<url>https://repo.spring.io/snapshot</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</pluginRepository>
-	</pluginRepositories>
-
 </project>

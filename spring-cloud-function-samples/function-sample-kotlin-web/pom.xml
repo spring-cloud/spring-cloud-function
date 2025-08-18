@@ -38,17 +38,17 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-kotlin</artifactId>
-			<version>3.2.9-SNAPSHOT</version>
+			<version>3.2.13-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-web</artifactId>
-			<version>3.2.9-SNAPSHOT</version>
+			<version>3.2.13-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-context</artifactId>
-			<version>3.2.9-SNAPSHOT</version>
+			<version>3.2.13-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
