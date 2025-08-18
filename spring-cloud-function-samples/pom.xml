@@ -31,6 +31,7 @@
  		<module>function-sample-cloudevent</module>
  		<module>function-sample-cloudevent-sdk</module>
 		<module>function-sample-grpc-cloudevent</module>
+		<module>function-sample-azure-eventgrid-trigger</module>
 	</modules>
 
 	<build>
