@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.cloud.functions.invoker.runner.Invoker;
 import com.google.gson.Gson;
 
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.test.client.TestRestTemplate;
 import org.springframework.cloud.function.adapter.gcp.FunctionInvoker;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;

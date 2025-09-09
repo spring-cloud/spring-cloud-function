@@ -65,8 +65,7 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 	}
 
 	private Flux<?> get(WebClient client) {
-		Flux<?> result = client.get().uri(this.props.getSource().getUrl()).exchange()
-				.flatMap(this::transform).repeat();
+		Flux<?> result = client.get().uri(this.props.getSource().getUrl()).exchangeToMono(this::transform).repeat();
 		if (this.props.isDebug()) {
 			result = result.log();
 		}

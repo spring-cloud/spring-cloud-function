@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Oleg Zhurakousky
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnBean(org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration.class)
+@ConditionalOnBean(org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration.class)
 public class ObservationAutoConfiguration {
 
 	@Bean

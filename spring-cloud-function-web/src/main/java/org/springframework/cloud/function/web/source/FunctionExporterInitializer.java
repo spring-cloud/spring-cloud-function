@@ -18,8 +18,8 @@ package org.springframework.cloud.function.web.source;
 
 import java.util.function.Supplier;
 
-import org.springframework.boot.web.reactive.context.ConfigurableReactiveWebEnvironment;
-import org.springframework.boot.web.reactive.context.ReactiveWebApplicationContext;
+import org.springframework.boot.web.context.reactive.ConfigurableReactiveWebEnvironment;
+import org.springframework.boot.web.context.reactive.ReactiveWebApplicationContext;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogInitializer;

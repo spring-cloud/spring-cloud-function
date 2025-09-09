@@ -31,6 +31,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.Supplier;
 
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
@@ -81,6 +83,11 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	@Override
 	public void setCharacterEncoding(String characterEncoding) {
 		this.characterEncoding = characterEncoding;
+	}
+
+	@Override
+	public void setCharacterEncoding(Charset encoding) {
+		HttpServletResponse.super.setCharacterEncoding(encoding);
 	}
 
 	@Override
@@ -217,7 +224,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 
 	@Override
 	public boolean containsHeader(String name) {
-		return this.headers.containsKey(name);
+		return this.headers.containsHeader(name);
 	}
 
 	/**
@@ -231,7 +238,17 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 */
 	@Override
 	public Collection<String> getHeaderNames() {
-		return this.headers.keySet();
+		return this.headers.headerNames();
+	}
+
+	@Override
+	public void setTrailerFields(Supplier<Map<String, String>> supplier) {
+		HttpServletResponse.super.setTrailerFields(supplier);
+	}
+
+	@Override
+	public Supplier<Map<String, String>> getTrailerFields() {
+		return HttpServletResponse.super.getTrailerFields();
 	}
 
 	/**
@@ -249,7 +266,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	@Override
 	@Nullable
 	public String getHeader(String name) {
-		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
+		return this.headers.containsHeader(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	/**
@@ -258,14 +275,14 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 * As of Servlet 3.0, this method is also defined in
 	 * {@link HttpServletResponse}. As of Spring 3.1, it returns a List of
 	 * stringified values for Servlet 3.0 compatibility. Consider using
-	 * {@link #getHeaderValues(String)} for raw Object access.
+	 * {@link #getHeaders(String)} for raw Object access.
 	 *
 	 * @param name the name of the header
 	 * @return the associated header values, or an empty List if none
 	 */
 	@Override
 	public List<String> getHeaders(String name) {
-		if (!this.headers.containsKey(name)) {
+		if (!this.headers.containsHeader(name)) {
 			return Collections.emptyList();
 		}
 		return this.headers.get(name);
@@ -281,7 +298,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 */
 	@Nullable
 	public Object getHeaderValue(String name) {
-		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
+		return this.headers.containsHeader(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	/**
@@ -327,6 +344,15 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 		Assert.notNull(url, "Redirect URL must not be null");
 		setHeader(HttpHeaders.LOCATION, url);
 		setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
+	}
+
+
+	@Override
+	public void sendRedirect(String location, int sc, boolean clearBuffer) throws IOException {
+		Assert.state(!isCommitted(), "Cannot send redirect - response is already committed");
+		Assert.notNull(location, "Redirect location must not be null");
+		setHeader(HttpHeaders.LOCATION, location);
+		setStatus(sc);
 	}
 
 	@Nullable

@@ -34,7 +34,7 @@ open class KotlinLambdasConfiguration {
 	open fun uppercase(): Function<String, String> = KotlinComponentFunction()
 	@Bean
 	open fun kotlinFunction(): (String) -> String {
-		return { it.toUpperCase() }
+		return { it.uppercase() }
 	}
 
 	@Bean

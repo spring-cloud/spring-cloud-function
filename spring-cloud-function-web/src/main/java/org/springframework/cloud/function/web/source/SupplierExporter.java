@@ -192,7 +192,7 @@ public class SupplierExporter implements SmartLifecycle {
 		}
 		Mono<ClientResponse> result = this.client.post().uri(uri)
 				.headers(headers -> headers(headers, destination, value)).bodyValue(body)
-				.exchange()
+				.exchangeToMono(Mono::just)
 				.doOnNext(response -> {
 					if (this.debug) {
 						logger.debug("Response STATUS: " + response.statusCode());
