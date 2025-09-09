@@ -57,7 +57,9 @@ public class RoutingFunctionTests {
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
 		System.clearProperty("spring.cloud.function.routing-expression");
-		context.close();
+		if (context != null) {
+			context.close();
+		}
 	}
 
 	private FunctionCatalog configureCatalog(Class<?> configurationClass) {

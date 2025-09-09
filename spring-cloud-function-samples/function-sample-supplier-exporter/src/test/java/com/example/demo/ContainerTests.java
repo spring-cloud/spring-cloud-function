@@ -54,7 +54,7 @@ public class ContainerTests {
 				return result;
 			}, result -> result != null);
 			assertThat(response.getBody()).contains("hi foo!");
-			assertThat(response.getHeaders()).containsKey("X-Amzn-Requestid");
+			assertThat(response.getHeaders().containsHeader("X-Amzn-Requestid")).isTrue();
 		}
 		String output = consumer.toUtf8String();
 		assertThat(output).contains("Lambda API listening on port 9001");

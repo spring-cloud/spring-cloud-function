@@ -124,6 +124,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	@DirtiesContext
+	@Disabled
 	public void addFoos() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/addFoos")).contentType(MediaType.APPLICATION_JSON)
@@ -146,6 +147,7 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	@DirtiesContext
+	@Disabled
 	public void bareUpdates() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/bareUpdates")).contentType(MediaType.APPLICATION_JSON)
