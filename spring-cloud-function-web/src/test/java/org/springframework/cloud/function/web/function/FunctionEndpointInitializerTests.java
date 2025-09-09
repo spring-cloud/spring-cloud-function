@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.test.client.TestRestTemplate;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
@@ -72,7 +72,7 @@ public class FunctionEndpointInitializerTests {
 		headers.set("Accept", "application/json");
 		HttpEntity entity = new HttpEntity(headers);
 
-		String urlTemplate = UriComponentsBuilder.fromHttpUrl("http://localhost:" + port + "/nullPayload")
+		String urlTemplate = UriComponentsBuilder.fromUriString("http://localhost:" + port + "/nullPayload")
 				.queryParam("fname", "Jim").queryParam("lname", "Lahey").encode().toUriString();
 
 		ResponseEntity<String> response = testRestTemplate.exchange(urlTemplate, HttpMethod.GET, entity, String.class);

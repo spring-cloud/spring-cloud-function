@@ -279,7 +279,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	@Override
 	@Nullable
 	public String getContentType() {
-		return this.headers.containsKey(HttpHeaders.CONTENT_TYPE) ? this.headers.get(HttpHeaders.CONTENT_TYPE).get(0) : null;
+		return this.headers.containsHeader(HttpHeaders.CONTENT_TYPE) ? this.headers.get(HttpHeaders.CONTENT_TYPE).get(0) : null;
 	}
 
 	@Override
@@ -713,17 +713,17 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	@Override
 	@Nullable
 	public String getHeader(String name) {
-		return this.headers.containsKey(name) ? this.headers.get(name).get(0) : null;
+		return this.headers.containsHeader(name) ? this.headers.get(name).get(0) : null;
 	}
 
 	@Override
 	public Enumeration<String> getHeaders(String name) {
-		return Collections.enumeration(this.headers.containsKey(name) ? this.headers.get(name) : new LinkedList<>());
+		return Collections.enumeration(this.headers.containsHeader(name) ? this.headers.get(name) : new LinkedList<>());
 	}
 
 	@Override
 	public Enumeration<String> getHeaderNames() {
-		return Collections.enumeration(this.headers.keySet());
+		return Collections.enumeration(this.headers.headerNames());
 	}
 
 	public void setHeader(String name, @Nullable String value) {
@@ -735,7 +735,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	}
 
 	public void addHeaders(MultiValueMap<String, String> headers) {
-		this.headers.addAll(headers);
+		headers.forEach(this.headers::addAll);
 	}
 
 	public void setHeaders(MultiValueMap<String, String> headers) {

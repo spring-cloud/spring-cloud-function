@@ -40,8 +40,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.web.server.test.LocalServerPort;
+import org.springframework.boot.web.server.test.client.TestRestTemplate;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.flux.HttpPostIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -170,7 +170,7 @@ public class HttpPostIntegrationTests {
 				.post(new URI("/messages")).contentType(MediaType.APPLICATION_JSON)
 				.header("x-foo", "bar").body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getHeaders().getFirst("x-foo")).isEqualTo("bar");
-		assertThat(result.getHeaders()).doesNotContainKey("id");
+		assertThat(result.getHeaders().containsHeader("id")).isFalse();
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 

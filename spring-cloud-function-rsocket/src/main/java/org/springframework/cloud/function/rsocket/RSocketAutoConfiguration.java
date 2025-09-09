@@ -19,8 +19,8 @@ package org.springframework.cloud.function.rsocket;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.rsocket.RSocketMessageHandlerCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.rsocket.autoconfigure.RSocketMessageHandlerCustomizer;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -47,8 +47,8 @@ class RSocketAutoConfiguration {
 	@ConditionalOnMissingBean
 	@Primary
 	FunctionRSocketMessageHandler functionRSocketMessageHandler(RSocketStrategies rSocketStrategies,
-		ObjectProvider<RSocketMessageHandlerCustomizer> customizers, FunctionCatalog functionCatalog,
-		FunctionProperties functionProperties, JsonMapper jsonMapper) {
+																ObjectProvider<RSocketMessageHandlerCustomizer> customizers, FunctionCatalog functionCatalog,
+																FunctionProperties functionProperties, JsonMapper jsonMapper) {
 
 		FunctionRSocketMessageHandler rsocketMessageHandler = new FunctionRSocketMessageHandler(functionCatalog, functionProperties, jsonMapper);
 		rsocketMessageHandler.setRSocketStrategies(rSocketStrategies);

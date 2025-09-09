@@ -33,7 +33,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
@@ -121,7 +120,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 			if (this.context.getBeanFactory().getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class, false,
 					false).length == 0) {
 				this.context.registerBean(PropertySourcesPlaceholderConfigurer.class,
-						() -> PropertyPlaceholderAutoConfiguration.propertySourcesPlaceholderConfigurer());
+					PropertySourcesPlaceholderConfigurer::new);
 			}
 
 			if (!this.context.getBeanFactory()

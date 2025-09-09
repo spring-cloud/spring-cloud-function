@@ -179,7 +179,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			@Override
 			public int getRemainingTimeInMillis() {
 				long now = System.currentTimeMillis();
-				if (!headers.containsKey("Lambda-Runtime-Deadline-Ms")) {
+				if (!headers.containsHeader("Lambda-Runtime-Deadline-Ms")) {
 					return 0;
 				}
 				int delta = (int) (Long.parseLong(headers.getFirst("Lambda-Runtime-Deadline-Ms")) - now);

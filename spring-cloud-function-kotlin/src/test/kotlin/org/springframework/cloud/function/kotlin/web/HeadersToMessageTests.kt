@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
-import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.boot.web.server.test.client.TestRestTemplate
 import org.springframework.cloud.function.web.RestApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.http.MediaType
@@ -55,7 +55,7 @@ open class HeadersToMessageTests {
 					.body("{\"name\":\"Bob\",\"age\":25}"), String::class.java
 			)
 		Assertions.assertThat(postForEntity.body).isEqualTo("{\"name\":\"Bob\",\"age\":25}")
-		Assertions.assertThat(postForEntity.headers.containsKey("x-content-type")).isTrue
+		Assertions.assertThat(postForEntity.headers.containsHeader("x-content-type")).isTrue
 		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
@@ -66,7 +66,7 @@ open class HeadersToMessageTests {
 			"{\"name\":\"Bob\",\"age\":25}", String::class.java
 		)
 		Assertions.assertThat(postForEntity.body).isEqualTo("{\"name\":\"Bob\",\"age\":25}")
-		Assertions.assertThat(postForEntity.headers.containsKey("x-content-type")).isTrue
+		Assertions.assertThat(postForEntity.headers.containsHeader("x-content-type")).isTrue
 		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
@@ -76,7 +76,7 @@ open class HeadersToMessageTests {
 	@org.springframework.boot.test.context.TestConfiguration
 	open class TestConfiguration {
 		@Bean("string")
-		open fun functiono(): (message: Message<String?>) -> Message<String?> = { request: Message<String?> ->
+		open fun functiono(): (message: Message<String>) -> Message<String> = { request: Message<String> ->
 			val message =
 				MessageBuilder.withPayload(request.payload)
 					.setHeader("X-Content-Type", "application/xml")

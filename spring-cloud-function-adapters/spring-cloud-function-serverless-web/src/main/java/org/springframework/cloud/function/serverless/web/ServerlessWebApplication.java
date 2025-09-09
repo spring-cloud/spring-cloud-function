@@ -194,7 +194,7 @@ public class ServerlessWebApplication extends SpringApplication {
 		listeners.contextPrepared(context);
 		bootstrapContext.close(context);
 		if (this.logStartupInfo) {
-			logStartupInfo(context.getParent() == null);
+			logStartupInfo(context);
 			logStartupProfileInfo(context);
 		}
 		// Add boot specific singleton beans

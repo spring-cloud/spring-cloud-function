@@ -36,7 +36,7 @@ open class KotlinSuspendFlowLambdasConfiguration {
 
 	@Bean
 	open fun kotlinFunction(): suspend (Flow<String>) -> Flow<String> =  { flow ->
-		flow.map { value -> value.toUpperCase() }
+		flow.map { value -> value.uppercase() }
 	}
 	
 	@Bean
