@@ -46,6 +46,7 @@ import reactor.util.function.Tuple3;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.messaging.Message;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,6 +62,24 @@ public class FunctionTypeUtilsTests {
 	public void testDiscoverFunctionalMethod() throws Exception {
 		Method method = FunctionTypeUtils.discoverFunctionalMethod(SampleEventConsumer.class);
 		assertThat(method.getName()).isEqualTo("accept");
+	}
+
+	private Type getBeanType(Class<?> configurationClass, String beanMethodName) {
+		return ReflectionUtils.findMethod(configurationClass, beanMethodName).getGenericReturnType();
+	}
+
+	@Test
+	public void testInputType() {
+		Type type;
+		Type inputType;
+
+		type = getBeanType(Gh1251Configuration.class, "consumer2");
+		inputType = FunctionTypeUtils.getInputType(type);
+		assertThat(inputType).isEqualTo(String.class);
+
+		type = getBeanType(Gh1251Configuration.class, "consumer3");
+		inputType = FunctionTypeUtils.getInputType(type);
+		assertThat(inputType).isEqualTo(String.class);
 	}
 
 	@Test
@@ -285,6 +304,31 @@ public class FunctionTypeUtilsTests {
 	public static class SimpleConsumer implements Consumer<Flux<Message<String>>> {
 		@Override
 		public void accept(Flux<Message<String>> messageFlux) {
+		}
+	}
+
+	static class Gh1251Configuration {
+
+		Gh1251Consumer2<Integer> consumer2() {
+			return new Gh1251Consumer2<Integer>();
+		}
+
+		Gh1251Consumer3<String> consumer3() {
+			return new Gh1251Consumer3<>();
+		}
+	}
+
+	static class Gh1251Consumer2<E> implements Consumer<String> {
+
+		@Override
+		public void accept(String message) {
+		}
+	}
+
+	static class Gh1251Consumer3<E> implements Consumer<E> {
+
+		@Override
+		public void accept(E message) {
 		}
 	}
 
