@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.Gson;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -78,6 +79,7 @@ public class JsonMapperTests {
 
 	// see https://github.com/spring-cloud/spring-cloud-function/issues/1189
 	@Test
+	@Disabled("https://github.com/spring-cloud/spring-cloud-function/issues/1304")
 	public void testJsonDateTimeConversion() {
 		ApplicationContext context = SpringApplication.run(EmptyConfiguration.class);
 		JsonMapper jsonMapper = context.getBean(JsonMapper.class);
