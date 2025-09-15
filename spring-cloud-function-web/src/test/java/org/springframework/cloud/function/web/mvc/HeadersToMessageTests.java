@@ -55,11 +55,11 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
-		HttpEntity<String> postForEntity = this.rest
+		HttpEntity<Map> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/employee"))
 						.contentType(MediaType.APPLICATION_JSON)
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
-		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
+						.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
+		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25));
 		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
 		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
 				.isEqualTo("application/xml");
@@ -68,13 +68,13 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testHeadersPropagatedByDefault() throws Exception {
-		HttpEntity<String> postForEntity = this.rest
+		HttpEntity<Map> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/vanilla"))
 						.contentType(MediaType.APPLICATION_JSON)
 						.header("x-context-type", "rubbish")
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
-		assertThat(postForEntity.getBody())
-				.isEqualTo("{\"name\":\"Bob\",\"age\":25,\"foo\":\"bar\"}");
+						.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
+		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25, "foo", "bar"));
+
 		assertThat(postForEntity.getHeaders().containsHeader("x-context-type")).isTrue();
 		assertThat(postForEntity.getHeaders().get("x-context-type").get(0))
 				.isEqualTo("rubbish");

@@ -17,6 +17,7 @@
 package org.springframework.cloud.function.web.flux;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -55,11 +56,11 @@ public class HeadersToMessageTests {
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		// test POJO paylod
-		ResponseEntity<String> postForEntity = this.rest
+		ResponseEntity<Map> postForEntity = this.rest
 				.exchange(RequestEntity.post(new URI("/functions/employee"))
 						.contentType(MediaType.APPLICATION_JSON)
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
-		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
+						.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
+		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25));
 		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
 		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
 				.isEqualTo("application/xml");
@@ -67,8 +68,8 @@ public class HeadersToMessageTests {
 
 		// test simple type payload
 		postForEntity = this.rest.postForEntity(new URI("/functions/string"),
-				"{\"name\":\"Bob\",\"age\":25}", String.class);
-		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
+				"{\"name\":\"Bob\",\"age\":25}", Map.class);
+		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25));
 		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
 		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
 				.isEqualTo("application/xml");

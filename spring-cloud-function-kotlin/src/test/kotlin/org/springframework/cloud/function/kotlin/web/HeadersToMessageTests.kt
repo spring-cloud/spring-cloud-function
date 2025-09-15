@@ -26,6 +26,7 @@ import org.springframework.cloud.function.web.RestApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.http.MediaType
 import org.springframework.http.RequestEntity
+import org.springframework.http.ResponseEntity
 import org.springframework.messaging.Message
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.test.context.ContextConfiguration
@@ -52,24 +53,25 @@ open class HeadersToMessageTests {
 			.exchange(
 				RequestEntity.post(URI("/functions/employee"))
 					.contentType(MediaType.APPLICATION_JSON)
-					.body("{\"name\":\"Bob\",\"age\":25}"), String::class.java
-			)
-		Assertions.assertThat(postForEntity.body).isEqualTo("{\"name\":\"Bob\",\"age\":25}")
+					.body("{\"name\":\"Bob\",\"age\":25}"), Map::class.java
+			) as ResponseEntity<Map<String, Object>>
+		val map = hashMapOf("name" to "Bob", "age" to 25) as Map<String, Object>
+		Assertions.assertThat(postForEntity.body).containsExactlyInAnyOrderEntriesOf(map)
 		Assertions.assertThat(postForEntity.headers.containsHeader("x-content-type")).isTrue
 		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
 		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
 
 		// test simple type payload
-		postForEntity = rest.postForEntity(
+		var postForEntity2 = rest.postForEntity(
 			URI("/functions/string"),
 			"{\"name\":\"Bob\",\"age\":25}", String::class.java
 		)
-		Assertions.assertThat(postForEntity.body).isEqualTo("{\"name\":\"Bob\",\"age\":25}")
-		Assertions.assertThat(postForEntity.headers.containsHeader("x-content-type")).isTrue
-		Assertions.assertThat(postForEntity.headers["x-content-type"]!![0])
+		Assertions.assertThat(postForEntity2.body).isEqualTo("{\"name\":\"Bob\",\"age\":25}")
+		Assertions.assertThat(postForEntity2.headers.containsHeader("x-content-type")).isTrue
+		Assertions.assertThat(postForEntity2.headers["x-content-type"]!![0])
 			.isEqualTo("application/xml")
-		Assertions.assertThat(postForEntity.headers["foo"]!![0]).isEqualTo("bar")
+		Assertions.assertThat(postForEntity2.headers["foo"]!![0]).isEqualTo("bar")
 	}
 
 	@EnableAutoConfiguration
