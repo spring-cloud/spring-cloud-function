@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
+import tools.jackson.databind.ObjectMapper;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;

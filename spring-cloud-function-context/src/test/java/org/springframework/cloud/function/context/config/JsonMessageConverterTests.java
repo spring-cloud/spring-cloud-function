@@ -16,14 +16,15 @@
 
 package org.springframework.cloud.function.context.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 

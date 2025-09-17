@@ -23,13 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+
 
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.util.ReflectionUtils;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -193,7 +196,8 @@ public class JsonMaskerTests {
 
 	@Test
 	public void validateMasking() throws Exception {
-		JacksonMapper mapper = new JacksonMapper(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT));
+		ObjectMapper objectMapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
+		JacksonMapper mapper = new JacksonMapper(objectMapper);
 		Map<Object, Object> map = mapper.fromJson(event, Map.class);
 
 		JsonMasker masker = JsonMasker.INSTANCE();
@@ -220,7 +224,8 @@ public class JsonMaskerTests {
 
 	@Test
 	public void validateMaskingWithAdditionalKeys() throws Exception {
-		JacksonMapper mapper = new JacksonMapper(new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT));
+		ObjectMapper objectMapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
+		JacksonMapper mapper = new JacksonMapper(objectMapper);
 		Map<Object, Object> map = mapper.fromJson(event, Map.class);
 
 		JsonMasker masker = JsonMasker.INSTANCE(Set.of("foo", "bar"));

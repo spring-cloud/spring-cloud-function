@@ -22,8 +22,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import tools.jackson.databind.ObjectMapper;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
@@ -141,7 +141,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 				}
 				this.context.registerBean(JsonMapper.class, () -> new ContextFunctionCatalogAutoConfiguration.JsonMapperConfiguration().jsonMapper(this.context));
 			}
-			else if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", null)) {
+			else if (ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", null)) {
 				if (this.context.getBeanFactory().getBeanNamesForType(ObjectMapper.class, false, false).length == 0) {
 					this.context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
 				}

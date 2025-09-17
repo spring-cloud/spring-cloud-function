@@ -29,7 +29,6 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.cloud.function.utils.FunctionClassUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -61,11 +60,6 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
 		try {
-			// Backward compatibility workaround. If the function class is of type FunctionInvoker then create plain
-			// Java instance and delegate to FunctionInvoker adaptor approach.
-			if (ClassUtils.isAssignable(FunctionInvoker.class, functionClass)) {
-				return functionClass.getDeclaredConstructor().newInstance();
-			}
 
 			initialize();
 

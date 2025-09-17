@@ -45,8 +45,8 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>com.fasterxml.jackson.module</groupId>
-			<artifactId>jackson-module-kotlin</artifactId>
+			<groupId>tools.jackson.module</groupId>
+    		<artifactId>jackson-module-kotlin</artifactId>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
@@ -60,11 +60,12 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-		    <groupId>com.fasterxml.jackson.datatype</groupId>
+		    <groupId>tools.jackson.datatype</groupId>
 		    <artifactId>jackson-datatype-jsr310</artifactId>
+			<version>3.0.0-rc2</version>
 		</dependency>
 		<dependency>
-		  <groupId>com.fasterxml.jackson.datatype</groupId>
+		  <groupId>tools.jackson.datatype</groupId>
 		  <artifactId>jackson-datatype-joda</artifactId>
 		</dependency>  
 		<dependency>
@@ -90,7 +91,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
+			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
 

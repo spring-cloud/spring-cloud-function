@@ -24,16 +24,17 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.MapperBuilder;
+import tools.jackson.datatype.joda.JodaModule;
+import tools.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactory;
@@ -222,7 +223,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			else {
-				if (ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", null)) {
+				if (ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", null)) {
 					return jackson(context);
 				}
 				else if (ClassUtils.isPresent("com.google.gson.Gson", null)) {
@@ -247,71 +248,34 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@SuppressWarnings("unchecked")
 		private JsonMapper jackson(ApplicationContext context) {
-			Assert.state(ClassUtils.isPresent("com.fasterxml.jackson.databind.ObjectMapper", ClassUtils.getDefaultClassLoader()),
+			Assert.state(ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", ClassUtils.getDefaultClassLoader()),
 				"Can not bootstrap Jackson mapper since Jackson is not on the classpath");
-			ObjectMapper mapper;
+			ObjectMapper mapper = null;
+			MapperBuilder builder = tools.jackson.databind.json.JsonMapper.builder();
 			try {
-				mapper = context.getBean(ObjectMapper.class).copy();
+				builder = context.getBean(ObjectMapper.class).rebuild();
 			}
 			catch (Exception e) {
-				mapper = new ObjectMapper();
-				mapper.registerModule(new JavaTimeModule());
+				builder = tools.jackson.databind.json.JsonMapper.builder();
 			}
-			mapper.registerModule(new JodaModule());
+			builder = builder.addModule(new JavaTimeModule());
+			builder = builder.addModule(new JodaModule());
+
 			if (KotlinDetector.isKotlinPresent()) {
 				try {
-					if (!mapper.getRegisteredModuleIds().contains("com.fasterxml.jackson.module.kotlin.KotlinModule")) {
-						Class<? extends Module> kotlinModuleClass = (Class<? extends Module>)
-								ClassUtils.forName("com.fasterxml.jackson.module.kotlin.KotlinModule", ClassUtils.getDefaultClassLoader());
-						Module kotlinModule = BeanUtils.instantiateClass(kotlinModuleClass);
-						mapper.registerModule(kotlinModule);
-					}
+					Class<? extends JacksonModule> kotlinModuleClass = (Class<? extends JacksonModule>)
+							ClassUtils.forName("com.fasterxml.jackson.module.kotlin.KotlinModule", ClassUtils.getDefaultClassLoader());
+					JacksonModule kotlinModule = BeanUtils.instantiateClass(kotlinModuleClass);
+					builder = builder.addModule(kotlinModule);
 				}
 				catch (ClassNotFoundException ex) {
 					// jackson-module-kotlin not available
 				}
 			}
-			mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-//			mapper.configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
-			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-			if (logger.isDebugEnabled()) {
-				logger.debug("ObjectMapper configuration: " + getConfigDetails(mapper));
-			}
+			builder = builder.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+			builder = builder.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			mapper = builder.build();
 			return new JacksonMapper(mapper);
-		}
-
-		private String getConfigDetails(ObjectMapper mapper) {
-			StringBuilder sb = new StringBuilder();
-
-			sb.append("Modules:\n");
-			if (mapper.getRegisteredModuleIds().isEmpty()) {
-				sb.append("\t").append("-none-").append("\n");
-			}
-			for (Object m : mapper.getRegisteredModuleIds()) {
-				sb.append("  ").append(m).append("\n");
-			}
-
-			sb.append("\nSerialization Features:\n");
-			for (SerializationFeature f : SerializationFeature.values()) {
-				sb.append("\t").append(f).append(" -> ")
-						.append(mapper.getSerializationConfig().hasSerializationFeatures(f.getMask()));
-				if (f.enabledByDefault()) {
-					sb.append(" (enabled by default)");
-				}
-				sb.append("\n");
-			}
-
-			sb.append("\nDeserialization Features:\n");
-			for (DeserializationFeature f : DeserializationFeature.values()) {
-				sb.append("\t").append(f).append(" -> ")
-						.append(mapper.getDeserializationConfig().hasDeserializationFeatures(f.getMask()));
-				if (f.enabledByDefault()) {
-					sb.append(" (enabled by default)");
-				}
-				sb.append("\n");
-			}
-
-			return sb.toString();
 		}
 	}
 }

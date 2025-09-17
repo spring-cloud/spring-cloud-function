@@ -24,14 +24,13 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 
@@ -45,7 +44,8 @@ public abstract class JsonMapper {
 	private static Log logger = LogFactory.getLog(JsonMapper.class);
 
 	// we need this just to validate is String is JSON
-	private static final ObjectMapper mapper = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+	private static final ObjectMapper mapper = tools.jackson.databind.json.JsonMapper.builder()
+		.enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
 
 
 	@SuppressWarnings("unchecked")
@@ -146,7 +146,7 @@ public abstract class JsonMapper {
 				JsonNode node = mapper.readTree(stringValue);
 				return node instanceof ArrayNode;
 			}
-			catch (JsonProcessingException e) {
+			catch (Exception e) {
 				return false;
 			}
 		}
@@ -162,7 +162,7 @@ public abstract class JsonMapper {
 				JsonNode node = mapper.readTree(stringValue);
 				return node instanceof ObjectNode;
 			}
-			catch (JsonProcessingException e) {
+			catch (Exception e) {
 				return false;
 			}
 		}

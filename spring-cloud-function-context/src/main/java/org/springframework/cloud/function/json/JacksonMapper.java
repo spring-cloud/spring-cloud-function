@@ -21,12 +21,11 @@ import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.type.TypeFactory;
 
 
 /**
@@ -50,7 +49,7 @@ public class JacksonMapper extends JsonMapper {
 	@Override
 	protected <T> T doFromJson(Object json, Type type) {
 		T convertedValue = null;
-		JavaType constructType = TypeFactory.defaultInstance().constructType(type);
+		JavaType constructType = TypeFactory.createDefaultInstance().constructType(type);
 
 		try {
 			if (json instanceof String) {
@@ -93,7 +92,7 @@ public class JacksonMapper extends JsonMapper {
 		try {
 			return this.mapper.writeValueAsString(value);
 		}
-		catch (JsonProcessingException e) {
+		catch (Exception e) {
 			throw new IllegalArgumentException("Cannot convert to JSON", e);
 		}
 	}

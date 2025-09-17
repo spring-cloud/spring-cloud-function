@@ -23,9 +23,10 @@ import java.util.Set;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import com.fasterxml.jackson.databind.MapperFeature;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.cfg.MapperBuilder;
 
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -114,7 +115,9 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (this.jsonMapper instanceof JacksonMapper) {
 			((JacksonMapper) this.jsonMapper).configureObjectMapper(objectMapper -> {
 				if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
-					objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+					MapperBuilder builder = objectMapper.rebuild();
+					builder.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
+					objectMapper =  builder.build();
 				}
 			});
 		}
