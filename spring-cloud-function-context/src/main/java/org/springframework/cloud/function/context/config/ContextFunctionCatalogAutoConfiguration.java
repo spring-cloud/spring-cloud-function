@@ -34,7 +34,6 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.cfg.MapperBuilder;
 import tools.jackson.datatype.joda.JodaModule;
-import tools.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactory;
@@ -258,7 +257,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 			catch (Exception e) {
 				builder = tools.jackson.databind.json.JsonMapper.builder();
 			}
-			builder = builder.addModule(new JavaTimeModule());
 			builder = builder.addModule(new JodaModule());
 
 			if (KotlinDetector.isKotlinPresent()) {

@@ -60,9 +60,8 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-		    <groupId>tools.jackson.datatype</groupId>
-		    <artifactId>jackson-datatype-jsr310</artifactId>
-			<version>3.0.0-rc2</version>
+		    <groupId>tools.jackson.core</groupId>
+		    <artifactId>jackson-databind</artifactId>
 		</dependency>
 		<dependency>
 		  <groupId>tools.jackson.datatype</groupId>
