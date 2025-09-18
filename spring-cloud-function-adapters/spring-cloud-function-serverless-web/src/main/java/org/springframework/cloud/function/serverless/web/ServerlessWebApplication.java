@@ -36,11 +36,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationContextFactory;
 import org.springframework.boot.Banner;
-import org.springframework.boot.BootstrapRegistryInitializer;
-import org.springframework.boot.ConfigurableBootstrapContext;
 import org.springframework.boot.DefaultApplicationArguments;
-import org.springframework.boot.DefaultBootstrapContext;
-import org.springframework.boot.DefaultPropertiesPropertySource;
 import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor;
 import org.springframework.boot.ResourceBanner;
 import org.springframework.boot.SpringApplication;
@@ -50,7 +46,11 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.ansi.AnsiColor;
 import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.boot.ansi.AnsiStyle;
+import org.springframework.boot.bootstrap.BootstrapRegistryInitializer;
+import org.springframework.boot.bootstrap.ConfigurableBootstrapContext;
+import org.springframework.boot.bootstrap.DefaultBootstrapContext;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
+import org.springframework.boot.env.DefaultPropertiesPropertySource;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.aot.AotApplicationContextInitializer;
@@ -125,7 +125,7 @@ public class ServerlessWebApplication extends SpringApplication {
 
 
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
-			DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
+			ConfigurableBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
 		// Create and configure the environment
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
