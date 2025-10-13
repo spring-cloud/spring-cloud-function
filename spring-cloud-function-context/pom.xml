@@ -169,7 +169,6 @@
 			<plugin>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<groupId>org.jetbrains.kotlin</groupId>
-				<version>2.1.0</version>
 				<executions>
 					<execution>
 						<id>compile</id>

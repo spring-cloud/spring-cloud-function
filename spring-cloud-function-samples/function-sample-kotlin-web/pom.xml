@@ -67,7 +67,6 @@
 			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-maven-plugin</artifactId>
-				<version>1.9.25</version>
 				<configuration>
 					<args>
 						<arg>-Xjsr305=strict</arg>
