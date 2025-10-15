@@ -28,6 +28,8 @@ import com.google.gson.Gson;
 import io.cloudevents.spring.messaging.CloudEventMessageConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.joda.time.DateTimeZone;
+import org.joda.time.tz.UTCProvider;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
@@ -256,6 +258,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			catch (Exception e) {
 				builder = tools.jackson.databind.json.JsonMapper.builder();
+				DateTimeZone.setProvider(new UTCProvider());
 			}
 			builder = builder.addModule(new JodaModule());
 
