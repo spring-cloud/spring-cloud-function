@@ -48,6 +48,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.web.client.RestTemplate;
 
@@ -147,6 +148,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 					ByteArrayInputStream is = new ByteArrayInputStream(response.getBody().getBytes(StandardCharsets.UTF_8));
 					Message<?> requestMessage = AWSLambdaUtils.generateMessage(is, function.getInputType(), function.isSupplier(), mapper, clientContext);
+					requestMessage = enrichTraceHeaders(response.getHeaders(), requestMessage);
+
 					Object functionResponse = function.apply(requestMessage);
 
 					byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, functionResponse, mapper, function.getOutputType());
@@ -168,6 +171,35 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 				}
 			}
 		}
+	}
+
+	private Message<?> enrichTraceHeaders(HttpHeaders headers, Message<?> message) {
+		String runtimeTrace = trim(headers.getFirst("Lambda-Runtime-Trace-Id"));
+		String envTrace = trim(System.getenv("_X_AMZN_TRACE_ID"));
+		String headerTrace = trim(headers.getFirst("X-Amzn-Trace-Id"));
+
+		// prefer Lambda runtime header, then environment, then inbound header
+		String resolved = runtimeTrace != null ? runtimeTrace
+			: envTrace != null ? envTrace
+			: headerTrace;
+
+		if (resolved != null) {
+			System.setProperty("com.amazonaws.xray.traceHeader", resolved);
+		}
+		else {
+			System.clearProperty("com.amazonaws.xray.traceHeader");
+			return message;
+		}
+
+		return MessageBuilder.fromMessage(message)
+			.setHeader("Lambda-Runtime-Trace-Id", runtimeTrace != null ? runtimeTrace : resolved)
+			.setHeader("X-Amzn-Trace-Id", resolved)
+			.setHeader("_X_AMZN_TRACE_ID", envTrace != null ? envTrace : resolved)
+			.build();
+	}
+
+	private String trim(String value) {
+		return (value == null || value.isBlank()) ? null : value.trim();
 	}
 
 	private Context generateClientContext(HttpHeaders headers) {
