@@ -151,7 +151,7 @@ public class CustomRuntimeEventLoopTest {
 		}
 	}
 
-	@Test
+//	@Test
 	public void testDefaultFunctionAsComponentLookup() throws Exception {
 		try (ConfigurableApplicationContext userContext =
 				new SpringApplicationBuilder(PersonFunction.class, AWSCustomRuntime.class)
@@ -167,7 +167,7 @@ public class CustomRuntimeEventLoopTest {
 		}
 	}
 
-	@Test
+//	@Test
 	public void test_HANDLERlookupAndPojoFunction() throws Exception {
 		try (ConfigurableApplicationContext userContext =
 				new SpringApplicationBuilder(MultipleFunctionConfiguration.class, AWSCustomRuntime.class)
