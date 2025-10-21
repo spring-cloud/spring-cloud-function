@@ -132,7 +132,7 @@ public final class FunctionWebRequestProcessingHelper {
 
 		Object result = function.apply(inputMessage);
 		if (function.isConsumer()) {
-			if (result instanceof Publisher) {
+			if (result instanceof Publisher && !function.isComposed()) {
 				Mono.from((Publisher) result).subscribe();
 			}
 			return "DELETE".equals(wrapper.getMethod()) ?

@@ -182,8 +182,6 @@ public class HttpPostIntegrationTests {
 		ResponseEntity<String> result = this.rest.exchange(RequestEntity
 				.post(new URI("/headers")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
-//		assertThat(result.getHeaders().getFirst("foo")).isEqualTo("bar");
-//		assertThat(result.getHeaders()).doesNotContainKey("id");
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\",\"(BAR)\"]");
 	}
 
@@ -377,7 +375,6 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	@DirtiesContext
-	@Disabled
 	public void count() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
 		assertThat(this.rest.exchange(
@@ -388,13 +385,20 @@ public class HttpPostIntegrationTests {
 
 	@Test
 	@DirtiesContext
-	@Disabled
 	public void fluxWithList() throws Exception {
 		List<String> list = Arrays.asList("A", "B", "A");
 		assertThat(this.rest.exchange(
 				RequestEntity.post(new URI("/fluxCollectionEcho")).accept(MediaType.APPLICATION_JSON)
 						.contentType(MediaType.APPLICATION_JSON).body(list),
 				String.class).getBody()).isEqualTo("[\"A\",\"B\",\"A\"]");
+	}
+
+	@Test
+	@DirtiesContext
+	public void testReactiveFunctionComposdWithImperativeConsumer() throws Exception {
+		RequestEntity entity = RequestEntity.post(new URI("/functionReactive,consumerImperative")).build();
+		this.rest.exchange(entity, String.class);
+		assertThat(ApplicationConfiguration.functionReactiveInvocations).isEqualTo(1);
 	}
 
 	private String sse(String... values) {
@@ -407,9 +411,24 @@ public class HttpPostIntegrationTests {
 
 		private List<String> list = new ArrayList<>();
 
+		private static int functionReactiveInvocations;
+
 		public static void main(String[] args) throws Exception {
 			SpringApplication.run(HttpPostIntegrationTests.ApplicationConfiguration.class,
 					args);
+		}
+
+		@Bean
+		public Function<Flux<String>, Flux<String>> functionReactive() {
+			functionReactiveInvocations = 0;
+			return flux -> flux.doOnNext(x -> functionReactiveInvocations++);
+		}
+
+		@Bean
+		public Consumer<String> consumerImperative() {
+			return value -> {
+				System.out.println(value);
+			};
 		}
 
 		@Bean({ "uppercase", "transform", "post/more" })

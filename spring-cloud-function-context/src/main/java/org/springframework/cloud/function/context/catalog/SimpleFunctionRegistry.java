@@ -741,7 +741,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 * Returns true if this function wrapper represents a composed function.
 		 * @return true if this function wrapper represents a composed function otherwise false
 		 */
-		boolean isComposed() {
+		public boolean isComposed() {
 			return this.composed;
 		}
 
