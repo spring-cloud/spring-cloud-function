@@ -28,9 +28,10 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.web.server.test.client.TestRestTemplate;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.web.RestApplication;
@@ -58,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.function.routing.enabled=true",
 		"spring.cloud.function.http.ignored-headers=abc,xyz"})
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
+@AutoConfigureTestRestTemplate
 public class RoutingFunctionTests {
 
 	@Autowired

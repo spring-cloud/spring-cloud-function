@@ -33,10 +33,11 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.web.server.test.LocalServerPort;
-import org.springframework.boot.web.server.test.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.function.mvc.MvcRestApplicationTests.TestConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -63,6 +64,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // @checkstyle:off
 @SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
 // @checkstyle:on
+@AutoConfigureTestRestTemplate
 public class MvcRestApplicationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.valueOf("text/event-stream");

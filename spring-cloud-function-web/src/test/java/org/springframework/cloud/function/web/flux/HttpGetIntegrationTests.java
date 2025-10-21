@@ -35,11 +35,12 @@ import reactor.core.publisher.Flux;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.web.server.test.LocalServerPort;
-import org.springframework.boot.web.server.test.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.flux.HttpGetIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -60,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {"spring.main.web-application-type=reactive", "debug=true"})
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 @DirtiesContext
+@AutoConfigureTestRestTemplate
 public class HttpGetIntegrationTests {
 
 	private static final MediaType EVENT_STREAM = MediaType.TEXT_EVENT_STREAM;

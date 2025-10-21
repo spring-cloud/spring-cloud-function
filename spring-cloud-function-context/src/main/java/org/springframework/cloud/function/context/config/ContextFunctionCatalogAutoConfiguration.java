@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTimeZone;
 import org.joda.time.tz.UTCProvider;
+import tools.jackson.core.StreamReadFeature;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JacksonModule;
 import tools.jackson.databind.ObjectMapper;
@@ -275,6 +276,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 			builder = builder.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			builder = builder.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			builder = builder.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
+			builder = builder.configure(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION, false);
+
 			mapper = builder.build();
 			return new JacksonMapper(mapper);
 		}

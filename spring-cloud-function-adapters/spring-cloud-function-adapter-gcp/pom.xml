@@ -40,14 +40,17 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-loader-tools</artifactId>
+			<version>4.0.0-M3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-loader-classic</artifactId>
+			<version>4.0.0-M3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-loader</artifactId>
+			<version>4.0.0-M3</version>
 		</dependency>
 
 		<!-- Test-only dependencies -->

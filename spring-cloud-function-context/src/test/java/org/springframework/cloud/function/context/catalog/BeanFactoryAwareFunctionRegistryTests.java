@@ -1402,6 +1402,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	public static class Person {
 		private String name;
+
 		private int id;
 		public Person() {
 

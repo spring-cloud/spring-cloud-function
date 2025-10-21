@@ -27,7 +27,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.webtestclient.AutoConfigureWebTestClient;
 import org.springframework.cloud.function.context.test.FunctionalSpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
 

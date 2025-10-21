@@ -143,8 +143,8 @@ public class CustomRuntimeEventLoopTest {
 
 			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
 			Message<String> replyMessage = aws.exchange("\"ricky\"");
-			assertThat(replyMessage.getHeaders()).containsKey("user-agent");
-			assertThat(((String) replyMessage.getHeaders().get("user-agent"))).startsWith("spring-cloud-function");
+			assertThat(replyMessage.getHeaders()).containsKey("User-Agent");
+			assertThat(((String) replyMessage.getHeaders().get("User-Agent"))).startsWith("spring-cloud-function");
 			assertThat(aws.exchange("\"ricky\"").getPayload()).isEqualTo("\"RICKY\"");
 			assertThat(aws.exchange("\"julien\"").getPayload()).isEqualTo("\"JULIEN\"");
 			assertThat(aws.exchange("\"bubbles\"").getPayload()).isEqualTo("\"BUBBLES\"");
@@ -177,6 +177,7 @@ public class CustomRuntimeEventLoopTest {
 
 			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
 
+			aws.exchange("\"ricky\"");
 			assertThat(aws.exchange("\"ricky\"").getPayload()).isEqualTo("{\"name\":\"RICKY\"}");
 			assertThat(aws.exchange("\"julien\"").getPayload()).isEqualTo("{\"name\":\"JULIEN\"}");
 			assertThat(aws.exchange("\"bubbles\"").getPayload()).isEqualTo("{\"name\":\"BUBBLES\"}");
