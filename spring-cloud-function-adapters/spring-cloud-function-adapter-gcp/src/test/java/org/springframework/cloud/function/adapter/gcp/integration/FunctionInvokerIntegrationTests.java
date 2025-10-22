@@ -23,7 +23,8 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 
-import org.springframework.boot.web.server.test.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.cloud.function.context.config.ContextFunctionCatalogAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +42,7 @@ import static org.springframework.cloud.function.adapter.gcp.integration.LocalSe
  * @author Daniel Zou
  * @author Mike Eltsufin
  */
+@AutoConfigureTestRestTemplate
 public class FunctionInvokerIntegrationTests {
 
 	@Test

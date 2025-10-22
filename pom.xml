@@ -228,7 +228,7 @@
 				<module>spring-cloud-function-adapters</module>
 				<module>spring-cloud-function-integration</module>
 				<!-- <module>spring-cloud-function-rsocket</module> -->
-				<module>spring-cloud-function-kotlin</module>
+				<!-- <module>spring-cloud-function-kotlin</module> -->
 				<module>docs</module>
 			</modules>
 		</profile>

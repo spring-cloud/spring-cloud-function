@@ -65,12 +65,27 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-resttestclient</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webtestclient</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.google.cloud.functions.invoker</groupId>
 			<artifactId>java-function-invoker</artifactId>
 			<version>${google.cloud.functions.invoker.version}</version>
 			<scope>test</scope>
 		</dependency>
-		<!-- replace com.github.stefanbirkner:system-rules:1.19.0. Used in FunctionInvokerBackgroundTests -->
+		<!-- replace com.github.stefanbirkner:system-rules:1.19.0. Used in
+		FunctionInvokerBackgroundTests -->
 		<dependency>
 			<groupId>com.github.blindpirate</groupId>
 			<artifactId>junit5-capture-system-output-extension</artifactId>
