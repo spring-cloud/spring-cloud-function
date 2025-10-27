@@ -46,6 +46,10 @@ public class JacksonMapper extends JsonMapper {
 		configurer.accept(mapper);
 	}
 
+	public ObjectMapper getObjectMapper() {
+		return this.mapper;
+	}
+
 	@Override
 	protected <T> T doFromJson(Object json, Type type) {
 		T convertedValue = null;
