@@ -865,6 +865,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				if ((!treatPayloadAsPlainText && JsonMapper.isJsonStringRepresentsCollection(payload))
 						&& !FunctionTypeUtils.isTypeCollection(this.inputType)
 						&& !FunctionTypeUtils.isTypeArray(this.inputType)) {
+					logger.debug("Actual input represents a collection while input type of the function does not represent a collection. " +
+						"Therefore framework will attempt invoke function for each element in the collection.");
 					MessageHeaders headers = input instanceof Message ? ((Message) input).getHeaders() : new MessageHeaders(Collections.emptyMap());
 					Collection collectionPayload = jsonMapper.fromJson(payload, Collection.class);
 					Class inputClass = FunctionTypeUtils.getRawType(this.inputType);
