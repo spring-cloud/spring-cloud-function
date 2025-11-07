@@ -29,6 +29,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
@@ -59,10 +60,20 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		create(new Class[] { KotlinLambdasConfiguration.class,
 				SimpleConfiguration.class,
 				KotlinComponentFunction.class,
+				KotlinPostProcessingFunction.class,
 				ComponentUppercase.class,
 				ComponentWithUnitReturn.class});
 
 		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
+
+		// Test post-processing logic
+		FunctionInvocationWrapper kotlinPostProcessingFunction = functionCatalog.lookup("kotlinPostProcessingFunction");
+		kotlinPostProcessingFunction.apply("bob");
+		kotlinPostProcessingFunction.postProcess();
+		KotlinPostProcessingFunction postProcessingFunction =  (KotlinPostProcessingFunction)
+			((KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) kotlinPostProcessingFunction.getTarget()).getKotlinLambdaTarget();
+		assertThat(postProcessingFunction.getInvoked()).isTrue();
+		// End test post-processing logic
 
 		FunctionInvocationWrapper kotlinComponentFunction = functionCatalog.lookup("kotlinComponentFunction");
 		assertThat(kotlinComponentFunction.isFunction()).isTrue();
