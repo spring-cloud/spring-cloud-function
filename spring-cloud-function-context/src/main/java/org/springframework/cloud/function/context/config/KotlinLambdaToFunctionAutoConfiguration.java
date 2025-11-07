@@ -62,6 +62,8 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 	public static final class KotlinFunctionWrapper implements Function<Object, Object>, Supplier<Object>, Consumer<Object>,
 			Function0<Object>, Function1<Object, Object>, Function2<Object, Object, Object>,
 			Function3<Object, Object, Object, Object>, Function4<Object, Object, Object, Object, Object> {
+
+
 		private final Object kotlinLambdaTarget;
 
 		private String name;
@@ -70,6 +72,10 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 		public KotlinFunctionWrapper(Object kotlinLambdaTarget) {
 			this.kotlinLambdaTarget = kotlinLambdaTarget;
+		}
+
+		public Object getKotlinLambdaTarget() {
+			return kotlinLambdaTarget;
 		}
 
 		@Override

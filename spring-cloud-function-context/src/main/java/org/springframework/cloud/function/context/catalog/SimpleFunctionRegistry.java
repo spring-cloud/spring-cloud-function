@@ -56,6 +56,7 @@ import org.springframework.cloud.function.context.FunctionProperties.FunctionCon
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.PostProcessingFunction;
+import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -72,10 +73,13 @@ import org.springframework.messaging.converter.CompositeMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+
 
 
 /**
@@ -443,6 +447,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (target instanceof PostProcessingFunction) {
 				this.postProcessor = (PostProcessingFunction) target;
 			}
+			if (ClassUtils.isPresent("kotlin.jvm.functions.Function0", ClassUtils.getDefaultClassLoader())
+				&& target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper kotlinFunction
+				&& kotlinFunction.getKotlinLambdaTarget() instanceof PostProcessingFunction) {
+				this.postProcessor = (PostProcessingFunction) kotlinFunction.getKotlinLambdaTarget();
+			}
 			this.target = target;
 			this.inputType = this.normalizeType(inputType);
 			this.outputType = this.normalizeType(outputType);
@@ -770,6 +779,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 
 			if (this.postProcessor != null) {
+				if (!(result instanceof Message)) {
+					result = MessageBuilder.withPayload(result).build();
+				}
 				this.unconvertedResult.set((Message<Object>) result);
 			}
 
