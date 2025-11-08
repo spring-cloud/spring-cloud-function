@@ -21,6 +21,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -171,6 +172,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
 								functionCandidate = this.proxyTarget(functionCandidate, functionalMethod);
 								functionType = FunctionTypeUtils.fromFunctionMethod(functionalMethod);
+								// GH-1307: Mark this as a POJO function for special handling
+								functionRegistration = new FunctionRegistration(functionCandidate, functionName)
+										.type(functionType)
+										.properties(Collections.singletonMap("isPojoFunction", "true"));
 							}
 							else if (this.isSpecialFunctionRegistration(functionNames, functionName)) {
 								functionRegistration = this.applicationContext

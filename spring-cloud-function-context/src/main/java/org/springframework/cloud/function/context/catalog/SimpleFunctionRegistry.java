@@ -287,6 +287,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				// ignore
 			}
 		}
+		// GH-1307: Mark POJO functions for special Message wrapping behavior
+		if (functionRegistration != null &&
+				functionRegistration.getProperties().containsKey("isPojoFunction")) {
+			try {
+				String isPojoValue = functionRegistration.getProperties().get("isPojoFunction");
+				function.setPojoFunction(Boolean.parseBoolean(isPojoValue));
+			}
+			catch (Exception e) {
+				// ignore
+			}
+		}
 		return function;
 	}
 
@@ -439,6 +450,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private boolean wrappedBiConsumer;
 
+		private boolean isPojoFunction;
+
 		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
 			if (target instanceof PostProcessingFunction) {
 				this.postProcessor = (PostProcessingFunction) target;
@@ -487,6 +500,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		public void setWrappedBiConsumer(boolean wrappedBiConsumer) {
 			this.wrappedBiConsumer = wrappedBiConsumer;
+		}
+
+		public void setPojoFunction(boolean isPojoFunction) {
+			this.isPojoFunction = isPojoFunction;
+		}
+
+		public boolean isPojoFunction() {
+			return this.isPojoFunction;
 		}
 
 		public boolean isSkipOutputConversion() {
@@ -1245,6 +1266,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 
 			if (ObjectUtils.isEmpty(contentType)) {
+				// GH-1307: For POJO functions, wrap output in Message to maintain
+				// consistency with regular functions
+				if (this.isPojoFunction && output instanceof Message
+						&& !(convertedOutput instanceof Message)) {
+					convertedOutput = MessageBuilder.withPayload(convertedOutput)
+						.copyHeaders(((Message) output).getHeaders())
+						.build();
+				}
 				return convertedOutput;
 			}
 
