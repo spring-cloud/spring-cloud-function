@@ -83,8 +83,10 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		Function<Integer, String> f2conversion = catalog.lookup("myFunctionLike");
 		assertThat(f2conversion.apply(123)).isEqualTo("123");
 
-		Function<Message<String>, String> f2message = catalog.lookup("myFunctionLike");
-		assertThat(f2message.apply(MessageBuilder.withPayload("message").build())).isEqualTo("MESSAGE");
+		// GH-1307: POJO functions now return Message for consistency
+		Function<Message<String>, Message<?>> f2message = catalog.lookup("myFunctionLike");
+		Message<?> messageResult = f2message.apply(MessageBuilder.withPayload("message").build());
+		assertThat(messageResult.getPayload()).isEqualTo("MESSAGE");
 
 		Function<Flux<String>, Flux<String>> f3 = catalog.lookup("myFunctionLike");
 		assertThat(f3.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
@@ -98,6 +100,52 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<String, String> f1 = catalog.lookup("myFunction|myFunctionLike|func");
 		assertThat(f1.apply("foo")).isEqualTo("FOO");
+	}
+
+	/**
+	 * GH-1307: POJO function should return Message consistently with regular functions
+	 * when no contentType is specified.
+	 */
+	@Test
+	public void testPojoFunctionReturnsMessageWithoutContentType() {
+		FunctionCatalog catalog = this.configureCatalog();
+
+		// Test POJO function without contentType
+		Function<Message<String>, Object> pojoFunction = catalog.lookup("myFunctionLike");
+		Message<String> input = MessageBuilder.withPayload("test")
+			.setHeader("correlationId", "123")
+			.build();
+
+		Object result = pojoFunction.apply(input);
+
+		// GH-1307: Verify POJO functions return Message for consistency
+		assertThat(result)
+			.as("POJO function should return Message, not plain value when input is Message")
+			.isInstanceOf(Message.class);
+
+		Message<?> messageResult = (Message<?>) result;
+		assertThat(messageResult.getPayload()).isEqualTo("TEST");
+		assertThat(messageResult.getHeaders().get("correlationId"))
+			.as("Headers should be preserved")
+			.isEqualTo("123");
+	}
+
+	/**
+	 * GH-1307: POJO function should NOT wrap output when input is plain String
+	 */
+	@Test
+	public void testPojoFunctionDoesNotWrapPlainStringInput() {
+		FunctionCatalog catalog = this.configureCatalog();
+
+		// GH-1307: POJO function with plain String input should return plain String
+		Function<String, Object> pojoFunction = catalog.lookup("myFunctionLike");
+		Object result = pojoFunction.apply("plainInput");
+
+		// Should return String, not Message
+		assertThat(result)
+			.as("POJO function should return plain String when input is plain String, not wrap in Message")
+			.isInstanceOf(String.class)
+			.isEqualTo("PLAININPUT");
 	}
 
 
