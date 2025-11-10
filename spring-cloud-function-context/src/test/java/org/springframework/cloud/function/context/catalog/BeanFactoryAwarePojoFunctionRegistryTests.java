@@ -131,7 +131,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	}
 
 	/**
-	 * GH-1307: POJO function should NOT wrap output when input is plain String
+	 * GH-1307: POJO function should NOT wrap output when input is plain String.
 	 */
 	@Test
 	public void testPojoFunctionDoesNotWrapPlainStringInput() {
