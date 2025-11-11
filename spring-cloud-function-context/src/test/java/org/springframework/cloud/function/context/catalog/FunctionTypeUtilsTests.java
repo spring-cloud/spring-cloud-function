@@ -116,16 +116,20 @@ public class FunctionTypeUtilsTests {
 		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<Message<List<String>>>>() { }.getType())).isFalse();
 	}
 
-//	@Test
-//	public void testNoNpeFromIsMessage() {
-//		FunctionTypeUtilsTests<Date> testService = new FunctionTypeUtilsTests<>();
-//
-//		Method methodUnderTest =
-//			ReflectionUtils.findMethod(testService.getClass(), "notAMessageMethod", AtomicReference.class);
-//		MethodParameter methodParameter = MethodParameter.forExecutable(methodUnderTest, 0);
-//
-//		assertThat(FunctionTypeUtils.isMessage(methodParameter.getGenericParameterType())).isFalse();
-//	}
+	@Test
+	public void testWithComplexGenericsHierarchy() throws Exception {
+		Type functionType = FunctionTypeUtils.discoverFunctionTypeFromFunctionFactoryMethod(FunctionTypeUtilsTests.class, "methodWithGenerics");
+		Type inputType = FunctionTypeUtils.getInputType(functionType);
+		Class typeClass = FunctionTypeUtils.getRawType(inputType);
+		assertThat(typeClass).isAssignableFrom(Message.class);
+		ParameterizedType parameterizedInputType = (ParameterizedType) inputType;
+		Type[] typeArguments = parameterizedInputType.getActualTypeArguments();
+		typeClass = FunctionTypeUtils.getRawType(typeArguments[0]);
+		assertThat(typeClass).isAssignableFrom(List.class);
+		typeArguments = ((ParameterizedType) typeArguments[0]).getActualTypeArguments();
+		typeClass = FunctionTypeUtils.getRawType(typeArguments[0]);
+		assertThat(typeClass).isAssignableFrom(SomeDomainObject.class);
+	}
 
 	//@Test
 	public void testPrimitiveFunctionInputTypes() {
@@ -166,7 +170,6 @@ public class FunctionTypeUtilsTests {
 		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(ToDoubleFunction.class);
 	}
 
-
 	//@Test
 	public void testPrimitiveFunctionOutputTypes() {
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntConsumer.class);
@@ -206,10 +209,6 @@ public class FunctionTypeUtilsTests {
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToDoubleFunction.class);
 		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(ToDoubleFunction.class);
 	}
-
-//	void notAMessageMethod(AtomicReference<T> payload) {
-//
-//	}
 
 	private static Function<String, Integer> function() {
 		return null;
@@ -262,6 +261,10 @@ public class FunctionTypeUtilsTests {
 
 	private Type getReturnType(String methodName) throws Exception {
 		return FunctionTypeUtilsTests.class.getDeclaredMethod(methodName).getGenericReturnType();
+	}
+
+	public static GenericBatchMessageListConsumer<SomeDomainObject> methodWithGenerics() {
+		return new GenericBatchMessageListConsumer<SomeDomainObject>();
 	}
 
 	//============
@@ -322,6 +325,17 @@ public class FunctionTypeUtilsTests {
 
 	public static class SampleData {
 
+	}
+
+	public static class SomeDomainObject {
+
+	}
+	public static class GenericBatchMessageListConsumer<T> implements Consumer<Message<List<T>>> {
+
+		@Override
+		public void accept(Message<List<T>> listMessage) {
+
+		}
 	}
 
 }

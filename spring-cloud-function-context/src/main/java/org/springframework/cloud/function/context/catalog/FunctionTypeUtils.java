@@ -179,7 +179,7 @@ public final class FunctionTypeUtils {
 			 */
 			return ObjectUtils.isEmpty(upperbounds) ? Object.class : getRawType(upperbounds[0]);
 		}
-		return ResolvableType.forType(type).getRawClass();
+		return ResolvableType.forType(type).getRawClass() == null ? Object.class : ResolvableType.forType(type).getRawClass();
 	}
 
 	/**
@@ -228,6 +228,28 @@ public final class FunctionTypeUtils {
 		return CollectionUtils.isEmpty(methods) ? null : methods.get(0);
 	}
 
+	public static Type discoverFunctionTypeFromType(Type functionalType) {
+		Type typeToReturn = null;
+		if (Function.class.isAssignableFrom(getRawType(functionalType))) {
+			ResolvableType functionType = ResolvableType.forType(functionalType).as(Function.class);
+			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), getRawType(functionalType));
+		}
+		else if (Consumer.class.isAssignableFrom(getRawType(functionalType))) {
+			ResolvableType functionType = ResolvableType.forType(functionalType).as(Consumer.class);
+
+			ResolvableType t = ResolvableType.forClassWithGenerics(getRawType(functionalType), functionType.getGeneric(0));
+			Type t2 = t.getType();
+			//Type t = ResolvableType.
+
+			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionType.getRawClass());
+		}
+		else {
+			ResolvableType functionType = ResolvableType.forType(functionalType).as(Supplier.class);
+			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), getRawType(functionalType));
+		}
+		return typeToReturn;
+	}
+
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
 		if (KotlinDetector.isKotlinPresent()) {
 			if (Function1.class.isAssignableFrom(functionalClass)) {
@@ -248,15 +270,15 @@ public final class FunctionTypeUtils {
 					}
 				}
 			}
-			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Function.class);
+			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Function.class);
 			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
 		else if (Consumer.class.isAssignableFrom(functionalClass)) {
-			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Consumer.class);
+			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Consumer.class);
 			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
 		else if (Supplier.class.isAssignableFrom(functionalClass)) {
-			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Supplier.class);
+			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Supplier.class);
 			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
 		return typeToReturn;
@@ -285,6 +307,7 @@ public final class FunctionTypeUtils {
 	 */
 	public static Type discoverFunctionTypeFromFunctionFactoryMethod(Method method) {
 		return method.getGenericReturnType();
+//		return discoverFunctionTypeFromClass(method.getReturnType());
 	}
 
 	/**
@@ -376,6 +399,49 @@ public final class FunctionTypeUtils {
 	}
 
 	/**
+	 * Will resolve @{@link ResolvableType} to {@link Type} preserving all the resolved generics.
+	 * @param typeWithGenerics - instance of {@link ResolvableType}.
+	 * @return - {@link Type} representation of the provided {@link ResolvableType}.
+	 */
+	public static Type resolveType(ResolvableType typeWithGenerics) {
+		if (typeWithGenerics.hasResolvableGenerics()) {
+			ResolvableType[] generics = typeWithGenerics.getGenerics();
+			List<ResolvableType> resolvedGenerics = new ArrayList<>();
+			for (int i = 0; i < generics.length; i++) {
+				ResolvableType genericType = typeWithGenerics.getGenerics()[i];
+				resolvedGenerics.add(ResolvableType.forType(resolveType(genericType)));
+			}
+			return ResolvableType.forClassWithGenerics(typeWithGenerics.getRawClass(),
+				resolvedGenerics.toArray(new ResolvableType[0])).getType();
+		}
+		else {
+			return typeWithGenerics.resolve();
+		}
+	}
+
+	public static Type getOutputType(Type functionType) {
+		assertSupportedTypes(functionType);
+		if (isConsumer(functionType)) {
+			logger.debug("Consumer does not have output type, returning null as output type.");
+			return null;
+		}
+
+		if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
+			return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
+		}
+		else {
+			ResolvableType resolvableFunctionType = isSupplier(functionType)
+				? ResolvableType.forType(functionType).as(Supplier.class)
+				: ResolvableType.forType(functionType).as(Function.class);
+			ResolvableType generics = isSupplier(functionType)
+				? resolvableFunctionType.getGenerics()[0]
+				: resolvableFunctionType.getGenerics()[1];
+			Type outputType = FunctionTypeUtils.resolveType(generics);
+			return outputType == null || outputType instanceof TypeVariable<?> ? Object.class : outputType;
+		}
+	}
+
+	/**
 	 * Returns input type of function type that represents Function or Consumer.
 	 * @param functionType  the Type of Function or Consumer
 	 * @return the input type as {@link Type}
@@ -387,32 +453,16 @@ public final class FunctionTypeUtils {
 			return null;
 		}
 
-		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
-
-		ResolvableType resolvableInputType = resolvableFunctionType.as(resolvableFunctionType.getRawClass());
-
-		if (resolvableInputType.getType() instanceof ParameterizedType) {
-			return resolvableInputType.getGeneric(0).getType();
+		if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
+			return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
 		}
 		else {
-			// will try another way. See GH-1251
-			if (FunctionTypeUtils.isFunction(functionType)) {
-				resolvableInputType = resolvableFunctionType.as(Function.class);
-			}
-			else {
-				if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
-					return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
-				}
-				else {
-					resolvableInputType = resolvableFunctionType.as(Consumer.class);
-				}
-			}
-			if (resolvableInputType.getType() instanceof ParameterizedType) {
-				return resolvableInputType.getGeneric(0).getType();
-			}
-			else  {
-				return Object.class;
-			}
+			ResolvableType resolvableFunctionType = isConsumer(functionType)
+				? ResolvableType.forType(functionType).as(Consumer.class)
+				: ResolvableType.forType(functionType).as(Function.class);
+			ResolvableType generics = resolvableFunctionType.getGenerics()[0];
+			Type inputType = FunctionTypeUtils.resolveType(generics);
+			return inputType == null || inputType instanceof TypeVariable<?> ? Object.class : inputType;
 		}
 	}
 
@@ -475,52 +525,6 @@ public final class FunctionTypeUtils {
 		}
 		return null;
 	}
-
-	public static Type getOutputType(Type functionType) {
-		assertSupportedTypes(functionType);
-		if (isConsumer(functionType)) {
-			logger.debug("Consumer does not have output type, returning null as output type.");
-			return null;
-		}
-
-		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
-
-		ResolvableType resolvableOutputType;
-		if (FunctionTypeUtils.isFunction(functionType)) {
-			resolvableOutputType = resolvableFunctionType.as(Function.class);
-		}
-		else {
-			if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
-				return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
-			}
-			else {
-				resolvableOutputType = resolvableFunctionType.as(Supplier.class);
-			}
-		}
-
-		Type outputType;
-		if (functionType instanceof Class functionTypeClass) {
-			if (FunctionTypeUtils.isFunction(functionType)) {
-				ResolvableType genericClass1 = resolvableOutputType.getGeneric(1);
-				outputType = genericClass1.getType();
-				outputType = (outputType instanceof TypeVariable) ? Object.class : GenericTypeResolver.resolveType(outputType, functionTypeClass);
-			}
-			else {
-				ResolvableType genericClass0 = resolvableOutputType.getGeneric(0);
-				outputType = genericClass0.getType();
-				outputType = (outputType instanceof TypeVariable) ? Object.class : GenericTypeResolver.resolveType(outputType, functionTypeClass);
-			}
-		}
-		else if (functionType instanceof ParameterizedType) {
-			Type genericType = isSupplier(functionType) ? resolvableOutputType.getGeneric(0).getType() : resolvableOutputType.getGeneric(1).getType();
-			outputType = GenericTypeResolver.resolveType(genericType, getRawType(functionType));
-		}
-		else {
-			outputType =  resolvableOutputType.getType();
-		}
-		return outputType instanceof TypeVariable ? Object.class : outputType;
-	}
-
 	public static Type getImmediateGenericType(Type type, int index) {
 		if (type instanceof ParameterizedType) {
 			return ((ParameterizedType) type).getActualTypeArguments()[index];
