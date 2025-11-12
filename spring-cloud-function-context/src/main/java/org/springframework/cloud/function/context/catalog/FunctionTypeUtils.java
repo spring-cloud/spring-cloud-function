@@ -140,7 +140,6 @@ public final class FunctionTypeUtils {
 
 	public static boolean isTypeArray(Type type) {
 		return type instanceof GenericArrayType;
-//		return getRawType(type).isArray();
 	}
 
 	public static boolean isJsonNode(Type type) {
@@ -230,23 +229,17 @@ public final class FunctionTypeUtils {
 
 	public static Type discoverFunctionTypeFromType(Type functionalType) {
 		Type typeToReturn = null;
+		ResolvableType functionType;
 		if (Function.class.isAssignableFrom(getRawType(functionalType))) {
-			ResolvableType functionType = ResolvableType.forType(functionalType).as(Function.class);
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), getRawType(functionalType));
+			functionType = ResolvableType.forType(functionalType).as(Function.class);
 		}
 		else if (Consumer.class.isAssignableFrom(getRawType(functionalType))) {
-			ResolvableType functionType = ResolvableType.forType(functionalType).as(Consumer.class);
-
-			ResolvableType t = ResolvableType.forClassWithGenerics(getRawType(functionalType), functionType.getGeneric(0));
-			Type t2 = t.getType();
-			//Type t = ResolvableType.
-
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionType.getRawClass());
+			functionType = ResolvableType.forType(functionalType).as(Consumer.class);
 		}
 		else {
-			ResolvableType functionType = ResolvableType.forType(functionalType).as(Supplier.class);
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), getRawType(functionalType));
+			functionType = ResolvableType.forType(functionalType).as(Supplier.class);
 		}
+		typeToReturn = resolveType(functionType);
 		return typeToReturn;
 	}
 
@@ -261,27 +254,7 @@ public final class FunctionTypeUtils {
 				return GenericTypeResolver.resolveType(kotlinType.getType(), functionalClass);
 			}
 		}
-		Type typeToReturn = null;
-		if (Function.class.isAssignableFrom(functionalClass)) {
-			for (Type superInterface : functionalClass.getGenericInterfaces()) {
-				if (superInterface != null && !superInterface.equals(Object.class)) {
-					if (superInterface.toString().contains("KStream") && ResolvableType.forType(superInterface).getGeneric(1).isArray()) {
-						return null;
-					}
-				}
-			}
-			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Function.class);
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
-		}
-		else if (Consumer.class.isAssignableFrom(functionalClass)) {
-			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Consumer.class);
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
-		}
-		else if (Supplier.class.isAssignableFrom(functionalClass)) {
-			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Supplier.class);
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
-		}
-		return typeToReturn;
+		return discoverFunctionTypeFromType(functionalClass);
 	}
 
 	/**
@@ -307,7 +280,6 @@ public final class FunctionTypeUtils {
 	 */
 	public static Type discoverFunctionTypeFromFunctionFactoryMethod(Method method) {
 		return method.getGenericReturnType();
-//		return discoverFunctionTypeFromClass(method.getReturnType());
 	}
 
 	/**
@@ -394,8 +366,8 @@ public final class FunctionTypeUtils {
 	 * @return generic type or output type
 	 */
 	public static Type getComponentTypeOfOutputType(Type functionType) {
-		Type inputType = getOutputType(functionType);
-		return getImmediateGenericType(inputType, 0);
+		Type outputType = getOutputType(functionType);
+		return getImmediateGenericType(outputType, 0);
 	}
 
 	/**
