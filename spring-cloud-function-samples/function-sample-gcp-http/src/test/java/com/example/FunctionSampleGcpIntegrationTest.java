@@ -18,7 +18,7 @@ package com.example;
 
 import java.io.IOException;
 
-import org.springframework.boot.web.server.test.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

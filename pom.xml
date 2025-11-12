@@ -180,7 +180,7 @@
 				<module>spring-cloud-function-web</module>
 				<module>spring-cloud-starter-function-web</module>
 				<module>spring-cloud-starter-function-webflux</module>
-				<!-- <module>spring-cloud-function-samples</module> -->
+				<module>spring-cloud-function-samples</module>
 				<!-- <module>spring-cloud-function-deployer</module> -->
 				<module>spring-cloud-function-adapters</module>
 				<module>spring-cloud-function-integration</module>
@@ -223,7 +223,7 @@
 				<module>spring-cloud-function-web</module>
 				<module>spring-cloud-starter-function-web</module>
 				<module>spring-cloud-starter-function-webflux</module>
-				<!-- <module>spring-cloud-function-samples</module> -->
+				<module>spring-cloud-function-samples</module>
 				<!-- <module>spring-cloud-function-deployer</module> -->
 				<module>spring-cloud-function-adapters</module>
 				<module>spring-cloud-function-integration</module>
