@@ -40,8 +40,7 @@ public class FunctionalTests {
 
 	@Test
 	public void words() throws Exception {
-		Function<Flux<String>, Flux<String>> function = this.catalog
-				.lookup(Function.class, "function");
+		Function<Flux<String>, Flux<String>> function = this.catalog.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 	}
 

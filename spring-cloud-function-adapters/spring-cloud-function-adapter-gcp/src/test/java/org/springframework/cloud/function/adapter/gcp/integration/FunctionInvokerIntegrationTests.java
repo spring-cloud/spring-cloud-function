@@ -63,15 +63,14 @@ public class FunctionInvokerIntegrationTests {
 
 	@Test
 	public void testErrorResponse() {
-		try (LocalServerTestSupport.ServerProcess serverProcess =
-						LocalServerTestSupport.startServer(ErrorFunction.class, "errorFunction")) {
+		try (LocalServerTestSupport.ServerProcess serverProcess = LocalServerTestSupport
+			.startServer(ErrorFunction.class, "errorFunction")) {
 
 			TestRestTemplate testRestTemplate = new TestRestTemplate();
 
 			HttpHeaders headers = new HttpHeaders();
 			ResponseEntity<String> response = testRestTemplate.postForEntity(
-					"http://localhost:" + serverProcess.getPort(), new HttpEntity<>("test", headers),
-					String.class);
+					"http://localhost:" + serverProcess.getPort(), new HttpEntity<>("test", headers), String.class);
 
 			assertThat(response.getStatusCode().is5xxServerError()).isTrue();
 		}
@@ -93,6 +92,7 @@ public class FunctionInvokerIntegrationTests {
 				throw new RuntimeException();
 			};
 		}
+
 	}
 
 	@Configuration
@@ -161,6 +161,7 @@ public class FunctionInvokerIntegrationTests {
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 }

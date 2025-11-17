@@ -36,8 +36,8 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * General utility class which aggregates various class-level utility functions
- * used by the framework.
+ * General utility class which aggregates various class-level utility functions used by
+ * the framework.
  *
  * @author Oleg Zhurakousky
  * @since 3.0.1
@@ -51,11 +51,10 @@ public final class FunctionClassUtils {
 	}
 
 	/**
-	 * Discovers the start class in the currently running application.
-	 * The discover search order is 'MAIN_CLASS' environment property,
-	 * 'MAIN_CLASS' system property, META-INF/MANIFEST.MF:'Start-Class' attribute,
-	 * meta-inf/manifest.mf:'Start-Class' attribute.
-	 *
+	 * Discovers the start class in the currently running application. The discover search
+	 * order is 'MAIN_CLASS' environment property, 'MAIN_CLASS' system property,
+	 * META-INF/MANIFEST.MF:'Start-Class' attribute, meta-inf/manifest.mf:'Start-Class'
+	 * attribute.
 	 * @return instance of Class which represent the start class of the application.
 	 */
 	public static Class<?> getStartClass() {
@@ -73,11 +72,11 @@ public final class FunctionClassUtils {
 		}
 		else {
 			try {
-				Class<?> result = getStartClass(
-						Collections.list(classLoader.getResources(JarFile.MANIFEST_NAME)), classLoader);
+				Class<?> result = getStartClass(Collections.list(classLoader.getResources(JarFile.MANIFEST_NAME)),
+						classLoader);
 				if (result == null) {
-					result = getStartClass(Collections
-							.list(classLoader.getResources("meta-inf/manifest.mf")), classLoader);
+					result = getStartClass(Collections.list(classLoader.getResources("meta-inf/manifest.mf")),
+							classLoader);
 				}
 				Assert.notNull(result, "Failed to locate main class");
 				mainClass = result;
@@ -114,12 +113,15 @@ public final class FunctionClassUtils {
 						Class<?> startClass = ClassUtils.forName(startClassName, classLoader);
 
 						if (KotlinDetector.isKotlinType(startClass)) {
-							PathMatchingResourcePatternResolver r = new PathMatchingResourcePatternResolver(classLoader);
+							PathMatchingResourcePatternResolver r = new PathMatchingResourcePatternResolver(
+									classLoader);
 							String packageName = startClass.getPackage().getName();
-							Resource[] resources = r.getResources("classpath:" + packageName.replace(".", "/") + "/*.class");
+							Resource[] resources = r
+								.getResources("classpath:" + packageName.replace(".", "/") + "/*.class");
 							for (int i = 0; i < resources.length; i++) {
 								Resource resource = resources[i];
-								String className = packageName + "." + (resource.getFilename().replace("/", ".")).replace(".class", "");
+								String className = packageName + "."
+										+ (resource.getFilename().replace("/", ".")).replace(".class", "");
 								startClass = ClassUtils.forName(className, classLoader);
 								if (isSpringBootApplication(startClass)) {
 									logger.info("Loaded Main Kotlin Class: " + startClass);
@@ -150,4 +152,5 @@ public final class FunctionClassUtils {
 		return startClass.getDeclaredAnnotation(SpringBootApplication.class) != null
 				|| startClass.getDeclaredAnnotation(SpringBootConfiguration.class) != null;
 	}
+
 }

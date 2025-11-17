@@ -28,10 +28,10 @@ import org.springframework.messaging.MessageChannel;
 /**
  * The {@link IntegrationFlowExtension} implementation for Spring Cloud Function domain.
  * Adds operators for functions and consumers and overloaded versions based on their names
- * or definitions resolved from the provided {@link org.springframework.cloud.function.context.FunctionCatalog}.
+ * or definitions resolved from the provided
+ * {@link org.springframework.cloud.function.context.FunctionCatalog}.
  *
  * @author Artem Bilan
- *
  * @since 4.0.3
  */
 public final class FunctionFlowDefinition extends IntegrationFlowExtension<FunctionFlowDefinition> {
@@ -51,7 +51,8 @@ public final class FunctionFlowDefinition extends IntegrationFlowExtension<Funct
 	}
 
 	/**
-	 * Configure a {@link org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper}
+	 * Configure a
+	 * {@link org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper}
 	 * as a handler in the endpoint by its definition from the
 	 * {@link org.springframework.cloud.function.context.FunctionCatalog}.
 	 * @param functionDefinition the function definition in the function catalog.
@@ -71,7 +72,8 @@ public final class FunctionFlowDefinition extends IntegrationFlowExtension<Funct
 	}
 
 	/**
-	 * Configure a {@link org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper}
+	 * Configure a
+	 * {@link org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper}
 	 * as a one-way handler in the final endpoint by its definition from the
 	 * {@link org.springframework.cloud.function.context.FunctionCatalog}.
 	 * @param consumerDefinition the consumer definition in the function catalog.
@@ -87,8 +89,7 @@ public final class FunctionFlowDefinition extends IntegrationFlowExtension<Funct
 	 * @return the current flow builder.
 	 */
 	public IntegrationFlow accept(Consumer<Message<?>> consumer) {
-		return handle(consumer::accept)
-				.get();
+		return handle(consumer::accept).get();
 	}
 
 }

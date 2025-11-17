@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.context.catalog;
 
-
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -50,7 +49,6 @@ import org.springframework.messaging.Message;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -66,10 +64,10 @@ public class FunctionTypeUtilsTests {
 	@Test
 	public void testFunctionTypeFrom() throws Exception {
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(SimpleConsumer.class);
-		//assertThat(type).isInstanceOf(ParameterizedType.class);
+		// assertThat(type).isInstanceOf(ParameterizedType.class);
 		Type wrapperType = FunctionTypeUtils.getInputType(type);
-//		Type wrapperType = ((ParameterizedType) type).getActualTypeArguments()[0];
-//		assertThat(wrapperType).isInstanceOf(ParameterizedType.class);
+		// Type wrapperType = ((ParameterizedType) type).getActualTypeArguments()[0];
+		// assertThat(wrapperType).isInstanceOf(ParameterizedType.class);
 		assertThat(wrapperType.getTypeName()).contains("Flux");
 
 		Type innerWrapperType = ((ParameterizedType) wrapperType).getActualTypeArguments()[0];
@@ -86,39 +84,53 @@ public class FunctionTypeUtilsTests {
 		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(Object.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MessageFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type)))
+			.isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type)))
+			.isAssignableFrom(String.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type)))
+			.isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type)))
+			.isAssignableFrom(String.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MessageConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type)))
+			.isAssignableFrom(String.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(MyMessageConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type)))
+			.isAssignableFrom(String.class);
 	}
 
 	@Test
 	public void testWithComplexHierarchy() {
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(ReactiveFunctionImpl.class);
-		assertThat(String.class).isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type)));
-		assertThat(Integer.class).isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type)));
+		assertThat(String.class)
+			.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfInputType(type)));
+		assertThat(Integer.class)
+			.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getComponentTypeOfOutputType(type)));
 	}
 
 	@Test
 	public void testIsTypeCollection() {
-		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<String>() { }.getType())).isFalse();
-		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<List<String>>() { }.getType())).isTrue();
-		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<List<String>>>() { }.getType())).isTrue();
-		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<List<Message<String>>>>() { }.getType())).isTrue();
-		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<Message<List<String>>>>() { }.getType())).isFalse();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<String>() {
+		}.getType())).isFalse();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<List<String>>() {
+		}.getType())).isTrue();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<List<String>>>() {
+		}.getType())).isTrue();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<List<Message<String>>>>() {
+		}.getType())).isTrue();
+		assertThat(FunctionTypeUtils.isTypeCollection(new ParameterizedTypeReference<Flux<Message<List<String>>>>() {
+		}.getType())).isFalse();
 	}
 
 	@Test
 	public void testWithComplexGenericsHierarchy() throws Exception {
-		Type functionType = FunctionTypeUtils.discoverFunctionTypeFromFunctionFactoryMethod(FunctionTypeUtilsTests.class, "methodWithGenerics");
+		Type functionType = FunctionTypeUtils
+			.discoverFunctionTypeFromFunctionFactoryMethod(FunctionTypeUtilsTests.class, "methodWithGenerics");
 		Type inputType = FunctionTypeUtils.getInputType(functionType);
 		Class typeClass = FunctionTypeUtils.getRawType(inputType);
 		assertThat(typeClass).isAssignableFrom(Message.class);
@@ -131,83 +143,106 @@ public class FunctionTypeUtilsTests {
 		assertThat(typeClass).isAssignableFrom(SomeDomainObject.class);
 	}
 
-	//@Test
+	// @Test
 	public void testPrimitiveFunctionInputTypes() {
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(IntConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(IntConsumer.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntSupplier.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(IntSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(IntSupplier.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(IntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(IntFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToIntFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(ToIntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(ToIntFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(LongConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(LongConsumer.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongSupplier.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(LongSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(LongSupplier.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(LongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(LongFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToLongFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(ToLongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(ToLongFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(DoubleConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(DoubleConsumer.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleSupplier.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(DoubleSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(DoubleSupplier.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(DoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(DoubleFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToDoubleFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))).isAssignableFrom(ToDoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+			.isAssignableFrom(ToDoubleFunction.class);
 	}
 
-	//@Test
+	// @Test
 	public void testPrimitiveFunctionOutputTypes() {
 		Type type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(IntConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(IntConsumer.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntSupplier.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(IntSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(IntSupplier.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(IntFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(IntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(IntFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToIntFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(ToIntFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(ToIntFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(LongConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(LongConsumer.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongSupplier.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(LongSupplier.class);
-
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(LongSupplier.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(LongFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(LongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(LongFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToLongFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(ToLongFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(ToLongFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleConsumer.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(DoubleConsumer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(DoubleConsumer.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleSupplier.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(DoubleSupplier.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(DoubleSupplier.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(DoubleFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(DoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(DoubleFunction.class);
 
 		type = FunctionTypeUtils.discoverFunctionTypeFromClass(ToDoubleFunction.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))).isAssignableFrom(ToDoubleFunction.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))
+			.isAssignableFrom(ToDoubleFunction.class);
 	}
 
 	private static Function<String, Integer> function() {
@@ -223,13 +258,11 @@ public class FunctionTypeUtilsTests {
 		return null;
 	}
 
-	private static Function<Tuple2<Flux<String>, Mono<String>>,
-			Tuple3<Flux<String>, Flux<String>, Mono<String>>> multiInputOutputPublisherFunction() {
+	private static Function<Tuple2<Flux<String>, Mono<String>>, Tuple3<Flux<String>, Flux<String>, Mono<String>>> multiInputOutputPublisherFunction() {
 		return null;
 	}
 
-	private static Function<Tuple2<Flux<Map<String, Integer>>, Mono<String>>,
-			Tuple3<Flux<List<byte[]>>, Flux<String>, Mono<String>>> multiInputOutputPublisherFunctionComplexTypes() {
+	private static Function<Tuple2<Flux<Map<String, Integer>>, Mono<String>>, Tuple3<Flux<List<byte[]>>, Flux<String>, Mono<String>>> multiInputOutputPublisherFunctionComplexTypes() {
 		return null;
 	}
 
@@ -267,7 +300,7 @@ public class FunctionTypeUtilsTests {
 		return new GenericBatchMessageListConsumer<SomeDomainObject>();
 	}
 
-	//============
+	// ============
 
 	private interface MessageFunction extends Function<Message<String>, Message<String>> {
 
@@ -286,9 +319,11 @@ public class FunctionTypeUtilsTests {
 	}
 
 	public static class SimpleConsumer implements Consumer<Flux<Message<String>>> {
+
 		@Override
 		public void accept(Flux<Message<String>> messageFlux) {
 		}
+
 	}
 
 	public interface ReactiveFunction<S, T> extends Function<Flux<S>, Flux<T>> {
@@ -301,6 +336,7 @@ public class FunctionTypeUtilsTests {
 		public Flux<Integer> apply(Flux<String> inFlux) {
 			return inFlux.map(v -> Integer.parseInt(v));
 		}
+
 	}
 
 	public static abstract class AbstractConsumer<C> implements Consumer<Message<C>> {
@@ -315,12 +351,15 @@ public class FunctionTypeUtilsTests {
 		}
 
 		protected abstract void doAccept(C payload);
+
 	}
 
 	public static class SampleEventConsumer extends AbstractConsumer<SampleData> {
+
 		@Override
 		protected void doAccept(SampleData data) {
 		}
+
 	}
 
 	public static class SampleData {
@@ -330,12 +369,14 @@ public class FunctionTypeUtilsTests {
 	public static class SomeDomainObject {
 
 	}
+
 	public static class GenericBatchMessageListConsumer<T> implements Consumer<Message<List<T>>> {
 
 		@Override
 		public void accept(Message<List<T>> listMessage) {
 
 		}
+
 	}
 
 }

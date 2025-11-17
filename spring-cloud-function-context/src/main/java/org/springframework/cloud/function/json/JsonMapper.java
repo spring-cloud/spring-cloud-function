@@ -34,7 +34,6 @@ import tools.jackson.databind.node.ObjectNode;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 
-
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -45,8 +44,8 @@ public abstract class JsonMapper {
 
 	// we need this just to validate is String is JSON
 	private static final ObjectMapper mapper = tools.jackson.databind.json.JsonMapper.builder()
-		.enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
-
+		.enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+		.build();
 
 	@SuppressWarnings("unchecked")
 	public <T> T fromJson(Object json, Type type) {
@@ -56,8 +55,7 @@ public abstract class JsonMapper {
 			}
 			Collection<?> inputs = (Collection<?>) json;
 			Type itemType = FunctionTypeUtils.getImmediateGenericType(type, 0);
-			Collection<?> results = FunctionTypeUtils.getRawType(type).isAssignableFrom(List.class)
-					? new ArrayList<>()
+			Collection<?> results = FunctionTypeUtils.getRawType(type).isAssignableFrom(List.class) ? new ArrayList<>()
 					: new HashSet<>();
 			for (Object input : inputs) {
 				results.add(this.doFromJson(input, itemType));
@@ -104,9 +102,10 @@ public abstract class JsonMapper {
 
 	/**
 	 * Performs a simple validation on an object to see if it appears to be a JSON string.
-	 * NOTE: the validation is very rudimentary and simply checks that the object is a String and begins
-	 * and ends with matching pairs of "{}" or "[]" or "\"\"" and therefore may not handle some corner cases.
-	 * Primarily intended for internal of  the framework.
+	 * NOTE: the validation is very rudimentary and simply checks that the object is a
+	 * String and begins and ends with matching pairs of "{}" or "[]" or "\"\"" and
+	 * therefore may not handle some corner cases. Primarily intended for internal of the
+	 * framework.
 	 * @param value candidate object to evaluate
 	 * @return true if and object appears to be a valid JSON string, otherwise false.
 	 */
@@ -168,4 +167,5 @@ public abstract class JsonMapper {
 		}
 		return false;
 	}
+
 }

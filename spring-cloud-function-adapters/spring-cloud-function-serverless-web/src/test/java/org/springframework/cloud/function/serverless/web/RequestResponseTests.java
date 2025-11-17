@@ -34,7 +34,6 @@ import org.springframework.http.HttpStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -115,10 +114,11 @@ public class RequestResponseTests {
 		assertThat(pets.get(0)).isInstanceOf(Pet.class);
 	}
 
-	//@WithMockUser("spring")
+	// @WithMockUser("spring")
 	@Test
 	public void validateGetPojo() throws Exception {
-		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets/6e3cc370-892f-4efe-a9eb-82926ff8cc5b");
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET",
+				"/pets/6e3cc370-892f-4efe-a9eb-82926ff8cc5b");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
 		Pet pet = mapper.readValue(response.getContentAsByteArray(), Pet.class);
@@ -146,12 +146,8 @@ public class RequestResponseTests {
 	@Test
 	public void validatePostWithBody() throws Exception {
 		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/pets/");
-		String jsonPet = "{\n"
-				+ "   \"id\":\"1234\",\n"
-				+ "   \"breed\":\"Canish\",\n"
-				+ "   \"name\":\"Foo\",\n"
-				+ "   \"date\":\"2012-04-23T18:25:43.511Z\"\n"
-				+ "}";
+		String jsonPet = "{\n" + "   \"id\":\"1234\",\n" + "   \"breed\":\"Canish\",\n" + "   \"name\":\"Foo\",\n"
+				+ "   \"date\":\"2012-04-23T18:25:43.511Z\"\n" + "}";
 		request.setContent(jsonPet.getBytes());
 		request.setContentType("application/json");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
@@ -173,19 +169,16 @@ public class RequestResponseTests {
 			assertThat(e.getCause()).isNotInstanceOf(NullPointerException.class);
 		}
 
-		assertThat(response.getStatus()).isEqualTo(400); // application fail because the pet is empty ;)
+		assertThat(response.getStatus()).isEqualTo(400); // application fail because the
+															// pet is empty ;)
 	}
 
 	@Test
 	public void validatePostAsyncWithBody() throws Exception {
-//		System.setProperty("spring.main.banner-mode", "off");
+		// System.setProperty("spring.main.banner-mode", "off");
 		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/petsAsync/");
-		String jsonPet = "{\n"
-				+ "   \"id\":\"1234\",\n"
-				+ "   \"breed\":\"Canish\",\n"
-				+ "   \"name\":\"Foo\",\n"
-				+ "   \"date\":\"2012-04-23T18:25:43.511Z\"\n"
-				+ "}";
+		String jsonPet = "{\n" + "   \"id\":\"1234\",\n" + "   \"breed\":\"Canish\",\n" + "   \"name\":\"Foo\",\n"
+				+ "   \"date\":\"2012-04-23T18:25:43.511Z\"\n" + "}";
 		request.setContent(jsonPet.getBytes());
 		request.setContentType("application/json");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();

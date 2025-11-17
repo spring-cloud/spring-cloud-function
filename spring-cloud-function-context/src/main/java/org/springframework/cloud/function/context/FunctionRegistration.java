@@ -45,11 +45,9 @@ import org.springframework.util.CollectionUtils;
 public class FunctionRegistration<T> implements BeanNameAware {
 
 	/**
-	 * Suffix used to add to the name of FunctionRegistration bean that
-	 * corresponds to the an actual function bean. It is often used when
-	 * the actual function bean may not be a java Function (e.g., Kotlin)
-	 * and certain custom wrapping is required.
-	 * <br>
+	 * Suffix used to add to the name of FunctionRegistration bean that corresponds to the
+	 * an actual function bean. It is often used when the actual function bean may not be
+	 * a java Function (e.g., Kotlin) and certain custom wrapping is required. <br>
 	 * NOTE: This is not intended as oublis API
 	 */
 	public static String REGISTRATION_NAME_SUFFIX = "_registration";
@@ -63,11 +61,11 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	private Type type;
 
 	/**
-	 * In certain cased, {@link FunctionRegistration} needs to know details
-	 * about the user function. For example, when the user provides a BiConsumer,
-	 * we wrap that in a regular Function. There are actions that a downstream client
-	 * needs to take based on the type information of the wrapped function such as
-	 * not creating an output binding when the wrapped type is a BiConsumer.
+	 * In certain cased, {@link FunctionRegistration} needs to know details about the user
+	 * function. For example, when the user provides a BiConsumer, we wrap that in a
+	 * regular Function. There are actions that a downstream client needs to take based on
+	 * the type information of the wrapped function such as not creating an output binding
+	 * when the wrapped type is a BiConsumer.
 	 */
 	private Object userFunction;
 
@@ -118,11 +116,13 @@ public class FunctionRegistration<T> implements BeanNameAware {
 
 	public FunctionRegistration<T> type(Type type) {
 		this.type = type;
-		if (KotlinDetector.isKotlinPresent() && this.target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) {
+		if (KotlinDetector.isKotlinPresent()
+				&& this.target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) {
 			return this;
 		}
-		Type discoveredFunctionType = type; //FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
-		if (discoveredFunctionType == null) { // only valid for Kafka Stream KStream[] return type.
+		Type discoveredFunctionType = type; // FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
+		if (discoveredFunctionType == null) { // only valid for Kafka Stream KStream[]
+												// return type.
 			return null;
 		}
 
@@ -130,20 +130,24 @@ public class FunctionRegistration<T> implements BeanNameAware {
 		Class<?> outputType = FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(discoveredFunctionType));
 
 		if (inputType != null && inputType != Object.class && outputType != null && outputType != Object.class) {
-			Assert.isTrue((inputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
-					&& outputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))),
+			Assert.isTrue(
+					(inputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type)))
+							&& outputType
+								.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type)))),
 					"Discovered function type does not match provided function type. Discovered: "
-						+ discoveredFunctionType + "; Provided: " + type);
+							+ discoveredFunctionType + "; Provided: " + type);
 		}
 		else if (inputType == null && outputType != Object.class) {
-			Assert.isTrue(outputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))),
+			Assert.isTrue(
+					outputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getOutputType(type))),
 					"Discovered function type does not match provided function type. Discovered: "
-						+ discoveredFunctionType + "; Provided: " + type);
+							+ discoveredFunctionType + "; Provided: " + type);
 		}
 		else if (outputType == null && inputType != Object.class) {
-			Assert.isTrue(inputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))),
+			Assert.isTrue(
+					inputType.isAssignableFrom(FunctionTypeUtils.getRawType(FunctionTypeUtils.getInputType(type))),
 					"Discovered function type does not match provided function type. Discovered: "
-						+ discoveredFunctionType + "; Provided: " + type);
+							+ discoveredFunctionType + "; Provided: " + type);
 		}
 
 		return this;
@@ -197,4 +201,5 @@ public class FunctionRegistration<T> implements BeanNameAware {
 	public void setUserFunction(Object userFunction) {
 		this.userFunction = userFunction;
 	}
+
 }

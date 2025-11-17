@@ -41,6 +41,7 @@ import org.springframework.web.servlet.DispatcherServlet;
  */
 @Configuration(proxyBeanMethods = false)
 public class ServerlessAutoConfiguration {
+
 	private static Log logger = LogFactory.getLog(ServerlessAutoConfiguration.class);
 
 	@Bean
@@ -94,7 +95,8 @@ public class ServerlessAutoConfiguration {
 				catch (Exception e) {
 					throw new IllegalStateException("Failed to create Spring MVC DispatcherServlet proxy", e);
 				}
-				for (ServletContextInitializer initializer : new ServletContextInitializerBeans(this.applicationContext)) {
+				for (ServletContextInitializer initializer : new ServletContextInitializerBeans(
+						this.applicationContext)) {
 					initializer.onStartup(servletContext);
 				}
 			}
@@ -102,5 +104,7 @@ public class ServerlessAutoConfiguration {
 				logger.debug("Skipping Serverless configuration for " + this.applicationContext);
 			}
 		}
+
 	}
+
 }

@@ -32,7 +32,6 @@ import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  */
 
@@ -40,9 +39,9 @@ public class FunctionsEndpointTests {
 
 	@Test
 	public void ensureIneligibleFunctionWontCauseNPE() {
-		ApplicationContext context = new SpringApplicationBuilder(SampleConfiguration.class)
-				.run("--spring.cloud.function.ineligible-definitions=echo,uppercase",
-						"--spring.main.lazy-initialization=true");
+		ApplicationContext context = new SpringApplicationBuilder(SampleConfiguration.class).run(
+				"--spring.cloud.function.ineligible-definitions=echo,uppercase",
+				"--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		FunctionsEndpoint endpoint = new FunctionsEndpoint(catalog);
 		Map<String, Map<String, Object>> allFunctionsinCatalog = endpoint.listAll();
@@ -70,5 +69,7 @@ public class FunctionsEndpointTests {
 		public Function<String, String> reverse() {
 			return v -> new StringBuilder(v).reverse().toString();
 		}
+
 	}
+
 }

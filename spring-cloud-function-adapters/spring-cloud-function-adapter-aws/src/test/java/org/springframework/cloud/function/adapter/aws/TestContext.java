@@ -22,7 +22,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */

@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.RequestDispatcher;
@@ -50,8 +49,8 @@ import org.springframework.util.ClassUtils;
 
 /**
  * Stub representation of {@link ServletContext} to satisfy required dependencies to
- * successfully proxy incoming web requests directly (serverlessely) to target web application.
- * Most methods are not implemented.
+ * successfully proxy incoming web requests directly (serverlessely) to target web
+ * application. Most methods are not implemented.
  *
  * @author Oleg Zhurakousky
  *
@@ -160,9 +159,8 @@ public class ServerlessServletContext implements ServletContext {
 
 	@Override
 	public String getServerInfo() {
-		return ClassUtils.isPresent("com.amazonaws.serverless.proxy.spring.SpringLambdaContainerHandler", ClassUtils.getDefaultClassLoader())
-				? "aws-serverless-java-container/6.0"
-						: "serverless-web-proxy";
+		return ClassUtils.isPresent("com.amazonaws.serverless.proxy.spring.SpringLambdaContainerHandler",
+				ClassUtils.getDefaultClassLoader()) ? "aws-serverless-java-container/6.0" : "serverless-web-proxy";
 	}
 
 	@Override
@@ -366,4 +364,5 @@ public class ServerlessServletContext implements ServletContext {
 	public void setResponseCharacterEncoding(String encoding) {
 		throw new UnsupportedOperationException("This ServletContext does not represent a running web container");
 	}
+
 }

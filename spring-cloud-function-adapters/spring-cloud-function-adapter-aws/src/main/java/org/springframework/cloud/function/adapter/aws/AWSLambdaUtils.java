@@ -42,7 +42,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StreamUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Anton Barkan
  *
@@ -79,13 +78,13 @@ public final class AWSLambdaUtils {
 			type = FunctionTypeUtils.getImmediateGenericType(type, 0);
 		}
 		Class<?> rawType = FunctionTypeUtils.getRawType(type);
-		return rawType != null && rawType.getPackage() != null &&
-			rawType.getPackage().getName().startsWith(
-						"com.amazonaws.services.lambda.runtime.events");
+		return rawType != null && rawType.getPackage() != null
+				&& rawType.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events");
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static Message generateMessage(InputStream payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper, Context context) throws IOException {
+	public static Message generateMessage(InputStream payload, Type inputType, boolean isSupplier,
+			JsonMapper jsonMapper, Context context) throws IOException {
 		if (inputType != null && FunctionTypeUtils.isMessage(inputType)) {
 			inputType = FunctionTypeUtils.getImmediateGenericType(inputType, 0);
 		}
@@ -101,7 +100,8 @@ public final class AWSLambdaUtils {
 		}
 	}
 
-	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier, JsonMapper jsonMapper) {
+	public static Message<byte[]> generateMessage(byte[] payload, Type inputType, boolean isSupplier,
+			JsonMapper jsonMapper) {
 		return generateMessage(payload, inputType, isSupplier, jsonMapper, null);
 	}
 
@@ -124,10 +124,8 @@ public final class AWSLambdaUtils {
 
 		Message<byte[]> requestMessage;
 
-		MessageBuilder builder = MessageBuilder
-				.withPayload(structMessage instanceof Map msg && msg.containsKey("payload")
-						? (msg.get("payload"))
-						: payload);
+		MessageBuilder builder = MessageBuilder.withPayload(
+				structMessage instanceof Map msg && msg.containsKey("payload") ? (msg.get("payload")) : payload);
 		if (isApiGateway) {
 			builder.setHeader(AWSLambdaUtils.AWS_API_GATEWAY, true);
 			if (JsonMapper.isJsonStringRepresentsCollection(((Map) structMessage).get("body"))) {
@@ -165,7 +163,8 @@ public final class AWSLambdaUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static byte[] generateOutputFromObject(Message<?> requestMessage, Object output, JsonMapper objectMapper, Type functionOutputType) {
+	public static byte[] generateOutputFromObject(Message<?> requestMessage, Object output, JsonMapper objectMapper,
+			Type functionOutputType) {
 		Message<byte[]> responseMessage = null;
 		if (output instanceof Publisher<?>) {
 			List<Object> result = new ArrayList<>();
@@ -209,25 +208,27 @@ public final class AWSLambdaUtils {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static byte[] generateOutput(Message requestMessage, Message<?> responseMessage,
-			JsonMapper objectMapper, Type functionOutputType) {
+	public static byte[] generateOutput(Message requestMessage, Message<?> responseMessage, JsonMapper objectMapper,
+			Type functionOutputType) {
 
 		if (isSupportedAWSType(functionOutputType)) {
 			return extractPayload((Message<Object>) responseMessage, objectMapper);
 		}
 
-		byte[] responseBytes = responseMessage  == null ? "\"OK\"".getBytes() : extractPayload((Message<Object>) responseMessage, objectMapper);
-		if (requestMessage.getHeaders().containsKey(AWS_API_GATEWAY) && ((boolean) requestMessage.getHeaders().get(AWS_API_GATEWAY))) {
+		byte[] responseBytes = responseMessage == null ? "\"OK\"".getBytes()
+				: extractPayload((Message<Object>) responseMessage, objectMapper);
+		if (requestMessage.getHeaders().containsKey(AWS_API_GATEWAY)
+				&& ((boolean) requestMessage.getHeaders().get(AWS_API_GATEWAY))) {
 			Map<String, Object> response = new HashMap<String, Object>();
-			response.put(IS_BASE64_ENCODED, responseMessage != null && responseMessage.getHeaders().containsKey(IS_BASE64_ENCODED)
-					? responseMessage.getHeaders().get(IS_BASE64_ENCODED) : false);
+			response.put(IS_BASE64_ENCODED,
+					responseMessage != null && responseMessage.getHeaders().containsKey(IS_BASE64_ENCODED)
+							? responseMessage.getHeaders().get(IS_BASE64_ENCODED) : false);
 
 			AtomicReference<MessageHeaders> headers = new AtomicReference<>();
 			int statusCode = HttpStatus.OK.value();
 			if (responseMessage != null) {
 				headers.set(responseMessage.getHeaders());
-				statusCode = headers.get().containsKey(STATUS_CODE)
-						? (int) headers.get().get(STATUS_CODE)
+				statusCode = headers.get().containsKey(STATUS_CODE) ? (int) headers.get().get(STATUS_CODE)
 						: HttpStatus.OK.value();
 			}
 
@@ -237,8 +238,8 @@ public final class AWSLambdaUtils {
 				response.put("statusDescription", httpStatus.toString());
 			}
 
-			String body = responseMessage == null
-					? "\"OK\"" : new String(extractPayload((Message<Object>) responseMessage, objectMapper), StandardCharsets.UTF_8);
+			String body = responseMessage == null ? "\"OK\"" : new String(
+					extractPayload((Message<Object>) responseMessage, objectMapper), StandardCharsets.UTF_8);
 			response.put(BODY, body);
 			if (responseMessage != null) {
 				Map<String, String> responseHeaders = new HashMap<>();
@@ -259,4 +260,5 @@ public final class AWSLambdaUtils {
 	private static boolean isRequestKinesis(Message<Object> requestMessage) {
 		return requestMessage.getHeaders().containsKey("Records");
 	}
+
 }

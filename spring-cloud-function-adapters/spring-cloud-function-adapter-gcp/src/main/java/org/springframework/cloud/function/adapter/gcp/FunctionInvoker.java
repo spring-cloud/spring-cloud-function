@@ -70,7 +70,8 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	private static final Log log = LogFactory.getLog(FunctionInvoker.class);
 
 	/**
-	 * Constant specifying Http Status Code. Accessible to users by calling 'FunctionInvoker.HTTP_STATUS_CODE'
+	 * Constant specifying Http Status Code. Accessible to users by calling
+	 * 'FunctionInvoker.HTTP_STATUS_CODE'
 	 */
 	public static final String HTTP_STATUS_CODE = "statusCode";
 
@@ -98,7 +99,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 			System.setProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY, "gson");
 		}
 		Thread.currentThread() // TODO: remove after upgrading to 1.0.0-alpha-2-rc5
-				.setContextClassLoader(FunctionInvoker.class.getClassLoader());
+			.setContextClassLoader(FunctionInvoker.class.getClassLoader());
 
 		log.info("Initializing: " + configurationClass);
 		SpringApplication springApplication = springApplication(configurationClass);
@@ -124,14 +125,17 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		Function<Message<BufferedReader>, Message<byte[]>> function = lookupFunction();
 
 		Message<BufferedReader> message = this.functionWrapped.getInputType() == Void.class
-				|| this.functionWrapped.getInputType() == null ? null
-						: MessageBuilder.withPayload(httpRequest.getReader()).copyHeaders(httpRequest.getHeaders())
-								.build();
+				|| this.functionWrapped.getInputType() == null
+						? null
+						: MessageBuilder.withPayload(httpRequest.getReader())
+							.copyHeaders(httpRequest.getHeaders())
+							.build();
 
 		Object resultObject = function.apply(message);
 
 		if (resultObject != null) {
-			Message<?> result = resultObject instanceof Publisher<?> ? getResultFromPublisher(resultObject) : (Message<?>) resultObject;
+			Message<?> result = resultObject instanceof Publisher<?> ? getResultFromPublisher(resultObject)
+					: (Message<?>) resultObject;
 
 			buildHttpResponse(httpRequest, httpResponse, result);
 		}
@@ -140,8 +144,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	/**
 	 * The implementation of a GCF {@link RawBackgroundFunction} that will be used as the
 	 * entry point from GCF.
-	 *
-	 * @param json    the payload.
+	 * @param json the payload.
 	 * @param context event context.
 	 * @since 3.0.5
 	 */
@@ -188,8 +191,9 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		for (Entry<String, Object> header : headers.entrySet()) {
 			Object values = header.getValue();
 			if (values instanceof Collection<?>) {
-				String headerValue = ((Collection<?>) values).stream().map(item -> item.toString())
-						.collect(Collectors.joining(","));
+				String headerValue = ((Collection<?>) values).stream()
+					.map(item -> item.toString())
+					.collect(Collectors.joining(","));
 				httpResponse.appendHeader(header.getKey(), headerValue);
 			}
 			else {
@@ -210,7 +214,10 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 	/*
 	 * This methd get the result from reactor's publisher.
 	 *
-	 * For reference: https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/springframework/cloud/function/adapter/aws/AWSLambdaUtils.java
+	 * For reference:
+	 * https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-
+	 * function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/
+	 * springframework/cloud/function/adapter/aws/AWSLambdaUtils.java
 	 */
 	private Message<byte[]> getResultFromPublisher(Object resultObject) {
 		List<Object> results = new ArrayList<>();

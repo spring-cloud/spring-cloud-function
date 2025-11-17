@@ -24,9 +24,9 @@ import org.springframework.messaging.Message;
 public interface MessageConverterHelper {
 
 	/**
-	 * This method will be called by the framework in cases when a message failed to convert.
-	 * It allows you to signal to the framework if such failure should be considered fatal or not.
-	 *
+	 * This method will be called by the framework in cases when a message failed to
+	 * convert. It allows you to signal to the framework if such failure should be
+	 * considered fatal or not.
 	 * @param message failed message
 	 * @return true if conversion failure must be considered fatal.
 	 */
@@ -34,11 +34,10 @@ public interface MessageConverterHelper {
 		return false;
 	}
 
-
 	/**
-	 * This method will be called by the framework in cases when a message failed to convert.
-	 * It allows you to signal to the framework if such failure should be considered fatal or not.
-	 *
+	 * This method will be called by the framework in cases when a message failed to
+	 * convert. It allows you to signal to the framework if such failure should be
+	 * considered fatal or not.
 	 * @param message failed message
 	 * @param t exception (coudl be null)
 	 * @return true if conversion failure must be considered fatal.
@@ -51,12 +50,13 @@ public interface MessageConverterHelper {
 	}
 
 	/**
-	 * This method will be called by the framework in cases when a single message within batch of messages failed to convert.
-	 * It provides a place for providing post-processing logic before message converter returns.
-	 *
+	 * This method will be called by the framework in cases when a single message within
+	 * batch of messages failed to convert. It provides a place for providing
+	 * post-processing logic before message converter returns.
 	 * @param message failed message.
 	 * @param index index of failed message within the batch
 	 */
 	default void postProcessBatchMessageOnFailure(Message<?> message, int index) {
 	}
+
 }

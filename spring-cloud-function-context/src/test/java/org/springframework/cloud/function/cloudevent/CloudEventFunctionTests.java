@@ -36,12 +36,9 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 
-
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -54,8 +51,7 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		Message<String> inputMessage = CloudEventMessageBuilder
-			.withData("{\"name\":\"Ricky\"}")
+		Message<String> inputMessage = CloudEventMessageBuilder.withData("{\"name\":\"Ricky\"}")
 			.setId(id)
 			.setSource("https://spring.io/")
 			.setType("org.springframework.cloud.function.cloudevent.CloudEventFunctionTests$Person")
@@ -64,7 +60,6 @@ public class CloudEventFunctionTests {
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isTrue();
 
 		Message<Person> resultMessage = (Message<Person>) function.apply(inputMessage);
-
 
 		/*
 		 * Validates that although user only deals with POJO, the framework recognizes
@@ -77,9 +72,10 @@ public class CloudEventFunctionTests {
 	}
 
 	/*
-	 * Aside from the properly processing and recognizing CE, the following tow tests (imperative and reactive)
-	 * also emulate message coming from one protocol going to another via MessageUtils.TARGET_PROTOCOL header that
-	 * is set here explicitly but for instance in s-c-stream is set by the framework
+	 * Aside from the properly processing and recognizing CE, the following tow tests
+	 * (imperative and reactive) also emulate message coming from one protocol going to
+	 * another via MessageUtils.TARGET_PROTOCOL header that is set here explicitly but for
+	 * instance in s-c-stream is set by the framework
 	 */
 	@Test
 	public void testBinaryPojoToPojoDefaultOutputHeaderProviderImperative() {
@@ -87,14 +83,11 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		String payload = "{\n" +
-				"        \"version\" : \"1.0\",\n" +
-				"        \"releaseName\" : \"Spring Framework\",\n" +
-				"        \"releaseDate\" : \"24-03-2004\"\n" +
-				"    }";
+		String payload = "{\n" + "        \"version\" : \"1.0\",\n"
+				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
+				+ "    }";
 
-		Message<String> inputMessage = CloudEventMessageBuilder
-			.withData(payload)
+		Message<String> inputMessage = CloudEventMessageBuilder.withData(payload)
 			.setId(id)
 			.setSource("https://spring.io/")
 			.setType("org.springframework")
@@ -124,14 +117,11 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		String payload = "{\n" +
-				"        \"version\" : \"1.0\",\n" +
-				"        \"releaseName\" : \"Spring Framework\",\n" +
-				"        \"releaseDate\" : \"24-03-2004\"\n" +
-				"    }";
+		String payload = "{\n" + "        \"version\" : \"1.0\",\n"
+				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
+				+ "    }";
 
-		Message<String> inputMessage = CloudEventMessageBuilder
-			.withData(payload)
+		Message<String> inputMessage = CloudEventMessageBuilder.withData(payload)
 			.setId(id)
 			.setSource("https://spring.io/")
 			.setType("org.springframework")
@@ -161,14 +151,11 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		String payload = "{\n" +
-				"        \"version\" : \"1.0\",\n" +
-				"        \"releaseName\" : \"Spring Framework\",\n" +
-				"        \"releaseDate\" : \"24-03-2004\"\n" +
-				"    }";
+		String payload = "{\n" + "        \"version\" : \"1.0\",\n"
+				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
+				+ "    }";
 
-		Message<String> inputMessage = CloudEventMessageBuilder
-			.withData(payload)
+		Message<String> inputMessage = CloudEventMessageBuilder.withData(payload)
 			.setId(id)
 			.setSource("https://spring.io/")
 			.setType("org.springframework")
@@ -191,7 +178,6 @@ public class CloudEventFunctionTests {
 		assertThat(message.getHeaders().get("ce_source")).isEqualTo(URI.create("http://spring.io/"));
 	}
 
-
 	// this kind of emulates that message came from Kafka
 	@SuppressWarnings("unchecked")
 	@Test
@@ -200,8 +186,7 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		Message<String> inputMessage = CloudEventMessageBuilder
-			.withData("{\"name\":\"Ricky\"}")
+		Message<String> inputMessage = CloudEventMessageBuilder.withData("{\"name\":\"Ricky\"}")
 			.setHeader("ce_id", id)
 			.setHeader("ce_source", "https://spring.io/")
 			.setHeader("ce_type", "org.springframework.cloud.function.cloudevent.CloudEventFunctionTests$Person")
@@ -218,42 +203,35 @@ public class CloudEventFunctionTests {
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(Person.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("https://spring.io/"));
-		assertThat(CloudEventMessageUtils.getTime(resultMessage)).isEqualTo(OffsetDateTime.parse("2024-03-22T03:56:24Z"));
+		assertThat(CloudEventMessageUtils.getTime(resultMessage))
+			.isEqualTo(OffsetDateTime.parse("2024-03-22T03:56:24Z"));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testStructuredPojoToPojoDefaultOutputAttributeProvider() throws Exception {
-		String payload = "{\n" +
-				"    \"specversion\" : \"1.0\",\n" +
-				"    \"type\" : \"org.springframework\",\n" +
-				"    \"source\" : \"https://spring.io/\",\n" +
-				"    \"id\" : \"A234-1234-1234\",\n" +
-				"    \"datacontenttype\" : \"application/json\",\n" +
-				"    \"data\" : {\n" +
-				"        \"version\" : \"1.0\",\n" +
-				"        \"releaseName\" : \"Spring Framework\",\n" +
-				"        \"releaseDate\" : \"24-03-2004\"\n" +
-				"    }\n" +
-				"}";
+		String payload = "{\n" + "    \"specversion\" : \"1.0\",\n" + "    \"type\" : \"org.springframework\",\n"
+				+ "    \"source\" : \"https://spring.io/\",\n" + "    \"id\" : \"A234-1234-1234\",\n"
+				+ "    \"datacontenttype\" : \"application/json\",\n" + "    \"data\" : {\n"
+				+ "        \"version\" : \"1.0\",\n" + "        \"releaseName\" : \"Spring Framework\",\n"
+				+ "        \"releaseDate\" : \"24-03-2004\"\n" + "    }\n" + "}";
 		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
 
-		Message<String> inputMessage = MessageBuilder
-				.withPayload(payload)
-				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
-				.build();
+		Message<String> inputMessage = MessageBuilder.withPayload(payload)
+			.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
+			.build();
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isFalse();
 
 		Message<SpringReleaseEvent> resultMessage = (Message<SpringReleaseEvent>) function.apply(inputMessage);
 		assertThat(resultMessage.getPayload().getReleaseDate())
-				.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
+			.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
 		assertThat(resultMessage.getPayload().getVersion()).isEqualTo("2.0");
-//		/*
-//		 * Validates that although user only deals with POJO, the framework recognizes
-//		 * both on input and output that it is dealing with Cloud Event and generates
-//		 * appropriate headers/attributes
-//		 */
+		// /*
+		// * Validates that although user only deals with POJO, the framework recognizes
+		// * both on input and output that it is dealing with Cloud Event and generates
+		// * appropriate headers/attributes
+		// */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
@@ -262,66 +240,52 @@ public class CloudEventFunctionTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testStructuredPojoToPojoMessageFunction() throws Exception {
-		String payload = "{\n" +
-				"    \"specversion\" : \"1.0\",\n" +
-				"    \"type\" : \"org.springframework\",\n" +
-				"    \"source\" : \"https://spring.io/\",\n" +
-				"    \"id\" : \"A234-1234-1234\",\n" +
-				"    \"datacontenttype\" : \"application/json\",\n" +
-				"    \"data\" : {\n" +
-				"        \"version\" : \"1.0\",\n" +
-				"        \"releaseName\" : \"Spring Framework\",\n" +
-				"        \"releaseDate\" : \"24-03-2004\"\n" +
-				"    }\n" +
-				"}";
+		String payload = "{\n" + "    \"specversion\" : \"1.0\",\n" + "    \"type\" : \"org.springframework\",\n"
+				+ "    \"source\" : \"https://spring.io/\",\n" + "    \"id\" : \"A234-1234-1234\",\n"
+				+ "    \"datacontenttype\" : \"application/json\",\n" + "    \"data\" : {\n"
+				+ "        \"version\" : \"1.0\",\n" + "        \"releaseName\" : \"Spring Framework\",\n"
+				+ "        \"releaseDate\" : \"24-03-2004\"\n" + "    }\n" + "}";
 		Function<Object, Object> function = this.lookup("springReleaseAsMessage", TestConfiguration.class);
 
-		Message<String> inputMessage = MessageBuilder
-				.withPayload(payload)
-				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
-				.build();
+		Message<String> inputMessage = MessageBuilder.withPayload(payload)
+			.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
+			.build();
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isFalse();
 
 		Message<SpringReleaseEvent> resultMessage = (Message<SpringReleaseEvent>) function.apply(inputMessage);
 		assertThat(resultMessage.getPayload().getReleaseDate())
-				.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
+			.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
 		assertThat(resultMessage.getPayload().getVersion()).isEqualTo("2.0");
-//		/*
-//		 * Validates that although user only deals with POJO, the framework recognizes
-//		 * both on input and output that it is dealing with Cloud Event and generates
-//		 * appropriate headers/attributes
-//		 */
+		// /*
+		// * Validates that although user only deals with POJO, the framework recognizes
+		// * both on input and output that it is dealing with Cloud Event and generates
+		// * appropriate headers/attributes
+		// */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
-		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("https://spring.release.event"));
+		assertThat(CloudEventMessageUtils.getSource(resultMessage))
+			.isEqualTo(URI.create("https://spring.release.event"));
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testStructuredPojoToPojoDefaultOutputAttributeProviderNoDataContentType() throws Exception {
-		String payload = "{\n" +
-				"    \"ce_specversion\" : \"1.0\",\n" +
-				"    \"ce_type\" : \"org.springframework\",\n" +
-				"    \"ce_source\" : \"https://spring.io/\",\n" +
-				"    \"ce_id\" : \"A234-1234-1234\",\n" +
-				"    \"ce_data\" : {\n" +
-				"        \"version\" : \"1.0\",\n" +
-				"        \"releaseName\" : \"Spring Framework\",\n" +
-				"        \"releaseDate\" : \"24-03-2004\"\n" +
-				"    }\n" +
-				"}";
+		String payload = "{\n" + "    \"ce_specversion\" : \"1.0\",\n" + "    \"ce_type\" : \"org.springframework\",\n"
+				+ "    \"ce_source\" : \"https://spring.io/\",\n" + "    \"ce_id\" : \"A234-1234-1234\",\n"
+				+ "    \"ce_data\" : {\n" + "        \"version\" : \"1.0\",\n"
+				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
+				+ "    }\n" + "}";
 		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
 
-		Message<String> inputMessage = MessageBuilder
-				.withPayload(payload)
-				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
-				.build();
+		Message<String> inputMessage = MessageBuilder.withPayload(payload)
+			.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
+			.build();
 		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isFalse();
 
 		Message<SpringReleaseEvent> resultMessage = (Message<SpringReleaseEvent>) function.apply(inputMessage);
 		assertThat(resultMessage.getPayload().getReleaseDate())
-				.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
+			.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
 		assertThat(resultMessage.getPayload().getVersion()).isEqualTo("2.0");
 		/*
 		 * Validates that although user only deals with POJO, the framework recognizes
@@ -334,14 +298,15 @@ public class CloudEventFunctionTests {
 	}
 
 	private Function<Object, Object> lookup(String functionDefinition, Class<?>... configClass) {
-		ApplicationContext context = new SpringApplicationBuilder(configClass).run(
-				"--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
+		ApplicationContext context = new SpringApplicationBuilder(configClass)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
 		return context.getBean(FunctionCatalog.class).lookup(functionDefinition);
 	}
 
 	@EnableAutoConfiguration
 	@Configuration
 	public static class TestConfiguration {
+
 		@Bean
 		Function<Message<Person>, Message<Person>> echo() {
 			return Function.identity();
@@ -395,15 +360,17 @@ public class CloudEventFunctionTests {
 				SpringReleaseEvent updated = springRelease().apply(message.getPayload());
 				assertThat(message.getHeaders().get("ce-type")).isEqualTo("org.springframework");
 				return CloudEventMessageBuilder.withData(updated)
-						.copyHeaders(message.getHeaders())
-						.setSource("https://spring.release.event")
-						.setType(SpringReleaseEvent.class.getName())
-						.build();
+					.copyHeaders(message.getHeaders())
+					.setSource("https://spring.release.event")
+					.setType(SpringReleaseEvent.class.getName())
+					.build();
 			};
 		}
+
 	}
 
 	public static class Person {
+
 		private String name;
 
 		public String getName() {
@@ -413,5 +380,7 @@ public class CloudEventFunctionTests {
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
+
 }

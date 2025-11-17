@@ -25,11 +25,12 @@ import com.microsoft.azure.functions.HttpStatusType;
 public class HttpResponseMessageStub implements HttpResponseMessage {
 
 	private HttpStatusType status;
+
 	private Map<String, String> headers = new HashMap<>();
+
 	private Object body;
 
-	public HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers,
-			Object body) {
+	public HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers, Object body) {
 		this.status = status;
 		this.headers = headers;
 		this.body = body;

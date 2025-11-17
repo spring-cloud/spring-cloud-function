@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.springframework.cloud.function.serverless.web;
 
 import java.util.Collection;
@@ -28,12 +27,12 @@ import jakarta.servlet.ServletRegistration;
 import jakarta.servlet.ServletSecurityElement;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 4.x
  *
  */
-public class ServerlessServletRegistration implements ServletRegistration, ServletRegistration.Dynamic, Comparable<ServerlessServletRegistration> {
+public class ServerlessServletRegistration
+		implements ServletRegistration, ServletRegistration.Dynamic, Comparable<ServerlessServletRegistration> {
 
 	private final String servletName;
 
