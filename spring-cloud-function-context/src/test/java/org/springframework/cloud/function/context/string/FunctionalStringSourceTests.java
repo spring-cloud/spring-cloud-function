@@ -35,7 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 // @checkstyle:off
-@FunctionalSpringBootTest(classes = Object.class, properties = "spring.main.sources=org.springframework.cloud.function.context.string.FunctionalStringSourceTests.TestConfiguration")
+@FunctionalSpringBootTest(classes = Object.class,
+		properties = "spring.main.sources=org.springframework.cloud.function.context.string.FunctionalStringSourceTests.TestConfiguration")
 // @checkstyle:on
 public class FunctionalStringSourceTests {
 
@@ -44,8 +45,7 @@ public class FunctionalStringSourceTests {
 
 	@Test
 	public void words() throws Exception {
-		Function<Flux<String>, Flux<String>> function = this.catalog
-				.lookup(Function.class, "function");
+		Function<Flux<String>, Flux<String>> function = this.catalog.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 	}
 

@@ -26,26 +26,22 @@ public abstract class WebRequestConstants {
 	/**
 	 * Function attribute name.
 	 */
-	public static final String FUNCTION = WebRequestConstants.class.getName()
-			+ ".function";
+	public static final String FUNCTION = WebRequestConstants.class.getName() + ".function";
 
 	/**
 	 * Consumer attribute name.
 	 */
-	public static final String CONSUMER = WebRequestConstants.class.getName()
-			+ ".consumer";
+	public static final String CONSUMER = WebRequestConstants.class.getName() + ".consumer";
 
 	/**
 	 * Supplier attribute name.
 	 */
-	public static final String SUPPLIER = WebRequestConstants.class.getName()
-			+ ".supplier";
+	public static final String SUPPLIER = WebRequestConstants.class.getName() + ".supplier";
 
 	/**
 	 * Argument attribute name.
 	 */
-	public static final String ARGUMENT = WebRequestConstants.class.getName()
-			+ ".argument";
+	public static final String ARGUMENT = WebRequestConstants.class.getName() + ".argument";
 
 	/**
 	 * Handler attribute name.

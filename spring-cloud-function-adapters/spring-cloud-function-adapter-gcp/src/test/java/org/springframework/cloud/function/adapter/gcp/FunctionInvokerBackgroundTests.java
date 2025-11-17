@@ -54,6 +54,7 @@ public class FunctionInvokerBackgroundTests {
 	public void testHelloWorldSupplier_Background(CaptureSystemOutput.OutputCapture outputCapture) {
 		testBackgroundFunction(outputCapture, HelloWorldSupplier.class, null, "Hello World!", null, null);
 	}
+
 	@Test
 	public void testJsonInputFunction_Background(CaptureSystemOutput.OutputCapture outputCapture) {
 		testBackgroundFunction(outputCapture, JsonInputFunction.class, new IncomingRequest("hello"),
@@ -119,8 +120,8 @@ public class FunctionInvokerBackgroundTests {
 				"Message: Hello; Type: google.pubsub.topic.publish; Message ID: 1234", "google.pubsub.topic.publish");
 	}
 
-	private <I, O> void testBackgroundFunction(CaptureSystemOutput.OutputCapture outputCapture, Class<?> configurationClass, I input, O expectedResult,
-			String expectedSysOut, String eventType) {
+	private <I, O> void testBackgroundFunction(CaptureSystemOutput.OutputCapture outputCapture,
+			Class<?> configurationClass, I input, O expectedResult, String expectedSysOut, String eventType) {
 
 		FunctionInvoker handler = new FunctionInvoker(configurationClass);
 
@@ -192,8 +193,9 @@ public class FunctionInvokerBackgroundTests {
 		@Bean
 		public Function<IncomingRequest, Message<OutgoingResponse>> function() {
 			return (in) -> MessageBuilder
-					.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
-					.setHeader("foo", "bar").build();
+				.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
+				.setHeader("foo", "bar")
+				.build();
 		}
 
 	}
@@ -263,6 +265,7 @@ public class FunctionInvokerBackgroundTests {
 				System.out.println("Message: " + payload + "; Type: " + eventType + "; Message ID: " + messageId);
 			};
 		}
+
 	}
 
 	@Configuration
@@ -299,6 +302,7 @@ public class FunctionInvokerBackgroundTests {
 		public void setMessage(String message) {
 			this.message = message;
 		}
+
 	}
 
 	public static class OutgoingResponse {

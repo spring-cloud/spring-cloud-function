@@ -35,16 +35,13 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-
-
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
 @Configuration
 @ConditionalOnClass(RequestMappingHandlerMapping.class)
-public class FunctionHandlerMapping extends RequestMappingHandlerMapping
-		implements InitializingBean {
+public class FunctionHandlerMapping extends RequestMappingHandlerMapping implements InitializingBean {
 
 	private final FunctionCatalog functions;
 
@@ -79,14 +76,12 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	}
 
 	@Override
-	protected HandlerMethod getHandlerInternal(HttpServletRequest request)
-			throws Exception {
+	protected HandlerMethod getHandlerInternal(HttpServletRequest request) throws Exception {
 		HandlerMethod handler = super.getHandlerInternal(request);
 		if (handler == null) {
 			return null;
 		}
-		String path = (String) request
-				.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
 		if (path == null) {
 			return handler;
 		}
@@ -97,8 +92,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			path = path.substring(this.prefix.length());
 		}
 
-		Object function = FunctionWebRequestProcessingHelper.findFunction(this.functionProperties, HttpMethod.valueOf(request.getMethod()),
-				this.functions, new HttpRequestAttributeDelegate(request), path);
+		Object function = FunctionWebRequestProcessingHelper.findFunction(this.functionProperties,
+				HttpMethod.valueOf(request.getMethod()), this.functions, new HttpRequestAttributeDelegate(request),
+				path);
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {
 				this.logger.debug("Found function for GET: " + path);
@@ -111,7 +107,9 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 
 	@SuppressWarnings("serial")
 	private static class HttpRequestAttributeDelegate extends HashMap<String, Object> {
+
 		private final HttpServletRequest request;
+
 		HttpRequestAttributeDelegate(HttpServletRequest request) {
 			this.request = request;
 		}
@@ -121,6 +119,7 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 			this.request.setAttribute(key, value);
 			return value;
 		}
+
 	}
 
 }

@@ -25,9 +25,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.util.CollectionUtils;
 
-
 /**
- *
  * @author Oleg Zhurakousky
  * @since 3.2
  *
@@ -38,8 +36,8 @@ public class AWSCompanionAutoConfiguration {
 	@Bean
 	public AWSTypesMessageConverter awsTypesMessageConverter(GenericApplicationContext applicationContext) {
 		JsonMapper jsonMapper = CollectionUtils.isEmpty(applicationContext.getBeansOfType(JsonMapper.class).values())
-				? new JacksonMapper(new ObjectMapper())
-						: applicationContext.getBean(JsonMapper.class);
+				? new JacksonMapper(new ObjectMapper()) : applicationContext.getBean(JsonMapper.class);
 		return new AWSTypesMessageConverter(jsonMapper);
 	}
+
 }

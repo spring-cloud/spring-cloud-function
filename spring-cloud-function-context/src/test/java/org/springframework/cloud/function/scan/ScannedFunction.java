@@ -28,13 +28,13 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component("function")
-public class ScannedFunction
-		implements Function<Map<String, String>, Map<String, String>> {
+public class ScannedFunction implements Function<Map<String, String>, Map<String, String>> {
 
 	@Override
 	public Map<String, String> apply(Map<String, String> m) {
-		return m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
-				e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
+		return m.entrySet()
+			.stream()
+			.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
 	}
 
 }

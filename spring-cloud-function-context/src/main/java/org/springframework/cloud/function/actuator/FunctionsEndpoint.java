@@ -72,12 +72,16 @@ public class FunctionsEndpoint {
 		return allFunctions;
 	}
 
-
 	private String toSimplePolyOut(FunctionInvocationWrapper function) {
-		return FunctionTypeUtils.getRawType(function.getItemType(function.getOutputType())).getSimpleName().toLowerCase(Locale.ROOT);
+		return FunctionTypeUtils.getRawType(function.getItemType(function.getOutputType()))
+			.getSimpleName()
+			.toLowerCase(Locale.ROOT);
 	}
 
 	private String toSimplePolyIn(FunctionInvocationWrapper function) {
-		return FunctionTypeUtils.getRawType(function.getItemType(function.getInputType())).getSimpleName().toLowerCase(Locale.ROOT);
+		return FunctionTypeUtils.getRawType(function.getItemType(function.getInputType()))
+			.getSimpleName()
+			.toLowerCase(Locale.ROOT);
 	}
+
 }

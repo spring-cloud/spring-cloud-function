@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.web.flux;
 
-
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.InitializingBean;
@@ -39,8 +38,7 @@ import org.springframework.web.server.ServerWebExchange;
  */
 @Configuration
 @ConditionalOnClass(RequestMappingHandlerMapping.class)
-public class FunctionHandlerMapping extends RequestMappingHandlerMapping
-		implements InitializingBean {
+public class FunctionHandlerMapping extends RequestMappingHandlerMapping implements InitializingBean {
 
 	private final FunctionCatalog functions;
 
@@ -52,8 +50,8 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	private String prefix = "";
 
 	@Autowired
-	public FunctionHandlerMapping(FunctionCatalog catalog,
-			FunctionController controller, FunctionProperties functionProperties) {
+	public FunctionHandlerMapping(FunctionCatalog catalog, FunctionController controller,
+			FunctionProperties functionProperties) {
 		this.functions = catalog;
 		this.logger.info("FunctionCatalog: " + catalog);
 		setOrder(super.getOrder() - 5);
@@ -83,8 +81,8 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		if (path.startsWith(this.prefix)) {
 			path = path.substring(this.prefix.length());
 		}
-		Object function = FunctionWebRequestProcessingHelper
-				.findFunction(this.functionProperties, request.getRequest().getMethod(), this.functions, request.getAttributes(), path);
+		Object function = FunctionWebRequestProcessingHelper.findFunction(this.functionProperties,
+				request.getRequest().getMethod(), this.functions, request.getAttributes(), path);
 
 		if (function != null) {
 			if (this.logger.isDebugEnabled()) {
@@ -99,4 +97,5 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	protected void initHandlerMethods() {
 	}
+
 }

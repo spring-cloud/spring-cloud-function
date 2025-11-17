@@ -53,11 +53,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.main.web-application-type=servlet",
-		"spring.cloud.function.web.path=/functions",
-		"spring.cloud.function.routing.enabled=true",
-		"spring.cloud.function.http.ignored-headers=abc,xyz"})
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = { "spring.main.web-application-type=servlet", "spring.cloud.function.web.path=/functions",
+				"spring.cloud.function.routing.enabled=true", "spring.cloud.function.http.ignored-headers=abc,xyz" })
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 @AutoConfigureTestRestTemplate
 public class RoutingFunctionTests {
@@ -68,22 +66,20 @@ public class RoutingFunctionTests {
 	@Autowired
 	private FunctionProperties functionProperties;
 
-
 	@Test
 	@DirtiesContext
 	public void testFunctionMessage() throws Exception {
 
 		HttpEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.APPLICATION_JSON)
-						.header("spring.cloud.function.definition", "employee")
-						.header("abc", "abc")
-						.header("xyz", "xyz")
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.APPLICATION_JSON)
+				.header("spring.cloud.function.definition", "employee")
+				.header("abc", "abc")
+				.header("xyz", "xyz")
+				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
 		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
-		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
-				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().get("x-content-type").get(0)).isEqualTo("application/xml");
 		assertThat(postForEntity.getHeaders().containsHeader("spring.cloud.function.definition")).isTrue();
 		assertThat(postForEntity.getHeaders().containsHeader("abc")).isFalse();
 		assertThat(postForEntity.getHeaders().containsHeader("xyz")).isFalse();
@@ -94,15 +90,14 @@ public class RoutingFunctionTests {
 	@DirtiesContext
 	public void testFunctionPrimitive() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.TEXT_PLAIN)
-						.header("spring.cloud.function.definition", "echo")
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
-		postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.TEXT_PLAIN)
-						.header("spring.cloud.function.definition", "echo")
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.TEXT_PLAIN)
+				.header("spring.cloud.function.definition", "echo")
+				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+		postForEntity = this.rest.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+			.contentType(MediaType.TEXT_PLAIN)
+			.header("spring.cloud.function.definition", "echo")
+			.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 
 		assertThat(postForEntity.getBody()).isEqualTo("{\"name\":\"Bob\",\"age\":25}");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -114,23 +109,24 @@ public class RoutingFunctionTests {
 	public void testFluxFunctionPrimitive() throws Exception {
 		this.functionProperties.setDefinition("fluxuppercase");
 		ResponseEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.TEXT_PLAIN)
-						.body("[\"hello\", \"bye\"]"), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.TEXT_PLAIN)
+				.body("[\"hello\", \"bye\"]"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("[\"HELLO\", \"BYE\"]");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		postForEntity = this.rest.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-				.contentType(MediaType.TEXT_PLAIN)
-				.body("hello1"), String.class);
+			.contentType(MediaType.TEXT_PLAIN)
+			.body("hello1"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("HELLO1");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-//		postForEntity = this.rest.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-//				.contentType(MediaType.TEXT_PLAIN)
-//				.body("hello2"), String.class);
-//		assertThat(postForEntity.getBody()).isEqualTo("HELLO2");
-//		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+		// postForEntity = this.rest.exchange(RequestEntity.post(new URI("/functions/" +
+		// RoutingFunction.FUNCTION_NAME))
+		// .contentType(MediaType.TEXT_PLAIN)
+		// .body("hello2"), String.class);
+		// assertThat(postForEntity.getBody()).isEqualTo("HELLO2");
+		// assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
 	@Test
@@ -138,9 +134,9 @@ public class RoutingFunctionTests {
 	public void testFluxFunctionPrimitiveArray() throws Exception {
 		this.functionProperties.setDefinition("fluxuppercase");
 		ResponseEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.APPLICATION_JSON)
-						.body(new String[] {"a", "b", "c"}), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.APPLICATION_JSON)
+				.body(new String[] { "a", "b", "c" }), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("[\"A\",\"B\",\"C\"]");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
@@ -150,24 +146,23 @@ public class RoutingFunctionTests {
 	@Disabled
 	public void testFluxConsumer() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.APPLICATION_JSON)
-						.header("function.name", "fluxconsumer")
-						.body(new String[] {"a", "b", "c"}), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.APPLICATION_JSON)
+				.header("function.name", "fluxconsumer")
+				.body(new String[] { "a", "b", "c" }), String.class);
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 	}
-
 
 	@Test
 	@DirtiesContext
 	@Disabled
 	public void testFunctionPojo() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.APPLICATION_JSON)
-						.header("function.name", "echoPojo")
-						.body("{\"value\":\"foo\"}"), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.APPLICATION_JSON)
+				.header("function.name", "echoPojo")
+				.body("{\"value\":\"foo\"}"), String.class);
 		assertThat(postForEntity.getBody()).isEqualTo("{\"foo\":{\"value\":\"foo\"},\"value\":\"bar\"}");
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
@@ -177,10 +172,10 @@ public class RoutingFunctionTests {
 	@Disabled
 	public void testConsumerMessage() throws Exception {
 		ResponseEntity<String> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
-						.contentType(MediaType.TEXT_PLAIN)
-						.header("spring.cloud.function.definition", "messageConsumer")
-						.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
+			.exchange(RequestEntity.post(new URI("/functions/" + RoutingFunction.FUNCTION_NAME))
+				.contentType(MediaType.TEXT_PLAIN)
+				.header("spring.cloud.function.definition", "messageConsumer")
+				.body("{\"name\":\"Bob\",\"age\":25}"), String.class);
 		assertThat(postForEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 
@@ -191,10 +186,10 @@ public class RoutingFunctionTests {
 		@Bean({ "employee" })
 		public Function<Message<Map<String, Object>>, Message<Map<String, Object>>> function() {
 			return request -> {
-				Message<Map<String, Object>> message = MessageBuilder
-						.withPayload(request.getPayload())
-						.setHeader("X-Content-Type", "application/xml")
-						.setHeader("foo", "bar").build();
+				Message<Map<String, Object>> message = MessageBuilder.withPayload(request.getPayload())
+					.setHeader("X-Content-Type", "application/xml")
+					.setHeader("foo", "bar")
+					.build();
 				return message;
 			};
 		}
@@ -237,6 +232,7 @@ public class RoutingFunctionTests {
 	}
 
 	public static class Foo {
+
 		private String value;
 
 		public String getValue() {
@@ -246,23 +242,31 @@ public class RoutingFunctionTests {
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 	public static class Bar {
+
 		private Foo foo;
+
 		private String value;
+
 		public Foo getFoo() {
 			return foo;
 		}
+
 		public void setFoo(Foo foo) {
 			this.foo = foo;
 		}
+
 		public String getValue() {
 			return value;
 		}
+
 		public void setValue(String value) {
 			this.value = value;
 		}
+
 	}
 
 }

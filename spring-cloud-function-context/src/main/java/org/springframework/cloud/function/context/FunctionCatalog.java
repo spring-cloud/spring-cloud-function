@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -30,9 +29,8 @@ public interface FunctionCatalog {
 
 	/**
 	 * Will look up the instance of the functional interface by name only.
-	 *
-	 * @param functionDefinition the definition of the functional interface. Must
-	 *                           not be null;
+	 * @param functionDefinition the definition of the functional interface. Must not be
+	 * null;
 	 * @return instance of the functional interface registered with this catalog
 	 */
 	default <T> T lookup(String functionDefinition) {
@@ -40,44 +38,41 @@ public interface FunctionCatalog {
 	}
 
 	/**
-	 * Will look up the instance of the functional interface by name and type which
-	 * can only be Supplier, Consumer or Function. If type is not provided, the
-	 * lookup will be made based on name only.
-	 *
-	 * @param                    <T> instance type
-	 * @param type               the type of functional interface. Can be null
-	 * @param functionDefinition the definition of the functional interface. Must
-	 *                           not be null;
+	 * Will look up the instance of the functional interface by name and type which can
+	 * only be Supplier, Consumer or Function. If type is not provided, the lookup will be
+	 * made based on name only.
+	 * @param <T> instance type
+	 * @param type the type of functional interface. Can be null
+	 * @param functionDefinition the definition of the functional interface. Must not be
+	 * null;
 	 * @return instance of the functional interface registered with this catalog
 	 */
 	default <T> T lookup(Class<?> type, String functionDefinition) {
 		return this.lookup(type, functionDefinition, (String[]) null);
 	}
 
-
 	/**
-	 * Will look up the instance of the functional interface by name only.
-	 * This lookup method assumes a very specific semantics which are: <i>function sub-type(s)
+	 * Will look up the instance of the functional interface by name only. This lookup
+	 * method assumes a very specific semantics which are: <i>function sub-type(s)
 	 * expected to be {@code Message<byte[]>}</i>. <br>
-	 * For example,
-	 * <br><br>
-	 * {@code Function<Message<byte[]>, Message<byte[]>>} or
+	 * For example, <br>
 	 * <br>
-	 * {@code Function<Flux<Message<byte[]>>, Flux<Message<byte[]>>>} or
+	 * {@code Function<Message<byte[]>, Message<byte[]>>} or <br>
+	 * {@code Function<Flux<Message<byte[]>>, Flux<Message<byte[]>>>} or <br>
+	 * {@code Consumer<Flux<Message<Flux<Message<byte[]>>>} etc. . . <br>
 	 * <br>
-	 * {@code Consumer<Flux<Message<Flux<Message<byte[]>>>} etc. . .
-	 * <br><br>
-	 * The {@code acceptedOutputMimeTypes} are the string representation of {@link MimeType} where each
-	 * mime-type in the provided array would correspond to the output with the same index
-	 * (for cases of functions with multiple outputs) and is used to convert such output back
-	 * to {@code Message<byte[]>}.
-	 * If you need to provide several accepted types per specific output you can simply delimit
-	 * them with comma (e.g., {@code application/json,text/plain...}).
-	 *
-	 * @param  <T> instance type which should be one of {@link Supplier}, {@link Function} or {@link Consumer}.
-	 * @param functionDefinition  the definition of a function (e.g., 'foo' or 'foo|bar')
-	 * @param acceptedOutputMimeTypes acceptedOutputMimeTypes array of string representation of {@link MimeType}s
-	 * 						used to convert function output back to {@code Message<byte[]>}.
+	 * The {@code acceptedOutputMimeTypes} are the string representation of
+	 * {@link MimeType} where each mime-type in the provided array would correspond to the
+	 * output with the same index (for cases of functions with multiple outputs) and is
+	 * used to convert such output back to {@code Message<byte[]>}. If you need to provide
+	 * several accepted types per specific output you can simply delimit them with comma
+	 * (e.g., {@code application/json,text/plain...}).
+	 * @param <T> instance type which should be one of {@link Supplier}, {@link Function}
+	 * or {@link Consumer}.
+	 * @param functionDefinition the definition of a function (e.g., 'foo' or 'foo|bar')
+	 * @param acceptedOutputMimeTypes acceptedOutputMimeTypes array of string
+	 * representation of {@link MimeType}s used to convert function output back to
+	 * {@code Message<byte[]>}.
 	 * @return instance of the functional interface registered with this catalog
 	 */
 	default <T> T lookup(String functionDefinition, String... expectedOutputMimeTypes) {
@@ -90,7 +85,6 @@ public interface FunctionCatalog {
 
 	/**
 	 * Return the count of functions registered in this catalog.
-	 *
 	 * @return the count of functions registered in this catalog
 	 */
 	default int size() {

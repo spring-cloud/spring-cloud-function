@@ -42,7 +42,6 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Salvatore Bernardo
  *
@@ -57,7 +56,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		this(converters, null);
 	}
 
-	public SmartCompositeMessageConverter(Collection<MessageConverter> converters, Supplier<Collection<MessageConverterHelper>> messageConverterHelpersSupplier) {
+	public SmartCompositeMessageConverter(Collection<MessageConverter> converters,
+			Supplier<Collection<MessageConverterHelper>> messageConverterHelpersSupplier) {
 		super(converters);
 		this.messageConverterHelpersSupplier = messageConverterHelpersSupplier;
 	}
@@ -68,7 +68,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		Collection<MessageConverterHelper> messageConverterHelpers = this.messageConverterHelpersSupplier != null
 				? this.messageConverterHelpersSupplier.get() : Collections.emptyList();
 		for (MessageConverter converter : getConverters()) {
-			if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
+			if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload())
+					&& !(message.getPayload() instanceof Collection<?>)) {
 				return message.getPayload();
 			}
 			try {
@@ -93,7 +94,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	public Object fromMessage(Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
 		Collection<MessageConverterHelper> messageConverterHelpers = this.messageConverterHelpersSupplier != null
 				? this.messageConverterHelpersSupplier.get() : Collections.emptyList();
-		if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
+		if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload())
+				&& !(message.getPayload() instanceof Collection<?>)) {
 			return message.getPayload();
 		}
 		Object result = null;
@@ -108,13 +110,27 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 					resultList.add(null);
 					isConverted = true;
 				}
-				for (Iterator<MessageConverter> iterator = getConverters().iterator(); iterator.hasNext() && !isConverted;) {
+				for (Iterator<MessageConverter> iterator = getConverters().iterator(); iterator.hasNext()
+						&& !isConverted;) {
 					MessageConverter converter = (MessageConverter) iterator.next();
-					if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO Stream stuff, needs to be removed
-						Message<?> m  = MessageBuilder.withPayload(item).copyHeaders(message.getHeaders()).build(); // TODO Message creating may be expensive
-						Object conversionResult = (converter instanceof SmartMessageConverter & genericItemRawType != genericItemType ?
-								((SmartMessageConverter) converter).fromMessage(m, genericItemRawType, genericItemType) :
-								converter.fromMessage(m, genericItemRawType));
+					if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO
+																													// Stream
+																													// stuff,
+																													// needs
+																													// to
+																													// be
+																													// removed
+						Message<?> m = MessageBuilder.withPayload(item).copyHeaders(message.getHeaders()).build(); // TODO
+																													// Message
+																													// creating
+																													// may
+																													// be
+																													// expensive
+						Object conversionResult = (converter instanceof SmartMessageConverter
+								& genericItemRawType != genericItemType
+										? ((SmartMessageConverter) converter).fromMessage(m, genericItemRawType,
+												genericItemType)
+										: converter.fromMessage(m, genericItemRawType));
 						if (conversionResult != null) {
 							resultList.add(conversionResult);
 							isConverted = true;
@@ -130,10 +146,16 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		}
 		else {
 			for (MessageConverter converter : getConverters()) {
-				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO Stream stuff, needs to be removed
-					result = (converter instanceof SmartMessageConverter ?
-							((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint) :
-							converter.fromMessage(message, targetClass));
+				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO
+																												// Stream
+																												// stuff,
+																												// needs
+																												// to
+																												// be
+																												// removed
+					result = (converter instanceof SmartMessageConverter
+							? ((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint)
+							: converter.fromMessage(message, targetClass));
 					if (result != null) {
 						return result;
 					}
@@ -144,7 +166,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		return result;
 	}
 
-	private void failConversionIfNecessary(Message<?> message, Collection<MessageConverterHelper> messageConverterHelpers, Throwable t) {
+	private void failConversionIfNecessary(Message<?> message,
+			Collection<MessageConverterHelper> messageConverterHelpers, Throwable t) {
 		for (MessageConverterHelper messageConverterHelper : messageConverterHelpers) {
 			if (messageConverterHelper.shouldFailIfCantConvert(message, t)) {
 				throw new MessageConversionException("Failed to convert Message: " + message
@@ -153,7 +176,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		}
 	}
 
-	private void postProcessBatchMessage(Message<?> message, Collection<MessageConverterHelper> messageConverterHelpers, int index) {
+	private void postProcessBatchMessage(Message<?> message, Collection<MessageConverterHelper> messageConverterHelpers,
+			int index) {
 		for (MessageConverterHelper messageConverterHelper : messageConverterHelpers) {
 			messageConverterHelper.postProcessBatchMessageOnFailure(message, index);
 		}
@@ -172,7 +196,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			for (String contentType : contentTypes) {
 				if (!MimeType.valueOf(contentType).isConcrete()) {
 					if (converter instanceof AbstractMessageConverter) {
-						List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter).getSupportedMimeTypes();
+						List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter)
+							.getSupportedMimeTypes();
 						for (MimeType supportedMimeType : supportedMimeTypes) {
 							if (supportedMimeType.isCompatibleWith(MimeType.valueOf(contentType))) {
 								MessageHeaderAccessor h = new MessageHeaderAccessor();
@@ -213,7 +238,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 						MessageHeaderAccessor h = new MessageHeaderAccessor();
 						h.copyHeaders(headers);
 						h.setHeader(MessageHeaders.CONTENT_TYPE, supportedMimeType);
-						Message<?> result = ((SmartMessageConverter) converter).toMessage(payload, h.getMessageHeaders(), conversionHint);
+						Message<?> result = ((SmartMessageConverter) converter).toMessage(payload,
+								h.getMessageHeaders(), conversionHint);
 						if (result != null) {
 							return result;
 						}
@@ -223,7 +249,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 					MessageHeaderAccessor h = new MessageHeaderAccessor();
 					h.copyHeaders(headers);
 					h.setHeader(MessageHeaders.CONTENT_TYPE, contentType);
-					Message<?> result = ((SmartMessageConverter) converter).toMessage(payload, h.getMessageHeaders(), conversionHint);
+					Message<?> result = ((SmartMessageConverter) converter).toMessage(payload, h.getMessageHeaders(),
+							conversionHint);
 					if (result != null) {
 						return result;
 					}
@@ -232,4 +259,5 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		}
 		return null;
 	}
+
 }

@@ -47,12 +47,15 @@ public class FunctionalWithInputSetTests {
 	@Test
 	public void words() throws Exception {
 		this.client = this.client.mutate().responseTimeout(Duration.ofSeconds(300)).build();
-		String reply = this.client
-				.post().uri("/")
-				.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
-				.exchange()
-				.expectStatus().isOk().expectBody(String.class).returnResult()
-				.getResponseBody();
+		String reply = this.client.post()
+			.uri("/")
+			.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.returnResult()
+			.getResponseBody();
 		assertThat(reply.contains("FOO")).isTrue();
 		assertThat(reply.contains("BAR")).isTrue();
 		assertThat(reply.contains("{\"value\":\"")).isTrue();
@@ -63,8 +66,8 @@ public class FunctionalWithInputSetTests {
 
 		@Override
 		public Foo apply(Set<Foo> value) {
-			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase(Locale.ROOT))
-					.collect(Collectors.joining()));
+			return new Foo(
+					value.stream().map(foo -> foo.getValue().toUpperCase(Locale.ROOT)).collect(Collectors.joining()));
 		}
 
 	}

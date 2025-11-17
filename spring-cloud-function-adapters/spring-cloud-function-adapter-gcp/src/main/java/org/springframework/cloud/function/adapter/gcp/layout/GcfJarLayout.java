@@ -49,7 +49,7 @@ public class GcfJarLayout extends Layouts.Jar implements CustomLoaderLayout {
 		writer.writeLoaderClasses();
 
 		String jarName = LAUNCHER_NAME.replaceAll("\\.", "/") + ".class";
-		writer.writeEntry(
-			jarName, GcfJarLauncher.class.getResourceAsStream("/" + jarName));
+		writer.writeEntry(jarName, GcfJarLauncher.class.getResourceAsStream("/" + jarName));
 	}
+
 }

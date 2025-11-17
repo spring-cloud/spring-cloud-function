@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.adapter.azure.web;
 
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -25,9 +24,11 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class PetData {
+
 	private PetData() {
 
 	}
+
 	private static List<String> breeds = new ArrayList<>();
 	static {
 		breeds.add("Afghan Hound");
@@ -108,8 +109,8 @@ public final class PetData {
 	public static Date getRandomDoB() {
 		GregorianCalendar gc = new GregorianCalendar();
 
-		int year = ThreadLocalRandom.current().nextInt(Calendar.getInstance().get(Calendar.YEAR) - 15,
-				Calendar.getInstance().get(Calendar.YEAR));
+		int year = ThreadLocalRandom.current()
+			.nextInt(Calendar.getInstance().get(Calendar.YEAR) - 15, Calendar.getInstance().get(Calendar.YEAR));
 
 		gc.set(Calendar.YEAR, year);
 
@@ -118,4 +119,5 @@ public final class PetData {
 		gc.set(Calendar.DAY_OF_YEAR, dayOfYear);
 		return gc.getTime();
 	}
+
 }

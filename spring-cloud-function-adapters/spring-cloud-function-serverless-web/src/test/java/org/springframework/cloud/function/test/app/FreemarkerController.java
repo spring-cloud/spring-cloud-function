@@ -29,4 +29,5 @@ public class FreemarkerController {
 	public String something2() {
 		return "index";
 	}
+
 }

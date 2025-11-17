@@ -31,8 +31,7 @@ import org.springframework.context.annotation.Configuration;
  * @since 3.2
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(name = {
-		"org.springframework.boot.actuate.endpoint.annotation.Endpoint" })
+@ConditionalOnClass(name = { "org.springframework.boot.actuate.endpoint.annotation.Endpoint" })
 @ConditionalOnBean(FunctionCatalog.class)
 @AutoConfigureAfter(EndpointAutoConfiguration.class)
 public class FunctionsEndpointAutoConfiguration {

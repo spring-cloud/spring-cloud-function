@@ -58,7 +58,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Dave Syer
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {"spring.main.web-application-type=reactive", "debug=true"})
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = { "spring.main.web-application-type=reactive", "debug=true" })
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 @DirtiesContext
 @AutoConfigureTestRestTemplate
@@ -82,71 +83,63 @@ public class HttpGetIntegrationTests {
 
 	@Test
 	public void staticResource() {
-		assertThat(this.rest.getForObject("/test.html", String.class))
-				.contains("<body>Test");
+		assertThat(this.rest.getForObject("/test.html", String.class)).contains("<body>Test");
 	}
 
 	@Test
 	public void wordsSSE() throws Exception {
-		assertThat(this.rest.exchange(
-				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
-				String.class).getBody()).isEqualTo(sse("foo", "bar"));
+		assertThat(this.rest.exchange(RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(), String.class)
+			.getBody()).isEqualTo(sse("foo", "bar"));
 	}
 
 	@Test
 	public void wordsJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/words"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\",\"bar\"]");
+			.exchange(RequestEntity.get(new URI("/words")).accept(MediaType.APPLICATION_JSON).build(), String.class)
+			.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
 	public void errorJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/bang"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\"]");
+			.exchange(RequestEntity.get(new URI("/bang")).accept(MediaType.APPLICATION_JSON).build(), String.class)
+			.getBody()).isEqualTo("[\"foo\"]");
 	}
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
 	public void word() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(
-				RequestEntity.get(new URI("/word")).accept(MediaType.TEXT_PLAIN).build(),
-				String.class);
+		ResponseEntity<String> result = this.rest
+			.exchange(RequestEntity.get(new URI("/word")).accept(MediaType.TEXT_PLAIN).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("foo");
 	}
 
 	@Test
 	public void foos() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+		assertThat(result.getBody()).isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void getMore() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/get/more")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/get/more")).build(),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
 	public void bareWords() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/bareWords")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/bareWords")).build(),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
@@ -154,101 +147,85 @@ public class HttpGetIntegrationTests {
 	@Test
 	public void timeoutJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/timeout"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\"]");
+			.exchange(RequestEntity.get(new URI("/timeout")).accept(MediaType.APPLICATION_JSON).build(), String.class)
+			.getBody()).isEqualTo("[\"foo\"]");
 	}
 
 	@Test
 	public void emptyJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/empty"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[]");
+			.exchange(RequestEntity.get(new URI("/empty")).accept(MediaType.APPLICATION_JSON).build(), String.class)
+			.getBody()).isEqualTo("[]");
 	}
 
 	@Test
 	public void sentences() throws Exception {
-		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class)
-				.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+		assertThat(this.rest.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class).getBody())
+			.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptAny() throws Exception {
 		assertThat(
-				this.rest
-						.exchange(RequestEntity.get(new URI("/sentences"))
-								.accept(MediaType.ALL).build(), String.class)
-						.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+				this.rest.exchange(RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(), String.class)
+					.getBody())
+			.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptJson() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(
-						RequestEntity.get(new URI("/sentences"))
-								.accept(MediaType.APPLICATION_JSON).build(),
-						String.class);
+		ResponseEntity<String> result = this.rest.exchange(
+				RequestEntity.get(new URI("/sentences")).accept(MediaType.APPLICATION_JSON).build(), String.class);
 		assertThat(result.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
-		assertThat(result.getHeaders().getContentType())
-				.isGreaterThanOrEqualTo(MediaType.APPLICATION_JSON);
+		assertThat(result.getHeaders().getContentType()).isGreaterThanOrEqualTo(MediaType.APPLICATION_JSON);
 	}
 
 	@Test
 	public void sentencesAcceptSse() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(
-				RequestEntity.get(new URI("/sentences")).accept(EVENT_STREAM).build(),
-				String.class);
-		assertThat(result.getBody())
-				.isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
-		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM))
-				.isTrue();
+		ResponseEntity<String> result = this.rest
+			.exchange(RequestEntity.get(new URI("/sentences")).accept(EVENT_STREAM).build(), String.class);
+		assertThat(result.getBody()).isEqualTo(sse("[\"go\",\"home\"]", "[\"come\",\"back\"]"));
+		assertThat(result.getHeaders().getContentType().isCompatibleWith(EVENT_STREAM)).isTrue();
 	}
 
 	@Test
 	public void postMoreFoo() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.get(new URI("/post/more/foo")).accept(MediaType.TEXT_PLAIN).build(),
-				String.class);
+		ResponseEntity<String> result = this.rest
+			.exchange(RequestEntity.get(new URI("/post/more/foo")).accept(MediaType.TEXT_PLAIN).build(), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\"]");
 	}
 
 	@Test
 	public void uppercaseGet() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.get(new URI("/uppercase/foo")).accept(MediaType.TEXT_PLAIN).build(),
-				String.class);
+		ResponseEntity<String> result = this.rest
+			.exchange(RequestEntity.get(new URI("/uppercase/foo")).accept(MediaType.TEXT_PLAIN).build(), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"(FOO)\"]");
 	}
 
 	@Test
 	public void convertGet() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.get(new URI("/wrap/123")).accept(MediaType.TEXT_PLAIN).build(),
-				String.class);
+		ResponseEntity<String> result = this.rest
+			.exchange(RequestEntity.get(new URI("/wrap/123")).accept(MediaType.TEXT_PLAIN).build(), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"..123..\"]");
 	}
 
 	@Test
 	public void supplierFirst() {
-		assertThat(this.rest.getForObject("/not/a/function", String.class))
-				.isEqualTo("[\"hello\"]");
+		assertThat(this.rest.getForObject("/not/a/function", String.class)).isEqualTo("[\"hello\"]");
 	}
 
 	@Test
 	public void convertGetJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/entity/321"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[{\"value\":321}]");
+			.exchange(RequestEntity.get(new URI("/entity/321")).accept(MediaType.APPLICATION_JSON).build(),
+					String.class)
+			.getBody()).isEqualTo("[{\"value\":321}]");
 	}
 
 	@Test
 	public void compose() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.get(new URI("/concat,reverse/foo")).accept(MediaType.TEXT_PLAIN).build(),
-				String.class);
+		ResponseEntity<String> result = this.rest.exchange(
+				RequestEntity.get(new URI("/concat,reverse/foo")).accept(MediaType.TEXT_PLAIN).build(), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"oofoof\"]");
 	}
 
@@ -263,8 +240,7 @@ public class HttpGetIntegrationTests {
 		private List<String> list = new ArrayList<>();
 
 		public static void main(String[] args) throws Exception {
-			SpringApplication.run(HttpGetIntegrationTests.ApplicationConfiguration.class,
-					args);
+			SpringApplication.run(HttpGetIntegrationTests.ApplicationConfiguration.class, args);
 		}
 
 		@Bean
@@ -274,14 +250,12 @@ public class HttpGetIntegrationTests {
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> reverse() {
-			return flux -> flux.log()
-					.map(value -> new StringBuilder(value.trim()).reverse().toString());
+			return flux -> flux.log().map(value -> new StringBuilder(value.trim()).reverse().toString());
 		}
 
 		@Bean({ "uppercase", "post/more" })
 		public Function<Flux<String>, Flux<String>> uppercase() {
-			return flux -> flux.log()
-					.map(value -> "(" + value.trim().toUpperCase(Locale.ROOT) + ")");
+			return flux -> flux.log().map(value -> "(" + value.trim().toUpperCase(Locale.ROOT) + ")");
 		}
 
 		@Bean
@@ -291,8 +265,7 @@ public class HttpGetIntegrationTests {
 
 		@Bean
 		public Function<Flux<Integer>, Flux<Map<String, Object>>> entity() {
-			return flux -> flux.log()
-					.map(value -> Collections.singletonMap("value", value));
+			return flux -> flux.log().map(value -> Collections.singletonMap("value", value));
 		}
 
 		@Bean({ "words", "get/more" })
@@ -349,15 +322,15 @@ public class HttpGetIntegrationTests {
 
 		@Bean
 		public Supplier<Flux<List<String>>> sentences() {
-			return () -> Flux.just(Arrays.asList("go", "home"),
-					Arrays.asList("come", "back"));
+			return () -> Flux.just(Arrays.asList("go", "home"), Arrays.asList("come", "back"));
 		}
 
 		@Bean
 		public Function<MultiValueMap<String, String>, Map<String, Integer>> sum() {
-			return valueMap -> valueMap.entrySet().stream()
-					.collect(Collectors.toMap(Map.Entry::getKey, values -> values
-							.getValue().stream().mapToInt(Integer::parseInt).sum()));
+			return valueMap -> valueMap.entrySet()
+				.stream()
+				.collect(Collectors.toMap(Map.Entry::getKey,
+						values -> values.getValue().stream().mapToInt(Integer::parseInt).sum()));
 		}
 
 	}

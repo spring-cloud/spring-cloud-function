@@ -32,7 +32,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.util.CollectionUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 3.0
  *
@@ -46,7 +45,8 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	public final static String PREFIX = "spring.cloud.function";
 
 	/**
-	 * Name of the header to be used to instruct function to apply this content type for output conversion.
+	 * Name of the header to be used to instruct function to apply this content type for
+	 * output conversion.
 	 */
 	public final static String EXPECT_CONTENT_TYPE_HEADER = "expected-content-type";
 
@@ -66,14 +66,15 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	public final static String PROXY = "proxy";
 
 	/**
-	 * Definition of the function to be used. This could be function name (e.g., 'myFunction')
-	 * or function composition definition (e.g., 'myFunction|yourFunction')
+	 * Definition of the function to be used. This could be function name (e.g.,
+	 * 'myFunction') or function composition definition (e.g., 'myFunction|yourFunction')
 	 */
 	private String definition;
 
 	/**
-	 * SpEL expression which should result in function definition (e.g., function name or composition instruction).
-	 * NOTE: SpEL evaluation context's root object is the input argument (e.g., Message).
+	 * SpEL expression which should result in function definition (e.g., function name or
+	 * composition instruction). NOTE: SpEL evaluation context's root object is the input
+	 * argument (e.g., Message).
 	 */
 	private String routingExpression;
 
@@ -92,18 +93,11 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 
 	public FunctionProperties() {
 		ineligibleDefinitions = new ArrayList<>();
-		String[] definitions = new String[] {
-				"org.springframework.boot",
+		String[] definitions = new String[] { "org.springframework.boot",
 				"org.springframework.cloud.function.cloudevent.CloudEventsFunctionExtensionConfiguration",
 				"org.springframework.cloud.function.context.config.FunctionsEndpointAutoConfiguration",
-				"classLoaderMetrics",
-				"jvmMemoryMetrics",
-				"jvmInfoMetrics",
-				"jvmCompilationMetrics",
-				"uptimeMetrics",
-				"kotlinToFunctionTransformer",
-				"CloudEventsMessageConverterConfiguration"
-		};
+				"classLoaderMetrics", "jvmMemoryMetrics", "jvmInfoMetrics", "jvmCompilationMetrics", "uptimeMetrics",
+				"kotlinToFunctionTransformer", "CloudEventsMessageConverterConfiguration" };
 		ineligibleDefinitions.addAll(Arrays.asList(definitions));
 	}
 
@@ -114,12 +108,15 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setConfiguration(Map<String, FunctionConfigurationProperties> configuration) {
 		for (Entry<String, FunctionConfigurationProperties> entry : configuration.entrySet()) {
-			String propertyX = "spring.cloud.function.configuration." + entry.getKey() + ".input-header-mapping-expression.";
-			String propertyY = "spring.cloud.function.configuration." + entry.getKey() + ".inputHeaderMappingExpression.";
-			Map<String, Object>  headerMapping = entry.getValue().getInputHeaderMappingExpression();
+			String propertyX = "spring.cloud.function.configuration." + entry.getKey()
+					+ ".input-header-mapping-expression.";
+			String propertyY = "spring.cloud.function.configuration." + entry.getKey()
+					+ ".inputHeaderMappingExpression.";
+			Map<String, Object> headerMapping = entry.getValue().getInputHeaderMappingExpression();
 			if (!CollectionUtils.isEmpty(headerMapping)) {
 				for (Object k : headerMapping.keySet()) {
-					if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
+					if (this.environment.containsProperty(propertyX + k)
+							|| this.environment.containsProperty(propertyY + k)) {
 						Map current = entry.getValue().getInputHeaderMappingExpression();
 						if (current.containsKey("0")) {
 							((Map) current.get("0")).put(k, headerMapping.get(k));
@@ -136,7 +133,8 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 			headerMapping = entry.getValue().getOutputHeaderMappingExpression();
 			if (!CollectionUtils.isEmpty(headerMapping)) {
 				for (Object k : headerMapping.keySet()) {
-					if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
+					if (this.environment.containsProperty(propertyX + k)
+							|| this.environment.containsProperty(propertyY + k)) {
 						Map current = entry.getValue().getOutputHeaderMappingExpression();
 						if (current.containsKey("0")) {
 							((Map) current.get("0")).put(k, headerMapping.get(k));
@@ -154,8 +152,7 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext)
-			throws BeansException {
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
 
@@ -220,8 +217,7 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 			return outputHeaderMappingExpression;
 		}
 
-		public void setOutputHeaderMappingExpression(
-				Map<String, Object> outputHeaderMappingExpression) {
+		public void setOutputHeaderMappingExpression(Map<String, Object> outputHeaderMappingExpression) {
 			this.outputHeaderMappingExpression = outputHeaderMappingExpression;
 		}
 
@@ -234,4 +230,5 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 		}
 
 	}
+
 }

@@ -25,30 +25,25 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.cloud.function.grpc.MessageHandlingHelper;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 3.2
  *
  */
 @SuppressWarnings("rawtypes")
-class CloudEventHandler extends CloudEventServiceImplBase  {
+class CloudEventHandler extends CloudEventServiceImplBase {
 
 	private Log logger = LogFactory.getLog(CloudEventHandler.class);
 
 	private final MessageHandlingHelper helper;
 
-
-
 	CloudEventHandler(MessageHandlingHelper helper) {
 		this.helper = helper;
 	}
-
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void requestReply(CloudEvent request, StreamObserver<CloudEvent> responseObserver) {
 		this.helper.requestReply(request, responseObserver);
 	}
+
 }
-
-

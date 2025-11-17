@@ -79,14 +79,10 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
-
-
-
 /**
- * Implementation of {@link FunctionCatalog} and {@link FunctionRegistry} which
- * does not depend on Spring's {@link BeanFactory}.
- * Each function must be registered with it explicitly to benefit from features
- * such as type conversion, composition, POJO etc.
+ * Implementation of {@link FunctionCatalog} and {@link FunctionRegistry} which does not
+ * depend on Spring's {@link BeanFactory}. Each function must be registered with it
+ * explicitly to benefit from features such as type conversion, composition, POJO etc.
  *
  * @author Oleg Zhurakousky
  * @author Roman Samarev
@@ -94,9 +90,12 @@ import org.springframework.util.StringUtils;
  * @author Chris Bono
  */
 public class SimpleFunctionRegistry implements FunctionRegistry {
+
 	protected Log logger = LogFactory.getLog(this.getClass());
+
 	/*
-	 * - do we care about FunctionRegistration after it's been registered? What additional value does it bring?
+	 * - do we care about FunctionRegistration after it's been registered? What additional
+	 * value does it bring?
 	 *
 	 */
 
@@ -117,8 +116,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	@Autowired(required = false)
 	private FunctionAroundWrapper functionAroundWrapper;
 
-	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper,
-			@Nullable FunctionProperties functionProperties,
+	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter,
+			JsonMapper jsonMapper, @Nullable FunctionProperties functionProperties,
 			@Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		Assert.notNull(messageConverter, "'messageConverter' must not be null");
 		Assert.notNull(jsonMapper, "'jsonMapper' must not be null");
@@ -130,8 +129,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	}
 
 	/**
-	 * Will add provided {@link MessageConverter}s to the head of the stack of the existing MessageConverters.
-	 *
+	 * Will add provided {@link MessageConverter}s to the head of the stack of the
+	 * existing MessageConverters.
 	 * @param messageConverters list of {@link MessageConverter}s.
 	 */
 	public void addMessageConverters(Collection<MessageConverter> messageConverters) {
@@ -140,7 +139,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 	}
 
-	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper) {
+	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter,
+			JsonMapper jsonMapper) {
 		this(conversionService, messageConverter, jsonMapper, null, null);
 	}
 
@@ -179,7 +179,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				if (registration.getTarget().getClass().getName().equals(definition)) {
 					return false;
 				}
-				else if (registration.getNames().contains(definition) || registration.getTarget().getClass().getName().contains(definition)) {
+				else if (registration.getNames().contains(definition)
+						|| registration.getTarget().getClass().getName().contains(definition)) {
 					return false;
 				}
 			}
@@ -197,7 +198,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		return true;
 	}
 
-	//-----
+	// -----
 
 	@Override
 	public Set<String> getNames(Class<?> type) {
@@ -239,27 +240,23 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	}
 
 	/**
-	 * This method will make sure that if there is only one function in catalog
-	 * it can be looked up by any name or no name.
-	 * It does so by attempting to determine the default function name
-	 * (the only function in catalog) and checking if it matches the provided name
-	 * replacing it if it does not.
+	 * This method will make sure that if there is only one function in catalog it can be
+	 * looked up by any name or no name. It does so by attempting to determine the default
+	 * function name (the only function in catalog) and checking if it matches the
+	 * provided name replacing it if it does not.
 	 */
 	String normalizeFunctionDefinition(String functionDefinition) {
-		functionDefinition = StringUtils.hasText(functionDefinition)
-				? functionDefinition.replaceAll(",", "|")
+		functionDefinition = StringUtils.hasText(functionDefinition) ? functionDefinition.replaceAll(",", "|")
 				: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
 
 		Set<String> names = this.getNames(null);
 		if (!names.contains(functionDefinition)) {
 			List<String> eligibleFunction = names.stream()
-					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
-					.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
-					.collect(Collectors.toList());
-			if (eligibleFunction.size() == 1
-					&& !eligibleFunction.get(0).equals(functionDefinition)
-					&& !functionDefinition.contains("|")
-					&& !eligibleFunction.get(0).startsWith("&")) {
+				.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
+				.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
+				.collect(Collectors.toList());
+			if (eligibleFunction.size() == 1 && !eligibleFunction.get(0).equals(functionDefinition)
+					&& !functionDefinition.contains("|") && !eligibleFunction.get(0).startsWith("&")) {
 				functionDefinition = eligibleFunction.get(0);
 			}
 		}
@@ -271,12 +268,11 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 */
 	private FunctionInvocationWrapper findFunctionInFunctionRegistrations(String functionName) {
 		FunctionRegistration<?> functionRegistration = this.functionRegistrations.stream()
-				.filter(fr -> fr.getNames().contains(functionName))
-				.findFirst()
-				.orElseGet(() -> null);
-		FunctionInvocationWrapper function = functionRegistration != null
-				? this.invocationWrapperInstance(functionName, functionRegistration.getTarget(), functionRegistration.getType())
-				: null;
+			.filter(fr -> fr.getNames().contains(functionName))
+			.findFirst()
+			.orElseGet(() -> null);
+		FunctionInvocationWrapper function = functionRegistration != null ? this.invocationWrapperInstance(functionName,
+				functionRegistration.getTarget(), functionRegistration.getType()) : null;
 		if (functionRegistration != null) {
 			Object userFunction = functionRegistration.getUserFunction();
 			if (userFunction instanceof BiConsumer && function != null) {
@@ -292,8 +288,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 		}
 		// GH-1307: Mark POJO functions for special Message wrapping behavior
-		if (functionRegistration != null &&
-				functionRegistration.getProperties().containsKey("isPojoFunction")) {
+		if (functionRegistration != null && functionRegistration.getProperties().containsKey("isPojoFunction")) {
 			try {
 				String isPojoValue = functionRegistration.getProperties().get("isPojoFunction");
 				function.setPojoFunction(Boolean.parseBoolean(isPojoValue));
@@ -309,7 +304,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 *
 	 */
 	private FunctionInvocationWrapper compose(Class<?> type, String functionDefinition) {
-		String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+		String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(),
+				"|");
 		FunctionInvocationWrapper composedFunction = null;
 
 		for (String functionName : functionNames) {
@@ -317,7 +313,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (function == null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Failed to locate function '" + functionName + "' for function definition '"
-						+ functionDefinition + " amongst existing function registrations. Will check with the bean factory");
+							+ functionDefinition
+							+ " amongst existing function registrations. Will check with the bean factory");
 				}
 				return null;
 			}
@@ -326,9 +323,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					composedFunction = function;
 				}
 				else {
-					FunctionInvocationWrapper andThenFunction =
-							invocationWrapperInstance(functionName, function.getTarget(), function.inputType, function.outputType);
-					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) andThenFunction);
+					FunctionInvocationWrapper andThenFunction = invocationWrapperInstance(functionName,
+							function.getTarget(), function.inputType, function.outputType);
+					composedFunction = (FunctionInvocationWrapper) composedFunction
+						.andThen((Function<Object, Object>) andThenFunction);
 				}
 				composedFunction = this.enrichInputIfNecessary(composedFunction);
 				composedFunction = this.enrichOutputIfNecessary(composedFunction);
@@ -348,18 +346,21 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return composedFunction;
 		}
 		String functionDefinition = composedFunction.getFunctionDefinition();
-		Map<String, FunctionConfigurationProperties> configurationProperties = this.functionProperties.getConfiguration();
+		Map<String, FunctionConfigurationProperties> configurationProperties = this.functionProperties
+			.getConfiguration();
 		if (!CollectionUtils.isEmpty(configurationProperties)) {
-			FunctionConfigurationProperties configuration =  configurationProperties
-					.get(functionDefinition.replace("|", "").replace(",", ""));
+			FunctionConfigurationProperties configuration = configurationProperties
+				.get(functionDefinition.replace("|", "").replace(",", ""));
 			if (configuration != null) {
 				if (!CollectionUtils.isEmpty(configuration.getInputHeaderMappingExpression())) {
 					BeanFactoryResolver beanResolver = this.functionProperties.getApplicationContext() != null
-							? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
-							: null;
-					HeaderEnricher enricher = new HeaderEnricher(configuration.getInputHeaderMappingExpression(), beanResolver);
-					FunctionInvocationWrapper w = new FunctionInvocationWrapper("inputHeaderEnricher", enricher, Message.class, Message.class);
-					composedFunction = (FunctionInvocationWrapper) w.andThen((Function<Object, Object>) composedFunction);
+							? new BeanFactoryResolver(this.functionProperties.getApplicationContext()) : null;
+					HeaderEnricher enricher = new HeaderEnricher(configuration.getInputHeaderMappingExpression(),
+							beanResolver);
+					FunctionInvocationWrapper w = new FunctionInvocationWrapper("inputHeaderEnricher", enricher,
+							Message.class, Message.class);
+					composedFunction = (FunctionInvocationWrapper) w
+						.andThen((Function<Object, Object>) composedFunction);
 					composedFunction.functionDefinition = functionDefinition;
 				}
 			}
@@ -372,19 +373,22 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return composedFunction;
 		}
 		String functionDefinition = composedFunction.getFunctionDefinition();
-		Map<String, FunctionConfigurationProperties> configurationProperties = this.functionProperties.getConfiguration();
+		Map<String, FunctionConfigurationProperties> configurationProperties = this.functionProperties
+			.getConfiguration();
 		if (!CollectionUtils.isEmpty(configurationProperties)) {
-			FunctionConfigurationProperties configuration =  configurationProperties
-					.get(functionDefinition.replace("|", "").replace(",", ""));
+			FunctionConfigurationProperties configuration = configurationProperties
+				.get(functionDefinition.replace("|", "").replace(",", ""));
 			if (configuration != null) {
 				if (!CollectionUtils.isEmpty(configuration.getOutputHeaderMappingExpression())) {
 					BeanFactoryResolver beanResolver = this.functionProperties.getApplicationContext() != null
-							? new BeanFactoryResolver(this.functionProperties.getApplicationContext())
-							: null;
-					HeaderEnricher enricher = new HeaderEnricher(configuration.getOutputHeaderMappingExpression(), beanResolver);
+							? new BeanFactoryResolver(this.functionProperties.getApplicationContext()) : null;
+					HeaderEnricher enricher = new HeaderEnricher(configuration.getOutputHeaderMappingExpression(),
+							beanResolver);
 					Type mesageType = ResolvableType.forClassWithGenerics(Message.class, Object.class).getType();
-					FunctionInvocationWrapper enricherWrapper = new FunctionInvocationWrapper("outputHeaderEnricher", enricher, mesageType, mesageType);
-					composedFunction = (FunctionInvocationWrapper) composedFunction.andThen((Function<Object, Object>) enricherWrapper);
+					FunctionInvocationWrapper enricherWrapper = new FunctionInvocationWrapper("outputHeaderEnricher",
+							enricher, mesageType, mesageType);
+					composedFunction = (FunctionInvocationWrapper) composedFunction
+						.andThen((Function<Object, Object>) enricherWrapper);
 					composedFunction.functionDefinition = functionDefinition;
 				}
 			}
@@ -395,14 +399,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	/*
 	 *
 	 */
-	private FunctionInvocationWrapper invocationWrapperInstance(String functionDefinition, Object target, Type inputType, Type outputType) {
+	private FunctionInvocationWrapper invocationWrapperInstance(String functionDefinition, Object target,
+			Type inputType, Type outputType) {
 		return new FunctionInvocationWrapper(functionDefinition, target, inputType, outputType);
 	}
 
 	/*
 	 *
 	 */
-	private FunctionInvocationWrapper invocationWrapperInstance(String functionDefinition, Object target, Type functionType) {
+	private FunctionInvocationWrapper invocationWrapperInstance(String functionDefinition, Object target,
+			Type functionType) {
 		return invocationWrapperInstance(functionDefinition, target,
 				FunctionTypeUtils.isSupplier(functionType) ? null : FunctionTypeUtils.getInputType(functionType),
 				FunctionTypeUtils.getOutputType(functionType));
@@ -412,7 +418,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 *
 	 */
 	@SuppressWarnings("rawtypes")
-	public class FunctionInvocationWrapper implements Function<Object, Object>, Consumer<Object>, Supplier<Object>, Runnable {
+	public class FunctionInvocationWrapper
+			implements Function<Object, Object>, Consumer<Object>, Supplier<Object>, Runnable {
 
 		private Object target;
 
@@ -445,10 +452,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		private Consumer<Boolean> skipInputConversionCallback;
 
 		/*
-		 * This is primarily to support Stream's ability to access
-		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
-		 * It is not intended to remain here and will be removed as soon as particular elements
-		 * of stream will be refactored to address this.
+		 * This is primarily to support Stream's ability to access un-converted payload
+		 * (e.g., to evaluate expression on some attribute of a payload) It is not
+		 * intended to remain here and will be removed as soon as particular elements of
+		 * stream will be refactored to address this.
 		 */
 		private Function<Object, Object> enhancer;
 
@@ -456,13 +463,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private boolean isPojoFunction;
 
-		FunctionInvocationWrapper(String functionDefinition,  Object target, Type inputType, Type outputType) {
+		FunctionInvocationWrapper(String functionDefinition, Object target, Type inputType, Type outputType) {
 			if (target instanceof PostProcessingFunction) {
 				this.postProcessor = (PostProcessingFunction) target;
 			}
 			if (ClassUtils.isPresent("kotlin.jvm.functions.Function0", ClassUtils.getDefaultClassLoader())
-				&& target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper kotlinFunction
-				&& kotlinFunction.getKotlinLambdaTarget() instanceof PostProcessingFunction) {
+					&& target instanceof KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper kotlinFunction
+					&& kotlinFunction.getKotlinLambdaTarget() instanceof PostProcessingFunction) {
 				this.postProcessor = (PostProcessingFunction) kotlinFunction.getKotlinLambdaTarget();
 			}
 			this.target = target;
@@ -493,8 +500,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 						this.postProcessor.postProcess(result);
 					}
 					catch (Exception ex) {
-						logger.warn("Failed to post process function "
-								+ this.functionDefinition  + "; Result of the invocation before post processing is " + result, ex);
+						logger.warn("Failed to post process function " + this.functionDefinition
+								+ "; Result of the invocation before post processing is " + result, ex);
 					}
 					finally {
 						this.unconvertedResult.remove();
@@ -533,7 +540,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		public void setSkipInputConversion(boolean skipInputConversion) {
 			if (logger.isDebugEnabled() && skipInputConversion) {
-				logger.debug("'skipInputConversion' was explicitely set to true. No input conversion will be attempted");
+				logger
+					.debug("'skipInputConversion' was explicitely set to true. No input conversion will be attempted");
 			}
 			this.skipInputConversion = skipInputConversion;
 			if (this.skipInputConversionCallback != null) {
@@ -547,17 +555,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		public void setSkipOutputConversion(boolean skipOutputConversion) {
 			if (logger.isDebugEnabled() && skipOutputConversion) {
-				logger.debug("'skipOutputConversion' was explicitely set to true. No output conversion will be attempted");
+				logger.debug(
+						"'skipOutputConversion' was explicitely set to true. No output conversion will be attempted");
 			}
 			this.skipOutputConversion = skipOutputConversion;
 		}
 
 		/**
-		 * !!! INTERNAL USE ONLY !!!
-		 * This is primarily to support s-c-Stream's ability to access
-		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
-		 * It is not intended to remain here and will be removed as soon as particular elements
-		 * of stream will be refactored to address this.
+		 * !!! INTERNAL USE ONLY !!! This is primarily to support s-c-Stream's ability to
+		 * access un-converted payload (e.g., to evaluate expression on some attribute of
+		 * a payload) It is not intended to remain here and will be removed as soon as
+		 * particular elements of stream will be refactored to address this.
 		 */
 		public Function<Object, Object> getEnhancer() {
 			return this.enhancer;
@@ -568,11 +576,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 		/**
-		 * !!! INTERNAL USE ONLY !!!
-		 * This is primarily to support s-c-Stream's ability to access
-		 * un-converted payload (e.g., to evaluate expression on some attribute of a payload)
-		 * It is not intended to remain here and will be removed as soon as particular elements
-		 * of stream will be refactored to address this.
+		 * !!! INTERNAL USE ONLY !!! This is primarily to support s-c-Stream's ability to
+		 * access un-converted payload (e.g., to evaluate expression on some attribute of
+		 * a payload) It is not intended to remain here and will be removed as soon as
+		 * particular elements of stream will be refactored to address this.
 		 */
 		public void setEnhancer(Function<Object, Object> enhancer) {
 			this.enhancer = enhancer;
@@ -587,15 +594,19 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 		/**
-		 * Return the actual {@link Type} of the item of the provided type.
-		 * This method is context specific and is not a general purpose utility method. The context is that the provided
-		 * {@link Type} may represent the input/output of a function where such type could be wrapped in
-		 * {@link Message}, {@link Flux} or {@link Mono}, so this method returns generic value of such type or itself if not wrapped.
-		 * @param type typically input or output Type of the function (see {@link #getInputType()} or {@link #getOutputType()}.
+		 * Return the actual {@link Type} of the item of the provided type. This method is
+		 * context specific and is not a general purpose utility method. The context is
+		 * that the provided {@link Type} may represent the input/output of a function
+		 * where such type could be wrapped in {@link Message}, {@link Flux} or
+		 * {@link Mono}, so this method returns generic value of such type or itself if
+		 * not wrapped.
+		 * @param type typically input or output Type of the function (see
+		 * {@link #getInputType()} or {@link #getOutputType()}.
 		 * @return the type of the item if wrapped otherwise the provided type.
 		 */
 		public Type getItemType(Type type) {
-			if (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type) || FunctionTypeUtils.isTypeCollection(type)) {
+			if (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type)
+					|| FunctionTypeUtils.isTypeCollection(type)) {
 				type = FunctionTypeUtils.getGenericType(type);
 			}
 			return type;
@@ -614,7 +625,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 */
 		@Override
 		public Object apply(Object input) {
-			if (logger.isDebugEnabled() && !(input  instanceof Publisher)) {
+			if (logger.isDebugEnabled() && !(input instanceof Publisher)) {
 				logger.debug("Invoking function " + this);
 			}
 
@@ -674,7 +685,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return FunctionTypeUtils.isMessage(this.outputType);
 		}
 
-
 		public boolean isRoutingFunction() {
 			return this.target instanceof RoutingFunction;
 		}
@@ -685,19 +695,23 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		@SuppressWarnings("unchecked")
 		@Override
 		public <V> Function<Object, V> andThen(Function<? super Object, ? extends V> after) {
-			Assert.isTrue(after instanceof FunctionInvocationWrapper, "Composed function must be an instanceof FunctionInvocationWrapper.");
+			Assert.isTrue(after instanceof FunctionInvocationWrapper,
+					"Composed function must be an instanceof FunctionInvocationWrapper.");
 
 			if (FunctionTypeUtils.isMultipleArgumentType(this.inputType)
 					|| FunctionTypeUtils.isMultipleArgumentType(this.outputType)
 					|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).inputType)
 					|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).outputType)) {
-				throw new UnsupportedOperationException("Composition of functions with multiple arguments is not supported at the moment");
+				throw new UnsupportedOperationException(
+						"Composition of functions with multiple arguments is not supported at the moment");
 			}
 			FunctionInvocationWrapper afterWrapper = (FunctionInvocationWrapper) after;
 
-			//see GH-1141 for this code snippet
-			if ((this.getTarget() instanceof Supplier || this.getTarget() instanceof Function) && FunctionTypeUtils.isPublisher(this.getOutputType())
-					&& afterWrapper.getTarget() instanceof Consumer && !FunctionTypeUtils.isPublisher(afterWrapper.getInputType())) {
+			// see GH-1141 for this code snippet
+			if ((this.getTarget() instanceof Supplier || this.getTarget() instanceof Function)
+					&& FunctionTypeUtils.isPublisher(this.getOutputType())
+					&& afterWrapper.getTarget() instanceof Consumer
+					&& !FunctionTypeUtils.isPublisher(afterWrapper.getInputType())) {
 				Consumer wrapper = new ConsumerWrapper((Consumer) afterWrapper.getTarget());
 				afterWrapper.target = wrapper;
 				afterWrapper.inputType = this.outputType;
@@ -710,35 +724,42 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 			Type composedFunctionType;
 			if (afterWrapper.outputType == null) {
-				composedFunctionType = (this.inputType == null) ?
-					ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(Object.class)).getType() :
-					ResolvableType.forClassWithGenerics(Consumer.class, ResolvableType.forType(this.inputType)).getType();
+				composedFunctionType = (this.inputType == null)
+						? ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(Object.class))
+							.getType()
+						: ResolvableType.forClassWithGenerics(Consumer.class, ResolvableType.forType(this.inputType))
+							.getType();
 			}
 			else if (this.inputType == null && afterWrapper.outputType != null) {
 				ResolvableType composedOutputType;
 				if (FunctionTypeUtils.isFlux(this.outputType)) {
-					composedOutputType = ResolvableType.forClassWithGenerics(Flux.class, ResolvableType.forType(afterWrapper.outputType));
+					composedOutputType = ResolvableType.forClassWithGenerics(Flux.class,
+							ResolvableType.forType(afterWrapper.outputType));
 				}
 				else if (FunctionTypeUtils.isMono(this.outputType)) {
-					composedOutputType = ResolvableType.forClassWithGenerics(Mono.class, ResolvableType.forType(afterWrapper.outputType));
+					composedOutputType = ResolvableType.forClassWithGenerics(Mono.class,
+							ResolvableType.forType(afterWrapper.outputType));
 				}
 				else {
 					composedOutputType = ResolvableType.forType(afterWrapper.outputType);
 				}
 
-				composedFunctionType = ResolvableType.forClassWithGenerics(Supplier.class, composedOutputType).getType();
+				composedFunctionType = ResolvableType.forClassWithGenerics(Supplier.class, composedOutputType)
+					.getType();
 			}
 			else if (this.outputType == null) {
 				throw new IllegalArgumentException("Can NOT compose anything with Consumer");
 			}
 			else {
-				composedFunctionType = ResolvableType.forClassWithGenerics(Function.class,
-						ResolvableType.forType(this.inputType),
-						ResolvableType.forType(((FunctionInvocationWrapper) after).outputType)).getType();
+				composedFunctionType = ResolvableType
+					.forClassWithGenerics(Function.class, ResolvableType.forType(this.inputType),
+							ResolvableType.forType(((FunctionInvocationWrapper) after).outputType))
+					.getType();
 			}
 
 			String composedName = this.functionDefinition + "|" + afterWrapper.functionDefinition;
-			FunctionInvocationWrapper composedFunction = invocationWrapperInstance(composedName, rawComposedFunction, composedFunctionType);
+			FunctionInvocationWrapper composedFunction = invocationWrapperInstance(composedName, rawComposedFunction,
+					composedFunctionType);
 			composedFunction.setSkipInputConversionCallback((skipInputConversion) -> {
 				this.setSkipInputConversion(skipInputConversion);
 				afterWrapper.setSkipInputConversion(skipInputConversion);
@@ -764,12 +785,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 */
 		@Override
 		public String toString() {
-			return this.functionDefinition + (this.isComposed() ? "" : "<" + this.inputType + ", " + this.outputType + ">");
+			return this.functionDefinition
+					+ (this.isComposed() ? "" : "<" + this.inputType + ", " + this.outputType + ">");
 		}
 
 		/**
 		 * Returns true if this function wrapper represents a composed function.
-		 * @return true if this function wrapper represents a composed function otherwise false
+		 * @return true if this function wrapper represents a composed function otherwise
+		 * false
 		 */
 		public boolean isComposed() {
 			return this.composed;
@@ -820,7 +843,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 		/**
-		 * Will return Object.class if type is represented as TypeVariable(T) or WildcardType(?).
+		 * Will return Object.class if type is represented as TypeVariable(T) or
+		 * WildcardType(?).
 		 */
 		private Type normalizeType(Type type) {
 			if (type != null) {
@@ -833,13 +857,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 *
 		 */
 		private Class<?> getRawClassFor(@Nullable Type type) {
-			return type instanceof TypeVariable || type instanceof WildcardType
-					? Object.class
+			return type instanceof TypeVariable || type instanceof WildcardType ? Object.class
 					: FunctionTypeUtils.getRawType(type);
 		}
 
 		/**
-		 * Will wrap the result in a Message if necessary and will copy input headers to the output message.
+		 * Will wrap the result in a Message if necessary and will copy input headers to
+		 * the output message.
 		 */
 		private Object enrichInvocationResultIfNecessary(Object input, Object result) {
 			if (result != null && !(result instanceof Publisher) && input instanceof Message) {
@@ -847,7 +871,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					result = functionInvocationHelper.postProcessResult(result, (Message) input);
 				}
 				if (!(result instanceof Message) && !FunctionTypeUtils.isCollectionOfMessage(this.outputType)) {
-					result = MessageBuilder.withPayload(result).copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders())).build();
+					result = MessageBuilder.withPayload(result)
+						.copyHeaders(this.sanitizeHeaders(((Message) input).getHeaders()))
+						.build();
 				}
 			}
 			return result;
@@ -868,7 +894,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		@SuppressWarnings("unchecked")
 		private Object fluxifyInputIfNecessary(Object input) {
-			if (input instanceof Message && !((Message) input).getHeaders().containsKey("user-agent") && this.isConsumer() && !this.isInputTypePublisher()) {
+			if (input instanceof Message && !((Message) input).getHeaders().containsKey("user-agent")
+					&& this.isConsumer() && !this.isInputTypePublisher()) {
 				return input;
 			}
 			if (FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
@@ -891,21 +918,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				if ((!treatPayloadAsPlainText && JsonMapper.isJsonStringRepresentsCollection(payload))
 						&& !FunctionTypeUtils.isTypeCollection(this.inputType)
 						&& !FunctionTypeUtils.isTypeArray(this.inputType)) {
-					logger.debug("Actual input represents a collection while input type of the function does not represent a collection. " +
-						"Therefore framework will attempt invoke function for each element in the collection.");
-					MessageHeaders headers = input instanceof Message ? ((Message) input).getHeaders() : new MessageHeaders(Collections.emptyMap());
+					logger
+						.debug("Actual input represents a collection while input type of the function does not represent a collection. "
+								+ "Therefore framework will attempt invoke function for each element in the collection.");
+					MessageHeaders headers = input instanceof Message ? ((Message) input).getHeaders()
+							: new MessageHeaders(Collections.emptyMap());
 					Collection collectionPayload = jsonMapper.fromJson(payload, Collection.class);
 					Class inputClass = FunctionTypeUtils.getRawType(this.inputType);
 					if (this.isInputTypeMessage()) {
-						inputClass = FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.inputType, 0));
+						inputClass = FunctionTypeUtils
+							.getRawType(FunctionTypeUtils.getImmediateGenericType(this.inputType, 0));
 					}
 
 					if (!inputClass.isAssignableFrom(Object.class) && !inputClass.isAssignableFrom(byte[].class)) {
 						logger.debug("Converting JSON string representing collection to a list of Messages. Function '"
 								+ this + "' will be invoked iteratively");
 						input = collectionPayload.stream()
-								.map(p -> MessageBuilder.withPayload(p).copyHeaders(headers).build())
-								.collect(Collectors.toList());
+							.map(p -> MessageBuilder.withPayload(p).copyHeaders(headers).build())
+							.collect(Collectors.toList());
 					}
 				}
 			}
@@ -915,22 +945,25 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.empty() : Flux.empty();
 				}
 				else if (input instanceof Message && ((Message) input).getPayload() instanceof Iterable) {
-					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input).flatMap(v -> {
-						if (logger.isDebugEnabled()) {
-							logger.debug("Creating Flux from Iterable: " + ((Message) v).getPayload());
-						}
-						return Flux.fromIterable((Iterable) ((Message) v).getPayload());
-					});
+					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input)
+							: Flux.just(input).flatMap(v -> {
+								if (logger.isDebugEnabled()) {
+									logger.debug("Creating Flux from Iterable: " + ((Message) v).getPayload());
+								}
+								return Flux.fromIterable((Iterable) ((Message) v).getPayload());
+							});
 				}
 				else if (input instanceof Iterable) {
-					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.fromIterable((Iterable) input);
+					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input)
+							: Flux.fromIterable((Iterable) input);
 
 				}
 				else {
 					input = FunctionTypeUtils.isMono(this.inputType) ? Mono.just(input) : Flux.just(input);
 				}
 			}
-			else if (!(input instanceof Publisher) && input instanceof Iterable && !FunctionTypeUtils.isTypeCollection(this.inputType)) {
+			else if (!(input instanceof Publisher) && input instanceof Iterable
+					&& !FunctionTypeUtils.isTypeCollection(this.inputType)) {
 				input = Flux.fromIterable((Iterable) input);
 			}
 			return input;
@@ -952,20 +985,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			Object result;
 			if (!this.isTypePublisher(this.inputType) && convertedInput instanceof Publisher publisherInput) {
 				result = publisherInput instanceof Mono
-						? Mono.from(publisherInput).map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
-							.doOnError(ex -> logger.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex))
-						: Flux.from(publisherInput).map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
-							.doOnError(ex -> logger.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex));
+						? Mono.from(publisherInput)
+							.map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
+							.doOnError(ex -> logger.error("Failed to invoke function '" + this.functionDefinition + "'",
+									(Throwable) ex))
+						: Flux.from(publisherInput)
+							.map(value -> this.invokeFunctionAndEnrichResultIfNecessary(value))
+							.doOnError(ex -> logger.error("Failed to invoke function '" + this.functionDefinition + "'",
+									(Throwable) ex));
 			}
 			else {
 				result = this.invokeFunctionAndEnrichResultIfNecessary(convertedInput);
 				if (result instanceof Flux flux) {
-					result = flux.doOnError(ex -> logger.error("Failed to invoke function '"
-							+ this.functionDefinition + "'", (Throwable) ex));
+					result = flux.doOnError(ex -> logger
+						.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex));
 				}
 				else if (result instanceof Mono mono) {
-					result = mono.doOnError(ex -> logger.error("Failed to invoke function '"
-							+ this.functionDefinition + "'", (Throwable) ex));
+					result = mono.doOnError(ex -> logger
+						.error("Failed to invoke function '" + this.functionDefinition + "'", (Throwable) ex));
 				}
 			}
 			return result;
@@ -999,7 +1036,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				inputValue = this.extractValueFromOriginalValueHolderIfNecessary(value);
 			}
 
-			if (!(this.target instanceof PassThruFunction) && inputValue instanceof Message && !this.isInputTypeMessage()) {
+			if (!(this.target instanceof PassThruFunction) && inputValue instanceof Message
+					&& !this.isInputTypeMessage()) {
 				inputValue = ((Message) inputValue).getPayload();
 			}
 
@@ -1008,7 +1046,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 
 			Object result;
-			if (inputValue != null && inputValue.getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
+			if (inputValue != null
+					&& inputValue.getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
 				result = ((Function) this.target).apply(null);
 			}
 			else {
@@ -1028,26 +1067,24 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		private Publisher postProcessFunction(Publisher result, AtomicReference<Message<?>> firstInputMessage) {
 			if (FunctionTypeUtils.isPublisher(this.inputType) && FunctionTypeUtils.isPublisher(this.outputType)) {
 				if (!FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.inputType, 0))
-						.isAssignableFrom(Void.class)
-					&& !FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.outputType, 0))
-						.isAssignableFrom(Void.class)) {
+					.isAssignableFrom(Void.class)
+						&& !FunctionTypeUtils.getRawType(FunctionTypeUtils.getImmediateGenericType(this.outputType, 0))
+							.isAssignableFrom(Void.class)) {
 
 					if (result instanceof Mono) {
 						return Mono.from((result)).map(v -> {
-							if (firstInputMessage.get() != null && CloudEventMessageUtils
-									.isCloudEvent(firstInputMessage.get())) {
-								return functionInvocationHelper.postProcessResult(v,
-										firstInputMessage.get());
+							if (firstInputMessage.get() != null
+									&& CloudEventMessageUtils.isCloudEvent(firstInputMessage.get())) {
+								return functionInvocationHelper.postProcessResult(v, firstInputMessage.get());
 							}
 							return v;
 						});
 					}
 					else {
 						return Flux.from((result)).map(v -> {
-							if (firstInputMessage.get() != null && CloudEventMessageUtils
-									.isCloudEvent(firstInputMessage.get())) {
-								return functionInvocationHelper.postProcessResult(v,
-										firstInputMessage.get());
+							if (firstInputMessage.get() != null
+									&& CloudEventMessageUtils.isCloudEvent(firstInputMessage.get())) {
+								return functionInvocationHelper.postProcessResult(v, firstInputMessage.get());
 							}
 							return v;
 						});
@@ -1066,30 +1103,32 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			Object result = null;
 			if (this.isTypePublisher(this.inputType)) {
 				if (convertedInput instanceof Flux fluxInput) {
-					result = fluxInput
-							.transform(flux -> {
-								flux =  Flux.from((Publisher) flux).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
-								((Consumer) this.target).accept(flux);
-								return Mono.ignoreElements((Flux) flux);
-							}).then();
+					result = fluxInput.transform(flux -> {
+						flux = Flux.from((Publisher) flux)
+							.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
+						((Consumer) this.target).accept(flux);
+						return Mono.ignoreElements((Flux) flux);
+					}).then();
 				}
 				else {
-					result = ((Mono) convertedInput)
-							.transform(mono -> {
-								mono =  Mono.from((Publisher) mono).map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
-								((Consumer) this.target).accept(mono);
-								return Mono.ignoreElements((Mono) mono);
-							}).then();
+					result = ((Mono) convertedInput).transform(mono -> {
+						mono = Mono.from((Publisher) mono)
+							.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v));
+						((Consumer) this.target).accept(mono);
+						return Mono.ignoreElements((Mono) mono);
+					}).then();
 				}
 			}
 			else if (convertedInput instanceof Publisher publisherInput) {
 				result = convertedInput instanceof Mono
 						? Mono.from(publisherInput)
-								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
-								.doOnNext((Consumer) this.target).then()
+							.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
+							.doOnNext((Consumer) this.target)
+							.then()
 						: Flux.from(publisherInput)
-								.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
-								.doOnNext((Consumer) this.target).then();
+							.map(v -> this.extractValueFromOriginalValueHolderIfNecessary(v))
+							.doOnNext((Consumer) this.target)
+							.then();
 			}
 			else {
 				Object extractedValue = this.extractValueFromOriginalValueHolderIfNecessary(convertedInput);
@@ -1118,12 +1157,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				}
 				return parsedArgumentValues;
 			}
-			throw new UnsupportedOperationException("At the moment only Tuple-based function are supporting multiple arguments");
+			throw new UnsupportedOperationException(
+					"At the moment only Tuple-based function are supporting multiple arguments");
 		}
 
 		@SuppressWarnings("unchecked")
 		private boolean isInputConversionNecessary(Object input, Type type) {
-			if (type == null || this.getRawClassFor(type) == Void.class || this.target instanceof RoutingFunction || this.isComposed() || this.target instanceof PassThruFunction) {
+			if (type == null || this.getRawClassFor(type) == Void.class || this.target instanceof RoutingFunction
+					|| this.isComposed() || this.target instanceof PassThruFunction) {
 				if (this.getRawClassFor(type) == Void.class) {
 					if (input instanceof Message) {
 						input = ((Message) input).getPayload();
@@ -1137,6 +1178,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 			return true;
 		}
+
 		/*
 		 *
 		 */
@@ -1163,13 +1205,15 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				if (!(input instanceof Message)) {
 					input = MessageBuilder.withPayload(input).build();
 				}
-				convertedInput = this.isInputTypeMessage()
-						? input
+				convertedInput = this.isInputTypeMessage() ? input
 						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
 			else if (input instanceof Message) {
 				input = this.filterOutHeaders((Message) input);
-				if (((Message) input).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
+				if (((Message) input).getPayload()
+					.getClass()
+					.getName()
+					.equals("org.springframework.kafka.support.KafkaNull")) {
 					return input;
 				}
 
@@ -1179,16 +1223,17 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
-					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload(), false);
+					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload(),
+							false);
 				}
 				if (convertedInput != null && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
 					convertedInput = !convertedInput.equals(input)
-							? new OriginalMessageHolder(convertedInput, (Message<?>) input)
-							: convertedInput;
+							? new OriginalMessageHolder(convertedInput, (Message<?>) input) : convertedInput;
 				}
 				if (convertedInput != null && logger.isDebugEnabled()) {
-					logger.debug("Converted Message: " + input + " to: " +
-							(convertedInput instanceof OriginalMessageHolder ? ((OriginalMessageHolder) convertedInput).value.getClass() : convertedInput));
+					logger.debug(
+							"Converted Message: " + input + " to: " + (convertedInput instanceof OriginalMessageHolder
+									? ((OriginalMessageHolder) convertedInput).value.getClass() : convertedInput));
 				}
 			}
 			else {
@@ -1207,7 +1252,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			return convertedInput;
 		}
 
-		// TODO temporary fix for https://github.com/spring-cloud/spring-cloud-stream/issues/2178
+		// TODO temporary fix for
+		// https://github.com/spring-cloud/spring-cloud-stream/issues/2178
 		// need a cleaner solution
 		@SuppressWarnings("unchecked")
 		private Message filterOutHeaders(Message message) {
@@ -1238,8 +1284,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 		/**
-		 * This is an optional conversion which would only happen if `expected-content-type` is
-		 * set as a header in a message or explicitly provided as part of the lookup.
+		 * This is an optional conversion which would only happen if
+		 * `expected-content-type` is set as a header in a message or explicitly provided
+		 * as part of the lookup.
 		 */
 		@SuppressWarnings("unchecked")
 		private Object convertOutputIfNecessary(Object output, Type type, String[] contentType) {
@@ -1268,7 +1315,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				Message enrichedMessage;
 				if (convertedOutput instanceof Message) {
 					enrichedMessage = MessageBuilder.fromMessage((Message) convertedOutput)
-						.setHeader(MessageHeaders.CONTENT_TYPE, contentType[0]).build();
+						.setHeader(MessageHeaders.CONTENT_TYPE, contentType[0])
+						.build();
 				}
 				else {
 					enrichedMessage = MessageBuilder.withPayload(convertedOutput)
@@ -1282,8 +1330,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			if (ObjectUtils.isEmpty(contentType)) {
 				// GH-1307: For POJO functions, wrap output in Message to maintain
 				// consistency with regular functions
-				if (this.isPojoFunction && output instanceof Message
-						&& !(convertedOutput instanceof Message)) {
+				if (this.isPojoFunction && output instanceof Message && !(convertedOutput instanceof Message)) {
 					convertedOutput = MessageBuilder.withPayload(convertedOutput)
 						.copyHeaders(((Message) output).getHeaders())
 						.build();
@@ -1291,24 +1338,29 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				return convertedOutput;
 			}
 
-
 			if (FunctionTypeUtils.isMultipleArgumentType(type)) {
 				convertedOutput = this.convertMultipleOutputArgumentTypeIfNecesary(convertedOutput, type, contentType);
 			}
 			else if (convertedOutput instanceof Message) {
-				convertedOutput = this.convertOutputMessageIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
+				convertedOutput = this.convertOutputMessageIfNecessary(convertedOutput,
+						ObjectUtils.isEmpty(contentType) ? null : contentType[0]);
 			}
 			else if (convertedOutput instanceof Collection && this.isOutputTypeMessage()) {
-				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType);
+				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput,
+						ObjectUtils.isEmpty(contentType) ? null : contentType);
 			}
 			else if (ObjectUtils.isArray(convertedOutput) && !(convertedOutput instanceof byte[])) {
-				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput, ObjectUtils.isEmpty(contentType) ? null : contentType);
+				convertedOutput = this.convertMultipleOutputValuesIfNecessary(convertedOutput,
+						ObjectUtils.isEmpty(contentType) ? null : contentType);
 			}
 			else {
 				convertedOutput = messageConverter.toMessage(convertedOutput,
-						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType == null ? "application/json" : contentType[0])));
+						new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE,
+								contentType == null ? "application/json" : contentType[0])));
 				if (FunctionTypeUtils.isTypeCollection(this.outputType) && output instanceof Message<?>) {
-					convertedOutput = MessageBuilder.fromMessage((Message) convertedOutput).copyHeaders(((Message) output).getHeaders()).build();
+					convertedOutput = MessageBuilder.fromMessage((Message) convertedOutput)
+						.copyHeaders(((Message) output).getHeaders())
+						.build();
 				}
 			}
 
@@ -1316,15 +1368,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 		/**
-		 * Will check if message contains any of the headers that are considered to serve as
-		 * signals to retain output as Message (regardless of the output type of function).
-		 * At this moment presence of 'scf-func-name' header or any header that begins with `lambda'
-		 * (use by AWS) will result in this method returning true.
+		 * Will check if message contains any of the headers that are considered to serve
+		 * as signals to retain output as Message (regardless of the output type of
+		 * function). At this moment presence of 'scf-func-name' header or any header that
+		 * begins with `lambda' (use by AWS) will result in this method returning true.
 		 */
 		/*
-		 * TODO we need to investigate if this could be extracted into some type of strategy since at
-		 * the pure core level there is no case for this to ever be true. In fact today it is only AWS Lambda
-		 * case that requires it since it may contain forwarding url
+		 * TODO we need to investigate if this could be extracted into some type of
+		 * strategy since at the pure core level there is no case for this to ever be
+		 * true. In fact today it is only AWS Lambda case that requires it since it may
+		 * contain forwarding url
 		 */
 		private boolean containsRetainMessageSignalInHeaders(Message message) {
 			if (functionInvocationHelper != null && functionInvocationHelper.isRetainOutputAsMessage(message)) {
@@ -1332,8 +1385,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 			else {
 				for (String headerName : message.getHeaders().keySet()) {
-					if (headerName.startsWith("lambda") ||
-						headerName.startsWith("scf-func-name")) {
+					if (headerName.startsWith("lambda") || headerName.startsWith("scf-func-name")) {
 						return true;
 					}
 				}
@@ -1358,8 +1410,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					convertedInput = SimpleFunctionRegistry.this.jsonMapper.fromJson(input, inputType);
 				}
 			}
-			else if (SimpleFunctionRegistry.this.conversionService != null
-					&& !rawInputType.equals(input.getClass())
+			else if (SimpleFunctionRegistry.this.conversionService != null && !rawInputType.equals(input.getClass())
 					&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
 				convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, rawInputType);
 			}
@@ -1373,10 +1424,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 *
 		 */
 		private boolean isWrapConvertedInputInMessage(Object convertedInput) {
-			return this.inputType != null
-					&& FunctionTypeUtils.isMessage(this.inputType)
-					&& !(convertedInput instanceof Message)
-					&& !(convertedInput instanceof Publisher)
+			return this.inputType != null && FunctionTypeUtils.isMessage(this.inputType)
+					&& !(convertedInput instanceof Message) && !(convertedInput instanceof Publisher)
 					&& !(convertedInput instanceof OriginalMessageHolder);
 		}
 
@@ -1384,7 +1433,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 *
 		 */
 		private Type extractActualValueTypeIfNecessary(Type type) {
-			if (type instanceof ParameterizedType && (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type))) {
+			if (type instanceof ParameterizedType
+					&& (FunctionTypeUtils.isPublisher(type) || FunctionTypeUtils.isMessage(type))) {
 				return FunctionTypeUtils.getGenericType(type);
 			}
 			return type;
@@ -1420,35 +1470,39 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			Object convertedInput = message.getPayload();
 
 			Type itemType = this.extractActualValueTypeIfNecessary(type);
-			Class<?> rawType = FunctionTypeUtils.isMessage(type)
-					? FunctionTypeUtils.getRawType(itemType)
+			Class<?> rawType = FunctionTypeUtils.isMessage(type) ? FunctionTypeUtils.getRawType(itemType)
 					: FunctionTypeUtils.getRawType(type);
 			convertedInput = type instanceof ParameterizedType
 					? SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType, itemType)
 					: SimpleFunctionRegistry.this.messageConverter.fromMessage(message, rawType);
 
 			if (convertedInput != null && !rawType.isAssignableFrom(convertedInput.getClass())) {
-				logger.warn("Failed to convert input to " + rawType + ". Will attempt to invoke function with raw type");
+				logger
+					.warn("Failed to convert input to " + rawType + ". Will attempt to invoke function with raw type");
 			}
 
 			if (FunctionTypeUtils.isMessage(type)) {
 				if (convertedInput == null) {
 					if (logger.isDebugEnabled()) {
 						/*
-						 * In the event conversion was unsuccessful we simply return the original un-converted message.
-						 * This will help to deal with issues like KafkaNull and others. However if this was not the intention
-						 * of the developer, this would be discovered early in the development process where the
-						 * additional message converter could be added to facilitate the conversion.
+						 * In the event conversion was unsuccessful we simply return the
+						 * original un-converted message. This will help to deal with
+						 * issues like KafkaNull and others. However if this was not the
+						 * intention of the developer, this would be discovered early in
+						 * the development process where the additional message converter
+						 * could be added to facilitate the conversion.
 						 */
-						logger.debug("Input type conversion of payload " + message.getPayload() + " resulted in 'null'. "
-								+ "Will use the original message as input.");
+						logger.debug("Input type conversion of payload " + message.getPayload()
+								+ " resulted in 'null'. " + "Will use the original message as input.");
 					}
 
 					convertedInput = message;
 				}
 				else {
 					if (!(convertedInput instanceof Message)) {
-						convertedInput = MessageBuilder.withPayload(convertedInput).copyHeaders(message.getHeaders()).build();
+						convertedInput = MessageBuilder.withPayload(convertedInput)
+							.copyHeaders(message.getHeaders())
+							.build();
 					}
 				}
 			}
@@ -1463,10 +1517,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			Object[] multipleValueArguments = this.parseMultipleValueArguments(output, outputTypes.length);
 			Object[] convertedOutputs = new Object[outputTypes.length];
 			for (int i = 0; i < multipleValueArguments.length; i++) {
-				String[] ctToUse = !ObjectUtils.isEmpty(contentType)
-						? new String[]{contentType[i]}
-						: new String[] {"application/json"};
-				Object convertedInput = this.convertOutputIfNecessary(multipleValueArguments[i], outputTypes[i], ctToUse);
+				String[] ctToUse = !ObjectUtils.isEmpty(contentType) ? new String[] { contentType[i] }
+						: new String[] { "application/json" };
+				Object convertedInput = this.convertOutputIfNecessary(multipleValueArguments[i], outputTypes[i],
+						ctToUse);
 				convertedOutputs[i] = convertedInput;
 			}
 			return Tuples.fromArray(convertedOutputs);
@@ -1478,13 +1532,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		@SuppressWarnings("unchecked")
 		private Object convertOutputMessageIfNecessary(Object output, String expectedOutputContetntType) {
 			String contentType;
-			if (this.isOutputTypeMessage() && ((Message) output).getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
+			if (this.isOutputTypeMessage()
+					&& ((Message) output).getHeaders().containsKey(MessageHeaders.CONTENT_TYPE)) {
 				contentType = ((Message) output).getHeaders().get(MessageHeaders.CONTENT_TYPE).toString();
 			}
 			else {
 				contentType = ((Message) output).getHeaders().containsKey(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
 						? (String) ((Message) output).getHeaders().get(FunctionProperties.EXPECT_CONTENT_TYPE_HEADER)
-								: expectedOutputContetntType;
+						: expectedOutputContetntType;
 			}
 
 			if (StringUtils.hasText(contentType)) {
@@ -1492,7 +1547,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				String[] expectedContentTypes = StringUtils.delimitedListToStringArray(contentType, ",");
 				for (String expectedContentType : expectedContentTypes) {
 					headersMap.put(MessageHeaders.CONTENT_TYPE, expectedContentType);
-					Message message = MessageBuilder.withPayload(((Message) output).getPayload()).copyHeaders(headersMap).build();
+					Message message = MessageBuilder.withPayload(((Message) output).getPayload())
+						.copyHeaders(headersMap)
+						.build();
 					Object result = messageConverter.toMessage(message.getPayload(), message.getHeaders());
 					if (result != null) {
 						return result;
@@ -1507,9 +1564,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		 */
 		@SuppressWarnings("unchecked")
 		private Object convertMultipleOutputValuesIfNecessary(Object output, String[] contentType) {
-			Collection outputCollection = ObjectUtils.isArray(output) ? CollectionUtils.arrayToList(output) : (Collection) output;
-			Collection convertedOutputCollection = outputCollection instanceof List ? new ArrayList<>() : new TreeSet<>();
-			Type type = this.isOutputTypeMessage() ? FunctionTypeUtils.getGenericType(this.outputType) : this.outputType;
+			Collection outputCollection = ObjectUtils.isArray(output) ? CollectionUtils.arrayToList(output)
+					: (Collection) output;
+			Collection convertedOutputCollection = outputCollection instanceof List ? new ArrayList<>()
+					: new TreeSet<>();
+			Type type = this.isOutputTypeMessage() ? FunctionTypeUtils.getGenericType(this.outputType)
+					: this.outputType;
 			for (Object outToConvert : outputCollection) {
 				Object result = this.convertOutputIfNecessary(outToConvert, type, contentType);
 				Assert.notNull(result, () -> "Failed to convert output '" + outToConvert + "'");
@@ -1530,56 +1590,54 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				publisher = Flux.from(publisher);
 			}
 			Type actualType = type != null && FunctionTypeUtils.isPublisher(type)
-					? FunctionTypeUtils.getImmediateGenericType(type, 0)
-					: type;
-			return publisher instanceof Mono
-					? Mono.from(publisher).map(v -> {
-						try {
-							return this.convertInputIfNecessary(v, actualType == null ? type : actualType);
-						}
-						catch (Exception e) {
-							throw new IllegalStateException("Failed to convert input", e);
-						}
-					})
-					: Flux.from(publisher).map(v -> {
-						try {
-							return this.convertInputIfNecessary(v, actualType == null ? type : actualType);
-						}
-						catch (Exception e) {
-							throw new IllegalStateException("Failed to convert input", e);
-						}
-					});
+					? FunctionTypeUtils.getImmediateGenericType(type, 0) : type;
+			return publisher instanceof Mono ? Mono.from(publisher).map(v -> {
+				try {
+					return this.convertInputIfNecessary(v, actualType == null ? type : actualType);
+				}
+				catch (Exception e) {
+					throw new IllegalStateException("Failed to convert input", e);
+				}
+			}) : Flux.from(publisher).map(v -> {
+				try {
+					return this.convertInputIfNecessary(v, actualType == null ? type : actualType);
+				}
+				catch (Exception e) {
+					throw new IllegalStateException("Failed to convert input", e);
+				}
+			});
 		}
 
 		/*
 		 *
 		 */
 		@SuppressWarnings("unchecked")
-		private Object convertOutputPublisherIfNecessary(Publisher publisher, Type type, String[] expectedOutputContentType) {
-			return publisher instanceof Mono
-					? Mono.from(publisher).map(v -> {
-						try {
-							return this.convertOutputIfNecessary(v, type, expectedOutputContentType);
-						}
-						catch (Exception e) {
-							throw new IllegalStateException("Failed to convert output", e);
-						}
-					})
-					: Flux.from(publisher).map(v -> {
-						try {
-							return this.convertOutputIfNecessary(v, type, expectedOutputContentType);
-						}
-						catch (Exception e) {
-							throw new IllegalStateException("Failed to convert output", e);
-						}
-					});
+		private Object convertOutputPublisherIfNecessary(Publisher publisher, Type type,
+				String[] expectedOutputContentType) {
+			return publisher instanceof Mono ? Mono.from(publisher).map(v -> {
+				try {
+					return this.convertOutputIfNecessary(v, type, expectedOutputContentType);
+				}
+				catch (Exception e) {
+					throw new IllegalStateException("Failed to convert output", e);
+				}
+			}) : Flux.from(publisher).map(v -> {
+				try {
+					return this.convertOutputIfNecessary(v, type, expectedOutputContentType);
+				}
+				catch (Exception e) {
+					throw new IllegalStateException("Failed to convert output", e);
+				}
+			});
 		}
+
 	}
 
 	/**
 	 *
 	 */
-	private static final class OriginalMessageHolder  {
+	private static final class OriginalMessageHolder {
+
 		private final Object value;
 
 		private final Message<?> originalMessage;
@@ -1596,13 +1654,16 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		public Message<?> getOriginalMessage() {
 			return this.originalMessage;
 		}
+
 	}
 
 	public static class PassThruFunction implements Function<Object, Object> {
+
 		@Override
 		public Object apply(Object t) {
 			return t;
 		}
+
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -1620,4 +1681,5 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 
 	}
+
 }

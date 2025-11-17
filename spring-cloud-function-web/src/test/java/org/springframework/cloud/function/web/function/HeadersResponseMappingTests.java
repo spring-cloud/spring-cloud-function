@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.web.function;
 
-
 import java.net.URI;
 import java.util.Locale;
 import java.util.function.Function;
@@ -41,8 +40,8 @@ public class HeadersResponseMappingTests {
 				"--server.port=0");
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = context.getEnvironment().getProperty("local.server.port");
-		ResponseEntity<String> response = testRestTemplate.postForEntity(
-				new URI("http://localhost:" + port + "/uppercase"), new Person("John", "Doe"), String.class);
+		ResponseEntity<String> response = testRestTemplate
+			.postForEntity(new URI("http://localhost:" + port + "/uppercase"), new Person("John", "Doe"), String.class);
 		assertThat(response.getBody()).isEqualTo("JOHN");
 	}
 
@@ -58,4 +57,5 @@ public class HeadersResponseMappingTests {
 		}
 
 	}
+
 }

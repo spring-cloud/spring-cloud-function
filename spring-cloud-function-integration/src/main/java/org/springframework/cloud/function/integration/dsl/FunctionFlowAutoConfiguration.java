@@ -22,11 +22,10 @@ import org.springframework.cloud.function.context.config.ContextFunctionCatalogA
 import org.springframework.context.annotation.Bean;
 
 /**
- * The auto-configuration to expose a {@link FunctionFlowBuilder} bean
- * based on the auto-configured {@link FunctionCatalog}.
+ * The auto-configuration to expose a {@link FunctionFlowBuilder} bean based on the
+ * auto-configured {@link FunctionCatalog}.
  *
  * @author Artem Bilan
- *
  * @since 4.0.3
  */
 @AutoConfiguration(after = ContextFunctionCatalogAutoConfiguration.class)

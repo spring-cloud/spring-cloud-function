@@ -35,4 +35,5 @@ public class ServerlessWebServerFactoryTests {
 	public static class TestApplication {
 
 	}
+
 }

@@ -31,20 +31,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class CloudEventMessageUtilsAndBuilderTests {
 
-	@Test// see https://github.com/spring-cloud/spring-cloud-function/issues/805
+	@Test // see https://github.com/spring-cloud/spring-cloud-function/issues/805
 	public void testHeaderKeyInsensitivity() {
 		Message<String> httpMessage = MessageBuilder.withPayload("hello")
-				.setHeader("cE-SoUrCe", "https://foo.bar")
-				.setHeader("Ce-specVeRsion", "1.0")
-				.setHeader("Ce-Type", "blah")
-				.setHeader("x", "x")
-				.setHeader("zzz", "zzz")
-				.build();
+			.setHeader("cE-SoUrCe", "https://foo.bar")
+			.setHeader("Ce-specVeRsion", "1.0")
+			.setHeader("Ce-Type", "blah")
+			.setHeader("x", "x")
+			.setHeader("zzz", "zzz")
+			.build();
 
 		assertThat(CloudEventMessageUtils.isCloudEvent(httpMessage)).isTrue();
 	}
 
-	@Test// see https://github.com/spring-cloud/spring-cloud-function/issues/680
+	@Test // see https://github.com/spring-cloud/spring-cloud-function/issues/680
 	public void testProperAttributeExtractionRegardlessOfTargetProtocol() {
 		Message<String> ceMessage = CloudEventMessageBuilder.withData("foo").build();
 		ceMessage = MessageBuilder.fromMessage(ceMessage).setHeader("kafka_foo", "blah").build();
@@ -67,19 +67,22 @@ public class CloudEventMessageUtilsAndBuilderTests {
 	@Test
 	public void testAttributeRecognitionAndCanonicalization() {
 		Message<String> httpMessage = MessageBuilder.withPayload("hello")
-				.setHeader(CloudEventMessageUtils.SOURCE, "https://foo.bar")
-				.setHeader(CloudEventMessageUtils.SPECVERSION, "1.0")
-				.setHeader(CloudEventMessageUtils.TYPE, "blah")
-				.setHeader("x", "x")
-				.setHeader("zzz", "zzz")
-				.build();
+			.setHeader(CloudEventMessageUtils.SOURCE, "https://foo.bar")
+			.setHeader(CloudEventMessageUtils.SPECVERSION, "1.0")
+			.setHeader(CloudEventMessageUtils.TYPE, "blah")
+			.setHeader("x", "x")
+			.setHeader("zzz", "zzz")
+			.build();
 		Map<String, Object> attributes = CloudEventMessageUtils.getAttributes(httpMessage);
 		assertThat(attributes.size()).isEqualTo(3);
 		assertThat((String) CloudEventMessageUtils.getData(httpMessage)).isEqualTo("hello");
 
-		Message<String> kafkaMessage = CloudEventMessageBuilder.fromMessage(httpMessage).build(CloudEventMessageUtils.KAFKA_ATTR_PREFIX);
+		Message<String> kafkaMessage = CloudEventMessageBuilder.fromMessage(httpMessage)
+			.build(CloudEventMessageUtils.KAFKA_ATTR_PREFIX);
 		attributes = CloudEventMessageUtils.getAttributes(kafkaMessage);
-		assertThat(attributes.size()).isEqualTo(4); // id will be auto injected, so always at least 4 (as tehre are 4 required attributes in CE)
+		assertThat(attributes.size()).isEqualTo(4); // id will be auto injected, so always
+													// at least 4 (as tehre are 4 required
+													// attributes in CE)
 		assertThat(kafkaMessage.getHeaders().get("ce_source")).isNotNull();
 		assertThat(CloudEventMessageUtils.getSource(kafkaMessage)).isEqualTo(URI.create("https://foo.bar"));
 		assertThat(kafkaMessage.getHeaders().get("ce_type")).isNotNull();
@@ -87,7 +90,8 @@ public class CloudEventMessageUtilsAndBuilderTests {
 		assertThat(kafkaMessage.getHeaders().get("ce_specversion")).isNotNull();
 		assertThat(CloudEventMessageUtils.getSpecVersion(kafkaMessage)).isEqualTo("1.0");
 
-		httpMessage = CloudEventMessageBuilder.fromMessage(kafkaMessage).build(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX);
+		httpMessage = CloudEventMessageBuilder.fromMessage(kafkaMessage)
+			.build(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX);
 		attributes = CloudEventMessageUtils.getAttributes(httpMessage);
 		assertThat(attributes.size()).isEqualTo(4); //
 		assertThat(httpMessage.getHeaders().get("ce-source")).isNotNull();
@@ -108,34 +112,33 @@ public class CloudEventMessageUtilsAndBuilderTests {
 		// amqpAttrs -> modified
 		// structured -> modified
 		Message<?> inputMessage = MessageBuilder.withPayload("hello")
-				.setHeader("ce_foo", "bar")
-				.setHeader("x", "x1")
-				.setHeader("x|x", "x2")
-				.build();
+			.setHeader("ce_foo", "bar")
+			.setHeader("x", "x1")
+			.setHeader("x|x", "x2")
+			.build();
 
 		Message<?> updatedMessage = CloudEventMessageUtils.canonicalizeHeadersWithPossibleCopy(inputMessage);
 
 		assertThat(inputMessage).isNotSameAs(updatedMessage);
-		assertThat(updatedMessage.getHeaders())
-				.containsEntry("ce-foo", "bar")
-				.containsEntry("x", "x1")
-				.containsEntry("x|x", "x2");
+		assertThat(updatedMessage.getHeaders()).containsEntry("ce-foo", "bar")
+			.containsEntry("x", "x1")
+			.containsEntry("x|x", "x2");
 	}
 
 	@Test
 	void canonicalizeHeadersWithPossibleCopyReturnsSameInstanceWhenNotModified() {
 		Message<?> inputMessage = MessageBuilder.withPayload("hello")
-				.setHeader("ce-foo", "bar")
-				.setHeader("x", "x1")
-				.setHeader("x|x", "x2")
-				.build();
+			.setHeader("ce-foo", "bar")
+			.setHeader("x", "x1")
+			.setHeader("x|x", "x2")
+			.build();
 
 		Message<?> updatedMessage = CloudEventMessageUtils.canonicalizeHeadersWithPossibleCopy(inputMessage);
 
 		assertThat(inputMessage).isSameAs(updatedMessage);
-		assertThat(updatedMessage.getHeaders())
-				.containsEntry("ce-foo", "bar")
-				.containsEntry("x", "x1")
-				.containsEntry("x|x", "x2");
+		assertThat(updatedMessage.getHeaders()).containsEntry("ce-foo", "bar")
+			.containsEntry("x", "x1")
+			.containsEntry("x|x", "x2");
 	}
+
 }

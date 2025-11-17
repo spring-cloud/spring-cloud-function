@@ -77,13 +77,14 @@ public final class HeaderUtils {
 		return fromMessage(headers, Collections.EMPTY_LIST);
 	}
 
-
-	public static HttpHeaders sanitize(HttpHeaders request, List<String> ignoredHeders, List<String> requestOnlyHeaders) {
+	public static HttpHeaders sanitize(HttpHeaders request, List<String> ignoredHeders,
+			List<String> requestOnlyHeaders) {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : request.headerNames()) {
 			List<String> value = request.get(name);
 			name = name.toLowerCase(Locale.ROOT);
-			if (!IGNORED.containsHeader(name) && !REQUEST_ONLY.containsHeader(name) && !ignoredHeders.contains(name) && !requestOnlyHeaders.contains(name)) {
+			if (!IGNORED.containsHeader(name) && !REQUEST_ONLY.containsHeader(name) && !ignoredHeders.contains(name)
+					&& !requestOnlyHeaders.contains(name)) {
 				result.put(name, value);
 			}
 		}
@@ -100,8 +101,7 @@ public final class HeaderUtils {
 		for (String name : headers.headerNames()) {
 			Collection<?> values = multi(headers.get(name));
 			name = name.toLowerCase(Locale.ROOT);
-			Object value = values == null ? null
-					: (values.size() == 1 ? values.iterator().next() : values);
+			Object value = values == null ? null : (values.size() == 1 ? values.iterator().next() : values);
 			if (name.toLowerCase(Locale.ROOT).equals(HttpHeaders.CONTENT_TYPE.toLowerCase(Locale.ROOT))) {
 				name = MessageHeaders.CONTENT_TYPE;
 			}

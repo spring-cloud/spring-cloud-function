@@ -42,18 +42,26 @@ public class PojoTests {
 
 	@Test
 	public void single() throws Exception {
-		this.client.post().uri("/").body(Mono.just("{\"value\":\"foo\"}"), String.class)
-				.exchange().expectStatus().isOk().expectBody(String.class)
-				.isEqualTo("{\"value\":\"FOO\"}");
+		this.client.post()
+			.uri("/")
+			.body(Mono.just("{\"value\":\"foo\"}"), String.class)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.isEqualTo("{\"value\":\"FOO\"}");
 	}
 
 	@Test
 	public void multiple() throws Exception {
-		this.client.post().uri("/")
-				.body(Mono.just("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"),
-						String.class)
-				.exchange().expectStatus().isOk().expectBody(String.class)
-				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+		this.client.post()
+			.uri("/")
+			.body(Mono.just("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@SpringBootConfiguration

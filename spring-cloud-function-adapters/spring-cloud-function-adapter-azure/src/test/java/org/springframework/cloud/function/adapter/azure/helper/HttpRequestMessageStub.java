@@ -29,9 +29,13 @@ import com.microsoft.azure.functions.HttpStatusType;
 public class HttpRequestMessageStub<I> implements HttpRequestMessage<I> {
 
 	private URI uri;
+
 	private HttpMethod httpMethod;
+
 	private Map<String, String> headers;
+
 	private Map<String, String> queryParameters;
+
 	private I body;
 
 	public void setUri(URI uri) {
@@ -88,4 +92,5 @@ public class HttpRequestMessageStub<I> implements HttpRequestMessage<I> {
 	public Builder createResponseBuilder(HttpStatus status) {
 		return new BuilderStub().status(status);
 	}
+
 }

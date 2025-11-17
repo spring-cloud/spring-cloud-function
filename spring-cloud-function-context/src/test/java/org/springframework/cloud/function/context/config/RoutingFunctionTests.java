@@ -45,7 +45,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -77,7 +76,8 @@ public class RoutingFunctionTests {
 	@Test
 	public void testDefaultRouting() {
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".definition", "blah").build();
+			.setHeader(FunctionProperties.PREFIX + ".definition", "blah")
+			.build();
 
 		FunctionCatalog functionCatalog = this.configureCatalog(EmptyConfiguration.class);
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
@@ -94,7 +94,8 @@ public class RoutingFunctionTests {
 		function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		function.apply(message);
-		ConfigurationWithDefaultMessageRoutingHandler config = this.context.getBean(ConfigurationWithDefaultMessageRoutingHandler.class);
+		ConfigurationWithDefaultMessageRoutingHandler config = this.context
+			.getBean(ConfigurationWithDefaultMessageRoutingHandler.class);
 		assertThat(config.defaultHandlerInvoked).isTrue();
 	}
 
@@ -105,7 +106,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".definition", "reverse").build();
+			.setHeader(FunctionProperties.PREFIX + ".definition", "reverse")
+			.build();
 		assertThat(function.apply(message)).isEqualTo("olleh");
 	}
 
@@ -116,8 +118,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".definition", List.of("reverse"))
-				.build();
+			.setHeader(FunctionProperties.PREFIX + ".definition", List.of("reverse"))
+			.build();
 		assertThat(function.apply(message)).isEqualTo("olleh");
 	}
 
@@ -128,9 +130,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".definition",
-						List.of("reverse", "uppercase"))
-				.build();
+			.setHeader(FunctionProperties.PREFIX + ".definition", List.of("reverse", "uppercase"))
+			.build();
 		assertThat(function.apply(message)).isEqualTo("OLLEH");
 	}
 
@@ -141,9 +142,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".routing-expression",
-						List.of("'reverse'"))
-				.build();
+			.setHeader(FunctionProperties.PREFIX + ".routing-expression", List.of("'reverse'"))
+			.build();
 		assertThat(function.apply(message)).isEqualTo("olleh");
 	}
 
@@ -154,9 +154,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".routing-expression",
-						List.of("'uppercase'", "'reverse'"))
-				.build();
+			.setHeader(FunctionProperties.PREFIX + ".routing-expression", List.of("'uppercase'", "'reverse'"))
+			.build();
 		assertThat(function.apply(message)).isEqualTo("HELLO");
 	}
 
@@ -167,7 +166,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux").build();
+			.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux")
+			.build();
 		assertThat(((Flux) function.apply(message)).blockFirst()).isEqualTo("hello");
 	}
 
@@ -178,7 +178,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux").build();
+			.setHeader(FunctionProperties.PREFIX + ".definition", "echoFlux")
+			.build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
 
 		StepVerifier.create(resultFlux).expectError().verify();
@@ -191,7 +192,8 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".routing-expression", "'echoFlux'").build();
+			.setHeader(FunctionProperties.PREFIX + ".routing-expression", "'echoFlux'")
+			.build();
 		Flux resultFlux = (Flux) function.apply(Flux.just(message));
 		StepVerifier.create(resultFlux).expectError().verify();
 	}
@@ -203,9 +205,9 @@ public class RoutingFunctionTests {
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".routing-expression",
-						"T(java.lang.Runtime).getRuntime().exec(\"open -a calculator.app\")")
-				.build();
+			.setHeader(FunctionProperties.PREFIX + ".routing-expression",
+					"T(java.lang.Runtime).getRuntime().exec(\"open -a calculator.app\")")
+			.build();
 		try {
 			function.apply(message);
 			Assertions.fail();
@@ -281,7 +283,8 @@ public class RoutingFunctionTests {
 		// non existing function
 		try {
 			function.apply(MessageBuilder.withPayload("hello")
-					.setHeader(FunctionProperties.PREFIX + ".definition", "blah").build());
+				.setHeader(FunctionProperties.PREFIX + ".definition", "blah")
+				.build());
 			Assertions.fail();
 		}
 		catch (Exception e) {
@@ -298,7 +301,8 @@ public class RoutingFunctionTests {
 		assertThat(function).isNotNull();
 
 		Message<String> message = MessageBuilder.withPayload("hello")
-				.setHeader(FunctionProperties.PREFIX + ".definition", "uppercase").build();
+			.setHeader(FunctionProperties.PREFIX + ".definition", "uppercase")
+			.build();
 
 		assertThat(function.apply(message)).isEqualTo("OLLEH");
 	}
@@ -325,7 +329,9 @@ public class RoutingFunctionTests {
 		FunctionCatalog functionCatalog = this.configureCatalog(MultipleRouterConfiguration.class);
 		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
 		assertThat(function).isNotNull();
-		Message<String> message = MessageBuilder.withPayload("hello").setHeader(FunctionProperties.PREFIX + ".DeFiNition", "uppercase").build();
+		Message<String> message = MessageBuilder.withPayload("hello")
+			.setHeader(FunctionProperties.PREFIX + ".DeFiNition", "uppercase")
+			.build();
 		assertThat(function.apply(message)).isEqualTo("HELLO");
 	}
 
@@ -347,6 +353,7 @@ public class RoutingFunctionTests {
 		public Function<Flux<String>, Flux<String>> echoFlux() {
 			return f -> f;
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -354,10 +361,12 @@ public class RoutingFunctionTests {
 	protected static class MultipleRouterConfiguration {
 
 		@Bean
-		RoutingFunction mySpecialRouter(FunctionCatalog functionCatalog, BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback) {
+		RoutingFunction mySpecialRouter(FunctionCatalog functionCatalog, BeanFactory beanFactory,
+				@Nullable MessageRoutingCallback routingCallback) {
 			Map<String, String> propertiesMap = new HashMap<>();
 			propertiesMap.put(FunctionProperties.PREFIX + ".routing-expression", "'reverse'");
-			return new RoutingFunction(functionCatalog, propertiesMap, new BeanFactoryResolver(beanFactory), routingCallback);
+			return new RoutingFunction(functionCatalog, propertiesMap, new BeanFactoryResolver(beanFactory),
+					routingCallback);
 		}
 
 		@Bean
@@ -369,29 +378,35 @@ public class RoutingFunctionTests {
 		public Function<String, String> uppercase() {
 			return String::toUpperCase;
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class EmptyConfiguration {
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class ConfigurationWithDefaultMessageRoutingHandler {
+
 		/**
 		 *
 		 */
 		public boolean defaultHandlerInvoked;
+
 		@Bean
 		public DefaultMessageRoutingHandler defaultRoutingHandler() {
 			return new DefaultMessageRoutingHandler() {
-					@Override
+				@Override
 				public void accept(Message<?> message) {
 					super.accept(message);
 					defaultHandlerInvoked = true;
 				}
 			};
 		}
+
 	}
+
 }

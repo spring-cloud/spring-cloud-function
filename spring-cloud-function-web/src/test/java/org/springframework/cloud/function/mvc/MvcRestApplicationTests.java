@@ -62,7 +62,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  */
 // @checkstyle:off
-@SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
+@SpringBootTest(classes = TestConfiguration.class, webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = "spring.main.web-application-type=servlet")
 // @checkstyle:on
 @AutoConfigureTestRestTemplate
 public class MvcRestApplicationTests {
@@ -85,49 +86,43 @@ public class MvcRestApplicationTests {
 
 	@Test
 	public void wordsSSE() throws Exception {
-		assertThat(this.rest.exchange(
-				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
-				String.class).getBody()).isEqualTo(sse("foo", "bar"));
+		assertThat(this.rest.exchange(RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(), String.class)
+			.getBody()).isEqualTo(sse("foo", "bar"));
 	}
 
 	@Test
 	public void wordsJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/words"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\",\"bar\"]");
+			.exchange(RequestEntity.get(new URI("/words")).accept(MediaType.APPLICATION_JSON).build(), String.class)
+			.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
 	@Disabled("Fix error handling")
 	public void errorJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/bang"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\"]");
+			.exchange(RequestEntity.get(new URI("/bang")).accept(MediaType.APPLICATION_JSON).build(), String.class)
+			.getBody()).isEqualTo("[\"foo\"]");
 	}
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
 	public void foos() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/foos")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+		assertThat(result.getBody()).isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void getMore() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/get/more")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/get/more")).build(),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
@@ -135,8 +130,8 @@ public class MvcRestApplicationTests {
 	@Test
 	@Disabled("Should this even work? Or do we need to be explicit about the JSON?")
 	public void updates() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(
-				RequestEntity.post(new URI("/updates")).body("one\ntwo"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/updates")).body("one\ntwo"),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("onetwo");
@@ -144,9 +139,9 @@ public class MvcRestApplicationTests {
 
 	@Test
 	public void updatesJson() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.post(new URI("/updates")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"one\",\"two\"]"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/updates"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"one\",\"two\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(this.test.list).hasSize(2);
 		assertThat(result.getBody()).isEqualTo("[\"one\",\"two\"]");
@@ -154,128 +149,116 @@ public class MvcRestApplicationTests {
 
 	@Test
 	public void addFoos() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.post(new URI("/addFoos")).contentType(MediaType.APPLICATION_JSON)
-				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/addFoos"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(this.test.list).hasSize(2);
-		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
+		assertThat(result.getBody()).isEqualTo("[{\"value\":\"foo\"},{\"value\":\"bar\"}]");
 	}
 
 	@Test
 	public void timeout() throws Exception {
-		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/timeout")).build(), String.class)
-				.getBody()).isEqualTo("[\"foo\"]");
+		assertThat(this.rest.exchange(RequestEntity.get(new URI("/timeout")).build(), String.class).getBody())
+			.isEqualTo("[\"foo\"]");
 	}
 
 	@Test
 	public void emptyJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/empty"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("[]");
+			.exchange(RequestEntity.get(new URI("/empty")).accept(MediaType.APPLICATION_JSON).build(), String.class)
+			.getBody()).isEqualTo("[]");
 	}
 
 	@Test
 	public void sentences() throws Exception {
-		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class)
-				.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+		assertThat(this.rest.exchange(RequestEntity.get(new URI("/sentences")).build(), String.class).getBody())
+			.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptAny() throws Exception {
 		assertThat(
-				this.rest
-						.exchange(RequestEntity.get(new URI("/sentences"))
-								.accept(MediaType.ALL).build(), String.class)
-						.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
+				this.rest.exchange(RequestEntity.get(new URI("/sentences")).accept(MediaType.ALL).build(), String.class)
+					.getBody())
+			.isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
 	}
 
 	@Test
 	public void sentencesAcceptJson() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(
-						RequestEntity.get(new URI("/sentences"))
-								.accept(MediaType.APPLICATION_JSON).build(),
-						String.class);
+		ResponseEntity<String> result = this.rest.exchange(
+				RequestEntity.get(new URI("/sentences")).accept(MediaType.APPLICATION_JSON).build(), String.class);
 		assertThat(result.getBody()).isEqualTo("[[\"go\",\"home\"],[\"come\",\"back\"]]");
-		assertThat(result.getHeaders().getContentType())
-				.isGreaterThanOrEqualTo(MediaType.APPLICATION_JSON);
+		assertThat(result.getHeaders().getContentType()).isGreaterThanOrEqualTo(MediaType.APPLICATION_JSON);
 	}
 
 	@Test
 	public void uppercase() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.post(new URI("/uppercase")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/uppercase"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
 	}
 
 	@Test
 	public void uppercaseFoos() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.post(new URI("/upFoos")).contentType(MediaType.APPLICATION_JSON)
-				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
-		assertThat(result.getBody())
-				.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/upFoos"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class);
+		assertThat(result.getBody()).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
 	public void transform() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.post(new URI("/transform")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/transform"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
 	}
 
 	@Test
 	public void postMore() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(RequestEntity
-				.post(new URI("/post/more")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/post/more"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getBody()).isEqualTo("[\"[FOO]\",\"[BAR]\"]");
 	}
 
 	@Test
 	public void uppercaseGet() {
-		assertThat(this.rest.getForObject("/uppercase/foo", String.class))
-				.isEqualTo("[FOO]");
+		assertThat(this.rest.getForObject("/uppercase/foo", String.class)).isEqualTo("[FOO]");
 	}
 
 	@Test
 	public void convertGet() {
-		assertThat(this.rest.getForObject("/wrap/123", String.class))
-				.isEqualTo("..123..");
+		assertThat(this.rest.getForObject("/wrap/123", String.class)).isEqualTo("..123..");
 	}
 
 	@Test
 	public void convertGetJson() throws Exception {
 		assertThat(this.rest
-				.exchange(RequestEntity.get(new URI("/entity/321"))
-						.accept(MediaType.APPLICATION_JSON).build(), String.class)
-				.getBody()).isEqualTo("{\"value\":321}");
+			.exchange(RequestEntity.get(new URI("/entity/321")).accept(MediaType.APPLICATION_JSON).build(),
+					String.class)
+			.getBody()).isEqualTo("{\"value\":321}");
 	}
 
 	@Test
 	public void uppercaseJsonStream() throws Exception {
-		assertThat(
-				this.rest.exchange(
-						RequestEntity.post(new URI("/maps"))
-								.contentType(MediaType.APPLICATION_JSON)
-								.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"),
-						String.class).getBody())
-								.isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
+		assertThat(this.rest
+			.exchange(RequestEntity.post(new URI("/maps"))
+				.contentType(MediaType.APPLICATION_JSON)
+				.body("[{\"value\":\"foo\"},{\"value\":\"bar\"}]"), String.class)
+			.getBody()).isEqualTo("[{\"value\":\"FOO\"},{\"value\":\"BAR\"}]");
 	}
 
 	@Test
 	public void uppercaseSSE() throws Exception {
-		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase"))
-				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class).getBody())
-						.isEqualTo(sse("[FOO]", "[BAR]"));
+		assertThat(this.rest
+			.exchange(RequestEntity.post(new URI("/uppercase"))
+				.accept(EVENT_STREAM)
+				.contentType(MediaType.APPLICATION_JSON)
+				.body("[\"foo\",\"bar\"]"), String.class)
+			.getBody()).isEqualTo(sse("[FOO]", "[BAR]"));
 	}
 
 	private String sse(String... values) {
@@ -291,14 +274,14 @@ public class MvcRestApplicationTests {
 
 		@PostMapping({ "/uppercase", "/transform", "/post/more" })
 		public Flux<?> uppercase(@RequestBody List<String> flux) {
-			return Flux.fromIterable(flux).log()
-					.map(value -> "[" + value.trim().toUpperCase(Locale.ROOT) + "]");
+			return Flux.fromIterable(flux).log().map(value -> "[" + value.trim().toUpperCase(Locale.ROOT) + "]");
 		}
 
 		@PostMapping("/upFoos")
 		public Flux<Foo> upFoos(@RequestBody List<Foo> list) {
-			return Flux.fromIterable(list).log()
-					.map(value -> new Foo(value.getValue().trim().toUpperCase(Locale.ROOT)));
+			return Flux.fromIterable(list)
+				.log()
+				.map(value -> new Foo(value.getValue().trim().toUpperCase(Locale.ROOT)));
 		}
 
 		@GetMapping("/uppercase/{id}")
@@ -313,13 +296,11 @@ public class MvcRestApplicationTests {
 
 		@GetMapping("/entity/{id}")
 		public Mono<Map<String, Object>> entity(@PathVariable Integer id) {
-			return Mono.just(id).log()
-					.map(value -> Collections.singletonMap("value", value));
+			return Mono.just(id).log().map(value -> Collections.singletonMap("value", value));
 		}
 
 		@PostMapping("/maps")
-		public Flux<Map<String, String>> maps(
-				@RequestBody List<Map<String, String>> flux) {
+		public Flux<Map<String, String>> maps(@RequestBody List<Map<String, String>> flux) {
 			return Flux.fromIterable(flux).map(value -> {
 				value.put("value", value.get("value").trim().toUpperCase(Locale.ROOT));
 				return value;

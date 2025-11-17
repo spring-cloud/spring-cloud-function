@@ -46,7 +46,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
- *
  * @author Christian Tzolov
  * @author Oleg Zhurakousky
  * @author Omer Celik
@@ -57,6 +56,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 	private static Log logger = LogFactory.getLog(AzureWebProxyInvoker.class);
 
 	private static final String AZURE_WEB_ADAPTER_NAME = "AzureWebAdapter";
+
 	private static final String AZURE_WEB_ADAPTER_ROUTE = AZURE_WEB_ADAPTER_NAME
 			+ "/{e?}/{e2?}/{e3?}/{e4?}/{e5?}/{e6?}/{e7?}/{e8?}/{e9?}/{e10?}/{e11?}/{e12?}/{e13?}/{e14?}/{e15?}";
 
@@ -74,8 +74,8 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 	}
 
 	/**
-	 * Because the getInstance is called by Azure Java Function on every function request we need to cache the Spring
-	 * context initialization on the first function call.
+	 * Because the getInstance is called by Azure Java Function on every function request
+	 * we need to cache the Spring context initialization on the first function call.
 	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
 	 * @throws ServletException error.
 	 */
@@ -103,11 +103,10 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 		ServerlessHttpServletRequest httpRequest = new ServerlessHttpServletRequest(servletContext,
 				request.getHttpMethod().toString(), path);
 
-
 		request.getBody().ifPresent(body -> {
-			Charset charsetEncoding = request.getHeaders() != null && request.getHeaders().containsKey("content-encoding")
-					? Charset.forName(request.getHeaders().get("content-encoding"))
-							: StandardCharsets.UTF_8;
+			Charset charsetEncoding = request.getHeaders() != null
+					&& request.getHeaders().containsKey("content-encoding")
+							? Charset.forName(request.getHeaders().get("content-encoding")) : StandardCharsets.UTF_8;
 			httpRequest.setContent(body.getBytes(charsetEncoding));
 		});
 
@@ -126,13 +125,10 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 	@FunctionName(AZURE_WEB_ADAPTER_NAME)
 	public HttpResponseMessage execute(
-			@HttpTrigger(name = "req", methods = {
-				HttpMethod.GET,
-				HttpMethod.POST,
-				HttpMethod.PUT,
-				HttpMethod.DELETE,
-				HttpMethod.PATCH
-			}, authLevel = AuthorizationLevel.ANONYMOUS, route = AZURE_WEB_ADAPTER_ROUTE) HttpRequestMessage<Optional<String>> request,
+			@HttpTrigger(name = "req",
+					methods = { HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH },
+					authLevel = AuthorizationLevel.ANONYMOUS,
+					route = AZURE_WEB_ADAPTER_ROUTE) HttpRequestMessage<Optional<String>> request,
 			ExecutionContext context) {
 
 		context.getLogger().info("Request body is: " + request.getBody().orElse("[empty]"));
@@ -165,4 +161,5 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 		}
 
 	}
+
 }

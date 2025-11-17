@@ -40,11 +40,12 @@ import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandl
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = Type.SERVLET)
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
-@Import({ FunctionController.class})
+@Import({ FunctionController.class })
 public class ReactorAutoConfiguration {
 
 	@Bean
-	public FunctionHandlerMapping functionHandlerMapping(FunctionProperties functionProperties, FunctionCatalog catalog, FunctionController controller) {
+	public FunctionHandlerMapping functionHandlerMapping(FunctionProperties functionProperties, FunctionCatalog catalog,
+			FunctionController controller) {
 		return new FunctionHandlerMapping(functionProperties, catalog, controller);
 	}
 

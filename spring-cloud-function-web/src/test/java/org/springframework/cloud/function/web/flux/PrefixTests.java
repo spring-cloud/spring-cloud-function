@@ -43,9 +43,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.main.web-application-type=reactive",
-		"spring.cloud.function.web.path=/functions", "debug" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = { "spring.main.web-application-type=reactive", "spring.cloud.function.web.path=/functions",
+				"debug" })
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 @AutoConfigureTestRestTemplate
 public class PrefixTests {
@@ -58,16 +58,15 @@ public class PrefixTests {
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(
-				RequestEntity.get(new URI("/functions/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/functions/words")).build(),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
 	public void missing() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 

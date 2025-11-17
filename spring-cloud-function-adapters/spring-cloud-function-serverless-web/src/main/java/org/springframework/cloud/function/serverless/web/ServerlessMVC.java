@@ -27,7 +27,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
@@ -57,10 +56,12 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
- * Represents the main entry point into interaction with web application over light-weight proxy.
- * After creating an instance via {@link #INSTANCE(Class...)} operation which will initialize the provided component
- * classes of your web application (effectively starting your web application less web server),
- * you use {@link #service(HttpServletRequest, HttpServletResponse)} operation to send request and receive a response.
+ * Represents the main entry point into interaction with web application over light-weight
+ * proxy. After creating an instance via {@link #INSTANCE(Class...)} operation which will
+ * initialize the provided component classes of your web application (effectively starting
+ * your web application less web server), you use
+ * {@link #service(HttpServletRequest, HttpServletResponse)} operation to send request and
+ * receive a response.
  *
  * @author Oleg Zhurakousky
  *
@@ -68,7 +69,8 @@ import org.springframework.web.servlet.DispatcherServlet;
 public final class ServerlessMVC {
 
 	/**
-	 * Name of the property to specify application context initialization timeout. Default is 20 sec.
+	 * Name of the property to specify application context initialization timeout. Default
+	 * is 20 sec.
 	 */
 	public static String INIT_TIMEOUT = "contextInitTimeout";
 
@@ -122,8 +124,10 @@ public final class ServerlessMVC {
 	}
 
 	private void initContext(Class<?>... componentClasses) {
-		this.applicationContext = (ServletWebServerApplicationContext) SpringApplication.run(componentClasses, new String[] {});
-		if (this.applicationContext.containsBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
+		this.applicationContext = (ServletWebServerApplicationContext) SpringApplication.run(componentClasses,
+				new String[] {});
+		if (this.applicationContext
+			.containsBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
 			this.dispatcher = this.applicationContext.getBean(DispatcherServlet.class);
 		}
 	}
@@ -144,23 +148,25 @@ public final class ServerlessMVC {
 	}
 
 	/**
-	 * Perform a request and return a type that allows chaining further actions,
-	 * such as asserting expectations, on the result.
-	 *
-	 * @param requestBuilder used to prepare the request to execute; see static
-	 *                       factory methods in
-	 *                       {@link org.springframework.test.web.servlet.request.MockMvcRequestBuilders}
+	 * Perform a request and return a type that allows chaining further actions, such as
+	 * asserting expectations, on the result.
+	 * @param requestBuilder used to prepare the request to execute; see static factory
+	 * methods in
+	 * {@link org.springframework.test.web.servlet.request.MockMvcRequestBuilders}
 	 * @return an instance of {@link ResultActions} (never {@code null})
 	 * @see org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializationTimeout + " milliseconds. "
-				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
+		Assert.state(this.waitForContext(),
+				"Failed to initialize Application within the specified time of " + this.initializationTimeout
+						+ " milliseconds. " + "If you need to increase it, please set " + INIT_TIMEOUT
+						+ " environment variable");
 		this.service(request, response, (CountDownLatch) null);
 	}
 
-	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
+	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch)
+			throws Exception {
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
 		filterChain.doFilter(request, response);
 
@@ -208,16 +214,17 @@ public final class ServerlessMVC {
 		@Nullable
 		private Iterator<Filter> iterator;
 
-
 		/**
 		 * Create a {@code FilterChain} with Filter's and a Servlet.
-		 *
 		 * @param servlet the {@link Servlet} to invoke in this {@link FilterChain}
 		 * @since 4.0.x
 		 */
 		ProxyFilterChain(DispatcherServlet servlet) {
 			List<Filter> filters = new ArrayList<>();
-			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ServerlessFilterRegistration) fr).getFilter()));
+			servlet.getServletContext()
+				.getFilterRegistrations()
+				.values()
+				.forEach(fr -> filters.add(((ServerlessFilterRegistration) fr).getFilter()));
 			Assert.notNull(filters, "filters cannot be null");
 			Assert.noNullElements(filters, "filters cannot contain null values");
 			this.filters = initFilterList(servlet, filters.toArray(new Filter[] {}));
@@ -245,8 +252,8 @@ public final class ServerlessMVC {
 		}
 
 		/**
-		 * Invoke registered {@link Filter Filters} and/or {@link Servlet} also saving
-		 * the request and response.
+		 * Invoke registered {@link Filter Filters} and/or {@link Servlet} also saving the
+		 * request and response.
 		 */
 		@Override
 		public void doFilter(ServletRequest request, ServletResponse response) throws IOException, ServletException {
@@ -288,10 +295,14 @@ public final class ServerlessMVC {
 					throws IOException, ServletException {
 
 				try {
-					if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value() && request instanceof ServerlessHttpServletRequest) {
-						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, ((HttpServletResponse) response).getStatus());
-						this.setErrorMessageAttribute((ServerlessHttpServletRequest) request, (ServerlessHttpServletResponse) response, null);
-						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
+					if (((HttpServletResponse) response).getStatus() != HttpStatus.OK.value()
+							&& request instanceof ServerlessHttpServletRequest) {
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE,
+								((HttpServletResponse) response).getStatus());
+						this.setErrorMessageAttribute((ServerlessHttpServletRequest) request,
+								(ServerlessHttpServletResponse) response, null);
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI,
+								((HttpServletRequest) request).getRequestURI());
 
 						((ServerlessHttpServletRequest) request).setRequestURI("/error");
 						this.delegateServlet.service(request, response);
@@ -302,10 +313,12 @@ public final class ServerlessMVC {
 				}
 				catch (Exception e) {
 					if (request instanceof ServerlessHttpServletRequest) {
-						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE, HttpStatus.INTERNAL_SERVER_ERROR.value());
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_STATUS_CODE,
+								HttpStatus.INTERNAL_SERVER_ERROR.value());
 						this.setErrorMessageAttribute((HttpServletRequest) request, (HttpServletResponse) response, e);
 						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_EXCEPTION_TYPE, e);
-						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI, ((HttpServletRequest) request).getRequestURI());
+						((HttpServletRequest) request).setAttribute(RequestDispatcher.ERROR_REQUEST_URI,
+								((HttpServletRequest) request).getRequestURI());
 						((ServerlessHttpServletRequest) request).setRequestURI("/error");
 					}
 
@@ -315,15 +328,18 @@ public final class ServerlessMVC {
 				}
 			}
 
-			private void setErrorMessageAttribute(HttpServletRequest request, HttpServletResponse response, Exception exception) {
+			private void setErrorMessageAttribute(HttpServletRequest request, HttpServletResponse response,
+					Exception exception) {
 				if (exception != null && StringUtils.hasText(exception.getMessage())) {
 					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, exception.getMessage());
 				}
-				else if (response instanceof ServerlessHttpServletResponse proxyResponse && StringUtils.hasText(proxyResponse.getErrorMessage())) {
+				else if (response instanceof ServerlessHttpServletResponse proxyResponse
+						&& StringUtils.hasText(proxyResponse.getErrorMessage())) {
 					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, proxyResponse.getErrorMessage());
 				}
 				else {
-					request.setAttribute(RequestDispatcher.ERROR_MESSAGE, HttpStatus.valueOf(response.getStatus()).getReasonPhrase());
+					request.setAttribute(RequestDispatcher.ERROR_MESSAGE,
+							HttpStatus.valueOf(response.getStatus()).getReasonPhrase());
 
 				}
 			}
@@ -340,7 +356,9 @@ public final class ServerlessMVC {
 			public String toString() {
 				return this.delegateServlet.toString();
 			}
+
 		}
+
 	}
 
 	public static class ProxyServletConfig implements ServletConfig {
@@ -370,5 +388,7 @@ public final class ServerlessMVC {
 		public String getInitParameter(String name) {
 			return null;
 		}
+
 	}
+
 }

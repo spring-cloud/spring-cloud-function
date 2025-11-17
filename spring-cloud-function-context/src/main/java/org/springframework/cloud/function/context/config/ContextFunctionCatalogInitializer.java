@@ -117,14 +117,14 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 
 			performPreinitialization();
 
-			if (this.context.getBeanFactory().getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class, false,
-					false).length == 0) {
+			if (this.context.getBeanFactory()
+				.getBeanNamesForType(PropertySourcesPlaceholderConfigurer.class, false, false).length == 0) {
 				this.context.registerBean(PropertySourcesPlaceholderConfigurer.class,
-					PropertySourcesPlaceholderConfigurer::new);
+						PropertySourcesPlaceholderConfigurer::new);
 			}
 
 			if (!this.context.getBeanFactory()
-					.containsBeanDefinition(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+				.containsBeanDefinition(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 				// Switch off the ConfigurationClassPostProcessor
 				this.context.registerBean(AnnotationConfigUtils.CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME,
 						DummyProcessor.class, () -> new DummyProcessor());
@@ -133,24 +133,29 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 			}
 			ConfigurationPropertiesBindingPostProcessor.register(registry);
 
-			String preferredMapper = context.getEnvironment().getProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY);
+			String preferredMapper = context.getEnvironment()
+				.getProperty(ContextFunctionCatalogAutoConfiguration.JSON_MAPPER_PROPERTY);
 
 			if (ClassUtils.isPresent("com.google.gson.Gson", null) && "gson".equals(preferredMapper)) {
 				if (this.context.getBeanFactory().getBeanNamesForType(Gson.class, false, false).length == 0) {
 					this.context.registerBean(Gson.class, () -> new Gson());
 				}
-				this.context.registerBean(JsonMapper.class, () -> new ContextFunctionCatalogAutoConfiguration.JsonMapperConfiguration().jsonMapper(this.context));
+				this.context.registerBean(JsonMapper.class,
+						() -> new ContextFunctionCatalogAutoConfiguration.JsonMapperConfiguration()
+							.jsonMapper(this.context));
 			}
 			else if (ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", null)) {
 				if (this.context.getBeanFactory().getBeanNamesForType(ObjectMapper.class, false, false).length == 0) {
 					this.context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
 				}
-				this.context.registerBean(JsonMapper.class, () -> new ContextFunctionCatalogAutoConfiguration.JsonMapperConfiguration().jsonMapper(this.context));
+				this.context.registerBean(JsonMapper.class,
+						() -> new ContextFunctionCatalogAutoConfiguration.JsonMapperConfiguration()
+							.jsonMapper(this.context));
 
 			}
 
-			String basePackage = this.context.getEnvironment().getProperty("spring.cloud.function.scan.packages",
-					"functions");
+			String basePackage = this.context.getEnvironment()
+				.getProperty("spring.cloud.function.scan.packages", "functions");
 			if (this.context.getEnvironment().getProperty("spring.cloud.function.scan.enabled", Boolean.class, true)
 					&& new ClassPathResource(basePackage.replace(".", "/")).exists()) {
 				ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.context, false,
@@ -178,15 +183,17 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 					messageConverters.add(new StringMessageConverter());
 					messageConverters.add(new PrimitiveTypesFromStringMessageConverter(new DefaultConversionService()));
 
-					SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(messageConverters);
+					SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(
+							messageConverters);
 
 					ConversionService conversionService = new DefaultConversionService();
-					return new SimpleFunctionRegistry(conversionService, messageConverter, this.context.getBean(JsonMapper.class));
+					return new SimpleFunctionRegistry(conversionService, messageConverter,
+							this.context.getBean(JsonMapper.class));
 				});
 				this.context.registerBean(FunctionProperties.class, () -> new FunctionProperties());
-				this.context.registerBean(FunctionRegistrationPostProcessor.class,
-						() -> new FunctionRegistrationPostProcessor(this.context.getAutowireCapableBeanFactory()
-								.getBeanProvider(FunctionRegistration.class)));
+				this.context
+					.registerBean(FunctionRegistrationPostProcessor.class, () -> new FunctionRegistrationPostProcessor(
+							this.context.getAutowireCapableBeanFactory().getBeanProvider(FunctionRegistration.class)));
 			}
 		}
 

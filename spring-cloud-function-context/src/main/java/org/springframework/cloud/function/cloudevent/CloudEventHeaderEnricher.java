@@ -20,11 +20,12 @@ package org.springframework.cloud.function.cloudevent;
  * Strategy that should be implemented by the user to help with outgoing Cloud Event
  * headers. <br>
  * <br>
- * NOTE: The provided instance of {@link CloudEventMessageBuilder} may or may not be initialized
- * with default values, so it is the responsibility of the user to ensure that all required Cloud Events
- * attributes are set. That said,  Spring frameworks which utilize this interface
- * will ensure that the provided {@link CloudEventMessageBuilder} is initialized with default values, leaving
- * you responsible to only set the attributes you need. <br>
+ * NOTE: The provided instance of {@link CloudEventMessageBuilder} may or may not be
+ * initialized with default values, so it is the responsibility of the user to ensure that
+ * all required Cloud Events attributes are set. That said, Spring frameworks which
+ * utilize this interface will ensure that the provided {@link CloudEventMessageBuilder}
+ * is initialized with default values, leaving you responsible to only set the attributes
+ * you need. <br>
  * Once implemented, simply configure it as a bean and the framework will invoke it before
  * the outbound Cloud Event Message is finalized.
  *

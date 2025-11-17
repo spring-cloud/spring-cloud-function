@@ -57,12 +57,8 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 	@Test
 	public void typeDiscoveryTests() {
-		create(new Class[] { KotlinLambdasConfiguration.class,
-				SimpleConfiguration.class,
-				KotlinComponentFunction.class,
-				KotlinPostProcessingFunction.class,
-				ComponentUppercase.class,
-				ComponentWithUnitReturn.class});
+		create(new Class[] { KotlinLambdasConfiguration.class, SimpleConfiguration.class, KotlinComponentFunction.class,
+				KotlinPostProcessingFunction.class, ComponentUppercase.class, ComponentWithUnitReturn.class });
 
 		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
 
@@ -70,8 +66,8 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 		FunctionInvocationWrapper kotlinPostProcessingFunction = functionCatalog.lookup("kotlinPostProcessingFunction");
 		kotlinPostProcessingFunction.apply("bob");
 		kotlinPostProcessingFunction.postProcess();
-		KotlinPostProcessingFunction postProcessingFunction =  (KotlinPostProcessingFunction)
-			((KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) kotlinPostProcessingFunction.getTarget()).getKotlinLambdaTarget();
+		KotlinPostProcessingFunction postProcessingFunction = (KotlinPostProcessingFunction) ((KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper) kotlinPostProcessingFunction
+			.getTarget()).getKotlinLambdaTarget();
 		assertThat(postProcessingFunction.getInvoked()).isTrue();
 		// End test post-processing logic
 
@@ -88,7 +84,8 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 		FunctionInvocationWrapper componentWithUnitReturn = functionCatalog.lookup("componentWithUnitReturn");
 		assertThat(componentWithUnitReturn.isConsumer()).isTrue();
-		assertThat(componentWithUnitReturn.getInputType()).isEqualTo(ResolvableType.forClassWithGenerics(Message.class, String.class).getType());
+		assertThat(componentWithUnitReturn.getInputType())
+			.isEqualTo(ResolvableType.forClassWithGenerics(Message.class, String.class).getType());
 
 		FunctionInvocationWrapper kotlinConsumer = functionCatalog.lookup("kotlinConsumer");
 		assertThat(kotlinConsumer.isConsumer()).isTrue();
@@ -105,7 +102,8 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 		FunctionInvocationWrapper kotlinListPojoFunction = functionCatalog.lookup("kotlinListPojoFunction");
 		assertThat(kotlinListPojoFunction.isFunction()).isTrue();
-		assertThat(kotlinListPojoFunction.getInputType().getTypeName()).isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
+		assertThat(kotlinListPojoFunction.getInputType().getTypeName())
+			.isEqualTo("java.util.List<org.springframework.cloud.function.kotlin.Person>");
 		assertThat(kotlinListPojoFunction.getOutputType()).isEqualTo(String.class);
 
 		FunctionInvocationWrapper componentUppercase = functionCatalog.lookup("componentUppercase");
@@ -125,8 +123,7 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 	@Test
 	public void testWithComplexTypesAndRouting() {
-		create(new Class[] { KotlinLambdasConfiguration.class,
-				SimpleConfiguration.class });
+		create(new Class[] { KotlinLambdasConfiguration.class, SimpleConfiguration.class });
 
 		FunctionInvocationWrapper function = this.catalog.lookup("kotlinListPojoFunction");
 		String result = (String) function.apply("[{\"name\":\"Ricky\"}]");
@@ -134,42 +131,42 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 
 		function = this.catalog.lookup(Function.class, "functionRouter");
 		result = (String) function.apply(MessageBuilder.withPayload("[{\"name\":\"Ricky\"}]")
-				.setHeader("spring.cloud.function.definition", "kotlinListPojoFunction").build());
+			.setHeader("spring.cloud.function.definition", "kotlinListPojoFunction")
+			.build());
 		assertThat(result).isEqualTo("List of: Ricky");
 
 	}
 
 	@Test
 	public void kotlinLambdas() {
-		create(new Class[] { KotlinLambdasConfiguration.class,
-				SimpleConfiguration.class });
+		create(new Class[] { KotlinLambdasConfiguration.class, SimpleConfiguration.class });
 
 		assertThat(this.context.getBean("kotlinFunction")).isInstanceOf(Function1.class);
 		FunctionInvocationWrapper function = this.catalog.lookup(Function.class, "kotlinFunction");
 		assertThat(function).isInstanceOf(Function.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getOutputType()))).isAssignableFrom(String.class);
-
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType())))
+			.isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getOutputType())))
+			.isAssignableFrom(String.class);
 
 		function = this.catalog.lookup(Function.class, "kotlinConsumer");
 		assertThat(this.context.getBean("kotlinConsumer")).isInstanceOf(Function1.class);
 		assertThat(function).isInstanceOf(Function.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType()))).isAssignableFrom(String.class);
-
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(function.getInputType())))
+			.isAssignableFrom(String.class);
 
 		assertThat(this.context.getBean("kotlinSupplier")).isInstanceOf(Function0.class);
 		FunctionInvocationWrapper supplier = this.catalog.lookup(Function.class, "kotlinSupplier");
 		assertThat(supplier).isInstanceOf(Supplier.class);
 		assertThat(supplier.get()).isEqualTo("Hello");
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(supplier.getOutputType()))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(supplier.getOutputType())))
+			.isAssignableFrom(String.class);
 
 		function = this.catalog.lookup(Function.class, "kotlinFunction|function2");
 		assertThat(function.apply("Hello")).isEqualTo("HELLOfunction2");
 
-		Function<String, String> javaFunction = this.catalog
-				.lookup(Function.class, "javaFunction");
-		assertThat(javaFunction.apply("Hello"))
-				.isEqualTo("Hello");
+		Function<String, String> javaFunction = this.catalog.lookup(Function.class, "javaFunction");
+		assertThat(javaFunction.apply("Hello")).isEqualTo("Hello");
 	}
 
 	private void create(Class<?>[] types, String... props) {

@@ -27,7 +27,6 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.type.TypeFactory;
 
-
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -70,7 +69,8 @@ public class JacksonMapper extends JsonMapper {
 			}
 		}
 		catch (Exception e) {
-			throw new IllegalStateException("Failed to convert. Possible bug as the conversion probably shouldn't have been attempted here", e);
+			throw new IllegalStateException(
+					"Failed to convert. Possible bug as the conversion probably shouldn't have been attempted here", e);
 		}
 		return convertedValue;
 	}
@@ -100,7 +100,5 @@ public class JacksonMapper extends JsonMapper {
 			throw new IllegalArgumentException("Cannot convert to JSON", e);
 		}
 	}
-
-
 
 }

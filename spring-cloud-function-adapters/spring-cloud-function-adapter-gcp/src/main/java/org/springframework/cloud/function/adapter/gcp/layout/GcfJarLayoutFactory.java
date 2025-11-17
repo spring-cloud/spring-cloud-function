@@ -33,4 +33,5 @@ public class GcfJarLayoutFactory implements LayoutFactory {
 	public Layout getLayout(File source) {
 		return new GcfJarLayout();
 	}
+
 }

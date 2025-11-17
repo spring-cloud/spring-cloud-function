@@ -82,16 +82,16 @@ public class AzureFunctionInstanceInjectorTest {
 
 		@FunctionName("hello")
 		public String execute(
-				@HttpTrigger(name = "req", methods = { HttpMethod.GET,
-						HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+				@HttpTrigger(name = "req", methods = { HttpMethod.GET, HttpMethod.POST },
+						authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 				ExecutionContext context) {
 
-			Message<String> enhancedRequest = (Message<String>) AzureFunctionUtil.enhanceInputIfNecessary(
-					request.getBody().get(),
-					context);
+			Message<String> enhancedRequest = (Message<String>) AzureFunctionUtil
+				.enhanceInputIfNecessary(request.getBody().get(), context);
 
 			return uppercase.apply(enhancedRequest);
 		}
+
 	}
 
 	@Configuration
@@ -102,7 +102,7 @@ public class AzureFunctionInstanceInjectorTest {
 		public Function<Message<String>, String> uppercaseBean() {
 			return message -> {
 				ExecutionContext context = (ExecutionContext) message.getHeaders()
-						.get(AzureFunctionUtil.EXECUTION_CONTEXT);
+					.get(AzureFunctionUtil.EXECUTION_CONTEXT);
 
 				Assertions.assertThat(context).isNotNull();
 				Assertions.assertThat(context.getFunctionName()).isEqualTo("hello");
@@ -111,5 +111,7 @@ public class AzureFunctionInstanceInjectorTest {
 			};
 
 		}
+
 	}
+
 }

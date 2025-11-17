@@ -151,7 +151,8 @@ public class ExporterProperties {
 		private String name;
 
 		/**
-		 * Content type to use when serializing source's output for transport (default 'application/json`).
+		 * Content type to use when serializing source's output for transport (default
+		 * 'application/json`).
 		 */
 		private String contentType = "application/json";
 
@@ -182,6 +183,7 @@ public class ExporterProperties {
 		public void setContentType(String contentType) {
 			this.contentType = contentType;
 		}
+
 	}
 
 }

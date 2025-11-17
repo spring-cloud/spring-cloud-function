@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import com.google.cloud.functions.invoker.runner.Invoker;
 import com.google.gson.Gson;
 
-
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.cloud.function.adapter.gcp.FunctionInvoker;
@@ -133,7 +132,8 @@ final public class LocalServerTestSupport {
 			while ((line = reader.readLine()) != null) {
 				System.out.println(line);
 				if (line.contains(SERVER_READY_STRING)) {
-					// Started ServerConnector@192b07fd{HTTP/1.1,[http/1.1]}{0.0.0.0:59259}
+					// Started
+					// ServerConnector@192b07fd{HTTP/1.1,[http/1.1]}{0.0.0.0:59259}
 					String portStr = line.substring(line.lastIndexOf(':') + 1, line.lastIndexOf('}'));
 					return Integer.parseInt(portStr);
 				}

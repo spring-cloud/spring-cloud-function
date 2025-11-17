@@ -32,10 +32,12 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.util.CollectionUtils;
 
 /**
- * The instance factory used by the Spring framework to initialize Azure function instance. It is waived with the Azure
- * Java Worker through the META-INFO/services/com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector service
- * hook. The Azure Java Worker delegates scans the classpath for service definition and delegates the function class
- * creation to this instance factory.
+ * The instance factory used by the Spring framework to initialize Azure function
+ * instance. It is waived with the Azure Java Worker through the
+ * META-INFO/services/com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector
+ * service hook. The Azure Java Worker delegates scans the classpath for service
+ * definition and delegates the function class creation to this instance factory.
+ *
  * @author Christian Tzolov
  * @author Omer Celik
  * @since 3.2.9
@@ -49,13 +51,16 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 	private static final ReentrantLock globalLock = new ReentrantLock();
 
 	/**
-	 * This method is called by the Azure Java Worker on every function invocation. The Worker sends in the classes
-	 * annotated with @FunctionName annotations and allows the Spring framework to initialize the function instance as a
-	 * Spring Bean and return the instance. Then the Worker uses the created instance to invoke the function.
-	 * @param functionClass the class that contains customer Azure functions (e.g. @FunctionName annotated )
+	 * This method is called by the Azure Java Worker on every function invocation. The
+	 * Worker sends in the classes annotated with @FunctionName annotations and allows the
+	 * Spring framework to initialize the function instance as a Spring Bean and return
+	 * the instance. Then the Worker uses the created instance to invoke the function.
+	 * @param functionClass the class that contains customer Azure functions
+	 * (e.g. @FunctionName annotated )
 	 * @param <T> customer Azure functions class type
 	 * @return the instance that will be invoked on by azure functions java worker
-	 * @throws Exception any exception that is thrown by the Spring framework during instance creation
+	 * @throws Exception any exception that is thrown by the Spring framework during
+	 * instance creation
 	 */
 	@Override
 	public <T> T getInstance(Class<T> functionClass) throws Exception {
@@ -65,9 +70,8 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 
 			Map<String, T> azureFunctionBean = APPLICATION_CONTEXT.getBeansOfType(functionClass);
 			if (CollectionUtils.isEmpty(azureFunctionBean)) {
-				throw new IllegalStateException(
-						"Failed to retrieve Bean instance for: " + functionClass
-								+ ". The class should be annotated with @Component to let the Spring framework initialize it!");
+				throw new IllegalStateException("Failed to retrieve Bean instance for: " + functionClass
+						+ ". The class should be annotated with @Component to let the Spring framework initialize it!");
 			}
 			return azureFunctionBean.entrySet().iterator().next().getValue();
 		}
@@ -80,8 +84,9 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 	}
 
 	/**
-	 * Create a static Application Context instance shared between multiple function invocations.
-	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 * Create a static Application Context instance shared between multiple function
+	 * invocations. Double-Checked Locking Optimization was used to avoid unnecessary
+	 * locking overhead.
 	 */
 	private static void initialize() {
 		if (APPLICATION_CONTEXT == null) {
@@ -107,4 +112,5 @@ public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 				new DefaultResourceLoader().getResource("classpath:/spring-azure-function-banner.txt")));
 		return application;
 	}
+
 }

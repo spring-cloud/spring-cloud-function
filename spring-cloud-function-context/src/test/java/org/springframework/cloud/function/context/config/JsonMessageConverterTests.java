@@ -25,11 +25,9 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeTypeUtils;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -44,14 +42,18 @@ public class JsonMessageConverterTests {
 		assertThat(converter.canConvertFrom(message, Object.class)).isFalse();
 		assertThat(converter.canConvertFrom(message, null)).isFalse();
 
-		message = MessageBuilder.withPayload("{\"name\":\"bill\"}").setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON).build();
+		message = MessageBuilder.withPayload("{\"name\":\"bill\"}")
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+			.build();
 		assertThat(converter.canConvertFrom(message, Person.class)).isTrue();
 		assertThat(converter.canConvertFrom(message, Object.class)).isFalse();
 		assertThat(converter.canConvertFrom(message, null)).isFalse();
 		assertThat(converter.convertFromInternal(message, Person.class, null)).isInstanceOf(Person.class);
 
 		message = MessageBuilder.withPayload("{\"name\":\"bill\"}")
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON.toString() + ";type=" + Person.class.getName()).build();
+			.setHeader(MessageHeaders.CONTENT_TYPE,
+					MimeTypeUtils.APPLICATION_JSON.toString() + ";type=" + Person.class.getName())
+			.build();
 		assertThat(converter.canConvertFrom(message, Object.class)).isTrue();
 		assertThat(converter.canConvertFrom(message, null)).isTrue();
 		assertThat(converter.convertFromInternal(message, Person.class, null)).isInstanceOf(Person.class);
@@ -60,6 +62,7 @@ public class JsonMessageConverterTests {
 	}
 
 	public static class Person {
+
 		private String name;
 
 		public String getName() {
@@ -69,5 +72,7 @@ public class JsonMessageConverterTests {
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
+
 }

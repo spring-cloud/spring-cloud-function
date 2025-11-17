@@ -45,9 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  *
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.main.web-application-type=servlet",
-		"spring.cloud.function.web.path=/functions" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = { "spring.main.web-application-type=servlet", "spring.cloud.function.web.path=/functions" })
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 @AutoConfigureTestRestTemplate
 public class HeadersToMessageTests {
@@ -57,29 +56,26 @@ public class HeadersToMessageTests {
 
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
-		HttpEntity<Map> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/employee"))
-						.contentType(MediaType.APPLICATION_JSON)
-						.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
+		HttpEntity<Map> postForEntity = this.rest.exchange(RequestEntity.post(new URI("/functions/employee"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
 		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25));
 		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
-		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
-				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().get("x-content-type").get(0)).isEqualTo("application/xml");
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 	}
 
 	@Test
 	public void testHeadersPropagatedByDefault() throws Exception {
-		HttpEntity<Map> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/vanilla"))
-						.contentType(MediaType.APPLICATION_JSON)
-						.header("x-context-type", "rubbish")
-						.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
-		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25, "foo", "bar"));
+		HttpEntity<Map> postForEntity = this.rest.exchange(RequestEntity.post(new URI("/functions/vanilla"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.header("x-context-type", "rubbish")
+			.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
+		assertThat(postForEntity.getBody())
+			.containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25, "foo", "bar"));
 
 		assertThat(postForEntity.getHeaders().containsHeader("x-context-type")).isTrue();
-		assertThat(postForEntity.getHeaders().get("x-context-type").get(0))
-				.isEqualTo("rubbish");
+		assertThat(postForEntity.getHeaders().get("x-context-type").get(0)).isEqualTo("rubbish");
 	}
 
 	@EnableAutoConfiguration
@@ -89,10 +85,10 @@ public class HeadersToMessageTests {
 		@Bean({ "employee" })
 		public Function<Message<Map<String, Object>>, Message<Map<String, Object>>> function() {
 			return request -> {
-				Message<Map<String, Object>> message = MessageBuilder
-						.withPayload(request.getPayload())
-						.setHeader("X-Content-Type", "application/xml")
-						.setHeader("foo", "bar").build();
+				Message<Map<String, Object>> message = MessageBuilder.withPayload(request.getPayload())
+					.setHeader("X-Content-Type", "application/xml")
+					.setHeader("foo", "bar")
+					.build();
 				return message;
 			};
 		}

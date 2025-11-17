@@ -37,9 +37,10 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 @Configuration
 @Import({ PetsController.class })
 public class PetStoreSpringAppConfig {
+
 	/*
-	 * Create required HandlerMapping, to avoid several default HandlerMapping
-	 * instances being created
+	 * Create required HandlerMapping, to avoid several default HandlerMapping instances
+	 * being created
 	 */
 	@Bean
 	public HandlerMapping handlerMapping() {
@@ -47,8 +48,8 @@ public class PetStoreSpringAppConfig {
 	}
 
 	/*
-	 * Create required HandlerAdapter, to avoid several default HandlerAdapter
-	 * instances being created
+	 * Create required HandlerAdapter, to avoid several default HandlerAdapter instances
+	 * being created
 	 */
 	@Bean
 	public HandlerAdapter handlerAdapter() {

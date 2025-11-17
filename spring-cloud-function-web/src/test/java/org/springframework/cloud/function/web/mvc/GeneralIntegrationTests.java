@@ -34,8 +34,8 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 /**
- *
  * @author Oleg Zhurakousky
  */
 public class GeneralIntegrationTests {
@@ -47,24 +47,20 @@ public class GeneralIntegrationTests {
 		String port = context.getEnvironment().getProperty("local.server.port");
 		TestRestTemplate template = new TestRestTemplate();
 
-		ResponseEntity<Void> result = template.exchange(
-				RequestEntity.delete(new URI("http://localhost:" + port + "/consumer1"))
-				.build(), Void.class);
+		ResponseEntity<Void> result = template
+			.exchange(RequestEntity.delete(new URI("http://localhost:" + port + "/consumer1")).build(), Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 
-		result = template.exchange(
-				RequestEntity.delete(new URI("http://localhost:" + port + "/consumer2"))
-				.build(), Void.class);
+		result = template.exchange(RequestEntity.delete(new URI("http://localhost:" + port + "/consumer2")).build(),
+				Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
 		result = template.exchange(
-				RequestEntity.delete(new URI("http://localhost:" + port + "/function,consumer1"))
-				.build(), Void.class);
+				RequestEntity.delete(new URI("http://localhost:" + port + "/function,consumer1")).build(), Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-		result = template.exchange(
-				RequestEntity.delete(new URI("http://localhost:" + port + "/supplier"))
-				.build(), Void.class);
+		result = template.exchange(RequestEntity.delete(new URI("http://localhost:" + port + "/supplier")).build(),
+				Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
@@ -75,48 +71,50 @@ public class GeneralIntegrationTests {
 		String port = context.getEnvironment().getProperty("local.server.port");
 		TestRestTemplate template = new TestRestTemplate();
 
-		ResponseEntity<String> result = template.exchange(RequestEntity
-				.post(new URI("http://localhost:" + port + "/consumer1")).contentType(MediaType.APPLICATION_JSON)
+		ResponseEntity<String> result = template
+			.exchange(RequestEntity.post(new URI("http://localhost:" + port + "/consumer1"))
+				.contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 
-		result = template.exchange(RequestEntity
-				.post(new URI("http://localhost:" + port + "/consumer2")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		result = template.exchange(RequestEntity.post(new URI("http://localhost:" + port + "/consumer2"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(result.getBody()).isNull();
 
-		result = template.exchange(RequestEntity
-				.post(new URI("http://localhost:" + port + "/function,consumer1")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		result = template.exchange(RequestEntity.post(new URI("http://localhost:" + port + "/function,consumer1"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 		assertThat(result.getBody()).isNull();
 
-		result = template.exchange(RequestEntity
-				.post(new URI("http://localhost:" + port + "/function")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		result = template.exchange(RequestEntity.post(new URI("http://localhost:" + port + "/function"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 
-		result = template.exchange(RequestEntity
-				.post(new URI("http://localhost:" + port + "/supplier")).contentType(MediaType.APPLICATION_JSON)
-				.body("[\"foo\",\"bar\"]"), String.class);
+		result = template.exchange(RequestEntity.post(new URI("http://localhost:" + port + "/supplier"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("[\"foo\",\"bar\"]"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
-
 
 	@EnableAutoConfiguration
 	protected static class MultipleConsumerConfiguration {
 
 		@Bean
 		public Consumer<String> consumer1() {
-			return v -> { };
+			return v -> {
+			};
 		}
 
 		@Bean
 		public Consumer<String> consumer2() {
-			return v -> { };
+			return v -> {
+			};
 		}
 
 		@Bean
@@ -128,5 +126,7 @@ public class GeneralIntegrationTests {
 		public Supplier<String> supplier() {
 			return () -> "";
 		}
+
 	}
+
 }

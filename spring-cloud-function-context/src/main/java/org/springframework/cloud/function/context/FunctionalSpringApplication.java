@@ -44,8 +44,7 @@ import static java.util.Arrays.stream;
  * @author Semyon Fishman
  * @author Oleg Zhurakousky
  */
-public class FunctionalSpringApplication
-		extends org.springframework.boot.SpringApplication {
+public class FunctionalSpringApplication extends org.springframework.boot.SpringApplication {
 
 	/**
 	 * Flag to say that context is functional beans.
@@ -65,8 +64,7 @@ public class FunctionalSpringApplication
 	public FunctionalSpringApplication(Class<?>... primarySources) {
 		super(primarySources);
 		setApplicationContextFactory(ApplicationContextFactory.ofContextClass(GenericApplicationContext.class));
-		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler",
-				null)) {
+		if (ClassUtils.isPresent("org.springframework.web.reactive.DispatcherHandler", null)) {
 			setWebApplicationType(WebApplicationType.REACTIVE);
 		}
 		else {
@@ -78,13 +76,11 @@ public class FunctionalSpringApplication
 		FunctionalSpringApplication.run(new Class<?>[0], args);
 	}
 
-	public static ConfigurableApplicationContext run(Class<?> primarySource,
-			String... args) {
+	public static ConfigurableApplicationContext run(Class<?> primarySource, String... args) {
 		return run(new Class<?>[] { primarySource }, args);
 	}
 
-	public static ConfigurableApplicationContext run(Class<?>[] primarySources,
-			String[] args) {
+	public static ConfigurableApplicationContext run(Class<?>[] primarySources, String[] args) {
 		return new FunctionalSpringApplication(primarySources).run(args);
 	}
 
@@ -117,13 +113,11 @@ public class FunctionalSpringApplication
 					handler = BeanUtils.instantiateClass(type);
 				}
 
-				ApplicationContextInitializer<ConfigurableApplicationContext> initializer =
-						(ApplicationContextInitializer<ConfigurableApplicationContext>) handler;
+				ApplicationContextInitializer<ConfigurableApplicationContext> initializer = (ApplicationContextInitializer<ConfigurableApplicationContext>) handler;
 				initializer.initialize(context);
 				functional = true;
 			}
-			else if (Function.class.isAssignableFrom(type)
-					|| Consumer.class.isAssignableFrom(type)
+			else if (Function.class.isAssignableFrom(type) || Consumer.class.isAssignableFrom(type)
 					|| Supplier.class.isAssignableFrom(type)) {
 				Class<?> functionType = type;
 				Object function = handler;
@@ -132,7 +126,7 @@ public class FunctionalSpringApplication
 						BeanDefinitionRegistry bdRegistry = (BeanDefinitionRegistry) beanFactory;
 						if (!ObjectUtils.isEmpty(context.getBeanNamesForType(functionType))) {
 							stream(context.getBeanNamesForType(functionType))
-							.forEach(beanName -> bdRegistry.registerAlias(beanName, "function"));
+								.forEach(beanName -> bdRegistry.registerAlias(beanName, "function"));
 						}
 						else {
 							this.register((GenericApplicationContext) context, function, functionType);
@@ -152,13 +146,10 @@ public class FunctionalSpringApplication
 
 	private void register(GenericApplicationContext context, Object function, Class<?> functionType) {
 		context.registerBean("function", FunctionRegistration.class,
-				() -> new FunctionRegistration<>(
-						handler(context, function, functionType))
-								.type(functionType));
+				() -> new FunctionRegistration<>(handler(context, function, functionType)).type(functionType));
 	}
 
-	private Object handler(GenericApplicationContext generic, Object handler,
-			Class<?> type) {
+	private Object handler(GenericApplicationContext generic, Object handler, Class<?> type) {
 		if (handler == null) {
 			handler = generic.getAutowireCapableBeanFactory().createBean(type);
 		}
@@ -167,8 +158,7 @@ public class FunctionalSpringApplication
 
 	@Override
 	protected void load(ApplicationContext context, Object[] sources) {
-		if (!context.getEnvironment().getProperty(SPRING_FUNCTIONAL_ENABLED,
-				Boolean.class, false)) {
+		if (!context.getEnvironment().getProperty(SPRING_FUNCTIONAL_ENABLED, Boolean.class, false)) {
 			super.load(context, sources);
 		}
 	}
@@ -176,17 +166,14 @@ public class FunctionalSpringApplication
 	private void defaultProperties(ConfigurableApplicationContext context) {
 		MutablePropertySources sources = context.getEnvironment().getPropertySources();
 		if (!sources.contains(DEFAULT_PROPERTIES)) {
-			sources.addLast(
-					new MapPropertySource(DEFAULT_PROPERTIES, Collections.emptyMap()));
+			sources.addLast(new MapPropertySource(DEFAULT_PROPERTIES, Collections.emptyMap()));
 		}
 		@SuppressWarnings("unchecked")
-		Map<String, Object> source = (Map<String, Object>) sources.get(DEFAULT_PROPERTIES)
-				.getSource();
+		Map<String, Object> source = (Map<String, Object>) sources.get(DEFAULT_PROPERTIES).getSource();
 		Map<String, Object> map = new HashMap<>(source);
 		map.put(SPRING_FUNCTIONAL_ENABLED, "true");
 		map.put(SPRING_WEB_APPLICATION_TYPE, getWebApplicationType());
-		sources.replace(DEFAULT_PROPERTIES,
-				new MapPropertySource(DEFAULT_PROPERTIES, map));
+		sources.replace(DEFAULT_PROPERTIES, new MapPropertySource(DEFAULT_PROPERTIES, map));
 	}
 
 }

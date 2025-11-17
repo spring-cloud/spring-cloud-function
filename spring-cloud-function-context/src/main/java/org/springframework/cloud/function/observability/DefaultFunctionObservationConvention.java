@@ -33,7 +33,8 @@ public class DefaultFunctionObservationConvention implements FunctionObservation
 
 	@Override
 	public KeyValues getLowCardinalityKeyValues(FunctionContext context) {
-		return KeyValues.of(FunctionObservation.FunctionLowCardinalityTags.FUNCTION_NAME.withValue(context.getTargetFunction().getFunctionDefinition()));
+		return KeyValues.of(FunctionObservation.FunctionLowCardinalityTags.FUNCTION_NAME
+			.withValue(context.getTargetFunction().getFunctionDefinition()));
 	}
 
 	@Override
@@ -45,4 +46,5 @@ public class DefaultFunctionObservationConvention implements FunctionObservation
 	public String getContextualName(FunctionContext context) {
 		return context.getTargetFunction().getFunctionDefinition() + " process";
 	}
+
 }

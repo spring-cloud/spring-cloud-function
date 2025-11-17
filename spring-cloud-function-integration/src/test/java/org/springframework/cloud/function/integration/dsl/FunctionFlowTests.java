@@ -54,7 +54,6 @@ import static org.mockito.Mockito.verify;
 
 /**
  * @author Artem Bilan
- *
  * @since 4.0.3
  */
 @SpringBootTest
@@ -77,9 +76,7 @@ public class FunctionFlowTests {
 		String result = this.results.poll(10, TimeUnit.SECONDS);
 		assertThat(result).isEqualTo("SIMPLE TEST DATA");
 		Message<?> receive = wireTapChannel.receive(10_000);
-		assertThat(receive)
-				.extracting(Message::getPayload)
-				.isEqualTo("simple test data".getBytes());
+		assertThat(receive).extracting(Message::getPayload).isEqualTo("simple test data".getBytes());
 
 		supplierEndpoint.stop();
 	}
@@ -98,33 +95,31 @@ public class FunctionFlowTests {
 		result = this.results.poll(10, TimeUnit.SECONDS);
 		assertThat(result).isEqualTo("COMPOSE AGAIN");
 
-		// Ensure that FunctionLookupHelper.memoize() does its trick calling FunctionCatalog.lookup() only once
+		// Ensure that FunctionLookupHelper.memoize() does its trick calling
+		// FunctionCatalog.lookup() only once
 		verify(this.functionCatalog).lookup(Consumer.class, "upperCaseFunction|simpleStringConsumer");
 	}
 
 	@Test
 	void noFunctionInCatalogException(@Autowired IntegrationFlowContext integrationFlowContext) {
-		// We need to mock here since BeanFactoryAwareFunctionRegistry will have slightly different logic
+		// We need to mock here since BeanFactoryAwareFunctionRegistry will have slightly
+		// different logic
 		FunctionCatalog mockFunctionCatalog = mock(FunctionCatalog.class);
 
 		FunctionFlowBuilder functionFlowBuilder = new FunctionFlowBuilder(mockFunctionCatalog);
 
-		IntegrationFlow wrongFlow =
-				functionFlowBuilder.from("inputChannel")
-						.accept("nonExistingConsumer");
+		IntegrationFlow wrongFlow = functionFlowBuilder.from("inputChannel").accept("nonExistingConsumer");
 
-		IntegrationFlowContext.IntegrationFlowRegistration registration =
-				integrationFlowContext.registration(wrongFlow)
-						.register();
+		IntegrationFlowContext.IntegrationFlowRegistration registration = integrationFlowContext.registration(wrongFlow)
+			.register();
 
 		assertThatExceptionOfType(MessageDeliveryException.class)
-				.isThrownBy(() -> registration.getInputChannel().send(new GenericMessage<>("test")))
-				.withRootCauseInstanceOf(IllegalArgumentException.class)
-				.withStackTraceContaining("No 'nonExistingConsumer' in the catalog");
+			.isThrownBy(() -> registration.getInputChannel().send(new GenericMessage<>("test")))
+			.withRootCauseInstanceOf(IllegalArgumentException.class)
+			.withStackTraceContaining("No 'nonExistingConsumer' in the catalog");
 
 		registration.destroy();
 	}
-
 
 	@EnableAutoConfiguration
 	@Configuration(proxyBeanMethods = false)
@@ -163,18 +158,17 @@ public class FunctionFlowTests {
 		@Bean
 		IntegrationFlow someFunctionFlow(FunctionFlowBuilder functionFlowBuilder) {
 			return functionFlowBuilder
-					.fromSupplier("simpleByteArraySupplier", e -> e.id("supplierEndpoint").autoStartup(false))
-					.wireTap("wireTapChannel")
-					.apply("upperCaseFunction")
-					.log(LoggingHandler.Level.WARN, FunctionFlowTests.class.getName())
-					.accept("simpleStringConsumer");
+				.fromSupplier("simpleByteArraySupplier", e -> e.id("supplierEndpoint").autoStartup(false))
+				.wireTap("wireTapChannel")
+				.apply("upperCaseFunction")
+				.log(LoggingHandler.Level.WARN, FunctionFlowTests.class.getName())
+				.accept("simpleStringConsumer");
 		}
 
 		@Bean
 		IntegrationFlow functionCompositionFlow(FunctionFlowBuilder functionFlowBuilder) {
-			return functionFlowBuilder
-					.from("functionCompositionInput")
-					.accept("upperCaseFunction|simpleStringConsumer");
+			return functionFlowBuilder.from("functionCompositionInput")
+				.accept("upperCaseFunction|simpleStringConsumer");
 		}
 
 	}

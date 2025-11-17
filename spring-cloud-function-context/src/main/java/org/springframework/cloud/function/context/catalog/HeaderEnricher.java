@@ -34,11 +34,10 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 
 /**
- * Class responsible for processing `input-header-mapping-expression`
- * and modifying message headers accordingly.
+ * Class responsible for processing `input-header-mapping-expression` and modifying
+ * message headers accordingly.
  *
  * @author Oleg Zhurakousky
- *
  * @since 3.1.3
  *
  */
@@ -74,7 +73,8 @@ class HeaderEnricher implements Function<Object, Object> {
 					messageBuilder.setHeader(keyValueExpressionEntry.getKey(), value);
 				}
 				catch (Exception e) {
-					String message = "Failed while evaluating expression \"" + keyValueExpressionEntry.getValue() + "\"  on incoming message";
+					String message = "Failed while evaluating expression \"" + keyValueExpressionEntry.getValue()
+							+ "\"  on incoming message";
 					if (logger.isDebugEnabled()) {
 						logger.warn(message + ": " + input, e);
 					}

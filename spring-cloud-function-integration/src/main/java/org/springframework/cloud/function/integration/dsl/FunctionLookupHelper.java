@@ -26,11 +26,11 @@ import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.util.Assert;
 
 /**
- * The helper class to lookup functions from the catalog in lazy manner and cache their instances.
+ * The helper class to lookup functions from the catalog in lazy manner and cache their
+ * instances.
  *
  * @author Artem Bilan
  * @author Omer Celik
- *
  * @since 4.0.3
  */
 public class FunctionLookupHelper {
@@ -60,16 +60,17 @@ public class FunctionLookupHelper {
 		return memoize(() -> requireNonNull(functionType, functionDefinition));
 	}
 
-	private  <T> T requireNonNull(Class<?> functionType, String functionDefinition) {
+	private <T> T requireNonNull(Class<?> functionType, String functionDefinition) {
 		T function = this.functionCatalog.lookup(functionType, functionDefinition);
 		Assert.notNull(function, () -> "No '" + functionDefinition + "' in the catalog");
 		return function;
 	}
 
 	/**
-	 * The delegate {@link Supplier#get()} is called exactly once and the result is cached.
-	 * @param  <T> Generic type of supplied value
-	 * @param  delegate The actual Supplier
+	 * The delegate {@link Supplier#get()} is called exactly once and the result is
+	 * cached.
+	 * @param <T> Generic type of supplied value
+	 * @param delegate The actual Supplier
 	 * @return The memoized Supplier
 	 */
 	private static <T> Supplier<T> memoize(Supplier<? extends T> delegate) {

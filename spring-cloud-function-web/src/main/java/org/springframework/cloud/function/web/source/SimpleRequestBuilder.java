@@ -69,8 +69,7 @@ class SimpleRequestBuilder implements RequestBuilder {
 	@Override
 	public URI uri(String destination) {
 		try {
-			return new URI(this.baseUrl.replace("${destination}", destination)
-					.replace("{{destination}}", destination));
+			return new URI(this.baseUrl.replace("${destination}", destination).replace("{{destination}}", destination));
 		}
 		catch (URISyntaxException e) {
 			throw new IllegalStateException("Cannot create URI", e);

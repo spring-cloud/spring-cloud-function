@@ -50,11 +50,14 @@ public class MessageRoutingCallbackTests {
 	public void testRoutingCallbackWithMessageModification() {
 		FunctionCatalog catalog = this.configureCatalog(SampleConfiguration.class);
 		SampleConfiguration conf = context.getBean(SampleConfiguration.class);
-		FunctionInvocationWrapper function = (FunctionInvocationWrapper) catalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
+		FunctionInvocationWrapper function = (FunctionInvocationWrapper) catalog.lookup(RoutingFunction.FUNCTION_NAME,
+				"application/json");
 		String foo = "{\"foo\":\"blah\"}";
-		Message<byte[]> fooResult = (Message<byte[]>) function.apply(MessageBuilder.withPayload(foo.getBytes()).build());
+		Message<byte[]> fooResult = (Message<byte[]>) function
+			.apply(MessageBuilder.withPayload(foo.getBytes()).build());
 		String bar = "{\"bar\":\"blah\"}";
-		Message<byte[]> barResult = (Message<byte[]>) function.apply(MessageBuilder.withPayload(bar.getBytes()).build());
+		Message<byte[]> barResult = (Message<byte[]>) function
+			.apply(MessageBuilder.withPayload(bar.getBytes()).build());
 		assertThat(fooResult.getPayload()).isEqualTo("\"foo\"".getBytes());
 		assertThat(barResult.getPayload()).isEqualTo("\"bar\"".getBytes());
 
@@ -64,8 +67,7 @@ public class MessageRoutingCallbackTests {
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
 		this.context = new SpringApplicationBuilder(configClass)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true");
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
@@ -119,10 +121,11 @@ public class MessageRoutingCallbackTests {
 				return m;
 			};
 		}
+
 	}
 
-
 	public static class Foo {
+
 		private String foo;
 
 		public String getFoo() {
@@ -132,9 +135,11 @@ public class MessageRoutingCallbackTests {
 		public void setFoo(String foo) {
 			this.foo = foo;
 		}
+
 	}
 
 	public static class Bar {
+
 		private String bar;
 
 		public String getBar() {
@@ -144,5 +149,7 @@ public class MessageRoutingCallbackTests {
 		public void setBar(String bar) {
 			this.bar = bar;
 		}
+
 	}
+
 }

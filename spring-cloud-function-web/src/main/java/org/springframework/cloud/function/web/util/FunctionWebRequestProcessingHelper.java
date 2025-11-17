@@ -57,9 +57,10 @@ public final class FunctionWebRequestProcessingHelper {
 
 	}
 
-	public static FunctionInvocationWrapper findFunction(FunctionProperties functionProperties, HttpMethod method, FunctionCatalog functionCatalog,
-											Map<String, Object> attributes, String path) {
-		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.DELETE)) {
+	public static FunctionInvocationWrapper findFunction(FunctionProperties functionProperties, HttpMethod method,
+			FunctionCatalog functionCatalog, Map<String, Object> attributes, String path) {
+		if (method.equals(HttpMethod.GET) || method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT)
+				|| method.equals(HttpMethod.DELETE)) {
 			return doFindFunction(functionProperties.getDefinition(), method, functionCatalog, attributes, path);
 		}
 		else {
@@ -72,7 +73,8 @@ public final class FunctionWebRequestProcessingHelper {
 		return postProcessResult(result, isMessage);
 	}
 
-	public static boolean isFunctionValidForMethod(String httpMethod, String functionDefinition, FunctionHttpProperties functionHttpProperties) {
+	public static boolean isFunctionValidForMethod(String httpMethod, String functionDefinition,
+			FunctionHttpProperties functionHttpProperties) {
 		String functionDefinitions = null;
 		switch (httpMethod) {
 			case "GET":
@@ -97,15 +99,17 @@ public final class FunctionWebRequestProcessingHelper {
 	}
 
 	public static String buildBadMappingErrorMessage(String httpMethod, String functionDefinition) {
-		return "Function '" + functionDefinition + "' is not eligible to be invoked "
-				+ "via  " + httpMethod + "  method. This is due to the fact that explicit mappings for " + httpMethod
+		return "Function '" + functionDefinition + "' is not eligible to be invoked " + "via  " + httpMethod
+				+ "  method. This is due to the fact that explicit mappings for " + httpMethod
 				+ " are provided via 'spring.cloud.function.http." + httpMethod + "' property "
-				+ "and this function is not listed there. Either remove all explicit mappings for " + httpMethod + " or add this function to the list of functions "
-				+ "specified in 'spring.cloud.function.http." + httpMethod + "' property.";
+				+ "and this function is not listed there. Either remove all explicit mappings for " + httpMethod
+				+ " or add this function to the list of functions " + "specified in 'spring.cloud.function.http."
+				+ httpMethod + "' property.";
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static Publisher<?> processRequest(FunctionWrapper wrapper, Object argument, boolean eventStream, List<String> ignoredHeaders, List<String> requestOnlyHeaders) {
+	public static Publisher<?> processRequest(FunctionWrapper wrapper, Object argument, boolean eventStream,
+			List<String> ignoredHeaders, List<String> requestOnlyHeaders) {
 		if (argument == null) {
 			argument = "";
 		}
@@ -118,7 +122,6 @@ public final class FunctionWebRequestProcessingHelper {
 		HttpHeaders headers = wrapper.getHeaders();
 
 		Message<?> inputMessage = null;
-
 
 		MessageBuilder builder = MessageBuilder.withPayload(argument);
 		if (!CollectionUtils.isEmpty(wrapper.getParams())) {
@@ -135,11 +138,14 @@ public final class FunctionWebRequestProcessingHelper {
 			if (result instanceof Publisher && !function.isComposed()) {
 				Mono.from((Publisher) result).subscribe();
 			}
-			return "DELETE".equals(wrapper.getMethod()) ?
-					Mono.empty() : Mono.just(ResponseEntity.accepted().headers(HeaderUtils.sanitize(headers, ignoredHeaders, requestOnlyHeaders)).build());
+			return "DELETE".equals(wrapper.getMethod()) ? Mono.empty()
+					: Mono.just(ResponseEntity.accepted()
+						.headers(HeaderUtils.sanitize(headers, ignoredHeaders, requestOnlyHeaders))
+						.build());
 		}
 
-		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers, ignoredHeaders, requestOnlyHeaders));
+		BodyBuilder responseOkBuilder = ResponseEntity.ok()
+			.headers(HeaderUtils.sanitize(headers, ignoredHeaders, requestOnlyHeaders));
 
 		Publisher pResult;
 		if (result instanceof Publisher) {
@@ -175,13 +181,14 @@ public final class FunctionWebRequestProcessingHelper {
 		});
 	}
 
-	private static Object processMessage(BodyBuilder responseOkBuilder, Message<?> message, List<String> ignoredHeaders) {
+	private static Object processMessage(BodyBuilder responseOkBuilder, Message<?> message,
+			List<String> ignoredHeaders) {
 		responseOkBuilder.headers(HeaderUtils.fromMessage(message.getHeaders(), ignoredHeaders));
 		return message.getPayload();
 	}
 
-	private static FunctionInvocationWrapper doFindFunction(String functionDefinition, HttpMethod method, FunctionCatalog functionCatalog,
-											Map<String, Object> attributes, String path) {
+	private static FunctionInvocationWrapper doFindFunction(String functionDefinition, HttpMethod method,
+			FunctionCatalog functionCatalog, Map<String, Object> attributes, String path) {
 
 		path = path.startsWith("/") ? path.substring(1) : path;
 		if (method.equals(HttpMethod.GET)) {
@@ -201,8 +208,7 @@ public final class FunctionWebRequestProcessingHelper {
 			}
 			builder.append(element);
 			name = builder.toString();
-			value = path.length() > name.length() ? path.substring(name.length() + 1)
-					: null;
+			value = path.length() > name.length() ? path.substring(name.length() + 1) : null;
 			FunctionInvocationWrapper function = functionCatalog.lookup(name);
 			if (function != null) {
 				return postProcessFunction(function, value, attributes);
@@ -218,7 +224,8 @@ public final class FunctionWebRequestProcessingHelper {
 		return null;
 	}
 
-	private static FunctionInvocationWrapper postProcessFunction(FunctionInvocationWrapper function, String argument,  Map<String, Object> attributes) {
+	private static FunctionInvocationWrapper postProcessFunction(FunctionInvocationWrapper function, String argument,
+			Map<String, Object> attributes) {
 		attributes.put(WebRequestConstants.FUNCTION, function);
 		if (argument != null) {
 			attributes.put(WebRequestConstants.ARGUMENT, argument);
@@ -236,8 +243,10 @@ public final class FunctionWebRequestProcessingHelper {
 		}
 		else if (result instanceof Message messageResult) {
 			if (messageResult.getPayload() instanceof byte[]) {
-				//String str = new String((byte[]) messageResult.getPayload());
-				result = MessageBuilder.withPayload(messageResult.getPayload()).copyHeaders(((Message) result).getHeaders()).build();
+				// String str = new String((byte[]) messageResult.getPayload());
+				result = MessageBuilder.withPayload(messageResult.getPayload())
+					.copyHeaders(((Message) result).getHeaders())
+					.build();
 			}
 		}
 		else if (result instanceof byte[]) {

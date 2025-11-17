@@ -32,13 +32,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-
 @RestController
 @EnableWebMvc
 public class PetsController {
 
 	@RequestMapping(path = "/petsAsync/", method = RequestMethod.POST)
-	public DeferredResult<Pet>  createPetAsync(@RequestBody Pet newPet) {
+	public DeferredResult<Pet> createPetAsync(@RequestBody Pet newPet) {
 		if (newPet.getName() == null || newPet.getBreed() == null) {
 			return null;
 		}
@@ -107,6 +106,9 @@ public class PetsController {
 
 	@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "No such Dog") // 404
 	public class DogNotFoundException extends RuntimeException {
+
 		// ...
+
 	}
+
 }

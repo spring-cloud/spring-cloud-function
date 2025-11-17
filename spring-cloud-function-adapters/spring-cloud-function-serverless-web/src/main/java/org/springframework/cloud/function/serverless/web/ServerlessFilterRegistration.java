@@ -26,7 +26,6 @@ import jakarta.servlet.Filter;
 import jakarta.servlet.FilterRegistration;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 4.x
  *

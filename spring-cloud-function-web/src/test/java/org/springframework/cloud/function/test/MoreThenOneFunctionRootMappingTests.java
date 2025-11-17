@@ -34,8 +34,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * @author Oleg Zhurakousky
  *
  */
-@SpringBootTest({ "spring.main.web-application-type=REACTIVE",
-		"spring.functional.enabled=false",
+@SpringBootTest({ "spring.main.web-application-type=REACTIVE", "spring.functional.enabled=false",
 		"spring.cloud.function.definition=uppercase|reverse" })
 @AutoConfigureWebTestClient
 @DirtiesContext
@@ -46,8 +45,14 @@ public class MoreThenOneFunctionRootMappingTests {
 
 	@Test
 	public void words() {
-		this.client.post().uri("/").body(Mono.just("star"), String.class).exchange()
-				.expectStatus().isOk().expectBody(String.class).isEqualTo("RATS");
+		this.client.post()
+			.uri("/")
+			.body(Mono.just("star"), String.class)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.isEqualTo("RATS");
 	}
 
 	@SpringBootConfiguration

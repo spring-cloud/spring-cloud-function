@@ -41,13 +41,13 @@ public class BasicStringConverter implements StringConverter {
 	public Object convert(Object function, String value) {
 		if (this.conversionService == null && this.registry != null) {
 			ConversionService conversionService = this.registry.getConversionService();
-			this.conversionService = conversionService != null ? conversionService
-					: new DefaultConversionService();
+			this.conversionService = conversionService != null ? conversionService : new DefaultConversionService();
 		}
-		//Class<?> type = this.inspector.getInputType(function);
-		Class<?> type = function == null ? Object.class : FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getInputType()));
-		return this.conversionService.canConvert(String.class, type)
-				? this.conversionService.convert(value, type) : value;
+		// Class<?> type = this.inspector.getInputType(function);
+		Class<?> type = function == null ? Object.class : FunctionTypeUtils
+			.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getInputType()));
+		return this.conversionService.canConvert(String.class, type) ? this.conversionService.convert(value, type)
+				: value;
 	}
 
 }

@@ -24,11 +24,11 @@ import org.springframework.util.MultiValueMap;
 /**
  * For internal use only.
  *
- *
  * @author Oleg Zhurakousky
  *
  */
 public class FunctionWrapper {
+
 	private final FunctionInvocationWrapper function;
 
 	private final MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -71,4 +71,5 @@ public class FunctionWrapper {
 	public String getMethod() {
 		return method;
 	}
+
 }

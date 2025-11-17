@@ -47,31 +47,38 @@ public class ContextFunctionCatalogAutoConfigurationKotlinSuspendTests {
 	@Test
 	public void typeDiscoveryTests() {
 		create(new Class[] { KotlinSuspendFlowLambdasConfiguration.class,
-			ContextFunctionCatalogAutoConfigurationKotlinTests.SimpleConfiguration.class });
+				ContextFunctionCatalogAutoConfigurationKotlinTests.SimpleConfiguration.class });
 
 		FunctionCatalog functionCatalog = this.context.getBean(FunctionCatalog.class);
 
 		FunctionInvocationWrapper kotlinFunction = functionCatalog.lookup("kotlinFunction");
 		assertThat(kotlinFunction.isFunction()).isTrue();
-		assertThat(kotlinFunction.getInputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
-		assertThat(kotlinFunction.getOutputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(kotlinFunction.getInputType().getTypeName())
+			.isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(kotlinFunction.getOutputType().getTypeName())
+			.isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
 		FunctionInvocationWrapper kotlinConsumer = functionCatalog.lookup("kotlinConsumer");
 		assertThat(kotlinConsumer.isConsumer()).isTrue();
-		assertThat(kotlinConsumer.getInputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(kotlinConsumer.getInputType().getTypeName())
+			.isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
 		FunctionInvocationWrapper kotlinSupplier = functionCatalog.lookup("kotlinSupplier");
 		assertThat(kotlinSupplier.isSupplier()).isTrue();
-		assertThat(kotlinSupplier.getOutputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(kotlinSupplier.getOutputType().getTypeName())
+			.isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 
 		FunctionInvocationWrapper kotlinPojoFunction = functionCatalog.lookup("kotlinPojoFunction");
 		assertThat(kotlinPojoFunction.isFunction()).isTrue();
-		assertThat(kotlinPojoFunction.getInputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<org.springframework.cloud.function.kotlin.Person>");
-		assertThat(kotlinPojoFunction.getOutputType().getTypeName()).isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
+		assertThat(kotlinPojoFunction.getInputType().getTypeName())
+			.isEqualTo("reactor.core.publisher.Flux<org.springframework.cloud.function.kotlin.Person>");
+		assertThat(kotlinPojoFunction.getOutputType().getTypeName())
+			.isEqualTo("reactor.core.publisher.Flux<java.lang.String>");
 	}
 
 	private void create(Class<?>[] types, String... props) {
 		this.context = (GenericApplicationContext) new SpringApplicationBuilder(types).properties(props).run();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
 	}
+
 }

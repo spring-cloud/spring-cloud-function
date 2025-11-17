@@ -71,8 +71,7 @@ public class SupplierExporter implements SmartLifecycle {
 
 	private volatile Disposable subscription;
 
-	SupplierExporter(RequestBuilder requestBuilder,
-			DestinationResolver destinationResolver, FunctionCatalog catalog,
+	SupplierExporter(RequestBuilder requestBuilder, DestinationResolver destinationResolver, FunctionCatalog catalog,
 			WebClient client, ExporterProperties exporterProperties) {
 		this.requestBuilder = requestBuilder;
 		this.destinationResolver = destinationResolver;
@@ -106,29 +105,31 @@ public class SupplierExporter implements SmartLifecycle {
 			suppliersPresent = true;
 		}
 		if (suppliersPresent) {
-			this.subscription = streams
-					.retryWhen(Retry.backoff(5, Duration.ofSeconds(1)))
-//					.retry(error -> {
-//						/*
-//						 * The ConnectException may happen if a server is not yet available/reachable
-//						 * The ClassCast is to handle delayed Mono issued by HttpSupplier.transform for non-2xx responses
-//						 */
-//						boolean retry = error instanceof ConnectException || error instanceof ClassCastException
-//								&& this.running;
-//						if (!retry) {
-//							this.ok = false;
-//							if (!this.debug) {
-//								logger.info(error);
-//							}
-//							stop();
-//						}
-//						return retry;
-//					}
-//					)
-					.doOnComplete(() -> {
-						stop();
-					})
-					.subscribe();
+			this.subscription = streams.retryWhen(Retry.backoff(5, Duration.ofSeconds(1)))
+				// .retry(error -> {
+				// /*
+				// * The ConnectException may happen if a server is not yet
+				// available/reachable
+				// * The ClassCast is to handle delayed Mono issued by
+				// HttpSupplier.transform for non-2xx responses
+				// */
+				// boolean retry = error instanceof ConnectException || error instanceof
+				// ClassCastException
+				// && this.running;
+				// if (!retry) {
+				// this.ok = false;
+				// if (!this.debug) {
+				// logger.info(error);
+				// }
+				// stop();
+				// }
+				// return retry;
+				// }
+				// )
+				.doOnComplete(() -> {
+					stop();
+				})
+				.subscribe();
 
 			this.ok = true;
 			this.running = true;
@@ -169,9 +170,9 @@ public class SupplierExporter implements SmartLifecycle {
 
 	private Flux<ClientResponse> forward(Supplier<Publisher<Object>> supplier, String name) {
 		Flux o = (Flux) supplier.get();
-//		o.subscribe(v -> {
-//			System.out.println(v);
-//		});
+		// o.subscribe(v -> {
+		// System.out.println(v);
+		// });
 		return Flux.from(o).flatMap(value -> {
 			String destination = this.destinationResolver.destination(supplier, name, value);
 			if (this.debug) {
@@ -190,14 +191,16 @@ public class SupplierExporter implements SmartLifecycle {
 		if (this.debug) {
 			logger.debug("Sending BODY as type: " + body.getClass().getName());
 		}
-		Mono<ClientResponse> result = this.client.post().uri(uri)
-				.headers(headers -> headers(headers, destination, value)).bodyValue(body)
-				.exchangeToMono(Mono::just)
-				.doOnNext(response -> {
-					if (this.debug) {
-						logger.debug("Response STATUS: " + response.statusCode());
-					}
-				});
+		Mono<ClientResponse> result = this.client.post()
+			.uri(uri)
+			.headers(headers -> headers(headers, destination, value))
+			.bodyValue(body)
+			.exchangeToMono(Mono::just)
+			.doOnNext(response -> {
+				if (this.debug) {
+					logger.debug("Response STATUS: " + response.statusCode());
+				}
+			});
 		if (this.debug) {
 			result = result.log();
 		}
@@ -211,4 +214,5 @@ public class SupplierExporter implements SmartLifecycle {
 	private URI uri(String destination) {
 		return this.requestBuilder.uri(destination);
 	}
+
 }

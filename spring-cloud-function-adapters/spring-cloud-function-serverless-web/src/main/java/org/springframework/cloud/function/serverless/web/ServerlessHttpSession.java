@@ -27,7 +27,6 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpSession;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 4.x
  *

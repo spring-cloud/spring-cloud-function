@@ -83,12 +83,12 @@ public class FunctionTypeProcessor implements BeanFactoryInitializationAotProces
 	}
 
 	private boolean isFunction(Class<?> beanType) {
-		return Function.class.isAssignableFrom(beanType)
-				|| Consumer.class.isAssignableFrom(beanType)
-					|| Supplier.class.isAssignableFrom(beanType);
+		return Function.class.isAssignableFrom(beanType) || Consumer.class.isAssignableFrom(beanType)
+				|| Supplier.class.isAssignableFrom(beanType);
 	}
 
-	private static final class ReflectiveProcessorBeanFactoryInitializationAotContribution implements BeanFactoryInitializationAotContribution {
+	private static final class ReflectiveProcessorBeanFactoryInitializationAotContribution
+			implements BeanFactoryInitializationAotContribution {
 
 		private final Class<?>[] typeHints;
 
@@ -97,24 +97,25 @@ public class FunctionTypeProcessor implements BeanFactoryInitializationAotProces
 		}
 
 		@Override
-		public void applyTo(GenerationContext generationContext, BeanFactoryInitializationCode beanFactoryInitializationCode) {
+		public void applyTo(GenerationContext generationContext,
+				BeanFactoryInitializationCode beanFactoryInitializationCode) {
 			RuntimeHints runtimeHints = generationContext.getRuntimeHints();
 			for (int i = 0; i < typeHints.length; i++) {
-				runtimeHints.reflection().registerType(typeHints[i], MemberCategory.PUBLIC_FIELDS,
-						MemberCategory.INVOKE_DECLARED_METHODS, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+				runtimeHints.reflection()
+					.registerType(typeHints[i], MemberCategory.PUBLIC_FIELDS, MemberCategory.INVOKE_DECLARED_METHODS,
+							MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
 			}
 
 			// known static types
-			runtimeHints.reflection().registerType(MessageUtils.MessageStructureWithCaseInsensitiveHeaderKeys.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-
+			runtimeHints.reflection()
+				.registerType(MessageUtils.MessageStructureWithCaseInsensitiveHeaderKeys.class,
+						MemberCategory.INVOKE_PUBLIC_METHODS);
 
 			// temporary due to bug in boot
-			runtimeHints.reflection().registerType(Ssl.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
-			runtimeHints.reflection().registerType(ServerNameSslBundle.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS);
+			runtimeHints.reflection().registerType(Ssl.class, MemberCategory.INVOKE_PUBLIC_METHODS);
+			runtimeHints.reflection().registerType(ServerNameSslBundle.class, MemberCategory.INVOKE_PUBLIC_METHODS);
 		}
 
 	}
+
 }

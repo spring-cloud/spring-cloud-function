@@ -30,7 +30,6 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.cloud.function.json.GsonMapper;
@@ -60,8 +59,8 @@ public class JsonMapperTests {
 		node.put("foo", "bar");
 
 		/*
-		 * Passing the ObjectNode directly results in a positive identification as
-		 * a collection, as its distant parent JsonNode implements Iterable.
+		 * Passing the ObjectNode directly results in a positive identification as a
+		 * collection, as its distant parent JsonNode implements Iterable.
 		 */
 		assertThat(JsonMapper.isJsonStringRepresentsCollection(node)).isFalse();
 
@@ -69,8 +68,8 @@ public class JsonMapperTests {
 
 		/*
 		 * Sending the node as a string returns false, however, as the line
-		 * isJsonString(value) && str.startsWith("[") && str.endsWith("]")
-		 * will not be true.
+		 * isJsonString(value) && str.startsWith("[") && str.endsWith("]") will not be
+		 * true.
 		 */
 		assertThat(JsonMapper.isJsonStringRepresentsCollection(nodeAsString)).isFalse();
 	}
@@ -89,8 +88,7 @@ public class JsonMapperTests {
 	@MethodSource("params")
 	public void vanillaArray(JsonMapper mapper) {
 		String json = "[{\"value\":\"foo\"},{\"value\":\"foo\"}]";
-		List<Foo> list = mapper.fromJson(json,
-				ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
+		List<Foo> list = mapper.fromJson(json, ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
 		assertThat(list).hasSize(2);
 		assertThat(list.get(0).getValue()).isEqualTo("foo");
 		assertThat(mapper.toString(list)).isEqualTo(json);
@@ -108,8 +106,7 @@ public class JsonMapperTests {
 	@ParameterizedTest
 	@MethodSource("params")
 	public void emptyArray(JsonMapper mapper) {
-		List<Foo> list = mapper.fromJson("[]",
-				ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
+		List<Foo> list = mapper.fromJson("[]", ResolvableType.forClassWithGenerics(List.class, Foo.class).getType());
 		assertThat(list).hasSize(0);
 	}
 
@@ -201,5 +198,7 @@ public class JsonMapperTests {
 		public void setZonedDateTime(ZonedDateTime zonedDateTime) {
 			this.zonedDateTime = zonedDateTime;
 		}
+
 	}
+
 }

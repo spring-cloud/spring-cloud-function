@@ -55,7 +55,8 @@ public final class AzureFunctionUtil {
 			return Flux.from((Publisher) input).map(item -> {
 				if (item instanceof Message) {
 					return MessageBuilder.fromMessage((Message<I>) item)
-							.setHeaderIfAbsent(EXECUTION_CONTEXT, executionContext).build();
+						.setHeaderIfAbsent(EXECUTION_CONTEXT, executionContext)
+						.build();
 				}
 				else {
 					return constructInputMessageFromItem(input, executionContext);
@@ -64,7 +65,8 @@ public final class AzureFunctionUtil {
 		}
 		else if (input instanceof Message) {
 			return MessageBuilder.fromMessage((Message<I>) input)
-					.setHeaderIfAbsent(EXECUTION_CONTEXT, executionContext).build();
+				.setHeaderIfAbsent(EXECUTION_CONTEXT, executionContext)
+				.build();
 		}
 		else if (input instanceof Iterable) {
 			return Flux.fromIterable((Iterable) input).map(item -> {
@@ -79,8 +81,7 @@ public final class AzureFunctionUtil {
 		if (input instanceof HttpRequestMessage) {
 			HttpRequestMessage<I> requestMessage = (HttpRequestMessage<I>) input;
 			Object payload = requestMessage.getHttpMethod() != null
-					&& requestMessage.getHttpMethod().equals(HttpMethod.GET)
-							? requestMessage.getQueryParameters()
+					&& requestMessage.getHttpMethod().equals(HttpMethod.GET) ? requestMessage.getQueryParameters()
 							: requestMessage.getBody();
 
 			if (payload == null) {

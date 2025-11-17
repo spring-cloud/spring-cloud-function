@@ -41,11 +41,10 @@ public class AzureWebProxyInvokerTests {
 
 		request.setHttpMethod(HttpMethod.GET);
 
-		request.setUri(new URI(
-				"http://localhost:7072/api/AzureWebAdapter/pets"));
+		request.setUri(new URI("http://localhost:7072/api/AzureWebAdapter/pets"));
 
-		request.setBody(Optional.of("{\"id\":\"535932f1-d18b-488a-ad8f-8d50b9678492\"" +
-				"\"breed\":\"Beagle\",\"name\":\"Murphy\",\"dateOfBirth\":1591682824313}"));
+		request.setBody(Optional.of("{\"id\":\"535932f1-d18b-488a-ad8f-8d50b9678492\""
+				+ "\"breed\":\"Beagle\",\"name\":\"Murphy\",\"dateOfBirth\":1591682824313}"));
 
 		HttpResponseMessage response = instance.execute(request, new TestExecutionContext("execute"));
 
@@ -56,9 +55,13 @@ public class AzureWebProxyInvokerTests {
 	public static class HttpRequestMessageStub<I> implements HttpRequestMessage<I> {
 
 		private URI uri;
+
 		private HttpMethod httpMethod;
+
 		private Map<String, String> headers;
+
 		private Map<String, String> queryParameters;
+
 		private I body;
 
 		public void setUri(URI uri) {
@@ -121,7 +124,9 @@ public class AzureWebProxyInvokerTests {
 	public static class BuilderStub implements Builder {
 
 		private HttpStatusType status;
+
 		private Map<String, String> headers = new HashMap<>();
+
 		private Object body;
 
 		@Override
@@ -152,11 +157,12 @@ public class AzureWebProxyInvokerTests {
 	public static class HttpResponseMessageStub implements HttpResponseMessage {
 
 		private HttpStatusType status;
+
 		private Map<String, String> headers = new HashMap<>();
+
 		private Object body;
 
-		HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers,
-				Object body) {
+		HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers, Object body) {
 			this.status = status;
 			this.headers = headers;
 			this.body = body;
@@ -178,4 +184,5 @@ public class AzureWebProxyInvokerTests {
 		}
 
 	}
+
 }

@@ -56,7 +56,8 @@ public final class CloudEventMessageUtils {
 
 		@Override
 		public MimeType resolve(@Nullable MessageHeaders headers) {
-			if (headers.containsKey("content-type")) { // this is temporary workaround for RSocket
+			if (headers.containsKey("content-type")) { // this is temporary workaround for
+														// RSocket
 				return MimeType.valueOf(headers.get("content-type").toString());
 			}
 			return super.resolve(headers);
@@ -67,7 +68,7 @@ public final class CloudEventMessageUtils {
 	private CloudEventMessageUtils() {
 	}
 
-	//=========== INTERNAL USE ONLY ==
+	// =========== INTERNAL USE ONLY ==
 	static String _DATA = "data";
 
 	static String _ID = "id";
@@ -87,6 +88,7 @@ public final class CloudEventMessageUtils {
 	static String _SUBJECT = "subject";
 
 	static String _TIME = "time";
+
 	// ================================
 
 	/**
@@ -169,7 +171,6 @@ public final class CloudEventMessageUtils {
 	 */
 	public static String TIME = DEFAULT_ATTR_PREFIX + _TIME;
 
-
 	public static String getId(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
 		Object value = message.getHeaders().get(prefix + MessageHeaders.ID);
@@ -237,17 +238,18 @@ public final class CloudEventMessageUtils {
 	}
 
 	public static Map<String, Object> getAttributes(Message<?> message) {
-		return message.getHeaders().entrySet().stream()
-				.filter(e -> isAttribute(e.getKey()))
-				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+		return message.getHeaders()
+			.entrySet()
+			.stream()
+			.filter(e -> isAttribute(e.getKey()))
+			.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 	}
 
 	/**
-	 * This method does several things.
-	 * First it canonicalizes Cloud Events attributes ensuring that they are all prefixed
-	 * with 'ce-' prefix regardless where they came from.
-	 * It also transforms structured-mode Cloud Event to binary-mode and then canonicalizes attributes
-	 * as well as described in the previous sentence.
+	 * This method does several things. First it canonicalizes Cloud Events attributes
+	 * ensuring that they are all prefixed with 'ce-' prefix regardless where they came
+	 * from. It also transforms structured-mode Cloud Event to binary-mode and then
+	 * canonicalizes attributes as well as described in the previous sentence.
 	 */
 	@SuppressWarnings("unchecked")
 	static Message<?> toCanonical(Message<?> inputMessage, MessageConverter messageConverter) {
@@ -256,7 +258,9 @@ public final class CloudEventMessageUtils {
 
 		boolean isCloudEvent = isCloudEvent(inputMessage);
 		if (isCloudEvent && headers.containsKey("content-type")) {
-			inputMessage = MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, headers.get("content-type")).build();
+			inputMessage = MessageBuilder.fromMessage(inputMessage)
+				.setHeader(MessageHeaders.CONTENT_TYPE, headers.get("content-type"))
+				.build();
 		}
 		MimeType contentType = contentTypeResolver.resolve(inputMessage.getHeaders());
 		String inputContentType = (String) inputMessage.getHeaders().get(DATACONTENTTYPE);
@@ -264,29 +268,31 @@ public final class CloudEventMessageUtils {
 		if (!isCloudEvent && contentType != null) {
 			// structured-mode
 
-			if (contentType.getType().equals(APPLICATION_CLOUDEVENTS.getType()) && contentType
-					.getSubtype().startsWith(APPLICATION_CLOUDEVENTS.getSubtype())) {
+			if (contentType.getType().equals(APPLICATION_CLOUDEVENTS.getType())
+					&& contentType.getSubtype().startsWith(APPLICATION_CLOUDEVENTS.getSubtype())) {
 
 				String dataContentType = StringUtils.hasText(inputContentType) ? inputContentType
 						: MimeTypeUtils.APPLICATION_JSON_VALUE;
 
 				String suffix = contentType.getSubtypeSuffix() == null ? "json" : contentType.getSubtypeSuffix();
 				MimeType cloudEventDeserializationContentType = MimeTypeUtils
-						.parseMimeType(contentType.getType() + "/" + suffix);
+					.parseMimeType(contentType.getType() + "/" + suffix);
 				Message<?> cloudEventMessage = MessageBuilder.fromMessage(inputMessage)
-						.setHeader(MessageHeaders.CONTENT_TYPE, cloudEventDeserializationContentType)
-						.setHeader(DATACONTENTTYPE, dataContentType).build();
+					.setHeader(MessageHeaders.CONTENT_TYPE, cloudEventDeserializationContentType)
+					.setHeader(DATACONTENTTYPE, dataContentType)
+					.build();
 				Map<String, Object> structuredCloudEvent = (Map<String, Object>) messageConverter
-						.fromMessage(cloudEventMessage, Map.class);
+					.fromMessage(cloudEventMessage, Map.class);
 				canonicalizeHeaders(structuredCloudEvent, true);
-				return buildBinaryMessageFromStructuredMap(structuredCloudEvent,
-						inputMessage.getHeaders());
+				return buildBinaryMessageFromStructuredMap(structuredCloudEvent, inputMessage.getHeaders());
 			}
 		}
 		else if (StringUtils.hasText(inputContentType)) {
-			// binary-mode, but DATACONTENTTYPE was specified explicitly so we set it as CT to ensure proper message converters are used.
-			return MessageBuilder.fromMessage(inputMessage).setHeader(MessageHeaders.CONTENT_TYPE, inputContentType)
-					.build();
+			// binary-mode, but DATACONTENTTYPE was specified explicitly so we set it as
+			// CT to ensure proper message converters are used.
+			return MessageBuilder.fromMessage(inputMessage)
+				.setHeader(MessageHeaders.CONTENT_TYPE, inputContentType)
+				.build();
 		}
 		return inputMessage;
 	}
@@ -294,32 +300,29 @@ public final class CloudEventMessageUtils {
 	/**
 	 * Attempts to {@link #canonicalizeHeaders canonicalize} the headers of a message.
 	 * @param message the message
-	 * @return a copy of the message with the canonicalized headers or the passed in unmodified message if no
-	 * headers were canonicalized
+	 * @return a copy of the message with the canonicalized headers or the passed in
+	 * unmodified message if no headers were canonicalized
 	 */
 	// VisibleForTesting
 	static Message<?> canonicalizeHeadersWithPossibleCopy(Message<?> message) {
 		Map<String, Object> headers = new HashMap<>(message.getHeaders());
 		boolean headersModified = canonicalizeHeaders(headers, false);
 		if (headersModified) {
-			message = MessageBuilder.fromMessage(message)
-					.removeHeaders("*")
-					.copyHeaders(headers)
-					.build();
+			message = MessageBuilder.fromMessage(message).removeHeaders("*").copyHeaders(headers).build();
 		}
 		return message;
 	}
 
 	/**
-	 * Will canonicalize Cloud Event attributes (headers) by ensuring canonical
-	 * prefix for all attributes and extensions regardless of where they came from.
-	 * The canonical prefix is 'ce-'.
+	 * Will canonicalize Cloud Event attributes (headers) by ensuring canonical prefix for
+	 * all attributes and extensions regardless of where they came from. The canonical
+	 * prefix is 'ce-'.
 	 *
 	 * So, for example 'ce_source' will become 'ce-source'.
 	 * @param headers message headers
-	 * @param structured boolean signifying that headers map represents structured Cloud Event
-	 * at which point attributes without any prefix will still be treated as
-	 * Cloud Event attributes.
+	 * @param structured boolean signifying that headers map represents structured Cloud
+	 * Event at which point attributes without any prefix will still be treated as Cloud
+	 * Event attributes.
 	 * @return whether the headers were modified during the process
 	 */
 	private static boolean canonicalizeHeaders(Map<String, Object> headers, boolean structured) {
@@ -379,7 +382,8 @@ public final class CloudEventMessageUtils {
 	static String determinePrefixToUse(Map<String, Object> messageHeaders, boolean strict) {
 		String targetProtocol = extractTargetProtocol(messageHeaders);
 		String prefix = determinePrefixToUse(targetProtocol);
-		if (StringUtils.hasText(prefix) && (strict || StringUtils.hasText((String) messageHeaders.get(prefix + _SPECVERSION)))) {
+		if (StringUtils.hasText(prefix)
+				&& (strict || StringUtils.hasText((String) messageHeaders.get(prefix + _SPECVERSION)))) {
 			return prefix;
 		}
 		else {
@@ -426,26 +430,23 @@ public final class CloudEventMessageUtils {
 	 * @return true if this Message represents Cloud Event in binary-mode
 	 */
 	public static boolean isCloudEvent(Message<?> message) {
-		MessageStructureWithCaseInsensitiveHeaderKeys _message = MessageUtils.toCaseInsensitiveHeadersStructure(message);
-		return (_message.getHeaders().containsKey(SPECVERSION)
-					&& _message.getHeaders().containsKey(TYPE)
-					&& _message.getHeaders().containsKey(SOURCE))
-				||
-				(_message.getHeaders().containsKey(_SPECVERSION)
-						&& _message.getHeaders().containsKey(_TYPE)
+		MessageStructureWithCaseInsensitiveHeaderKeys _message = MessageUtils
+			.toCaseInsensitiveHeadersStructure(message);
+		return (_message.getHeaders().containsKey(SPECVERSION) && _message.getHeaders().containsKey(TYPE)
+				&& _message.getHeaders().containsKey(SOURCE))
+				|| (_message.getHeaders().containsKey(_SPECVERSION) && _message.getHeaders().containsKey(_TYPE)
 						&& _message.getHeaders().containsKey(_SOURCE))
-				||
-				(_message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SPECVERSION)
-					&& _message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _TYPE)
-					&& _message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SOURCE))
-				||
-				(_message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SPECVERSION)
-					&& _message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _TYPE)
-					&& _message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SOURCE));
+				|| (_message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SPECVERSION)
+						&& _message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _TYPE)
+						&& _message.getHeaders().containsKey(AMQP_ATTR_PREFIX + _SOURCE))
+				|| (_message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SPECVERSION)
+						&& _message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _TYPE)
+						&& _message.getHeaders().containsKey(KAFKA_ATTR_PREFIX + _SOURCE));
 	}
 
 	private static boolean isAttribute(String key) {
-		return key.startsWith(DEFAULT_ATTR_PREFIX) || key.startsWith(AMQP_ATTR_PREFIX) || key.startsWith(KAFKA_ATTR_PREFIX);
+		return key.startsWith(DEFAULT_ATTR_PREFIX) || key.startsWith(AMQP_ATTR_PREFIX)
+				|| key.startsWith(KAFKA_ATTR_PREFIX);
 	}
 
 	private static Message<?> buildBinaryMessageFromStructuredMap(Map<String, Object> structuredCloudEvent,
@@ -455,9 +456,8 @@ public final class CloudEventMessageUtils {
 			payload = Collections.emptyMap();
 		}
 
-		CloudEventMessageBuilder<?> messageBuilder = CloudEventMessageBuilder
-				.withData(payload)
-				.copyHeaders(structuredCloudEvent);
+		CloudEventMessageBuilder<?> messageBuilder = CloudEventMessageBuilder.withData(payload)
+			.copyHeaders(structuredCloudEvent);
 
 		for (String key : originalHeaders.keySet()) {
 			if (!MessageHeaders.ID.equals(key)) {
@@ -486,11 +486,13 @@ public final class CloudEventMessageUtils {
 	}
 
 	public static class Protocols {
+
 		static String AMQP = "amqp";
 		static String AVRO = "avro";
 		static String HTTP = "http";
 		static String JSON = "json";
 		static String KAFKA = "kafka";
+
 	}
 
 }

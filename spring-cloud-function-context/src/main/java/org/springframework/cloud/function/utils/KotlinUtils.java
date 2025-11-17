@@ -25,6 +25,7 @@ import org.springframework.core.KotlinDetector;
  * @author Oleg Zhurakousky
  */
 public final class KotlinUtils {
+
 	private KotlinUtils() {
 
 	}
@@ -36,4 +37,5 @@ public final class KotlinUtils {
 		}
 		return false;
 	}
+
 }

@@ -27,8 +27,6 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-
 /**
  * @author Oleg Zhurakousky
  */
@@ -42,9 +40,9 @@ public class AsyncStartTests {
 		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/hello");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
-//		assertThat(System.currentTimeMillis() - start).isGreaterThan(2000);
-//		assertThat(response.getContentAsString()).isEqualTo("hello");
-//		assertThat(response.getStatus()).isEqualTo(200);
+		// assertThat(System.currentTimeMillis() - start).isGreaterThan(2000);
+		// assertThat(response.getContentAsString()).isEqualTo("hello");
+		// assertThat(response.getStatus()).isEqualTo(200);
 	}
 
 	@Test
@@ -79,6 +77,7 @@ public class AsyncStartTests {
 		public String hello() {
 			return "hello";
 		}
+
 	}
 
 }

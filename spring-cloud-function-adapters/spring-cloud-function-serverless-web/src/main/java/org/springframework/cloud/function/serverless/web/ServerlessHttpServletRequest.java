@@ -67,7 +67,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -78,11 +77,12 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	private static final BufferedReader EMPTY_BUFFERED_READER = new BufferedReader(new StringReader(""));
 
 	private static final InputStream EMPTY_INPUT_STREAM = new ByteArrayInputStream(new byte[0]);
+
 	/**
 	 * Date formats as specified in the HTTP RFC.
 	 *
-	 * @see <a href="https://tools.ietf.org/html/rfc7231#section-7.1.1.1">Section
-	 *      7.1.1.1 of RFC 7231</a>
+	 * @see <a href="https://tools.ietf.org/html/rfc7231#section-7.1.1.1">Section 7.1.1.1
+	 * of RFC 7231</a>
 	 */
 	private static final String[] DATE_FORMATS = new String[] { "EEE, dd MMM yyyy HH:mm:ss zzz",
 			"EEE, dd-MMM-yy HH:mm:ss zzz", "EEE MMM dd HH:mm:ss yyyy" };
@@ -180,8 +180,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	}
 
 	/**
-	 * Return the ServletContext that this request is associated with. (Not
-	 * available in the standard HttpServletRequest interface for some reason.)
+	 * Return the ServletContext that this request is associated with. (Not available in
+	 * the standard HttpServletRequest interface for some reason.)
 	 */
 	@Override
 	public ServletContext getServletContext() {
@@ -213,8 +213,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	 * Set the content of the request body as a byte array.
 	 * <p>
 	 * If the supplied byte array represents text such as XML or JSON, the
-	 * {@link #setCharacterEncoding character encoding} should typically be set as
-	 * well.
+	 * {@link #setCharacterEncoding character encoding} should typically be set as well.
 	 *
 	 * @see #setCharacterEncoding(String)
 	 * @see #getContentAsByteArray()
@@ -228,7 +227,6 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 
 	/**
 	 * Get the content of the request body as a byte array.
-	 *
 	 * @return the content as a byte array (potentially {@code null})
 	 * @since 5.0
 	 * @see #setContent(byte[])
@@ -242,12 +240,9 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	/**
 	 * Get the content of the request body as a {@code String}, using the configured
 	 * {@linkplain #getCharacterEncoding character encoding}.
-	 *
 	 * @return the content as a {@code String}, potentially {@code null}
-	 * @throws IllegalStateException        if the character encoding has not been
-	 *                                      set
-	 * @throws UnsupportedEncodingException if the character encoding is not
-	 *                                      supported
+	 * @throws IllegalStateException if the character encoding has not been set
+	 * @throws UnsupportedEncodingException if the character encoding is not supported
 	 * @since 5.0
 	 * @see #setContent(byte[])
 	 * @see #setCharacterEncoding(String)
@@ -279,7 +274,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	@Override
 	@Nullable
 	public String getContentType() {
-		return this.headers.containsHeader(HttpHeaders.CONTENT_TYPE) ? this.headers.get(HttpHeaders.CONTENT_TYPE).get(0) : null;
+		return this.headers.containsHeader(HttpHeaders.CONTENT_TYPE) ? this.headers.get(HttpHeaders.CONTENT_TYPE).get(0)
+				: null;
 	}
 
 	@Override
@@ -325,8 +321,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	/**
 	 * Set a single value for the specified HTTP parameter.
 	 * <p>
-	 * If there are already one or more values registered for the given parameter
-	 * name, they will be replaced.
+	 * If there are already one or more values registered for the given parameter name,
+	 * they will be replaced.
 	 */
 	public void setParameter(String name, String value) {
 		setParameter(name, new String[] { value });
@@ -335,8 +331,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	/**
 	 * Set an array of values for the specified HTTP parameter.
 	 * <p>
-	 * If there are already one or more values registered for the given parameter
-	 * name, they will be replaced.
+	 * If there are already one or more values registered for the given parameter name,
+	 * they will be replaced.
 	 */
 	public void setParameter(String name, String... values) {
 		Assert.notNull(name, "Parameter name must not be null");
@@ -344,9 +340,9 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	}
 
 	/**
-	 * Set all provided parameters <strong>replacing</strong> any existing values
-	 * for the provided parameter names. To add without replacing existing values,
-	 * use {@link #addParameters(java.util.Map)}.
+	 * Set all provided parameters <strong>replacing</strong> any existing values for the
+	 * provided parameter names. To add without replacing existing values, use
+	 * {@link #addParameters(java.util.Map)}.
 	 */
 	public void setParameters(Map<String, ?> params) {
 		Assert.notNull(params, "Parameter map must not be null");
@@ -367,8 +363,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	/**
 	 * Add a single value for the specified HTTP parameter.
 	 * <p>
-	 * If there are already one or more values registered for the given parameter
-	 * name, the given value will be added to the end of the list.
+	 * If there are already one or more values registered for the given parameter name,
+	 * the given value will be added to the end of the list.
 	 */
 	public void addParameter(String name, @Nullable String value) {
 		addParameter(name, new String[] { value });
@@ -377,8 +373,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	/**
 	 * Add an array of values for the specified HTTP parameter.
 	 * <p>
-	 * If there are already one or more values registered for the given parameter
-	 * name, the given values will be added to the end of the list.
+	 * If there are already one or more values registered for the given parameter name,
+	 * the given values will be added to the end of the list.
 	 */
 	public void addParameter(String name, String... values) {
 		Assert.notNull(name, "Parameter name must not be null");
@@ -395,9 +391,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	}
 
 	/**
-	 * Add all provided parameters <strong>without</strong> replacing any existing
-	 * values. To replace existing values, use
-	 * {@link #setParameters(java.util.Map)}.
+	 * Add all provided parameters <strong>without</strong> replacing any existing values.
+	 * To replace existing values, use {@link #setParameters(java.util.Map)}.
 	 */
 	public void addParameters(Map<String, ?> params) {
 		Assert.notNull(params, "Parameter map must not be null");
@@ -495,8 +490,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 		if (this.content != null) {
 			InputStream sourceStream = new ByteArrayInputStream(this.content);
 			Reader sourceReader = (this.characterEncoding != null)
-					? new InputStreamReader(sourceStream, this.characterEncoding)
-					: new InputStreamReader(sourceStream);
+					? new InputStreamReader(sourceStream, this.characterEncoding) : new InputStreamReader(sourceStream);
 			this.reader = new BufferedReader(sourceReader);
 		}
 		else {
@@ -569,8 +563,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	}
 
 	/**
-	 * Return an {@linkplain Enumeration enumeration} of the preferred
-	 * {@linkplain Locale locales} configured in this mock request.
+	 * Return an {@linkplain Enumeration enumeration} of the preferred {@linkplain Locale
+	 * locales} configured in this mock request.
 	 * <p>
 	 * If no locales have been explicitly configured, the default, preferred
 	 * {@link Locale} for the <em>server</em> mocked by this request is
@@ -651,7 +645,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 		Assert.state(this.asyncSupported, "Async not supported");
 		this.dispatcherType = DispatcherType.ASYNC;
 		this.asyncStarted = true;
-		this.asyncContext = this.asyncContext == null ? new ServerlessAsyncContext(request, response) : this.asyncContext;
+		this.asyncContext = this.asyncContext == null ? new ServerlessAsyncContext(request, response)
+				: this.asyncContext;
 		return this.asyncContext;
 	}
 
@@ -683,7 +678,6 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	public AsyncContext getAsyncContext() {
 		return this.asyncContext;
 	}
-
 
 	public void setDispatcherType(DispatcherType dispatcherType) {
 		this.dispatcherType = dispatcherType;
@@ -830,7 +824,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	@Override
 	@Nullable
 	public String getPathTranslated() {
-		//return (this.pathInfo != null ? getRealPath(this.pathInfo) : null);
+		// return (this.pathInfo != null ? getRealPath(this.pathInfo) : null);
 		return this.pathInfo;
 	}
 
@@ -1025,4 +1019,5 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 }

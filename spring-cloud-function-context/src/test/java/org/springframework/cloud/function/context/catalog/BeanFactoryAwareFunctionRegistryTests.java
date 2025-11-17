@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.context.catalog;
 
-
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -82,7 +81,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Artem Bilan
  *
@@ -97,8 +95,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
 		this.context = new SpringApplicationBuilder(configClass)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true");
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
@@ -124,7 +121,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		for (int i = 0; i < 10; i++) {
 			catalog.lookup("echo1|any");
 		}
-		Field functionRegistrationsField =  ReflectionUtils.findField(catalog.getClass(), "functionRegistrations");
+		Field functionRegistrationsField = ReflectionUtils.findField(catalog.getClass(), "functionRegistrations");
 		functionRegistrationsField.setAccessible(true);
 		Set<FunctionRegistration> functionRegistrations = (Set) functionRegistrationsField.get(catalog);
 		assertThat(functionRegistrations.size()).isEqualTo(1);
@@ -159,14 +156,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		CompositionReactiveSupplierWithConsumer.results.clear();
 
 		function = catalog.lookup("functionMessage|consume");
-		function.apply(Flux.fromArray(new Message[] {MessageBuilder.withPayload("ricky").build(), MessageBuilder.withPayload("bubbles").build()}));
+		function.apply(Flux.fromArray(new Message[] { MessageBuilder.withPayload("ricky").build(),
+				MessageBuilder.withPayload("bubbles").build() }));
 		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
 		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo("RICKY");
 		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo("BUBBLES");
 		CompositionReactiveSupplierWithConsumer.results.clear();
 
 		function = catalog.lookup("functionPrimitive|consume");
-		function.apply(Flux.fromArray(new String[] {"ricky", "bubbles"}));
+		function.apply(Flux.fromArray(new String[] { "ricky", "bubbles" }));
 		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
 		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo("RICKY");
 		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo("BUBBLES");
@@ -212,7 +210,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			}
 		}
 		System.out.println(registeredFunction);
-		//assertThat(registeredFunction.size()).isEqualTo(5);
+		// assertThat(registeredFunction.size()).isEqualTo(5);
 		assertThat((FunctionInvocationWrapper) catalog.lookup("asJsonNode")).isNull();
 	}
 
@@ -220,7 +218,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public void testJsonNodeAsInput() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(JsonNodeConfiguration.class);
 		Function<Message<String>, Message<byte[]>> f = catalog.lookup("messageAsJsonNode", "application/json");
-		Message<String> m = MessageBuilder.withPayload("[{\"name\":\"bob\"}, {\"name\":\"bob\"}]").setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build();
+		Message<String> m = MessageBuilder.withPayload("[{\"name\":\"bob\"}, {\"name\":\"bob\"}]")
+			.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+			.build();
 		assertThat(new String(f.apply(m).getPayload())).isEqualTo("[{\"name\":\"bob\"},{\"name\":\"bob\"}]");
 		f = catalog.lookup("asJsonNode", "application/json");
 		assertThat(new String(f.apply(m).getPayload())).isEqualTo("[{\"name\":\"bob\"},{\"name\":\"bob\"}]");
@@ -263,26 +263,27 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog();
 		Object function = catalog.lookup("");
 		assertThat(function).isNull();
-		//==
+		// ==
 		System.setProperty("spring.cloud.function.definition", "uppercase");
 		catalog = this.configureCatalog();
 		function = catalog.lookup("");
 		assertThat(function).isNotNull();
-//		Field field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
-//		field.setAccessible(true);
+		// Field field = ReflectionUtils.findField(FunctionInvocationWrapper.class,
+		// "composed");
+		// field.setAccessible(true);
 		assertThat(((FunctionInvocationWrapper) function).isComposed()).isFalse();
-		//==
+		// ==
 		System.setProperty("spring.cloud.function.definition", "uppercase|uppercaseFlux");
 		catalog = this.configureCatalog();
-//		function = catalog.lookup("", "application/json");
+		// function = catalog.lookup("", "application/json");
 		function = catalog.lookup("");
 		Function<Flux<String>, Flux<Message<String>>> typedFunction = (Function<Flux<String>, Flux<Message<String>>>) function;
 		Object blockFirst = typedFunction.apply(Flux.just("hello")).blockFirst();
 		System.out.println(blockFirst);
 		assertThat(function).isNotNull();
-//		field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
-//		field.setAccessible(true);
-//		assertThat(((boolean) field.get(function))).isTrue();
+		// field = ReflectionUtils.findField(FunctionInvocationWrapper.class, "composed");
+		// field.setAccessible(true);
+		// assertThat(((boolean) field.get(function))).isTrue();
 		assertThat(((FunctionInvocationWrapper) function).isComposed()).isTrue();
 	}
 
@@ -299,16 +300,22 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public void testImperativeFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 
-		Function<Flux<Message<byte[]>>, Flux<Message<byte[]>>> messageFlux = catalog.lookup("uppercase", "application/json");
-		Message<byte[]> message1 = MessageBuilder.withPayload("\"uppercaseFlux\"".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build();
-		Message<byte[]> message2 = MessageBuilder.withPayload("\"uppercaseFlux2\"".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build();
+		Function<Flux<Message<byte[]>>, Flux<Message<byte[]>>> messageFlux = catalog.lookup("uppercase",
+				"application/json");
+		Message<byte[]> message1 = MessageBuilder.withPayload("\"uppercaseFlux\"".getBytes())
+			.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+			.build();
+		Message<byte[]> message2 = MessageBuilder.withPayload("\"uppercaseFlux2\"".getBytes())
+			.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+			.build();
 		List<Message<byte[]>> messageResult = messageFlux.apply(Flux.just(message1, message2)).collectList().block();
 		assertThat(messageResult.get(0).getPayload()).isEqualTo("\"UPPERCASEFLUX\"".getBytes(StandardCharsets.UTF_8));
 		assertThat(messageResult.get(1).getPayload()).isEqualTo("\"UPPERCASEFLUX2\"".getBytes(StandardCharsets.UTF_8));
 	}
 
 	@Test
-	public void testConsumerFunction() { // function that returns Void, effectively a Consumer
+	public void testConsumerFunction() { // function that returns Void, effectively a
+											// Consumer
 		FunctionCatalog catalog = this.configureCatalog();
 
 		Function<String, Void> consumerFunction = catalog.lookup("consumerFunction");
@@ -317,7 +324,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		Function<Message<byte[]>, Void> consumerFunctionAsMessageA = catalog.lookup("consumerFunction");
 		assertThat(consumerFunctionAsMessageA.apply(new GenericMessage<byte[]>("\"hello\"".getBytes()))).isNull();
 
-		Function<Message<byte[]>, Void> consumerFunctionAsMessageB = catalog.lookup("consumerFunction", "application/json");
+		Function<Message<byte[]>, Void> consumerFunctionAsMessageB = catalog.lookup("consumerFunction",
+				"application/json");
 		assertThat(consumerFunctionAsMessageB.apply(new GenericMessage<byte[]>("\"hello\"".getBytes()))).isNull();
 	}
 
@@ -325,13 +333,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public void testMessageToPojoConversion() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<Message<String>, Person> uppercasePerson = catalog.lookup("uppercasePerson");
-		Person person =  uppercasePerson.apply(MessageBuilder.withPayload("{\"name\":\"bill\",\"id\":2}").build());
+		Person person = uppercasePerson.apply(MessageBuilder.withPayload("{\"name\":\"bill\",\"id\":2}").build());
 		assertThat(person.getName()).isEqualTo("BILL");
 	}
 
 	/*
-	 * When invoking imperative function as reactive the rules are
-	 * - the input wrapper must match the output wrapper (e.g., <Flux, Flux> or <Mono, Mono>)
+	 * When invoking imperative function as reactive the rules are - the input wrapper
+	 * must match the output wrapper (e.g., <Flux, Flux> or <Mono, Mono>)
 	 */
 	@Test
 	public void testImperativeVoidInputFunction() {
@@ -369,7 +377,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(resultList.get(0)).isEqualTo("voidInputFunctionReactive2");
 	}
 
-
 	@Test
 	public void testComposition() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog();
@@ -397,7 +404,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		FunctionInvocationWrapper function = catalog.lookup("uppercase|reverse");
 		assertThat(function.apply("foo")).isEqualTo("OOF");
 
-		Object target =  function.getTarget();
+		Object target = function.getTarget();
 		Field arg1Field = ReflectionUtils.findField(target.getClass(), "arg$1");
 		arg1Field.setAccessible(true);
 		FunctionInvocationWrapper functionUppercase = (FunctionInvocationWrapper) arg1Field.get(target);
@@ -424,9 +431,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	/*
-	 * This test should fail since the actual function is <Flux, Flux>, hence we can
-	 * not possibly convert Flux (which implies "many") to a single string.
-	 * Further more, such flux will need to be triggered (e.g., subscribe(..) )
+	 * This test should fail since the actual function is <Flux, Flux>, hence we can not
+	 * possibly convert Flux (which implies "many") to a single string. Further more, such
+	 * flux will need to be triggered (e.g., subscribe(..) )
 	 */
 	@SuppressWarnings("unused")
 	@Test
@@ -445,7 +452,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Test
 	public void testCompositionWithOutputConversion() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Flux<String>, Flux<Message<byte[]>>> fluxFunction = catalog.lookup("uppercase|reverseFlux", "application/json");
+		Function<Flux<String>, Flux<Message<byte[]>>> fluxFunction = catalog.lookup("uppercase|reverseFlux",
+				"application/json");
 		List<Message<byte[]>> result = fluxFunction.apply(Flux.just("hello", "bye")).collectList().block();
 		assertThat(result.get(0).getPayload()).isEqualTo("\"OLLEH\"".getBytes());
 		assertThat(result.get(1).getPayload()).isEqualTo("\"EYB\"".getBytes());
@@ -493,22 +501,23 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result).isEqualTo("BIKE");
 
 		// as Message<String>
-		result = (String) function.apply(MessageBuilder.withPayload("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}").build());
+		result = (String) function
+			.apply(MessageBuilder.withPayload("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}").build());
 		assertThat(result).isEqualTo("BIKE");
 
 		// as Message<BYTE[]>
-		result = (String) function.apply(MessageBuilder.withPayload("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}".getBytes()).build());
+		result = (String) function.apply(
+				MessageBuilder.withPayload("{\"key\":\"purchase\",\"data\":{\"name\":\"bike\"}}".getBytes()).build());
 		assertThat(result).isEqualTo("BIKE");
 	}
 
 	// MULTI INPUT/OUTPUT
 
-
 	@Test
 	public void testMultiInput() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<String>> multiInputFunction =
-									catalog.lookup("multiInputSingleOutputViaReactiveTuple");
+		Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<String>> multiInputFunction = catalog
+			.lookup("multiInputSingleOutputViaReactiveTuple");
 		Flux<String> stringStream = Flux.just("one", "two", "three");
 		Flux<Integer> intStream = Flux.just(1, 2, 3);
 
@@ -519,12 +528,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.get(2)).isEqualTo("three-3");
 	}
 
-
-	//@Test
+	// @Test
 	public void testMultiInputWithComposition() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple2<Flux<String>, Flux<String>>, Flux<String>> multiInputFunction =
-									catalog.lookup("multiInputSingleOutputViaReactiveTuple|uppercase");
+		Function<Tuple2<Flux<String>, Flux<String>>, Flux<String>> multiInputFunction = catalog
+			.lookup("multiInputSingleOutputViaReactiveTuple|uppercase");
 		Flux<String> stringStream = Flux.just("one", "two", "three");
 		Flux<String> intStream = Flux.just("1", "2", "3");
 
@@ -535,12 +543,11 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(result.get(2)).isEqualTo("THREE-3");
 	}
 
-
 	@Test
 	public void testMultiOutput() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Flux<Person>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction =
-									catalog.lookup("multiOutputAsTuple");
+		Function<Flux<Person>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction = catalog
+			.lookup("multiOutputAsTuple");
 		Flux<Person> personStream = Flux.just(new Person("Uncle Sam", 1), new Person("Oncle Pierre", 2));
 
 		Tuple3<Flux<Person>, Flux<String>, Flux<Integer>> result = multiOutputFunction.apply(personStream);
@@ -585,9 +592,12 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Disabled
 	public void byteArrayNoSpecialHandling() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(ByteArrayFunction.class);
-		FunctionInvocationWrapper function = catalog.lookup("beanFactoryAwareFunctionRegistryTests.ByteArrayFunction", "application/json");
+		FunctionInvocationWrapper function = catalog.lookup("beanFactoryAwareFunctionRegistryTests.ByteArrayFunction",
+				"application/json");
 		assertThat(function).isNotNull();
-		Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("hello".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "application/octet-stream").build());
+		Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("hello".getBytes())
+			.setHeader(MessageHeaders.CONTENT_TYPE, "application/octet-stream")
+			.build());
 
 		System.out.println(new String(result.getPayload()));
 
@@ -600,7 +610,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog(CollectionOutConfiguration.class);
 		FunctionInvocationWrapper function = catalog.lookup("parseToList", "application/json");
 		assertThat(function).isNotNull();
-		Object result = function.apply(MessageBuilder.withPayload("1,2,3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		Object result = function.apply(MessageBuilder.withPayload("1,2,3".getBytes())
+			.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+			.build());
 		assertThat(result instanceof Message).isTrue();
 		byte[] payload = ((Message<byte[]>) result).getPayload();
 		JsonMapper mapper = this.context.getBean(JsonMapper.class);
@@ -611,7 +623,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 		function = catalog.lookup("parseToListOfMessages", "application/json");
 		assertThat(function).isNotNull();
-		result = function.apply(MessageBuilder.withPayload("1,2,3".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+		result = function.apply(MessageBuilder.withPayload("1,2,3".getBytes())
+			.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+			.build());
 		assertThat(result instanceof List).isTrue();
 		assertThat(((Message<?>) ((List<?>) result).get(0)).getHeaders()).containsKey("foo");
 		assertThat(((Message<?>) ((List<?>) result).get(1)).getHeaders()).containsKey("foo");
@@ -619,14 +633,17 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	/**
-	 * The following two tests test the fallback mechanism when an accept header has several values.
-	 * The function produces Integer, which cannot be serialized by the default converter supporting text/plain
-	 * (StringMessageConverter) but can by the one supporting application/json, which comes second.
+	 * The following two tests test the fallback mechanism when an accept header has
+	 * several values. The function produces Integer, which cannot be serialized by the
+	 * default converter supporting text/plain (StringMessageConverter) but can by the one
+	 * supporting application/json, which comes second.
 	 */
-	//@Test
+	// @Test
 	public void testMultipleOrderedAcceptValues() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(MultipleOrderedAcceptValuesConfiguration.class);
-		Function<String, Message<byte[]>> function = catalog.lookup("beanFactoryAwareFunctionRegistryTests.MultipleOrderedAcceptValuesConfiguration", "text/plain,application/json");
+		Function<String, Message<byte[]>> function = catalog.lookup(
+				"beanFactoryAwareFunctionRegistryTests.MultipleOrderedAcceptValuesConfiguration",
+				"text/plain,application/json");
 		assertThat(function).isNotNull();
 		Message<byte[]> result = function.apply("hello");
 		assertThat(result.getPayload()).isEqualTo("5".getBytes("UTF-8"));
@@ -649,22 +666,20 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
 		FunctionInvocationWrapper function = catalog.lookup("echo", "text/*");
 
-		Message<Tuple2<String, String>> tupleResult = (Message<Tuple2<String, String>>) function.apply(MessageBuilder
-				.withPayload(Tuples.of("bonjour", "monde"))
+		Message<Tuple2<String, String>> tupleResult = (Message<Tuple2<String, String>>) function
+			.apply(MessageBuilder.withPayload(Tuples.of("bonjour", "monde"))
 				.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/csv"))
-				.build()
-		);
+				.build());
 
 		assertThat(tupleResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/csv"));
 		assertThat(tupleResult.getHeaders().get("accept")).isNull();
 
-		Message<Date> dateResult = (Message<Date>) function.apply(MessageBuilder
-				.withPayload(123)
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/integer"))
-				.build()
-		);
+		Message<Date> dateResult = (Message<Date>) function.apply(MessageBuilder.withPayload(123)
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("text/integer"))
+			.build());
 
-		assertThat(dateResult.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeType.valueOf("text/integer"));
+		assertThat(dateResult.getHeaders().get(MessageHeaders.CONTENT_TYPE))
+			.isEqualTo(MimeType.valueOf("text/integer"));
 		assertThat(dateResult.getHeaders().get("accept")).isNull();
 	}
 
@@ -731,9 +746,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		assertThat(list.get(0).name).isEqualTo("OLEG");
 		assertThat(list.get(1).name).isEqualTo("SEVA");
 
-
-
-		result = (Flux) f.apply(new GenericMessage<String>("[{\"id\":1, \"name\":\"oleg\"}, {\"id\":2, \"name\":\"seva\"}]"));
+		result = (Flux) f
+			.apply(new GenericMessage<String>("[{\"id\":1, \"name\":\"oleg\"}, {\"id\":2, \"name\":\"seva\"}]"));
 		list = (List) result.collectList().block();
 		assertThat(list.size()).isEqualTo(2);
 		assertThat(list.get(0).name).isEqualTo("OLEG");
@@ -743,8 +757,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Test
 	public void testGH_608() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true");
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 
 		Consumer<Flux<String>> consumer = catalog.lookup("reactivePojoConsumer");
@@ -757,14 +770,14 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public void testGH_611() {
 		FunctionCatalog catalog = this.configureCatalog(NegotiatingMessageConverterConfiguration.class);
 		Supplier<Message<Integer>> f = catalog.lookup("supplier", "text/*");
-		assertThat(f.get().getHeaders().get(MessageHeaders.CONTENT_TYPE)).isEqualTo(MimeTypeUtils.parseMimeType("text/*"));
+		assertThat(f.get().getHeaders().get(MessageHeaders.CONTENT_TYPE))
+			.isEqualTo(MimeTypeUtils.parseMimeType("text/*"));
 	}
 
 	@Test
 	public void testGH_608_C() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
-			.run("--logging.level.org.springframework.cloud.function=DEBUG",
-				"--spring.main.lazy-initialization=true");
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 
 		String productJson = "{\"key\":\"someKey\",\"data\": {\"name\":\"bike\"}}";
@@ -790,14 +803,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public void testGH_635() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(SCF_GH_635ConfigurationAsFunction.class);
 		Function lmFunction = catalog.lookup("emptyMessageList", "application/json");
-		List<Message<?>> emptyListOfMessages = (List<Message<?>>) lmFunction.apply(MessageBuilder.withPayload("hello").build());
+		List<Message<?>> emptyListOfMessages = (List<Message<?>>) lmFunction
+			.apply(MessageBuilder.withPayload("hello").build());
 		assertThat(emptyListOfMessages).isEmpty();
 		emptyListOfMessages = (List<Message<?>>) lmFunction.apply("hello");
 		assertThat(emptyListOfMessages).isEmpty();
 
 		JsonMapper mapper = this.context.getBean(JsonMapper.class);
 		Function lsFunction = catalog.lookup("emptyStringList", "application/json");
-		Message<byte[]> emptyListOfString = (Message<byte[]>) lsFunction.apply(MessageBuilder.withPayload("hello").build());
+		Message<byte[]> emptyListOfString = (Message<byte[]>) lsFunction
+			.apply(MessageBuilder.withPayload("hello").build());
 		List resultList = mapper.fromJson(emptyListOfString.getPayload(), List.class);
 		assertThat(resultList).isEmpty();
 		emptyListOfString = (Message<byte[]>) lsFunction.apply("hello");
@@ -820,8 +835,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Test
 	public void test_791() {
 		try (ConfigurableApplicationContext ac = new SpringApplicationBuilder(InputHeaderPropagationConfiguration.class)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true")) {
+			.run("--logging.level.org.springframework.cloud.function=DEBUG",
+					"--spring.main.lazy-initialization=true")) {
 			FunctionCatalog catalog = ac.getBean(FunctionCatalog.class);
 
 			Function<Message<String>, Message<byte[]>> uppercase = catalog.lookup("uppercase", "application/json");
@@ -829,9 +844,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			assertThat(result.getHeaders()).doesNotContainKey("foo");
 		}
 		try (ConfigurableApplicationContext ac = new SpringApplicationBuilder(InputHeaderPropagationConfiguration.class)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.uppercase.copy-input-headers=true")) {
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.uppercase.copy-input-headers=true")) {
 			FunctionCatalog catalog = ac.getBean(FunctionCatalog.class);
 
 			Function<Message<String>, Message<byte[]>> uppercase = catalog.lookup("uppercase", "application/json");
@@ -850,7 +864,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		list.add("Ricky");
 		list.add("Julien");
 		list.add("Bubbles");
-		Publisher p = (Publisher) lmFunction.apply(MessageBuilder.withPayload(list).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+		Publisher p = (Publisher) lmFunction
+			.apply(MessageBuilder.withPayload(list).setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
 		List<Object> result = new ArrayList<>();
 		for (Object value : Flux.from(p).toIterable()) {
 			result.add(value);
@@ -876,7 +891,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
 			for (int y = 0; y < 10; y++) {
 				executor.execute(() -> {
-					assertThat((FunctionInvocationWrapper) catalog.lookup("uppercase|reverse", "application/json")).isNotNull();
+					assertThat((FunctionInvocationWrapper) catalog.lookup("uppercase|reverse", "application/json"))
+						.isNotNull();
 					counter.incrementAndGet();
 				});
 			}
@@ -909,11 +925,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<Message<Person>, String> uppercasePerson() {
 			return v -> v.getPayload().getName().toUpperCase(Locale.ROOT);
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration(proxyBeanMethods = false)
 	public static class JsonNodeConfiguration {
+
 		@Bean
 		public Function<Message<JsonNode>, String> messageAsJsonNode() {
 			return v -> {
@@ -927,6 +945,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				return v.toString();
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -941,10 +960,12 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Component
 	@EnableAutoConfiguration
 	public static class ReactiveFunctionImpl implements ReactiveFunction<String, Integer> {
+
 		@Override
 		public Flux<Integer> apply(Flux<String> inFlux) {
 			return inFlux.map(v -> Integer.parseInt(v));
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -958,11 +979,14 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<String, List<Message<String>>> parseToListOfMessages() {
 			return v -> {
-				List<Message<String>> list = Arrays.asList(v.split(",")).stream()
-						.map(value -> MessageBuilder.withPayload(value).setHeader("foo", "foo").build()).collect(Collectors.toList());
+				List<Message<String>> list = Arrays.asList(v.split(","))
+					.stream()
+					.map(value -> MessageBuilder.withPayload(value).setHeader("foo", "foo").build())
+					.collect(Collectors.toList());
 				return list;
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -994,13 +1018,14 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 
 		public static class ConverterC extends ConverterA {
+
 			ConverterC() {
 				super("text/*");
 			}
 
 			@Override
-			protected Object convertFromInternal(
-					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+			protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+					@Nullable Object conversionHint) {
 				return message.getPayload().toString();
 			}
 
@@ -1019,16 +1044,18 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
 				return payload instanceof Integer;
 			}
+
 		}
 
 		public static class ConverterB extends ConverterA {
+
 			ConverterB() {
 				super("text/integer");
 			}
 
 			@Override
-			protected Object convertFromInternal(
-					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+			protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+					@Nullable Object conversionHint) {
 				return message.getPayload().toString();
 			}
 
@@ -1047,6 +1074,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
 				return payload instanceof String;
 			}
+
 		}
 
 		private static class ConverterA extends AbstractMessageConverter {
@@ -1061,8 +1089,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 			@SuppressWarnings("unchecked")
 			@Override
-			protected Object convertFromInternal(
-					Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+			protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+					@Nullable Object conversionHint) {
 				Tuple2<String, String> payload = (Tuple2<String, String>) message.getPayload();
 
 				String convertedPayload = payload.getT1() + "," + payload.getT2();
@@ -1089,15 +1117,20 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			protected boolean supports(Class<?> clazz) {
 				throw new UnsupportedOperationException();
 			}
+
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class WrappedWithAroundAdviseConfiguration {
+
 		@Bean
 		public Function<Message<String>, Message<String>> uppercase() {
-			return v -> MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT)).copyHeaders(v.getHeaders()).build();
+			return v -> MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT))
+				.copyHeaders(v.getHeaders())
+				.build();
 		}
 
 		@Bean
@@ -1111,11 +1144,13 @@ public class BeanFactoryAwareFunctionRegistryTests {
 					// in this test we know input is a Message
 					Message<?> mInput = (Message<?>) input;
 					MessageBuilder.fromMessage(mInput).setHeader("before", "foo").build();
-					Message<Object> result = (Message<Object>) targetFunction.apply(MessageBuilder.fromMessage(mInput).setHeader("before", "foo").build());
+					Message<Object> result = (Message<Object>) targetFunction
+						.apply(MessageBuilder.fromMessage(mInput).setHeader("before", "foo").build());
 					return MessageBuilder.fromMessage(result).setHeader("after", "bar").build();
 				}
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1126,6 +1161,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<String, String> uppercase() {
 			return x -> x.toUpperCase(Locale.ROOT);
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1175,7 +1211,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<Message<String>, Message<String>> uppercaseMessage() {
 			return message -> {
 				Message<String> result = MessageBuilder.fromMessage(message)
-					.removeHeader("foo").setHeader("bar", "bar").build();
+					.removeHeader("foo")
+					.setHeader("bar", "bar")
+					.build();
 				return result;
 			};
 		}
@@ -1220,7 +1258,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			});
 		}
 
-
 		@Bean
 		public Function<Mono<Void>, Mono<Void>> monoVoidToMonoVoid() {
 			return mono -> mono.doOnSuccess(v -> System.out.println("HELLO"));
@@ -1238,7 +1275,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				return Flux.zip(stringStream, intStream, (string, integer) -> string + "-" + integer);
 			};
 		}
-		//========
+		// ========
 
 		// MULTI-OUTPUT
 		@Bean
@@ -1254,7 +1291,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<Flux<Person>, Flux<Tuple3<Person, String, Integer>>> multiOutputAsTuple2() {
 			return null;
 		}
-		//========
+		// ========
 
 		@Bean
 		public Function<Mono<String>, Mono<Void>> monoToMonoVoid() {
@@ -1334,6 +1371,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1353,6 +1391,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			}
 
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1370,7 +1409,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				// TODO Auto-generated method stub
 				return null;
 			}
+
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1385,48 +1426,67 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<String, List<String>> emptyStringList() {
 			return input -> Collections.emptyList();
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	public static class SCF_GH_768ConfigurationAsFunction {
+
 		@Bean
 		public Function<Map<String, Date>, String> echoToString() {
 			return data -> {
 				for (Entry<String, Date> dataEntry : data.entrySet()) {
-					assertThat(dataEntry.getValue()).isInstanceOf(Date.class); // would fail if value would not be converted to Person
+					assertThat(dataEntry.getValue()).isInstanceOf(Date.class); // would
+																				// fail if
+																				// value
+																				// would
+																				// not be
+																				// converted
+																				// to
+																				// Person
 				}
 				return data.toString();
 			};
 		}
+
 	}
 
 	public static class Person {
+
 		private String name;
 
 		private int id;
+
 		public Person() {
 
 		}
+
 		public Person(String name, int id) {
 			this.name = name;
 			this.id = id;
 		}
+
 		public String getName() {
 			return name;
 		}
+
 		public void setName(String name) {
 			this.name = name;
 		}
+
 		public int getId() {
 			return id;
 		}
+
 		public void setId(int id) {
 			this.id = id;
 		}
+
 		@Override
 		public String toString() {
 			return "Person: " + name + "/" + id;
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1463,6 +1523,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			}
 			return result;
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1474,12 +1535,14 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Integer apply(String t) {
 			return t.length();
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration(proxyBeanMethods = false)
 	@Component
-	public static class MultipleOrderedAcceptValuesAsMessageOutputConfiguration implements Function<String, Message<Integer>> {
+	public static class MultipleOrderedAcceptValuesAsMessageOutputConfiguration
+			implements Function<String, Message<Integer>> {
 
 		@Override
 		public Message<Integer> apply(String t) {
@@ -1491,13 +1554,16 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@EnableAutoConfiguration
 	@Configuration
 	public static class ComplexTypeFunctionConfiguration {
+
 		@Bean
 		public Function<Event<String, Product>, String> function() {
 			return v -> v.getData().getName().toUpperCase(Locale.ROOT);
 		}
+
 	}
 
 	private static final class Product {
+
 		private String name;
 
 		public String getName() {
@@ -1507,6 +1573,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
 
 	private static final class Event<K, V> {
@@ -1530,7 +1597,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public void setData(V data) {
 			this.data = data;
 		}
+
 	}
+
 	@EnableAutoConfiguration
 	@Configuration
 	public static class EmptyPojoConfiguratioin {
@@ -1539,6 +1608,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<String, String> echo() {
 			return v -> v;
 		}
+
 	}
 
 	public static class EmptyPojo {
@@ -1553,6 +1623,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<String, String> echo1() {
 			return v -> null;
 		}
+
 		@Bean
 		public Function<String, String> echo2() {
 			return v -> {
@@ -1562,12 +1633,14 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				return v;
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration // s-c-f-1141
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static class CompositionReactiveSupplierWithConsumer {
+
 		private static List results = new ArrayList<>();
 
 		@Bean
@@ -1591,8 +1664,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Supplier<Flux<Integer>> supplyPrimitive() {
 			return () -> {
-				return Flux.fromArray(
-						new Integer[] { 1, 2});
+				return Flux.fromArray(new Integer[] { 1, 2 });
 			};
 		}
 
@@ -1605,6 +1677,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				results.add(v);
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -1615,5 +1688,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<Message<?>, Message<?>> myFunction() {
 			return msg -> msg;
 		}
+
 	}
+
 }

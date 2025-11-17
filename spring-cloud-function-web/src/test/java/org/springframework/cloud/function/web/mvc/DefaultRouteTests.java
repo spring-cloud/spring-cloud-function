@@ -59,8 +59,8 @@ public class DefaultRouteTests {
 	@Test
 	@Disabled("FIXME")
 	public void explicit() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(
-				RequestEntity.post(new URI("/uppercase")).body("foo"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/uppercase")).body("foo"),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("FOO");
 	}
@@ -68,8 +68,7 @@ public class DefaultRouteTests {
 	@Test
 	@Disabled("FIXME")
 	public void implicit() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.post(new URI("/")).body("foo"), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.post(new URI("/")).body("foo"), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("FOO");
 	}

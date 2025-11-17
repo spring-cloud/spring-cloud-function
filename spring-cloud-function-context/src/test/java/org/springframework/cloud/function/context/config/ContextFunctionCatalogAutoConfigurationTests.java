@@ -90,19 +90,15 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void lookUps() {
 		create(SimpleConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function")).isInstanceOf(Function.class);
 		assertThat(this.context.getBean("function2")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class,
-				"function,function2")).isInstanceOf(Function.class);
-		Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class,
-				"function,function2,function3");
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function,function2"))
+			.isInstanceOf(Function.class);
+		Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class, "function,function2,function3");
 		assertThat(f).isInstanceOf(Function.class);
-		assertThat(f.apply(Flux.just("hello")).blockFirst())
-				.isEqualTo("HELLOfunction2function3");
+		assertThat(f.apply(Flux.just("hello")).blockFirst()).isEqualTo("HELLOfunction2function3");
 		assertThat(this.context.getBean("supplierFoo")).isInstanceOf(Supplier.class);
-		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "supplierFoo"))
-				.isInstanceOf(Supplier.class);
+		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "supplierFoo")).isInstanceOf(Supplier.class);
 		assertThat(this.context.getBean("supplier_Foo")).isInstanceOf(Supplier.class);
 	}
 
@@ -111,11 +107,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void ambiguousFunction() {
 		create(AmbiguousConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "foos"))
-				.isInstanceOf(Supplier.class);
-		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos")).getRawInputType();
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos")).isInstanceOf(Function.class);
+		assertThat((Supplier<?>) this.catalog.lookup(Supplier.class, "foos")).isInstanceOf(Supplier.class);
+		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos"))
+			.getRawInputType();
 		assertThat(inputType).isEqualTo(String.class);
 		FunctionInvocationWrapper function = this.catalog.lookup("foos");
 		Type outputType = function.getOutputType();
@@ -138,9 +133,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void dependencyInjection() {
 		create(DependencyInjectionConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos")).getRawInputType();
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos")).isInstanceOf(Function.class);
+		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos"))
+			.getRawInputType();
 		assertThat(inputType).isEqualTo(String.class);
 	}
 
@@ -148,9 +143,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void externalDependencyInjection() {
 		create(ExternalDependencyConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
-		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos")).getRawInputType();
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos")).isInstanceOf(Function.class);
+		Class<?> inputType = ((FunctionInvocationWrapper) this.catalog.lookup(Function.class, "foos"))
+			.getRawInputType();
 		assertThat(inputType).isEqualTo(String.class);
 	}
 
@@ -206,8 +201,11 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		final Type inputType = function.getInputType();
 
 		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Flux.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Message.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(FunctionTypeUtils.getGenericType(inputType)))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType)))
+			.isAssignableFrom(Message.class);
+		assertThat(FunctionTypeUtils
+			.getRawType(FunctionTypeUtils.getGenericType(FunctionTypeUtils.getGenericType(inputType))))
+			.isAssignableFrom(String.class);
 	}
 
 	@Test
@@ -221,8 +219,11 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		final Type inputType = function.getInputType();
 
 		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Publisher.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Message.class);
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(FunctionTypeUtils.getGenericType(inputType)))).isAssignableFrom(String.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType)))
+			.isAssignableFrom(Message.class);
+		assertThat(FunctionTypeUtils
+			.getRawType(FunctionTypeUtils.getGenericType(FunctionTypeUtils.getGenericType(inputType))))
+			.isAssignableFrom(String.class);
 
 	}
 
@@ -270,7 +271,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		FunctionInvocationWrapper function = this.catalog.lookup("function");
 		assertThat(function).isInstanceOf(Function.class);
 		Type inputType = function.getInputType();
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType)))
+			.isAssignableFrom(Map.class);
 		assertThat(FunctionTypeUtils.getRawType(inputType)).isAssignableFrom(Flux.class);
 	}
 
@@ -281,7 +283,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		FunctionInvocationWrapper function = this.catalog.lookup("function");
 		assertThat(function).isInstanceOf(Function.class);
 		Type inputType = function.getInputType();
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType)))
+			.isAssignableFrom(Map.class);
 	}
 
 	@Test
@@ -293,7 +296,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(function.isInputTypePublisher()).isFalse();
 		assertThat(function.isOutputTypePublisher()).isFalse();
 		Type inputType = function.getInputType();
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Integer.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType)))
+			.isAssignableFrom(Integer.class);
 	}
 
 	@Test
@@ -325,7 +329,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		FunctionInvocationWrapper function = this.catalog.lookup("function");
 		assertThat(function).isInstanceOf(Function.class);
 		Type inputType = function.getInputType();
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType)))
+			.isAssignableFrom(Map.class);
 	}
 
 	@Test
@@ -335,7 +340,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		FunctionInvocationWrapper function = this.catalog.lookup("function");
 		assertThat(function).isInstanceOf(Function.class);
 		Type inputType = function.getInputType();
-		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))).isAssignableFrom(Map.class);
+		assertThat(FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType)))
+			.isAssignableFrom(Map.class);
 	}
 
 	@Test
@@ -356,8 +362,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	private void create(String jarfile, Class<?> config, String... props) {
 		try {
 			URL[] urls = new URL[] { new ClassPathResource(jarfile).getURL() };
-			ClassUtils.overrideThreadContextClassLoader(
-					new URLClassLoader(urls, getClass().getClassLoader()));
+			ClassUtils.overrideThreadContextClassLoader(new URLClassLoader(urls, getClass().getClassLoader()));
 			create(config, props);
 		}
 		catch (Exception e) {
@@ -370,8 +375,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		create(SimpleConfiguration.class);
 		Object bean = this.context.getBean("function");
 		assertThat(bean).isInstanceOf(Function.class);
-		Function<Flux<String>, Flux<String>> function = this.catalog
-				.lookup(Function.class, "function");
+		Function<Flux<String>, Flux<String>> function = this.catalog.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
 	}
@@ -389,8 +393,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	public void simpleConsumer() {
 		create(SimpleConfiguration.class);
 		assertThat(this.context.getBean("consumer")).isInstanceOf(Consumer.class);
-		Function<Flux<String>, Mono<Void>> consumer = this.catalog.lookup(Function.class,
-				"consumer");
+		Function<Flux<String>, Mono<Void>> consumer = this.catalog.lookup(Function.class, "consumer");
 		consumer.apply(Flux.just("foo", "bar")).subscribe();
 		assertThat(this.context.getBean(SimpleConfiguration.class).list).hasSize(2);
 	}
@@ -402,18 +405,17 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
 		assertThat((Function<?, ?>) this.catalog.lookup("function")).isNull();
 		assertThat((Function<?, ?>) this.catalog.lookup("other")).isNotNull();
-		assertThat(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) this.catalog.lookup("other")).getInputType()))
-						.isEqualTo(String.class);
+		assertThat(FunctionTypeUtils
+			.getGenericType(((FunctionInvocationWrapper) this.catalog.lookup("other")).getInputType()))
+			.isEqualTo(String.class);
 	}
 
 	@Test
 	public void aliasBean() {
 		create(AliasConfiguration.class);
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isNotNull();
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "other"))
-				.isInstanceOf(Function.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function")).isNotNull();
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "other")).isInstanceOf(Function.class);
 	}
 
 	@Test
@@ -423,29 +425,26 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function")).isInstanceOf(Function.class);
 		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "registration")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "other"))
-				.isInstanceOf(Function.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "other")).isInstanceOf(Function.class);
 	}
 
-//	@Test
-//	public void factoryBeanFunction() {
-//		create(FactoryBeanConfiguration.class);
-//		assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
-//		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-//				.isInstanceOf(Function.class);
-//		Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class,
-//				"function");
-//		assertThat(f.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO-bar");
-//	}
+	// @Test
+	// public void factoryBeanFunction() {
+	// create(FactoryBeanConfiguration.class);
+	// assertThat(this.context.getBean("function")).isInstanceOf(Function.class);
+	// assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
+	// .isInstanceOf(Function.class);
+	// Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class,
+	// "function");
+	// assertThat(f.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO-bar");
+	// }
 
 	@Test
 	public void functionCatalogDependentBeanFactoryPostProcessor() {
-		create(new Class[]{ComponentFunctionConfiguration.class, AppendFunction.class});
+		create(new Class[] { ComponentFunctionConfiguration.class, AppendFunction.class });
 		assertThat(this.context.getBean("appendFunction")).isInstanceOf(Function.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "appendFunction"))
-			.isInstanceOf(Function.class);
-		Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class,
-			"appendFunction");
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "appendFunction")).isInstanceOf(Function.class);
+		Function<Flux<String>, Flux<String>> f = this.catalog.lookup(Function.class, "appendFunction");
 		assertThat(f.apply(Flux.just("World")).blockFirst()).isEqualTo("Hello World");
 	}
 
@@ -456,7 +455,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	private void create(Class<?>[] types, String... props) {
 		this.context = new SpringApplicationBuilder(types).properties(props).run();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
-//		this.inspector = this.context.getBean(FunctionInspector.class);
+		// this.inspector = this.context.getBean(FunctionInspector.class);
 	}
 
 	@EnableAutoConfiguration
@@ -508,6 +507,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class ComponentFunctionConfiguration {
+
 		@Bean
 		public String value() {
 			return "Hello ";
@@ -515,13 +515,16 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public BeanFactoryPostProcessor someBeanFactoryPostProcessor(Environment environment,
-			@Nullable FunctionRegistry functionCatalog) {
-			return beanFactory -> { };
+				@Nullable FunctionRegistry functionCatalog) {
+			return beanFactory -> {
+			};
 		}
+
 	}
 
 	@Component("appendFunction")
 	public static class AppendFunction implements Function<String, String> {
+
 		private String value;
 
 		public AppendFunction(String value) {
@@ -532,6 +535,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		public String apply(String s) {
 			return this.value + s;
 		}
+
 	}
 
 	@EnableAutoConfiguration
@@ -552,8 +556,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration(proxyBeanMethods = false, value = "foos")
-	protected static class FunctionConfiguration
-			implements Function<Flux<String>, Flux<Foo>> {
+	protected static class FunctionConfiguration implements Function<Flux<String>, Flux<Foo>> {
 
 		@Override
 		public Flux<Foo> apply(Flux<String> flux) {
@@ -628,8 +631,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<Map<String, String>, Map<String, String>> function() {
-			return m -> m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
-					e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
+			return m -> m.entrySet()
+				.stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
 		}
 
 	}
@@ -646,8 +650,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	protected static class SingletonConfiguration implements BeanFactoryPostProcessor {
 
 		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
-				throws BeansException {
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 			beanFactory.registerSingleton("function", new SingletonFunction());
 		}
 
@@ -655,12 +658,10 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@EnableAutoConfiguration
 	@Configuration
-	protected static class SingletonMessageConfiguration
-			implements BeanFactoryPostProcessor {
+	protected static class SingletonMessageConfiguration implements BeanFactoryPostProcessor {
 
 		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
-				throws BeansException {
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 			beanFactory.registerSingleton("function", new SingletonMessageFunction());
 		}
 
@@ -686,8 +687,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	}
 
-	protected static class SingletonMessageFunction
-			implements Function<Message<Integer>, Message<String>> {
+	protected static class SingletonMessageFunction implements Function<Message<Integer>, Message<String>> {
 
 		@Override
 		public Message<String> apply(Message<Integer> input) {
@@ -722,8 +722,9 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<Flux<Map<String, String>>, Flux<Map<String, String>>> function() {
-			return flux -> flux.map(m -> m.entrySet().stream().collect(Collectors
-					.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase(Locale.ROOT))));
+			return flux -> flux.map(m -> m.entrySet()
+				.stream()
+				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase(Locale.ROOT))));
 		}
 
 	}
@@ -734,8 +735,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<Flux<Message<String>>, Flux<Message<String>>> function() {
-			return flux -> flux.map(m -> MessageBuilder
-					.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).build());
+			return flux -> flux.map(m -> MessageBuilder.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).build());
 		}
 
 	}
@@ -746,8 +746,8 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<Publisher<Message<String>>, Publisher<Message<String>>> function() {
-			return flux -> Flux.from(flux).map(m -> MessageBuilder
-					.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).build());
+			return flux -> Flux.from(flux)
+				.map(m -> MessageBuilder.withPayload(m.getPayload().toUpperCase(Locale.ROOT)).build());
 		}
 
 	}
@@ -758,8 +758,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<Flux<String>, Mono<Map<String, Integer>>> function() {
-			return flux -> flux.collect(HashMap::new,
-					(map, word) -> map.merge(word, 1, Integer::sum));
+			return flux -> flux.collect(HashMap::new, (map, word) -> map.merge(word, 1, Integer::sum));
 		}
 
 	}
@@ -815,8 +814,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public FunctionRegistration<Function<String, String>> registration() {
-			return new FunctionRegistration<Function<String, String>>(function(),
-					"other");
+			return new FunctionRegistration<Function<String, String>>(function(), "other");
 		}
 
 		@Bean
@@ -826,30 +824,29 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	}
 
-//	@EnableAutoConfiguration
-//	@Configuration(proxyBeanMethods = false )
-//	protected static class FactoryBeanConfiguration
-//			implements BeanDefinitionRegistryPostProcessor {
-//
-//		@Override
-//		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry)
-//				throws BeansException {
-//			RootBeanDefinition beanDefinition = new RootBeanDefinition(
-//					FunctionFactoryBean.class);
-//			beanDefinition.setSource(new DescriptiveResource("Function"));
-//			registry.registerBeanDefinition("function", beanDefinition);
-//		}
-//
-//		@Override
-//		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
-//				throws BeansException {
-//
-//		}
-//
-//	}
+	// @EnableAutoConfiguration
+	// @Configuration(proxyBeanMethods = false )
+	// protected static class FactoryBeanConfiguration
+	// implements BeanDefinitionRegistryPostProcessor {
+	//
+	// @Override
+	// public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry)
+	// throws BeansException {
+	// RootBeanDefinition beanDefinition = new RootBeanDefinition(
+	// FunctionFactoryBean.class);
+	// beanDefinition.setSource(new DescriptiveResource("Function"));
+	// registry.registerBeanDefinition("function", beanDefinition);
+	// }
+	//
+	// @Override
+	// public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory)
+	// throws BeansException {
+	//
+	// }
+	//
+	// }
 
-	private static final class FunctionFactoryBean
-			extends AbstractFactoryBean<Function<String, String>> {
+	private static final class FunctionFactoryBean extends AbstractFactoryBean<Function<String, String>> {
 
 		@Override
 		public Class<?> getObjectType() {
