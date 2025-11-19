@@ -147,12 +147,12 @@ public class RequestResponseTests {
 	public void validatePostWithBody() throws Exception {
 		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/pets/");
 		String jsonPet = """
-			{
-			   "id":"1234",
-			   "breed":"Canish",
-			   "name":"Foo",
-			   "date":"2012-04-23T18:25:43.511Z"
-			}""";
+				{
+				   "id":"1234",
+				   "breed":"Canish",
+				   "name":"Foo",
+				   "date":"2012-04-23T18:25:43.511Z"
+				}""";
 		request.setContent(jsonPet.getBytes());
 		request.setContentType("application/json");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();

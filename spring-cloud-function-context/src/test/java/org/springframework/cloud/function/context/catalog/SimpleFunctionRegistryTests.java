@@ -108,16 +108,11 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { "aaaaaaaaaa", // no problem
-			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]" // protobuf
-																											// encoder
-																											// prepends
-																											// '['
-																											// for
-																											// length
-																											// (91
-																											// bytes)
-	})
+	@ValueSource(strings = {
+			// no problem
+			"aaaaaaaaaa",
+			// protobuf encoder prepends '[' for length (91 bytes)
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]" })
 	public void testSCF1094(String stringValue) throws IOException {
 
 		Function<StringValue, String> getValue = msg -> msg != null ? msg.getValue() : null;
@@ -202,10 +197,8 @@ public class SimpleFunctionRegistryTests {
 
 		Function<Map<String, Person>, String> function = persons -> {
 			for (Entry<String, Person> entry : persons.entrySet()) {
-				assertThat(entry.getValue().getName()).isNotEmpty(); // would fail if
-																		// value would not
-																		// be converted to
-																		// Person
+				// would fail if value would not be converted to Person
+				assertThat(entry.getValue().getName()).isNotEmpty();
 			}
 			return persons.toString();
 		};
@@ -365,8 +358,8 @@ public class SimpleFunctionRegistryTests {
 
 		// FunctionInvocationWrapper lookedUpFunction = catalog.lookup("hello");
 		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("hello");
-		assertThat(lookedUpFunction).isNotNull(); // because we only have one and can look
-													// it up with any name
+		// because we only have one and can look it up with any name
+		assertThat(lookedUpFunction).isNotNull();
 		FunctionRegistration<TestFunction> registration2 = new FunctionRegistration<>(function, "foo2")
 			.type(TestFunction.class);
 		catalog.register(registration2);

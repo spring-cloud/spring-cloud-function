@@ -314,8 +314,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	@Test
-	public void testConsumerFunction() { // function that returns Void, effectively a
-											// Consumer
+	public void testConsumerFunction() {
+		// function that returns Void, effectively a Consumer
 		FunctionCatalog catalog = this.configureCatalog();
 
 		Function<String, Void> consumerFunction = catalog.lookup("consumerFunction");
@@ -1436,14 +1436,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		public Function<Map<String, Date>, String> echoToString() {
 			return data -> {
 				for (Entry<String, Date> dataEntry : data.entrySet()) {
-					assertThat(dataEntry.getValue()).isInstanceOf(Date.class); // would
-																				// fail if
-																				// value
-																				// would
-																				// not be
-																				// converted
-																				// to
-																				// Person
+					// would fail if value would not be converted to Person
+					assertThat(dataEntry.getValue()).isInstanceOf(Date.class);
 				}
 				return data.toString();
 			};

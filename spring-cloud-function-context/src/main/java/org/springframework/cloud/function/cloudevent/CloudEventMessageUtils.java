@@ -56,8 +56,8 @@ public final class CloudEventMessageUtils {
 
 		@Override
 		public MimeType resolve(@Nullable MessageHeaders headers) {
-			if (headers.containsKey("content-type")) { // this is temporary workaround for
-														// RSocket
+			if (headers.containsKey("content-type")) {
+				// this is temporary workaround for RSocket
 				return MimeType.valueOf(headers.get("content-type").toString());
 			}
 			return super.resolve(headers);

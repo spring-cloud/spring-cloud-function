@@ -453,9 +453,8 @@ public final class FunctionTypeUtils {
 		else if (function instanceof FunctionRegistration) {
 			return ((FunctionRegistration) function).getType();
 		}
-		if (applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) { // for
-																												// Kotlin
-																												// primarily
+		if (applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) {
+			// for Kotlin primarily
 			FunctionRegistration fr = applicationContext
 				.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
 			return fr.getType();

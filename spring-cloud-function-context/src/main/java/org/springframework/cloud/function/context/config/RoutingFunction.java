@@ -114,13 +114,21 @@ public class RoutingFunction implements Function<Object, Object> {
 
 	/*
 	 * - Check if `this.routingCallback` is present and if it is use it (only for Message
-	 * input) If NOT - Check if spring.cloud.function.definition is set in header and if
-	 * it is use it.(only for Message input) If NOT - Check if
-	 * spring.cloud.function.routing-expression is set in header and if it is set use it
-	 * (only for Message input) If NOT - Check `spring.cloud.function.definition` is set
-	 * in FunctionProperties and if it is use it (Message and Publisher) If NOT - Check
-	 * `spring.cloud.function.routing-expression` is set in FunctionProperties and if it
-	 * is use it (Message and Publisher) If NOT - Fail
+	 * input)
+	 *
+	 * If NOT - Check if spring.cloud.function.definition is set in header and if it is
+	 * use it.(only for Message input)
+	 *
+	 * If NOT - Check if spring.cloud.function.routing-expression is set in header and if
+	 * it is set use it (only for Message input)
+	 *
+	 * If NOT - Check `spring.cloud.function.definition` is set in FunctionProperties and
+	 * if it is use it (Message and Publisher)
+	 *
+	 * If NOT - Check `spring.cloud.function.routing-expression` is set in
+	 * FunctionProperties and if it is use it (Message and Publisher)
+	 *
+	 * If NOT - Fail
 	 */
 	private Object route(Object input, boolean originalInputIsPublisher) {
 		FunctionInvocationWrapper function = null;
