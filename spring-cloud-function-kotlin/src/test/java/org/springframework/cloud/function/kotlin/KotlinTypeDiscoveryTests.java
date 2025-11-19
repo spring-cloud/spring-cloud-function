@@ -16,8 +16,6 @@
 
 package org.springframework.cloud.function.kotlin;
 
-
-
 import java.lang.reflect.Type;
 
 import org.junit.jupiter.api.Test;
@@ -37,4 +35,5 @@ public class KotlinTypeDiscoveryTests {
 		Type inputType = FunctionTypeUtils.getInputType(functionType);
 		assertThat(FunctionTypeUtils.isMessage(inputType)).isTrue();
 	}
+
 }

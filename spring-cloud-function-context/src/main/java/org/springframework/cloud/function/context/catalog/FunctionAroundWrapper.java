@@ -23,12 +23,12 @@ import org.springframework.messaging.Message;
 import org.springframework.util.StringUtils;
 
 /**
- * Wrapper that acts as around advise over function invocation.
- * If registered as bean it will be autowired into {@link FunctionInvocationWrapper}.
- * Keep in mind that it only affects imperative invocations where input is {@link Message}
+ * Wrapper that acts as around advise over function invocation. If registered as bean it
+ * will be autowired into {@link FunctionInvocationWrapper}. Keep in mind that it only
+ * affects imperative invocations where input is {@link Message}
  *
- * NOTE: This API is experimental and and could change without notice. It is
- * intended for internal use only (e.g., spring-cloud-sleuth)
+ * NOTE: This API is experimental and and could change without notice. It is intended for
+ * internal use only (e.g., spring-cloud-sleuth)
  *
  * @author Oleg Zhurakousky
  * @since 3.1
@@ -40,7 +40,8 @@ public abstract class FunctionAroundWrapper {
 		String functionalTracingEnabledStr = System.getProperty("spring.cloud.function.observability.enabled");
 		boolean functionalTracingEnabled = !StringUtils.hasText(functionalTracingEnabledStr)
 				|| Boolean.parseBoolean(functionalTracingEnabledStr);
-		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message && !FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
+		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message
+				&& !FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
 			Object result = this.doApply(input, targetFunction);
 			targetFunction.wrapped = false;
 			return result;
@@ -51,4 +52,5 @@ public abstract class FunctionAroundWrapper {
 	}
 
 	protected abstract Object doApply(Object input, FunctionInvocationWrapper targetFunction);
+
 }

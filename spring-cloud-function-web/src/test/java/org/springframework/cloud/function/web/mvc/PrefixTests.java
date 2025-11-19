@@ -46,9 +46,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.main.web-application-type=servlet",
-		"spring.cloud.function.web.path=/functions" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = { "spring.main.web-application-type=servlet", "spring.cloud.function.web.path=/functions" })
 @ContextConfiguration(classes = { RestApplication.class, TestConfiguration.class })
 @AutoConfigureTestRestTemplate
 public class PrefixTests {
@@ -58,19 +57,17 @@ public class PrefixTests {
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = this.rest.exchange(
-				RequestEntity.get(new URI("/functions/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/functions/words")).build(),
+				String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
 	@Test
 	public void missing() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
-
 
 	@Test
 	public void uppercase() throws Exception {
@@ -93,7 +90,8 @@ public class PrefixTests {
 		public Function<Message<String>, String[]> uppercase() {
 			return message -> {
 				assertThat(message.getPayload().equals("foo"));
-				Map<String, String> httpParam = (Map<String, String>) message.getHeaders().get(HeaderUtils.HTTP_REQUEST_PARAM);
+				Map<String, String> httpParam = (Map<String, String>) message.getHeaders()
+					.get(HeaderUtils.HTTP_REQUEST_PARAM);
 				assertThat(httpParam.get("nome")).isEqualTo("Doe");
 				assertThat(httpParam.get("prenome")).isEqualTo("John");
 				return new String[] { "foo", "bar" };

@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Oleg Zhurakousky
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=servlet")
-@ContextConfiguration(classes = {ApplicationConfiguration.class})
+@ContextConfiguration(classes = { ApplicationConfiguration.class })
 @AutoConfigureTestRestTemplate
 public class HttpDeleteIntegrationTests {
 
@@ -69,27 +69,24 @@ public class HttpDeleteIntegrationTests {
 
 	@Test
 	public void testDeleteConsumer() throws Exception {
-		ResponseEntity<Void> result = this.rest.exchange(
-				RequestEntity.delete(new URI("/deleteConsumer/123"))
-				.build(), Void.class);
+		ResponseEntity<Void> result = this.rest.exchange(RequestEntity.delete(new URI("/deleteConsumer/123")).build(),
+				Void.class);
 
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 	}
 
 	@Test
 	public void testDeleteConsumerWithParameters() throws Exception {
-		ResponseEntity<Void> result = this.rest.exchange(
-				RequestEntity.delete(new URI("/deleteConsumerAsMessage/123?foo=bar"))
-				.build(), Void.class);
+		ResponseEntity<Void> result = this.rest
+			.exchange(RequestEntity.delete(new URI("/deleteConsumerAsMessage/123?foo=bar")).build(), Void.class);
 
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 	}
 
 	@Test
 	public void testDeleteWithFunction() throws Exception {
-		ResponseEntity<Void> result = this.rest.exchange(
-				RequestEntity.delete(new URI("/deleteFunction"))
-				.build(), Void.class);
+		ResponseEntity<Void> result = this.rest.exchange(RequestEntity.delete(new URI("/deleteFunction")).build(),
+				Void.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
@@ -100,8 +97,7 @@ public class HttpDeleteIntegrationTests {
 		private List<String> list = new ArrayList<>();
 
 		public static void main(String[] args) throws Exception {
-			SpringApplication.run(HttpDeleteIntegrationTests.ApplicationConfiguration.class,
-					args);
+			SpringApplication.run(HttpDeleteIntegrationTests.ApplicationConfiguration.class, args);
 		}
 
 		@Bean
@@ -112,7 +108,6 @@ public class HttpDeleteIntegrationTests {
 				return null;
 			};
 		}
-
 
 		@Bean
 		public Consumer<String> deleteConsumer() {

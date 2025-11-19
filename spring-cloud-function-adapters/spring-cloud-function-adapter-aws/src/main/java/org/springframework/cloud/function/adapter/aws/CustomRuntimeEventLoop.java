@@ -55,8 +55,8 @@ import org.springframework.web.client.RestTemplate;
 import static org.apache.http.HttpHeaders.USER_AGENT;
 
 /**
- * Event loop and necessary configurations to support AWS Lambda
- * Custom Runtime - https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html.
+ * Event loop and necessary configurations to support AWS Lambda Custom Runtime -
+ * https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html.
  *
  * @author Oleg Zhurakousky
  * @author Mark Sailes
@@ -69,13 +69,15 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 	private static Log logger = LogFactory.getLog(CustomRuntimeEventLoop.class);
 
 	static final String LAMBDA_VERSION_DATE = "2018-06-01";
+
 	private static final String LAMBDA_ERROR_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/error";
+
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
+
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
-	private static final String USER_AGENT_VALUE = String.format(
-			"spring-cloud-function/%s-%s",
-			System.getProperty("java.runtime.version"),
-			extractVersion());
+
+	private static final String USER_AGENT_VALUE = String.format("spring-cloud-function/%s-%s",
+			System.getProperty("java.runtime.version"), extractVersion());
 
 	private final ConfigurableApplicationContext applicationContext;
 
@@ -125,7 +127,9 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			logger.debug("Event URI: " + eventUri);
 		}
 
-		RequestEntity<Void> requestEntity = RequestEntity.get(URI.create(eventUri)).header(USER_AGENT, USER_AGENT_VALUE).build();
+		RequestEntity<Void> requestEntity = RequestEntity.get(URI.create(eventUri))
+			.header(USER_AGENT, USER_AGENT_VALUE)
+			.build();
 		FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 		RestTemplate rest = new RestTemplate();
 		JsonMapper mapper = context.getBean(JsonMapper.class);
@@ -144,18 +148,22 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			if (response != null && response.hasBody()) {
 				String requestId = response.getHeaders().getFirst("Lambda-Runtime-Aws-Request-Id");
 				try {
-					FunctionInvocationWrapper function = locateFunction(environment, functionCatalog, response.getHeaders());
+					FunctionInvocationWrapper function = locateFunction(environment, functionCatalog,
+							response.getHeaders());
 
-					ByteArrayInputStream is = new ByteArrayInputStream(response.getBody().getBytes(StandardCharsets.UTF_8));
-					Message<?> requestMessage = AWSLambdaUtils.generateMessage(is, function.getInputType(), function.isSupplier(), mapper, clientContext);
+					ByteArrayInputStream is = new ByteArrayInputStream(
+							response.getBody().getBytes(StandardCharsets.UTF_8));
+					Message<?> requestMessage = AWSLambdaUtils.generateMessage(is, function.getInputType(),
+							function.isSupplier(), mapper, clientContext);
 					requestMessage = enrichTraceHeaders(response.getHeaders(), requestMessage);
 
 					Object functionResponse = function.apply(requestMessage);
 
-					byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, functionResponse, mapper, function.getOutputType());
+					byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, functionResponse,
+							mapper, function.getOutputType());
 
-					String invocationUrl = MessageFormat
-							.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
+					String invocationUrl = MessageFormat.format(LAMBDA_INVOCATION_URL_TEMPLATE, runtimeApi,
+							LAMBDA_VERSION_DATE, requestId);
 
 					ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(invocationUrl))
 						.header(USER_AGENT, USER_AGENT_VALUE)
@@ -179,9 +187,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		String headerTrace = trim(headers.getFirst("X-Amzn-Trace-Id"));
 
 		// prefer Lambda runtime header, then environment, then inbound header
-		String resolved = runtimeTrace != null ? runtimeTrace
-			: envTrace != null ? envTrace
-			: headerTrace;
+		String resolved = runtimeTrace != null ? runtimeTrace : envTrace != null ? envTrace : headerTrace;
 
 		if (resolved != null) {
 			System.setProperty("com.amazonaws.xray.traceHeader", resolved);
@@ -280,7 +286,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		return context;
 	}
 
-	private void propagateAwsError(String requestId, Exception e, JsonMapper mapper, String runtimeApi, RestTemplate rest) {
+	private void propagateAwsError(String requestId, Exception e, JsonMapper mapper, String runtimeApi,
+			RestTemplate rest) {
 		String errorMessage = e.getMessage();
 		String errorType = e.getClass().getSimpleName();
 		StringWriter sw = new StringWriter();
@@ -293,10 +300,11 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		em.put("stackTrace", stackTrace);
 		byte[] outputBody = mapper.toJson(em);
 		try {
-			String errorUrl = MessageFormat.format(LAMBDA_ERROR_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
-			ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(errorUrl))
-					.header(USER_AGENT, USER_AGENT_VALUE)
-					.body(outputBody), Object.class);
+			String errorUrl = MessageFormat.format(LAMBDA_ERROR_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE,
+					requestId);
+			ResponseEntity<Object> result = rest.exchange(
+					RequestEntity.post(URI.create(errorUrl)).header(USER_AGENT, USER_AGENT_VALUE).body(outputBody),
+					Object.class);
 			if (logger.isInfoEnabled()) {
 				logger.info("Result ERROR status: " + result.getStatusCode());
 			}
@@ -366,8 +374,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			this.routingFunction = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
 			if (this.routingFunction != null && logger.isInfoEnabled()) {
 				logger.info("Will default to RoutingFunction, since multiple functions available in FunctionCatalog."
-								+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
-								+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
+						+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
+						+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
 			}
 			function = this.routingFunction;
 		}
@@ -399,4 +407,5 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 		}
 
 	}
+
 }

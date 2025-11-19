@@ -51,13 +51,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  *
  */
-@SpringBootTest(classes = { RestConfiguration.class,
-		ApplicationConfiguration.class }, webEnvironment = WebEnvironment.DEFINED_PORT, properties = {
-				"spring.cloud.function.web.export.sink.url=http://localhost:${server.port}",
+@SpringBootTest(classes = { RestConfiguration.class, ApplicationConfiguration.class },
+		webEnvironment = WebEnvironment.DEFINED_PORT,
+		properties = { "spring.cloud.function.web.export.sink.url=http://localhost:${server.port}",
 				"spring.cloud.function.web.export.source.url=http://localhost:${server.port}",
 				"spring.cloud.function.web.export.sink.name=origin|uppercase"
-				// "spring.cloud.function.web.export.debug=true"
-				})
+		// "spring.cloud.function.web.export.debug=true"
+		})
 @Disabled
 public class FunctionAutoConfigurationIntegrationTests {
 

@@ -3,4 +3,9 @@
 		"-//Puppy Crawl//DTD Suppressions 1.1//EN"
 		"https://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 <suppressions>
+	<suppress files=".*CustomRuntimeEventLoopTest\.java" checks="RegexpSinglelineJava"/>
+	<suppress files=".*FunctionInvokerTests\.java" checks="RegexpSinglelineJava"/>
+	<suppress files=".*RequestResponseTests\.java" checks="RegexpSinglelineJava"/>
+	<suppress files=".*CloudEventFunctionTests\.java" checks="RegexpSinglelineJava"/>
+	<suppress files=".*JsonMaskerTests\.java" checks="RegexpSinglelineJava"/>
 </suppressions>

@@ -39,8 +39,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 /**
- *
  * @author Oleg Zhurakousky
  * @author Chris Bono
  */
@@ -97,5 +97,7 @@ public class MultipartFileTests {
 				return value.getOriginalFilename().toUpperCase(Locale.ROOT);
 			};
 		}
+
 	}
+
 }

@@ -51,7 +51,6 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-
 @Configuration
 @Import({ PetsController.class, FreemarkerController.class })
 @EnableWebSecurity
@@ -59,8 +58,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 public class PetStoreSpringAppConfig {
 
 	/*
-	 * Create required HandlerMapping, to avoid several default HandlerMapping
-	 * instances being created
+	 * Create required HandlerMapping, to avoid several default HandlerMapping instances
+	 * being created
 	 */
 	@Bean
 	public HandlerMapping handlerMapping() {
@@ -68,8 +67,8 @@ public class PetStoreSpringAppConfig {
 	}
 
 	/*
-	 * Create required HandlerAdapter, to avoid several default HandlerAdapter
-	 * instances being created
+	 * Create required HandlerAdapter, to avoid several default HandlerAdapter instances
+	 * being created
 	 */
 	@Bean
 	public HandlerAdapter handlerAdapter() {
@@ -79,10 +78,7 @@ public class PetStoreSpringAppConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, SimpleFilter simpleFilter,
 			AnotherFilter anotherFilter) throws Exception {
-		http
-		.csrf(csrf -> csrf.disable())
-		.cors(cors -> cors.disable())
-		.addFilterBefore(new GenericFilterBean() {
+		http.csrf(csrf -> csrf.disable()).cors(cors -> cors.disable()).addFilterBefore(new GenericFilterBean() {
 			@Override
 			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 					throws IOException, ServletException {
@@ -93,14 +89,12 @@ public class PetStoreSpringAppConfig {
 				session.setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
 				chain.doFilter(request, response);
 			}
-		}, SecurityContextHolderFilter.class)
-		.securityMatcher("/foo/deny")
-		.authorizeHttpRequests(auth -> {
+		}, SecurityContextHolderFilter.class).securityMatcher("/foo/deny").authorizeHttpRequests(auth -> {
 			auth.anyRequest().hasRole("FOO");
 		})
-		.addFilterAfter(simpleFilter, LogoutFilter.class)
-		.addFilterAfter(anotherFilter, RequestCacheAwareFilter.class)
-		.exceptionHandling(f -> f.accessDeniedHandler(new MyAccessDeinedHandler()));
+			.addFilterAfter(simpleFilter, LogoutFilter.class)
+			.addFilterAfter(anotherFilter, RequestCacheAwareFilter.class)
+			.exceptionHandling(f -> f.accessDeniedHandler(new MyAccessDeinedHandler()));
 		return http.build();
 	}
 
@@ -129,6 +123,7 @@ public class PetStoreSpringAppConfig {
 	}
 
 	public static class SimpleFilter extends OncePerRequestFilter {
+
 		/**
 		 *
 		 */
@@ -146,6 +141,7 @@ public class PetStoreSpringAppConfig {
 
 			filterChain.doFilter(request, response);
 		}
+
 	}
 
 	public static class AnotherFilter extends OncePerRequestFilter {
@@ -154,6 +150,7 @@ public class PetStoreSpringAppConfig {
 		 *
 		 */
 		public boolean invoked;
+
 		@Override
 		protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
 				FilterChain filterChain) throws ServletException, IOException {
@@ -165,6 +162,7 @@ public class PetStoreSpringAppConfig {
 			}
 			filterChain.doFilter(request, response);
 		}
+
 	}
 
 	public static class MyAccessDeinedHandler implements AccessDeniedHandler {
@@ -176,4 +174,5 @@ public class PetStoreSpringAppConfig {
 		}
 
 	}
+
 }

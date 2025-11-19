@@ -52,11 +52,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
-*
-* @author Oleg Zhurakousky
-* @author Chris Bono
-* @since 2.1
-*/
+ * @author Oleg Zhurakousky
+ * @author Chris Bono
+ * @since 2.1
+ */
 public class FunctionEndpointInitializerTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -73,7 +72,10 @@ public class FunctionEndpointInitializerTests {
 		HttpEntity entity = new HttpEntity(headers);
 
 		String urlTemplate = UriComponentsBuilder.fromUriString("http://localhost:" + port + "/nullPayload")
-				.queryParam("fname", "Jim").queryParam("lname", "Lahey").encode().toUriString();
+			.queryParam("fname", "Jim")
+			.queryParam("lname", "Lahey")
+			.encode()
+			.toUriString();
 
 		ResponseEntity<String> response = testRestTemplate.exchange(urlTemplate, HttpMethod.GET, entity, String.class);
 		String res = response.getBody();
@@ -85,8 +87,8 @@ public class FunctionEndpointInitializerTests {
 	public void testNonExistingFunction() throws Exception {
 		int port = startServerAndWaitForPort(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
-		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/foo"), "stressed", String.class);
+		ResponseEntity<String> response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/foo"),
+				"stressed", String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 	}
 
@@ -95,7 +97,7 @@ public class FunctionEndpointInitializerTests {
 		int port = startServerAndWaitForPort(ConsumerConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+			.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
 		assertThat(response.getBody()).isNull();
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
 	}
@@ -105,9 +107,10 @@ public class FunctionEndpointInitializerTests {
 		int port = startServerAndWaitForPort(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+			.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("STRESSED");
-		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/reverse"), "stressed", String.class);
+		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/reverse"), "stressed",
+				String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
@@ -115,8 +118,8 @@ public class FunctionEndpointInitializerTests {
 	public void testCompositionFunctionMapping() throws Exception {
 		int port = startServerAndWaitForPort(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
-		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
+		ResponseEntity<String> response = testRestTemplate.postForEntity(
+				new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
@@ -125,7 +128,7 @@ public class FunctionEndpointInitializerTests {
 		int port = startServerAndWaitForPort(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		ResponseEntity<String> response = testRestTemplate
-				.getForEntity(new URI("http://localhost:" + port + "/reverse/stressed"), String.class);
+			.getForEntity(new URI("http://localhost:" + port + "/reverse/stressed"), String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
@@ -134,16 +137,15 @@ public class FunctionEndpointInitializerTests {
 		int port = startServerAndWaitForPort(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		ResponseEntity<String> response = testRestTemplate
-				.getForEntity(new URI("http://localhost:" + port + "/supplier"), String.class);
+			.getForEntity(new URI("http://localhost:" + port + "/supplier"), String.class);
 		assertThat(response.getBody()).isEqualTo("Jim Lahey");
 	}
 
 	private int startServerAndWaitForPort(Class<?> primaryAppConfig, boolean functional) throws InterruptedException {
 		ConfigurableApplicationContext context = functional
 				? FunctionalSpringApplication.run(primaryAppConfig, "--server.port=0")
-						: SpringApplication.run(primaryAppConfig, "--server.port=0");
-		await()
-			.pollDelay(Duration.ofMillis(500))
+				: SpringApplication.run(primaryAppConfig, "--server.port=0");
+		await().pollDelay(Duration.ofMillis(500))
 			.pollInterval(Duration.ofMillis(500))
 			.atMost(Duration.ofSeconds(3))
 			.untilAsserted(() -> {
@@ -158,8 +160,7 @@ public class FunctionEndpointInitializerTests {
 	}
 
 	@SpringBootConfiguration
-	protected static class ConsumerConfiguration
-			implements ApplicationContextInitializer<GenericApplicationContext> {
+	protected static class ConsumerConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
 
 		public Consumer<String> consume() {
 			return v -> System.out.println(v);
@@ -178,14 +179,15 @@ public class FunctionEndpointInitializerTests {
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class BeansConfiguration {
+
 		@Bean
 		public BiFunction<String, Map<String, Object>, Map<String, Object>> nullPayload() {
 			return (p, h) -> {
 				return h;
 			};
 		}
-	}
 
+	}
 
 	@SpringBootConfiguration
 	protected static class ApplicationConfiguration
@@ -222,8 +224,7 @@ public class FunctionEndpointInitializerTests {
 					() -> new FunctionRegistration<>(lowercase())
 						.type(FunctionTypeUtils.functionType(String.class, String.class)));
 			applicationContext.registerBean("supplier", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(supplier())
-						.type(FunctionTypeUtils.supplierType(String.class)));
+					() -> new FunctionRegistration<>(supplier()).type(FunctionTypeUtils.supplierType(String.class)));
 		}
 
 	}

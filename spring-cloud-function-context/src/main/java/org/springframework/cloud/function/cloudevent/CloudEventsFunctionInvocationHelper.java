@@ -38,14 +38,15 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Implementation of {@link FunctionInvocationHelper} to support Cloud Events.
- * This is a primary (and the only) integration bridge with {@link FunctionInvocationWrapper}.
+ * Implementation of {@link FunctionInvocationHelper} to support Cloud Events. This is a
+ * primary (and the only) integration bridge with {@link FunctionInvocationWrapper}.
  *
  * @author Oleg Zhurakousky
  * @since 3.1
  *
  */
-public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHelper<Message<?>>, ApplicationContextAware {
+public class CloudEventsFunctionInvocationHelper
+		implements FunctionInvocationHelper<Message<?>>, ApplicationContextAware {
 
 	private Log logger = LogFactory.getLog(this.getClass());
 
@@ -71,13 +72,15 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 
 	@Override
 	public boolean isRetainOutputAsMessage(Message<?> message) {
-		return message.getHeaders().containsKey("partitionKey") || (message.getHeaders().containsKey(MessageUtils.MESSAGE_TYPE)
-			&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE));
+		return message.getHeaders().containsKey("partitionKey") || (message.getHeaders()
+			.containsKey(MessageUtils.MESSAGE_TYPE)
+				&& message.getHeaders().get(MessageUtils.MESSAGE_TYPE).equals(CloudEventMessageUtils.CLOUDEVENT_VALUE));
 	}
 
 	@Override
 	public Message<?> preProcessInput(Message<?> input, Object inputConverter) {
-		// TODO find a way to invoke it conditionally. May be check for certain headers with all known prefixes as well as content type
+		// TODO find a way to invoke it conditionally. May be check for certain headers
+		// with all known prefixes as well as content type
 		try {
 			return CloudEventMessageUtils.toCanonical(input, (MessageConverter) inputConverter);
 		}
@@ -93,7 +96,8 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 	@Override
 	public Message<?> postProcessResult(Object result, Message<?> input) {
 		Object convertedResult = result;
-		if (this.messageConverter != null && CLOUD_EVENT_CLASS != null && CLOUD_EVENT_CLASS.isAssignableFrom(result.getClass())) {
+		if (this.messageConverter != null && CLOUD_EVENT_CLASS != null
+				&& CLOUD_EVENT_CLASS.isAssignableFrom(result.getClass())) {
 			convertedResult = this.messageConverter.toMessage(result, input.getHeaders());
 		}
 
@@ -105,9 +109,10 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(resultMessage.getHeaders(), true);
 		}
 
-		Assert.hasText(targetPrefix, "Unable to determine prefix for Cloud Event atttributes, "
-				+ "which they must have according to protocol specification. Consider adding 'target-protocol' "
-				+ "header with values of one of the supported protocols - [kafka, amqp, http]");
+		Assert.hasText(targetPrefix,
+				"Unable to determine prefix for Cloud Event atttributes, "
+						+ "which they must have according to protocol specification. Consider adding 'target-protocol' "
+						+ "header with values of one of the supported protocols - [kafka, amqp, http]");
 		if (logger.isDebugEnabled()) {
 			logger.debug("Cloud event attributes will be prefixed with '" + targetPrefix + "'");
 		}
@@ -120,7 +125,8 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 	}
 
 	private Message<?> doPostProcessResult(Object result, String targetPrefix) {
-		Message<?> resultMessage = null; //result instanceof Message ? (Message<?>) result : null;
+		Message<?> resultMessage = null; // result instanceof Message ? (Message<?>)
+											// result : null;
 		CloudEventMessageBuilder<?> messageBuilder;
 		if (result instanceof Message) {
 			if (CloudEventMessageUtils.isCloudEvent((Message<?>) result)) {
@@ -131,11 +137,10 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 			}
 		}
 		else {
-			messageBuilder = CloudEventMessageBuilder
-					.withData(result)
-					.setId(UUID.randomUUID().toString())
-					.setSource(URI.create("http://spring.io/" + getApplicationName()))
-					.setType(result.getClass().getName());
+			messageBuilder = CloudEventMessageBuilder.withData(result)
+				.setId(UUID.randomUUID().toString())
+				.setSource(URI.create("http://spring.io/" + getApplicationName()))
+				.setType(result.getClass().getName());
 		}
 
 		if (this.cloudEventAttributesProvider != null) {
@@ -154,4 +159,5 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 		String name = environment.getProperty("spring.application.name");
 		return (StringUtils.hasText(name) ? name : "");
 	}
+
 }

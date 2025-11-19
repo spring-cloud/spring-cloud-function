@@ -38,16 +38,17 @@ import org.springframework.util.MimeTypeUtils;
  * @since 3.2
  */
 @EnableAutoConfiguration
-public class AWSCustomRuntime  {
+public class AWSCustomRuntime {
 
 	BlockingQueue<Object> inputQueue = new ArrayBlockingQueue<>(3);
 
 	BlockingQueue<Message<String>> outputQueue = new ArrayBlockingQueue<>(3);
 
 	public AWSCustomRuntime(ConfigurableApplicationContext context) {
-		context.getEnvironment().getPropertySources().addFirst(
-			new MapPropertySource("AWSCustomRuntime",
-				Map.of("AWS_LAMBDA_RUNTIME_API", "localhost:${local.server.port}")));
+		context.getEnvironment()
+			.getPropertySources()
+			.addFirst(new MapPropertySource("AWSCustomRuntime",
+					Map.of("AWS_LAMBDA_RUNTIME_API", "localhost:${local.server.port}")));
 	}
 
 	@Bean("2018-06-01/runtime/invocation/consume/response")
@@ -67,10 +68,9 @@ public class AWSCustomRuntime  {
 				}
 				if (!(value instanceof Message)) {
 					return MessageBuilder.withPayload((String) value)
-							.setHeader("Lambda-Runtime-Aws-Request-Id", "consume")
-							.setHeader("Content-Type",
-									MimeTypeUtils.APPLICATION_JSON)
-							.build();
+						.setHeader("Lambda-Runtime-Aws-Request-Id", "consume")
+						.setHeader("Content-Type", MimeTypeUtils.APPLICATION_JSON)
+						.build();
 				}
 				else {
 					return (Message<String>) value;

@@ -19,9 +19,13 @@ package org.springframework.cloud.function.test.app;
 import java.util.Date;
 
 public class Pet {
+
 	private String id;
+
 	private String breed;
+
 	private String name;
+
 	private Date dateOfBirth;
 
 	public String getId() {
@@ -55,4 +59,5 @@ public class Pet {
 	public void setDateOfBirth(Date dateOfBirth) {
 		this.dateOfBirth = dateOfBirth;
 	}
+
 }

@@ -51,13 +51,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Dave Syer
  * @author Oleg Zhurakousky
  */
-@FunctionalSpringBootTest(classes = ApplicationConfiguration.class, webEnvironment = WebEnvironment.NONE, properties = {
-		"spring.main.web-application-type=none",
-		"spring.cloud.function.web.export.sink.url=http://localhost:${my.port}",
-		"spring.cloud.function.web.export.source.url=http://localhost:${my.port}",
-		"spring.cloud.function.web.export.sink.name=origin|uppercase",
-		"spring.cloud.function.web.export.sink.contentType=text/plain",
-		"spring.cloud.function.web.export.debug=true" })
+@FunctionalSpringBootTest(classes = ApplicationConfiguration.class, webEnvironment = WebEnvironment.NONE,
+		properties = { "spring.main.web-application-type=none",
+				"spring.cloud.function.web.export.sink.url=http://localhost:${my.port}",
+				"spring.cloud.function.web.export.source.url=http://localhost:${my.port}",
+				"spring.cloud.function.web.export.sink.name=origin|uppercase",
+				"spring.cloud.function.web.export.sink.contentType=text/plain",
+				"spring.cloud.function.web.export.debug=true" })
 @Disabled
 public class FunctionalExporterTests {
 
@@ -76,8 +76,7 @@ public class FunctionalExporterTests {
 		String port = "" + TestSocketUtils.findAvailableTcpPort();
 		System.setProperty("server.port", port);
 		System.setProperty("my.port", port);
-		context = SpringApplication.run(RestPojoConfiguration.class,
-				"--spring.main.web-application-type=reactive");
+		context = SpringApplication.run(RestPojoConfiguration.class, "--spring.main.web-application-type=reactive");
 		app = context.getBean(RestPojoConfiguration.class);
 		// Sometimes the server doesn't start quick enough
 		Thread.sleep(500L);
@@ -113,15 +112,15 @@ public class FunctionalExporterTests {
 			return value -> {
 				headers.putAll(value.getHeaders());
 				return MessageBuilder.withPayload(value.getPayload().getName().toUpperCase(Locale.ROOT))
-					.copyHeaders(value.getHeaders()).build();
+					.copyHeaders(value.getHeaders())
+					.build();
 			};
 		}
 
 		@Override
 		public void initialize(GenericApplicationContext context) {
-			context.registerBean("uppercase", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(uppercase())
-						.type(FunctionTypeUtils.discoverFunctionTypeFromFunctionFactoryMethod(this.getClass(), "uppercase")));
+			context.registerBean("uppercase", FunctionRegistration.class, () -> new FunctionRegistration<>(uppercase())
+				.type(FunctionTypeUtils.discoverFunctionTypeFromFunctionFactoryMethod(this.getClass(), "uppercase")));
 		}
 
 		public static Type discoverFunctionTypeFromFunctionFactoryMethod(Class<?> clazz, String methodName) {
@@ -131,11 +130,13 @@ public class FunctionalExporterTests {
 		public static Type discoverFunctionTypeFromFunctionFactoryMethod(Method method) {
 			return method.getGenericReturnType();
 		}
+
 	}
 
 }
 
 class Person {
+
 	private String name;
 
 	public String getName() {
@@ -145,4 +146,5 @@ class Person {
 	public void setName(String name) {
 		this.name = name;
 	}
+
 }

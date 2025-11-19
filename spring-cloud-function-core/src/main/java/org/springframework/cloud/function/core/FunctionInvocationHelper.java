@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-
 package org.springframework.cloud.function.core;
 
-
 /**
- *
  * @author Oleg Zhurakousky
  * @author John Blum
  * @since 3.1
@@ -38,4 +35,5 @@ public interface FunctionInvocationHelper<I> {
 	default Object postProcessResult(Object result, I input) {
 		return result;
 	}
+
 }

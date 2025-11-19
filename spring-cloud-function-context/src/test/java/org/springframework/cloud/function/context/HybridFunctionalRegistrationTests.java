@@ -33,7 +33,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -43,8 +42,8 @@ public class HybridFunctionalRegistrationTests {
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testNoDoubleRegistrationInHybridMode() {
-		ConfigurableApplicationContext context = FunctionalSpringApplication
-				.run(UppercaseFunction.class, "--spring.functional.enabled=false");
+		ConfigurableApplicationContext context = FunctionalSpringApplication.run(UppercaseFunction.class,
+				"--spring.functional.enabled=false");
 
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 
@@ -56,8 +55,8 @@ public class HybridFunctionalRegistrationTests {
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testMessageHeaderPropagationInFunctionalBeanRegistration() {
-		ConfigurableApplicationContext context = FunctionalSpringApplication
-				.run(UppercaseMessageFunction.class, "--spring.functional.enabled=false");
+		ConfigurableApplicationContext context = FunctionalSpringApplication.run(UppercaseMessageFunction.class,
+				"--spring.functional.enabled=false");
 
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 
@@ -65,41 +64,38 @@ public class HybridFunctionalRegistrationTests {
 		assertThat(context.getBeansOfType(UppercaseMessageFunction.class).size()).isEqualTo(1);
 		Function f = catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseMessageFunction");
 		assertThat(f).isNotNull();
-		String result = (String) f.apply(MessageBuilder.withPayload("hello").setHeader("foo", "foo").setHeader("blah", "blah").build());
+		String result = (String) f
+			.apply(MessageBuilder.withPayload("hello").setHeader("foo", "foo").setHeader("blah", "blah").build());
 		assertThat(result).isEqualTo("HELLO");
 	}
 
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testNoDoubleRegistrationInHybridModeFluxedFunction() {
-		ConfigurableApplicationContext context = FunctionalSpringApplication
-				.run(UppercaseFluxFunction.class, "--spring.functional.enabled=false");
+		ConfigurableApplicationContext context = FunctionalSpringApplication.run(UppercaseFluxFunction.class,
+				"--spring.functional.enabled=false");
 
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 
 		assertThat(context.containsBean("function")).isTrue();
 		assertThat(context.getBeansOfType(UppercaseFluxFunction.class).size()).isEqualTo(1);
-		assertThat((Function) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFluxFunction")).isNotNull();
+		assertThat((Function) catalog.lookup(Function.class, "hybridFunctionalRegistrationTests.UppercaseFluxFunction"))
+			.isNotNull();
 	}
 
 	@SpringBootConfiguration(proxyBeanMethods = false)
-	@ImportAutoConfiguration({
-		ContextFunctionCatalogAutoConfiguration.class,
-		JacksonAutoConfiguration.class }
-	)
+	@ImportAutoConfiguration({ ContextFunctionCatalogAutoConfiguration.class, JacksonAutoConfiguration.class })
 	public static class UppercaseFunction implements Function<String, String> {
 
 		@Override
 		public String apply(String t) {
 			return t.toUpperCase(Locale.ROOT);
 		}
+
 	}
 
 	@SpringBootConfiguration(proxyBeanMethods = false)
-	@ImportAutoConfiguration({
-		ContextFunctionCatalogAutoConfiguration.class,
-		JacksonAutoConfiguration.class }
-	)
+	@ImportAutoConfiguration({ ContextFunctionCatalogAutoConfiguration.class, JacksonAutoConfiguration.class })
 	public static class UppercaseMessageFunction implements Function<Message<String>, String> {
 
 		@Override
@@ -108,13 +104,11 @@ public class HybridFunctionalRegistrationTests {
 			assertThat(message.getHeaders().get("blah")).isEqualTo("blah");
 			return message.getPayload().toUpperCase(Locale.ROOT);
 		}
+
 	}
 
 	@SpringBootConfiguration(proxyBeanMethods = false)
-	@ImportAutoConfiguration({
-		ContextFunctionCatalogAutoConfiguration.class,
-		JacksonAutoConfiguration.class }
-	)
+	@ImportAutoConfiguration({ ContextFunctionCatalogAutoConfiguration.class, JacksonAutoConfiguration.class })
 	public static class UppercaseFluxFunction implements Function<Flux<String>, Flux<String>> {
 
 		@Override
@@ -122,6 +116,6 @@ public class HybridFunctionalRegistrationTests {
 			return flux.map(v -> v.toUpperCase(Locale.ROOT));
 		}
 
-
 	}
+
 }

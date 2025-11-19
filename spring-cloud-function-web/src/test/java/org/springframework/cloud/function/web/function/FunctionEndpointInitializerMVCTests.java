@@ -32,7 +32,6 @@ import org.springframework.http.ResponseEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Chris Bono
  * @since 2.1
@@ -41,26 +40,28 @@ public class FunctionEndpointInitializerMVCTests {
 
 	@Test
 	public void testSingleFunctionMapping() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(ApplicationConfiguration.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(ApplicationConfiguration.class,
+				"--server.port=0");
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = context.getEnvironment().getProperty("local.server.port");
 		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+			.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("STRESSED");
-		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/reverse"), "stressed", String.class);
+		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/reverse"), "stressed",
+				String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
 
 	@Test
 	public void testCompositionFunctionMapping() throws Exception {
-		ConfigurableApplicationContext context = SpringApplication.run(ApplicationConfiguration.class, "--server.port=0");
+		ConfigurableApplicationContext context = SpringApplication.run(ApplicationConfiguration.class,
+				"--server.port=0");
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		String port = context.getEnvironment().getProperty("local.server.port");
-		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
+		ResponseEntity<String> response = testRestTemplate.postForEntity(
+				new URI("http://localhost:" + port + "/uppercase,lowercase,reverse"), "stressed", String.class);
 		assertThat(response.getBody()).isEqualTo("desserts");
 	}
-
 
 	@SpringBootApplication
 	protected static class ApplicationConfiguration {
@@ -79,6 +80,7 @@ public class FunctionEndpointInitializerMVCTests {
 		public Function<String, String> reverse() {
 			return s -> new StringBuilder(s).reverse().toString();
 		}
+
 	}
 
 }

@@ -57,8 +57,7 @@ public class SingletonTests {
 
 	@Test
 	public void words() throws Exception {
-		ResponseEntity<String> result = this.rest
-				.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
+		ResponseEntity<String> result = this.rest.exchange(RequestEntity.get(new URI("/words")).build(), String.class);
 		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
@@ -72,17 +71,13 @@ public class SingletonTests {
 			return new BeanDefinitionRegistryPostProcessor() {
 
 				@Override
-				public void postProcessBeanFactory(
-						ConfigurableListableBeanFactory beanFactory)
-						throws BeansException {
+				public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 				}
 
 				@Override
-				public void postProcessBeanDefinitionRegistry(
-						BeanDefinitionRegistry registry) throws BeansException {
+				public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 					// Simulates what happens when you add a compiled function
-					RootBeanDefinition beanDefinition = new RootBeanDefinition(
-							MySupplier.class);
+					RootBeanDefinition beanDefinition = new RootBeanDefinition(MySupplier.class);
 					registry.registerBeanDefinition("words", beanDefinition);
 				}
 			};
