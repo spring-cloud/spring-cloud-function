@@ -79,301 +79,697 @@ public class FunctionInvokerTests {
 
 	String jsonPojoCollection = "[{\"name\":\"Ricky\"},{\"name\":\"Julien\"},{\"name\":\"Julien\"}]";
 
-	String someEvent = "{\n" + "    \"payload\": {\n" + "        \"headers\": {\n"
-			+ "            \"businessUnit\": \"1\"\n" + "        }\n" + "    },\n" + "    \"headers\": {\n"
-			+ "        \"aws-context\": {\n" + "            \"memoryLimit\": 1024,\n"
-			+ "            \"awsRequestId\": \"87a211bf-540f-4f9f-a218-d096a0099999\",\n"
-			+ "            \"functionName\": \"myfunction\",\n" + "            \"functionVersion\": \"278\",\n"
-			+ "            \"invokedFunctionArn\": \"arn:aws:lambda:us-east-1:xxxxxxx:function:xxxxx:snapstart\",\n"
-			+ "            \"deadlineTimeInMs\": 1712717704761,\n" + "            \"logger\": {\n"
-			+ "                \"logFiltering\": {\n" + "                    \"minimumLogLevel\": \"UNDEFINED\"\n"
-			+ "                },\n" + "                \"logFormatter\": {},\n"
-			+ "                \"logFormat\": \"TEXT\"\n" + "            }\n" + "        },\n"
-			+ "        \"businessUnit\": \"1\",\n" + "        \"id\": \"xxxx\",\n" + "        \"aws-event\": true,\n"
-			+ "        \"timestamp\": 1712716805129\n" + "    }\n" + "}";
+	String someEvent = """
+			{
+			    "payload": {
+			        "headers": {
+			            "businessUnit": "1"
+			        }
+			    },
+			    "headers": {
+			        "aws-context": {
+			            "memoryLimit": 1024,
+			            "awsRequestId": "87a211bf-540f-4f9f-a218-d096a0099999",
+			            "functionName": "myfunction",
+			            "functionVersion": "278",
+			            "invokedFunctionArn": "arn:aws:lambda:us-east-1:xxxxxxx:function:xxxxx:snapstart",
+			            "deadlineTimeInMs": 1712717704761,
+			            "logger": {
+			                "logFiltering": {
+			                    "minimumLogLevel": "UNDEFINED"
+			                },
+			                "logFormatter": {},
+			                "logFormat": "TEXT"
+			            }
+			        },
+			        "businessUnit": "1",
+			        "id": "xxxx",
+			        "aws-event": true,
+			        "timestamp": 1712716805129
+			    }
+			}""";
 
-	String scheduleEvent = "{\n" + "  \"version\": \"0\",\n" + "  \"id\": \"17793124-05d4-b198-2fde-7ededc63b103\",\n"
-			+ "  \"detail-type\": \"Object Created\",\n" + "  \"source\": \"aws.s3\",\n"
-			+ "  \"account\": \"111122223333\",\n" + "  \"time\": \"2021-11-12T00:00:00Z\",\n"
-			+ "  \"region\": \"ca-central-1\",\n" + "  \"resources\": [\n"
-			+ "    \"arn:aws:s3:::amzn-s3-demo-bucket1\"\n" + "  ],\n" + "  \"detail\": {\n"
-			+ "    \"version\": \"0\",\n" + "    \"bucket\": {\n" + "      \"name\": \"amzn-s3-demo-bucket1\"\n"
-			+ "    },\n" + "    \"object\": {\n" + "      \"key\": \"example-key\",\n" + "      \"size\": 5,\n"
-			+ "      \"etag\": \"b1946ac92492d2347c6235b4d2611184\",\n"
-			+ "      \"version-id\": \"IYV3p45BT0ac8hjHg1houSdS1a.Mro8e\",\n"
-			+ "      \"sequencer\": \"617f08299329d189\"\n" + "    },\n" + "    \"request-id\": \"N4N7GDK58NMKJ12R\",\n"
-			+ "    \"requester\": \"123456789012\",\n" + "    \"source-ip-address\": \"1.2.3.4\",\n"
-			+ "    \"reason\": \"PutObject\"\n" + "  }\n" + "}  ";
+	String scheduleEvent = """
+			{
+			  "version": "0",
+			  "id": "17793124-05d4-b198-2fde-7ededc63b103",
+			  "detail-type": "Object Created",
+			  "source": "aws.s3",
+			  "account": "111122223333",
+			  "time": "2021-11-12T00:00:00Z",
+			  "region": "ca-central-1",
+			  "resources": [
+			    "arn:aws:s3:::amzn-s3-demo-bucket1"
+			  ],
+			  "detail": {
+			    "version": "0",
+			    "bucket": {
+			      "name": "amzn-s3-demo-bucket1"
+			    },
+			    "object": {
+			      "key": "example-key",
+			      "size": 5,
+			      "etag": "b1946ac92492d2347c6235b4d2611184",
+			      "version-id": "IYV3p45BT0ac8hjHg1houSdS1a.Mro8e",
+			      "sequencer": "617f08299329d189"
+			    },
+			    "request-id": "N4N7GDK58NMKJ12R",
+			    "requester": "123456789012",
+			    "source-ip-address": "1.2.3.4",
+			    "reason": "PutObject"
+			  }
+			}""";
 
-	String dynamoDbEvent = "{\n" + "  \"Records\": [\n" + "    {\n"
-			+ "      \"eventID\": \"f07f8ca4b0b26cb9c4e5e77e69f274ee\",\n" + "      \"eventName\": \"INSERT\",\n"
-			+ "      \"eventVersion\": \"1.1\",\n" + "      \"eventSource\": \"aws:dynamodb\",\n"
-			+ "      \"awsRegion\": \"us-east-1\",\n" + "      \"userIdentity\":{\n" + "        \"type\":\"Service\",\n"
-			+ "        \"principalId\":\"dynamodb.amazonaws.com\"\n" + "      },\n" + "      \"dynamodb\": {\n"
-			+ "        \"ApproximateCreationDateTime\": 1.684934517E9,\n" + "        \"Keys\": {\n"
-			+ "          \"val\": {\n" + "            \"S\": \"data\"\n" + "          },\n" + "          \"key\": {\n"
-			+ "            \"S\": \"binary\"\n" + "          }\n" + "        },\n" + "        \"NewImage\": {\n"
-			+ "          \"val\": {\n" + "            \"S\": \"data\"\n" + "          },\n" + "          \"asdf1\": {\n"
-			+ "            \"B\": \"AAEqQQ==\"\n" + "          },\n" + "          \"asdf2\": {\n"
-			+ "            \"BS\": [\n" + "              \"AAEqQQ==\",\n" + "              \"QSoBAA==\"\n"
-			+ "            ]\n" + "          },\n" + "          \"key\": {\n" + "            \"S\": \"binary\"\n"
-			+ "          }\n" + "        },\n" + "        \"SequenceNumber\": \"1405400000000002063282832\",\n"
-			+ "        \"SizeBytes\": 54,\n" + "        \"StreamViewType\": \"NEW_AND_OLD_IMAGES\"\n" + "      },\n"
-			+ "      \"eventSourceARN\": \"arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000\"\n"
-			+ "    },\n" + "    {\n" + "      \"eventID\": \"f07f8ca4b0b26cb9c4e5e77e42f274ee\",\n"
-			+ "      \"eventName\": \"INSERT\",\n" + "      \"eventVersion\": \"1.1\",\n"
-			+ "      \"eventSource\": \"aws:dynamodb\",\n" + "      \"awsRegion\": \"us-east-1\",\n"
-			+ "      \"dynamodb\": {\n" + "        \"ApproximateCreationDateTime\": 1480642020,\n"
-			+ "        \"Keys\": {\n" + "          \"val\": {\n" + "            \"S\": \"data\"\n" + "          },\n"
-			+ "          \"key\": {\n" + "            \"S\": \"binary\"\n" + "          }\n" + "        },\n"
-			+ "        \"NewImage\": {\n" + "          \"val\": {\n" + "            \"S\": \"data\"\n"
-			+ "          },\n" + "          \"asdf1\": {\n" + "            \"B\": \"AAEqQQ==\"\n" + "          },\n"
-			+ "          \"b2\": {\n" + "            \"B\": \"test\"\n" + "          },\n" + "          \"asdf2\": {\n"
-			+ "            \"BS\": [\n" + "              \"AAEqQQ==\",\n" + "              \"QSoBAA==\",\n"
-			+ "              \"AAEqQQ==\"\n" + "            ]\n" + "          },\n" + "          \"key\": {\n"
-			+ "            \"S\": \"binary\"\n" + "          },\n" + "          \"Binary\": {\n"
-			+ "            \"B\": \"AAEqQQ==\"\n" + "          },\n" + "          \"Boolean\": {\n"
-			+ "            \"BOOL\": true\n" + "          },\n" + "          \"BinarySet\": {\n"
-			+ "            \"BS\": [\n" + "              \"AAEqQQ==\",\n" + "              \"AAEqQQ==\"\n"
-			+ "            ]\n" + "          },\n" + "          \"List\": {\n" + "            \"L\": [\n"
-			+ "              {\n" + "                \"S\": \"Cookies\"\n" + "              },\n" + "              {\n"
-			+ "                \"S\": \"Coffee\"\n" + "              },\n" + "              {\n"
-			+ "                \"N\": \"3.14159\"\n" + "              }\n" + "            ]\n" + "          },\n"
-			+ "          \"Map\": {\n" + "            \"M\": {\n" + "              \"Name\": {\n"
-			+ "                \"S\": \"Joe\"\n" + "              },\n" + "              \"Age\": {\n"
-			+ "                \"N\": \"35\"\n" + "              }\n" + "            }\n" + "          },\n"
-			+ "          \"FloatNumber\": {\n" + "            \"N\": \"123.45\"\n" + "          },\n"
-			+ "          \"IntegerNumber\": {\n" + "            \"N\": \"123\"\n" + "          },\n"
-			+ "          \"NumberSet\": {\n" + "            \"NS\": [\n" + "              \"1234\",\n"
-			+ "              \"567.8\"\n" + "            ]\n" + "          },\n" + "          \"Null\": {\n"
-			+ "            \"NULL\": true\n" + "          },\n" + "          \"String\": {\n"
-			+ "            \"S\": \"Hello\"\n" + "          },\n" + "          \"StringSet\": {\n"
-			+ "            \"SS\": [\n" + "              \"Giraffe\",\n" + "              \"Zebra\"\n"
-			+ "            ]\n" + "          },\n" + "          \"EmptyStringSet\": {\n" + "            \"SS\": []\n"
-			+ "          }\n" + "        },\n" + "        \"SequenceNumber\": \"1405400000000002063282832\",\n"
-			+ "        \"SizeBytes\": 54,\n" + "        \"StreamViewType\": \"NEW_AND_OLD_IMAGES\"\n" + "      },\n"
-			+ "      \"eventSourceARN\": \"arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000\"\n"
-			+ "    }\n" + "  ]\n" + "}";
+	String dynamoDbEvent = """
+			{
+			  "Records": [
+			    {
+			      "eventID": "f07f8ca4b0b26cb9c4e5e77e69f274ee",
+			      "eventName": "INSERT",
+			      "eventVersion": "1.1",
+			      "eventSource": "aws:dynamodb",
+			      "awsRegion": "us-east-1",
+			      "userIdentity":{
+			        "type":"Service",
+			        "principalId":"dynamodb.amazonaws.com"
+			      },
+			      "dynamodb": {
+			        "ApproximateCreationDateTime": 1.684934517E9,
+			        "Keys": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "key": {
+			            "S": "binary"
+			          }
+			        },
+			        "NewImage": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "asdf1": {
+			            "B": "AAEqQQ=="
+			          },
+			          "asdf2": {
+			            "BS": [
+			              "AAEqQQ==",
+			              "QSoBAA=="
+			            ]
+			          },
+			          "key": {
+			            "S": "binary"
+			          }
+			        },
+			        "SequenceNumber": "1405400000000002063282832",
+			        "SizeBytes": 54,
+			        "StreamViewType": "NEW_AND_OLD_IMAGES"
+			      },
+			      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000"
+			    },
+			    {
+			      "eventID": "f07f8ca4b0b26cb9c4e5e77e42f274ee",
+			      "eventName": "INSERT",
+			      "eventVersion": "1.1",
+			      "eventSource": "aws:dynamodb",
+			      "awsRegion": "us-east-1",
+			      "dynamodb": {
+			        "ApproximateCreationDateTime": 1480642020,
+			        "Keys": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "key": {
+			            "S": "binary"
+			          }
+			        },
+			        "NewImage": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "asdf1": {
+			            "B": "AAEqQQ=="
+			          },
+			          "b2": {
+			            "B": "test"
+			          },
+			          "asdf2": {
+			            "BS": [
+			              "AAEqQQ==",
+			              "QSoBAA==",
+			              "AAEqQQ=="
+			            ]
+			          },
+			          "key": {
+			            "S": "binary"
+			          },
+			          "Binary": {
+			            "B": "AAEqQQ=="
+			          },
+			          "Boolean": {
+			            "BOOL": true
+			          },
+			          "BinarySet": {
+			            "BS": [
+			              "AAEqQQ==",
+			              "AAEqQQ=="
+			            ]
+			          },
+			          "List": {
+			            "L": [
+			              {
+			                "S": "Cookies"
+			              },
+			              {
+			                "S": "Coffee"
+			              },
+			              {
+			                "N": "3.14159"
+			              }
+			            ]
+			          },
+			          "Map": {
+			            "M": {
+			              "Name": {
+			                "S": "Joe"
+			              },
+			              "Age": {
+			                "N": "35"
+			              }
+			            }
+			          },
+			          "FloatNumber": {
+			            "N": "123.45"
+			          },
+			          "IntegerNumber": {
+			            "N": "123"
+			          },
+			          "NumberSet": {
+			            "NS": [
+			              "1234",
+			              "567.8"
+			            ]
+			          },
+			          "Null": {
+			            "NULL": true
+			          },
+			          "String": {
+			            "S": "Hello"
+			          },
+			          "StringSet": {
+			            "SS": [
+			              "Giraffe",
+			              "Zebra"
+			            ]
+			          },
+			          "EmptyStringSet": {
+			            "SS": []
+			          }
+			        },
+			        "SequenceNumber": "1405400000000002063282832",
+			        "SizeBytes": 54,
+			        "StreamViewType": "NEW_AND_OLD_IMAGES"
+			      },
+			      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000"
+			    }
+			  ]
+			}""";
 
-	String sampleLBEvent = "{\n" + "  \"requestContext\": {\n" + "    \"elb\": {\n"
-			+ "      \"targetGroupArn\": \"arn:aws:elasticloadbalancing:us-east-1:XXXXXXXXXXX:targetgroup/sample/6d0ecf831eec9f09\"\n"
-			+ "    }\n" + "  },\n" + "  \"httpMethod\": \"GET\",\n" + "  \"path\": \"/\",\n"
-			+ "  \"queryStringParameters\": {},\n" + "  \"headers\": {\n"
-			+ "    \"accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\",\n"
-			+ "    \"accept-encoding\": \"gzip\",\n" + "    \"accept-language\": \"en-US,en;q=0.5\",\n"
-			+ "    \"connection\": \"keep-alive\",\n" + "    \"cookie\": \"name=value\",\n"
-			+ "    \"host\": \"lambda-YYYYYYYY.elb.amazonaws.com\",\n" + "    \"upgrade-insecure-requests\": \"1\",\n"
-			+ "    \"user-agent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:60.0) Gecko/20100101 Firefox/60.0\",\n"
-			+ "    \"x-amzn-trace-id\": \"Root=1-5bdb40ca-556d8b0c50dc66f0511bf520\",\n"
-			+ "    \"x-forwarded-for\": \"192.0.2.1\",\n" + "    \"x-forwarded-port\": \"80\",\n"
-			+ "    \"x-forwarded-proto\": \"http\"\n" + "  },\n" + "  \"body\": \"Hello from ELB\",\n"
-			+ "  \"isBase64Encoded\": false\n" + "}";
+	String sampleLBEvent = """
+			{
+			  "requestContext": {
+			    "elb": {
+			      "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:XXXXXXXXXXX:targetgroup/sample/6d0ecf831eec9f09"
+			    }
+			  },
+			  "httpMethod": "GET",
+			  "path": "/",
+			  "queryStringParameters": {},
+			  "headers": {
+			    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+			    "accept-encoding": "gzip",
+			    "accept-language": "en-US,en;q=0.5",
+			    "connection": "keep-alive",
+			    "cookie": "name=value",
+			    "host": "lambda-YYYYYYYY.elb.amazonaws.com",
+			    "upgrade-insecure-requests": "1",
+			    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:60.0) Gecko/20100101 Firefox/60.0",
+			    "x-amzn-trace-id": "Root=1-5bdb40ca-556d8b0c50dc66f0511bf520",
+			    "x-forwarded-for": "192.0.2.1",
+			    "x-forwarded-port": "80",
+			    "x-forwarded-proto": "http"
+			  },
+			  "body": "Hello from ELB",
+			  "isBase64Encoded": false
+			}""";
 
-	String sampleSQSEvent = "{\n" + "  \"Records\": [\n" + "    {\n"
-			+ "      \"messageId\": \"19dd0b57-b21e-4ac1-bd88-01bbb068cb78\",\n"
-			+ "      \"receiptHandle\": \"MessageReceiptHandle\",\n" + "      \"body\": \"Hello from SQS!\",\n"
-			+ "      \"attributes\": {\n" + "        \"ApproximateReceiveCount\": \"1\",\n"
-			+ "        \"SentTimestamp\": \"1523232000000\",\n" + "        \"SenderId\": \"123456789012\",\n"
-			+ "        \"ApproximateFirstReceiveTimestamp\": \"1523232000001\"\n" + "      },\n"
-			+ "      \"messageAttributes\": {},\n" + "      \"md5OfBody\": \"7b270e59b47ff90a553787216d55d91d\",\n"
-			+ "      \"eventSource\": \"aws:sqs\",\n"
-			+ "      \"eventSourceARN\": \"arn:aws:sqs:eu-central-1:123456789012:MyQueue\",\n"
-			+ "      \"awsRegion\": \"eu-central-1\"\n" + "    }\n" + "  ]\n" + "}";
+	String sampleSQSEvent = """
+			{
+			  "Records": [
+			    {
+			      "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+			      "receiptHandle": "MessageReceiptHandle",
+			      "body": "Hello from SQS!",
+			      "attributes": {
+			        "ApproximateReceiveCount": "1",
+			        "SentTimestamp": "1523232000000",
+			        "SenderId": "123456789012",
+			        "ApproximateFirstReceiveTimestamp": "1523232000001"
+			      },
+			      "messageAttributes": {},
+			      "md5OfBody": "7b270e59b47ff90a553787216d55d91d",
+			      "eventSource": "aws:sqs",
+			      "eventSourceARN": "arn:aws:sqs:eu-central-1:123456789012:MyQueue",
+			      "awsRegion": "eu-central-1"
+			    }
+			  ]
+			}""";
 
-	String sampleSNSEvent = "{\n" + "  \"Records\": [\n" + "    {\n" + "      \"EventVersion\": \"1.0\",\n"
-			+ "      \"EventSubscriptionArn\": \"arn:aws:sns:us-east-2:123456789012:sns-lambda:21be56ed-a058-49f5-8c98-aedd2564c486\",\n"
-			+ "      \"EventSource\": \"aws:sns\",\n" + "      \"Sns\": {\n" + "        \"SignatureVersion\": \"1\",\n"
-			+ "        \"Timestamp\": \"2019-01-02T12:45:07.000Z\",\n"
-			+ "        \"Signature\": \"tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==\",\n"
-			+ "        \"SigningCertUrl\": \"https://sns.us-east-2.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem\",\n"
-			+ "        \"MessageId\": \"95df01b4-ee98-5cb9-9903-4c221d41eb5e\",\n"
-			+ "        \"Message\": \"Hello from SNS!\",\n" + "        \"MessageAttributes\": {\n"
-			+ "          \"Test\": {\n" + "            \"Type\": \"String\",\n"
-			+ "            \"Value\": \"TestString\"\n" + "          },\n" + "          \"TestBinary\": {\n"
-			+ "            \"Type\": \"Binary\",\n" + "            \"Value\": \"TestBinary\"\n" + "          }\n"
-			+ "        },\n" + "        \"Type\": \"Notification\",\n"
-			+ "        \"UnsubscribeUrl\": \"https://sns.us-east-2.amazonaws.com/?Action=Unsubscribe&amp;SubscriptionArn=arn:aws:sns:us-east-2:123456789012:test-lambda:21be56ed-a058-49f5-8c98-aedd2564c486\",\n"
-			+ "        \"TopicArn\":\"arn:aws:sns:us-east-2:123456789012:sns-lambda\",\n"
-			+ "        \"Subject\": \"TestInvoke\"\n" + "      }\n" + "    }\n" + "  ]\n" + "}";
+	String sampleSNSEvent = """
+			{
+			  "Records": [
+			    {
+			      "EventVersion": "1.0",
+			      "EventSubscriptionArn": "arn:aws:sns:us-east-2:123456789012:sns-lambda:21be56ed-a058-49f5-8c98-aedd2564c486",
+			      "EventSource": "aws:sns",
+			      "Sns": {
+			        "SignatureVersion": "1",
+			        "Timestamp": "2019-01-02T12:45:07.000Z",
+			        "Signature": "tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==",
+			        "SigningCertUrl": "https://sns.us-east-2.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem",
+			        "MessageId": "95df01b4-ee98-5cb9-9903-4c221d41eb5e",
+			        "Message": "Hello from SNS!",
+			        "MessageAttributes": {
+			          "Test": {
+			            "Type": "String",
+			            "Value": "TestString"
+			          },
+			          "TestBinary": {
+			            "Type": "Binary",
+			            "Value": "TestBinary"
+			          }
+			        },
+			        "Type": "Notification",
+			        "UnsubscribeUrl": "https://sns.us-east-2.amazonaws.com/?Action=Unsubscribe&amp;SubscriptionArn=arn:aws:sns:us-east-2:123456789012:test-lambda:21be56ed-a058-49f5-8c98-aedd2564c486",
+			        "TopicArn":"arn:aws:sns:us-east-2:123456789012:sns-lambda",
+			        "Subject": "TestInvoke"
+			      }
+			    }
+			  ]
+			}""";
 
-	String sampleKinesisEvent = "{" + "    \"Records\": [" + "        {" + "            \"kinesis\": {"
-			+ "                \"kinesisSchemaVersion\": \"1.0\"," + "                \"partitionKey\": \"1\","
-			+ "                \"sequenceNumber\": \"49590338271490256608559692538361571095921575989136588898\","
-			+ "                \"data\": \"SGVsbG8sIHRoaXMgaXMgYSB0ZXN0Lg==\","
-			+ "                \"approximateArrivalTimestamp\": 1545084650.987" + "            },"
-			+ "            \"eventSource\": \"aws:kinesis\"," + "            \"eventVersion\": \"1.0\","
-			+ "            \"eventID\": \"shardId-000000000006:49590338271490256608559692538361571095921575989136588898\","
-			+ "            \"eventName\": \"aws:kinesis:record\","
-			+ "            \"invokeIdentityArn\": \"arn:aws:iam::123456789012:role/lambda-role\","
-			+ "            \"awsRegion\": \"us-east-2\","
-			+ "            \"eventSourceARN\": \"arn:aws:kinesis:us-east-2:123456789012:stream/lambda-stream\""
-			+ "        }," + "        {" + "            \"kinesis\": {"
-			+ "                \"kinesisSchemaVersion\": \"1.0\"," + "                \"partitionKey\": \"1\","
-			+ "                \"sequenceNumber\": \"49590338271490256608559692540925702759324208523137515618\","
-			+ "                \"data\": \"VGhpcyBpcyBvbmx5IGEgdGVzdC4=\","
-			+ "                \"approximateArrivalTimestamp\": 1545084711.166" + "            },"
-			+ "            \"eventSource\": \"aws:kinesis\"," + "            \"eventVersion\": \"1.0\","
-			+ "            \"eventID\": \"shardId-000000000006:49590338271490256608559692540925702759324208523137515618\","
-			+ "            \"eventName\": \"aws:kinesis:record\","
-			+ "            \"invokeIdentityArn\": \"arn:aws:iam::123456789012:role/lambda-role\","
-			+ "            \"awsRegion\": \"us-east-2\","
-			+ "            \"eventSourceARN\": \"arn:aws:kinesis:us-east-2:123456789012:stream/lambda-stream\""
-			+ "        }" + "    ]" + "}";
+	String sampleKinesisEvent = """
+			{
+			    "Records": [
+			        {
+			            "kinesis": {
+			                "kinesisSchemaVersion": "1.0",
+			                "partitionKey": "1",
+			                "sequenceNumber": "49590338271490256608559692538361571095921575989136588898",
+			                "data": "SGVsbG8sIHRoaXMgaXMgYSB0ZXN0Lg==",
+			                "approximateArrivalTimestamp": 1545084650.987
+			            },
+			            "eventSource": "aws:kinesis",
+			            "eventVersion": "1.0",
+			            "eventID": "shardId-000000000006:49590338271490256608559692538361571095921575989136588898",
+			            "eventName": "aws:kinesis:record",
+			            "invokeIdentityArn": "arn:aws:iam::123456789012:role/lambda-role",
+			            "awsRegion": "us-east-2",
+			            "eventSourceARN": "arn:aws:kinesis:us-east-2:123456789012:stream/lambda-stream"
+			        },
+			        {
+			            "kinesis": {
+			                "kinesisSchemaVersion": "1.0",
+			                "partitionKey": "1",
+			                "sequenceNumber": "49590338271490256608559692540925702759324208523137515618",
+			                "data": "VGhpcyBpcyBvbmx5IGEgdGVzdC4=",
+			                "approximateArrivalTimestamp": 1545084711.166
+			            },
+			            "eventSource": "aws:kinesis",
+			            "eventVersion": "1.0",
+			            "eventID": "shardId-000000000006:49590338271490256608559692540925702759324208523137515618",
+			            "eventName": "aws:kinesis:record",
+			            "invokeIdentityArn": "arn:aws:iam::123456789012:role/lambda-role",
+			            "awsRegion": "us-east-2",
+			            "eventSourceARN": "arn:aws:kinesis:us-east-2:123456789012:stream/lambda-stream"
+			        }
+			    ]
+			}""";
 
 	// https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-	String apiGatewayV2Event = "{\n" + "  \"version\": \"2.0\",\n" + "  \"routeKey\": \"$default\",\n"
-			+ "  \"rawPath\": \"/my/path\",\n"
-			+ "  \"rawQueryString\": \"parameter1=value1&parameter1=value2&parameter2=value\",\n" + "  \"cookies\": [\n"
-			+ "    \"cookie1\",\n" + "    \"cookie2\"\n" + "  ],\n" + "  \"headers\": {\n"
-			+ "    \"header1\": \"value1\",\n" + "    \"header2\": \"value1,value2\"\n" + "  },\n"
-			+ "  \"queryStringParameters\": {\n" + "    \"parameter1\": \"value1,value2\",\n"
-			+ "    \"parameter2\": \"value\"\n" + "  },\n" + "  \"requestContext\": {\n"
-			+ "    \"accountId\": \"123456789012\",\n" + "    \"apiId\": \"api-id\",\n" + "    \"authentication\": {\n"
-			+ "      \"clientCert\": {\n" + "        \"clientCertPem\": \"CERT_CONTENT\",\n"
-			+ "        \"subjectDN\": \"www.example.com\",\n" + "        \"issuerDN\": \"Example issuer\",\n"
-			+ "        \"serialNumber\": \"a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1\",\n"
-			+ "        \"validity\": {\n" + "          \"notBefore\": \"May 28 12:30:02 2019 GMT\",\n"
-			+ "          \"notAfter\": \"Aug  5 09:36:04 2021 GMT\"\n" + "        }\n" + "      }\n" + "    },\n"
-			+ "    \"authorizer\": {\n" + "      \"jwt\": {\n" + "        \"claims\": {\n"
-			+ "          \"claim1\": \"value1\",\n" + "          \"claim2\": \"value2\"\n" + "        },\n"
-			+ "        \"scopes\": [\n" + "          \"scope1\",\n" + "          \"scope2\"\n" + "        ]\n"
-			+ "      }\n" + "    },\n" + "    \"domainName\": \"id.execute-api.us-east-1.amazonaws.com\",\n"
-			+ "    \"domainPrefix\": \"id\",\n" + "    \"http\": {\n" + "      \"method\": \"POST\",\n"
-			+ "      \"path\": \"/my/path\",\n" + "      \"protocol\": \"HTTP/1.1\",\n"
-			+ "      \"sourceIp\": \"IP\",\n" + "      \"userAgent\": \"agent\"\n" + "    },\n"
-			+ "    \"requestId\": \"id\",\n" + "    \"routeKey\": \"$default\",\n" + "    \"stage\": \"$default\",\n"
-			+ "    \"time\": \"12/Mar/2020:19:03:58 +0000\",\n" + "    \"timeEpoch\": 1583348638390\n" + "  },\n"
-			+ "  \"body\": \"Hello from Lambda\",\n" + "  \"pathParameters\": {\n" + "    \"parameter1\": \"value1\"\n"
-			+ "  },\n" + "  \"isBase64Encoded\": false,\n" + "  \"stageVariables\": {\n"
-			+ "    \"stageVariable1\": \"value1\",\n" + "    \"stageVariable2\": \"value2\"\n" + "  }\n" + "}";
+	String apiGatewayV2Event = """
+			{
+			  "version": "2.0",
+			  "routeKey": "$default",
+			  "rawPath": "/my/path",
+			  "rawQueryString": "parameter1=value1&parameter1=value2&parameter2=value",
+			  "cookies": [
+			    "cookie1",
+			    "cookie2"
+			  ],
+			  "headers": {
+			    "header1": "value1",
+			    "header2": "value1,value2"
+			  },
+			  "queryStringParameters": {
+			    "parameter1": "value1,value2",
+			    "parameter2": "value"
+			  },
+			  "requestContext": {
+			    "accountId": "123456789012",
+			    "apiId": "api-id",
+			    "authentication": {
+			      "clientCert": {
+			        "clientCertPem": "CERT_CONTENT",
+			        "subjectDN": "www.example.com",
+			        "issuerDN": "Example issuer",
+			        "serialNumber": "a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1:a1",
+			        "validity": {
+			          "notBefore": "May 28 12:30:02 2019 GMT",
+			          "notAfter": "Aug  5 09:36:04 2021 GMT"
+			        }
+			      }
+			    },
+			    "authorizer": {
+			      "jwt": {
+			        "claims": {
+			          "claim1": "value1",
+			          "claim2": "value2"
+			        },
+			        "scopes": [
+			          "scope1",
+			          "scope2"
+			        ]
+			      }
+			    },
+			    "domainName": "id.execute-api.us-east-1.amazonaws.com",
+			    "domainPrefix": "id",
+			    "http": {
+			      "method": "POST",
+			      "path": "/my/path",
+			      "protocol": "HTTP/1.1",
+			      "sourceIp": "IP",
+			      "userAgent": "agent"
+			    },
+			    "requestId": "id",
+			    "routeKey": "$default",
+			    "stage": "$default",
+			    "time": "12/Mar/2020:19:03:58 +0000",
+			    "timeEpoch": 1583348638390
+			  },
+			  "body": "Hello from Lambda",
+			  "pathParameters": {
+			    "parameter1": "value1"
+			  },
+			  "isBase64Encoded": false,
+			  "stageVariables": {
+			    "stageVariable1": "value1",
+			    "stageVariable2": "value2"
+			  }
+			}""";
 
-	String apiGatewayEvent = "{\n" + "    \"resource\": \"/uppercase2\",\n" + "    \"path\": \"/uppercase2\",\n"
-			+ "    \"httpMethod\": \"POST\",\n" + "    \"headers\": {\n" + "        \"accept\": \"*/*\",\n"
-			+ "        \"content-type\": \"application/json\",\n"
-			+ "        \"Host\": \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\",\n"
-			+ "        \"User-Agent\": \"curl/7.54.0\",\n"
-			+ "        \"X-Amzn-Trace-Id\": \"Root=1-5ece339e-e0595766066d703ec70f1522\",\n"
-			+ "        \"X-Forwarded-For\": \"90.37.8.133\",\n" + "        \"X-Forwarded-Port\": \"443\",\n"
-			+ "        \"X-Forwarded-Proto\": \"https\"\n" + "    },\n" + "    \"multiValueHeaders\": {\n"
-			+ "        \"accept\": [\n" + "            \"*/*\"\n" + "        ],\n" + "        \"content-type\": [\n"
-			+ "            \"application/json\"\n" + "        ],\n" + "        \"Host\": [\n"
-			+ "            \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\"\n" + "        ],\n"
-			+ "        \"User-Agent\": [\n" + "            \"curl/7.54.0\"\n" + "        ],\n"
-			+ "        \"X-Amzn-Trace-Id\": [\n" + "            \"Root=1-5ece339e-e0595766066d703ec70f1522\"\n"
-			+ "        ],\n" + "        \"X-Forwarded-For\": [\n" + "            \"90.37.8.133\"\n" + "        ],\n"
-			+ "        \"X-Forwarded-Port\": [\n" + "            \"443\"\n" + "        ],\n"
-			+ "        \"X-Forwarded-Proto\": [\n" + "            \"https\"\n" + "        ]\n" + "    },\n"
-			+ "    \"queryStringParameters\": null,\n" + "    \"multiValueQueryStringParameters\": null,\n"
-			+ "    \"pathParameters\": null,\n" + "    \"stageVariables\": null,\n" + "    \"requestContext\": {\n"
-			+ "        \"resourceId\": \"qf0io6\",\n" + "        \"resourcePath\": \"/uppercase2\",\n"
-			+ "        \"httpMethod\": \"POST\",\n" + "        \"extendedRequestId\": \"NL0A1EokCGYFZOA=\",\n"
-			+ "        \"requestTime\": \"27/May/2020:09:32:14 +0000\",\n" + "        \"path\": \"/test/uppercase2\",\n"
-			+ "        \"accountId\": \"123456789098\",\n" + "        \"protocol\": \"HTTP/1.1\",\n"
-			+ "        \"stage\": \"test\",\n" + "        \"domainPrefix\": \"fhul32ccy2\",\n"
-			+ "        \"requestTimeEpoch\": 1590571934872,\n"
-			+ "        \"requestId\": \"b96500aa-f92a-43c3-9360-868ba4053a00\",\n" + "        \"identity\": {\n"
-			+ "            \"cognitoIdentityPoolId\": null,\n" + "            \"accountId\": null,\n"
-			+ "            \"cognitoIdentityId\": null,\n" + "            \"caller\": null,\n"
-			+ "            \"sourceIp\": \"90.37.8.133\",\n" + "            \"principalOrgId\": null,\n"
-			+ "            \"accessKey\": null,\n" + "            \"cognitoAuthenticationType\": null,\n"
-			+ "            \"cognitoAuthenticationProvider\": null,\n" + "            \"userArn\": null,\n"
-			+ "            \"userAgent\": \"curl/7.54.0\",\n" + "            \"user\": null\n" + "        },\n"
-			+ "        \"domainName\": \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\",\n"
-			+ "        \"apiId\": \"fhul32ccy2\"\n" + "    },\n" + "    \"body\":\"hello\",\n"
-			+ "    \"isBase64Encoded\": false\n" + "}";
+	String apiGatewayEvent = """
+			{
+			    "resource": "/uppercase2",
+			    "path": "/uppercase2",
+			    "httpMethod": "POST",
+			    "headers": {
+			        "accept": "*/*",
+			        "content-type": "application/json",
+			        "Host": "fhul32ccy2.execute-api.eu-west-3.amazonaws.com",
+			        "User-Agent": "curl/7.54.0",
+			        "X-Amzn-Trace-Id": "Root=1-5ece339e-e0595766066d703ec70f1522",
+			        "X-Forwarded-For": "90.37.8.133",
+			        "X-Forwarded-Port": "443",
+			        "X-Forwarded-Proto": "https"
+			    },
+			    "multiValueHeaders": {
+			        "accept": [
+			            "*/*"
+			        ],
+			        "content-type": [
+			            "application/json"
+			        ],
+			        "Host": [
+			            "fhul32ccy2.execute-api.eu-west-3.amazonaws.com"
+			        ],
+			        "User-Agent": [
+			            "curl/7.54.0"
+			        ],
+			        "X-Amzn-Trace-Id": [
+			            "Root=1-5ece339e-e0595766066d703ec70f1522"
+			        ],
+			        "X-Forwarded-For": [
+			            "90.37.8.133"
+			        ],
+			        "X-Forwarded-Port": [
+			            "443"
+			        ],
+			        "X-Forwarded-Proto": [
+			            "https"
+			        ]
+			    },
+			    "queryStringParameters": null,
+			    "multiValueQueryStringParameters": null,
+			    "pathParameters": null,
+			    "stageVariables": null,
+			    "requestContext": {
+			        "resourceId": "qf0io6",
+			        "resourcePath": "/uppercase2",
+			        "httpMethod": "POST",
+			        "extendedRequestId": "NL0A1EokCGYFZOA=",
+			        "requestTime": "27/May/2020:09:32:14 +0000",
+			        "path": "/test/uppercase2",
+			        "accountId": "123456789098",
+			        "protocol": "HTTP/1.1",
+			        "stage": "test",
+			        "domainPrefix": "fhul32ccy2",
+			        "requestTimeEpoch": 1590571934872,
+			        "requestId": "b96500aa-f92a-43c3-9360-868ba4053a00",
+			        "identity": {
+			            "cognitoIdentityPoolId": null,
+			            "accountId": null,
+			            "cognitoIdentityId": null,
+			            "caller": null,
+			            "sourceIp": "90.37.8.133",
+			            "principalOrgId": null,
+			            "accessKey": null,
+			            "cognitoAuthenticationType": null,
+			            "cognitoAuthenticationProvider": null,
+			            "userArn": null,
+			            "userAgent": "curl/7.54.0",
+			            "user": null
+			        },
+			        "domainName": "fhul32ccy2.execute-api.eu-west-3.amazonaws.com",
+			        "apiId": "fhul32ccy2"
+			    },
+			    "body":"hello",
+			    "isBase64Encoded": false
+			}""";
 
-	String s3Event = "{\n" + "    \"Records\": [\n" + "        {\n" + "            \"eventVersion\": \"2.1\",\n"
-			+ "            \"eventSource\": \"aws:s3\",\n" + "            \"awsRegion\": \"eu-central-1\",\n"
-			+ "            \"eventTime\": \"2023-11-04T23:44:23.905Z\",\n"
-			+ "            \"eventName\": \"ObjectCreated:Put\",\n" + "            \"userIdentity\": {\n"
-			+ "                \"principalId\": \"AWS:xxxxxxxxxxxxxxxxxxx\"\n" + "            },\n"
-			+ "            \"requestParameters\": {\n" + "                \"sourceIPAddress\": \"x.x.x.x\"\n"
-			+ "            },\n" + "            \"responseElements\": {\n"
-			+ "                \"x-amz-request-id\": \"xxxxxxxxxxxxxxxx\",\n"
-			+ "                \"x-amz-id-2\": \"xxxxxxxxxxxxxxxxxxxx\"\n" + "            },\n"
-			+ "            \"s3\": {\n" + "                \"s3SchemaVersion\": \"1.0\",\n"
-			+ "                \"configurationId\": \"xxxxxxxxxxxxxxxxxxxxxxxx\",\n" + "                \"bucket\": {\n"
-			+ "                    \"name\": \"xxxxxxxxxxxxxxx\",\n" + "                    \"ownerIdentity\": {\n"
-			+ "                        \"principalId\": \"xxxxxxxxxxxxxxxxxx\"\n" + "                    },\n"
-			+ "                    \"arn\": \"arn:aws:s3:::xxxxxxxxxxxxxxxxx\"\n" + "                },\n"
-			+ "                \"object\": {\n" + "                    \"key\": \"xxxxxxxxxxxxxxxx\",\n"
-			+ "                    \"size\": 6064,\n" + "                    \"eTag\": \"xxxxxxxxxxxxx\",\n"
-			+ "                    \"sequencer\": \"xxxxxxxxxxxxxx\"\n" + "                }\n" + "            }\n"
-			+ "        }\n" + "    ]\n" + "}";
+	String s3Event = """
+			{
+			    "Records": [
+			        {
+			            "eventVersion": "2.1",
+			            "eventSource": "aws:s3",
+			            "awsRegion": "eu-central-1",
+			            "eventTime": "2023-11-04T23:44:23.905Z",
+			            "eventName": "ObjectCreated:Put",
+			            "userIdentity": {
+			                "principalId": "AWS:xxxxxxxxxxxxxxxxxxx"
+			            },
+			            "requestParameters": {
+			                "sourceIPAddress": "x.x.x.x"
+			            },
+			            "responseElements": {
+			                "x-amz-request-id": "xxxxxxxxxxxxxxxx",
+			                "x-amz-id-2": "xxxxxxxxxxxxxxxxxxxx"
+			            },
+			            "s3": {
+			                "s3SchemaVersion": "1.0",
+			                "configurationId": "xxxxxxxxxxxxxxxxxxxxxxxx",
+			                "bucket": {
+			                    "name": "xxxxxxxxxxxxxxx",
+			                    "ownerIdentity": {
+			                        "principalId": "xxxxxxxxxxxxxxxxxx"
+			                    },
+			                    "arn": "arn:aws:s3:::xxxxxxxxxxxxxxxxx"
+			                },
+			                "object": {
+			                    "key": "xxxxxxxxxxxxxxxx",
+			                    "size": 6064,
+			                    "eTag": "xxxxxxxxxxxxx",
+			                    "sequencer": "xxxxxxxxxxxxxx"
+			                }
+			            }
+			        }
+			    ]
+			}""";
 
-	String apiGatewayEventWithStructuredBody = "{\n" + "    \"resource\": \"/uppercase2\",\n"
-			+ "    \"path\": \"/uppercase2\",\n" + "    \"httpMethod\": \"POST\",\n" + "    \"headers\": {\n"
-			+ "        \"accept\": \"*/*\",\n" + "        \"content-type\": \"application/json\",\n"
-			+ "        \"Host\": \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\",\n"
-			+ "        \"User-Agent\": \"curl/7.54.0\",\n"
-			+ "        \"X-Amzn-Trace-Id\": \"Root=1-5ece339e-e0595766066d703ec70f1522\",\n"
-			+ "        \"X-Forwarded-For\": \"90.37.8.133\",\n" + "        \"X-Forwarded-Port\": \"443\",\n"
-			+ "        \"X-Forwarded-Proto\": \"https\"\n" + "    },\n" + "    \"multiValueHeaders\": {\n"
-			+ "        \"accept\": [\n" + "            \"*/*\"\n" + "        ],\n" + "        \"content-type\": [\n"
-			+ "            \"application/json\"\n" + "        ],\n" + "        \"Host\": [\n"
-			+ "            \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\"\n" + "        ],\n"
-			+ "        \"User-Agent\": [\n" + "            \"curl/7.54.0\"\n" + "        ],\n"
-			+ "        \"X-Amzn-Trace-Id\": [\n" + "            \"Root=1-5ece339e-e0595766066d703ec70f1522\"\n"
-			+ "        ],\n" + "        \"X-Forwarded-For\": [\n" + "            \"90.37.8.133\"\n" + "        ],\n"
-			+ "        \"X-Forwarded-Port\": [\n" + "            \"443\"\n" + "        ],\n"
-			+ "        \"X-Forwarded-Proto\": [\n" + "            \"https\"\n" + "        ]\n" + "    },\n"
-			+ "    \"queryStringParameters\": null,\n" + "    \"multiValueQueryStringParameters\": null,\n"
-			+ "    \"pathParameters\": null,\n" + "    \"stageVariables\": null,\n" + "    \"requestContext\": {\n"
-			+ "        \"resourceId\": \"qf0io6\",\n" + "        \"resourcePath\": \"/uppercase2\",\n"
-			+ "        \"httpMethod\": \"POST\",\n" + "        \"extendedRequestId\": \"NL0A1EokCGYFZOA=\",\n"
-			+ "        \"requestTime\": \"27/May/2020:09:32:14 +0000\",\n" + "        \"path\": \"/test/uppercase2\",\n"
-			+ "        \"accountId\": \"123456789098\",\n" + "        \"protocol\": \"HTTP/1.1\",\n"
-			+ "        \"stage\": \"test\",\n" + "        \"domainPrefix\": \"fhul32ccy2\",\n"
-			+ "        \"requestTimeEpoch\": 1590571934872,\n"
-			+ "        \"requestId\": \"b96500aa-f92a-43c3-9360-868ba4053a00\",\n" + "        \"identity\": {\n"
-			+ "            \"cognitoIdentityPoolId\": null,\n" + "            \"accountId\": null,\n"
-			+ "            \"cognitoIdentityId\": null,\n" + "            \"caller\": null,\n"
-			+ "            \"sourceIp\": \"90.37.8.133\",\n" + "            \"principalOrgId\": null,\n"
-			+ "            \"accessKey\": null,\n" + "            \"cognitoAuthenticationType\": null,\n"
-			+ "            \"cognitoAuthenticationProvider\": null,\n" + "            \"userArn\": null,\n"
-			+ "            \"userAgent\": \"curl/7.54.0\",\n" + "            \"user\": null\n" + "        },\n"
-			+ "        \"domainName\": \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\",\n"
-			+ "        \"apiId\": \"fhul32ccy2\"\n" + "    },\n" + "    \"body\":{\"name\":\"Jim Lahey\"},\n"
-			+ "    \"isBase64Encoded\": false\n" + "}";
+	String apiGatewayEventWithStructuredBody = """
+			{
+			    "resource": "/uppercase2",
+			    "path": "/uppercase2",
+			    "httpMethod": "POST",
+			    "headers": {
+			        "accept": "*/*",
+			        "content-type": "application/json",
+			        "Host": "fhul32ccy2.execute-api.eu-west-3.amazonaws.com",
+			        "User-Agent": "curl/7.54.0",
+			        "X-Amzn-Trace-Id": "Root=1-5ece339e-e0595766066d703ec70f1522",
+			        "X-Forwarded-For": "90.37.8.133",
+			        "X-Forwarded-Port": "443",
+			        "X-Forwarded-Proto": "https"
+			    },
+			    "multiValueHeaders": {
+			        "accept": [
+			            "*/*"
+			        ],
+			        "content-type": [
+			            "application/json"
+			        ],
+			        "Host": [
+			            "fhul32ccy2.execute-api.eu-west-3.amazonaws.com"
+			        ],
+			        "User-Agent": [
+			            "curl/7.54.0"
+			        ],
+			        "X-Amzn-Trace-Id": [
+			            "Root=1-5ece339e-e0595766066d703ec70f1522"
+			        ],
+			        "X-Forwarded-For": [
+			            "90.37.8.133"
+			        ],
+			        "X-Forwarded-Port": [
+			            "443"
+			        ],
+			        "X-Forwarded-Proto": [
+			            "https"
+			        ]
+			    },
+			    "queryStringParameters": null,
+			    "multiValueQueryStringParameters": null,
+			    "pathParameters": null,
+			    "stageVariables": null,
+			    "requestContext": {
+			        "resourceId": "qf0io6",
+			        "resourcePath": "/uppercase2",
+			        "httpMethod": "POST",
+			        "extendedRequestId": "NL0A1EokCGYFZOA=",
+			        "requestTime": "27/May/2020:09:32:14 +0000",
+			        "path": "/test/uppercase2",
+			        "accountId": "123456789098",
+			        "protocol": "HTTP/1.1",
+			        "stage": "test",
+			        "domainPrefix": "fhul32ccy2",
+			        "requestTimeEpoch": 1590571934872,
+			        "requestId": "b96500aa-f92a-43c3-9360-868ba4053a00",
+			        "identity": {
+			            "cognitoIdentityPoolId": null,
+			            "accountId": null,
+			            "cognitoIdentityId": null,
+			            "caller": null,
+			            "sourceIp": "90.37.8.133",
+			            "principalOrgId": null,
+			            "accessKey": null,
+			            "cognitoAuthenticationType": null,
+			            "cognitoAuthenticationProvider": null,
+			            "userArn": null,
+			            "userAgent": "curl/7.54.0",
+			            "user": null
+			        },
+			        "domainName": "fhul32ccy2.execute-api.eu-west-3.amazonaws.com",
+			        "apiId": "fhul32ccy2"
+			    },
+			    "body":{"name":"Jim Lahey"},
+			    "isBase64Encoded": false
+			}""";
 
-	String apiGatewayEventWithArray = "{\n" + "    \"resource\": \"/uppercase2\",\n"
-			+ "    \"path\": \"/uppercase2\",\n" + "    \"httpMethod\": \"POST\",\n" + "    \"headers\": {\n"
-			+ "        \"accept\": \"*/*\",\n" + "        \"content-type\": \"application/json\",\n"
-			+ "        \"Host\": \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\",\n"
-			+ "        \"User-Agent\": \"curl/7.54.0\",\n"
-			+ "        \"X-Amzn-Trace-Id\": \"Root=1-5ece339e-e0595766066d703ec70f1522\",\n"
-			+ "        \"X-Forwarded-For\": \"90.37.8.133\",\n" + "        \"X-Forwarded-Port\": \"443\",\n"
-			+ "        \"X-Forwarded-Proto\": \"https\"\n" + "    },\n" + "    \"multiValueHeaders\": {\n"
-			+ "        \"accept\": [\n" + "            \"*/*\"\n" + "        ],\n" + "        \"content-type\": [\n"
-			+ "            \"application/json\"\n" + "        ],\n" + "        \"Host\": [\n"
-			+ "            \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\"\n" + "        ],\n"
-			+ "        \"User-Agent\": [\n" + "            \"curl/7.54.0\"\n" + "        ],\n"
-			+ "        \"X-Amzn-Trace-Id\": [\n" + "            \"Root=1-5ece339e-e0595766066d703ec70f1522\"\n"
-			+ "        ],\n" + "        \"X-Forwarded-For\": [\n" + "            \"90.37.8.133\"\n" + "        ],\n"
-			+ "        \"X-Forwarded-Port\": [\n" + "            \"443\"\n" + "        ],\n"
-			+ "        \"X-Forwarded-Proto\": [\n" + "            \"https\"\n" + "        ]\n" + "    },\n"
-			+ "    \"queryStringParameters\": null,\n" + "    \"multiValueQueryStringParameters\": null,\n"
-			+ "    \"pathParameters\": null,\n" + "    \"stageVariables\": null,\n" + "    \"requestContext\": {\n"
-			+ "        \"resourceId\": \"qf0io6\",\n" + "        \"resourcePath\": \"/uppercase2\",\n"
-			+ "        \"httpMethod\": \"POST\",\n" + "        \"extendedRequestId\": \"NL0A1EokCGYFZOA=\",\n"
-			+ "        \"requestTime\": \"27/May/2020:09:32:14 +0000\",\n" + "        \"path\": \"/test/uppercase2\",\n"
-			+ "        \"accountId\": \"123456789098\",\n" + "        \"protocol\": \"HTTP/1.1\",\n"
-			+ "        \"stage\": \"test\",\n" + "        \"domainPrefix\": \"fhul32ccy2\",\n"
-			+ "        \"requestTimeEpoch\": 1590571934872,\n"
-			+ "        \"requestId\": \"b96500aa-f92a-43c3-9360-868ba4053a00\",\n" + "        \"identity\": {\n"
-			+ "            \"cognitoIdentityPoolId\": null,\n" + "            \"accountId\": null,\n"
-			+ "            \"cognitoIdentityId\": null,\n" + "            \"caller\": null,\n"
-			+ "            \"sourceIp\": \"90.37.8.133\",\n" + "            \"principalOrgId\": null,\n"
-			+ "            \"accessKey\": null,\n" + "            \"cognitoAuthenticationType\": null,\n"
-			+ "            \"cognitoAuthenticationProvider\": null,\n" + "            \"userArn\": null,\n"
-			+ "            \"userAgent\": \"curl/7.54.0\",\n" + "            \"user\": null\n" + "        },\n"
-			+ "        \"domainName\": \"fhul32ccy2.execute-api.eu-west-3.amazonaws.com\",\n"
-			+ "        \"apiId\": \"fhul32ccy2\"\n" + "    },\n"
-			+ "    \"body\":[{\"name\":\"Jim Lahey\"},{\"name\":\"Ricky\"}],\n" + "    \"isBase64Encoded\": false\n"
-			+ "}";
+	String apiGatewayEventWithArray = """
+			{
+			    "resource": "/uppercase2",
+			    "path": "/uppercase2",
+			    "httpMethod": "POST",
+			    "headers": {
+			        "accept": "*/*",
+			        "content-type": "application/json",
+			        "Host": "fhul32ccy2.execute-api.eu-west-3.amazonaws.com",
+			        "User-Agent": "curl/7.54.0",
+			        "X-Amzn-Trace-Id": "Root=1-5ece339e-e0595766066d703ec70f1522",
+			        "X-Forwarded-For": "90.37.8.133",
+			        "X-Forwarded-Port": "443",
+			        "X-Forwarded-Proto": "https"
+			    },
+			    "multiValueHeaders": {
+			        "accept": [
+			            "*/*"
+			        ],
+			        "content-type": [
+			            "application/json"
+			        ],
+			        "Host": [
+			            "fhul32ccy2.execute-api.eu-west-3.amazonaws.com"
+			        ],
+			        "User-Agent": [
+			            "curl/7.54.0"
+			        ],
+			        "X-Amzn-Trace-Id": [
+			            "Root=1-5ece339e-e0595766066d703ec70f1522"
+			        ],
+			        "X-Forwarded-For": [
+			            "90.37.8.133"
+			        ],
+			        "X-Forwarded-Port": [
+			            "443"
+			        ],
+			        "X-Forwarded-Proto": [
+			            "https"
+			        ]
+			    },
+			    "queryStringParameters": null,
+			    "multiValueQueryStringParameters": null,
+			    "pathParameters": null,
+			    "stageVariables": null,
+			    "requestContext": {
+			        "resourceId": "qf0io6",
+			        "resourcePath": "/uppercase2",
+			        "httpMethod": "POST",
+			        "extendedRequestId": "NL0A1EokCGYFZOA=",
+			        "requestTime": "27/May/2020:09:32:14 +0000",
+			        "path": "/test/uppercase2",
+			        "accountId": "123456789098",
+			        "protocol": "HTTP/1.1",
+			        "stage": "test",
+			        "domainPrefix": "fhul32ccy2",
+			        "requestTimeEpoch": 1590571934872,
+			        "requestId": "b96500aa-f92a-43c3-9360-868ba4053a00",
+			        "identity": {
+			            "cognitoIdentityPoolId": null,
+			            "accountId": null,
+			            "cognitoIdentityId": null,
+			            "caller": null,
+			            "sourceIp": "90.37.8.133",
+			            "principalOrgId": null,
+			            "accessKey": null,
+			            "cognitoAuthenticationType": null,
+			            "cognitoAuthenticationProvider": null,
+			            "userArn": null,
+			            "userAgent": "curl/7.54.0",
+			            "user": null
+			        },
+			        "domainName": "fhul32ccy2.execute-api.eu-west-3.amazonaws.com",
+			        "apiId": "fhul32ccy2"
+			    },
+			    "body":[{"name":"Jim Lahey"},{"name":"Ricky"}],
+			    "isBase64Encoded": false
+			}""";
 
-	String gwAuthorizerEvent = "{\n" + "    \"type\":\"TOKEN\",\n" + "    \"authorizationToken\":\"allow\",\n"
-			+ "    \"methodArn\":\"arn:aws:execute-api:us-west-2:123456789012:ymy8tbxw7b/*/GET/\"\n" + "}";
+	String gwAuthorizerEvent = """
+			{
+			    "type":"TOKEN",
+			    "authorizationToken":"allow",
+			    "methodArn":"arn:aws:execute-api:us-west-2:123456789012:ymy8tbxw7b/*/GET/"
+			}""";
 
 	@BeforeEach
 	public void before() throws Exception {

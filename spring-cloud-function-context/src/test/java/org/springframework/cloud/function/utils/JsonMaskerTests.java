@@ -36,55 +36,159 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class JsonMaskerTests {
 
-	private String event = "{\n" + "  \"Records\": [\n" + "    {\n"
-			+ "      \"eventID\": \"f07f8ca4b0b26cb9c4e5e77e69f274ee\",\n" + "      \"eventName\": \"INSERT\",\n"
-			+ "      \"eventVersion\": \"1.1\",\n" + "      \"eventSource\": \"aws:dynamodb\",\n"
-			+ "      \"awsRegion\": \"us-east-1\",\n" + "      \"userIdentity\":{\n" + "        \"type\":\"Service\",\n"
-			+ "        \"principalId\":\"dynamodb.amazonaws.com\"\n" + "      },\n" + "      \"dynamodb\": {\n"
-			+ "        \"ApproximateCreationDateTime\": 1.684934517E9,\n" + "        \"Keys\": {\n"
-			+ "          \"val\": {\n" + "            \"S\": \"data\"\n" + "          },\n" + "          \"key\": {\n"
-			+ "            \"S\": \"binary\"\n" + "          }\n" + "        },\n" + "        \"NewImage\": {\n"
-			+ "          \"val\": {\n" + "            \"S\": \"data\"\n" + "          },\n" + "          \"asdf1\": {\n"
-			+ "            \"B\": \"AAEqQQ==\"\n" + "          },\n" + "          \"asdf2\": {\n"
-			+ "            \"BS\": [\n" + "              \"AAEqQQ==\",\n" + "              \"QSoBAA==\"\n"
-			+ "            ]\n" + "          },\n" + "          \"key\": {\n" + "            \"S\": \"binary\"\n"
-			+ "          }\n" + "        },\n" + "        \"SequenceNumber\": \"1405400000000002063282832\",\n"
-			+ "        \"SizeBytes\": 54,\n" + "        \"StreamViewType\": \"NEW_AND_OLD_IMAGES\"\n" + "      },\n"
-			+ "      \"eventSourceARN\": \"arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000\"\n"
-			+ "    },\n" + "    {\n" + "      \"eventID\": \"f07f8ca4b0b26cb9c4e5e77e42f274ee\",\n"
-			+ "      \"eventName\": \"INSERT\",\n" + "      \"eventVersion\": \"1.1\",\n"
-			+ "      \"eventSource\": \"aws:dynamodb\",\n" + "      \"awsRegion\": \"us-east-1\",\n"
-			+ "      \"dynamodb\": {\n" + "        \"ApproximateCreationDateTime\": 1480642020,\n"
-			+ "        \"Keys\": {\n" + "          \"val\": {\n" + "            \"S\": \"data\"\n" + "          },\n"
-			+ "          \"key\": {\n" + "            \"S\": \"binary\"\n" + "          }\n" + "        },\n"
-			+ "        \"NewImage\": {\n" + "          \"val\": {\n" + "            \"S\": \"data\"\n"
-			+ "          },\n" + "          \"asdf1\": {\n" + "            \"B\": \"AAEqQQ==\"\n" + "          },\n"
-			+ "          \"b2\": {\n" + "            \"B\": \"test\"\n" + "          },\n" + "          \"asdf2\": {\n"
-			+ "            \"BS\": [\n" + "              \"AAEqQQ==\",\n" + "              \"QSoBAA==\",\n"
-			+ "              \"AAEqQQ==\"\n" + "            ]\n" + "          },\n" + "          \"key\": {\n"
-			+ "            \"S\": \"binary\"\n" + "          },\n" + "          \"Binary\": {\n"
-			+ "            \"B\": \"AAEqQQ==\"\n" + "          },\n" + "          \"Boolean\": {\n"
-			+ "            \"BOOL\": true\n" + "          },\n" + "          \"BinarySet\": {\n"
-			+ "            \"BS\": [\n" + "              \"AAEqQQ==\",\n" + "              \"AAEqQQ==\"\n"
-			+ "            ]\n" + "          },\n" + "          \"List\": {\n" + "            \"L\": [\n"
-			+ "              {\n" + "                \"S\": \"Cookies\"\n" + "              },\n" + "              {\n"
-			+ "                \"S\": \"Coffee\"\n" + "              },\n" + "              {\n"
-			+ "                \"N\": \"3.14159\"\n" + "              }\n" + "            ]\n" + "          },\n"
-			+ "          \"Map\": {\n" + "            \"M\": {\n" + "              \"Name\": {\n"
-			+ "                \"S\": \"Joe\"\n" + "              },\n" + "              \"Age\": {\n"
-			+ "                \"N\": \"35\"\n" + "              }\n" + "            }\n" + "          },\n"
-			+ "          \"FloatNumber\": {\n" + "            \"N\": \"123.45\"\n" + "          },\n"
-			+ "          \"IntegerNumber\": {\n" + "            \"N\": \"123\"\n" + "          },\n"
-			+ "          \"NumberSet\": {\n" + "            \"NS\": [\n" + "              \"1234\",\n"
-			+ "              \"567.8\"\n" + "            ]\n" + "          },\n" + "          \"Null\": {\n"
-			+ "            \"NULL\": true\n" + "          },\n" + "          \"String\": {\n"
-			+ "            \"S\": \"Hello\"\n" + "          },\n" + "          \"StringSet\": {\n"
-			+ "            \"SS\": [\n" + "              \"Giraffe\",\n" + "              \"Zebra\"\n"
-			+ "            ]\n" + "          },\n" + "          \"EmptyStringSet\": {\n" + "            \"SS\": []\n"
-			+ "          }\n" + "        },\n" + "        \"SequenceNumber\": \"1405400000000002063282832\",\n"
-			+ "        \"SizeBytes\": 54,\n" + "        \"StreamViewType\": \"NEW_AND_OLD_IMAGES\"\n" + "      },\n"
-			+ "      \"eventSourceARN\": \"arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000\"\n"
-			+ "    }\n" + "  ]\n" + "}";
+	private String event = """
+			{
+			  "Records": [
+			    {
+			      "eventID": "f07f8ca4b0b26cb9c4e5e77e69f274ee",
+			      "eventName": "INSERT",
+			      "eventVersion": "1.1",
+			      "eventSource": "aws:dynamodb",
+			      "awsRegion": "us-east-1",
+			      "userIdentity":{
+			        "type":"Service",
+			        "principalId":"dynamodb.amazonaws.com"
+			      },
+			      "dynamodb": {
+			        "ApproximateCreationDateTime": 1.684934517E9,
+			        "Keys": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "key": {
+			            "S": "binary"
+			          }
+			        },
+			        "NewImage": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "asdf1": {
+			            "B": "AAEqQQ=="
+			          },
+			          "asdf2": {
+			            "BS": [
+			              "AAEqQQ==",
+			              "QSoBAA=="
+			            ]
+			          },
+			          "key": {
+			            "S": "binary"
+			          }
+			        },
+			        "SequenceNumber": "1405400000000002063282832",
+			        "SizeBytes": 54,
+			        "StreamViewType": "NEW_AND_OLD_IMAGES"
+			      },
+			      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000"
+			    },
+			    {
+			      "eventID": "f07f8ca4b0b26cb9c4e5e77e42f274ee",
+			      "eventName": "INSERT",
+			      "eventVersion": "1.1",
+			      "eventSource": "aws:dynamodb",
+			      "awsRegion": "us-east-1",
+			      "dynamodb": {
+			        "ApproximateCreationDateTime": 1480642020,
+			        "Keys": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "key": {
+			            "S": "binary"
+			          }
+			        },
+			        "NewImage": {
+			          "val": {
+			            "S": "data"
+			          },
+			          "asdf1": {
+			            "B": "AAEqQQ=="
+			          },
+			          "b2": {
+			            "B": "test"
+			          },
+			          "asdf2": {
+			            "BS": [
+			              "AAEqQQ==",
+			              "QSoBAA==",
+			              "AAEqQQ=="
+			            ]
+			          },
+			          "key": {
+			            "S": "binary"
+			          },
+			          "Binary": {
+			            "B": "AAEqQQ=="
+			          },
+			          "Boolean": {
+			            "BOOL": true
+			          },
+			          "BinarySet": {
+			            "BS": [
+			              "AAEqQQ==",
+			              "AAEqQQ=="
+			            ]
+			          },
+			          "List": {
+			            "L": [
+			              {
+			                "S": "Cookies"
+			              },
+			              {
+			                "S": "Coffee"
+			              },
+			              {
+			                "N": "3.14159"
+			              }
+			            ]
+			          },
+			          "Map": {
+			            "M": {
+			              "Name": {
+			                "S": "Joe"
+			              },
+			              "Age": {
+			                "N": "35"
+			              }
+			            }
+			          },
+			          "FloatNumber": {
+			            "N": "123.45"
+			          },
+			          "IntegerNumber": {
+			            "N": "123"
+			          },
+			          "NumberSet": {
+			            "NS": [
+			              "1234",
+			              "567.8"
+			            ]
+			          },
+			          "Null": {
+			            "NULL": true
+			          },
+			          "String": {
+			            "S": "Hello"
+			          },
+			          "StringSet": {
+			            "SS": [
+			              "Giraffe",
+			              "Zebra"
+			            ]
+			          },
+			          "EmptyStringSet": {
+			            "SS": []
+			          }
+			        },
+			        "SequenceNumber": "1405400000000002063282832",
+			        "SizeBytes": 54,
+			        "StreamViewType": "NEW_AND_OLD_IMAGES"
+			      },
+			      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000"
+			    }
+			  ]
+			}""";
 
 	private List<String> maskedKeys = new ArrayList<>();
 
