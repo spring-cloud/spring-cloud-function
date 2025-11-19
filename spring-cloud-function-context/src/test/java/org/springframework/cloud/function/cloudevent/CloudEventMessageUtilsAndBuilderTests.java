@@ -80,9 +80,9 @@ public class CloudEventMessageUtilsAndBuilderTests {
 		Message<String> kafkaMessage = CloudEventMessageBuilder.fromMessage(httpMessage)
 			.build(CloudEventMessageUtils.KAFKA_ATTR_PREFIX);
 		attributes = CloudEventMessageUtils.getAttributes(kafkaMessage);
-		assertThat(attributes.size()).isEqualTo(4); // id will be auto injected, so always
-													// at least 4 (as tehre are 4 required
-													// attributes in CE)
+		// id will be auto injected, so always at least 4 (as there are 4 required
+		// attributes in CE)
+		assertThat(attributes.size()).isEqualTo(4);
 		assertThat(kafkaMessage.getHeaders().get("ce_source")).isNotNull();
 		assertThat(CloudEventMessageUtils.getSource(kafkaMessage)).isEqualTo(URI.create("https://foo.bar"));
 		assertThat(kafkaMessage.getHeaders().get("ce_type")).isNotNull();

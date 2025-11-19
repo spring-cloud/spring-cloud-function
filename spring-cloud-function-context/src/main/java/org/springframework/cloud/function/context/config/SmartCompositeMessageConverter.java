@@ -113,19 +113,10 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 				for (Iterator<MessageConverter> iterator = getConverters().iterator(); iterator.hasNext()
 						&& !isConverted;) {
 					MessageConverter converter = (MessageConverter) iterator.next();
-					if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO
-																													// Stream
-																													// stuff,
-																													// needs
-																													// to
-																													// be
-																													// removed
-						Message<?> m = MessageBuilder.withPayload(item).copyHeaders(message.getHeaders()).build(); // TODO
-																													// Message
-																													// creating
-																													// may
-																													// be
-																													// expensive
+					// TODO Stream stuff, needs to be removed
+					if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) {
+						// TODO Message creating may be expensive
+						Message<?> m = MessageBuilder.withPayload(item).copyHeaders(message.getHeaders()).build();
 						Object conversionResult = (converter instanceof SmartMessageConverter
 								& genericItemRawType != genericItemType
 										? ((SmartMessageConverter) converter).fromMessage(m, genericItemRawType,
@@ -146,13 +137,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 		}
 		else {
 			for (MessageConverter converter : getConverters()) {
-				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO
-																												// Stream
-																												// stuff,
-																												// needs
-																												// to
-																												// be
-																												// removed
+				// TODO Stream stuff, needs to be removed
+				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) {
 					result = (converter instanceof SmartMessageConverter
 							? ((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint)
 							: converter.fromMessage(message, targetClass));

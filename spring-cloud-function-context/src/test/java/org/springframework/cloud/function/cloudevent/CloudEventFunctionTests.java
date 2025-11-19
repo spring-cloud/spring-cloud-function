@@ -244,11 +244,11 @@ public class CloudEventFunctionTests {
 		assertThat(resultMessage.getPayload().getReleaseDate())
 			.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
 		assertThat(resultMessage.getPayload().getVersion()).isEqualTo("2.0");
-		// /*
-		// * Validates that although user only deals with POJO, the framework recognizes
-		// * both on input and output that it is dealing with Cloud Event and generates
-		// * appropriate headers/attributes
-		// */
+		/*
+		 * Validates that although user only deals with POJO, the framework recognizes
+		 * both on input and output that it is dealing with Cloud Event and generates
+		 * appropriate headers/attributes
+		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
@@ -282,11 +282,11 @@ public class CloudEventFunctionTests {
 		assertThat(resultMessage.getPayload().getReleaseDate())
 			.isEqualTo(new SimpleDateFormat("dd-MM-yyyy").parse("01-10-2006"));
 		assertThat(resultMessage.getPayload().getVersion()).isEqualTo("2.0");
-		// /*
-		// * Validates that although user only deals with POJO, the framework recognizes
-		// * both on input and output that it is dealing with Cloud Event and generates
-		// * appropriate headers/attributes
-		// */
+		/*
+		 * Validates that although user only deals with POJO, the framework recognizes
+		 * both on input and output that it is dealing with Cloud Event and generates
+		 * appropriate headers/attributes
+		 */
 		assertThat(CloudEventMessageUtils.isCloudEvent(resultMessage)).isTrue();
 		assertThat(CloudEventMessageUtils.getType(resultMessage)).isEqualTo(SpringReleaseEvent.class.getName());
 		assertThat(CloudEventMessageUtils.getSource(resultMessage))

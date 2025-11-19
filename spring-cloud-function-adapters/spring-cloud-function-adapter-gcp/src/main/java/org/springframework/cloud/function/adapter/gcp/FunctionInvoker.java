@@ -211,13 +211,11 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		}
 	}
 
-	/*
-	 * This methd get the result from reactor's publisher.
+	/**
+	 * This method gets the result from reactor's publisher.
 	 *
 	 * For reference:
-	 * https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-
-	 * function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/
-	 * springframework/cloud/function/adapter/aws/AWSLambdaUtils.java
+	 * https://github.com/spring-cloud/spring-cloud-function/blob/main/spring-cloud-function-adapters/spring-cloud-function-adapter-aws/src/main/java/org/springframework/cloud/function/adapter/aws/AWSLambdaUtils.java
 	 */
 	private Message<byte[]> getResultFromPublisher(Object resultObject) {
 		List<Object> results = new ArrayList<>();

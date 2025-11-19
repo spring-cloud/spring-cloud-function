@@ -121,8 +121,8 @@ public class FunctionRegistration<T> implements BeanNameAware {
 			return this;
 		}
 		Type discoveredFunctionType = type; // FunctionTypeUtils.discoverFunctionTypeFromClass(this.target.getClass());
-		if (discoveredFunctionType == null) { // only valid for Kafka Stream KStream[]
-												// return type.
+		if (discoveredFunctionType == null) {
+			// only valid for Kafka Stream KStream[] return type.
 			return null;
 		}
 
