@@ -83,9 +83,12 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		String payload = "{\n" + "        \"version\" : \"1.0\",\n"
-				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
-				+ "    }";
+		String payload = """
+				{
+					"version" : "1.0",
+					"releaseName" : "Spring Framework",
+					"releaseDate" : "24-03-2004"
+				}""";
 
 		Message<String> inputMessage = CloudEventMessageBuilder.withData(payload)
 			.setId(id)
@@ -117,9 +120,12 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		String payload = "{\n" + "        \"version\" : \"1.0\",\n"
-				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
-				+ "    }";
+		String payload = """
+				{
+					"version" : "1.0",
+					"releaseName" : "Spring Framework",
+					"releaseDate" : "24-03-2004"
+				}""";
 
 		Message<String> inputMessage = CloudEventMessageBuilder.withData(payload)
 			.setId(id)
@@ -151,9 +157,12 @@ public class CloudEventFunctionTests {
 
 		String id = UUID.randomUUID().toString();
 
-		String payload = "{\n" + "        \"version\" : \"1.0\",\n"
-				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
-				+ "    }";
+		String payload = """
+				{
+					"version" : "1.0",
+					"releaseName" : "Spring Framework",
+					"releaseDate" : "24-03-2004"
+				}""";
 
 		Message<String> inputMessage = CloudEventMessageBuilder.withData(payload)
 			.setId(id)
@@ -210,11 +219,19 @@ public class CloudEventFunctionTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testStructuredPojoToPojoDefaultOutputAttributeProvider() throws Exception {
-		String payload = "{\n" + "    \"specversion\" : \"1.0\",\n" + "    \"type\" : \"org.springframework\",\n"
-				+ "    \"source\" : \"https://spring.io/\",\n" + "    \"id\" : \"A234-1234-1234\",\n"
-				+ "    \"datacontenttype\" : \"application/json\",\n" + "    \"data\" : {\n"
-				+ "        \"version\" : \"1.0\",\n" + "        \"releaseName\" : \"Spring Framework\",\n"
-				+ "        \"releaseDate\" : \"24-03-2004\"\n" + "    }\n" + "}";
+		String payload = """
+				{
+				    "specversion" : "1.0",
+				    "type" : "org.springframework",
+				    "source" : "https://spring.io/",
+				    "id" : "A234-1234-1234",
+				    "datacontenttype" : "application/json",
+				    "data" : {
+				        "version" : "1.0",
+				        "releaseName" : "Spring Framework",
+				        "releaseDate" : "24-03-2004"
+				    }
+				}""";
 		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
 
 		Message<String> inputMessage = MessageBuilder.withPayload(payload)
@@ -240,11 +257,19 @@ public class CloudEventFunctionTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testStructuredPojoToPojoMessageFunction() throws Exception {
-		String payload = "{\n" + "    \"specversion\" : \"1.0\",\n" + "    \"type\" : \"org.springframework\",\n"
-				+ "    \"source\" : \"https://spring.io/\",\n" + "    \"id\" : \"A234-1234-1234\",\n"
-				+ "    \"datacontenttype\" : \"application/json\",\n" + "    \"data\" : {\n"
-				+ "        \"version\" : \"1.0\",\n" + "        \"releaseName\" : \"Spring Framework\",\n"
-				+ "        \"releaseDate\" : \"24-03-2004\"\n" + "    }\n" + "}";
+		String payload = """
+				{
+				    "specversion" : "1.0",
+				    "type" : "org.springframework",
+				    "source" : "https://spring.io/",
+				    "id" : "A234-1234-1234",
+				    "datacontenttype" : "application/json",
+				    "data" : {
+				        "version" : "1.0",
+				        "releaseName" : "Spring Framework",
+				        "releaseDate" : "24-03-2004"
+				    }
+				}""";
 		Function<Object, Object> function = this.lookup("springReleaseAsMessage", TestConfiguration.class);
 
 		Message<String> inputMessage = MessageBuilder.withPayload(payload)
@@ -271,11 +296,18 @@ public class CloudEventFunctionTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testStructuredPojoToPojoDefaultOutputAttributeProviderNoDataContentType() throws Exception {
-		String payload = "{\n" + "    \"ce_specversion\" : \"1.0\",\n" + "    \"ce_type\" : \"org.springframework\",\n"
-				+ "    \"ce_source\" : \"https://spring.io/\",\n" + "    \"ce_id\" : \"A234-1234-1234\",\n"
-				+ "    \"ce_data\" : {\n" + "        \"version\" : \"1.0\",\n"
-				+ "        \"releaseName\" : \"Spring Framework\",\n" + "        \"releaseDate\" : \"24-03-2004\"\n"
-				+ "    }\n" + "}";
+		String payload = """
+				{
+				    "ce_specversion" : "1.0",
+				    "ce_type" : "org.springframework",
+				    "ce_source" : "https://spring.io/",
+				    "ce_id" : "A234-1234-1234",
+				    "ce_data" : {
+				        "version" : "1.0",
+				        "releaseName" : "Spring Framework",
+				        "releaseDate" : "24-03-2004"
+				    }
+				}""";
 		Function<Object, Object> function = this.lookup("springRelease", TestConfiguration.class);
 
 		Message<String> inputMessage = MessageBuilder.withPayload(payload)

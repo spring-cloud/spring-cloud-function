@@ -146,8 +146,13 @@ public class RequestResponseTests {
 	@Test
 	public void validatePostWithBody() throws Exception {
 		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/pets/");
-		String jsonPet = "{\n" + "   \"id\":\"1234\",\n" + "   \"breed\":\"Canish\",\n" + "   \"name\":\"Foo\",\n"
-				+ "   \"date\":\"2012-04-23T18:25:43.511Z\"\n" + "}";
+		String jsonPet = """
+			{
+			   "id":"1234",
+			   "breed":"Canish",
+			   "name":"Foo",
+			   "date":"2012-04-23T18:25:43.511Z"
+			}""";
 		request.setContent(jsonPet.getBytes());
 		request.setContentType("application/json");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
@@ -177,8 +182,13 @@ public class RequestResponseTests {
 	public void validatePostAsyncWithBody() throws Exception {
 		// System.setProperty("spring.main.banner-mode", "off");
 		ServerlessHttpServletRequest request = new ServerlessHttpServletRequest(null, "POST", "/petsAsync/");
-		String jsonPet = "{\n" + "   \"id\":\"1234\",\n" + "   \"breed\":\"Canish\",\n" + "   \"name\":\"Foo\",\n"
-				+ "   \"date\":\"2012-04-23T18:25:43.511Z\"\n" + "}";
+		String jsonPet = """
+				{
+				   "id":"1234",
+				   "breed":"Canish",
+				   "name":"Foo",
+				   "date":"2012-04-23T18:25:43.511Z"
+				}""";
 		request.setContent(jsonPet.getBytes());
 		request.setContentType("application/json");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
