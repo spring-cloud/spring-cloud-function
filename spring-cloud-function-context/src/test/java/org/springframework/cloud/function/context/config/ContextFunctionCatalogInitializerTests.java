@@ -414,7 +414,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 	}
 
-	private static class Person {
+	private static final class Person {
 		private String name;
 
 		public String getName() {

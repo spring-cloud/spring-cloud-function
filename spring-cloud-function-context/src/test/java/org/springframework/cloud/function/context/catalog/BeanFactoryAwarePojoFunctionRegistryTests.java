@@ -170,7 +170,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	}
 
 	// POJO Function that implements Function
-	private static class MyFunction implements Function<String, String> {
+	private static final class MyFunction implements Function<String, String> {
 		public String uppercase(String value) {
 			return value.toUpperCase(Locale.ROOT);
 		}
@@ -182,7 +182,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	}
 
 	// POJO Function
-	public static class MyFunctionLike {
+	public static final class MyFunctionLike {
 		public String uppercase(String value) {
 			return value.toUpperCase(Locale.ROOT);
 		}

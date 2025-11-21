@@ -133,7 +133,7 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 		return handler;
 	}
 
-	private static class RouterFunctionRegister {
+	private static final class RouterFunctionRegister {
 
 		private static void register(GenericApplicationContext context) {
 			context.registerBean(RouterFunction.class,

@@ -46,7 +46,7 @@ public class HeadersResponseMappingTests {
 		assertThat(response.getBody()).isEqualTo("JOHN");
 	}
 
-	static record Person(String firstName, String lastName) {
+	record Person(String firstName, String lastName) {
 	}
 
 	@SpringBootApplication

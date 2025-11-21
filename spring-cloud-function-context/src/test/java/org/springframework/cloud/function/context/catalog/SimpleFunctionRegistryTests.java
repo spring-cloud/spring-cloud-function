@@ -697,7 +697,7 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	@EnableAutoConfiguration
-	private static class CustomConverterConfiguration {
+	private static final class CustomConverterConfiguration {
 		@Bean
 		public MessageConverter stringToPersonConverter() {
 			return new AbstractMessageConverter(MimeType.valueOf("text/person")) {
@@ -738,7 +738,7 @@ public class SimpleFunctionRegistryTests {
 		}
 	}
 
-	public static class Person {
+	public static final class Person {
 		private String name;
 
 		public String getName() {
@@ -755,7 +755,7 @@ public class SimpleFunctionRegistryTests {
 		}
 	}
 
-	private static class Words implements Supplier<String> {
+	private static final class Words implements Supplier<String> {
 
 		@Override
 		public String get() {
@@ -764,7 +764,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class UpperCase implements Function<String, String> {
+	private static final class UpperCase implements Function<String, String> {
 
 		@Override
 		public String apply(String t) {
@@ -773,7 +773,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class Echo implements Function<Object, Object> {
+	private static final class Echo implements Function<Object, Object> {
 
 		@Override
 		public Object apply(Object t) {
@@ -782,7 +782,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class UpperCaseMessage
+	private static final class UpperCaseMessage
 			implements Function<Message<String>, Message<String>> {
 
 		@Override
@@ -793,7 +793,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class Reverse implements Function<String, String> {
+	private static final class Reverse implements Function<String, String> {
 
 		@Override
 		public String apply(String t) {
@@ -802,7 +802,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class ReverseMessage
+	private static final class ReverseMessage
 			implements Function<Message<String>, Message<String>> {
 
 		@Override
@@ -814,7 +814,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class TestFunction implements Function<Integer, String> {
+	private static final class TestFunction implements Function<Integer, String> {
 
 		@Override
 		public String apply(Integer t) {
@@ -823,7 +823,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class ReactiveFunction implements Function<Flux<Message<List<Person>>>, Flux<List<String>>> {
+	private static final class ReactiveFunction implements Function<Flux<Message<List<Person>>>, Flux<List<String>>> {
 
 		@Override
 		public Flux<List<String>> apply(Flux<Message<List<Person>>> listFlux) {
@@ -833,7 +833,7 @@ public class SimpleFunctionRegistryTests {
 		}
 	}
 
-	private static class ReactiveMonoGreeter implements Supplier<Mono<Message<String>>> {
+	private static final class ReactiveMonoGreeter implements Supplier<Mono<Message<String>>> {
 
 		@Override
 		public Mono<Message<String>> get() {
@@ -842,7 +842,7 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
-	private static class HeaderEnricherFunction implements Function<Message<?>, Message<?>> {
+	private static final class HeaderEnricherFunction implements Function<Message<?>, Message<?>> {
 
 		@Override
 		public Message<?> apply(Message<?> message) {
@@ -851,28 +851,28 @@ public class SimpleFunctionRegistryTests {
 		}
 	}
 
-	private static class StringArrayFunction implements Function<String[], String> {
+	private static final class StringArrayFunction implements Function<String[], String> {
 		@Override
 		public String apply(String[] t) {
 			return Arrays.asList(t).toString();
 		}
 	}
 
-	private static class StringListFunction implements Function<List<String>, String> {
+	private static final class StringListFunction implements Function<List<String>, String> {
 		@Override
 		public String apply(List<String> t) {
 			return t.toString();
 		}
 	}
 
-	private static class TypelessFunction implements Function<Object, String> {
+	private static final class TypelessFunction implements Function<Object, String> {
 		@Override
 		public String apply(Object t) {
 			return t.toString();
 		}
 	}
 
-	private static class ByteArrayFunction implements Function<byte[], String> {
+	private static final class ByteArrayFunction implements Function<byte[], String> {
 		@Override
 		public String apply(byte[] t) {
 			return new String(t);

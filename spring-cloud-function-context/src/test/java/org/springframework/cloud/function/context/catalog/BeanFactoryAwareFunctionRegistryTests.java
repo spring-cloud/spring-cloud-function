@@ -1344,7 +1344,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			return new Foo();
 		}
 
-		private static class Foo implements Supplier<Object>, Serializable {
+		private static final class Foo implements Supplier<Object>, Serializable {
 
 			@Override
 			public Object get() {
@@ -1363,7 +1363,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			return new Foo();
 		}
 
-		private static class Foo implements Function<Object, Object>, Serializable {
+		private static final class Foo implements Function<Object, Object>, Serializable {
 
 			@Override
 			public Object apply(Object t) {
@@ -1497,7 +1497,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 	}
 
-	private static class Product {
+	private static final class Product {
 		private String name;
 
 		public String getName() {
@@ -1509,7 +1509,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 	}
 
-	private static class Event<K, V> {
+	private static final class Event<K, V> {
 
 		private K key;
 

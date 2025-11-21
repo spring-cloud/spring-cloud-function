@@ -327,7 +327,7 @@ public class ServerlessWebApplication extends SpringApplication {
 		}
 	}
 
-	private static class SpringAwsBanner implements Banner {
+	private static final class SpringAwsBanner implements Banner {
 
 		private static final String[] BANNER = { "", "\n"
 				+ "  ____             _                _____        ______    _                    _         _       \n"

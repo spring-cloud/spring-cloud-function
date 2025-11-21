@@ -106,7 +106,7 @@ public class HeadersToMessageTests {
 	}
 
 	@SuppressWarnings("unused") // used by json converter
-	private static class Employee {
+	private static final class Employee {
 
 		private String name;
 

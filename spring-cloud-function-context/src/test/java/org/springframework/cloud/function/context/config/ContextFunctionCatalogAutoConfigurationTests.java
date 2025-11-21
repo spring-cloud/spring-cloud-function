@@ -848,7 +848,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 //
 //	}
 
-	private static class FunctionFactoryBean
+	private static final class FunctionFactoryBean
 			extends AbstractFactoryBean<Function<String, String>> {
 
 		@Override

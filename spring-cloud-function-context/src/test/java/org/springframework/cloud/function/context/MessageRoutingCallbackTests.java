@@ -48,8 +48,8 @@ public class MessageRoutingCallbackTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testRoutingCallbackWithMessageModification() {
-		FunctionCatalog catalog = this.configureCatalog(SamppleConfiguration.class);
-		SamppleConfiguration conf = context.getBean(SamppleConfiguration.class);
+		FunctionCatalog catalog = this.configureCatalog(SampleConfiguration.class);
+		SampleConfiguration conf = context.getBean(SampleConfiguration.class);
 		FunctionInvocationWrapper function = (FunctionInvocationWrapper) catalog.lookup(RoutingFunction.FUNCTION_NAME, "application/json");
 		String foo = "{\"foo\":\"blah\"}";
 		Message<byte[]> fooResult = (Message<byte[]>) function.apply(MessageBuilder.withPayload(foo.getBytes()).build());
@@ -71,7 +71,7 @@ public class MessageRoutingCallbackTests {
 	}
 
 	@EnableAutoConfiguration
-	private static class SamppleConfiguration {
+	private static final class SampleConfiguration {
 
 		Map<String, UUID> createdMessageIds = new HashMap<>();
 

@@ -421,7 +421,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 * Inner class that adapts the ServletOutputStream to mark the response as
 	 * committed once the buffer size is exceeded.
 	 */
-	private class ResponseServletOutputStream extends ServletOutputStream {
+	private final class ResponseServletOutputStream extends ServletOutputStream {
 
 		private WriteListener listener;
 
