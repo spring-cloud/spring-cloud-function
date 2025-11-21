@@ -182,7 +182,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	}
 
 	// POJO Function
-	public static final class MyFunctionLike {
+	public static class MyFunctionLike {
 		public String uppercase(String value) {
 			return value.toUpperCase(Locale.ROOT);
 		}
