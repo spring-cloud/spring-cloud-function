@@ -21,7 +21,6 @@ import java.io.IOException;
 import org.springframework.boot.loader.tools.CustomLoaderLayout;
 import org.springframework.boot.loader.tools.Layouts;
 import org.springframework.boot.loader.tools.LoaderClassesWriter;
-import org.springframework.boot.loader.tools.LoaderImplementation;
 import org.springframework.cloud.function.adapter.gcp.GcfJarLauncher;
 
 /**
@@ -47,7 +46,7 @@ public class GcfJarLayout extends Layouts.Jar implements CustomLoaderLayout {
 
 	@Override
 	public void writeLoadedClasses(LoaderClassesWriter writer) throws IOException {
-		writer.writeLoaderClasses(LoaderImplementation.CLASSIC);
+		writer.writeLoaderClasses();
 
 		String jarName = LAUNCHER_NAME.replaceAll("\\.", "/") + ".class";
 		writer.writeEntry(
