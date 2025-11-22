@@ -85,7 +85,10 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 		if (targetClass.getPackage() != null &&
 				targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
 			PojoSerializer<?> serializer = LambdaEventSerializers.serializerFor(targetClass, Thread.currentThread().getContextClassLoader());
-			Object event = serializer.fromJson(new ByteArrayInputStream((byte[]) message.getPayload()));
+			byte[] payloadBytes = message.getPayload() instanceof String
+					? ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8)
+					: (byte[]) message.getPayload();
+			Object event = serializer.fromJson(new ByteArrayInputStream(payloadBytes));
 			return event;
 		}
 		else {
