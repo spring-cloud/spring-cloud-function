@@ -377,11 +377,14 @@ public class RoutingFunctionTests {
 	@EnableAutoConfiguration
 	@Configuration
 	protected static class ConfigurationWithDefaultMessageRoutingHandler {
+		/**
+		 *
+		 */
 		public boolean defaultHandlerInvoked;
 		@Bean
 		public DefaultMessageRoutingHandler defaultRoutingHandler() {
 			return new DefaultMessageRoutingHandler() {
-				@Override
+					@Override
 				public void accept(Message<?> message) {
 					super.accept(message);
 					defaultHandlerInvoked = true;
