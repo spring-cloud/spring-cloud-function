@@ -34,9 +34,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
- * Message builder which is aware of Cloud Event semantics.
- * It provides type-safe setters for v1.0 Cloud Event attributes while
- * supporting all other versions via convenient
+ * Message builder which is aware of Cloud Event semantics. It provides type-safe setters
+ * for v1.0 Cloud Event attributes while supporting all other versions via convenient
  * {@link #setHeader(String, Object)} method.
  *
  * @author Oleg Zhurakousky
@@ -134,7 +133,6 @@ public final class CloudEventMessageBuilder<T> {
 	/**
 	 * Returns a snapshot of the headers {@link Map} at the time this method is called.
 	 * The returned Map is read-only.
-	 *
 	 * @return map of headers
 	 */
 	public Map<String, Object> toHeadersMap() {
@@ -142,9 +140,9 @@ public final class CloudEventMessageBuilder<T> {
 	}
 
 	/**
-	 * Will build the message ensuring that the Cloud Event attributes are all
-	 * prefixed with the prefix determined by the framework. If you want to
-	 * use a specific prefix please use {@link #build(String)} method.
+	 * Will build the message ensuring that the Cloud Event attributes are all prefixed
+	 * with the prefix determined by the framework. If you want to use a specific prefix
+	 * please use {@link #build(String)} method.
 	 * @return instance of {@link Message}
 	 */
 	public Message<T> build() {
@@ -152,20 +150,19 @@ public final class CloudEventMessageBuilder<T> {
 	}
 
 	/**
-	 * Will build the message ensuring that the Cloud Event attributes are
-	 * prefixed with the 'attributePrefixToUse'.
-	 *
+	 * Will build the message ensuring that the Cloud Event attributes are prefixed with
+	 * the 'attributePrefixToUse'.
 	 * @param attributePrefixToUse prefix to use for attributes
 	 * @return instance of {@link Message}
 	 */
 	public Message<T> build(String attributePrefixToUse) {
-		Assert.isTrue(attributePrefixToUse.equals(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX)
-				|| attributePrefixToUse.equals(CloudEventMessageUtils.KAFKA_ATTR_PREFIX)
-				|| attributePrefixToUse.equals(CloudEventMessageUtils.AMQP_ATTR_PREFIX), "Supported prefixes are "
-				+ CloudEventMessageUtils.DEFAULT_ATTR_PREFIX
-				+ ", " + CloudEventMessageUtils.KAFKA_ATTR_PREFIX
-				+ ", " + CloudEventMessageUtils.AMQP_ATTR_PREFIX
-				+ ". Was " + attributePrefixToUse);
+		Assert.isTrue(
+				attributePrefixToUse.equals(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX)
+						|| attributePrefixToUse.equals(CloudEventMessageUtils.KAFKA_ATTR_PREFIX)
+						|| attributePrefixToUse.equals(CloudEventMessageUtils.AMQP_ATTR_PREFIX),
+				"Supported prefixes are " + CloudEventMessageUtils.DEFAULT_ATTR_PREFIX + ", "
+						+ CloudEventMessageUtils.KAFKA_ATTR_PREFIX + ", " + CloudEventMessageUtils.AMQP_ATTR_PREFIX
+						+ ". Was " + attributePrefixToUse);
 		if (StringUtils.hasText(attributePrefixToUse)) {
 			String[] keys = this.headers.keySet().toArray(new String[] {});
 			for (String key : keys) {
@@ -206,8 +203,10 @@ public final class CloudEventMessageBuilder<T> {
 		}
 		MessageHeaders headers = new MessageHeaders(this.headers);
 		GenericMessage<T> message = new GenericMessage<T>(this.data, headers);
-		Assert.isTrue(CloudEventMessageUtils.isCloudEvent(message), "The message does not appear to be a valid Cloud Event, "
-				+ "since one of the required attributes (id, specversion, type, source) is missing");
+		Assert.isTrue(CloudEventMessageUtils.isCloudEvent(message),
+				"The message does not appear to be a valid Cloud Event, "
+						+ "since one of the required attributes (id, specversion, type, source) is missing");
 		return message;
 	}
+
 }

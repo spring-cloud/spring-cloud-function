@@ -99,19 +99,21 @@ public class FunctionInstanceInjectorServiceLoadingTest {
 	}
 
 	@Configuration
-	@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class)})
+	@ComponentScan(
+			excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
 	public static class MyMainConfig {
 
 		@Bean
 		public Function<Message<String>, String> uppercase() {
 			return message -> {
 				ExecutionContext context = (ExecutionContext) message.getHeaders()
-						.get(AzureFunctionUtil.EXECUTION_CONTEXT);
+					.get(AzureFunctionUtil.EXECUTION_CONTEXT);
 				Assertions.assertThat(context).isNotNull();
 				Assertions.assertThat(context.getFunctionName()).isEqualTo("hello");
 				return message.getPayload().toUpperCase(Locale.ROOT);
 			};
 		}
+
 	}
 
 	@Component
@@ -122,14 +124,15 @@ public class FunctionInstanceInjectorServiceLoadingTest {
 
 		@FunctionName("ditest")
 		public String execute(
-				@HttpTrigger(name = "req", methods = { HttpMethod.GET,
-						HttpMethod.POST }, authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
+				@HttpTrigger(name = "req", methods = { HttpMethod.GET, HttpMethod.POST },
+						authLevel = AuthorizationLevel.ANONYMOUS) HttpRequestMessage<Optional<String>> request,
 				ExecutionContext context) {
 
-			Message<String> enhancedRequest = (Message<String>) AzureFunctionUtil.enhanceInputIfNecessary(
-					request.getBody().get(),
-					context);
+			Message<String> enhancedRequest = (Message<String>) AzureFunctionUtil
+				.enhanceInputIfNecessary(request.getBody().get(), context);
 			return uppercase.apply(enhancedRequest);
 		}
+
 	}
+
 }

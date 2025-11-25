@@ -43,11 +43,14 @@ public class FunctionalWithInputListTests {
 
 	@Test
 	public void words() throws Exception {
-		this.client.post().uri("/")
-				.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"),
-						String.class)
-				.exchange().expectStatus().isOk().expectBody(String.class)
-				.isEqualTo("{\"value\":\"FOOBAR\"}");
+		this.client.post()
+			.uri("/")
+			.body(Mono.just("[{\"value\":\"foo\"}, {\"value\":\"bar\"}]"), String.class)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.isEqualTo("{\"value\":\"FOOBAR\"}");
 	}
 
 	@SpringBootConfiguration
@@ -55,8 +58,8 @@ public class FunctionalWithInputListTests {
 
 		@Override
 		public Foo apply(List<Foo> value) {
-			return new Foo(value.stream().map(foo -> foo.getValue().toUpperCase(Locale.ROOT))
-					.collect(Collectors.joining()));
+			return new Foo(
+					value.stream().map(foo -> foo.getValue().toUpperCase(Locale.ROOT)).collect(Collectors.joining()));
 		}
 
 	}

@@ -58,7 +58,8 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * Implementation of {@link FunctionRegistry} capable of discovering functions in {@link BeanFactory}.
+ * Implementation of {@link FunctionRegistry} capable of discovering functions in
+ * {@link BeanFactory}.
  *
  * @author Oleg Zhurakousky
  * @author Soby Chacko
@@ -67,8 +68,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 	private GenericApplicationContext applicationContext;
 
-	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter,
-			JsonMapper jsonMapper, @Nullable FunctionProperties functionProperties, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
+	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService,
+			CompositeMessageConverter messageConverter, JsonMapper jsonMapper,
+			@Nullable FunctionProperties functionProperties,
+			@Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		super(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
 	}
 
@@ -83,10 +86,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	 */
 	@Override
 	public int size() {
-		return this.applicationContext.getBeanNamesForType(Supplier.class).length +
-			this.applicationContext.getBeanNamesForType(Function.class).length +
-			this.applicationContext.getBeanNamesForType(Consumer.class).length +
-			super.size();
+		return this.applicationContext.getBeanNamesForType(Supplier.class).length
+				+ this.applicationContext.getBeanNamesForType(Function.class).length
+				+ this.applicationContext.getBeanNamesForType(Consumer.class).length + super.size();
 	}
 
 	/*
@@ -96,16 +98,11 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	public Set<String> getNames(Class<?> type) {
 		Set<String> registeredNames = super.getNames(type);
 		if (type == null) {
-			registeredNames
-				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Function.class)));
-			registeredNames
-				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Supplier.class)));
-			registeredNames
-				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Consumer.class)));
-			registeredNames
-				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(BiFunction.class)));
-			registeredNames
-				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(BiConsumer.class)));
+			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Function.class)));
+			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Supplier.class)));
+			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(Consumer.class)));
+			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(BiFunction.class)));
+			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(BiConsumer.class)));
 			registeredNames
 				.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(FunctionRegistration.class)));
 		}
@@ -118,23 +115,25 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	public <T> T lookup(Class<?> type, String functionDefinition, String... expectedOutputMimeTypes) {
-		functionDefinition = StringUtils.hasText(functionDefinition)
-				? functionDefinition
-						: this.applicationContext.getEnvironment().getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
-		if (!this.applicationContext.containsBean(functionDefinition) || !KotlinUtils.isKotlinType(this.applicationContext.getBean(functionDefinition))) {
+		functionDefinition = StringUtils.hasText(functionDefinition) ? functionDefinition
+				: this.applicationContext.getEnvironment().getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
+		if (!this.applicationContext.containsBean(functionDefinition)
+				|| !KotlinUtils.isKotlinType(this.applicationContext.getBean(functionDefinition))) {
 			functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		}
 		if (!isFunctionDefinitionEligible(functionDefinition)) {
 			return null;
 		}
 		if (!StringUtils.hasText(functionDefinition)) {
-			Collection<Object> functionalBeans = this.getNames(null).stream()
-					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
-					.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
-					.collect(Collectors.toList());
+			Collection<Object> functionalBeans = this.getNames(null)
+				.stream()
+				.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
+				.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
+				.collect(Collectors.toList());
 			if (!CollectionUtils.isEmpty(functionalBeans) && functionalBeans.size() > 1) {
-				logger.warn("Multiple functional beans were found " + functionalBeans + ", thus can't determine default function definition. Please "
-					+ "use 'spring.cloud.function.definition' property to explicitly define it. ");
+				logger.warn("Multiple functional beans were found " + functionalBeans
+						+ ", thus can't determine default function definition. Please "
+						+ "use 'spring.cloud.function.definition' property to explicitly define it. ");
 			}
 		}
 
@@ -143,7 +142,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		synchronized (syncInstance) {
 			if (function == null) {
 				Set<String> functionRegistratioinNames = super.getNames(null);
-				String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+				String[] functionNames = StringUtils
+					.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 				for (String functionName : functionNames) {
 					if (functionRegistratioinNames.contains(functionName)) {
 						if (logger.isDebugEnabled()) {
@@ -158,45 +158,55 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 							if (functionCandidate instanceof FunctionRegistration) {
 								functionRegistration = (FunctionRegistration) functionCandidate;
 							}
-							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
-								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
+							else if (functionCandidate instanceof BiFunction
+									|| functionCandidate instanceof BiConsumer) {
+								functionRegistration = this.registerMessagingBiFunction(functionCandidate,
+										functionName);
 							}
 							else if (KotlinUtils.isKotlinType(functionCandidate)) {
-								KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper wrapper =
-									new KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper(functionCandidate);
+								KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper wrapper = new KotlinLambdaToFunctionAutoConfiguration.KotlinFunctionWrapper(
+										functionCandidate);
 								wrapper.setName(functionName);
 								wrapper.setBeanFactory(this.applicationContext.getBeanFactory());
 								functionRegistration = wrapper.getFunctionRegistration();
 							}
 							else if (this.isFunctionPojo(functionCandidate, functionName)) {
-								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
+								Method functionalMethod = FunctionTypeUtils
+									.discoverFunctionalMethod(functionCandidate.getClass());
 								functionCandidate = this.proxyTarget(functionCandidate, functionalMethod);
 								functionType = FunctionTypeUtils.fromFunctionMethod(functionalMethod);
-								// GH-1307: Mark this as a POJO function for special handling
+								// GH-1307: Mark this as a POJO function for special
+								// handling
 								functionRegistration = new FunctionRegistration(functionCandidate, functionName)
-										.type(functionType)
-										.properties(Collections.singletonMap("isPojoFunction", "true"));
+									.type(functionType)
+									.properties(Collections.singletonMap("isPojoFunction", "true"));
 							}
 							else if (this.isSpecialFunctionRegistration(functionNames, functionName)) {
-								functionRegistration = this.applicationContext
-										.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
+								functionRegistration = this.applicationContext.getBean(
+										functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX,
+										FunctionRegistration.class);
 							}
 							else {
-								functionType = FunctionTypeUtils.discoverFunctionType(functionCandidate, functionName, this.applicationContext);
+								functionType = FunctionTypeUtils.discoverFunctionType(functionCandidate, functionName,
+										this.applicationContext);
 							}
 
 							if (logger.isDebugEnabled()) {
-								logger.debug("Discovered function type for: " + functionDefinition + " - " + functionType);
+								logger.debug(
+										"Discovered function type for: " + functionDefinition + " - " + functionType);
 							}
 							if (functionRegistration == null) {
-								functionRegistration = new FunctionRegistration(functionCandidate, functionName).type(functionType);
+								functionRegistration = new FunctionRegistration(functionCandidate, functionName)
+									.type(functionType);
 							}
-							// Certain Kafka Streams functions such as KStream[] return types could be null (esp when using Kotlin).
+							// Certain Kafka Streams functions such as KStream[] return
+							// types could be null (esp when using Kotlin).
 							this.register(functionRegistration);
 						}
 						else {
 							if (logger.isDebugEnabled()) {
-								logger.debug("Function '" + functionName + "' is not available in FunctionCatalog or BeanFactory");
+								logger.debug("Function '" + functionName
+										+ "' is not available in FunctionCatalog or BeanFactory");
 							}
 						}
 					}
@@ -224,8 +234,11 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 					+ "Other signatures are not supported at the moment.");
 		}
 
-		ResolvableType messageType = ResolvableType.forClassWithGenerics(Message.class, ResolvableType.forType(inputType1));
-		Type biFunctionWrapperType = ResolvableType.forClassWithGenerics(Function.class, messageType, ResolvableType.forType(inputType2)).getType();
+		ResolvableType messageType = ResolvableType.forClassWithGenerics(Message.class,
+				ResolvableType.forType(inputType1));
+		Type biFunctionWrapperType = ResolvableType
+			.forClassWithGenerics(Function.class, messageType, ResolvableType.forType(inputType2))
+			.getType();
 
 		Function wrapperFunction = message -> {
 			Object payload = ((Message) message).getPayload();
@@ -241,7 +254,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			}
 		};
 
-		FunctionRegistration<Function> functionRegistration = new FunctionRegistration<>(wrapperFunction, functionName).type(biFunctionWrapperType);
+		FunctionRegistration<Function> functionRegistration = new FunctionRegistration<>(wrapperFunction, functionName)
+			.type(biFunctionWrapperType);
 		functionRegistration.setUserFunction(userFunction);
 		return functionRegistration;
 	}
@@ -253,7 +267,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		}
 		else {
 			try {
-				functionCandidate = BeanFactoryAnnotationUtils.qualifiedBeanOfType(this.applicationContext.getBeanFactory(), Object.class, functionName);
+				functionCandidate = BeanFactoryAnnotationUtils
+					.qualifiedBeanOfType(this.applicationContext.getBeanFactory(), Object.class, functionName);
 			}
 			catch (Exception e) {
 				// ignore since there is no safe isAvailable-kind of method
@@ -268,21 +283,19 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	}
 
 	private boolean isFunctionPojo(Object functionCandidate, String functionName) {
-		return !functionCandidate.getClass().isSynthetic()
-			&& !(functionCandidate instanceof Supplier)
-			&& !(functionCandidate instanceof Function)
-			&& !(functionCandidate instanceof Consumer)
-			&& !this.applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX);
+		return !functionCandidate.getClass().isSynthetic() && !(functionCandidate instanceof Supplier)
+				&& !(functionCandidate instanceof Function) && !(functionCandidate instanceof Consumer)
+				&& !this.applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX);
 	}
 
 	/**
-	 * At the moment 'special function registration' simply implies that a bean under the provided functionName
-	 * may have already been wrapped and registered as FunuctionRegistration with BeanFactory under the name of
-	 * the function suffixed with {@link FunctionRegistration#REGISTRATION_NAME_SUFFIX}
-	 * (e.g., 'myKotlinFunction_registration').
-	 * <br><br>
+	 * At the moment 'special function registration' simply implies that a bean under the
+	 * provided functionName may have already been wrapped and registered as
+	 * FunuctionRegistration with BeanFactory under the name of the function suffixed with
+	 * {@link FunctionRegistration#REGISTRATION_NAME_SUFFIX} (e.g.,
+	 * 'myKotlinFunction_registration'). <br>
+	 * <br>
 	 * At the moment only Kotlin module does this
-	 *
 	 * @param functionCandidate candidate for FunctionInvocationWrapper instance
 	 * @param functionName the name of the function
 	 * @return true if this function candidate qualifies
@@ -303,4 +316,5 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		});
 		return pf.getProxy();
 	}
+
 }

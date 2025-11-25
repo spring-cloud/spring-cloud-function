@@ -46,4 +46,5 @@ public class FunctionContext extends Observation.Context {
 	public Message<?> getMessage() {
 		return message;
 	}
+
 }

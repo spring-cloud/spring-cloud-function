@@ -65,8 +65,8 @@ class FunctionExporterInitializer implements ApplicationContextInitializer<Gener
 	}
 
 	private boolean isExporting(GenericApplicationContext context) {
-		Boolean enabled = context.getEnvironment().getProperty("spring.cloud.function.web.export.enabled",
-				Boolean.class);
+		Boolean enabled = context.getEnvironment()
+			.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
 		if (enabled != null) {
 			return enabled;
 		}
@@ -84,24 +84,25 @@ class FunctionExporterInitializer implements ApplicationContextInitializer<Gener
 	private void registerExport(GenericApplicationContext context) {
 		context.registerBean(ExporterProperties.class, () -> new ExporterProperties());
 		context.registerBean(FunctionExporterAutoConfiguration.class,
-				() -> new FunctionExporterAutoConfiguration(context.getBean(ExporterProperties.class), context.getBean(FunctionHttpProperties.class)));
+				() -> new FunctionExporterAutoConfiguration(context.getBean(ExporterProperties.class),
+						context.getBean(FunctionHttpProperties.class)));
 		if (context.getBeanFactory().getBeanNamesForType(DestinationResolver.class, false, false).length == 0) {
 			context.registerBean(DestinationResolver.class,
 					() -> context.getBean(FunctionExporterAutoConfiguration.class).simpleDestinationResolver());
 		}
 		if (context.getBeanFactory().getBeanNamesForType(RequestBuilder.class, false, false).length == 0) {
 			context.registerBean(RequestBuilder.class, () -> context.getBean(FunctionExporterAutoConfiguration.class)
-					.simpleRequestBuilder(context.getEnvironment()));
+				.simpleRequestBuilder(context.getEnvironment()));
 		}
 		if (context.getEnvironment().getProperty("spring.cloud.function.web.export.source.url") != null) {
-			context.registerBean("origin", FunctionRegistration.class, () -> context
-					.getBean(FunctionExporterAutoConfiguration.class).origin(context.getBean(WebClient.Builder.class)));
+			context.registerBean("origin", FunctionRegistration.class,
+					() -> context.getBean(FunctionExporterAutoConfiguration.class)
+						.origin(context.getBean(WebClient.Builder.class)));
 		}
 		if (context.getEnvironment().getProperty("spring.cloud.function.web.export.sink.url") != null) {
-			context.registerBean(SupplierExporter.class,
-					() -> context.getBean(FunctionExporterAutoConfiguration.class).sourceForwarder(
-							context.getBean(RequestBuilder.class), context.getBean(DestinationResolver.class),
-							context.getBean(FunctionCatalog.class), context.getBean(WebClient.Builder.class)));
+			context.registerBean(SupplierExporter.class, () -> context.getBean(FunctionExporterAutoConfiguration.class)
+				.sourceForwarder(context.getBean(RequestBuilder.class), context.getBean(DestinationResolver.class),
+						context.getBean(FunctionCatalog.class), context.getBean(WebClient.Builder.class)));
 		}
 	}
 

@@ -45,9 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Adrien Poupard
  *
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
-		"spring.cloud.function.web.path=/functions",
-		"spring.main.web-application-type=reactive" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
+		properties = { "spring.cloud.function.web.path=/functions", "spring.main.web-application-type=reactive" })
 @ContextConfiguration(classes = { RestApplication.class, HeadersToMessageTests.TestConfiguration.class })
 @AutoConfigureTestRestTemplate
 public class HeadersToMessageTests {
@@ -58,23 +57,20 @@ public class HeadersToMessageTests {
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		// test POJO paylod
-		ResponseEntity<Map> postForEntity = this.rest
-				.exchange(RequestEntity.post(new URI("/functions/employee"))
-						.contentType(MediaType.APPLICATION_JSON)
-						.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
+		ResponseEntity<Map> postForEntity = this.rest.exchange(RequestEntity.post(new URI("/functions/employee"))
+			.contentType(MediaType.APPLICATION_JSON)
+			.body("{\"name\":\"Bob\",\"age\":25}"), Map.class);
 		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25));
 		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
-		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
-				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().get("x-content-type").get(0)).isEqualTo("application/xml");
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 
 		// test simple type payload
-		postForEntity = this.rest.postForEntity(new URI("/functions/string"),
-				"{\"name\":\"Bob\",\"age\":25}", Map.class);
+		postForEntity = this.rest.postForEntity(new URI("/functions/string"), "{\"name\":\"Bob\",\"age\":25}",
+				Map.class);
 		assertThat(postForEntity.getBody()).containsExactlyInAnyOrderEntriesOf(Map.of("name", "Bob", "age", 25));
 		assertThat(postForEntity.getHeaders().containsHeader("x-content-type")).isTrue();
-		assertThat(postForEntity.getHeaders().get("x-content-type").get(0))
-				.isEqualTo("application/xml");
+		assertThat(postForEntity.getHeaders().get("x-content-type").get(0)).isEqualTo("application/xml");
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 	}
 
@@ -86,8 +82,9 @@ public class HeadersToMessageTests {
 		public Function<Message<String>, Message<String>> functiono() {
 			return request -> {
 				Message<String> message = MessageBuilder.withPayload(request.getPayload())
-						.setHeader("X-Content-Type", "application/xml")
-						.setHeader("foo", "bar").build();
+					.setHeader("X-Content-Type", "application/xml")
+					.setHeader("foo", "bar")
+					.build();
 				return message;
 			};
 		}
@@ -95,10 +92,10 @@ public class HeadersToMessageTests {
 		@Bean({ "employee" })
 		public Function<Message<Employee>, Message<Employee>> function1() {
 			return request -> {
-				Message<Employee> message = MessageBuilder
-						.withPayload(request.getPayload())
-						.setHeader("X-Content-Type", "application/xml")
-						.setHeader("foo", "bar").build();
+				Message<Employee> message = MessageBuilder.withPayload(request.getPayload())
+					.setHeader("X-Content-Type", "application/xml")
+					.setHeader("foo", "bar")
+					.build();
 				return message;
 			};
 		}

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package org.springframework.cloud.function.utils;
 
 import java.util.Locale;
@@ -57,11 +56,14 @@ public final class FunctionMessageUtils {
 			else if (key.startsWith("solace_")) {
 				return "solace";
 			}
-			else if (key.toLowerCase(Locale.ROOT).equals("user-agent") || key.toLowerCase(Locale.ROOT).equals("accept-encoding") || key.toLowerCase(Locale.ROOT).equals("host")) {
+			else if (key.toLowerCase(Locale.ROOT).equals("user-agent")
+					|| key.toLowerCase(Locale.ROOT).equals("accept-encoding")
+					|| key.toLowerCase(Locale.ROOT).equals("host")) {
 				return "http";
 			}
 			// add rsocket
 		}
 		return "origin";
 	}
+
 }

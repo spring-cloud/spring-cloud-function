@@ -25,7 +25,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -44,4 +43,5 @@ public class CloudEventGrpcAutoConfiguration {
 	public CloudEventMessageConverter cloudEventMessageConverter() {
 		return new CloudEventMessageConverter();
 	}
+
 }

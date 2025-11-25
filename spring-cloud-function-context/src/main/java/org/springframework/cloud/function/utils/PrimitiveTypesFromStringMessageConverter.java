@@ -26,12 +26,10 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.MimeType;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 3.1
  */
 public class PrimitiveTypesFromStringMessageConverter extends AbstractMessageConverter {
-
 
 	private final ConversionService conversionService;
 
@@ -39,7 +37,6 @@ public class PrimitiveTypesFromStringMessageConverter extends AbstractMessageCon
 		super(new MimeType("text", "plain"));
 		this.conversionService = conversionService;
 	}
-
 
 	@Override
 	protected boolean supports(Class<?> clazz) {
@@ -53,7 +50,9 @@ public class PrimitiveTypesFromStringMessageConverter extends AbstractMessageCon
 
 	@Override
 	@Nullable
-	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+			@Nullable Object conversionHint) {
 		return payload.toString().getBytes(StandardCharsets.UTF_8);
 	}
+
 }

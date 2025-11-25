@@ -46,12 +46,11 @@ import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @since 3.1
  *
- *        see
- *        https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-output-format
+ * see
+ * https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-output-format
  */
 public class FunctionInvoker implements RequestStreamHandler {
 
@@ -89,21 +88,26 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (context == null) {
 			logger.warn("Lambda is invoked with null Context");
 		}
-		Message requestMessage = AWSLambdaUtils
-				.generateMessage(input, this.function.getInputType(), this.function.isSupplier(), jsonMapper, context);
+		Message requestMessage = AWSLambdaUtils.generateMessage(input, this.function.getInputType(),
+				this.function.isSupplier(), jsonMapper, context);
 
 		Object response = this.function.apply(requestMessage);
-		byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, response, this.jsonMapper, function.getOutputType());
+		byte[] responseBytes = AWSLambdaUtils.generateOutputFromObject(requestMessage, response, this.jsonMapper,
+				function.getOutputType());
 		StreamUtils.copy(responseBytes, output);
 		// any exception should propagate
 	}
 
 	private void start() {
 		Class<?> startClass = FunctionClassUtils.getStartClass();
-		String[] properties = new String[] {"--spring.cloud.function.web.export.enabled=false", "--spring.main.web-application-type=none"};
+		String[] properties = new String[] { "--spring.cloud.function.web.export.enabled=false",
+				"--spring.main.web-application-type=none" };
 		ConfigurableApplicationContext context = ApplicationContextInitializer.class.isAssignableFrom(startClass)
-				? FunctionalSpringApplication.run(new Class[] {startClass, AWSCompanionAutoConfiguration.class}, properties)
-						: new SpringApplicationBuilder().main(startClass).sources(new Class[] {startClass, AWSCompanionAutoConfiguration.class}).run(properties);
+				? FunctionalSpringApplication.run(new Class[] { startClass, AWSCompanionAutoConfiguration.class },
+						properties)
+				: new SpringApplicationBuilder().main(startClass)
+					.sources(new Class[] { startClass, AWSCompanionAutoConfiguration.class })
+					.run(properties);
 
 		Environment environment = context.getEnvironment();
 		if (!StringUtils.hasText(this.functionDefinition)) {
@@ -117,7 +121,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 				if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
 					MapperBuilder builder = objectMapper.rebuild();
 					builder.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
-					objectMapper =  builder.build();
+					objectMapper = builder.build();
 				}
 			});
 		}
@@ -131,14 +135,16 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (this.function == null) {
 			if (logger.isInfoEnabled()) {
 				if (!StringUtils.hasText(this.functionDefinition)) {
-					logger.info("Failed to determine default function. Please use 'spring.cloud.function.definition' property "
-							+ "or pass function definition as a constructor argument to this FunctionInvoker");
+					logger.info(
+							"Failed to determine default function. Please use 'spring.cloud.function.definition' property "
+									+ "or pass function definition as a constructor argument to this FunctionInvoker");
 				}
 				Set<String> names = functionCatalog.getNames(null);
 				if (names.size() == 1) {
-					logger.info("Will default to RoutingFunction, since it is the only function available in FunctionCatalog."
-							+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
-							+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
+					logger
+						.info("Will default to RoutingFunction, since it is the only function available in FunctionCatalog."
+								+ "Expecting 'spring.cloud.function.definition' or 'spring.cloud.function.routing-expression' as Message headers. "
+								+ "If invocation is over API Gateway, Message headers can be provided as HTTP headers.");
 				}
 				else {
 					logger.info("More than one function is available in FunctionCatalog. " + names
@@ -161,4 +167,5 @@ public class FunctionInvoker implements RequestStreamHandler {
 		}
 		this.started = true;
 	}
+
 }

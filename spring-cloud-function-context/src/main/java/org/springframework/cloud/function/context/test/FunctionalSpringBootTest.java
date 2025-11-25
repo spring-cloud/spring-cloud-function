@@ -29,7 +29,6 @@ import org.springframework.core.annotation.AliasFor;
 import org.springframework.test.context.ContextConfiguration;
 
 /**
- *
  * @author Dave Syer
  * @since 2.0
  *

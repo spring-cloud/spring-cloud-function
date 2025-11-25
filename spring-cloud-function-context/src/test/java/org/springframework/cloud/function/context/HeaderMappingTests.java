@@ -38,13 +38,12 @@ public class HeaderMappingTests {
 
 	@Test
 	public void testErrorWarnAndContinue() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].key1=hello1",
-						"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].key2='hello2'",
-						"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].foo=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].key1=hello1",
+					"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].key2='hello2'",
+					"--spring.cloud.function.configuration.echoFail.input-header-mapping-expression[0].foo=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("echoFail");
@@ -54,139 +53,140 @@ public class HeaderMappingTests {
 
 	@Test
 	public void testInputHeaderMappingPropertyWithIndex() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key1='hello1'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].foo=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key1='hello1'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].foo=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("echo");
 			function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build());
 		}
 	}
 
 	@Test
 	public void testInputHeaderMappingPropertyWithIndexMix() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key1='hello1'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key1='hello1'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("echo");
 			function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build());
 		}
 	}
 
 	@Test
 	public void testInputHeaderMappingPropertyWithIndexMixDeux() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key1='hello1'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key1='hello1'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression[0].key2='hello2'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("echo");
 			function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build());
 		}
 	}
 
 	@Test
 	public void testInputHeaderMappingPropertyWithoutIndex() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key1='hello1'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key2='hello2'",
-						"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key1='hello1'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression.key2='hello2'",
+					"--spring.cloud.function.configuration.echo.input-header-mapping-expression.foo=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("echo");
 			function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build());
 		}
 	}
 
 	@Test
 	public void testInputHeaderMappingExpressionWithCompositionWithIndex() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression[0].key1='hello1'",
-						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression[0].key2='hello2'",
-						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression[0].foo=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression[0].key1='hello1'",
+					"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression[0].key2='hello2'",
+					"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression[0].foo=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("echo|foo");
 			function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build());
 		}
 	}
 
 	@Test
 	public void testInputHeaderMappingExpressionWithCompositionWithoutIndex() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.key1='hello1'",
-						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.key2='hello2'",
-						"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.foo=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.key1='hello1'",
+					"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.key2='hello2'",
+					"--spring.cloud.function.configuration.echofoo.input-header-mapping-expression.foo=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("echo|foo");
 			function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build());
 
-			//assertions are in 'echo' function since we're validating what's coming into it.
+			// assertions are in 'echo' function since we're validating what's coming into
+			// it.
 		}
 	}
 
 	@Test
 	public void testInputHeaderMappingPropertyWithSplitExpression() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key1=headers.path.split('/')[0]",
-						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key2=headers.path.split('/')[1]",
-						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key3=headers.path")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key1=headers.path.split('/')[0]",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key2=headers.path.split('/')[1]",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key3=headers.path")) {
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("split");
 			function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-					.setHeader("path", "foo/bar/baz").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.setHeader("path", "foo/bar/baz")
+				.build());
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testOutputHeaderMapping() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.keyOut1='hello1'",
-						"--spring.cloud.function.configuration.foo.output-header-mapping-expression.keyOut2=headers.contentType")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.foo.output-header-mapping-expression.keyOut1='hello1'",
+					"--spring.cloud.function.configuration.foo.output-header-mapping-expression.keyOut2=headers.contentType")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("foo");
 			Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build());
 			assertThat(result.getHeaders().containsKey("keyOut1")).isTrue();
 			assertThat(result.getHeaders().get("keyOut1")).isEqualTo("hello1");
 			assertThat(result.getHeaders().containsKey("keyOut2")).isTrue();
@@ -197,21 +197,21 @@ public class HeaderMappingTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void testMixedInputOutputHeaderMapping() throws Exception {
-		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(
-				SampleFunctionConfiguration.class).web(WebApplicationType.NONE).run(
-						"--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true",
-						"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut1='hello1'",
-						"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut2=headers.contentType",
-						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key1=headers.path.split('/')[0]",
-						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key2=headers.path.split('/')[1]",
-						"--spring.cloud.function.configuration.split.input-header-mapping-expression.key3=headers.path")) {
+		try (ConfigurableApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
+			.web(WebApplicationType.NONE)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true",
+					"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut1='hello1'",
+					"--spring.cloud.function.configuration.split.output-header-mapping-expression.keyOut2=headers.contentType",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key1=headers.path.split('/')[0]",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key2=headers.path.split('/')[1]",
+					"--spring.cloud.function.configuration.split.input-header-mapping-expression.key3=headers.path")) {
 
 			FunctionCatalog functionCatalog = context.getBean(FunctionCatalog.class);
 			FunctionInvocationWrapper function = functionCatalog.lookup("split");
 			Message<byte[]> result = (Message<byte[]>) function.apply(MessageBuilder.withPayload("helo")
-					.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
-					.setHeader("path", "foo/bar/baz").build());
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.setHeader("path", "foo/bar/baz")
+				.build());
 			assertThat(result.getHeaders().containsKey("keyOut1")).isTrue();
 			assertThat(result.getHeaders().get("keyOut1")).isEqualTo("hello1");
 			assertThat(result.getHeaders().containsKey("keyOut2")).isTrue();
@@ -260,5 +260,7 @@ public class HeaderMappingTests {
 				return x;
 			};
 		}
+
 	}
+
 }

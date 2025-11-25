@@ -24,18 +24,19 @@ import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 
-
 /**
  * @author Marcin Grzejszczak
  * @author Oleg Zhurakousky
  * @since 4.0.0
  */
 public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
+
 	private final ObservationRegistry observationRegistry;
 
 	private final FunctionObservationConvention functionObservationConvention;
 
-	public ObservationFunctionAroundWrapper(ObservationRegistry observationRegistry, @Nullable FunctionObservationConvention functionObservationConvention) {
+	public ObservationFunctionAroundWrapper(ObservationRegistry observationRegistry,
+			@Nullable FunctionObservationConvention functionObservationConvention) {
 		this.observationRegistry = observationRegistry;
 		this.functionObservationConvention = functionObservationConvention;
 	}
@@ -46,11 +47,15 @@ public class ObservationFunctionAroundWrapper extends FunctionAroundWrapper {
 	}
 
 	private Object nonReactorStream(Message<?> message,
-		SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
+			SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction) {
 		return functionProcessingObservation(targetFunction, message).observe(() -> targetFunction.apply(message));
 	}
 
-	private Observation functionProcessingObservation(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction, Message<?> message) {
-		return FunctionObservation.FUNCTION_PROCESSING_OBSERVATION.observation(this.functionObservationConvention, DefaultFunctionObservationConvention.INSTANCE, () -> new FunctionContext(targetFunction, message), this.observationRegistry);
+	private Observation functionProcessingObservation(SimpleFunctionRegistry.FunctionInvocationWrapper targetFunction,
+			Message<?> message) {
+		return FunctionObservation.FUNCTION_PROCESSING_OBSERVATION.observation(this.functionObservationConvention,
+				DefaultFunctionObservationConvention.INSTANCE, () -> new FunctionContext(targetFunction, message),
+				this.observationRegistry);
 	}
+
 }

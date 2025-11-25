@@ -37,8 +37,6 @@ import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.util.ClassUtils;
 
-
-
 /**
  * @author Oleg Zhurakousky
  * @author Omer Celik
@@ -158,4 +156,5 @@ public final class JsonMasker {
 	private void addKeys(Set<String> keys) {
 		this.keysToMask.addAll(keys);
 	}
+
 }

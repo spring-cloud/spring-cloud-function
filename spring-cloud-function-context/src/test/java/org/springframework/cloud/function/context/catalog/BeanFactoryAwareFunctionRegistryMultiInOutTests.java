@@ -50,7 +50,6 @@ import org.springframework.util.MimeTypeUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -58,19 +57,20 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 
 	private FunctionCatalog configureCatalog() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG");
+			.run("--logging.level.org.springframework.cloud.function=DEBUG");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
 
 	/*
-	 * This test validates <Tuple2<Flux<String>, Flux<Integer>> without any type conversion
+	 * This test validates <Tuple2<Flux<String>, Flux<Integer>> without any type
+	 * conversion
 	 */
 	@Test
 	public void testMultiInput() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<String>> multiInputFunction =
-									catalog.lookup("multiInputSingleOutputViaReactiveTuple");
+		Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<String>> multiInputFunction = catalog
+			.lookup("multiInputSingleOutputViaReactiveTuple");
 		Flux<String> stringStream = Flux.just("one", "two", "three");
 		Flux<Integer> intStream = Flux.just(1, 2, 3);
 
@@ -83,8 +83,8 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	@Test
 	public void testMultiInputWithPojoConversion() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple2<Flux<CartEvent>, Flux<CheckoutEvent>>, Flux<OrderEvent>> multiInputFunction =
-									catalog.lookup("thomas", "application/json");
+		Function<Tuple2<Flux<CartEvent>, Flux<CheckoutEvent>>, Flux<OrderEvent>> multiInputFunction = catalog
+			.lookup("thomas", "application/json");
 		CartEvent carEvent = new CartEvent();
 		carEvent.setCarEvent("carEvent");
 		Flux<CartEvent> carEventStream = Flux.just(carEvent);
@@ -104,26 +104,27 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	@Disabled
 	public void testMultiInputBiFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
-		BiFunction<Flux<String>, Flux<Integer>, Flux<String>> multiInputFunction =
-									catalog.lookup(BiFunction.class, "multiInputSingleOutputViaBiFunction");
+		BiFunction<Flux<String>, Flux<Integer>, Flux<String>> multiInputFunction = catalog.lookup(BiFunction.class,
+				"multiInputSingleOutputViaBiFunction");
 		Flux<String> stringStream = Flux.just("one", "two", "three");
 		Flux<Integer> intStream = Flux.just(1, 2, 3);
 
-//		List<String> result = multiInputFunction.apply(Tuples.of(stringStream, intStream)).collectList().block();
-//		System.out.println(result);
+		// List<String> result = multiInputFunction.apply(Tuples.of(stringStream,
+		// intStream)).collectList().block();
+		// System.out.println(result);
 	}
 
 	/*
-	 * This test invokes the same function as above but with types reversed.
-	 * While the target function remains <Tuple2<Flux<String>, Flux<Integer>>
-	 * it is actually invoked as Tuple2<Flux<Integer>, Flux<String>>
-	 * hence showcasing type conversion using Spring's ConversionService
+	 * This test invokes the same function as above but with types reversed. While the
+	 * target function remains <Tuple2<Flux<String>, Flux<Integer>> it is actually invoked
+	 * as Tuple2<Flux<Integer>, Flux<String>> hence showcasing type conversion using
+	 * Spring's ConversionService
 	 */
 	@Test
 	public void testMultiInputWithConversion() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple2<Flux<Integer>, Flux<String>>, Flux<String>> multiInputFunction =
-									catalog.lookup("multiInputSingleOutputViaReactiveTuple");
+		Function<Tuple2<Flux<Integer>, Flux<String>>, Flux<String>> multiInputFunction = catalog
+			.lookup("multiInputSingleOutputViaReactiveTuple");
 		Flux<Integer> stringStream = Flux.just(11, 22, 33);
 		Flux<String> intStream = Flux.just("1", "2", "2");
 
@@ -141,8 +142,8 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	@Disabled
 	public void testMultiInputWithComposition() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple2<Flux<String>, Flux<String>>, Flux<String>> multiInputFunction =
-									catalog.lookup("multiInputSingleOutputViaReactiveTuple|uppercase");
+		Function<Tuple2<Flux<String>, Flux<String>>, Flux<String>> multiInputFunction = catalog
+			.lookup("multiInputSingleOutputViaReactiveTuple|uppercase");
 		Flux<String> stringStream = Flux.just("one", "two", "three");
 		Flux<String> intStream = Flux.just("1", "2", "3");
 
@@ -151,14 +152,13 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	}
 
 	/*
-	 * This is basically the repeater function currently prototyped in Riff
-	 * The only difference it uses Tuple2 instead of BiFunction (which we will support anyway)
+	 * This is basically the repeater function currently prototyped in Riff The only
+	 * difference it uses Tuple2 instead of BiFunction (which we will support anyway)
 	 */
 	@Test
 	public void testMultiOutputAsArray() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<?>[]> repeater =
-									catalog.lookup("repeater");
+		Function<Tuple2<Flux<String>, Flux<Integer>>, Flux<?>[]> repeater = catalog.lookup("repeater");
 		Flux<String> stringStream = Flux.just("one", "two", "three");
 		Flux<Integer> intStream = Flux.just(3, 2, 1);
 
@@ -167,19 +167,17 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		result[1].subscribe(System.out::println);
 	}
 
-
 	/*
-	 * This test demonstrates single input into multiple outputs
-	 * as Tuple3 thus making output types known.
+	 * This test demonstrates single input into multiple outputs as Tuple3 thus making
+	 * output types known.
 	 *
-	 * The input is a POJO (Person)
-	 * no conversion
+	 * The input is a POJO (Person) no conversion
 	 */
 	@Test
 	public void testMultiOutputAsTuplePojoInInputTypeMatch() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Flux<Person>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction =
-									catalog.lookup("multiOutputAsTuplePojoIn");
+		Function<Flux<Person>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction = catalog
+			.lookup("multiOutputAsTuplePojoIn");
 		Flux<Person> personStream = Flux.just(new Person("Uncle Sam", 1), new Person("Oncle Pierre", 2));
 
 		Tuple3<Flux<Person>, Flux<String>, Flux<Integer>> result = multiOutputFunction.apply(personStream);
@@ -189,22 +187,24 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	}
 
 	/*
-	 * This test is identical to the previous one with the exception that the
-	 * input is a Message with payload as JSON byte array representation of Person (expected by the target function),
-	 * thus demonstrating Message Conversion
+	 * This test is identical to the previous one with the exception that the input is a
+	 * Message with payload as JSON byte array representation of Person (expected by the
+	 * target function), thus demonstrating Message Conversion
 	 */
 	@Test
 	public void testMultiOutputAsTuplePojoInInputByteArray() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Flux<Message<byte[]>>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction =
-									catalog.lookup("multiOutputAsTuplePojoIn");
+		Function<Flux<Message<byte[]>>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction = catalog
+			.lookup("multiOutputAsTuplePojoIn");
 
-		Message<byte[]> uncleSam = MessageBuilder.withPayload("{\"name\":\"Uncle Sam\",\"id\":1}".getBytes(StandardCharsets.UTF_8))
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
-		Message<byte[]> unclePierre = MessageBuilder.withPayload("{\"name\":\"Oncle Pierre\",\"id\":2}".getBytes(StandardCharsets.UTF_8))
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
+		Message<byte[]> uncleSam = MessageBuilder
+			.withPayload("{\"name\":\"Uncle Sam\",\"id\":1}".getBytes(StandardCharsets.UTF_8))
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+			.build();
+		Message<byte[]> unclePierre = MessageBuilder
+			.withPayload("{\"name\":\"Oncle Pierre\",\"id\":2}".getBytes(StandardCharsets.UTF_8))
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+			.build();
 		Flux<Message<byte[]>> personStream = Flux.just(uncleSam, unclePierre);
 
 		Tuple3<Flux<Person>, Flux<String>, Flux<Integer>> result = multiOutputFunction.apply(personStream);
@@ -214,23 +214,25 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	}
 
 	/*
-	 * This is another variation of the above. In this case the signature of the target function is
-	 * <Flux<Message<Person>>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> yet we are sending
-	 * Message with payload as byte[] which is converted to Person and then embedded in new Message<Person>
-	 * passed to a function
+	 * This is another variation of the above. In this case the signature of the target
+	 * function is <Flux<Message<Person>>, Tuple3<Flux<Person>, Flux<String>,
+	 * Flux<Integer>>> yet we are sending Message with payload as byte[] which is
+	 * converted to Person and then embedded in new Message<Person> passed to a function
 	 */
 	@Test
 	public void testMultiOutputAsTuplePojoInInputByteArrayInputTypePojoMessage() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Flux<Message<byte[]>>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction =
-									catalog.lookup("multiOutputAsTupleMessageIn");
+		Function<Flux<Message<byte[]>>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputFunction = catalog
+			.lookup("multiOutputAsTupleMessageIn");
 
-		Message<byte[]> uncleSam = MessageBuilder.withPayload("{\"name\":\"Uncle Sam\",\"id\":1}".getBytes(StandardCharsets.UTF_8))
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
-		Message<byte[]> unclePierre = MessageBuilder.withPayload("{\"name\":\"Oncle Pierre\",\"id\":2}".getBytes(StandardCharsets.UTF_8))
-				.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
-				.build();
+		Message<byte[]> uncleSam = MessageBuilder
+			.withPayload("{\"name\":\"Uncle Sam\",\"id\":1}".getBytes(StandardCharsets.UTF_8))
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+			.build();
+		Message<byte[]> unclePierre = MessageBuilder
+			.withPayload("{\"name\":\"Oncle Pierre\",\"id\":2}".getBytes(StandardCharsets.UTF_8))
+			.setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON)
+			.build();
 		Flux<Message<byte[]>> personStream = Flux.just(uncleSam, unclePierre);
 
 		Tuple3<Flux<Person>, Flux<String>, Flux<Integer>> result = multiOutputFunction.apply(personStream);
@@ -242,8 +244,8 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	@Test
 	public void testMultiToMulti() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple3<Flux<String>, Flux<String>, Flux<Integer>>, Tuple2<Flux<Person>, Mono<Long>>> multiToMulti =
-									catalog.lookup("multiToMulti");
+		Function<Tuple3<Flux<String>, Flux<String>, Flux<Integer>>, Tuple2<Flux<Person>, Mono<Long>>> multiToMulti = catalog
+			.lookup("multiToMulti");
 
 		Flux<String> firstFlux = Flux.just("Unlce", "Oncle");
 		Flux<String> secondFlux = Flux.just("Sam", "Pierre");
@@ -258,15 +260,23 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 	@Disabled
 	public void testMultiToMultiWithMessageByteArrayPayload() {
 		FunctionCatalog catalog = this.configureCatalog();
-		Function<Tuple3<Flux<Message<byte[]>>, Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>>> multiTuMulti =
-									catalog.lookup("multiToMulti", "foo/bar,application/json", "application/json");
+		Function<Tuple3<Flux<Message<byte[]>>, Flux<Message<byte[]>>, Flux<Message<byte[]>>>, Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>>> multiTuMulti = catalog
+			.lookup("multiToMulti", "foo/bar,application/json", "application/json");
 
 		Flux<Message<byte[]>> firstFlux = Flux.just(
-				MessageBuilder.withPayload("Unlce".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build(),
-				MessageBuilder.withPayload("Onlce".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+				MessageBuilder.withPayload("Unlce".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+					.build(),
+				MessageBuilder.withPayload("Onlce".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+					.build());
 		Flux<Message<byte[]>> secondFlux = Flux.just(
-				MessageBuilder.withPayload("Sam".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build(),
-				MessageBuilder.withPayload("Pierre".getBytes()).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain").build());
+				MessageBuilder.withPayload("Sam".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+					.build(),
+				MessageBuilder.withPayload("Pierre".getBytes())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+					.build());
 
 		ByteBuffer one = ByteBuffer.allocate(4);
 		one.putInt(1);
@@ -274,10 +284,15 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		two.putInt(2);
 
 		Flux<Message<byte[]>> thirdFlux = Flux.just(
-				MessageBuilder.withPayload(one.array()).setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer").build(),
-				MessageBuilder.withPayload(two.array()).setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer").build());
+				MessageBuilder.withPayload(one.array())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer")
+					.build(),
+				MessageBuilder.withPayload(two.array())
+					.setHeader(MessageHeaders.CONTENT_TYPE, "octet-stream/integer")
+					.build());
 
-		Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>> result = multiTuMulti.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
+		Tuple2<Flux<Message<byte[]>>, Mono<Message<byte[]>>> result = multiTuMulti
+			.apply(Tuples.of(firstFlux, secondFlux, thirdFlux));
 		ObjectMapper mapper = new ObjectMapper();
 		result.getT1().subscribe(v -> {
 			try {
@@ -296,7 +311,6 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 			}
 		});
 	}
-
 
 	@EnableAutoConfiguration
 	@Configuration
@@ -354,15 +368,15 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 				Flux<String> nameFlux = tuple.getT2();
 				Flux<Integer> idFlux = tuple.getT3();
 				Flux<Person> person = toStringFlux.zipWith(nameFlux)
-						.map(t -> t.getT1() + " " + t.getT2())
-						.zipWith(idFlux)
-						.map(t -> new Person(t.getT1(), t.getT2()));
+					.map(t -> t.getT1() + " " + t.getT2())
+					.zipWith(idFlux)
+					.map(t -> new Person(t.getT1(), t.getT2()));
 				return Tuples.of(person, person.count());
 			};
 		}
 
 		@Bean
-		public MessageConverter byteArrayToIntegerMessageConverter()  {
+		public MessageConverter byteArrayToIntegerMessageConverter() {
 			return new AbstractMessageConverter(MimeTypeUtils.parseMimeType("octet-stream/integer")) {
 
 				@Override
@@ -371,15 +385,15 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 				}
 
 				@Override
-				protected Object convertFromInternal(
-						Message<?> message, Class<?> targetClass, @Nullable Object conversionHint) {
+				protected Object convertFromInternal(Message<?> message, Class<?> targetClass,
+						@Nullable Object conversionHint) {
 					ByteBuffer wrappedPayload = ByteBuffer.wrap((byte[]) message.getPayload());
 					return wrappedPayload.getInt();
 				}
 
 				@Override
-				protected Object convertToInternal(
-						Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+				protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+						@Nullable Object conversionHint) {
 
 					return null;
 				}
@@ -395,13 +409,10 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 
 				Flux<Integer> sharedIntFlux = integerFlux.publish().autoConnect(2);
 
-				Flux<String> repeated = stringFlux
-						.zipWith(sharedIntFlux)
-						.flatMap(t -> Flux.fromIterable(Collections.nCopies(t.getT2(), t.getT1())));
+				Flux<String> repeated = stringFlux.zipWith(sharedIntFlux)
+					.flatMap(t -> Flux.fromIterable(Collections.nCopies(t.getT2(), t.getT1())));
 
-				Flux<Integer> sum = sharedIntFlux
-						.buffer(3, 1)
-						.map(l -> l.stream().mapToInt(Integer::intValue).sum());
+				Flux<Integer> sum = sharedIntFlux.buffer(3, 1).map(l -> l.stream().mapToInt(Integer::intValue).sum());
 
 				return new Flux[] { repeated, sum };
 			};
@@ -420,9 +431,11 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 				});
 			};
 		}
+
 	}
 
 	public static class CartEvent {
+
 		private String carEvent;
 
 		public String getCarEvent() {
@@ -432,9 +445,11 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		public void setCarEvent(String carEvent) {
 			this.carEvent = carEvent;
 		}
+
 	}
 
 	public static class CheckoutEvent {
+
 		private String checkoutEvent;
 
 		public String getCheckoutEvent() {
@@ -444,9 +459,11 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		public void setCheckoutEvent(String checkoutEvent) {
 			this.checkoutEvent = checkoutEvent;
 		}
+
 	}
 
 	public static class OrderEvent {
+
 		private String orderEvent;
 
 		public String getOrderEvent() {
@@ -456,33 +473,45 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		public void setOrderEvent(String orderEvent) {
 			this.orderEvent = orderEvent;
 		}
+
 	}
 
 	public static class Person {
+
 		private String name;
+
 		private int id;
+
 		public Person() {
 
 		}
+
 		public Person(String name, int id) {
 			this.name = name;
 			this.id = id;
 		}
+
 		public String getName() {
 			return name;
 		}
+
 		public void setName(String name) {
 			this.name = name;
 		}
+
 		public int getId() {
 			return id;
 		}
+
 		public void setId(int id) {
 			this.id = id;
 		}
+
 		@Override
 		public String toString() {
 			return "Person: " + name + "/" + id;
 		}
+
 	}
+
 }

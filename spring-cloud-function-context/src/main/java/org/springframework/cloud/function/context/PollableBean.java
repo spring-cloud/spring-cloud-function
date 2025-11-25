@@ -27,25 +27,24 @@ import org.springframework.context.annotation.Bean;
 
 /**
  *
- * A marker and qualifier annotation to signal that
- * annotated functional factory method is a bean (e.g., Supplier, Function or Consumer)
- * that also needs to be polled periodically.
+ * A marker and qualifier annotation to signal that annotated functional factory method is
+ * a bean (e.g., Supplier, Function or Consumer) that also needs to be polled
+ * periodically. <br>
+ * This has special significance to the reactive suppliers (e.g.,
+ * {@code Supplier<Flux<?>>}), since by default they are treated as producers of an
+ * infinite stream. However if such suppliers produce a finite stream they may need to be
+ * triggered again. <br>
  * <br>
- * This has special significance to the reactive suppliers (e.g., {@code Supplier<Flux<?>>}),
- * since by default they are treated as producers of an infinite stream.
- * However if such suppliers produce a finite stream they may need to be triggered again.
- * <br>
- * <br>
- * NOTE: The spring-cloud-function framework provides no default post processing behavior for this annotation. This
- * means that annotating a factory method with this annotation will not have any effect without some application/framework
- * specific post processing (see spring-cloud-stream as an example).
- *
+ * NOTE: The spring-cloud-function framework provides no default post processing behavior
+ * for this annotation. This means that annotating a factory method with this annotation
+ * will not have any effect without some application/framework specific post processing
+ * (see spring-cloud-stream as an example).
  *
  * @author Oleg Zhurakousky
  * @since 3.0
  *
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Bean
 @Documented
@@ -53,11 +52,11 @@ public @interface PollableBean {
 
 	/**
 	 * Signals to the post processors of this annotation that the result produced by the
-	 * annotated {@link Supplier} has to be split. Specifics on how to split and what
-	 * to split are left to the underlying framework.
-	 *
-	 * @return true if the resulting stream produced by the
-	 * annotated {@link Supplier} has to be split.
+	 * annotated {@link Supplier} has to be split. Specifics on how to split and what to
+	 * split are left to the underlying framework.
+	 * @return true if the resulting stream produced by the annotated {@link Supplier} has
+	 * to be split.
 	 */
 	boolean splittable() default true;
+
 }

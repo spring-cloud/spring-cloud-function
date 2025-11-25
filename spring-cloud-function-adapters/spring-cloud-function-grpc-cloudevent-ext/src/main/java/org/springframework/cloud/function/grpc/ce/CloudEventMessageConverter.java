@@ -31,7 +31,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -80,15 +79,15 @@ public class CloudEventMessageConverter extends AbstractGrpcMessageConverter<Clo
 	@Override
 	protected CloudEvent doFromSpringMessage(Message<byte[]> springMessage) {
 		Builder builder = CloudEvent.newBuilder()
-				.setTextDataBytes(ByteString.copyFrom(springMessage.getPayload()))
-				.setType(CloudEventMessageUtils.getType(springMessage))
-				.setSource(CloudEventMessageUtils.getSource(springMessage).toString())
-				.setId(CloudEventMessageUtils.getId(springMessage))
-				.setSpecVersion(CloudEventMessageUtils.getSpecVersion(springMessage));
-
+			.setTextDataBytes(ByteString.copyFrom(springMessage.getPayload()))
+			.setType(CloudEventMessageUtils.getType(springMessage))
+			.setSource(CloudEventMessageUtils.getSource(springMessage).toString())
+			.setId(CloudEventMessageUtils.getId(springMessage))
+			.setSpecVersion(CloudEventMessageUtils.getSpecVersion(springMessage));
 
 		for (Entry<String, Object> entry : springMessage.getHeaders().entrySet()) {
-			builder.putAttributes(entry.getKey(), CloudEventAttributeValue.newBuilder().setCeString(entry.getValue().toString()).build());
+			builder.putAttributes(entry.getKey(),
+					CloudEventAttributeValue.newBuilder().setCeString(entry.getValue().toString()).build());
 		}
 		return builder.build();
 
@@ -98,4 +97,5 @@ public class CloudEventMessageConverter extends AbstractGrpcMessageConverter<Clo
 	protected boolean supports(Class<? extends GeneratedMessageV3> grpcClass) {
 		return grpcClass.isAssignableFrom(CloudEvent.class);
 	}
+
 }

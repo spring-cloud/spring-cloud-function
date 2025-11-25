@@ -34,12 +34,11 @@ import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
 /**
- * Implementation of {@link MessageConverter} which uses Jackson or Gson libraries to do the
- * actual conversion via {@link JsonMapper} instance.
+ * Implementation of {@link MessageConverter} which uses Jackson or Gson libraries to do
+ * the actual conversion via {@link JsonMapper} instance.
  *
  * @author Oleg Zhurakousky
  * @author Andrey Shlykov
- *
  * @since 3.0.4
  */
 public class JsonMessageConverter extends AbstractMessageConverter {
@@ -47,8 +46,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	private final JsonMapper jsonMapper;
 
 	public JsonMessageConverter(JsonMapper jsonMapper) {
-		this(jsonMapper, new MimeType("application", "json"), new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
-				CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype() + "+json"));
+		this(jsonMapper, new MimeType("application", "json"),
+				new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
+						CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype() + "+json"));
 	}
 
 	public JsonMessageConverter(JsonMapper jsonMapper, MimeType... supportedMimeTypes) {
@@ -94,7 +94,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 					convertToType = Thread.currentThread().getContextClassLoader().loadClass(type);
 				}
 				catch (ClassNotFoundException e) {
-					throw new IllegalArgumentException("Failed to load class `" + type + "` specified by the provided content-type: " + mimeType, e);
+					throw new IllegalArgumentException(
+							"Failed to load class `" + type + "` specified by the provided content-type: " + mimeType,
+							e);
 				}
 			}
 			else {

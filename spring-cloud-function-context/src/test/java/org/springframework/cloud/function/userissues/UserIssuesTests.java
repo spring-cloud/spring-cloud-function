@@ -37,20 +37,17 @@ import org.springframework.core.ResolvableType;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 
-
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
 public class UserIssuesTests {
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
-		ApplicationContext context = new SpringApplicationBuilder(configClass).run(
-				"--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
+		ApplicationContext context = new SpringApplicationBuilder(configClass)
+			.run("--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
@@ -64,8 +61,8 @@ public class UserIssuesTests {
 	public void testIssue602() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(Issue602Configuration.class);
 		Function<Message<String>, Integer> function = catalog.lookup("consumer");
-		int result = function.apply(
-				new GenericMessage<String>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
+		int result = function
+			.apply(new GenericMessage<String>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
 		assertThat(result).isEqualTo(3);
 	}
 
@@ -74,20 +71,15 @@ public class UserIssuesTests {
 	public void testIssue1075() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(Issue1075StreamConfiguration.class);
 
-
-		List<Object> list = Arrays.asList(new Product[] {new Product("foo"), new Product("bar")});
+		List<Object> list = Arrays.asList(new Product[] { new Product("foo"), new Product("bar") });
 		Event event = new Event(list);
 		EventHolder eventHolder = new EventHolder(event);
 		ObjectMapper mapper = new ObjectMapper();
 		String message = mapper.writeValueAsString(eventHolder);
 		Function function = catalog.lookup("somethingYouShouldNeverDo");
-		boolean result = (boolean) function.apply(
-				new GenericMessage<String>(message));
+		boolean result = (boolean) function.apply(new GenericMessage<String>(message));
 		assertThat(result).isTrue();
 	}
-
-
-
 
 	@Test
 	public void testIssue602asPOJO() throws Exception {
@@ -127,9 +119,9 @@ public class UserIssuesTests {
 		FunctionCatalog catalog = this.configureCatalog(Issue601Configuration.class);
 		FunctionInvocationWrapper function = catalog.lookup("uppercase");
 		assertThat(function.getInputType().getTypeName())
-				.isEqualTo(ResolvableType.forClassWithGenerics(Flux.class, String.class).getType().getTypeName());
+			.isEqualTo(ResolvableType.forClassWithGenerics(Flux.class, String.class).getType().getTypeName());
 		assertThat(function.getOutputType().getTypeName())
-				.isEqualTo(ResolvableType.forClassWithGenerics(Flux.class, Integer.class).getType().getTypeName());
+			.isEqualTo(ResolvableType.forClassWithGenerics(Flux.class, Integer.class).getType().getTypeName());
 		Flux<Integer> result = (Flux<Integer>) function.apply(Flux.just("julien", "ricky", "bubbles"));
 		List<Integer> results = result.collectList().block();
 		assertThat(results.get(0)).isEqualTo(6);
@@ -140,6 +132,7 @@ public class UserIssuesTests {
 	@EnableAutoConfiguration
 	@Configuration
 	public static class Issue602Configuration {
+
 		@Bean
 		public Function<List<Product>, Integer> consumer() {
 			return v -> {
@@ -149,11 +142,13 @@ public class UserIssuesTests {
 				return v.size();
 			};
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration
 	public static class Issue1075StreamConfiguration {
+
 		@Bean
 		public Function<Message<EventHolder<Event<List<Product>>>>, Boolean> somethingYouShouldNeverDo() {
 			return message -> {
@@ -163,9 +158,11 @@ public class UserIssuesTests {
 				return true;
 			};
 		}
+
 	}
 
 	public static class EventHolder<T> {
+
 		private T payload;
 
 		public EventHolder() {
@@ -186,6 +183,7 @@ public class UserIssuesTests {
 	}
 
 	public static class Event<T> {
+
 		private T payload;
 
 		public Event() {
@@ -202,15 +200,18 @@ public class UserIssuesTests {
 		public void setPayload(T payload) {
 			this.payload = payload;
 		}
+
 	}
 
 	@EnableAutoConfiguration
 	@Configuration
 	public static class Issue601Configuration {
+
 		@Bean
 		public Uppercase uppercase() {
 			return new Uppercase();
 		}
+
 	}
 
 	public static class Uppercase implements Function<Flux<String>, Flux<Integer>> {
@@ -219,9 +220,11 @@ public class UserIssuesTests {
 		public Flux<Integer> apply(Flux<String> s) {
 			return s.map(v -> v.length());
 		}
+
 	}
 
 	public static class Product {
+
 		private String name;
 
 		public Product() {
@@ -238,5 +241,7 @@ public class UserIssuesTests {
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
+
 }

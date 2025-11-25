@@ -62,6 +62,8 @@ public class SpringReleaseEvent {
 
 	@Override
 	public String toString() {
-		return "releaseDate:" + new SimpleDateFormat("dd-MM-yyyy").format(releaseDate) + "; releaseName:" + releaseName + "; version:" + version;
+		return "releaseDate:" + new SimpleDateFormat("dd-MM-yyyy").format(releaseDate) + "; releaseName:" + releaseName
+				+ "; version:" + version;
 	}
+
 }

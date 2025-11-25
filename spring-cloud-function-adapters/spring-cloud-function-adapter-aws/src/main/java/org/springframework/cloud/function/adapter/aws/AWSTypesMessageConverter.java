@@ -37,11 +37,10 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.MimeType;
 
 /**
- * Implementation of {@link MessageConverter} which uses Jackson or Gson libraries to do the
- * actual conversion via {@link JsonMapper} instance.
+ * Implementation of {@link MessageConverter} which uses Jackson or Gson libraries to do
+ * the actual conversion via {@link JsonMapper} instance.
  *
  * @author Oleg Zhurakousky
- *
  * @since 3.2
  */
 class AWSTypesMessageConverter extends JsonMessageConverter {
@@ -52,8 +51,9 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 	private final AtomicReference<S3EventSerializer> s3EventSerializer = new AtomicReference<>();
 
 	AWSTypesMessageConverter(JsonMapper jsonMapper) {
-		this(jsonMapper, new MimeType("application", "json"), new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
-				CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype() + "+json"));
+		this(jsonMapper, new MimeType("application", "json"),
+				new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
+						CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype() + "+json"));
 	}
 
 	AWSTypesMessageConverter(JsonMapper jsonMapper, MimeType... supportedMimeTypes) {
@@ -69,9 +69,10 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 		if (message.getHeaders().containsKey(AWSLambdaUtils.AWS_EVENT)) {
 			return ((boolean) message.getHeaders().get(AWSLambdaUtils.AWS_EVENT));
 		}
-		//TODO Do we really need the ^^ above? It seems like the line below dows the trick
-		else if (targetClass.getPackage() != null &&
-				targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
+		// TODO Do we really need the ^^ above? It seems like the line below dows the
+		// trick
+		else if (targetClass.getPackage() != null
+				&& targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
 			return true;
 		}
 		return false;
@@ -82,12 +83,12 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 		if (message.getPayload().getClass().isAssignableFrom(targetClass)) {
 			return message.getPayload();
 		}
-		if (targetClass.getPackage() != null &&
-				targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
-			PojoSerializer<?> serializer = LambdaEventSerializers.serializerFor(targetClass, Thread.currentThread().getContextClassLoader());
+		if (targetClass.getPackage() != null
+				&& targetClass.getPackage().getName().startsWith("com.amazonaws.services.lambda.runtime.events")) {
+			PojoSerializer<?> serializer = LambdaEventSerializers.serializerFor(targetClass,
+					Thread.currentThread().getContextClassLoader());
 			byte[] payloadBytes = message.getPayload() instanceof String
-					? ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8)
-					: (byte[]) message.getPayload();
+					? ((String) message.getPayload()).getBytes(StandardCharsets.UTF_8) : (byte[]) message.getPayload();
 			Object event = serializer.fromJson(new ByteArrayInputStream(payloadBytes));
 			return event;
 		}
@@ -118,23 +119,23 @@ class AWSTypesMessageConverter extends JsonMessageConverter {
 		return true;
 	}
 
-
 	@SuppressWarnings("unchecked")
 	@Override
 	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
 			@Nullable Object conversionHint) {
-		if (payload instanceof String && headers.containsKey(AWSLambdaUtils.IS_BASE64_ENCODED)  && (boolean) headers.get(AWSLambdaUtils.IS_BASE64_ENCODED)) {
+		if (payload instanceof String && headers.containsKey(AWSLambdaUtils.IS_BASE64_ENCODED)
+				&& (boolean) headers.get(AWSLambdaUtils.IS_BASE64_ENCODED)) {
 			return ((String) payload).getBytes(StandardCharsets.UTF_8);
 		}
 		if (payload.getClass().getName().equals("com.amazonaws.services.lambda.runtime.events.S3Event")) {
 			if (this.s3EventSerializer.get() == null) {
-				this.s3EventSerializer.set(new S3EventSerializer<>().withClassLoader(ClassUtils.getDefaultClassLoader()));
+				this.s3EventSerializer
+					.set(new S3EventSerializer<>().withClassLoader(ClassUtils.getDefaultClassLoader()));
 			}
 			ByteArrayOutputStream stream = new ByteArrayOutputStream();
 			this.s3EventSerializer.get().toJson(payload, stream);
 			return stream.toByteArray();
 		}
-
 
 		return jsonMapper.toJson(payload);
 	}

@@ -87,7 +87,6 @@ import org.springframework.util.InvalidMimeTypeException;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
-
 /**
  * @author Dave Syer
  * @author Mark Fisher
@@ -99,19 +98,23 @@ import org.springframework.util.StringUtils;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionProperties.class)
-@AutoConfigureAfter(name = {"org.springframework.cloud.function.deployer.FunctionDeployerConfiguration"})
+@AutoConfigureAfter(name = { "org.springframework.cloud.function.deployer.FunctionDeployerConfiguration" })
 public class ContextFunctionCatalogAutoConfiguration {
 
 	private static Log logger = LogFactory.getLog(ContextFunctionCatalogAutoConfiguration.class);
+
 	/**
-	 * The name of the property to specify desired JSON mapper. Available values are `jackson' and 'gson'.
+	 * The name of the property to specify desired JSON mapper. Available values are
+	 * `jackson' and 'gson'.
 	 */
 	public static final String JSON_MAPPER_PROPERTY = "spring.cloud.function.preferred-json-mapper";
 
 	@Bean
 	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper,
-											ConfigurableApplicationContext context, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
-		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
+			ConfigurableApplicationContext context,
+			@Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
+		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory()
+			.getConversionService();
 		if (conversionService == null) {
 			conversionService = new DefaultConversionService();
 		}
@@ -135,9 +138,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			}
 		}
 
-		mcList = mcList.stream()
-			.filter(this::isConverterEligible)
-			.collect(Collectors.toList());
+		mcList = mcList.stream().filter(this::isConverterEligible).collect(Collectors.toList());
 
 		mcList.add(new JsonMessageConverter(jsonMapper));
 		mcList.add(new ByteArrayMessageConverter());
@@ -166,20 +167,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 			((CloudEventsFunctionInvocationHelper) functionInvocationHelper).setMessageConverter(messageConverter);
 		}
 		FunctionProperties functionProperties = context.getBean(FunctionProperties.class);
-		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
+		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties,
+				functionInvocationHelper);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Bean(RoutingFunction.FUNCTION_NAME)
 	public RoutingFunction functionRouter(FunctionCatalog functionCatalog, FunctionProperties functionProperties,
-								BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback,
-								@Nullable DefaultMessageRoutingHandler defaultMessageRoutingHandler) {
+			BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback,
+			@Nullable DefaultMessageRoutingHandler defaultMessageRoutingHandler) {
 		if (defaultMessageRoutingHandler != null) {
-			FunctionRegistration functionRegistration = new FunctionRegistration(defaultMessageRoutingHandler, RoutingFunction.DEFAULT_ROUTE_HANDLER);
-			functionRegistration.type(FunctionTypeUtils.consumerType(ResolvableType.forClassWithGenerics(Message.class, Object.class).getType()));
+			FunctionRegistration functionRegistration = new FunctionRegistration(defaultMessageRoutingHandler,
+					RoutingFunction.DEFAULT_ROUTE_HANDLER);
+			functionRegistration.type(FunctionTypeUtils
+				.consumerType(ResolvableType.forClassWithGenerics(Message.class, Object.class).getType()));
 			((FunctionRegistry) functionCatalog).register(functionRegistration);
 		}
-		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory), routingCallback);
+		return new RoutingFunction(functionCatalog, functionProperties, new BeanFactoryResolver(beanFactory),
+				routingCallback);
 	}
 
 	private boolean isConverterEligible(Object messageConverter) {
@@ -199,19 +204,23 @@ public class ContextFunctionCatalogAutoConfiguration {
 		public CloudEventMessageConverter cloudEventMessageConverter() {
 			return new CloudEventMessageConverter();
 		}
+
 	}
 
 	@ComponentScan(basePackages = "${spring.cloud.function.scan.packages:functions}",
-			includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, classes = { Supplier.class, Function.class, Consumer.class }),
-			excludeFilters = @Filter(type = FilterType.ANNOTATION, classes = { Configuration.class, Component.class}))
+			includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE,
+					classes = { Supplier.class, Function.class, Consumer.class }),
+			excludeFilters = @Filter(type = FilterType.ANNOTATION, classes = { Configuration.class, Component.class }))
 	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnProperty(prefix = "spring.cloud.function.scan", name = "enabled", havingValue = "true", matchIfMissing = true)
+	@ConditionalOnProperty(prefix = "spring.cloud.function.scan", name = "enabled", havingValue = "true",
+			matchIfMissing = true)
 	protected static class PlainFunctionScanConfiguration {
 
 	}
 
 	@Configuration(proxyBeanMethods = false)
 	public static class JsonMapperConfiguration {
+
 		@Bean
 		@ConditionalOnMissingBean(JsonMapper.class)
 		public JsonMapper jsonMapper(ApplicationContext context) {
@@ -232,12 +241,13 @@ public class ContextFunctionCatalogAutoConfiguration {
 					return gson(context);
 				}
 			}
-			throw new IllegalStateException("Failed to configure JsonMapper. Neither jackson nor gson are present on the claspath");
+			throw new IllegalStateException(
+					"Failed to configure JsonMapper. Neither jackson nor gson are present on the claspath");
 		}
 
 		private JsonMapper gson(ApplicationContext context) {
 			Assert.state(ClassUtils.isPresent("com.google.gson.Gson", ClassUtils.getDefaultClassLoader()),
-				"Can not bootstrap Gson mapper since Gson is not on the classpath");
+					"Can not bootstrap Gson mapper since Gson is not on the classpath");
 			Gson gson;
 			try {
 				gson = context.getBean(Gson.class);
@@ -250,8 +260,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 		@SuppressWarnings("unchecked")
 		private JsonMapper jackson(ApplicationContext context) {
-			Assert.state(ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", ClassUtils.getDefaultClassLoader()),
-				"Can not bootstrap Jackson mapper since Jackson is not on the classpath");
+			Assert.state(
+					ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", ClassUtils.getDefaultClassLoader()),
+					"Can not bootstrap Jackson mapper since Jackson is not on the classpath");
 			ObjectMapper mapper = null;
 			MapperBuilder builder = tools.jackson.databind.json.JsonMapper.builder();
 			try {
@@ -265,8 +276,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 
 			if (KotlinDetector.isKotlinPresent()) {
 				try {
-					Class<? extends JacksonModule> kotlinModuleClass = (Class<? extends JacksonModule>)
-							ClassUtils.forName("com.fasterxml.jackson.module.kotlin.KotlinModule", ClassUtils.getDefaultClassLoader());
+					Class<? extends JacksonModule> kotlinModuleClass = (Class<? extends JacksonModule>) ClassUtils
+						.forName("com.fasterxml.jackson.module.kotlin.KotlinModule",
+								ClassUtils.getDefaultClassLoader());
 					JacksonModule kotlinModule = BeanUtils.instantiateClass(kotlinModuleClass);
 					builder = builder.addModule(kotlinModule);
 				}
@@ -282,5 +294,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			mapper = builder.build();
 			return new JacksonMapper(mapper);
 		}
+
 	}
+
 }

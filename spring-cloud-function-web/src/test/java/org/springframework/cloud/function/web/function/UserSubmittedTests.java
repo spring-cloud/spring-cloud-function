@@ -33,7 +33,6 @@ import org.springframework.http.ResponseEntity;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  * @author Chris Bono
  * @since 2.1
@@ -46,8 +45,8 @@ public class UserSubmittedTests {
 		int port = context.getEnvironment().getProperty("local.server.port", Integer.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		Thread.sleep(200);
-		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/echo"), "", String.class);
+		ResponseEntity<String> response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/echo"),
+				"", String.class);
 		assertThat(response.getBody()).isNull();
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
@@ -58,12 +57,11 @@ public class UserSubmittedTests {
 		int port = context.getEnvironment().getProperty("local.server.port", Integer.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
 		Thread.sleep(200);
-		ResponseEntity<String> response = testRestTemplate
-				.postForEntity(new URI("http://localhost:" + port + "/echo"), "hello", String.class);
+		ResponseEntity<String> response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/echo"),
+				"hello", String.class);
 		assertThat(response.getBody()).isEqualTo("HELLO");
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
-
 
 	@SpringBootApplication
 	protected static class Issue274Configuration {
@@ -72,6 +70,7 @@ public class UserSubmittedTests {
 		public Function<String, String> echo() {
 			return s -> s.toUpperCase(Locale.ROOT);
 		}
+
 	}
 
 }

@@ -63,9 +63,13 @@ import static org.mockito.Mockito.when;
 public class FunctionInvokerHttpTests {
 
 	private static final Gson gson = new Gson();
+
 	private HttpRequest request;
+
 	private HttpResponse response;
+
 	private BufferedWriter bufferedWriter;
+
 	private StringWriter writer;
 
 	@BeforeEach
@@ -86,9 +90,7 @@ public class FunctionInvokerHttpTests {
 		handler.service(request, response);
 		bufferedWriter.close();
 
-
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
-
 
 	}
 
@@ -104,7 +106,6 @@ public class FunctionInvokerHttpTests {
 		handler.service(request, response);
 		bufferedWriter.close();
 
-
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
 
@@ -118,7 +119,6 @@ public class FunctionInvokerHttpTests {
 		when(request.getReader()).thenReturn(new BufferedReader(new StringReader("hello")));
 		handler.service(request, response);
 		bufferedWriter.close();
-
 
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
@@ -135,7 +135,6 @@ public class FunctionInvokerHttpTests {
 		handler.service(request, response);
 		bufferedWriter.close();
 
-
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
 
@@ -150,7 +149,6 @@ public class FunctionInvokerHttpTests {
 		when(request.getReader()).thenReturn(new BufferedReader(new StringReader(gson.toJson(input))));
 		handler.service(request, response);
 		bufferedWriter.close();
-
 
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
 	}
@@ -167,9 +165,7 @@ public class FunctionInvokerHttpTests {
 		handler.service(request, response);
 		bufferedWriter.close();
 
-
 		assertThat(writer.toString()).isEqualTo(gson.toJson(expectedOutput));
-
 
 	}
 
@@ -233,7 +229,9 @@ public class FunctionInvokerHttpTests {
 
 			String payload = "hello";
 
-			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("statusCode", 404).setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
+			Message<String> msg = MessageBuilder.withPayload(payload)
+				.setHeader("statusCode", 404)
+				.setHeader(MessageHeaders.CONTENT_TYPE, "text/plain")
 				.build();
 
 			return x -> msg;
@@ -251,8 +249,7 @@ public class FunctionInvokerHttpTests {
 			String payload = "hello";
 			List<Object> li = new ArrayList<Object>(asList(123, "headerThing"));
 
-			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("multiValueHeader", li)
-				.build();
+			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("multiValueHeader", li).build();
 
 			return x -> msg;
 		};
@@ -300,10 +297,12 @@ public class FunctionInvokerHttpTests {
 		public Function<IncomingRequest, Message<OutgoingResponse>> function() {
 			return (in) -> {
 				return MessageBuilder
-						.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
-						.setHeader("foo", "bar").build();
+					.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
+					.setHeader("foo", "bar")
+					.build();
 			};
 		}
+
 	}
 
 	@Configuration
@@ -335,6 +334,7 @@ public class FunctionInvokerHttpTests {
 		public void setMessage(String message) {
 			this.message = message;
 		}
+
 	}
 
 	public static class OutgoingResponse {
@@ -357,6 +357,5 @@ public class FunctionInvokerHttpTests {
 		}
 
 	}
-
 
 }
