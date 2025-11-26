@@ -73,6 +73,7 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 
+
 /**
  * Set of utility operations to interrogate function definitions.
  *
@@ -94,17 +95,17 @@ public final class FunctionTypeUtils {
 
 	public static Type functionType(Type input, Type output) {
 		return ResolvableType.forClassWithGenerics(Function.class,
-			ResolvableType.forType(input), ResolvableType.forType(output)).getType();
+				ResolvableType.forType(input), ResolvableType.forType(output)).getType();
 	}
 
 	public static Type consumerType(Type input) {
 		return ResolvableType.forClassWithGenerics(Consumer.class,
-			ResolvableType.forType(input)).getType();
+				ResolvableType.forType(input)).getType();
 	}
 
 	public static Type supplierType(Type output) {
 		return ResolvableType.forClassWithGenerics(Supplier.class,
-			ResolvableType.forType(output)).getType();
+				ResolvableType.forType(output)).getType();
 	}
 
 	/**
@@ -179,7 +180,7 @@ public final class FunctionTypeUtils {
 			 */
 			return ObjectUtils.isEmpty(upperbounds) ? Object.class : getRawType(upperbounds[0]);
 		}
-		return ResolvableType.forType(type).getRawClass() == null ? Object.class : ResolvableType.forType(type).getRawClass();
+		return ResolvableType.forType(type).getRawClass();
 	}
 
 	/**
@@ -194,15 +195,15 @@ public final class FunctionTypeUtils {
 	public static Method discoverFunctionalMethod(Class<?> pojoFunctionClass) {
 		if (Supplier.class.isAssignableFrom(pojoFunctionClass)) {
 			return Stream.of(ReflectionUtils.getAllDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
-				&& m.getName().equals("get")).findFirst().get();
+					&& m.getName().equals("get")).findFirst().get();
 		}
 		else if (Consumer.class.isAssignableFrom(pojoFunctionClass) || BiConsumer.class.isAssignableFrom(pojoFunctionClass)) {
 			return Stream.of(ReflectionUtils.getAllDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
-				&& m.getName().equals("accept")).findFirst().get();
+					&& m.getName().equals("accept")).findFirst().get();
 		}
 		else if (Function.class.isAssignableFrom(pojoFunctionClass) || BiFunction.class.isAssignableFrom(pojoFunctionClass)) {
 			return Stream.of(ReflectionUtils.getAllDeclaredMethods(pojoFunctionClass)).filter(m -> !m.isSynthetic()
-				&& m.getName().equals("apply")).findFirst().get();
+					&& m.getName().equals("apply")).findFirst().get();
 		}
 
 		List<Method> methods = new ArrayList<>();
@@ -213,7 +214,7 @@ public final class FunctionTypeUtils {
 
 		}, method ->
 			!method.getDeclaringClass().isAssignableFrom(Object.class)
-				&& !method.isSynthetic() && !method.isBridge() && !method.isVarArgs());
+			&& !method.isSynthetic() && !method.isBridge() && !method.isVarArgs());
 
 		if (methods.size() > 1) {
 			for (Method candidadteMethod : methods) {
@@ -226,28 +227,6 @@ public final class FunctionTypeUtils {
 			}
 		}
 		return CollectionUtils.isEmpty(methods) ? null : methods.get(0);
-	}
-
-	public static Type discoverFunctionTypeFromType(Type functionalType) {
-		Type typeToReturn = null;
-		if (Function.class.isAssignableFrom(getRawType(functionalType))) {
-			ResolvableType functionType = ResolvableType.forType(functionalType).as(Function.class);
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), getRawType(functionalType));
-		}
-		else if (Consumer.class.isAssignableFrom(getRawType(functionalType))) {
-			ResolvableType functionType = ResolvableType.forType(functionalType).as(Consumer.class);
-
-			ResolvableType t = ResolvableType.forClassWithGenerics(getRawType(functionalType), functionType.getGeneric(0));
-			Type t2 = t.getType();
-			//Type t = ResolvableType.
-
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionType.getRawClass());
-		}
-		else {
-			ResolvableType functionType = ResolvableType.forType(functionalType).as(Supplier.class);
-			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), getRawType(functionalType));
-		}
-		return typeToReturn;
 	}
 
 	public static Type discoverFunctionTypeFromClass(Class<?> functionalClass) {
@@ -270,15 +249,15 @@ public final class FunctionTypeUtils {
 					}
 				}
 			}
-			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Function.class);
+			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Function.class);
 			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
 		else if (Consumer.class.isAssignableFrom(functionalClass)) {
-			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Consumer.class);
+			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Consumer.class);
 			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
 		else if (Supplier.class.isAssignableFrom(functionalClass)) {
-			ResolvableType functionType = ResolvableType.forType(functionalClass).as(Supplier.class);
+			ResolvableType functionType = ResolvableType.forClass(functionalClass).as(Supplier.class);
 			typeToReturn = GenericTypeResolver.resolveType(functionType.getType(), functionalClass);
 		}
 		return typeToReturn;
@@ -307,7 +286,6 @@ public final class FunctionTypeUtils {
 	 */
 	public static Type discoverFunctionTypeFromFunctionFactoryMethod(Method method) {
 		return method.getGenericReturnType();
-//		return discoverFunctionTypeFromClass(method.getReturnType());
 	}
 
 	/**
@@ -321,11 +299,11 @@ public final class FunctionTypeUtils {
 			return null;
 		}
 		Assert.isTrue(
-			functionMethod.getName().equals("apply") ||
+				functionMethod.getName().equals("apply") ||
 				functionMethod.getName().equals("accept") ||
 				functionMethod.getName().equals("get") ||
 				functionMethod.getName().equals("invoke"),
-			"Only Supplier, Function or Consumer supported at the moment. Was " + functionMethod.getDeclaringClass());
+				"Only Supplier, Function or Consumer supported at the moment. Was " + functionMethod.getDeclaringClass());
 
 		ResolvableType functionType;
 		if (functionMethod.getName().equals("apply") || functionMethod.getName().equals("invoke")) {
@@ -399,49 +377,6 @@ public final class FunctionTypeUtils {
 	}
 
 	/**
-	 * Will resolve @{@link ResolvableType} to {@link Type} preserving all the resolved generics.
-	 * @param typeWithGenerics - instance of {@link ResolvableType}.
-	 * @return - {@link Type} representation of the provided {@link ResolvableType}.
-	 */
-	public static Type resolveType(ResolvableType typeWithGenerics) {
-		if (typeWithGenerics.hasResolvableGenerics()) {
-			ResolvableType[] generics = typeWithGenerics.getGenerics();
-			List<ResolvableType> resolvedGenerics = new ArrayList<>();
-			for (int i = 0; i < generics.length; i++) {
-				ResolvableType genericType = typeWithGenerics.getGenerics()[i];
-				resolvedGenerics.add(ResolvableType.forType(resolveType(genericType)));
-			}
-			return ResolvableType.forClassWithGenerics(typeWithGenerics.getRawClass(),
-				resolvedGenerics.toArray(new ResolvableType[0])).getType();
-		}
-		else {
-			return typeWithGenerics.resolve();
-		}
-	}
-
-	public static Type getOutputType(Type functionType) {
-		assertSupportedTypes(functionType);
-		if (isConsumer(functionType)) {
-			logger.debug("Consumer does not have output type, returning null as output type.");
-			return null;
-		}
-
-		if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
-			return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
-		}
-		else {
-			ResolvableType resolvableFunctionType = isSupplier(functionType)
-				? ResolvableType.forType(functionType).as(Supplier.class)
-				: ResolvableType.forType(functionType).as(Function.class);
-			ResolvableType generics = isSupplier(functionType)
-				? resolvableFunctionType.getGenerics()[0]
-				: resolvableFunctionType.getGenerics()[1];
-			Type outputType = FunctionTypeUtils.resolveType(generics);
-			return outputType == null || outputType instanceof TypeVariable<?> ? Object.class : outputType;
-		}
-	}
-
-	/**
 	 * Returns input type of function type that represents Function or Consumer.
 	 * @param functionType  the Type of Function or Consumer
 	 * @return the input type as {@link Type}
@@ -453,17 +388,35 @@ public final class FunctionTypeUtils {
 			return null;
 		}
 
+		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
+
+		if (FunctionTypeUtils.isFunction(functionType)) {
+			return extractInputType(resolvableFunctionType.as(Function.class).getGeneric(0));
+		}
+		if (FunctionTypeUtils.isConsumer(functionType)) {
+			return extractInputType(resolvableFunctionType.as(Consumer.class).getGeneric(0));
+		}
 		if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
 			return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
 		}
-		else {
-			ResolvableType resolvableFunctionType = isConsumer(functionType)
-				? ResolvableType.forType(functionType).as(Consumer.class)
-				: ResolvableType.forType(functionType).as(Function.class);
-			ResolvableType generics = resolvableFunctionType.getGenerics()[0];
-			Type inputType = FunctionTypeUtils.resolveType(generics);
-			return inputType == null || inputType instanceof TypeVariable<?> ? Object.class : inputType;
+
+		// no consumer or function
+		// might be one of the other supported types (as asserted in first line of method)
+		// for example FunctionRegistration or IntConsumer
+
+		// unclear what the contract is in such a case
+		// maybe returning null here might be "more" correct
+		return Object.class;
+	}
+
+	private static Type extractInputType(ResolvableType resolvableInputType) {
+		if (resolvableInputType.getType() instanceof TypeVariable) {
+			// In case the input type is a type variable (e.g. as in GH-1251) we need to resolve the type
+			// For the case that the type is unbound Object.class is used
+			return resolvableInputType.resolve(Object.class);
 		}
+
+		return resolvableInputType.getType();
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -476,7 +429,7 @@ public final class FunctionTypeUtils {
 		}
 		if (applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) { // for Kotlin primarily
 			FunctionRegistration fr = applicationContext
-				.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
+					.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
 			return fr.getType();
 		}
 
@@ -525,6 +478,52 @@ public final class FunctionTypeUtils {
 		}
 		return null;
 	}
+
+	public static Type getOutputType(Type functionType) {
+		assertSupportedTypes(functionType);
+		if (isConsumer(functionType)) {
+			logger.debug("Consumer does not have output type, returning null as output type.");
+			return null;
+		}
+
+		ResolvableType resolvableFunctionType = ResolvableType.forType(functionType);
+
+		ResolvableType resolvableOutputType;
+		if (FunctionTypeUtils.isFunction(functionType)) {
+			resolvableOutputType = resolvableFunctionType.as(Function.class);
+		}
+		else {
+			if (KotlinDetector.isKotlinPresent() && Function1.class.isAssignableFrom(getRawType(functionType))) { // Kotlin
+				return ResolvableType.forType(getImmediateGenericType(functionType, 1)).getType();
+			}
+			else {
+				resolvableOutputType = resolvableFunctionType.as(Supplier.class);
+			}
+		}
+
+		Type outputType;
+		if (functionType instanceof Class functionTypeClass) {
+			if (FunctionTypeUtils.isFunction(functionType)) {
+				ResolvableType genericClass1 = resolvableOutputType.getGeneric(1);
+				outputType = genericClass1.getType();
+				outputType = (outputType instanceof TypeVariable) ? Object.class : GenericTypeResolver.resolveType(outputType, functionTypeClass);
+			}
+			else {
+				ResolvableType genericClass0 = resolvableOutputType.getGeneric(0);
+				outputType = genericClass0.getType();
+				outputType = (outputType instanceof TypeVariable) ? Object.class : GenericTypeResolver.resolveType(outputType, functionTypeClass);
+			}
+		}
+		else if (functionType instanceof ParameterizedType) {
+			Type genericType = isSupplier(functionType) ? resolvableOutputType.getGeneric(0).getType() : resolvableOutputType.getGeneric(1).getType();
+			outputType = GenericTypeResolver.resolveType(genericType, getRawType(functionType));
+		}
+		else {
+			outputType =  resolvableOutputType.getType();
+		}
+		return outputType instanceof TypeVariable ? Object.class : outputType;
+	}
+
 	public static Type getImmediateGenericType(Type type, int index) {
 		if (type instanceof ParameterizedType) {
 			return ((ParameterizedType) type).getActualTypeArguments()[index];
@@ -614,23 +613,23 @@ public final class FunctionTypeUtils {
 
 		Type functionType = null;
 		switch (parameterTypes.length) {
-			case 0:
-				functionType =  ResolvableType.forClassWithGenerics(Supplier.class,
+		case 0:
+			functionType =  ResolvableType.forClassWithGenerics(Supplier.class,
 					ResolvableType.forMethodReturnType(functionalMethod)).getType();
-				break;
-			case 1:
-				if (Void.class.isAssignableFrom(functionalMethod.getReturnType())) {
-					functionType =  ResolvableType.forClassWithGenerics(Consumer.class,
+			break;
+		case 1:
+			if (Void.class.isAssignableFrom(functionalMethod.getReturnType())) {
+				functionType =  ResolvableType.forClassWithGenerics(Consumer.class,
 						ResolvableType.forMethodParameter(functionalMethod, 0)).getType();
-				}
-				else {
-					functionType =  ResolvableType.forClassWithGenerics(Function.class,
+			}
+			else {
+				functionType =  ResolvableType.forClassWithGenerics(Function.class,
 						ResolvableType.forMethodParameter(functionalMethod, 0),
 						ResolvableType.forMethodReturnType(functionalMethod)).getType();
-				}
-				break;
-			default:
-				throw new UnsupportedOperationException("Functional method: " + functionalMethod + " is not supported");
+			}
+			break;
+		default:
+			throw new UnsupportedOperationException("Functional method: " + functionalMethod + " is not supported");
 		}
 		return functionType;
 	}
@@ -653,31 +652,31 @@ public final class FunctionTypeUtils {
 		if (type instanceof ParameterizedType) {
 			type = ((ParameterizedType) type).getRawType();
 			Assert.isTrue(type instanceof Class<?>, "Must be one of Supplier, Function, Consumer"
-				+ " or FunctionRegistration. Was " + type);
+					+ " or FunctionRegistration. Was " + type);
 		}
 
 		Class<?> candidateType = (Class<?>) type;
 
 		Assert.isTrue(Supplier.class.isAssignableFrom(candidateType)
-				|| (KotlinDetector.isKotlinPresent() && (Function0.class.isAssignableFrom(candidateType) || Function1.class.isAssignableFrom(candidateType)))
-				|| Function.class.isAssignableFrom(candidateType)
-				|| Consumer.class.isAssignableFrom(candidateType)
-				|| FunctionRegistration.class.isAssignableFrom(candidateType)
-				|| IntConsumer.class.isAssignableFrom(candidateType)
-				|| IntSupplier.class.isAssignableFrom(candidateType)
-				|| IntFunction.class.isAssignableFrom(candidateType)
-				|| ToIntFunction.class.isAssignableFrom(candidateType)
-				|| LongConsumer.class.isAssignableFrom(candidateType)
-				|| LongSupplier.class.isAssignableFrom(candidateType)
-				|| LongFunction.class.isAssignableFrom(candidateType)
-				|| ToLongFunction.class.isAssignableFrom(candidateType)
-				|| DoubleConsumer.class.isAssignableFrom(candidateType)
-				|| DoubleSupplier.class.isAssignableFrom(candidateType)
-				|| DoubleFunction.class.isAssignableFrom(candidateType)
-				|| ToDoubleFunction.class.isAssignableFrom(candidateType)
-				|| type.getTypeName().startsWith("org.springframework.context.annotation.ConfigurationClassEnhancer"),
-			"Must be one of Supplier, Function, Consumer"
-				+ " or FunctionRegistration. Was " + type);
+						|| (KotlinDetector.isKotlinPresent() && (Function0.class.isAssignableFrom(candidateType) || Function1.class.isAssignableFrom(candidateType)))
+						|| Function.class.isAssignableFrom(candidateType)
+						|| Consumer.class.isAssignableFrom(candidateType)
+						|| FunctionRegistration.class.isAssignableFrom(candidateType)
+						|| IntConsumer.class.isAssignableFrom(candidateType)
+						|| IntSupplier.class.isAssignableFrom(candidateType)
+						|| IntFunction.class.isAssignableFrom(candidateType)
+						|| ToIntFunction.class.isAssignableFrom(candidateType)
+						|| LongConsumer.class.isAssignableFrom(candidateType)
+						|| LongSupplier.class.isAssignableFrom(candidateType)
+						|| LongFunction.class.isAssignableFrom(candidateType)
+						|| ToLongFunction.class.isAssignableFrom(candidateType)
+						|| DoubleConsumer.class.isAssignableFrom(candidateType)
+						|| DoubleSupplier.class.isAssignableFrom(candidateType)
+						|| DoubleFunction.class.isAssignableFrom(candidateType)
+						|| ToDoubleFunction.class.isAssignableFrom(candidateType)
+						|| type.getTypeName().startsWith("org.springframework.context.annotation.ConfigurationClassEnhancer"),
+				"Must be one of Supplier, Function, Consumer"
+						+ " or FunctionRegistration. Was " + type);
 	}
 
 	private static Type extractReactiveType(Type type) {
