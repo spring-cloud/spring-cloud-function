@@ -266,7 +266,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 			if (KotlinDetector.isKotlinPresent()) {
 				try {
 					Class<? extends JacksonModule> kotlinModuleClass = (Class<? extends JacksonModule>)
-							ClassUtils.forName("com.fasterxml.jackson.module.kotlin.KotlinModule", ClassUtils.getDefaultClassLoader());
+							ClassUtils.forName("tools.jackson.module.kotlin.KotlinModule", ClassUtils.getDefaultClassLoader());
 					JacksonModule kotlinModule = BeanUtils.instantiateClass(kotlinModuleClass);
 					builder = builder.addModule(kotlinModule);
 				}
