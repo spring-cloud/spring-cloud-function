@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-function-adapter-parent</artifactId>
-		<version>4.2.4</version>
+		<version>4.2.4-SNAPSHOT</version>
 	</parent>
 	<artifactId>spring-cloud-function-grpc-cloudevent-ext</artifactId>
 	<name>spring-cloud-function-grpc-cloudevent-ext</name>
