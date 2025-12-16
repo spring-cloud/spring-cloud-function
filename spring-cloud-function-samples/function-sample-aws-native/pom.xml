@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.9-SNAPSHOT</version>
+		<version>3.5.8</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>oz.native.sample</groupId>
@@ -15,7 +15,7 @@
 	<description>Sample of AWS with Spring Native</description>
 	<properties>
 		<java.version>19</java.version>
-		<spring-cloud.version>2025.0.1-SNAPSHOT</spring-cloud.version><!-- @releaser:version-check-off -->
+		<spring-cloud.version>2025.0.2-SNAPSHOT</spring-cloud.version><!-- @releaser:version-check-off -->
 	</properties>
 	<dependencies>
 		<dependency>
