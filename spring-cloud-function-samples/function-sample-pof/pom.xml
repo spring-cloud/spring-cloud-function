@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.8</version>
+		<version>3.5.9-SNAPSHOT</version>
 		<relativePath/>
 	</parent>
 
@@ -21,7 +21,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
-		<spring-cloud-function.version>4.3.1</spring-cloud-function.version>
+		<spring-cloud-function.version>4.3.1-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
