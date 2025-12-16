@@ -21,7 +21,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<reactor.version>3.1.2.RELEASE</reactor.version>
-		<spring-cloud-function.version>4.3.1-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>4.3.2-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
