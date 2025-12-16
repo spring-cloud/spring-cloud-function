@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.9-SNAPSHOT</version>
+		<version>3.5.8</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>oz.spring</groupId>
@@ -15,7 +15,7 @@
 	<description>Template project for creating function that can be deployed as AWS Lambda</description>
 	<properties>
 		<java.version>17</java.version>
-		<spring-cloud.version>2025.0.1-SNAPSHOT</spring-cloud.version>
+		<spring-cloud.version>2025.0.1</spring-cloud.version>
 		<wrapper.version>1.0.31.RELEASE</wrapper.version>
 		<aws-lambda-events.version>3.14.0</aws-lambda-events.version>
 		<aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>

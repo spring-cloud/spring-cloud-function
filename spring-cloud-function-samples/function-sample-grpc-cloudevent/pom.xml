@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.9-SNAPSHOT</version>
+		<version>3.5.8</version>
 		<relativePath/> 
 	</parent>
 	<groupId>com.example.grpc</groupId>
@@ -16,7 +16,7 @@
 	<name>function-sample-grpc-cloudevent</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
-		<spring-cloud-function.version>4.3.1-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>4.3.1</spring-cloud-function.version>
 		<grpc.version>1.55.1</grpc.version>
 	</properties>
 	<dependencies>
