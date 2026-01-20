@@ -24,8 +24,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
-import org.springframework.boot.gson.autoconfigure.GsonAutoConfiguration;
-import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.web.BasicStringConverter;
@@ -44,7 +42,7 @@ import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandl
 @ConditionalOnClass({ Flux.class, AsyncHandlerMethodReturnValueHandler.class })
 @ConditionalOnWebApplication(type = Type.REACTIVE)
 @Import(FunctionController.class)
-@AutoConfigureAfter({ JacksonAutoConfiguration.class, GsonAutoConfiguration.class })
+@AutoConfigureAfter(name = { "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration", "org.springframework.boot.gson.autoconfigure.GsonAutoConfiguration" })
 public class ReactorAutoConfiguration {
 
 	@Bean

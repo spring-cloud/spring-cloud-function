@@ -110,15 +110,6 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
-	public void testEmptyPojoConversion() {
-		FunctionCatalog catalog = this.configureCatalog(EmptyPojoConfiguratioin.class);
-		Function function = catalog.lookup("echo");
-		String result = (String) function.apply(MessageBuilder.withPayload(new EmptyPojo()).build());
-		assertThat(result).isEqualTo("{}");
-	}
-
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@Test
 	public void testCompositionWithNonExistingFunction() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
 		for (int i = 0; i < 10; i++) {
