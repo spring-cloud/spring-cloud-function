@@ -25,8 +25,8 @@ import com.google.cloud.functions.RawBackgroundFunction;
 import org.springframework.boot.loader.launch.JarLauncher;
 
 /**
- * The launcher class written at the top-level of the output JAR to be deployed to
- * Google Cloud Functions. This	 is the entry point to the function when run from JAR.
+ * The launcher class written at the top-level of the output JAR to be deployed to Google
+ * Cloud Functions. This is the entry point to the function when run from JAR.
  *
  * @author Ray Tsang
  * @author Daniel Zou
@@ -38,12 +38,11 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 	private final Object delegate;
 
 	public GcfJarLauncher() throws Exception {
-		//JarFile.registerUrlProtocolHandler();
+		// JarFile.registerUrlProtocolHandler();
 
 		this.loader = createClassLoader(getClassPathUrls());
 
-		Class<?> clazz = this.loader
-			.loadClass("org.springframework.cloud.function.adapter.gcp.FunctionInvoker");
+		Class<?> clazz = this.loader.loadClass("org.springframework.cloud.function.adapter.gcp.FunctionInvoker");
 		this.delegate = clazz.getConstructor().newInstance();
 	}
 
@@ -58,5 +57,5 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 		Thread.currentThread().setContextClassLoader(this.loader);
 		((RawBackgroundFunction) delegate).accept(json, context);
 	}
-}
 
+}

@@ -45,8 +45,14 @@ public class ImplicitNonFunctionalTests {
 
 	@Test
 	public void words() throws Exception {
-		this.client.post().uri("/").body(Mono.just("foo"), String.class).exchange()
-				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
+		this.client.post()
+			.uri("/")
+			.body(Mono.just("foo"), String.class)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.isEqualTo("FOO");
 	}
 
 	@SpringBootConfiguration

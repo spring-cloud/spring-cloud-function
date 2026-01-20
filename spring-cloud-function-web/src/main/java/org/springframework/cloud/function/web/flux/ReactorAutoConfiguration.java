@@ -46,7 +46,8 @@ import org.springframework.web.method.support.AsyncHandlerMethodReturnValueHandl
 public class ReactorAutoConfiguration {
 
 	@Bean
-	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog, FunctionController controller, FunctionProperties functionProperties) {
+	public FunctionHandlerMapping functionHandlerMapping(FunctionCatalog catalog, FunctionController controller,
+			FunctionProperties functionProperties) {
 		return new FunctionHandlerMapping(catalog, controller, functionProperties);
 	}
 

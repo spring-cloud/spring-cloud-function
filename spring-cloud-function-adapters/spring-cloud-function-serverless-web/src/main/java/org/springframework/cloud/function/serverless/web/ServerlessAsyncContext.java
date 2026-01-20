@@ -43,6 +43,7 @@ import org.springframework.web.util.WebUtils;
  * @author Omer Celik
  */
 public class ServerlessAsyncContext implements AsyncContext {
+
 	private final HttpServletRequest request;
 
 	@Nullable
@@ -59,12 +60,10 @@ public class ServerlessAsyncContext implements AsyncContext {
 
 	private final ReentrantLock globalLock = new ReentrantLock();
 
-
 	public ServerlessAsyncContext(ServletRequest request, @Nullable ServletResponse response) {
 		this.request = (HttpServletRequest) request;
 		this.response = (HttpServletResponse) response;
 	}
-
 
 	public void addDispatchHandler(Runnable handler) {
 		Assert.notNull(handler, "Dispatch handler must not be null");
@@ -95,7 +94,8 @@ public class ServerlessAsyncContext implements AsyncContext {
 
 	@Override
 	public boolean hasOriginalRequestAndResponse() {
-		return (this.request instanceof ServerlessHttpServletRequest && this.response instanceof ServerlessHttpServletResponse);
+		return (this.request instanceof ServerlessHttpServletRequest
+				&& this.response instanceof ServerlessHttpServletResponse);
 	}
 
 	@Override
@@ -127,7 +127,8 @@ public class ServerlessAsyncContext implements AsyncContext {
 
 	@Override
 	public void complete() {
-		ServerlessHttpServletRequest mockRequest = WebUtils.getNativeRequest(this.request, ServerlessHttpServletRequest.class);
+		ServerlessHttpServletRequest mockRequest = WebUtils.getNativeRequest(this.request,
+				ServerlessHttpServletRequest.class);
 		if (mockRequest != null) {
 			mockRequest.setAsyncStarted(false);
 		}
@@ -166,13 +167,13 @@ public class ServerlessAsyncContext implements AsyncContext {
 	}
 
 	/**
-	 * By default this is set to 10000 (10 seconds) even though the Servlet API
-	 * specifies a default async request timeout of 30 seconds. Keep in mind the
-	 * timeout could further be impacted by global configuration through the MVC
-	 * Java config or the XML namespace, as well as be overridden per request on
+	 * By default this is set to 10000 (10 seconds) even though the Servlet API specifies
+	 * a default async request timeout of 30 seconds. Keep in mind the timeout could
+	 * further be impacted by global configuration through the MVC Java config or the XML
+	 * namespace, as well as be overridden per request on
 	 * {@link org.springframework.web.context.request.async.DeferredResult DeferredResult}
-	 * or on
-	 * {@link org.springframework.web.servlet.mvc.method.annotation.SseEmitter SseEmitter}.
+	 * or on {@link org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+	 * SseEmitter}.
 	 * @param timeout the timeout value to use.
 	 * @see AsyncContext#setTimeout(long)
 	 */
@@ -185,4 +186,5 @@ public class ServerlessAsyncContext implements AsyncContext {
 	public long getTimeout() {
 		return this.timeout;
 	}
+
 }

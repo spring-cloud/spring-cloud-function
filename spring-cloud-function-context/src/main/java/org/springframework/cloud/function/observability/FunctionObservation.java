@@ -60,4 +60,5 @@ enum FunctionObservation implements ObservationDocumentation {
 		}
 
 	}
+
 }

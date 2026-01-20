@@ -32,11 +32,14 @@ import org.springframework.messaging.Message;
 @Configuration(proxyBeanMethods = false)
 public class CloudEventsFunctionExtensionConfiguration {
 
-	// The following two beans are intended to be mutually exclusive. Only one should be activated based
+	// The following two beans are intended to be mutually exclusive. Only one should be
+	// activated based
 	// on the presence of Cloud Event SDK API
 	@Bean
 	@ConditionalOnMissingBean
-	public FunctionInvocationHelper<Message<?>> nativeFunctionInvocationHelper(@Nullable CloudEventHeaderEnricher cloudEventHeadersProvider) {
+	public FunctionInvocationHelper<Message<?>> nativeFunctionInvocationHelper(
+			@Nullable CloudEventHeaderEnricher cloudEventHeadersProvider) {
 		return new CloudEventsFunctionInvocationHelper(cloudEventHeadersProvider);
 	}
+
 }

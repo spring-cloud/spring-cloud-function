@@ -36,8 +36,8 @@ public class ObservationAutoConfiguration {
 	@ConditionalOnMissingBean
 	@ConditionalOnBean(ObservationRegistry.class)
 	public FunctionAroundWrapper observationFunctionAroundWrapper(ObservationRegistry registry,
-		ObjectProvider<FunctionObservationConvention> functionObservationConvention) {
-		return new ObservationFunctionAroundWrapper(registry,
-			functionObservationConvention.getIfAvailable(() -> null));
+			ObjectProvider<FunctionObservationConvention> functionObservationConvention) {
+		return new ObservationFunctionAroundWrapper(registry, functionObservationConvention.getIfAvailable(() -> null));
 	}
+
 }

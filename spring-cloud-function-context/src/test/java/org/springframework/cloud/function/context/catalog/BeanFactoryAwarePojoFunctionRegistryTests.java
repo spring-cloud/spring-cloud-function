@@ -34,7 +34,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- *
  * @author Oleg Zhurakousky
  *
  */
@@ -42,7 +41,7 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 
 	private FunctionCatalog configureCatalog() {
 		ApplicationContext context = new SpringApplicationBuilder(SampleFunctionConfiguration.class)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG");
+			.run("--logging.level.org.springframework.cloud.function=DEBUG");
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
@@ -51,8 +50,8 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	public void testWithPojoFunctionImplementingFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 
-//		MyFunction f1 = catalog.lookup("myFunction");
-//		assertThat(f1.uppercase("foo")).isEqualTo("FOO");
+		// MyFunction f1 = catalog.lookup("myFunction");
+		// assertThat(f1.uppercase("foo")).isEqualTo("FOO");
 
 		Function<String, String> f2 = catalog.lookup("myFunction");
 		assertThat(f2.apply("foo")).isEqualTo("FOO");
@@ -67,15 +66,16 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		assertThat(f3.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 
 		Function<Message<String>, Message<byte[]>> f2messageReturned = catalog.lookup("myFunction", "application/json");
-		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload())).isEqualTo("\"MESSAGE\"");
+		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload()))
+			.isEqualTo("\"MESSAGE\"");
 	}
 
 	@Test
 	public void testWithPojoFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 
-//		MyFunctionLike f1 = catalog.lookup("myFunctionLike");
-//		assertThat(f1.uppercase("foo")).isEqualTo("FOO");
+		// MyFunctionLike f1 = catalog.lookup("myFunctionLike");
+		// assertThat(f1.uppercase("foo")).isEqualTo("FOO");
 
 		Function<String, String> f2 = catalog.lookup("myFunctionLike");
 		assertThat(f2.apply("foo")).isEqualTo("FOO");
@@ -91,8 +91,10 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		Function<Flux<String>, Flux<String>> f3 = catalog.lookup("myFunctionLike");
 		assertThat(f3.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 
-		Function<Message<String>, Message<byte[]>> f2messageReturned = catalog.lookup("myFunctionLike", "application/json");
-		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload())).isEqualTo("\"MESSAGE\"");
+		Function<Message<String>, Message<byte[]>> f2messageReturned = catalog.lookup("myFunctionLike",
+				"application/json");
+		assertThat(new String(f2messageReturned.apply(MessageBuilder.withPayload("message").build()).getPayload()))
+			.isEqualTo("\"MESSAGE\"");
 	}
 
 	@Test
@@ -112,22 +114,17 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 
 		// Test POJO function without contentType
 		Function<Message<String>, Object> pojoFunction = catalog.lookup("myFunctionLike");
-		Message<String> input = MessageBuilder.withPayload("test")
-			.setHeader("correlationId", "123")
-			.build();
+		Message<String> input = MessageBuilder.withPayload("test").setHeader("correlationId", "123").build();
 
 		Object result = pojoFunction.apply(input);
 
 		// GH-1307: Verify POJO functions return Message for consistency
-		assertThat(result)
-			.as("POJO function should return Message, not plain value when input is Message")
+		assertThat(result).as("POJO function should return Message, not plain value when input is Message")
 			.isInstanceOf(Message.class);
 
 		Message<?> messageResult = (Message<?>) result;
 		assertThat(messageResult.getPayload()).isEqualTo("TEST");
-		assertThat(messageResult.getHeaders().get("correlationId"))
-			.as("Headers should be preserved")
-			.isEqualTo("123");
+		assertThat(messageResult.getHeaders().get("correlationId")).as("Headers should be preserved").isEqualTo("123");
 	}
 
 	/**
@@ -148,7 +145,6 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 			.isEqualTo("PLAININPUT");
 	}
 
-
 	@EnableAutoConfiguration
 	@Configuration(proxyBeanMethods = false)
 	protected static class SampleFunctionConfiguration {
@@ -167,10 +163,12 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		public Function<String, String> func() {
 			return v -> v;
 		}
+
 	}
 
 	// POJO Function that implements Function
 	private static final class MyFunction implements Function<String, String> {
+
 		public String uppercase(String value) {
 			return value.toUpperCase(Locale.ROOT);
 		}
@@ -179,12 +177,16 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		public String apply(String t) {
 			return this.uppercase(t);
 		}
+
 	}
 
 	// POJO Function
 	public static class MyFunctionLike {
+
 		public String uppercase(String value) {
 			return value.toUpperCase(Locale.ROOT);
 		}
+
 	}
+
 }

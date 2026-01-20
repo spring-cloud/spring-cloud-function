@@ -39,19 +39,20 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.util.Assert;
 
 /**
- * The entry point for starting a {@link FunctionFlowDefinition}.
- * Requires a {@link FunctionCatalog} to lookup function instances
- * by their names or definitions from respective operators.
+ * The entry point for starting a {@link FunctionFlowDefinition}. Requires a
+ * {@link FunctionCatalog} to lookup function instances by their names or definitions from
+ * respective operators.
  * <p>
- * In addition to standard {@link IntegrationFlow} {@code from()} overloaded methods (for convenience),
- * this class introduces {@link #fromSupplier(String)} factory methods to resolve the target {@link Supplier}
- * by its name or function definition from the provided {@link FunctionCatalog}.
+ * In addition to standard {@link IntegrationFlow} {@code from()} overloaded methods (for
+ * convenience), this class introduces {@link #fromSupplier(String)} factory methods to
+ * resolve the target {@link Supplier} by its name or function definition from the
+ * provided {@link FunctionCatalog}.
  * <p>
- * This class represents a DSL for functions composition via integration endpoints.
- * Extra processing can be done in between functions by the regular {@link IntegrationFlow} operators:
- * <pre class="code">
+ * This class represents a DSL for functions composition via integration endpoints. Extra
+ * processing can be done in between functions by the regular {@link IntegrationFlow}
+ * operators: <pre class="code">
  * {@code
- * @Bean
+ * &#64;Bean
  * IntegrationFlow someFunctionFlow(FunctionFlowBuilder functionFlowBuilder) {
  *		return functionFlowBuilder
  *				.fromSupplier("timeSupplier")
@@ -64,7 +65,6 @@ import org.springframework.util.Assert;
  * </pre>
  *
  * @author Artem Bilan
- *
  * @since 4.0.3
  */
 public class FunctionFlowBuilder {

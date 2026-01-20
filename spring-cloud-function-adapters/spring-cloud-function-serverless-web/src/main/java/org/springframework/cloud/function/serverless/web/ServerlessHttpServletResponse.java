@@ -44,9 +44,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.util.WebUtils;
 
-
 /**
- *
  * @author Oleg Zhurakousky
  * @since 4.x
  *
@@ -118,12 +116,10 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 * specified for the response by the application, either through
 	 * {@link HttpServletResponse} methods or through a charset parameter on the
 	 * {@code Content-Type}. If no charset has been explicitly defined, the
-	 * {@linkplain #setDefaultCharacterEncoding(String) default character encoding}
-	 * will be used.
-	 *
+	 * {@linkplain #setDefaultCharacterEncoding(String) default character encoding} will
+	 * be used.
 	 * @return the content as a {@code String}
-	 * @throws UnsupportedEncodingException if the character encoding is not
-	 *                                      supported
+	 * @throws UnsupportedEncodingException if the character encoding is not supported
 	 * @see #getContentAsString(Charset)
 	 * @see #setCharacterEncoding(String)
 	 * @see #setContentType(String)
@@ -230,11 +226,9 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	/**
 	 * Return the names of all specified headers as a Set of Strings.
 	 * <p>
-	 * As of Servlet 3.0, this method is also defined in
-	 * {@link HttpServletResponse}.
-	 *
-	 * @return the {@code Set} of header name {@code Strings}, or an empty
-	 *         {@code Set} if none
+	 * As of Servlet 3.0, this method is also defined in {@link HttpServletResponse}.
+	 * @return the {@code Set} of header name {@code Strings}, or an empty {@code Set} if
+	 * none
 	 */
 	@Override
 	public Collection<String> getHeaderNames() {
@@ -252,14 +246,12 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	}
 
 	/**
-	 * Return the primary value for the given header as a String, if any. Will
-	 * return the first value in case of multiple values.
+	 * Return the primary value for the given header as a String, if any. Will return the
+	 * first value in case of multiple values.
 	 * <p>
-	 * As of Servlet 3.0, this method is also defined in
-	 * {@link HttpServletResponse}. As of Spring 3.1, it returns a stringified value
-	 * for Servlet 3.0 compatibility. Consider using {@link #getHeaderValue(String)}
-	 * for raw Object access.
-	 *
+	 * As of Servlet 3.0, this method is also defined in {@link HttpServletResponse}. As
+	 * of Spring 3.1, it returns a stringified value for Servlet 3.0 compatibility.
+	 * Consider using {@link #getHeaderValue(String)} for raw Object access.
 	 * @param name the name of the header
 	 * @return the associated header value, or {@code null} if none
 	 */
@@ -272,11 +264,9 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	/**
 	 * Return all values for the given header as a List of Strings.
 	 * <p>
-	 * As of Servlet 3.0, this method is also defined in
-	 * {@link HttpServletResponse}. As of Spring 3.1, it returns a List of
-	 * stringified values for Servlet 3.0 compatibility. Consider using
-	 * {@link #getHeaders(String)} for raw Object access.
-	 *
+	 * As of Servlet 3.0, this method is also defined in {@link HttpServletResponse}. As
+	 * of Spring 3.1, it returns a List of stringified values for Servlet 3.0
+	 * compatibility. Consider using {@link #getHeaders(String)} for raw Object access.
 	 * @param name the name of the header
 	 * @return the associated header values, or an empty List if none
 	 */
@@ -292,7 +282,6 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 * Return the primary value for the given header, if any.
 	 * <p>
 	 * Will return the first value in case of multiple values.
-	 *
 	 * @param name the name of the header
 	 * @return the associated header value, or {@code null} if none
 	 */
@@ -312,13 +301,13 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	}
 
 	/**
-	 * The default implementation delegates to {@link #encodeURL}, returning the
-	 * given URL String as-is.
+	 * The default implementation delegates to {@link #encodeURL}, returning the given URL
+	 * String as-is.
 	 * <p>
 	 * Can be overridden in subclasses, appending a session id or the like in a
-	 * redirect-specific fashion. For general URL encoding rules, override the
-	 * common {@link #encodeURL} method instead, applying to redirect URLs as well
-	 * as to general URLs.
+	 * redirect-specific fashion. For general URL encoding rules, override the common
+	 * {@link #encodeURL} method instead, applying to redirect URLs as well as to general
+	 * URLs.
 	 */
 	@Override
 	public String encodeRedirectURL(String url) {
@@ -345,7 +334,6 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 		setHeader(HttpHeaders.LOCATION, url);
 		setStatus(HttpServletResponse.SC_MOVED_TEMPORARILY);
 	}
-
 
 	@Override
 	public void sendRedirect(String location, int sc, boolean clearBuffer) throws IOException {
@@ -406,7 +394,6 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 		}
 	}
 
-
 	@Override
 	public int getStatus() {
 		return this.status;
@@ -418,8 +405,8 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	}
 
 	/**
-	 * Inner class that adapts the ServletOutputStream to mark the response as
-	 * committed once the buffer size is exceeded.
+	 * Inner class that adapts the ServletOutputStream to mark the response as committed
+	 * once the buffer size is exceeded.
 	 */
 	private final class ResponseServletOutputStream extends ServletOutputStream {
 
@@ -461,6 +448,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 			super.close();
 			flushBuffer();
 		}
+
 	}
 
 	private class ResponsePrintWriter extends PrintWriter {
@@ -504,6 +492,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 			super.close();
 			this.commited = true;
 		}
+
 	}
 
 }

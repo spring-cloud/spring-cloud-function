@@ -33,8 +33,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * A {@link Supplier} that pulls data from an HTTP endpoint. Repeatedly polls the endpoint
- * until a non-2xx response is received, at which point it will repeatedly produced a
- * Mono at 1 sec intervals until the next 2xx response.
+ * until a non-2xx response is received, at which point it will repeatedly produced a Mono
+ * at 1 sec intervals until the next 2xx response.
  *
  * @author Dave Syer
  * @author Oleg Zhurakousky
@@ -80,8 +80,7 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 			}
 			return Mono.delay(Duration.ofSeconds(1));
 		}
-		return response.bodyToMono(this.props.getSource().getType())
-				.map(value -> message(response, value));
+		return response.bodyToMono(this.props.getSource().getType()).map(value -> message(response, value));
 	}
 
 	private Object message(ClientResponse response, Object payload) {
@@ -89,11 +88,11 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 			return payload;
 		}
 		return MessageBuilder.withPayload(payload)
-				.copyHeaders(HeaderUtils.fromHttp(
-						HeaderUtils.sanitize(response.headers().asHttpHeaders(), this.httpProperties.getIgnoredHeaders(), this.httpProperties.getRequestOnlyHeaders())))
-				.setHeader("scf-sink-url", this.props.getSink().getUrl())
-				.setHeader("scf-func-name", this.props.getSink().getName())
-				.build();
+			.copyHeaders(HeaderUtils.fromHttp(HeaderUtils.sanitize(response.headers().asHttpHeaders(),
+					this.httpProperties.getIgnoredHeaders(), this.httpProperties.getRequestOnlyHeaders())))
+			.setHeader("scf-sink-url", this.props.getSink().getUrl())
+			.setHeader("scf-func-name", this.props.getSink().getName())
+			.build();
 	}
 
 	@SuppressWarnings("serial")
@@ -110,4 +109,5 @@ public class HttpSupplier implements Supplier<Flux<?>> {
 		}
 
 	}
+
 }

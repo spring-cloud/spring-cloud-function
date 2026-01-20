@@ -23,35 +23,36 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.function.context.FunctionProperties;
 
 /**
-*
-* @author Oleg Zhurakousky
-* @since 4.0.4
-*
-*/
+ * @author Oleg Zhurakousky
+ * @since 4.0.4
+ *
+ */
 @ConfigurationProperties(prefix = FunctionProperties.PREFIX + ".http")
 public class FunctionHttpProperties {
 
 	/**
-	 * Function definition mappings for GET method (e.g. 'spring.cloud.function.http.GET=foo;bar|baz')
+	 * Function definition mappings for GET method (e.g.
+	 * 'spring.cloud.function.http.GET=foo;bar|baz')
 	 */
 	public String get;
 
-
 	/**
-	 * Function definition mappings for POST method (e.g. 'spring.cloud.function.http.POST=foo;bar|baz')
+	 * Function definition mappings for POST method (e.g.
+	 * 'spring.cloud.function.http.POST=foo;bar|baz')
 	 */
 	public String post;
 
 	/**
-	 * Function definition mappings for PUT method (e.g. 'spring.cloud.function.http.PUT=foo;bar|baz')
+	 * Function definition mappings for PUT method (e.g.
+	 * 'spring.cloud.function.http.PUT=foo;bar|baz')
 	 */
 	public String put;
 
 	/**
-	 * Function definition mappings for DELETE method (e.g. 'spring.cloud.function.http.DELETE=foo;bar|baz')
+	 * Function definition mappings for DELETE method (e.g.
+	 * 'spring.cloud.function.http.DELETE=foo;bar|baz')
 	 */
 	public String delete;
-
 
 	/**
 	 * List of headers to be ignored when generating HttpHeaders (request or response).
@@ -110,4 +111,5 @@ public class FunctionHttpProperties {
 	public void setRequestOnlyHeaders(List<String> requestOnlyHeaders) {
 		this.requestOnlyHeaders = requestOnlyHeaders;
 	}
+
 }

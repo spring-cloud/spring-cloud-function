@@ -38,16 +38,22 @@ public class AWSTypesProcessor implements BeanFactoryInitializationAotProcessor 
 		return new ReflectiveProcessorBeanFactoryInitializationAotContribution();
 	}
 
-	private static final class ReflectiveProcessorBeanFactoryInitializationAotContribution implements BeanFactoryInitializationAotContribution {
+	private static final class ReflectiveProcessorBeanFactoryInitializationAotContribution
+			implements BeanFactoryInitializationAotContribution {
+
 		@Override
-		public void applyTo(GenerationContext generationContext, BeanFactoryInitializationCode beanFactoryInitializationCode) {
+		public void applyTo(GenerationContext generationContext,
+				BeanFactoryInitializationCode beanFactoryInitializationCode) {
 			RuntimeHints runtimeHints = generationContext.getRuntimeHints();
 			// known static types
-			runtimeHints.reflection().registerType(HttpEntity.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
-			runtimeHints.reflection().registerType(ResponseEntity.class,
-					MemberCategory.INVOKE_PUBLIC_METHODS, MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+			runtimeHints.reflection()
+				.registerType(HttpEntity.class, MemberCategory.INVOKE_PUBLIC_METHODS,
+						MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+			runtimeHints.reflection()
+				.registerType(ResponseEntity.class, MemberCategory.INVOKE_PUBLIC_METHODS,
+						MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
 		}
 
 	}
+
 }

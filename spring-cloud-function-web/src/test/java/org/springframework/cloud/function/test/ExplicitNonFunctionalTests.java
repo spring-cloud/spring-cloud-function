@@ -35,8 +35,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * @author Dave Syer
  *
  */
-@SpringBootTest({ "spring.main.web-application-type=REACTIVE",
-		"spring.functional.enabled=false" })
+@SpringBootTest({ "spring.main.web-application-type=REACTIVE", "spring.functional.enabled=false" })
 @AutoConfigureWebTestClient(timeout = "10000")
 @DirtiesContext
 public class ExplicitNonFunctionalTests {
@@ -46,9 +45,14 @@ public class ExplicitNonFunctionalTests {
 
 	@Test
 	public void words() throws Exception {
-		this.client
-				.post().uri("/").body(Mono.just("foo"), String.class).exchange()
-				.expectStatus().isOk().expectBody(String.class).isEqualTo("FOO");
+		this.client.post()
+			.uri("/")
+			.body(Mono.just("foo"), String.class)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.isEqualTo("FOO");
 	}
 
 	@SpringBootConfiguration

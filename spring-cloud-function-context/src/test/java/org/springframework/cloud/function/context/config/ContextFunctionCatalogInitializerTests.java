@@ -70,20 +70,17 @@ public class ContextFunctionCatalogInitializerTests {
 	@Test
 	public void lookUps() {
 		create(SimpleConfiguration.class);
-		assertThat(this.context.getBean("function"))
-				.isInstanceOf(FunctionRegistration.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function"))
-				.isInstanceOf(Function.class);
+		assertThat(this.context.getBean("function")).isInstanceOf(FunctionRegistration.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "function")).isInstanceOf(Function.class);
 	}
 
 	@Test
 	public void properties() {
 		create(PropertiesConfiguration.class, "app.greeting=hello");
-		assertThat(this.context.getBean("function"))
-				.isInstanceOf(FunctionRegistration.class);
+		assertThat(this.context.getBean("function")).isInstanceOf(FunctionRegistration.class);
 		@SuppressWarnings("unchecked")
 		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) this.catalog
-				.lookup(Function.class, "function");
+			.lookup(Function.class, "function");
 		assertThat(function).isInstanceOf(Function.class);
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("hello foo");
 	}
@@ -91,11 +88,10 @@ public class ContextFunctionCatalogInitializerTests {
 	@Test
 	public void value() {
 		create(ValueConfiguration.class, "app.greeting=hello");
-		assertThat(this.context.getBean("function"))
-				.isInstanceOf(FunctionRegistration.class);
+		assertThat(this.context.getBean("function")).isInstanceOf(FunctionRegistration.class);
 		@SuppressWarnings("unchecked")
 		Function<Flux<String>, Flux<String>> function = (Function<Flux<String>, Flux<String>>) this.catalog
-				.lookup(Function.class, "function");
+			.lookup(Function.class, "function");
 		assertThat(function).isInstanceOf(Function.class);
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("hello foo");
 	}
@@ -104,11 +100,10 @@ public class ContextFunctionCatalogInitializerTests {
 	@Disabled
 	public void compose() {
 		create(SimpleConfiguration.class);
-		assertThat(this.context.getBean("function"))
-				.isInstanceOf(FunctionRegistration.class);
+		assertThat(this.context.getBean("function")).isInstanceOf(FunctionRegistration.class);
 		@SuppressWarnings("unchecked")
-		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) this.catalog
-				.lookup(Supplier.class, "supplier|function");
+		Supplier<Flux<String>> supplier = (Supplier<Flux<String>>) this.catalog.lookup(Supplier.class,
+				"supplier|function");
 		assertThat(supplier).isInstanceOf(Supplier.class);
 		assertThat(supplier.get().blockFirst()).isEqualTo("HELLO");
 		// TODO: support for function composition
@@ -129,8 +124,7 @@ public class ContextFunctionCatalogInitializerTests {
 	public void dependencyInjection() {
 		create(DependencyInjectionConfiguration.class);
 		assertThat(this.context.getBean("foos")).isInstanceOf(FunctionRegistration.class);
-		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos"))
-				.isInstanceOf(Function.class);
+		assertThat((Function<?, ?>) this.catalog.lookup(Function.class, "foos")).isInstanceOf(Function.class);
 	}
 
 	@Test
@@ -138,8 +132,7 @@ public class ContextFunctionCatalogInitializerTests {
 		create(SimpleConfiguration.class);
 		Object bean = this.context.getBean("function");
 		assertThat(bean).isInstanceOf(FunctionRegistration.class);
-		Function<Flux<String>, Flux<Person>> function
-			= this.catalog.lookup(Function.class, "function");
+		Function<Flux<String>, Flux<Person>> function = this.catalog.lookup(Function.class, "function");
 		assertThat(function.apply(Flux.just("{\"name\":\"foo\"}")).blockFirst().getName()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
 	}
@@ -150,8 +143,8 @@ public class ContextFunctionCatalogInitializerTests {
 				"spring.cloud.function.scan.packages=org.springframework.cloud.function.context.scan");
 		Object bean = this.context.getBean(TestFunction.class.getName());
 		assertThat(bean).isInstanceOf(Function.class);
-		Function<Flux<String>, Flux<String>> function = this.catalog
-				.lookup(Function.class, TestFunction.class.getName());
+		Function<Flux<String>, Flux<String>> function = this.catalog.lookup(Function.class,
+				TestFunction.class.getName());
 		assertThat(function.apply(Flux.just("foo")).blockFirst()).isEqualTo("FOO");
 		assertThat(bean).isNotSameAs(function);
 	}
@@ -159,8 +152,7 @@ public class ContextFunctionCatalogInitializerTests {
 	@Test
 	public void simpleSupplier() {
 		create(SimpleConfiguration.class);
-		assertThat(this.context.getBean("supplier"))
-				.isInstanceOf(FunctionRegistration.class);
+		assertThat(this.context.getBean("supplier")).isInstanceOf(FunctionRegistration.class);
 		Supplier<String> supplier = this.catalog.lookup(Supplier.class, "supplier");
 		assertThat(supplier.get()).isEqualTo("hello");
 	}
@@ -168,10 +160,8 @@ public class ContextFunctionCatalogInitializerTests {
 	@Test
 	public void simpleConsumer() {
 		create(SimpleConfiguration.class);
-		assertThat(this.context.getBean("consumer"))
-				.isInstanceOf(FunctionRegistration.class);
-		Function<Flux<String>, Mono<Void>> consumer = this.catalog.lookup(Function.class,
-				"consumer");
+		assertThat(this.context.getBean("consumer")).isInstanceOf(FunctionRegistration.class);
+		Function<Flux<String>, Mono<Void>> consumer = this.catalog.lookup(Function.class, "consumer");
 		consumer.apply(Flux.just("foo", "bar")).subscribe();
 		assertThat(this.context.getBean(SimpleConfiguration.class).list).hasSize(2);
 	}
@@ -185,15 +175,12 @@ public class ContextFunctionCatalogInitializerTests {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void create(
-			Class<? extends ApplicationContextInitializer<GenericApplicationContext>> type,
+	private void create(Class<? extends ApplicationContextInitializer<GenericApplicationContext>> type,
 			String... props) {
-		create(Arrays.asList(BeanUtils.instantiateClass(type))
-				.toArray(new ApplicationContextInitializer[0]), props);
+		create(Arrays.asList(BeanUtils.instantiateClass(type)).toArray(new ApplicationContextInitializer[0]), props);
 	}
 
-	private void create(ApplicationContextInitializer<GenericApplicationContext>[] types,
-			String... props) {
+	private void create(ApplicationContextInitializer<GenericApplicationContext>[] types, String... props) {
 		this.context = new GenericApplicationContext();
 		Map<String, Object> map = new HashMap<>();
 		for (String prop : props) {
@@ -203,20 +190,18 @@ public class ContextFunctionCatalogInitializerTests {
 			map.put(key, value);
 		}
 		if (!map.isEmpty()) {
-			this.context.getEnvironment().getPropertySources()
-					.addFirst(new MapPropertySource("testProperties", map));
+			this.context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("testProperties", map));
 		}
 		for (ApplicationContextInitializer<GenericApplicationContext> type : types) {
 			type.initialize(this.context);
 		}
-		new ContextFunctionCatalogInitializer.ContextFunctionCatalogBeanRegistrar(
-				this.context).postProcessBeanDefinitionRegistry(this.context);
+		new ContextFunctionCatalogInitializer.ContextFunctionCatalogBeanRegistrar(this.context)
+			.postProcessBeanDefinitionRegistry(this.context);
 		this.context.refresh();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
 	}
 
-	protected static class EmptyConfiguration
-			implements ApplicationContextInitializer<GenericApplicationContext> {
+	protected static class EmptyConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
 
 		@Override
 		public void initialize(GenericApplicationContext applicationContext) {
@@ -229,8 +214,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Override
 		public void initialize(GenericApplicationContext context) {
-			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(function()));
+			context.registerBean("function", FunctionRegistration.class, () -> new FunctionRegistration<>(function()));
 		}
 
 		@Bean
@@ -240,23 +224,19 @@ public class ContextFunctionCatalogInitializerTests {
 
 	}
 
-	protected static class SimpleConfiguration
-			implements ApplicationContextInitializer<GenericApplicationContext> {
+	protected static class SimpleConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
 
 		private List<String> list = new ArrayList<>();
-
 
 		@Override
 		public void initialize(GenericApplicationContext context) {
 
-			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(function()).type(FunctionTypeUtils.functionType(Person.class, Person.class)));
+			context.registerBean("function", FunctionRegistration.class, () -> new FunctionRegistration<>(function())
+				.type(FunctionTypeUtils.functionType(Person.class, Person.class)));
 			context.registerBean("supplier", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(supplier())
-							.type(FunctionTypeUtils.supplierType(String.class)));
+					() -> new FunctionRegistration<>(supplier()).type(FunctionTypeUtils.supplierType(String.class)));
 			context.registerBean("consumer", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(consumer())
-							.type(FunctionTypeUtils.consumerType(String.class)));
+					() -> new FunctionRegistration<>(consumer()).type(FunctionTypeUtils.consumerType(String.class)));
 			context.registerBean(SimpleConfiguration.class, () -> this);
 		}
 
@@ -278,11 +258,11 @@ public class ContextFunctionCatalogInitializerTests {
 		public Consumer<String> consumer() {
 			return value -> this.list.add(value);
 		}
+
 	}
 
 	@ConfigurationProperties("app")
-	protected static class PropertiesConfiguration
-			implements ApplicationContextInitializer<GenericApplicationContext> {
+	protected static class PropertiesConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
 
 		private String greeting;
 
@@ -296,8 +276,8 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Override
 		public void initialize(GenericApplicationContext context) {
-			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(function()).type(FunctionTypeUtils.functionType(String.class, String.class)));
+			context.registerBean("function", FunctionRegistration.class, () -> new FunctionRegistration<>(function())
+				.type(FunctionTypeUtils.functionType(String.class, String.class)));
 			context.registerBean(PropertiesConfiguration.class, () -> this);
 		}
 
@@ -308,16 +288,15 @@ public class ContextFunctionCatalogInitializerTests {
 
 	}
 
-	protected static class ValueConfiguration
-			implements ApplicationContextInitializer<GenericApplicationContext> {
+	protected static class ValueConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
 
 		@Value("${app.greeting}")
 		private String greeting;
 
 		@Override
 		public void initialize(GenericApplicationContext context) {
-			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(function()).type(FunctionTypeUtils.functionType(String.class, String.class)));
+			context.registerBean("function", FunctionRegistration.class, () -> new FunctionRegistration<>(function())
+				.type(FunctionTypeUtils.functionType(String.class, String.class)));
 			context.registerBean(ValueConfiguration.class, () -> this);
 		}
 
@@ -328,8 +307,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 	}
 
-	protected static class GsonConfiguration
-			implements ApplicationContextInitializer<GenericApplicationContext> {
+	protected static class GsonConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
 
 		private Gson gson = new Gson();
 
@@ -354,7 +332,7 @@ public class ContextFunctionCatalogInitializerTests {
 			context.registerBean(String.class, () -> value());
 			context.registerBean("foos", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(foos(context.getBean(String.class)))
-							.type(FunctionTypeUtils.functionType(String.class, Foo.class)));
+						.type(FunctionTypeUtils.functionType(String.class, Foo.class)));
 		}
 
 		@Bean
@@ -370,15 +348,13 @@ public class ContextFunctionCatalogInitializerTests {
 	}
 
 	protected static class FunctionConfiguration
-			implements Function<Flux<String>, Flux<Foo>>,
-			ApplicationContextInitializer<GenericApplicationContext> {
+			implements Function<Flux<String>, Flux<Foo>>, ApplicationContextInitializer<GenericApplicationContext> {
 
 		@Override
 		public void initialize(GenericApplicationContext context) {
 			context.registerBean("foos", FunctionConfiguration.class, () -> this);
 			context.registerBean("function", FunctionRegistration.class,
-					() -> new FunctionRegistration<>(this, "foos")
-							.type(FunctionConfiguration.class));
+					() -> new FunctionRegistration<>(this, "foos").type(FunctionConfiguration.class));
 		}
 
 		@Override
@@ -415,6 +391,7 @@ public class ContextFunctionCatalogInitializerTests {
 	}
 
 	private static final class Person {
+
 		private String name;
 
 		public String getName() {
@@ -424,5 +401,7 @@ public class ContextFunctionCatalogInitializerTests {
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
+
 }

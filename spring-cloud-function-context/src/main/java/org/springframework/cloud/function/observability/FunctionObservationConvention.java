@@ -32,4 +32,5 @@ public interface FunctionObservationConvention extends ObservationConvention<Fun
 	default boolean supportsContext(Observation.Context context) {
 		return context instanceof FunctionContext;
 	}
+
 }

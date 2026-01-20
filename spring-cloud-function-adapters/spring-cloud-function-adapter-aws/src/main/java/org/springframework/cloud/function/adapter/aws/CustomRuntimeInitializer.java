@@ -67,10 +67,9 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 		return false;
 	}
 
-
 	private boolean isWebExportEnabled(GenericApplicationContext context) {
 		Boolean enabled = context.getEnvironment()
-				.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
+			.getProperty("spring.cloud.function.web.export.enabled", Boolean.class);
 		return enabled != null && enabled;
 	}
 

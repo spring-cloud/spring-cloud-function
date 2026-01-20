@@ -45,7 +45,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(WebClient.class)
 @Conditional(SourceActiveCondition.class)
-@EnableConfigurationProperties({ExporterProperties.class, FunctionHttpProperties.class})
+@EnableConfigurationProperties({ ExporterProperties.class, FunctionHttpProperties.class })
 public class FunctionExporterAutoConfiguration {
 
 	private final ExporterProperties props;
