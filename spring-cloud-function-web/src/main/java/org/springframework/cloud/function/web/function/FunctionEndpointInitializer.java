@@ -87,9 +87,12 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 	private static boolean webflux = ClassUtils
 			.isPresent("org.springframework.web.reactive.function.server.RouterFunction", null);
 
+	private static boolean errorAttributes = ClassUtils
+		.isPresent("org.springframework.boot.webflux.error.ErrorAttributes", null);
+
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		if (webflux && ContextFunctionCatalogInitializer.enabled
+		if (errorAttributes && webflux && ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty(FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
 						WebApplicationType.class, WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
