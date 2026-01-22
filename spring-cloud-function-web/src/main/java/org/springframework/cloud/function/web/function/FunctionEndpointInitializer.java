@@ -31,11 +31,7 @@ import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
 
 import org.springframework.boot.WebApplicationType;
-import org.springframework.boot.autoconfigure.web.ErrorProperties;
-import org.springframework.boot.autoconfigure.web.WebProperties.Resources;
 import org.springframework.boot.webflux.autoconfigure.error.DefaultErrorWebExceptionHandler;
-import org.springframework.boot.webflux.error.DefaultErrorAttributes;
-import org.springframework.boot.webflux.error.ErrorAttributes;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionalSpringApplication;
@@ -56,7 +52,6 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
 import org.springframework.util.Assert;
@@ -92,7 +87,7 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		if (errorAttributes && webflux && ContextFunctionCatalogInitializer.enabled
+		if (webflux && ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty(FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
 						WebApplicationType.class, WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
@@ -102,7 +97,9 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 	}
 
 	private void registerWebFluxAutoConfiguration(GenericApplicationContext context) {
-		context.registerBean(DefaultErrorWebExceptionHandler.class, () -> errorHandler(context));
+		if (errorAttributes) {
+			context.registerBean(DefaultErrorWebExceptionHandler.class, () -> ErrorHandlerRegistrar.errorHandler(context));
+		}
 		context.registerBean(WebHttpHandlerBuilder.WEB_HANDLER_BEAN_NAME, HttpWebHandlerAdapter.class,
 				() -> httpHandler(context));
 		context.addApplicationListener(new ServerListener(context));
@@ -122,19 +119,7 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 						.codecs(config -> config.registerDefaults(true)).build());
 	}
 
-	private DefaultErrorWebExceptionHandler errorHandler(GenericApplicationContext context) {
-		context.registerBean(ErrorAttributes.class, () -> new DefaultErrorAttributes());
-		context.registerBean(ErrorProperties.class, () -> new ErrorProperties());
 
-		context.registerBean(Resources.class, () -> new Resources());
-		DefaultErrorWebExceptionHandler handler = new DefaultErrorWebExceptionHandler(
-				context.getBeansOfType(ErrorAttributes.class).values().iterator().next(), context.getBean(Resources.class),
-				context.getBean(ErrorProperties.class), context);
-		ServerCodecConfigurer codecs = ServerCodecConfigurer.create();
-		handler.setMessageWriters(codecs.getWriters());
-		handler.setMessageReaders(codecs.getReaders());
-		return handler;
-	}
 
 	private static final class RouterFunctionRegister {
 
