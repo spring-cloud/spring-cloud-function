@@ -41,9 +41,12 @@ public abstract class FunctionAroundWrapper {
 		boolean functionalTracingEnabled = !StringUtils.hasText(functionalTracingEnabledStr)
 				|| Boolean.parseBoolean(functionalTracingEnabledStr);
 		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message && !FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
-			Object result = this.doApply(input, targetFunction);
-			targetFunction.wrapped = false;
-			return result;
+			try {
+				return this.doApply(input, targetFunction);
+			}
+			finally {
+				targetFunction.wrapped = false;
+			}
 		}
 		else {
 			return targetFunction.apply(input);
