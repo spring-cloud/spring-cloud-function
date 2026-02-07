@@ -710,6 +710,33 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testAroundWrapperAppliedOnEveryInvocation() {
+		FunctionCatalog catalog = this.configureCatalog(AroundWrapperExceptionResetConfiguration.class);
+		FunctionInvocationWrapper f = catalog.lookup("uppercase");
+		AtomicInteger wrapperCallCount = (AtomicInteger) this.context.getBean("wrapperCallCount");
+
+		// successful invocation
+		Message result = (Message) f.apply(MessageBuilder.withPayload("hello").build());
+		assertThat(result.getPayload()).isEqualTo("HELLO");
+		assertThat(wrapperCallCount.get()).isEqualTo(1);
+
+		// failed invocation
+		try {
+			f.apply(MessageBuilder.withPayload("exception").build());
+		}
+		catch (RuntimeException e) {
+			// expected
+		}
+		assertThat(wrapperCallCount.get()).isEqualTo(2);
+
+		// subsequent invocation must still go through the wrapper
+		result = (Message) f.apply(MessageBuilder.withPayload("world").build());
+		assertThat(result.getPayload()).isEqualTo("WORLD");
+		assertThat(wrapperCallCount.get()).isEqualTo(3);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testEachElementInFluxIsProcessed() {
 		FunctionCatalog catalog = this.configureCatalog(SampleFunctionConfiguration.class);
 		Function f = catalog.lookup("uppercasePerson");
@@ -1605,6 +1632,37 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		@Bean
 		public Function<Message<?>, Message<?>> myFunction() {
 			return msg -> msg;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class AroundWrapperExceptionResetConfiguration {
+
+		@Bean
+		public Function<Message<String>, Message<String>> uppercase() {
+			return v -> {
+				if ("exception".equals(v.getPayload())) {
+					throw new RuntimeException("Expected exception");
+				}
+				return MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT)).copyHeaders(v.getHeaders()).build();
+			};
+		}
+
+		@Bean
+		public AtomicInteger wrapperCallCount() {
+			return new AtomicInteger();
+		}
+
+		@Bean
+		public FunctionAroundWrapper wrapper(AtomicInteger wrapperCallCount) {
+			return new FunctionAroundWrapper() {
+				@Override
+				protected Object doApply(Object input, FunctionInvocationWrapper targetFunction) {
+					wrapperCallCount.incrementAndGet();
+					return targetFunction.apply(input);
+				}
+			};
 		}
 	}
 }
