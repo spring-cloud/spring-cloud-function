@@ -379,7 +379,12 @@ public final class CloudEventMessageUtils {
 	static String determinePrefixToUse(Map<String, Object> messageHeaders, boolean strict) {
 		String targetProtocol = extractTargetProtocol(messageHeaders);
 		String prefix = determinePrefixToUse(targetProtocol);
-		if (StringUtils.hasText(prefix) && (strict || StringUtils.hasText((String) messageHeaders.get(prefix + _SPECVERSION)))) {
+		Object sv = messageHeaders.get(prefix + _SPECVERSION);
+		String specVersion = "";
+		if (sv != null) {
+			specVersion = sv instanceof String ? (String) sv : new String((byte[]) sv, StandardCharsets.UTF_8);
+		}
+		if (StringUtils.hasText(prefix) && (strict || StringUtils.hasText(specVersion))) {
 			return prefix;
 		}
 		else {
