@@ -108,6 +108,7 @@
 			<plugin>
 				<artifactId>kotlin-maven-plugin</artifactId>
 				<groupId>org.jetbrains.kotlin</groupId>
+				<version>2.3.10</version>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
