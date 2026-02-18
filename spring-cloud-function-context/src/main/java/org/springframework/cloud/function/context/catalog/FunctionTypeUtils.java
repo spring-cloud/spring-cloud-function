@@ -383,7 +383,7 @@ public final class FunctionTypeUtils {
 				ResolvableType genericType = typeWithGenerics.getGenerics()[i];
 				resolvedGenerics.add(ResolvableType.forType(resolveType(genericType)));
 			}
-			return ResolvableType.forClassWithGenerics(typeWithGenerics.getRawClass(),
+			return ResolvableType.forClassWithGenerics(typeWithGenerics.resolve(),
 				resolvedGenerics.toArray(new ResolvableType[0])).getType();
 		}
 		else {
