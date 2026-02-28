@@ -80,6 +80,9 @@ public final class ServerlessMVC {
 
 	private volatile ServletWebServerApplicationContext applicationContext;
 
+	@Nullable
+	private volatile Throwable startupFailure;
+
 	private final CountDownLatch contextStartupLatch = new CountDownLatch(1);
 
 	private final long initializationTimeout;
@@ -114,11 +117,13 @@ public final class ServerlessMVC {
 				initContext(componentClasses);
 			}
 			catch (Exception e) {
-				throw new IllegalStateException(e);
+				this.startupFailure = e;
+				LOGGER.error("Application failed to initialize.", e);
 			}
 			finally {
 				contextStartupLatch.countDown();
-				LOGGER.info("Application is started successfully.");
+				LOGGER.info((this.startupFailure == null) ? "Application is started successfully."
+						: "Application startup finished with errors.");
 			}
 		}).start();
 	}
@@ -133,17 +138,17 @@ public final class ServerlessMVC {
 	}
 
 	public ConfigurableWebApplicationContext getApplicationContext() {
-		this.waitForContext();
+		this.assertContextReady();
 		return this.applicationContext;
 	}
 
 	public ServletContext getServletContext() {
-		this.waitForContext();
+		this.assertContextReady();
 		return this.dispatcher.getServletContext();
 	}
 
 	public void stop() {
-		this.waitForContext();
+		this.assertContextReady();
 		this.applicationContext.stop();
 	}
 
@@ -154,8 +159,7 @@ public final class ServerlessMVC {
 	 * @param response the outgoing response
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializationTimeout + " milliseconds. "
-				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
+		this.assertContextReady();
 		this.service(request, response, (CountDownLatch) null);
 	}
 
@@ -194,6 +198,18 @@ public final class ServerlessMVC {
 			Thread.currentThread().interrupt();
 		}
 		return false;
+	}
+
+	private void assertContextReady() {
+		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializationTimeout + " milliseconds. "
+				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
+		if (this.startupFailure != null) {
+			throw new IllegalStateException("Application context failed to initialize. "
+					+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.", this.startupFailure);
+		}
+		Assert.state(this.dispatcher != null, "DispatcherServlet is not initialized. "
+				+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
+		Assert.state(this.applicationContext != null, "ApplicationContext is not initialized.");
 	}
 
 	private static class ProxyFilterChain implements FilterChain {

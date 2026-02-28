@@ -40,7 +40,12 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author Oleg Zhurakousky
  * @since 4.x
  */
-@AutoConfiguration(beforeName = "org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration")
+@AutoConfiguration(beforeName = {
+	"org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration",
+	"org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration",
+	"org.springframework.boot.jetty.autoconfigure.servlet.JettyServletWebServerAutoConfiguration",
+	"org.springframework.boot.undertow.autoconfigure.servlet.UndertowServletWebServerAutoConfiguration"
+})
 @Configuration(proxyBeanMethods = false)
 public class ServerlessAutoConfiguration {
 	private static final Log LOGGER = LogFactory.getLog(ServerlessAutoConfiguration.class);
