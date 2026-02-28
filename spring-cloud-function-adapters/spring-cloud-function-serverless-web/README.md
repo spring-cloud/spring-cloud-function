@@ -8,6 +8,12 @@ A sample is provided in [sample](https://github.com/spring-cloud/spring-cloud-fu
 
 _NOTE: Although this module is AWS specific, this dependency is protocol only (not binary), therefore there is no AWS dependnecies._
 
+_NOTE: The serverless `ServletWebServerFactory` is declared with `@ConditionalOnMissingBean`. If your
+application defines its own `ServletWebServerFactory` bean (for example Tomcat/Jetty/Undertow customization),
+that custom bean will take precedence and can disable the serverless adapter path. For serverless-web usage,
+do not provide a competing `ServletWebServerFactory` bean unless it delegates to
+`ServerlessAutoConfiguration.ServerlessServletWebServerFactory`._
+
 The aformentioned proxy is identified as AWS Lambda [handler](https://github.com/spring-cloud/spring-cloud-function/blob/serverless-web/spring-cloud-function-adapters/spring-cloud-function-adapter-aws-web/sample/pet-store/template.yml#L14)
 
 The main Spring Boot configuration file is identified as [MAIN_CLASS](https://github.com/spring-cloud/spring-cloud-function/blob/serverless-web/spring-cloud-function-adapters/spring-cloud-function-adapter-aws-web/sample/pet-store/template.yml#L22)
