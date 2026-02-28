@@ -42,7 +42,7 @@ import org.springframework.util.StringUtils;
  */
 public final class FunctionClassUtils {
 
-	private static Log logger = LogFactory.getLog(FunctionClassUtils.class);
+	private static final Log LOGGER = LogFactory.getLog(FunctionClassUtils.class);
 
 	private static Class<?> MAIN_CLASS;
 
@@ -91,20 +91,20 @@ public final class FunctionClassUtils {
 						+ "entry in META-INF/MANIFEST.MF (in that order).", ex);
 			}
 		}
-		logger.info("Main class: " + mainClass);
+		LOGGER.info("Main class: " + mainClass);
 		return mainClass;
 	}
 
 	private static Class<?> getStartClass(List<URL> list, ClassLoader classLoader) {
-		if (logger.isTraceEnabled()) {
-			logger.trace("Searching manifests: " + list);
+		if (LOGGER.isTraceEnabled()) {
+			LOGGER.trace("Searching manifests: " + list);
 		}
 		for (URL url : list) {
 			try {
 				InputStream inputStream = null;
 				Manifest manifest = new Manifest(url.openStream());
-				logger.info("Searching for start class in manifest: " + url);
-				if (logger.isDebugEnabled()) {
+				LOGGER.info("Searching for start class in manifest: " + url);
+				if (LOGGER.isDebugEnabled()) {
 					manifest.write(System.out);
 				}
 				try {
@@ -135,7 +135,7 @@ public final class FunctionClassUtils {
 				}
 			}
 			catch (Exception ex) {
-				logger.debug("Failed to determine Start-Class in manifest file of " + url, ex);
+				LOGGER.debug("Failed to determine Start-Class in manifest file of " + url, ex);
 			}
 		}
 		return null;
