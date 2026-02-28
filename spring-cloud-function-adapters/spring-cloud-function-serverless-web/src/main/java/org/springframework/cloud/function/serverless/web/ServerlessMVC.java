@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -33,6 +34,7 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
+import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletConfig;
@@ -126,6 +128,8 @@ public final class ServerlessMVC {
 		if (this.applicationContext.containsBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
 			this.dispatcher = this.applicationContext.getBean(DispatcherServlet.class);
 		}
+		Assert.state(this.dispatcher != null, "DispatcherServlet bean was not initialized. "
+				+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
 	}
 
 	public ConfigurableWebApplicationContext getApplicationContext() {
@@ -161,6 +165,8 @@ public final class ServerlessMVC {
 	}
 
 	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
+		Assert.state(this.dispatcher != null, "DispatcherServlet is not initialized. "
+				+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
 		filterChain.doFilter(request, response);
 
@@ -217,7 +223,17 @@ public final class ServerlessMVC {
 		 */
 		ProxyFilterChain(DispatcherServlet servlet) {
 			List<Filter> filters = new ArrayList<>();
-			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ServerlessFilterRegistration) fr).getFilter()));
+			for (Map.Entry<String, ? extends FilterRegistration> entry : servlet.getServletContext().getFilterRegistrations()
+					.entrySet()) {
+				FilterRegistration registration = entry.getValue();
+				if (registration instanceof ServerlessFilterRegistration serverlessFilterRegistration) {
+					filters.add(serverlessFilterRegistration.getFilter());
+				}
+				else {
+					LOG.debug("Skipping unsupported filter registration type '" + registration.getClass().getName()
+							+ "' for filter '" + entry.getKey() + "'");
+				}
+			}
 			Assert.notNull(filters, "filters cannot be null");
 			Assert.noNullElements(filters, "filters cannot contain null values");
 			this.filters = initFilterList(servlet, filters.toArray(new Filter[] {}));

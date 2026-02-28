@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.server.WebServerException;
@@ -39,6 +40,7 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author Oleg Zhurakousky
  * @since 4.x
  */
+@AutoConfiguration(beforeName = "org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration")
 @Configuration(proxyBeanMethods = false)
 public class ServerlessAutoConfiguration {
 	private static Log logger = LogFactory.getLog(ServerlessAutoConfiguration.class);
@@ -46,6 +48,7 @@ public class ServerlessAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	public ServletWebServerFactory servletWebServerFactory() {
+		// A user-defined ServletWebServerFactory bean will override this and may bypass serverless initialization.
 		return new ServerlessServletWebServerFactory();
 	}
 
