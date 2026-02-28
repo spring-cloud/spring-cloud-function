@@ -43,7 +43,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 @AutoConfiguration(beforeName = "org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration")
 @Configuration(proxyBeanMethods = false)
 public class ServerlessAutoConfiguration {
-	private static Log logger = LogFactory.getLog(ServerlessAutoConfiguration.class);
+	private static final Log LOGGER = LogFactory.getLog(ServerlessAutoConfiguration.class);
 
 	@Bean
 	@ConditionalOnMissingBean
@@ -85,14 +85,14 @@ public class ServerlessAutoConfiguration {
 		@Override
 		public void afterPropertiesSet() throws Exception {
 			if (applicationContext instanceof ServletWebServerApplicationContext servletApplicationContext) {
-				logger.info("Configuring Serverless Web Container");
+				LOGGER.info("Configuring Serverless Web Container");
 				ServerlessServletContext servletContext = new ServerlessServletContext();
 				servletApplicationContext.setServletContext(servletContext);
 				DispatcherServlet dispatcher = applicationContext.getBean(DispatcherServlet.class);
 				try {
-					logger.info("Initializing DispatcherServlet");
+					LOGGER.info("Initializing DispatcherServlet");
 					dispatcher.init(new ProxyServletConfig(servletApplicationContext.getServletContext()));
-					logger.info("Initialized DispatcherServlet");
+					LOGGER.info("Initialized DispatcherServlet");
 				}
 				catch (Exception e) {
 					throw new IllegalStateException("Failed to create Spring MVC DispatcherServlet proxy", e);
@@ -102,7 +102,7 @@ public class ServerlessAutoConfiguration {
 				}
 			}
 			else {
-				logger.debug("Skipping Serverless configuration for " + this.applicationContext);
+				LOGGER.debug("Skipping Serverless configuration for " + this.applicationContext);
 			}
 		}
 	}

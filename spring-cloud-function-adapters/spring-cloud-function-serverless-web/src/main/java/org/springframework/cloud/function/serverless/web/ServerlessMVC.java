@@ -47,11 +47,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -74,7 +74,7 @@ public final class ServerlessMVC {
 	 */
 	public static String INIT_TIMEOUT = "contextInitTimeout";
 
-	private static Log LOG = LogFactory.getLog(ServerlessMVC.class);
+	private static final Log LOGGER = LogFactory.getLog(ServerlessMVC.class);
 
 	private volatile DispatcherServlet dispatcher;
 
@@ -109,8 +109,8 @@ public final class ServerlessMVC {
 	private void initializeContextAsync(Class<?>... componentClasses) {
 		new Thread(() -> {
 			try {
-				LOG.info("Starting application with the following configuration classes:");
-				Stream.of(componentClasses).forEach(clazz -> LOG.info(clazz.getSimpleName()));
+				LOGGER.info("Starting application with the following configuration classes:");
+				Stream.of(componentClasses).forEach(clazz -> LOGGER.info(clazz.getSimpleName()));
 				initContext(componentClasses);
 			}
 			catch (Exception e) {
@@ -118,7 +118,7 @@ public final class ServerlessMVC {
 			}
 			finally {
 				contextStartupLatch.countDown();
-				LOG.info("Application is started successfully.");
+				LOGGER.info("Application is started successfully.");
 			}
 		}).start();
 	}
@@ -230,7 +230,7 @@ public final class ServerlessMVC {
 					filters.add(serverlessFilterRegistration.getFilter());
 				}
 				else {
-					LOG.debug("Skipping unsupported filter registration type '" + registration.getClass().getName()
+					LOGGER.debug("Skipping unsupported filter registration type '" + registration.getClass().getName()
 							+ "' for filter '" + entry.getKey() + "'");
 				}
 			}
@@ -325,7 +325,7 @@ public final class ServerlessMVC {
 						((ServerlessHttpServletRequest) request).setRequestURI("/error");
 					}
 
-					LOG.error("Failed processing the request to: " + ((HttpServletRequest) request).getRequestURI(), e);
+					LOGGER.error("Failed processing the request to: " + ((HttpServletRequest) request).getRequestURI(), e);
 
 					this.delegateServlet.service(request, response);
 				}
