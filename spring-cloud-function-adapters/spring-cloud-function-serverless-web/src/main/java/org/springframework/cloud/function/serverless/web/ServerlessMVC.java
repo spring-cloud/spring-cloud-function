@@ -46,8 +46,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.jspecify.annotations.Nullable;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
@@ -148,15 +148,10 @@ public final class ServerlessMVC {
 	}
 
 	/**
-	 * Perform a request and return a type that allows chaining further actions,
-	 * such as asserting expectations, on the result.
+	 * Process a serverless request through the configured servlet/filter chain.
 	 *
-	 * @param requestBuilder used to prepare the request to execute; see static
-	 *                       factory methods in
-	 *                       {@link org.springframework.test.web.servlet.request.MockMvcRequestBuilders}
-	 * @return an instance of {@link ResultActions} (never {@code null})
-	 * @see org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
+	 * @param request the incoming request
+	 * @param response the outgoing response
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializationTimeout + " milliseconds. "

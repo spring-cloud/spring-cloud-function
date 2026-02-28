@@ -58,8 +58,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpUpgradeHandler;
 import jakarta.servlet.http.Part;
-
 import org.jspecify.annotations.Nullable;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -559,9 +559,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	 * <strong>not</strong> take into consideration any locales specified via the
 	 * {@code Accept-Language} header.
 	 *
-	 * @see javax.servlet.ServletRequest#getLocale()
-	 * @see #addPreferredLocale(Locale)
-	 * @see #setPreferredLocales(List)
+	 * @see jakarta.servlet.ServletRequest#getLocale()
 	 */
 	@Override
 	public Locale getLocale() {
@@ -580,9 +578,7 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	 * <strong>not</strong> take into consideration any locales specified via the
 	 * {@code Accept-Language} header.
 	 *
-	 * @see javax.servlet.ServletRequest#getLocales()
-	 * @see #addPreferredLocale(Locale)
-	 * @see #setPreferredLocales(List)
+	 * @see jakarta.servlet.ServletRequest#getLocales()
 	 */
 	@Override
 	public Enumeration<Locale> getLocales() {
@@ -590,10 +586,9 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	}
 
 	/**
-	 * Return {@code true} if the {@link #setSecure secure} flag has been set to
-	 * {@code true} or if the {@link #getScheme scheme} is {@code https}.
+	 * Return {@code true} if the {@link #getScheme scheme} is {@code https}.
 	 *
-	 * @see javax.servlet.ServletRequest#isSecure()
+	 * @see jakarta.servlet.ServletRequest#isSecure()
 	 */
 	@Override
 	public boolean isSecure() {
