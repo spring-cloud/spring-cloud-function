@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -33,6 +34,7 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
+import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletConfig;
@@ -44,16 +46,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.server.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -72,11 +75,14 @@ public final class ServerlessMVC {
 	 */
 	public static String INIT_TIMEOUT = "contextInitTimeout";
 
-	private static Log LOG = LogFactory.getLog(ServerlessMVC.class);
+	private static final Log LOGGER = LogFactory.getLog(ServerlessMVC.class);
 
 	private volatile DispatcherServlet dispatcher;
 
 	private volatile ServletWebServerApplicationContext applicationContext;
+
+	@Nullable
+	private volatile Throwable startupFailure;
 
 	private final CountDownLatch contextStartupLatch = new CountDownLatch(1);
 
@@ -92,6 +98,10 @@ public final class ServerlessMVC {
 		ServerlessMVC mvc = new ServerlessMVC();
 		mvc.applicationContext = applicationContext;
 		mvc.dispatcher = mvc.applicationContext.getBean(DispatcherServlet.class);
+		ServletContext servletContext = mvc.dispatcher.getServletContext();
+		if (servletContext != null && servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) == null) {
+			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, mvc.applicationContext);
+		}
 		mvc.contextStartupLatch.countDown();
 		return mvc;
 	}
@@ -107,16 +117,18 @@ public final class ServerlessMVC {
 	private void initializeContextAsync(Class<?>... componentClasses) {
 		new Thread(() -> {
 			try {
-				LOG.info("Starting application with the following configuration classes:");
-				Stream.of(componentClasses).forEach(clazz -> LOG.info(clazz.getSimpleName()));
+				LOGGER.info("Starting application with the following configuration classes:");
+				Stream.of(componentClasses).forEach(clazz -> LOGGER.info(clazz.getSimpleName()));
 				initContext(componentClasses);
 			}
 			catch (Exception e) {
-				throw new IllegalStateException(e);
+				this.startupFailure = e;
+				LOGGER.error("Application failed to initialize.", e);
 			}
 			finally {
 				contextStartupLatch.countDown();
-				LOG.info("Application is started successfully.");
+				LOGGER.info((this.startupFailure == null) ? "Application is started successfully."
+						: "Application startup finished with errors.");
 			}
 		}).start();
 	}
@@ -126,41 +138,43 @@ public final class ServerlessMVC {
 		if (this.applicationContext.containsBean(DispatcherServletAutoConfiguration.DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
 			this.dispatcher = this.applicationContext.getBean(DispatcherServlet.class);
 		}
+		Assert.state(this.dispatcher != null, "DispatcherServlet bean was not initialized. "
+			+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
+		ServletContext servletContext = this.dispatcher.getServletContext();
+		if (servletContext != null && servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) == null) {
+			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.applicationContext);
+		}
 	}
 
 	public ConfigurableWebApplicationContext getApplicationContext() {
-		this.waitForContext();
+		this.assertContextReady();
 		return this.applicationContext;
 	}
 
 	public ServletContext getServletContext() {
-		this.waitForContext();
+		this.assertContextReady();
 		return this.dispatcher.getServletContext();
 	}
 
 	public void stop() {
-		this.waitForContext();
+		this.assertContextReady();
 		this.applicationContext.stop();
 	}
 
 	/**
-	 * Perform a request and return a type that allows chaining further actions,
-	 * such as asserting expectations, on the result.
+	 * Process a serverless request through the configured servlet/filter chain.
 	 *
-	 * @param requestBuilder used to prepare the request to execute; see static
-	 *                       factory methods in
-	 *                       {@link org.springframework.test.web.servlet.request.MockMvcRequestBuilders}
-	 * @return an instance of {@link ResultActions} (never {@code null})
-	 * @see org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-	 * @see org.springframework.test.web.servlet.result.MockMvcResultMatchers
+	 * @param request the incoming request
+	 * @param response the outgoing response
 	 */
 	public void service(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializationTimeout + " milliseconds. "
-				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
+		this.assertContextReady();
 		this.service(request, response, (CountDownLatch) null);
 	}
 
 	public void service(HttpServletRequest request, HttpServletResponse response, CountDownLatch latch) throws Exception {
+		Assert.state(this.dispatcher != null, "DispatcherServlet is not initialized. "
+				+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
 		ProxyFilterChain filterChain = new ProxyFilterChain(this.dispatcher);
 		filterChain.doFilter(request, response);
 
@@ -195,6 +209,18 @@ public final class ServerlessMVC {
 		return false;
 	}
 
+	private void assertContextReady() {
+		Assert.state(this.waitForContext(), "Failed to initialize Application within the specified time of " + this.initializationTimeout + " milliseconds. "
+				+ "If you need to increase it, please set " + INIT_TIMEOUT + " environment variable");
+		if (this.startupFailure != null) {
+			throw new IllegalStateException("Application context failed to initialize. "
+					+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.", this.startupFailure);
+		}
+		Assert.state(this.dispatcher != null, "DispatcherServlet is not initialized. "
+				+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
+		Assert.state(this.applicationContext != null, "ApplicationContext is not initialized.");
+	}
+
 	private static class ProxyFilterChain implements FilterChain {
 
 		@Nullable
@@ -217,7 +243,17 @@ public final class ServerlessMVC {
 		 */
 		ProxyFilterChain(DispatcherServlet servlet) {
 			List<Filter> filters = new ArrayList<>();
-			servlet.getServletContext().getFilterRegistrations().values().forEach(fr -> filters.add(((ServerlessFilterRegistration) fr).getFilter()));
+			for (Map.Entry<String, ? extends FilterRegistration> entry : servlet.getServletContext().getFilterRegistrations()
+					.entrySet()) {
+				FilterRegistration registration = entry.getValue();
+				if (registration instanceof ServerlessFilterRegistration serverlessFilterRegistration) {
+					filters.add(serverlessFilterRegistration.getFilter());
+				}
+				else {
+					LOGGER.debug("Skipping unsupported filter registration type '" + registration.getClass().getName()
+							+ "' for filter '" + entry.getKey() + "'");
+				}
+			}
 			Assert.notNull(filters, "filters cannot be null");
 			Assert.noNullElements(filters, "filters cannot contain null values");
 			this.filters = initFilterList(servlet, filters.toArray(new Filter[] {}));
@@ -309,7 +345,7 @@ public final class ServerlessMVC {
 						((ServerlessHttpServletRequest) request).setRequestURI("/error");
 					}
 
-					LOG.error("Failed processing the request to: " + ((HttpServletRequest) request).getRequestURI(), e);
+					LOGGER.error("Failed processing the request to: " + ((HttpServletRequest) request).getRequestURI(), e);
 
 					this.delegateServlet.service(request, response);
 				}

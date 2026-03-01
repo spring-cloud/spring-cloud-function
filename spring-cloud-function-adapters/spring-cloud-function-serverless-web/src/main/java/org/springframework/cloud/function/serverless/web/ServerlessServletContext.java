@@ -58,7 +58,7 @@ import org.springframework.util.ClassUtils;
  */
 public class ServerlessServletContext implements ServletContext {
 
-	private Log logger = LogFactory.getLog(ServerlessServletContext.class);
+	private static final Log LOGGER = LogFactory.getLog(ServerlessServletContext.class);
 
 	private HashMap<String, Object> attributes = new HashMap<>();
 
@@ -145,12 +145,12 @@ public class ServerlessServletContext implements ServletContext {
 
 	@Override
 	public void log(String msg) {
-		this.logger.info(msg);
+		this.LOGGER.info(msg);
 	}
 
 	@Override
 	public void log(String message, Throwable throwable) {
-		this.logger.error(message, throwable);
+		this.LOGGER.error(message, throwable);
 	}
 
 	@Override

@@ -22,5 +22,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  *
  * @author Christian Tzolov
  */
-public interface CountryRepository extends JpaRepository<Country, Integer> {
+public interface CountryRepository extends JpaRepository<Country, Long> {
 }

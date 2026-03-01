@@ -38,9 +38,9 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.util.WebUtils;
 
@@ -118,8 +118,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 	 * specified for the response by the application, either through
 	 * {@link HttpServletResponse} methods or through a charset parameter on the
 	 * {@code Content-Type}. If no charset has been explicitly defined, the
-	 * {@linkplain #setDefaultCharacterEncoding(String) default character encoding}
-	 * will be used.
+	 * default character encoding will be used.
 	 *
 	 * @return the content as a {@code String}
 	 * @throws UnsupportedEncodingException if the character encoding is not

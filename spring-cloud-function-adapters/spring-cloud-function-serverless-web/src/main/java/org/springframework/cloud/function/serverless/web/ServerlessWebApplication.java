@@ -74,7 +74,7 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
  */
 public class ServerlessWebApplication extends SpringApplication {
 
-	private static final Log logger = LogFactory.getLog(ServerlessWebApplication.class);
+	private static final Log LOGGER = LogFactory.getLog(ServerlessWebApplication.class);
 
 	private ApplicationStartup applicationStartup = ApplicationStartup.DEFAULT;
 
@@ -151,7 +151,7 @@ public class ServerlessWebApplication extends SpringApplication {
 		ArgumentResolver argumentResolver = ArgumentResolver.of(SpringApplication.class, this);
 		argumentResolver = argumentResolver.and(String[].class, args);
 		List<SpringApplicationRunListener> listeners = getSpringFactoriesInstances(SpringApplicationRunListener.class, argumentResolver);
-		return new SpringApplicationRunListeners(logger, listeners, this.applicationStartup);
+		return new SpringApplicationRunListeners(LOGGER, listeners, this.applicationStartup);
 	}
 
 	private Banner printBanner(ConfigurableEnvironment environment) {
