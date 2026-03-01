@@ -56,6 +56,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
+import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -97,6 +98,10 @@ public final class ServerlessMVC {
 		ServerlessMVC mvc = new ServerlessMVC();
 		mvc.applicationContext = applicationContext;
 		mvc.dispatcher = mvc.applicationContext.getBean(DispatcherServlet.class);
+		ServletContext servletContext = mvc.dispatcher.getServletContext();
+		if (servletContext != null && servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) == null) {
+			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, mvc.applicationContext);
+		}
 		mvc.contextStartupLatch.countDown();
 		return mvc;
 	}
@@ -134,7 +139,11 @@ public final class ServerlessMVC {
 			this.dispatcher = this.applicationContext.getBean(DispatcherServlet.class);
 		}
 		Assert.state(this.dispatcher != null, "DispatcherServlet bean was not initialized. "
-				+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
+			+ "Ensure ServerlessAutoConfiguration is active and selected as the ServletWebServerFactory.");
+		ServletContext servletContext = this.dispatcher.getServletContext();
+		if (servletContext != null && servletContext.getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE) == null) {
+			servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.applicationContext);
+		}
 	}
 
 	public ConfigurableWebApplicationContext getApplicationContext() {
