@@ -59,7 +59,7 @@ public class CountryController {
 	}
 
 	@GetMapping("/countries/{id}")
-	public Country countryById(@PathVariable Integer id) {
+	public Country countryById(@PathVariable Long id) {
 		return this.countryRepository.findById(id).get();
 	}
 }

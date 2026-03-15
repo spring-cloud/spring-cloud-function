@@ -16,8 +16,12 @@
 
 package org.springframework.cloud.function.serverless.web;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.Map;
 
+import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -193,6 +197,40 @@ public class RequestResponseTests {
 		Pet pet = mapper.readValue(response.getContentAsByteArray(), Pet.class);
 		assertThat(pet).isNotNull();
 		assertThat(pet.getName()).isNotEmpty();
+	}
+
+	@Test
+	public void validateNonServerlessFilterRegistrationIsSkipped() throws Exception {
+		ServerlessServletContext servletContext = (ServerlessServletContext) this.mvc.getServletContext();
+		Field registrationsField = ServerlessServletContext.class.getDeclaredField("filterRegistrations");
+		registrationsField.setAccessible(true);
+		@SuppressWarnings("unchecked")
+		Map<String, FilterRegistration> registrations =
+			(Map<String, FilterRegistration>) registrationsField.get(servletContext);
+
+		FilterRegistration nonServerlessRegistration = (FilterRegistration) Proxy.newProxyInstance(
+			FilterRegistration.class.getClassLoader(),
+			new Class[]{FilterRegistration.class},
+			(proxy, method, args) -> {
+				if ("getName".equals(method.getName())) {
+					return "nonServerless";
+				}
+				if (method.getReturnType().isPrimitive()) {
+					if (method.getReturnType() == boolean.class) {
+						return false;
+					}
+					return 0;
+				}
+				return null;
+			});
+
+		registrations.put("nonServerless", nonServerlessRegistration);
+
+		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets");
+		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
+		this.mvc.service(request, response);
+
+		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
 	}
 
 }

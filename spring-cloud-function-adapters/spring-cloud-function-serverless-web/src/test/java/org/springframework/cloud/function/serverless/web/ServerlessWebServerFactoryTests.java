@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author Oleg Zhurakousky
  */
@@ -29,6 +31,7 @@ public class ServerlessWebServerFactoryTests {
 	public void testServerFactoryExists() {
 		ServerlessMVC mvc = ServerlessMVC.INSTANCE(TestApplication.class);
 		mvc.getApplicationContext();
+		assertThat(mvc.getServletContext()).isNotNull();
 	}
 
 	@SpringBootApplication
