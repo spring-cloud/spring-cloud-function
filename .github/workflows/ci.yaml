@@ -1,6 +1,7 @@
 name: Spring Cloud Function CI Job
 
 on:
+  workflow_call:
   push:
     branches:
       - main
