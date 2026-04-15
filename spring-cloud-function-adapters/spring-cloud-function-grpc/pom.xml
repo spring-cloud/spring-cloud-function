@@ -13,7 +13,7 @@
 		<version>4.3.3-SNAPSHOT</version>
 	</parent>
 	<properties>
-		<grpc.version>1.55.1</grpc.version>
+		<grpc.version>1.55.3</grpc.version>
 		<disable.checks>true</disable.checks>
 	</properties>
 	<dependencies>

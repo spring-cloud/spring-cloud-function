@@ -11,7 +11,7 @@
 	<name>spring-cloud-function-grpc-cloudevent-ext</name>
 	<description>CloudEvent extension for spring-cloud-function-grpc</description>
 	<properties>
-		<grpc.version>1.55.1</grpc.version>
+		<grpc.version>1.55.3</grpc.version>
 	</properties>
 	<dependencies>
 		<dependency>
