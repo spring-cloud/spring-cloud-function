@@ -17,7 +17,7 @@
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<spring-cloud-function.version>4.3.3-SNAPSHOT</spring-cloud-function.version>
-		<grpc.version>1.55.1</grpc.version>
+		<grpc.version>1.55.3</grpc.version>
 	</properties>
 	<dependencies>
 		<dependency>
