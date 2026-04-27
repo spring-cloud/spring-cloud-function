@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -102,7 +103,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 	private final Set<FunctionRegistration<?>> functionRegistrations = new CopyOnWriteArraySet<>();
 
-	private final Map<String, FunctionInvocationWrapper> wrappedFunctionDefinitions = new HashMap<>();
+	private final Map<String, FunctionInvocationWrapper> wrappedFunctionDefinitions;
 
 	private final ConversionService conversionService;
 
@@ -113,6 +114,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	private final FunctionInvocationHelper<Message<?>> functionInvocationHelper;
 
 	private final FunctionProperties functionProperties;
+
+	private int wrappedFunctionDefinitionsCacheSize = 1000;
 
 	@Autowired(required = false)
 	private FunctionAroundWrapper functionAroundWrapper;
@@ -127,7 +130,20 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		this.messageConverter = messageConverter;
 		this.functionInvocationHelper = functionInvocationHelper;
 		this.functionProperties = functionProperties;
+		this.wrappedFunctionDefinitions = new LinkedHashMap<String, FunctionInvocationWrapper>() {
+			@Override
+			protected boolean removeEldestEntry(Map.Entry<String, FunctionInvocationWrapper> eldest) {
+				boolean remove = size() > wrappedFunctionDefinitionsCacheSize;
+				if (remove) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("Removing message channel from cache " + eldest.getKey());
+					}
+				}
+				return remove;
+			}
+		};
 	}
+
 
 	/**
 	 * Will add provided {@link MessageConverter}s to the head of the stack of the existing MessageConverters.
@@ -484,6 +500,19 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 		}
 
+		public int hashCode() {
+			return this.functionDefinition.hashCode();
+		}
+
+		public boolean equals(Object obj) {
+			if (obj instanceof FunctionInvocationWrapper functionWrapper) {
+				if (functionWrapper.getFunctionDefinition().equals(this.getFunctionDefinition())) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		@SuppressWarnings("unchecked")
 		public void postProcess() {
 			if (this.postProcessor != null) {
@@ -687,6 +716,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		public <V> Function<Object, V> andThen(Function<? super Object, ? extends V> after) {
 			Assert.isTrue(after instanceof FunctionInvocationWrapper, "Composed function must be an instanceof FunctionInvocationWrapper.");
 
+			if (this.equals(after)) {
+				throw new IllegalArgumentException("Attempt is made to compose '" + this
+						+ "' function with itself '" + after + "' which is not allowed as it causes recursive condition.");
+			}
 			if (FunctionTypeUtils.isMultipleArgumentType(this.inputType)
 					|| FunctionTypeUtils.isMultipleArgumentType(this.outputType)
 					|| FunctionTypeUtils.isMultipleArgumentType(((FunctionInvocationWrapper) after).inputType)
