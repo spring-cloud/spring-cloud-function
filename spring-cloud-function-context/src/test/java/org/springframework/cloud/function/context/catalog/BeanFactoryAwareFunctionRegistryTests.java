@@ -61,6 +61,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
+import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -80,6 +81,7 @@ import org.springframework.util.ReflectionUtils;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 /**
  *
@@ -106,6 +108,31 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@BeforeEach
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	public void testBoundedFunctionCache() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
+		Field wrappedFunctionDefinitionsCacheSizeField = ReflectionUtils
+				.findField(catalog.getClass(), "wrappedFunctionDefinitionsCacheSize");
+		wrappedFunctionDefinitionsCacheSizeField.setAccessible(true);
+		wrappedFunctionDefinitionsCacheSizeField.set(catalog, 10);
+		catalog.lookup("echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2");
+		catalog.lookup("echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1");
+		assertThat(catalog.size()).isEqualTo(11);
+	}
+
+	@Test
+	public void testCompositionWithItself() throws Exception {
+		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
+		try {
+			catalog.lookup(RoutingFunction.FUNCTION_NAME + "|" + RoutingFunction.FUNCTION_NAME);
+			failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+		}
+		catch (IllegalArgumentException e) {
+			// TODO: nothing
+		}
+
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
