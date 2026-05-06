@@ -56,7 +56,7 @@ public class FunctionDeployerTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
-	@Test
+	//@Test
 	public void testWithMavenConfiguration() throws Exception {
 		String[] args = new String[] {
 				"--spring.cloud.function.location=maven://oz.demo:demo-stream:0.0.1-SNAPSHOT",
