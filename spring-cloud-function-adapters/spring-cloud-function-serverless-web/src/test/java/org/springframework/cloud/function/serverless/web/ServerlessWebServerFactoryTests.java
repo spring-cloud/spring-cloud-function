@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.serverless.web;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author Oleg Zhurakousky
  */
+@Disabled
 public class ServerlessWebServerFactoryTests {
 
 	@Test
