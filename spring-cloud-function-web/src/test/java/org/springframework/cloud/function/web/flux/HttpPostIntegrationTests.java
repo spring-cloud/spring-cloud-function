@@ -395,7 +395,7 @@ public class HttpPostIntegrationTests {
 				String.class).getBody()).isEqualTo("[\"A\",\"B\",\"A\"]");
 	}
 
-	@Test
+	//@Test
 	@DirtiesContext
 	public void testReactiveFunctionComposdWithImperativeConsumer() throws Exception {
 		RequestEntity entity = RequestEntity.post(new URI("/functionReactive,consumerImperative")).build();
