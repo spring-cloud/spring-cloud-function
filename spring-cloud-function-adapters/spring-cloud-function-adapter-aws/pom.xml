@@ -22,7 +22,7 @@
 		<aws-lambda-events.version>3.14.0</aws-lambda-events.version>
 		<aws-java-sdk.version>1.12.797</aws-java-sdk.version>
 		<aws-lambda-java-log4j.version>1.0.1</aws-lambda-java-log4j.version>
-		<aws-lambda-java-serialization.version>1.1.5</aws-lambda-java-serialization.version>
+		<aws-lambda-java-serialization.version>1.0.2</aws-lambda-java-serialization.version>
 		<aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
 		<amazon-kinesis-client.version>1.15.1</amazon-kinesis-client.version>
 		<aws-kinesis-deaggregator.version>1.0.3</aws-kinesis-deaggregator.version>
