@@ -66,6 +66,7 @@
 		<dependency>
 		  <groupId>tools.jackson.datatype</groupId>
 		  <artifactId>jackson-datatype-joda</artifactId>
+		  <version>3.0.2</version>
 		</dependency>  
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
