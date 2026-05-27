@@ -274,7 +274,6 @@ public class ContextFunctionCatalogAutoConfiguration {
 					// jackson-module-kotlin not available
 				}
 			}
-			builder.addModule(new JodaModule());
 			builder = builder.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 			builder = builder.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 			builder = builder.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
