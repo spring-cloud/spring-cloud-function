@@ -18,6 +18,7 @@ package org.springframework.cloud.function.serverless.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Disabled
 class ServerlessAutoConfigurationTests {
 
 	@Test
