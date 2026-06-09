@@ -141,10 +141,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		Object syncInstance = functionDefinition == null ? this : functionDefinition;
 		synchronized (syncInstance) {
 			if (function == null) {
-				Set<String> functionRegistratioinNames = super.getNames(null);
+				Set<String> functionRegistrationNames = super.getNames(null);
 				String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
 				for (String functionName : functionNames) {
-					if (functionRegistratioinNames.contains(functionName)) {
+					if (functionRegistrationNames.contains(functionName)) {
 						if (logger.isDebugEnabled()) {
 							logger.debug("Skipping function '" + functionName + "' since it is already present");
 						}
