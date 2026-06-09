@@ -67,6 +67,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 	private GenericApplicationContext applicationContext;
 
+	private final Object lookupLock = new Object();
+
 	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter,
 			JsonMapper jsonMapper, @Nullable FunctionProperties functionProperties, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		super(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
@@ -139,8 +141,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		}
 
 		FunctionInvocationWrapper function = this.doLookup(type, functionDefinition, expectedOutputMimeTypes);
-		Object syncInstance = functionDefinition == null ? this : functionDefinition;
-		synchronized (syncInstance) {
+		synchronized (lookupLock) {
 			if (function == null) {
 				Set<String> functionRegistrationNames = super.getNames(null);
 				String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
