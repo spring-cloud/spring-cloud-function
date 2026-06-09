@@ -178,7 +178,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 										.type(functionType)
 										.properties(Collections.singletonMap("isPojoFunction", "true"));
 							}
-							else if (this.isSpecialFunctionRegistration(functionNames, functionName)) {
+							else if (this.isSpecialFunctionRegistration(functionName)) {
 								functionRegistration = this.applicationContext
 										.getBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX, FunctionRegistration.class);
 							}
@@ -284,11 +284,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	 * <br><br>
 	 * At the moment only Kotlin module does this
 	 *
-	 * @param functionCandidate candidate for FunctionInvocationWrapper instance
 	 * @param functionName the name of the function
 	 * @return true if this function candidate qualifies
 	 */
-	private boolean isSpecialFunctionRegistration(Object functionCandidate, String functionName) {
+	private boolean isSpecialFunctionRegistration(String functionName) {
 		return this.applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX);
 	}
 
