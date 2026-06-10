@@ -85,10 +85,12 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	 */
 	@Override
 	public int size() {
-		return this.applicationContext.getBeanNamesForType(Supplier.class).length +
-			this.applicationContext.getBeanNamesForType(Function.class).length +
-			this.applicationContext.getBeanNamesForType(Consumer.class).length +
-			super.size();
+		return this.applicationContext.getBeanNamesForType(Supplier.class).length
+				+ this.applicationContext.getBeanNamesForType(Function.class).length
+				+ this.applicationContext.getBeanNamesForType(Consumer.class).length
+				+ this.applicationContext.getBeanNamesForType(BiFunction.class).length // missing
+				+ this.applicationContext.getBeanNamesForType(BiConsumer.class).length // missing
+				+ super.size();
 	}
 
 	/*
