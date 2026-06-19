@@ -12,13 +12,8 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-<<<<<<< HEAD
 		<version>4.0.7</version>
-		<relativePath />
-=======
-		<version>3.5.15</version>
 		<relativePath/>
->>>>>>> cc0983bd2 (Initial changes to fix repos)
 	</parent>
 
 	<properties>

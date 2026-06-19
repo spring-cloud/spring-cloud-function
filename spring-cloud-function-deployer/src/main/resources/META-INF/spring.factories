@@ -1,1 +1,0 @@
-org.springframework.boot.EnvironmentPostProcessor=org.springframework.cloud.function.deployer.FunctionDeployerConfiguration$LegacyPropertyEnvironmentPostProcessor
