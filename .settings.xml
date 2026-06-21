@@ -18,11 +18,11 @@
 
 <settings>
   <servers>
-	<!-- <server>
+	<server>
 	  <id>repo.spring.io</id>
-	  <username>${env.CI_DEPLOY_USERNAME}</username>
-	  <password>${env.CI_DEPLOY_PASSWORD}</password>
-	</server> -->
+	  <username>${env.ARTIFACTORY_USERNAME}</username>
+	  <password>${env.ARTIFACTORY_PASSWORD}</password>
+	</server>
   </servers>
   <profiles>
 	<profile>
