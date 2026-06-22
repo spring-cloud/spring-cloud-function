@@ -17,13 +17,13 @@
   -->
 
 <settings>
-<!--  <servers>-->
-<!--	<server>-->
-<!--	  <id>repo.spring.io</id>-->
-<!--	  <username>${env.ARTIFACTORY_USERNAME}</username>-->
-<!--	  <password>${env.ARTIFACTORY_PASSWORD}</password>-->
-<!--	</server>-->
-<!--  </servers>-->
+  <servers>
+	<server>
+	  <id>repo.spring.io</id>
+	  <username>${env.ARTIFACTORY_USERNAME}</username>
+	  <password>${env.ARTIFACTORY_PASSWORD}</password>
+	</server>
+  </servers>
   <profiles>
 	<profile>
       <!--
