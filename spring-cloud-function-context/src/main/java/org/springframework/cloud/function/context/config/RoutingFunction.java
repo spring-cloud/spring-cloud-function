@@ -18,7 +18,7 @@ package org.springframework.cloud.function.context.config;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -194,32 +194,25 @@ public class RoutingFunction implements Function<Object, Object> {
 	}
 
 	private FunctionInvocationWrapper locateFunctionFromDefinitionOrExpression(Message<?> message) {
-		for (Entry<String, Object> headerEntry : message.getHeaders().entrySet()) {
-			String headerKey = headerEntry.getKey();
-			Object headerValue = headerEntry.getValue();
+		Map<String, Object> messageHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+		messageHeaders.putAll(message.getHeaders());
+		Object defValue = messageHeaders.get(FunctionProperties.FUNCTION_DEFINITION);
+		Object exprValue = messageHeaders.get(FunctionProperties.ROUTING_EXPRESSION);
 
-			if (headerKey == null || headerValue == null) {
-				continue;
+		if (defValue != null) {
+			if (defValue instanceof String definition) {
+				return functionFromDefinition(definition);
 			}
-
-			boolean isFunctionDefinition = FunctionProperties.FUNCTION_DEFINITION.equalsIgnoreCase(headerKey);
-			boolean isRoutingExpression = FunctionProperties.ROUTING_EXPRESSION.equalsIgnoreCase(headerKey);
-
-			if (isFunctionDefinition) {
-				if (headerValue instanceof String definition) {
-					return functionFromDefinition(definition);
-				}
-				else if (headerValue instanceof List<?> definitions && !definitions.isEmpty()) {
-					return functionFromDefinition(definitions.stream().map(Object::toString).collect(Collectors.joining(",")));
-				}
+			else if (defValue instanceof List<?> definitions && !definitions.isEmpty()) {
+				return functionFromDefinition(definitions.stream().map(Object::toString).collect(Collectors.joining(",")));
 			}
-			else if (isRoutingExpression) {
-				if (headerValue instanceof String expression) {
-					return functionFromExpression(expression, message, true);
-				}
-				else if (headerValue instanceof List<?> expressions && !expressions.isEmpty()) {
-					return functionFromExpression(expressions.get(0).toString(), message, true);
-				}
+		}
+		else if (exprValue != null) {
+			if (exprValue instanceof String expression) {
+				return functionFromExpression(expression, message, true);
+			}
+			else if (exprValue instanceof List<?> expressions && !expressions.isEmpty()) {
+				return functionFromExpression(expressions.get(0).toString(), message, true);
 			}
 		}
 		return null;
