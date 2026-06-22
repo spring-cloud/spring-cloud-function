@@ -205,7 +205,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 	boolean isFunctionDefinitionEligible(String functionDefinition) {
 		if (this.functionProperties != null) {
-			this.functionProperties.getIneligibleDefinitions().contains(functionDefinition);
 			boolean matchFoundInBoth = !Collections.disjoint(Arrays.asList(functionDefinition.split("\\|")),
 					this.functionProperties.getIneligibleDefinitions());
 			return !matchFoundInBoth;
