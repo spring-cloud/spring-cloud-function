@@ -111,46 +111,42 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 		return configuration;
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void setConfiguration(Map<String, FunctionConfigurationProperties> configuration) {
 		for (Entry<String, FunctionConfigurationProperties> entry : configuration.entrySet()) {
-			String propertyX = "spring.cloud.function.configuration." + entry.getKey() + ".input-header-mapping-expression.";
-			String propertyY = "spring.cloud.function.configuration." + entry.getKey() + ".inputHeaderMappingExpression.";
-			Map<String, Object>  headerMapping = entry.getValue().getInputHeaderMappingExpression();
-			if (!CollectionUtils.isEmpty(headerMapping)) {
-				for (Object k : headerMapping.keySet()) {
-					if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
-						Map current = entry.getValue().getInputHeaderMappingExpression();
-						if (current.containsKey("0")) {
-							((Map) current.get("0")).put(k, headerMapping.get(k));
-						}
-						else {
-							entry.getValue().setInputHeaderMappingExpression(Collections.singletonMap("0", current));
-							break;
-						}
+			this.normalizeHeaderMappingExpression(entry, true);
+			this.normalizeHeaderMappingExpression(entry, false);
+		}
+
+		this.configuration = configuration;
+	}
+
+	private void normalizeHeaderMappingExpression(Entry<String,
+			FunctionConfigurationProperties> entry, boolean input) {
+		String prefix = "spring.cloud.function.configuration." + entry.getKey();
+		String propertyX = input ? prefix + ".input-header-mapping-expression." : prefix + ".output-header-mapping-expression.";
+		String propertyY = input ? prefix + ".inputHeaderMappingExpression." : prefix + ".outputHeaderMappingExpression.";
+		Map<String, Object>  headerMapping = input ? entry.getValue().getInputHeaderMappingExpression()
+				: entry.getValue().getOutputHeaderMappingExpression();
+		if (!CollectionUtils.isEmpty(headerMapping)) {
+			for (Object k : headerMapping.keySet()) {
+				if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
+					Map current = input ? entry.getValue().getInputHeaderMappingExpression()
+									: entry.getValue().getOutputHeaderMappingExpression();
+					if (current.containsKey("0")) {
+						((Map) current.get("0")).put(k, headerMapping.get(k));
 					}
-				}
-			}
-			propertyX = "spring.cloud.function.configuration." + entry.getKey() + ".output-header-mapping-expression.";
-			propertyY = "spring.cloud.function.configuration." + entry.getKey() + ".outputHeaderMappingExpression.";
-			headerMapping = entry.getValue().getOutputHeaderMappingExpression();
-			if (!CollectionUtils.isEmpty(headerMapping)) {
-				for (Object k : headerMapping.keySet()) {
-					if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
-						Map current = entry.getValue().getOutputHeaderMappingExpression();
-						if (current.containsKey("0")) {
-							((Map) current.get("0")).put(k, headerMapping.get(k));
+					else {
+						if (input) {
+							entry.getValue().setInputHeaderMappingExpression(Collections.singletonMap("0", current));
 						}
 						else {
 							entry.getValue().setOutputHeaderMappingExpression(Collections.singletonMap("0", current));
-							break;
 						}
+						break;
 					}
 				}
 			}
 		}
-
-		this.configuration = configuration;
 	}
 
 	@Override
