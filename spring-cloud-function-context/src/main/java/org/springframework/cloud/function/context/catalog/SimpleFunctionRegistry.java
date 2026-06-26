@@ -266,7 +266,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
 
 		Set<String> names = this.getNames(null);
-		if (!names.contains(functionDefinition)) {
+		if (this.isSingleFunctionFallbackEnabled() && !names.contains(functionDefinition)) {
 			List<String> eligibleFunction = names.stream()
 					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
 					.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
@@ -279,6 +279,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 		}
 		return functionDefinition;
+	}
+
+	private boolean isSingleFunctionFallbackEnabled() {
+		return this.functionProperties == null || this.functionProperties.isSingleFunctionFallbackEnabled();
 	}
 
 	/*

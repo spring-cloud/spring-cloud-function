@@ -98,9 +98,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	}
 
 	private FunctionCatalog configureCatalog(Class<?>... configClass) {
-		this.context = new SpringApplicationBuilder(configClass)
-				.run("--logging.level.org.springframework.cloud.function=DEBUG",
-						"--spring.main.lazy-initialization=true");
+		return this.configureCatalogWithProperties(new String[0], configClass);
+	}
+
+	private FunctionCatalog configureCatalogWithProperties(String[] properties, Class<?>... configClass) {
+		List<String> args = new ArrayList<>();
+		args.add("--logging.level.org.springframework.cloud.function=DEBUG");
+		args.add("--spring.main.lazy-initialization=true");
+		args.addAll(Arrays.asList(properties));
+		this.context = new SpringApplicationBuilder(configClass).run(args.toArray(new String[0]));
 		FunctionCatalog catalog = context.getBean(FunctionCatalog.class);
 		return catalog;
 	}
@@ -302,6 +308,23 @@ public class BeanFactoryAwareFunctionRegistryTests {
 //		field.setAccessible(true);
 //		assertThat(((boolean) field.get(function))).isTrue();
 		assertThat(((FunctionInvocationWrapper) function).isComposed()).isTrue();
+	}
+
+	@Test
+	public void testSingleFunctionFallbackIsEnabledByDefault() {
+		FunctionCatalog catalog = this.configureCatalog(InputHeaderPropagationConfiguration.class);
+
+		assertThat((Object) catalog.lookup("missingFunction")).isNotNull();
+	}
+
+	@Test
+	public void testSingleFunctionFallbackCanBeDisabled() {
+		FunctionCatalog catalog = this.configureCatalogWithProperties(
+				new String[] { "--spring.cloud.function.single-function-fallback-enabled=false" },
+				InputHeaderPropagationConfiguration.class);
+
+		assertThat((Object) catalog.lookup("missingFunction")).isNull();
+		assertThat((Object) catalog.lookup("uppercase")).isNotNull();
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

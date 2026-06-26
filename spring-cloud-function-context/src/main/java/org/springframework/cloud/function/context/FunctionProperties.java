@@ -82,6 +82,11 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	 */
 	private final List<String> ineligibleDefinitions;
 
+	/**
+	 * Whether a single eligible function can be looked up when the requested name is absent.
+	 */
+	private boolean singleFunctionFallbackEnabled = true;
+
 	private Map<String, FunctionConfigurationProperties> configuration;
 
 	private String expectedContentType;
@@ -194,6 +199,14 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 
 	public void setIneligibleDefinitions(List<String> definitions) {
 		this.ineligibleDefinitions.addAll(definitions);
+	}
+
+	public boolean isSingleFunctionFallbackEnabled() {
+		return this.singleFunctionFallbackEnabled;
+	}
+
+	public void setSingleFunctionFallbackEnabled(boolean singleFunctionFallbackEnabled) {
+		this.singleFunctionFallbackEnabled = singleFunctionFallbackEnabled;
 	}
 
 	public static class FunctionConfigurationProperties {
