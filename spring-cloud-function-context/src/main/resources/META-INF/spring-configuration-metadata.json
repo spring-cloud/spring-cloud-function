@@ -15,6 +15,12 @@
 			"defaultValue": ""
 		},
 		{
+			"name": "spring.cloud.function.single-function-fallback-enabled",
+			"type": "java.lang.Boolean",
+			"description": "Whether a single eligible function can be looked up when the requested name is absent.",
+			"defaultValue": true
+		},
+		{
 			"name": "spring.cloud.function.routing.enabled",
 			"type": "java.lang.Boolean",
 			"description": "Enables RoutingFunction which delegates incoming request to a function named via function.name header",
