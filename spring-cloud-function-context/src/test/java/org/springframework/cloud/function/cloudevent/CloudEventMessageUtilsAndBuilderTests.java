@@ -99,6 +99,30 @@ public class CloudEventMessageUtilsAndBuilderTests {
 	}
 
 	@Test
+	void buildWithKafkaPrefixUsesContentTypeHeaderForDataContentType() {
+		Message<String> kafkaMessage = CloudEventMessageBuilder.withData("hello")
+				.setDataContentType("application/json")
+				.build(CloudEventMessageUtils.KAFKA_ATTR_PREFIX);
+
+		assertThat(kafkaMessage.getHeaders())
+				.containsEntry("content-type", "application/json")
+				.doesNotContainKey("ce_datacontenttype");
+		assertThat(CloudEventMessageUtils.getDataContentType(kafkaMessage)).isEqualTo("application/json");
+	}
+
+	@Test
+	void buildWithDefaultPrefixUsesCloudEventDataContentTypeAttribute() {
+		Message<String> message = CloudEventMessageBuilder.withData("hello")
+				.setDataContentType("application/json")
+				.build(CloudEventMessageUtils.DEFAULT_ATTR_PREFIX);
+
+		assertThat(message.getHeaders())
+				.containsEntry("ce-datacontenttype", "application/json")
+				.doesNotContainKey("content-type");
+		assertThat(CloudEventMessageUtils.getDataContentType(message)).isEqualTo("application/json");
+	}
+
+	@Test
 	void canonicalizeHeadersWithPossibleCopyReturnsCopyWithUpdatedHeadersWhenModified() {
 		// TODO add the following test cases
 		//

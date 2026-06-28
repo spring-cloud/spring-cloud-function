@@ -186,7 +186,13 @@ public final class CloudEventMessageBuilder<T> {
 	private void swapPrefix(String key, String currentPrefix, String newPrefix) {
 		Object value = headers.remove(key);
 		key = key.substring(currentPrefix.length());
-		this.headers.put(newPrefix + key, value);
+		if (newPrefix.equals(CloudEventMessageUtils.KAFKA_ATTR_PREFIX)
+				&& key.equals(CloudEventMessageUtils._DATACONTENTTYPE)) {
+			this.headers.put("content-type", value);
+		}
+		else {
+			this.headers.put(newPrefix + key, value);
+		}
 	}
 
 	private Message<T> doBuild(String prefix) {
