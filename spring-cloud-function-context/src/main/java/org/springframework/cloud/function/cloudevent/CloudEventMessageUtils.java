@@ -205,10 +205,16 @@ public final class CloudEventMessageUtils {
 	public static String getDataContentType(Message<?> message) {
 		String prefix = determinePrefixToUse(message.getHeaders());
 		Object value = message.getHeaders().get(prefix + _DATACONTENTTYPE);
+		if (value == null && isCloudEvent(message)) {
+			value = message.getHeaders().get("content-type");
+			if (value == null) {
+				value = message.getHeaders().get(MessageHeaders.CONTENT_TYPE);
+			}
+		}
 		if (value instanceof byte[] v) {
 			value = toString(v);
 		}
-		return (String) value;
+		return value != null ? value.toString() : null;
 	}
 
 	public static URI getDataSchema(Message<?> message) {
