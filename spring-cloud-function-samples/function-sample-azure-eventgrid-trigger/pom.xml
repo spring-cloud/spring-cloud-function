@@ -29,13 +29,14 @@
 		<functionAppRegion>westus</functionAppRegion>
 		<functionResourceGroup>java-functions-group</functionResourceGroup>
 		<functionPricingTier>Y1</functionPricingTier>
+		<spring-cloud-function.version>5.0.4-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 	<dependencies>
 
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-azure</artifactId>
-			<version>4.3.5-SNAPSHOT</version>
+			<version>${spring-cloud-function.version}</version>
 		</dependency>
 
 		<dependency>

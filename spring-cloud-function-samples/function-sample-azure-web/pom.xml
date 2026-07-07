@@ -20,7 +20,7 @@
 		<java.version>17</java.version>
 
 		<spring-boot-thin-layout.version>1.0.31.RELEASE</spring-boot-thin-layout.version>
-		<spring-cloud-function-adapter-azure-web.version>5.0.2-SNAPSHOT</spring-cloud-function-adapter-azure-web.version>
+		<spring-cloud-function.version>5.0.4-SNAPSHOT</spring-cloud-function.version>
 
 		<!-- 2. You must set the Spring Boot start class for the Azure Function runtime to be able to find the entry point. -->
 		<start-class>com.example.azure.web.AzureWebDemoApplication</start-class>
@@ -41,7 +41,7 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-azure-web</artifactId>
-			<version>${spring-cloud-function-adapter-azure-web.version}</version>
+			<version>${spring-cloud-function.version}</version>
 		</dependency>
 
 		<!-- Spring Web Application common dependecies -->
