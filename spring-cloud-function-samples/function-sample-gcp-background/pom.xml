@@ -18,12 +18,15 @@
 		<version>4.0.7</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+	<properties>
+		<spring-cloud-function.version>5.0.4-SNAPSHOT</spring-cloud-function.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-function-adapter-gcp</artifactId>
-			<version>4.3.5-SNAPSHOT</version>
+			<version>${spring-cloud-function.version}</version>
 		</dependency>
 	</dependencies>
 
