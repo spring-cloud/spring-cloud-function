@@ -63,7 +63,8 @@ In summary, Spring Cloud Function instruments Java functions with additional fea
 While the previous example shows you how to lookup a function in `FunctionCatalog` programmatically, in a typical integration case where Spring Cloud Function is used as the programming model by another framework (e.g. https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream]), you can declare which functions to use via the `spring.cloud.function.definition` property.
 It is important to know and understand the default behaviour when it comes to discovering functions in `FunctionCatalog`.
 
-For instance, if you only have one Functional bean in your `ApplicationContext`, the `spring.cloud.function.definition` property typically will not be required since a single function in `FunctionCatalog` can be looked up by an empty name, or any name.
+For instance, if you only have one Functional bean in your `ApplicationContext`, the `spring.cloud.function.definition` property typically will not be required since a single function in `FunctionCatalog` 
+can be looked up by an empty name, or any name.
 For example, assuming that `uppercase` is the only function in your catalog, it can be looked up as `catalog.lookup(null)`, `catalog.lookup(“”)`, `catalog.lookup(“foo”)`.
 
 That said, for cases where you are using a framework such as Spring Cloud Stream, which uses `spring.cloud.function.definition`, it is recommended to always use the `spring.cloud.function.definition` property.
@@ -74,6 +75,9 @@ For example,
 ----
 spring.cloud.function.definition=uppercase
 ----
+
+If you do not wish to lookup a single function by an empty string or any name, you can set the `spring.cloud.function.single-function-fallback-enabled` 
+property to `false`, thus ensuring that function is looked up only by its proper name.
 
 [[filtering-ineligible-functions]]
 === Filtering ineligible functions
