@@ -37,6 +37,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -214,7 +215,7 @@ public final class CloudEventMessageUtils {
 		if (value instanceof byte[] v) {
 			value = toString(v);
 		}
-		return value != null ? value.toString() : null;
+		return !ObjectUtils.isEmpty(value) ? value.toString() : null;
 	}
 
 	public static URI getDataSchema(Message<?> message) {
