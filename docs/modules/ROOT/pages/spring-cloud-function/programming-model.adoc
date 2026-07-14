@@ -637,11 +637,30 @@ The payload of the `Message` could be any type, and it is up to the actual imple
 
 [[provided-messageconverters]]
 === Provided MessageConverters
-
 As mentioned earlier, the framework already provides a stack of `MessageConverters` to handle most common use cases.
 The following list describes the provided `MessageConverters`, in order of precedence (the first `MessageConverter` that works is used):
 
-. `JsonMessageConverter`:  Supports conversion of the payload of the `Message` to/from POJO for cases when `contentType` is `application/json` using Jackson (DEFAULT) or Gson libraries. This message converter also aware of `type` parameter (e.g., _application/json;type=foo.bar.Person_). This is useful for cases where types may not be known at the time when function is developed, hence function signature may look like `Function<?, ?>` or `Function` or `Function<Object, Object>`. In other words for type conversion we typically derive type from function signature. Having, mime-type parameter allows you to communicate type in a more dynamic way.
+. `JsonMessageConverter`:  Supports conversion of the payload of the `Message` to/from POJO for cases
+when `contentType` is `application/json` using Jackson (DEFAULT) or Gson libraries.
+This message converter also aware of `type` parameter (e.g., _application/json;type=foo.bar.Person_).
+This is useful for cases where types may not be known at the time when function is developed, hence function
+signature may look like `Function<?, ?>` or `Function` or `Function<Object, Object>`. In other words for type conversion
+we typically derive type from function signature. Having, mime-type parameter allows you to communicate type in a more
+dynamic way. To use the `type` parameter (for specifying the target class during deserialization), you must explicitly declare the
+allowed classes in a *whitelist file* named _META-INF/deserializable.types_.
+This file must be placed in the classpath (typically under `src/main/resources`). The purpose of this whitelist is to
+prevent arbitrary type loading from untrusted sources, such as Message headers or HTTP requests.
+The file is a plain text file 	with one fully qualified class name per line. Comma-separated values on the same line are also supported.
+*Example* `META-INF/deserializable.types`
+[source, text]
+----
+foo.bar.MyClass
+org.springframework.cloud.function.context.config.JsonMessageConverterTests$Person
+java.util.Collections
+----
+Once the classes are listed in the whitelist, you can safely specify them using the type parameter in the MIME type, for example:
+`Content-Type: application/json;type=foo.bar.MyClass`
+
 . `ByteArrayMessageConverter`: Supports conversion of the payload of the `Message` from `byte[]` to `byte[]` for cases when `contentType` is `application/octet-stream`. It is essentially a pass through and exists primarily for backward compatibility.
 . `StringMessageConverter`: Supports conversion of any type to a `String` when `contentType` is `text/plain`.
 

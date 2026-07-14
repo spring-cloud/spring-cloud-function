@@ -1,0 +1,3 @@
+java.lang.Object
+org.springframework.cloud.function.context.config.JsonMessageConverterTests$Person
+java.util.Collections

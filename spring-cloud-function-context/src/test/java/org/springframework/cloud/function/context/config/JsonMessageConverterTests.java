@@ -38,7 +38,7 @@ public class JsonMessageConverterTests {
 	@Test
 	public void testTypeInference() {
 		JsonMessageConverter converter = new JsonMessageConverter(new JacksonMapper(new ObjectMapper()));
-
+		System.out.println(Person.class.getName());
 		Message<String> message = MessageBuilder.withPayload("{\"name\":\"bill\"}").build();
 		assertThat(converter.canConvertFrom(message, Person.class)).isTrue();
 		assertThat(converter.canConvertFrom(message, Object.class)).isFalse();

@@ -18,7 +18,14 @@ package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 import org.springframework.cloud.function.cloudevent.CloudEventMessageUtils;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -30,6 +37,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.StringUtils;
 
@@ -46,6 +55,8 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 
 	private final JsonMapper jsonMapper;
 
+	private final List<String> deserializableTypes = new ArrayList<>();
+
 	public JsonMessageConverter(JsonMapper jsonMapper) {
 		this(jsonMapper, new MimeType("application", "json"), new MimeType(CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getType(),
 				CloudEventMessageUtils.APPLICATION_CLOUDEVENTS.getSubtype() + "+json"));
@@ -54,6 +65,23 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	public JsonMessageConverter(JsonMapper jsonMapper, MimeType... supportedMimeTypes) {
 		super(supportedMimeTypes);
 		this.jsonMapper = jsonMapper;
+		try {
+			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/deserializable.types");
+			while (resources.hasMoreElements()) {
+				URI uri = resources.nextElement().toURI();
+				List<String> lines = Files.readAllLines(Path.of(uri));
+				for (String line : lines) {
+					// need to split in case if delimited
+					String[] keys = line.split(",");
+					for (int i = 0; i < keys.length; i++) {
+						this.deserializableTypes.add(keys[i].trim());
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			logger.trace("Failed to load deserilazable types", e);
+		}
 	}
 
 	@Override
@@ -87,14 +115,19 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 		}
 		Type convertToType = this.getResolvedType(targetClass, conversionHint);
 		if (convertToType == null || convertToType == Object.class) {
-			MimeType mimeType = getMimeType(message.getHeaders());
-			String type = mimeType.getParameter("type");
-			if (StringUtils.hasText(type)) {
-				try {
-					convertToType = Thread.currentThread().getContextClassLoader().loadClass(type);
+			if (!CollectionUtils.isEmpty(this.deserializableTypes)) {
+				MimeType mimeType = getMimeType(message.getHeaders());
+				String type = mimeType.getParameter("type");
+				if (StringUtils.hasText(type) && this.deserializableTypes.contains(type)) {
+					try {
+						convertToType = Thread.currentThread().getContextClassLoader().loadClass(type);
+					}
+					catch (ClassNotFoundException e) {
+						throw new IllegalArgumentException("Failed to load class `" + type + "` specified by the provided content-type: " + mimeType, e);
+					}
 				}
-				catch (ClassNotFoundException e) {
-					throw new IllegalArgumentException("Failed to load class `" + type + "` specified by the provided content-type: " + mimeType, e);
+				else {
+					return message.getPayload();
 				}
 			}
 			else {
