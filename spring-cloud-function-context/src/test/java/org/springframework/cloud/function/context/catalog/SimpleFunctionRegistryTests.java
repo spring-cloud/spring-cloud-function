@@ -84,6 +84,7 @@ import org.springframework.util.ReflectionUtils;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Oleg Zhurakousky
@@ -357,7 +358,44 @@ public class SimpleFunctionRegistryTests {
 		assertThat(lookedUpFunction).isNull();
 	}
 
+	@Test
+	public void testSingleFunctionDoesNotCorruptComposedFunctioin() {
+		FunctionRegistration<UpperCase> upperCaseRegistration = new FunctionRegistration<>(
+				new UpperCase(), "uppercase").type(UpperCase.class);
+		FunctionRegistration<Reverse> reverseRegistration = new FunctionRegistration<>(
+				new Reverse(), "reverse").type(Reverse.class);
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(upperCaseRegistration);
+		catalog.register(reverseRegistration);
 
+		FunctionInvocationWrapper lookedUpFunction = catalog
+				.lookup("uppercase|reverse");
+		assertThat(lookedUpFunction).isNotNull();
+
+		FunctionInvocationWrapper uppercase = catalog
+				.lookup("uppercase");
+
+		assertThat(uppercase.isSkipOutputConversion()).isFalse();
+	}
+
+	@Test
+	public void testCompositionWithItself() {
+		FunctionRegistration<UpperCase> upperCaseRegistration = new FunctionRegistration<>(
+				new UpperCase(), "uppercase").type(UpperCase.class);
+
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(upperCaseRegistration);
+
+		try {
+			catalog.lookup("uppercase|uppercase");
+			fail();
+		}
+		catch (Exception e) {
+			// TODO: handle exception
+		}
+	}
 
 	@Test
 	public void testFunctionComposition() {

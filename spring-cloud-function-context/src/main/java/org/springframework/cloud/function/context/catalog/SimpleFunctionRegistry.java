@@ -248,7 +248,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		if (function == null) {
 			function = this.compose(type, functionDefinition);
 		}
-
 		if (function != null) {
 			if (!ObjectUtils.isEmpty(expectedOutputMimeTypes)) {
 				function.expectedOutputContentType = expectedOutputMimeTypes;
@@ -365,6 +364,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					}
 				}
 			}
+		}
+		if (composedFunction != null && composedFunction.isSingleton) {
+			this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("Composed function " + composedFunction);
