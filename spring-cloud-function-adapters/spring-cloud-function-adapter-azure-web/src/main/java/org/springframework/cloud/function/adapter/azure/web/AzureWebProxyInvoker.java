@@ -148,7 +148,7 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 		}, authLevel = AuthorizationLevel.ANONYMOUS, route = AZURE_WEB_ADAPTER_ROUTE) HttpRequestMessage<Optional<String>> request,
 		ExecutionContext context) {
 
-		context.getLogger().info("Request body is: " + request.getBody().orElse("[empty]"));
+		context.getLogger().finest("Request body is: " + request.getBody().orElse("[empty]"));
 
 		HttpServletRequest httpRequest = this.prepareRequest(request);
 
@@ -164,8 +164,8 @@ public class AzureWebProxyInvoker implements FunctionInstanceInjector {
 
 			String responseString = httpResponse.getContentAsString(StandardCharsets.UTF_8);
 			if (StringUtils.hasText(responseString)) {
-				if (LOGGER.isDebugEnabled()) {
-					LOGGER.debug("Response: " + responseString);
+				if (LOGGER.isTraceEnabled()) {
+					LOGGER.trace("Response: " + responseString);
 				}
 				responseBuilder.body(responseString);
 			} // TODO: what to do with bodyless response?
