@@ -36,8 +36,8 @@ public class CustomRuntimeInitializer implements ApplicationContextInitializer<G
 	@Override
 	public void initialize(GenericApplicationContext context) {
 		Environment environment = context.getEnvironment();
-		if (logger.isDebugEnabled()) {
-			logger.debug("AWS Environment: " + System.getenv());
+		if (AWSLambdaUtils.isEnvironmentDumpAllowed(environment) && logger.isTraceEnabled()) {
+			logger.trace("AWS Environment: " + System.getenv());
 		}
 
 		if (!this.isWebExportEnabled(context) && isCustomRuntime(environment)) {

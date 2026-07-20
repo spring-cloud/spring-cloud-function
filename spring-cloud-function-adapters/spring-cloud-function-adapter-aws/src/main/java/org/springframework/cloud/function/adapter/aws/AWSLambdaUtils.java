@@ -35,6 +35,7 @@ import reactor.core.publisher.Flux;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.utils.JsonMasker;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -73,6 +74,17 @@ public final class AWSLambdaUtils {
 
 	private AWSLambdaUtils() {
 
+	}
+
+	public static boolean isEnvironmentDumpAllowed(Environment environment) {
+		try {
+			return Boolean.getBoolean(environment.getProperty("SPRING_ENV_DUMP_ALLOW"));
+		}
+		catch (Exception e) {
+			logger.debug("Failed to process SPRING_ENV_DUMP_ALLOW property. Value is "
+					+ environment.getProperty("SPRING_ENV_DUMP_ALLOW"), e);
+			return false;
+		}
 	}
 
 	static boolean isSupportedAWSType(Type type) {

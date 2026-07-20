@@ -117,9 +117,11 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 	private void eventLoop(ConfigurableApplicationContext context) {
 		Environment environment = context.getEnvironment();
+
 		logger.info("Starting spring-cloud-function CustomRuntimeEventLoop");
-		if (logger.isDebugEnabled()) {
-			logger.debug("AWS LAMBDA ENVIRONMENT: " + System.getenv());
+
+		if (AWSLambdaUtils.isEnvironmentDumpAllowed(environment) && logger.isTraceEnabled()) {
+			logger.trace("AWS LAMBDA ENVIRONMENT: " + System.getenv());
 		}
 
 		String runtimeApi = environment.getProperty("AWS_LAMBDA_RUNTIME_API");
