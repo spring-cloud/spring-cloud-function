@@ -46,6 +46,22 @@ public final class HeaderUtils {
 		IGNORED.add(MessageHeaders.ID, "");
 		IGNORED.add(HttpHeaders.CONTENT_LENGTH, "0");
 		IGNORED.add(HttpHeaders.TRANSFER_ENCODING, "*");
+		IGNORED.add(HttpHeaders.SET_COOKIE, "*");
+		IGNORED.add(HttpHeaders.SET_COOKIE2, "*");
+		IGNORED.add("Content-Security-Policy", "*");
+		IGNORED.add(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "*");
+		IGNORED.add(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "*");
+		IGNORED.add(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "*");
+		IGNORED.add(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+		IGNORED.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "*");
+		IGNORED.add(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "*");
+		IGNORED.add(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "*");
+		IGNORED.add(HttpHeaders.AUTHORIZATION, "*");
+		IGNORED.add(HttpHeaders.CACHE_CONTROL, "*");
+		IGNORED.add(HttpHeaders.COOKIE, "*");
+		IGNORED.add(HttpHeaders.PROXY_AUTHENTICATE, "*");
+		IGNORED.add(HttpHeaders.PROXY_AUTHORIZATION, "*");
+
 		// Headers that would typically be added by a downstream client
 		REQUEST_ONLY.add(HttpHeaders.ACCEPT, "");
 		REQUEST_ONLY.add(HttpHeaders.CONTENT_LENGTH, "");
