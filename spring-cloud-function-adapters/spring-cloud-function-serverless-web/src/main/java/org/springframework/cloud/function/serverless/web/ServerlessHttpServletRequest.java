@@ -592,7 +592,8 @@ public class ServerlessHttpServletRequest implements HttpServletRequest {
 	 */
 	@Override
 	public boolean isSecure() {
-		return false;
+		String scheme = this.getScheme();
+		return "https".equals(scheme);
 	}
 
 	@Override
