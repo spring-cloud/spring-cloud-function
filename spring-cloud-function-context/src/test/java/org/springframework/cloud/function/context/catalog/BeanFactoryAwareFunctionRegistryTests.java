@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -113,13 +114,25 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Test
 	public void testBoundedFunctionCache() throws Exception {
 		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
-		Field wrappedFunctionDefinitionsCacheSizeField = ReflectionUtils
-				.findField(catalog.getClass(), "wrappedFunctionDefinitionsCacheSize");
+		Field wrappedFunctionDefinitionsCacheSizeField = ReflectionUtils.findField(catalog.getClass(),
+				"wrappedFunctionDefinitionsCacheSize");
 		wrappedFunctionDefinitionsCacheSizeField.setAccessible(true);
 		wrappedFunctionDefinitionsCacheSizeField.set(catalog, 10);
-		catalog.lookup("echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2");
-		catalog.lookup("echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1");
-		assertThat(catalog.size()).isEqualTo(11);
+		Field wrappedFunctionDefinitionsField = ReflectionUtils.findField(catalog.getClass(),
+				"wrappedFunctionDefinitions");
+		wrappedFunctionDefinitionsField.setAccessible(true);
+		int threadCount = 20;
+		CountDownLatch latch = new CountDownLatch(threadCount);
+		for (int i = 0; i < threadCount; i++) {
+			new Thread(() -> {
+				catalog.lookup("echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2");
+				catalog.lookup(
+						"echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1|echo2|echo1");
+				latch.countDown();
+			}).start();
+		}
+		latch.await();
+		assertThat(((Map<?, ?>) (wrappedFunctionDefinitionsField.get(catalog))).size()).isEqualTo(10);
 	}
 
 	@Test
