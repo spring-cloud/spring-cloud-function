@@ -80,9 +80,6 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
-
-
-
 /**
  * Implementation of {@link FunctionCatalog} and {@link FunctionRegistry} which
  * does not depend on Spring's {@link BeanFactory}.
@@ -116,6 +113,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	private final FunctionProperties functionProperties;
 
 	private int wrappedFunctionDefinitionsCacheSize = 1000;
+
+	private final Object cacheLock = new Object();
 
 	@Autowired(required = false)
 	private FunctionAroundWrapper functionAroundWrapper;
@@ -236,7 +235,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 */
 	@SuppressWarnings("unchecked")
 	<T> T doLookup(Class<?> type, String functionDefinition, String[] expectedOutputMimeTypes) {
-		FunctionInvocationWrapper function = this.wrappedFunctionDefinitions.get(functionDefinition);
+		FunctionInvocationWrapper function;
+		synchronized (cacheLock) {
+			function = this.wrappedFunctionDefinitions.get(functionDefinition);
+		}
 		if (function == null) {
 			function = this.compose(type, functionDefinition);
 		}
@@ -352,7 +354,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				composedFunction = this.enrichInputIfNecessary(composedFunction);
 				composedFunction = this.enrichOutputIfNecessary(composedFunction);
 				if (composedFunction.isSingleton) {
-					this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
+					synchronized (cacheLock) {
+						this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
+					}
 				}
 			}
 		}
