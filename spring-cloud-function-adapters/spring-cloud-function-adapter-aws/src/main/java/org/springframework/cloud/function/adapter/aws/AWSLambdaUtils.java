@@ -40,6 +40,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 
 /**
  *
@@ -123,9 +124,12 @@ public final class AWSLambdaUtils {
 								&& ((Map) structMessage).containsKey("version")));
 
 		Message<byte[]> requestMessage;
+		String strExtractPayload = System.getenv().get("spring.cloud-function.aws.extract-payload");
+		boolean extractPayload = StringUtils.hasText(strExtractPayload)
+				? Boolean.parseBoolean(strExtractPayload) : true;
 
 		MessageBuilder builder = MessageBuilder
-				.withPayload(structMessage instanceof Map msg && msg.containsKey("payload")
+				.withPayload(extractPayload && structMessage instanceof Map msg && msg.containsKey("payload")
 						? (msg.get("payload"))
 						: payload);
 		if (isApiGateway) {

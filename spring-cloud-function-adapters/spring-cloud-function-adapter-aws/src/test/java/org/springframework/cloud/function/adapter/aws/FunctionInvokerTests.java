@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collections;
@@ -1288,9 +1289,23 @@ public class FunctionInvokerTests {
 		assertThat(result.get("body")).isEqualTo("\"hello\"");
 	}
 
+	private void setEnvironmentVariable(String key, String value) {
+		try {
+			Class<?> classOfMap = System.getenv().getClass();
+			Field field = classOfMap.getDeclaredField("m");
+			field.setAccessible(true);
+			Map<String, String> writeableEnvironmentVariables = (Map<String, String>) field.get(System.getenv());
+			writeableEnvironmentVariables.put(key, value);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void testApiGatewayV2Event() throws Exception {
+		this.setEnvironmentVariable("spring.cloud-function.aws.extract-payload", "true");
 		System.out.println(this.apiGatewayV2Event);
 		System.setProperty("MAIN_CLASS", ApiGatewayConfiguration.class.getName());
 		System.setProperty("spring.cloud.function.definition", "inputApiV2Event");
