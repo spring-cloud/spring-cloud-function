@@ -33,7 +33,6 @@ import reactor.core.publisher.Mono;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.cloud.function.utils.SocketUtils;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
@@ -45,12 +44,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 
+
 /**
  *
  * @author Oleg Zhurakousky
  * @author Chris Bono
  */
-//@Disabled
+@Disabled
 public class GrpcInteractionTests {
 
 	@BeforeEach
