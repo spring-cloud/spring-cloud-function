@@ -90,6 +90,7 @@ import org.springframework.util.StringUtils;
  * @author Roman Samarev
  * @author Soby Chacko
  * @author Chris Bono
+ * @author Roman Akentev
  */
 public class SimpleFunctionRegistry implements FunctionRegistry {
 	protected Log logger = LogFactory.getLog(this.getClass());
@@ -1219,7 +1220,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 				convertedInput = this.convertInputMessageIfNecessary((Message) input, type);
 				if (convertedInput == null) { // give ConversionService a chance
-					convertedInput = this.convertNonMessageInputIfNecessary(type, ((Message) input).getPayload(), false);
+					boolean failOnJsonError = JsonMapper.isJsonContentType(contentTypeHeaderValue((Message<?>) input));
+					Object payload = ((Message) input).getPayload();
+					boolean maybeJson = failOnJsonError || JsonMapper.isJsonString(payload);
+					convertedInput = this.convertNonMessageInputIfNecessary(type, payload, maybeJson, failOnJsonError);
 				}
 				if (convertedInput != null && !FunctionTypeUtils.isMultipleArgumentType(this.inputType)) {
 					convertedInput = !convertedInput.equals(input)
@@ -1232,7 +1236,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				}
 			}
 			else {
-				convertedInput = this.convertNonMessageInputIfNecessary(type, input, JsonMapper.isJsonString(input));
+				// Non-Message input — no Content-Type headers to evaluate
+				convertedInput = this.convertNonMessageInputIfNecessary(type, input, JsonMapper.isJsonString(input), false);
 				if (convertedInput != null && logger.isDebugEnabled()) {
 					logger.debug("Converted input: " + input + " to: " + convertedInput);
 				}
@@ -1384,7 +1389,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		/*
 		 *
 		 */
-		private Object convertNonMessageInputIfNecessary(Type inputType, Object input, boolean maybeJson) {
+		private Object convertNonMessageInputIfNecessary(Type inputType, Object input,
+				boolean maybeJson, boolean failOnJsonError) {
 			Object convertedInput = null;
 			Class<?> rawInputType = this.isTypePublisher(inputType) || this.isInputTypeMessage()
 					? FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(inputType))
@@ -1395,10 +1401,21 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					inputType = FunctionTypeUtils.getGenericType(inputType);
 				}
 				if (Object.class != inputType) {
-					convertedInput = SimpleFunctionRegistry.this.jsonMapper.fromJson(input, inputType);
+					try {
+						convertedInput = SimpleFunctionRegistry.this.jsonMapper.fromJson(input, inputType);
+					}
+					catch (Exception e) {
+						if (failOnJsonError) {
+							throw e;
+						}
+						if (logger.isDebugEnabled()) {
+							logger.debug("JSON conversion failed for '" + input + "' to " + inputType
+									+ ". Falling back to ConversionService.", e);
+						}
+					}
 				}
 			}
-			else if (SimpleFunctionRegistry.this.conversionService != null
+			if (convertedInput == null && SimpleFunctionRegistry.this.conversionService != null
 					&& !rawInputType.equals(input.getClass())
 					&& SimpleFunctionRegistry.this.conversionService.canConvert(input.getClass(), rawInputType)) {
 				convertedInput = SimpleFunctionRegistry.this.conversionService.convert(input, rawInputType);
