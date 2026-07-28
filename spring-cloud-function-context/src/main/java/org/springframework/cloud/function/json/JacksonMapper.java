@@ -31,6 +31,7 @@ import tools.jackson.databind.type.TypeFactory;
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author Roman Akentev
  */
 public class JacksonMapper extends JsonMapper {
 
@@ -70,7 +71,7 @@ public class JacksonMapper extends JsonMapper {
 			}
 		}
 		catch (Exception e) {
-			throw new IllegalStateException("Failed to convert. Possible bug as the conversion probably shouldn't have been attempted here", e);
+			throw new IllegalStateException("Failed to convert JSON to " + type + ": " + e.getMessage(), e);
 		}
 		return convertedValue;
 	}
