@@ -44,6 +44,9 @@ public class AWSCustomRuntime  {
 
 	BlockingQueue<Message<String>> outputQueue = new ArrayBlockingQueue<>(3);
 
+	/** Queue for capturing error responses from the Custom Runtime event loop. */
+	public BlockingQueue<Message<String>> errorQueue = new ArrayBlockingQueue<>(3);
+
 	public AWSCustomRuntime(ConfigurableApplicationContext context) {
 		context.getEnvironment().getPropertySources().addFirst(
 			new MapPropertySource("AWSCustomRuntime",
@@ -53,6 +56,11 @@ public class AWSCustomRuntime  {
 	@Bean("2018-06-01/runtime/invocation/consume/response")
 	Consumer<Message<String>> consume() {
 		return v -> outputQueue.offer(v);
+	}
+
+	@Bean("2018-06-01/runtime/invocation/consume/error")
+	Consumer<Message<String>> consumeError() {
+		return v -> errorQueue.offer(v);
 	}
 
 	@SuppressWarnings("unchecked")
