@@ -68,6 +68,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.KotlinDetector;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
@@ -76,15 +77,14 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
-import org.springframework.messaging.converter.ContentTypeResolver;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.InvalidMimeTypeException;
 import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 
 
@@ -96,38 +96,40 @@ import org.springframework.util.StringUtils;
  * @author Anshul Mehra
  * @author Soby Chacko
  * @author Chris Bono
+ * @author Roman Akentev
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionProperties.class)
 @AutoConfigureAfter(name = {"org.springframework.cloud.function.deployer.FunctionDeployerConfiguration"})
 public class ContextFunctionCatalogAutoConfiguration {
 
-	private static Log logger = LogFactory.getLog(ContextFunctionCatalogAutoConfiguration.class);
 	/**
 	 * The name of the property to specify desired JSON mapper. Available values are `jackson' and 'gson'.
 	 */
 	public static final String JSON_MAPPER_PROPERTY = "spring.cloud.function.preferred-json-mapper";
+	private static final Log logger = LogFactory
+			.getLog(ContextFunctionCatalogAutoConfiguration.class);
 
 	@Bean
 	public FunctionRegistry functionCatalog(List<MessageConverter> messageConverters, JsonMapper jsonMapper,
-											ConfigurableApplicationContext context, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
-		ConfigurableConversionService conversionService = (ConfigurableConversionService) context.getBeanFactory().getConversionService();
-		if (conversionService == null) {
-			conversionService = new DefaultConversionService();
-		}
+											ConfigurableApplicationContext context, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper,
+											FunctionProperties functionProperties) {
+		ConversionService existing = context.getBeanFactory().getConversionService();
+		ConfigurableConversionService conversionService = (existing instanceof ConfigurableConversionService ccs)
+				? ccs
+				: new DefaultConversionService();
 		Map<String, GenericConverter> converters = context.getBeansOfType(GenericConverter.class);
 		for (GenericConverter converter : converters.values()) {
 			conversionService.addConverter(converter);
 		}
 
-		SmartCompositeMessageConverter messageConverter = null;
+		SmartCompositeMessageConverter messageConverter;
 		List<MessageConverter> mcList = new ArrayList<>();
 
 		if (!CollectionUtils.isEmpty(messageConverters)) {
 			for (MessageConverter mc : messageConverters) {
-				if (mc instanceof CompositeMessageConverter) {
-					List<MessageConverter> conv = ((CompositeMessageConverter) mc).getConverters().stream().toList();
-					mcList.addAll(conv);
+				if (mc instanceof CompositeMessageConverter composite) {
+					mcList.addAll(composite.getConverters());
 				}
 				else {
 					mcList.add(mc);
@@ -143,29 +145,24 @@ public class ContextFunctionCatalogAutoConfiguration {
 		mcList.add(new ByteArrayMessageConverter());
 		StringMessageConverter stringConverter = new StringMessageConverter();
 		stringConverter.setSerializedPayloadClass(String.class);
-		stringConverter.setContentTypeResolver(new ContentTypeResolver() {
-			@Override
-			public MimeType resolve(MessageHeaders headers) throws InvalidMimeTypeException {
-				if (headers.containsKey(MessageHeaders.CONTENT_TYPE)) {
-					if (headers.get(MessageHeaders.CONTENT_TYPE).toString().startsWith("text")) {
-						return MimeType.valueOf("text/plain");
-					}
-					else {
-						return MimeType.valueOf(headers.get(MessageHeaders.CONTENT_TYPE).toString());
-					}
+		stringConverter.setContentTypeResolver(headers -> {
+			if (headers != null) {
+				Object contentType = headers.get(MessageHeaders.CONTENT_TYPE);
+				if (contentType != null) {
+					String typeStr = contentType.toString();
+					return typeStr.startsWith("text") ? MimeTypeUtils.TEXT_PLAIN
+							: MimeType.valueOf(typeStr);
 				}
-				return null;
 			}
+			return null;
 		});
 		mcList.add(stringConverter);
 
-		messageConverter = new SmartCompositeMessageConverter(mcList, () -> {
-			return context.getBeansOfType(MessageConverterHelper.class).values();
-		});
-		if (functionInvocationHelper instanceof CloudEventsFunctionInvocationHelper) {
-			((CloudEventsFunctionInvocationHelper) functionInvocationHelper).setMessageConverter(messageConverter);
+		messageConverter = new SmartCompositeMessageConverter(mcList,
+				() -> context.getBeansOfType(MessageConverterHelper.class).values());
+		if (functionInvocationHelper instanceof CloudEventsFunctionInvocationHelper cloudEventsFunctionInvocationHelper) {
+			cloudEventsFunctionInvocationHelper.setMessageConverter(messageConverter);
 		}
-		FunctionProperties functionProperties = context.getBean(FunctionProperties.class);
 		return new BeanFactoryAwareFunctionRegistry(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
 	}
 
@@ -225,14 +222,14 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 			else {
-				if (ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", null)) {
+				if (ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", ClassUtils.getDefaultClassLoader())) {
 					return jackson(context);
 				}
-				else if (ClassUtils.isPresent("com.google.gson.Gson", null)) {
+				else if (ClassUtils.isPresent("com.google.gson.Gson", ClassUtils.getDefaultClassLoader())) {
 					return gson(context);
 				}
 			}
-			throw new IllegalStateException("Failed to configure JsonMapper. Neither jackson nor gson are present on the claspath");
+			throw new IllegalStateException("Failed to configure JsonMapper. Neither jackson nor gson are present on the classpath");
 		}
 
 		private JsonMapper gson(ApplicationContext context) {
@@ -243,43 +240,62 @@ public class ContextFunctionCatalogAutoConfiguration {
 				gson = context.getBean(Gson.class);
 			}
 			catch (Exception e) {
+				logger.warn(
+					"Failed to obtain a Gson bean from context. "
+						+ "Falling back to default Gson configuration.",
+					e);
 				gson = new Gson();
 			}
 			return new GsonMapper(gson);
 		}
 
-		@SuppressWarnings("unchecked")
 		private JsonMapper jackson(ApplicationContext context) {
 			Assert.state(ClassUtils.isPresent("tools.jackson.databind.ObjectMapper", ClassUtils.getDefaultClassLoader()),
 				"Can not bootstrap Jackson mapper since Jackson is not on the classpath");
-			ObjectMapper mapper = null;
-			MapperBuilder builder = tools.jackson.databind.json.JsonMapper.builder();
+
+			MapperBuilder<?, ?> builder;
 			try {
 				builder = context.getBean(ObjectMapper.class).rebuild();
 			}
-			catch (Exception e) {
-				builder = tools.jackson.databind.json.JsonMapper.builder();
-				DateTimeZone.setProvider(new UTCProvider());
-			}
-			builder = builder.addModule(new JodaModule());
+			catch (Exception ex) {
+				logger.warn(
+					"Unexpected error while attempting to rebuild ObjectMapper. "
+						+ "Falling back to default Jackson configuration.",
+					ex);
+			builder = tools.jackson.databind.json.JsonMapper.builder();
+			DateTimeZone.setProvider(new UTCProvider());
+		}
 
 			if (KotlinDetector.isKotlinPresent()) {
 				try {
-					Class<? extends JacksonModule> kotlinModuleClass = (Class<? extends JacksonModule>)
-							ClassUtils.forName("tools.jackson.module.kotlin.KotlinModule", ClassUtils.getDefaultClassLoader());
-					JacksonModule kotlinModule = BeanUtils.instantiateClass(kotlinModuleClass);
-					builder = builder.addModule(kotlinModule);
+					Class<?> rawClass = ClassUtils.forName(
+							"tools.jackson.module.kotlin.KotlinModule",
+							ClassUtils.getDefaultClassLoader());
+					if (JacksonModule.class.isAssignableFrom(rawClass)) {
+						Class<? extends JacksonModule> kotlinModuleClass = rawClass
+								.asSubclass(JacksonModule.class);
+						builder.addModule(BeanUtils.instantiateClass(kotlinModuleClass));
+					}
+					else {
+						logger.warn(
+								"Kotlin Jackson module ('tools.jackson.module.kotlin.KotlinModule') is present on the classpath, "
+										+ "but is not assignable to JacksonModule. Check for Jackson version mismatches or classloader conflicts.");
+					}
 				}
 				catch (ClassNotFoundException ex) {
-					// jackson-module-kotlin not available
+					logger.warn(
+							"Kotlin is present on the classpath, but the Jackson Kotlin module is not available. "
+									+ "Consider adding 'jackson-module-kotlin' to your dependencies to avoid serialization issues with Kotlin classes.");
 				}
 			}
-			builder = builder.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-			builder = builder.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-			builder = builder.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false);
-			builder = builder.configure(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION, false);
 
-			mapper = builder.build();
+			ObjectMapper mapper = builder.addModule(new JodaModule())
+					.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+					.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+					.configure(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION, false)
+					.build();
+
 			return new JacksonMapper(mapper);
 		}
 	}
