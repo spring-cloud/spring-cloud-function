@@ -25,6 +25,7 @@ import org.springframework.cloud.function.context.FunctionProperties;
 /**
 *
 * @author Oleg Zhurakousky
+* @author Roman Akentev
 * @since 4.0.4
 *
 */
@@ -34,34 +35,34 @@ public class FunctionHttpProperties {
 	/**
 	 * Function definition mappings for GET method (e.g. 'spring.cloud.function.http.GET=foo;bar|baz')
 	 */
-	public String get;
+	private String get;
 
 
 	/**
 	 * Function definition mappings for POST method (e.g. 'spring.cloud.function.http.POST=foo;bar|baz')
 	 */
-	public String post;
+	private String post;
 
 	/**
 	 * Function definition mappings for PUT method (e.g. 'spring.cloud.function.http.PUT=foo;bar|baz')
 	 */
-	public String put;
+	private String put;
 
 	/**
 	 * Function definition mappings for DELETE method (e.g. 'spring.cloud.function.http.DELETE=foo;bar|baz')
 	 */
-	public String delete;
+	private String delete;
 
 
 	/**
 	 * List of headers to be ignored when generating HttpHeaders (request or response).
 	 */
-	public List<String> ignoredHeaders = Collections.emptyList();
+	private List<String> ignoredHeaders = Collections.emptyList();
 
 	/**
 	 * List of headers that must remain only in the request.
 	 */
-	public List<String> requestOnlyHeaders = Collections.emptyList();
+	private List<String> requestOnlyHeaders = Collections.emptyList();
 
 	public String getGet() {
 		return this.get;
@@ -72,7 +73,7 @@ public class FunctionHttpProperties {
 	}
 
 	public String getPost() {
-		return post;
+		return this.post;
 	}
 
 	public void setPost(String post) {
@@ -80,7 +81,7 @@ public class FunctionHttpProperties {
 	}
 
 	public String getPut() {
-		return put;
+		return this.put;
 	}
 
 	public void setPut(String put) {
@@ -88,7 +89,7 @@ public class FunctionHttpProperties {
 	}
 
 	public String getDelete() {
-		return delete;
+		return this.delete;
 	}
 
 	public void setDelete(String delete) {
@@ -96,7 +97,7 @@ public class FunctionHttpProperties {
 	}
 
 	public List<String> getIgnoredHeaders() {
-		return ignoredHeaders;
+		return this.ignoredHeaders;
 	}
 
 	public void setIgnoredHeaders(List<String> ignoredHeaders) {
@@ -104,7 +105,7 @@ public class FunctionHttpProperties {
 	}
 
 	public List<String> getRequestOnlyHeaders() {
-		return requestOnlyHeaders;
+		return this.requestOnlyHeaders;
 	}
 
 	public void setRequestOnlyHeaders(List<String> requestOnlyHeaders) {
