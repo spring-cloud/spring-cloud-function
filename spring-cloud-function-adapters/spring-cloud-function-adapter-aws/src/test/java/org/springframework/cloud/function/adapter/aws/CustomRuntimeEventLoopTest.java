@@ -16,7 +16,9 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,7 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.adapter.test.aws.AWSCustomRuntime;
+import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -214,6 +217,76 @@ public class CustomRuntimeEventLoopTest {
 			assertThat(aws.exchange("\"bubbles\"").getPayload()).isEqualTo("{\"name\":\"BUBBLES\"}");
 		}
 
+	}
+
+	@Test
+	public void testFunctionThatThrowsException() throws Exception {
+		try (ConfigurableApplicationContext userContext =
+				new SpringApplicationBuilder(ErrorFunctionConfiguration.class, AWSCustomRuntime.class)
+					.web(WebApplicationType.SERVLET)
+					.properties("_HANDLER=hello", "server.port=0")
+					.run()) {
+
+			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
+			JsonMapper mapper = userContext.getBean(JsonMapper.class);
+
+			aws.exchange("\"test\"");
+			Message<String> errorMessage = aws.errorQueue.poll(5000, java.util.concurrent.TimeUnit.MILLISECONDS);
+
+			assertThat(errorMessage).isNotNull();
+			Map<String, Object> errorMap = mapper.fromJson(errorMessage.getPayload(), Map.class);
+
+			assertThat(errorMap)
+				.containsEntry("errorMessage", "Something went wrong")
+				.containsEntry("errorType", "java.lang.RuntimeException")
+				.containsKey("stackTrace");
+			assertThat(errorMap.get("stackTrace")).isInstanceOf(List.class);
+			assertThat((List<?>) errorMap.get("stackTrace"))
+				.isNotEmpty()
+				.first().asString().contains("CustomRuntimeEventLoopTest");
+		}
+	}
+
+	@Test
+	public void testFunctionThatThrowsNestedException() throws Exception {
+		try (ConfigurableApplicationContext userContext =
+				new SpringApplicationBuilder(ErrorFunctionConfiguration.class, AWSCustomRuntime.class)
+					.web(WebApplicationType.SERVLET)
+					.properties("_HANDLER=helloNested", "server.port=0")
+					.run()) {
+
+			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
+			JsonMapper mapper = userContext.getBean(JsonMapper.class);
+
+			aws.exchange("\"test\"");
+			Message<String> errorMessage = aws.errorQueue.poll(5000, java.util.concurrent.TimeUnit.MILLISECONDS);
+
+			assertThat(errorMessage).isNotNull();
+			Map<String, Object> errorMap = mapper.fromJson(errorMessage.getPayload(), Map.class);
+
+			assertThat(errorMap)
+				.containsEntry("errorMessage", "Wrapper exception")
+				.containsEntry("errorType", "java.lang.RuntimeException");
+			assertThat(errorMap.get("stackTrace")).isInstanceOf(List.class);
+		}
+	}
+
+	@EnableAutoConfiguration
+	protected static class ErrorFunctionConfiguration {
+		@Bean
+		public Function<String, String> hello() {
+			return event -> {
+				throw new RuntimeException("Something went wrong");
+			};
+		}
+
+		@Bean
+		public Function<String, String> helloNested() {
+			return event -> {
+				Exception cause = new IllegalStateException("Root cause error");
+				throw new RuntimeException("Wrapper exception", cause);
+			};
+		}
 	}
 
 	@EnableAutoConfiguration
