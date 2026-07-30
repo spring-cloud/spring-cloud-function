@@ -23,6 +23,7 @@ import com.google.cloud.functions.HttpResponse;
 import com.google.cloud.functions.RawBackgroundFunction;
 
 import org.springframework.boot.loader.launch.JarLauncher;
+import org.springframework.boot.loader.net.protocol.Handlers;
 
 /**
  * The launcher class written at the top-level of the output JAR to be deployed to
@@ -30,6 +31,7 @@ import org.springframework.boot.loader.launch.JarLauncher;
  *
  * @author Ray Tsang
  * @author Daniel Zou
+ * @author Roman Akentev
  */
 public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBackgroundFunction {
 
@@ -38,7 +40,7 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 	private final Object delegate;
 
 	public GcfJarLauncher() throws Exception {
-		//JarFile.registerUrlProtocolHandler();
+		Handlers.register();
 
 		this.loader = createClassLoader(getClassPathUrls());
 
