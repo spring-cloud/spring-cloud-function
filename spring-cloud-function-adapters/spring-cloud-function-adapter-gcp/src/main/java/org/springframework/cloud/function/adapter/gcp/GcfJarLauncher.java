@@ -16,6 +16,10 @@
 
 package org.springframework.cloud.function.adapter.gcp;
 
+import java.net.URL;
+import java.net.URLStreamHandler;
+import java.net.URLStreamHandlerFactory;
+
 import com.google.cloud.functions.Context;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
@@ -23,6 +27,8 @@ import com.google.cloud.functions.HttpResponse;
 import com.google.cloud.functions.RawBackgroundFunction;
 
 import org.springframework.boot.loader.launch.JarLauncher;
+import org.springframework.boot.loader.net.protocol.Handlers;
+import org.springframework.boot.loader.net.protocol.nested.Handler;
 
 /**
  * The launcher class written at the top-level of the output JAR to be deployed to
@@ -30,21 +36,44 @@ import org.springframework.boot.loader.launch.JarLauncher;
  *
  * @author Ray Tsang
  * @author Daniel Zou
+ * @author Roman Akentev
  */
 public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBackgroundFunction {
+
+	private static final URLStreamHandlerFactory NESTED_URL_STREAM_HANDLER_FACTORY = new NestedUrlStreamHandlerFactory();
 
 	private final ClassLoader loader;
 
 	private final Object delegate;
 
 	public GcfJarLauncher() throws Exception {
-		//JarFile.registerUrlProtocolHandler();
+		Handlers.register();
+		registerNestedUrlStreamHandlerFactory();
 
 		this.loader = createClassLoader(getClassPathUrls());
 
 		Class<?> clazz = this.loader
 			.loadClass("org.springframework.cloud.function.adapter.gcp.FunctionInvoker");
 		this.delegate = clazz.getConstructor().newInstance();
+	}
+
+	/**
+	 * Install a {@link URLStreamHandlerFactory} that provides the {@code nested:}
+	 * handler directly, without relying on the {@code java.protocol.handler.pkgs}
+	 * property. That property is only consulted by the JVM through the bootstrap
+	 * and system classloaders, so it cannot find the handler when the loader
+	 * classes are only visible to the classloader of the deployed fat JAR (e.g.
+	 * when the Google Cloud Functions framework loads the JAR in a child
+	 * {@code URLClassLoader}).
+	 */
+	private void registerNestedUrlStreamHandlerFactory() {
+		try {
+			URL.setURLStreamHandlerFactory(NESTED_URL_STREAM_HANDLER_FACTORY);
+		}
+		catch (Error error) {
+			// A factory is already installed. Handlers.register() above may still be
+			// sufficient when the loader classes are on the system classpath.
+		}
 	}
 
 	@Override
@@ -58,5 +87,15 @@ public class GcfJarLauncher extends JarLauncher implements HttpFunction, RawBack
 		Thread.currentThread().setContextClassLoader(this.loader);
 		((RawBackgroundFunction) delegate).accept(json, context);
 	}
+
+	private static final class NestedUrlStreamHandlerFactory implements URLStreamHandlerFactory {
+
+		@Override
+		public URLStreamHandler createURLStreamHandler(String protocol) {
+			return ("nested".equals(protocol)) ? new Handler() : null;
+		}
+
+	}
+
 }
 
