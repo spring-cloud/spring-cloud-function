@@ -28,7 +28,7 @@ apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'io.spring.sample'
-version = '2.0.0.RELEASE'
+version = '5.0.4-INTERNAL-SNAPSHOT'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
