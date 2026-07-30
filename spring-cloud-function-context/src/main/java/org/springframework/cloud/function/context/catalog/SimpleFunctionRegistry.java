@@ -113,8 +113,6 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 	private final FunctionProperties functionProperties;
 
-	private int wrappedFunctionDefinitionsCacheSize = 1000;
-
 	private final Object cacheLock = new Object();
 
 	@Autowired(required = false)
@@ -123,6 +121,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper,
 			@Nullable FunctionProperties functionProperties,
 			@Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
+		this(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper, 1000);
+	}
+
+	public SimpleFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter, JsonMapper jsonMapper,
+			@Nullable FunctionProperties functionProperties,
+			@Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper,
+			int wrappedFunctionDefinitionsCacheSize) {
 		Assert.notNull(messageConverter, "'messageConverter' must not be null");
 		Assert.notNull(jsonMapper, "'jsonMapper' must not be null");
 		this.conversionService = conversionService;
@@ -448,7 +453,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private boolean composed;
 
-		private boolean message;
+		private final boolean message;
 
 		private String[] expectedOutputContentType;
 

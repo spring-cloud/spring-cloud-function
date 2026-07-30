@@ -33,7 +33,7 @@ import org.springframework.cloud.function.grpc.MessageHandlingHelper;
 @SuppressWarnings("rawtypes")
 class CloudEventHandler extends CloudEventServiceImplBase  {
 
-	private Log logger = LogFactory.getLog(CloudEventHandler.class);
+	private final Log logger = LogFactory.getLog(CloudEventHandler.class);
 
 	private final MessageHandlingHelper helper;
 

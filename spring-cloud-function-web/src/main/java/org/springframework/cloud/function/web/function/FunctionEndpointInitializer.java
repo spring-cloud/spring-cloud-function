@@ -79,15 +79,15 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
  */
 public class FunctionEndpointInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
-	private static boolean webflux = ClassUtils
+	private static final boolean WEBFLUX = ClassUtils
 			.isPresent("org.springframework.web.reactive.function.server.RouterFunction", null);
 
-	private static boolean errorAttributes = ClassUtils
+	private static final boolean ERROR_ATTRIBUTES = ClassUtils
 		.isPresent("org.springframework.boot.webflux.error.ErrorAttributes", null);
 
 	@Override
 	public void initialize(GenericApplicationContext context) {
-		if (webflux && ContextFunctionCatalogInitializer.enabled
+		if (WEBFLUX && ContextFunctionCatalogInitializer.enabled
 				&& context.getEnvironment().getProperty(FunctionalSpringApplication.SPRING_WEB_APPLICATION_TYPE,
 						WebApplicationType.class, WebApplicationType.REACTIVE) == WebApplicationType.REACTIVE
 				&& context.getEnvironment().getProperty("spring.functional.enabled", Boolean.class, false)) {
@@ -97,7 +97,7 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 	}
 
 	private void registerWebFluxAutoConfiguration(GenericApplicationContext context) {
-		if (errorAttributes) {
+		if (ERROR_ATTRIBUTES) {
 			context.registerBean(DefaultErrorWebExceptionHandler.class, () -> ErrorHandlerRegistrar.errorHandler(context));
 		}
 		context.registerBean(WebHttpHandlerBuilder.WEB_HANDLER_BEAN_NAME, HttpWebHandlerAdapter.class,
@@ -132,9 +132,9 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 
 	private static class ServerListener implements SmartApplicationListener {
 
-		private static Log logger = LogFactory.getLog(ServerListener.class);
+		private static final Log logger = LogFactory.getLog(ServerListener.class);
 
-		private GenericApplicationContext context;
+		private final GenericApplicationContext context;
 
 		ServerListener(GenericApplicationContext context) {
 			this.context = context;
@@ -190,7 +190,7 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 
 class FunctionEndpointFactory {
 
-	private static Log logger = LogFactory.getLog(FunctionEndpointFactory.class);
+	private static final Log logger = LogFactory.getLog(FunctionEndpointFactory.class);
 
 	private final FunctionCatalog functionCatalog;
 

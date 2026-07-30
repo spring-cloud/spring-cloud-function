@@ -49,7 +49,7 @@ import org.springframework.messaging.support.MessageBuilder;
  */
 public final class GrpcUtils {
 
-	private static Log logger = LogFactory.getLog(GrpcUtils.class);
+	private static final Log logger = LogFactory.getLog(GrpcUtils.class);
 
 	private GrpcUtils() {
 

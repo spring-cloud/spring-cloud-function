@@ -26,7 +26,7 @@ import com.microsoft.azure.functions.HttpStatusType;
 public class BuilderStub implements Builder {
 
 	private HttpStatusType status;
-	private Map<String, String> headers = new HashMap<>();
+	private final Map<String, String> headers = new HashMap<>();
 	private Object body;
 
 	@Override

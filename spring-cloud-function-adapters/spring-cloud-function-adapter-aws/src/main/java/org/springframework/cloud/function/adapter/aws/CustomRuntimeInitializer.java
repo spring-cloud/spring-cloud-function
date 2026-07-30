@@ -31,7 +31,7 @@ import org.springframework.util.StringUtils;
  */
 public class CustomRuntimeInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
 
-	private static Log logger = LogFactory.getLog(CustomRuntimeInitializer.class);
+	private static final Log logger = LogFactory.getLog(CustomRuntimeInitializer.class);
 
 	@Override
 	public void initialize(GenericApplicationContext context) {

@@ -62,6 +62,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Oleg Zhurakousky
  * @author Soby Chacko
+ * @author Roman Akentev
  */
 public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry implements ApplicationContextAware {
 
@@ -72,6 +73,12 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter,
 			JsonMapper jsonMapper, @Nullable FunctionProperties functionProperties, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper) {
 		super(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper);
+	}
+
+	public BeanFactoryAwareFunctionRegistry(ConversionService conversionService, CompositeMessageConverter messageConverter,
+			JsonMapper jsonMapper, @Nullable FunctionProperties functionProperties, @Nullable FunctionInvocationHelper<Message<?>> functionInvocationHelper,
+			int wrappedFunctionDefinitionsCacheSize) {
+		super(conversionService, messageConverter, jsonMapper, functionProperties, functionInvocationHelper, wrappedFunctionDefinitionsCacheSize);
 	}
 
 	@Override

@@ -97,7 +97,7 @@ public class HttpDeleteIntegrationTests {
 	@TestConfiguration
 	public static class ApplicationConfiguration {
 
-		private List<String> list = new ArrayList<>();
+		private final List<String> list = new ArrayList<>();
 
 		public static void main(String[] args) throws Exception {
 			SpringApplication.run(HttpDeleteIntegrationTests.ApplicationConfiguration.class,

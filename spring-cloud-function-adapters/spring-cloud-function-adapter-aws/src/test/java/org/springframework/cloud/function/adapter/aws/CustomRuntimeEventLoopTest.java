@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class CustomRuntimeEventLoopTest {
 
-	private String API_EVENT = "{\n"
+	private final String API_EVENT = "{\n"
 			+ "    \"version\": \"1.0\",\n"
 			+ "    \"resource\": \"$default\",\n"
 			+ "    \"path\": \"/question\",\n"

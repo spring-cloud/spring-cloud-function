@@ -55,7 +55,7 @@ public class ServerlessHttpServletResponse implements HttpServletResponse {
 
 	private static final String DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss zzz";
 
-	private String defaultCharacterEncoding = WebUtils.DEFAULT_CHARACTER_ENCODING;
+	private final String defaultCharacterEncoding = WebUtils.DEFAULT_CHARACTER_ENCODING;
 
 	private String characterEncoding = this.defaultCharacterEncoding;
 

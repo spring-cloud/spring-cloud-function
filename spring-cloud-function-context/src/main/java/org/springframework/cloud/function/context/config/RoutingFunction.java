@@ -66,7 +66,7 @@ public class RoutingFunction implements Function<Object, Object> {
 	 */
 	public static final String DEFAULT_ROUTE_HANDLER = "defaultMessageRoutingHandler";
 
-	private static Log logger = LogFactory.getLog(RoutingFunction.class);
+	private static final Log logger = LogFactory.getLog(RoutingFunction.class);
 
 	private final StandardEvaluationContext evalContext = new StandardEvaluationContext();
 

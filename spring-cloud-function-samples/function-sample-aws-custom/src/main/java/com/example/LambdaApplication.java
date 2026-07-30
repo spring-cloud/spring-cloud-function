@@ -17,7 +17,7 @@ import org.springframework.context.support.GenericApplicationContext;
 public class LambdaApplication
 		implements ApplicationContextInitializer<GenericApplicationContext> {
 
-	private static Log logger = LogFactory.getLog(LambdaApplication.class);
+	private static final Log logger = LogFactory.getLog(LambdaApplication.class);
 
 	public Function<String, String> uppercase() {
 		return value -> {

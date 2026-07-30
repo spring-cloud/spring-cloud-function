@@ -43,12 +43,12 @@ public class ExporterProperties {
 	/**
 	 * Properties related to a source of items (via an HTTP GET on startup).
 	 */
-	private Source source = new Source();
+	private final Source source = new Source();
 
 	/**
 	 * Properties related to a sink of items (via an HTTP POST on startup).
 	 */
-	private Sink sink = new Sink();
+	private final Sink sink = new Sink();
 
 	/**
 	 * Flag to enable the export of a supplier.
@@ -143,7 +143,7 @@ public class ExporterProperties {
 		/**
 		 * Additional headers to append to the outgoing HTTP requests.
 		 */
-		private Map<String, String> headers = new LinkedHashMap<>();
+		private final Map<String, String> headers = new LinkedHashMap<>();
 
 		/**
 		 * The name of a specific existing Supplier to export from the function catalog.

@@ -35,7 +35,7 @@ import tools.jackson.databind.type.TypeFactory;
  */
 public class JacksonMapper extends JsonMapper {
 
-	private static Log logger = LogFactory.getLog(JacksonMapper.class);
+	private static final Log logger = LogFactory.getLog(JacksonMapper.class);
 
 	private final ObjectMapper mapper;
 

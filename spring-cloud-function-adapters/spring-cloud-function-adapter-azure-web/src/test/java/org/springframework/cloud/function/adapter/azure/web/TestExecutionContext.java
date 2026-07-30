@@ -23,7 +23,7 @@ import com.microsoft.azure.functions.ExecutionContext;
 
 public class TestExecutionContext implements ExecutionContext {
 
-	private String name;
+	private final String name;
 
 	public TestExecutionContext(String name) {
 		this.name = name;

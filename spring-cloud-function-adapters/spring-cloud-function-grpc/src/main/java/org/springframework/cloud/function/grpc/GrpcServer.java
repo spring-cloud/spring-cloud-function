@@ -45,7 +45,7 @@ import org.springframework.util.ClassUtils;
  */
 class GrpcServer implements SmartLifecycle, EnvironmentAware {
 
-	private Log logger = LogFactory.getLog(GrpcServer.class);
+	private final Log logger = LogFactory.getLog(GrpcServer.class);
 
 	private final FunctionGrpcProperties grpcProperties;
 

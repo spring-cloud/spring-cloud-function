@@ -68,11 +68,11 @@ public class FunctionalExporterTests {
 
 	private static ConfigurableApplicationContext context;
 
-	private static Map<String, Object> headers = new HashMap<>();
+	private static final Map<String, Object> HEADERS = new HashMap<>();
 
 	@BeforeAll
 	public static void init() throws Exception {
-		headers.clear();
+		HEADERS.clear();
 		String port = "" + TestSocketUtils.findAvailableTcpPort();
 		System.setProperty("server.port", port);
 		System.setProperty("my.port", port);
@@ -85,7 +85,7 @@ public class FunctionalExporterTests {
 
 	@AfterAll
 	public static void close() {
-		headers.clear();
+		HEADERS.clear();
 		System.clearProperty("server.port");
 		if (context != null) {
 			context.close();
@@ -101,8 +101,8 @@ public class FunctionalExporterTests {
 		// It completed
 		assertThat(FunctionalExporterTests.app.inputs).contains("HELLO");
 		assertThat(this.forwarder.isOk()).isTrue();
-		assertThat(headers.containsKey("scf-sink-url"));
-		assertThat(headers.containsKey("scf-func-name"));
+		assertThat(HEADERS.containsKey("scf-sink-url"));
+		assertThat(HEADERS.containsKey("scf-func-name"));
 	}
 
 	@SpringBootConfiguration
@@ -111,7 +111,7 @@ public class FunctionalExporterTests {
 
 		Function<Message<Person>, Message<String>> uppercase() {
 			return value -> {
-				headers.putAll(value.getHeaders());
+				HEADERS.putAll(value.getHeaders());
 				return MessageBuilder.withPayload(value.getPayload().getName().toUpperCase(Locale.ROOT))
 					.copyHeaders(value.getHeaders()).build();
 			};

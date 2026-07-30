@@ -35,7 +35,7 @@ import org.springframework.messaging.MessageHeaders;
  */
 public class LambdaDestinationResolver implements DestinationResolver {
 
-	private static Log logger = LogFactory.getLog(LambdaDestinationResolver.class);
+	private static final Log logger = LogFactory.getLog(LambdaDestinationResolver.class);
 
 	@Override
 	public String destination(Supplier<?> supplier, String name, Object value) {

@@ -42,7 +42,7 @@ import org.springframework.util.MimeTypeUtils;
  */
 public abstract class JsonMapper {
 
-	private static Log logger = LogFactory.getLog(JsonMapper.class);
+	private static final Log logger = LogFactory.getLog(JsonMapper.class);
 
 	// we need this just to validate is String is JSON
 	private static final ObjectMapper mapper = tools.jackson.databind.json.JsonMapper.builder()

@@ -38,9 +38,9 @@ public final class HeaderUtils {
 	 */
 	public static final String HTTP_REQUEST_PARAM = "http_request_param";
 
-	private static HttpHeaders IGNORED = new HttpHeaders();
+	private static final HttpHeaders IGNORED = new HttpHeaders();
 
-	private static HttpHeaders REQUEST_ONLY = new HttpHeaders();
+	private static final HttpHeaders REQUEST_ONLY = new HttpHeaders();
 
 	static {
 		IGNORED.add(MessageHeaders.ID, "");

@@ -49,7 +49,7 @@ public class SampleApplicationTests {
 	@LocalServerPort
 	private int port;
 
-	private TestRestTemplate rest = new TestRestTemplate();
+	private final TestRestTemplate rest = new TestRestTemplate();
 
 	@BeforeEach
 	public void before() {

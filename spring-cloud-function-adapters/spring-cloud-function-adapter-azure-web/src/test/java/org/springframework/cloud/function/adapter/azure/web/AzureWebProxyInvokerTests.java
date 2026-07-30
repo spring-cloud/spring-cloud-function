@@ -121,7 +121,7 @@ public class AzureWebProxyInvokerTests {
 	public static class BuilderStub implements Builder {
 
 		private HttpStatusType status;
-		private Map<String, String> headers = new HashMap<>();
+		private final Map<String, String> headers = new HashMap<>();
 		private Object body;
 
 		@Override
@@ -151,9 +151,9 @@ public class AzureWebProxyInvokerTests {
 
 	public static class HttpResponseMessageStub implements HttpResponseMessage {
 
-		private HttpStatusType status;
-		private Map<String, String> headers = new HashMap<>();
-		private Object body;
+		private final HttpStatusType status;
+		private final Map<String, String> headers;
+		private final Object body;
 
 		HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers,
 				Object body) {

@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.adapter.azure.helper;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.microsoft.azure.functions.HttpResponseMessage;
@@ -24,9 +23,9 @@ import com.microsoft.azure.functions.HttpStatusType;
 
 public class HttpResponseMessageStub implements HttpResponseMessage {
 
-	private HttpStatusType status;
-	private Map<String, String> headers = new HashMap<>();
-	private Object body;
+	private final HttpStatusType status;
+	private final Map<String, String> headers;
+	private final Object body;
 
 	public HttpResponseMessageStub(HttpStatusType status, Map<String, String> headers,
 			Object body) {
