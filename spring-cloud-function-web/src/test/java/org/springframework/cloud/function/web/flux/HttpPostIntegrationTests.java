@@ -411,7 +411,7 @@ public class HttpPostIntegrationTests {
 	@Configuration(proxyBeanMethods = false)
 	public static class ApplicationConfiguration {
 
-		private List<String> list = new ArrayList<>();
+		private final List<String> list = new ArrayList<>();
 
 		private static int functionReactiveInvocations;
 

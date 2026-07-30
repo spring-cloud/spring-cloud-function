@@ -18,7 +18,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 @SpringBootApplication
 public class LambdaApplication {
 
-	private static Log logger = LogFactory.getLog(LambdaApplication.class);
+	private static final Log logger = LogFactory.getLog(LambdaApplication.class);
 
 	@Bean
 	public Consumer<String> consume() {

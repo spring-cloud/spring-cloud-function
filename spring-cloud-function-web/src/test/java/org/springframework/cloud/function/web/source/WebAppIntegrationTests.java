@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 		"spring.cloud.function.web.export.autoStartup=false" })
 public class WebAppIntegrationTests {
 
-	private static Log logger = LogFactory.getLog(WebAppIntegrationTests.class);
+	private static final Log logger = LogFactory.getLog(WebAppIntegrationTests.class);
 
 	@Autowired
 	private SupplierExporter forwarder;
@@ -87,9 +87,9 @@ public class WebAppIntegrationTests {
 	@RestController
 	public static class ApplicationConfiguration {
 
-		private List<String> values = new ArrayList<>();
+		private final List<String> values = new ArrayList<>();
 
-		private CountDownLatch latch = new CountDownLatch(1);
+		private final CountDownLatch latch = new CountDownLatch(1);
 
 		@Bean
 		public Supplier<String> word() {

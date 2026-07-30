@@ -31,7 +31,7 @@ public class BasicStringConverter implements StringConverter {
 
 	private ConversionService conversionService;
 
-	private ConfigurableListableBeanFactory registry;
+	private final ConfigurableListableBeanFactory registry;
 
 	public BasicStringConverter(ConfigurableListableBeanFactory registry) {
 		this.registry = registry;

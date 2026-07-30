@@ -61,6 +61,7 @@ import org.springframework.util.ClassUtils;
 /**
  * @author Dave Syer
  * @author Oleg Zhurakousky
+ * @author Roman Akentev
  *
  */
 public class ContextFunctionCatalogInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
@@ -86,7 +87,7 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 
 	static class ContextFunctionCatalogBeanRegistrar implements BeanDefinitionRegistryPostProcessor {
 
-		private GenericApplicationContext context;
+		private final GenericApplicationContext context;
 
 		ContextFunctionCatalogBeanRegistrar(GenericApplicationContext applicationContext) {
 			this.context = applicationContext;
@@ -181,7 +182,8 @@ public class ContextFunctionCatalogInitializer implements ApplicationContextInit
 					SmartCompositeMessageConverter messageConverter = new SmartCompositeMessageConverter(messageConverters);
 
 					ConversionService conversionService = new DefaultConversionService();
-					return new SimpleFunctionRegistry(conversionService, messageConverter, this.context.getBean(JsonMapper.class));
+					int cacheSize = this.context.getEnvironment().getProperty("spring.cloud.function.registry.cache-size", int.class, 1000);
+					return new SimpleFunctionRegistry(conversionService, messageConverter, this.context.getBean(JsonMapper.class), null, null, cacheSize);
 				});
 				this.context.registerBean(FunctionProperties.class, () -> new FunctionProperties());
 				this.context.registerBean(FunctionRegistrationPostProcessor.class,

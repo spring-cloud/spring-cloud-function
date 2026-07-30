@@ -50,7 +50,7 @@ import org.springframework.util.StringUtils;
  */
 public final class AWSLambdaUtils {
 
-	private static Log logger = LogFactory.getLog(AWSLambdaUtils.class);
+	private static final Log logger = LogFactory.getLog(AWSLambdaUtils.class);
 
 	static final String AWS_API_GATEWAY = "aws-api-gateway";
 

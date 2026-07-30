@@ -88,6 +88,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
  *
  * @author Oleg Zhurakousky
  * @author Artem Bilan
+ * @author Roman Akentev
  *
  */
 public class BeanFactoryAwareFunctionRegistryTests {
@@ -119,11 +120,9 @@ public class BeanFactoryAwareFunctionRegistryTests {
 
 	@Test
 	public void testBoundedFunctionCache() throws Exception {
-		FunctionCatalog catalog = this.configureCatalog(CompositionWithNullReturnInBetween.class);
-		Field wrappedFunctionDefinitionsCacheSizeField = ReflectionUtils.findField(catalog.getClass(),
-				"wrappedFunctionDefinitionsCacheSize");
-		wrappedFunctionDefinitionsCacheSizeField.setAccessible(true);
-		wrappedFunctionDefinitionsCacheSizeField.set(catalog, 10);
+		FunctionCatalog catalog = this.configureCatalogWithProperties(
+				new String[] { "--spring.cloud.function.registry.cache-size=10" },
+				CompositionWithNullReturnInBetween.class);
 		Field wrappedFunctionDefinitionsField = ReflectionUtils.findField(catalog.getClass(),
 				"wrappedFunctionDefinitions");
 		wrappedFunctionDefinitionsField.setAccessible(true);
@@ -183,30 +182,30 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		FunctionCatalog catalog = this.configureCatalog(CompositionReactiveSupplierWithConsumer.class);
 		FunctionInvocationWrapper function = catalog.lookup("supplyPrimitive|consume");
 		function.apply(null);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo(1);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo(2);
-		CompositionReactiveSupplierWithConsumer.results.clear();
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(0)).isEqualTo(1);
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(1)).isEqualTo(2);
+		CompositionReactiveSupplierWithConsumer.RESULTS.clear();
 
 		function = catalog.lookup("supplyMessage|consume");
 		function.apply(null);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo(1);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo(2);
-		CompositionReactiveSupplierWithConsumer.results.clear();
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(0)).isEqualTo(1);
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(1)).isEqualTo(2);
+		CompositionReactiveSupplierWithConsumer.RESULTS.clear();
 
 		function = catalog.lookup("functionMessage|consume");
 		function.apply(Flux.fromArray(new Message[] {MessageBuilder.withPayload("ricky").build(), MessageBuilder.withPayload("bubbles").build()}));
-		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo("RICKY");
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo("BUBBLES");
-		CompositionReactiveSupplierWithConsumer.results.clear();
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(0)).isEqualTo("RICKY");
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(1)).isEqualTo("BUBBLES");
+		CompositionReactiveSupplierWithConsumer.RESULTS.clear();
 
 		function = catalog.lookup("functionPrimitive|consume");
 		function.apply(Flux.fromArray(new String[] {"ricky", "bubbles"}));
-		assertThat(CompositionReactiveSupplierWithConsumer.results.size()).isEqualTo(2);
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(0)).isEqualTo("RICKY");
-		assertThat(CompositionReactiveSupplierWithConsumer.results.get(1)).isEqualTo("BUBBLES");
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.size()).isEqualTo(2);
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(0)).isEqualTo("RICKY");
+		assertThat(CompositionReactiveSupplierWithConsumer.RESULTS.get(1)).isEqualTo("BUBBLES");
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -1649,7 +1648,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@Configuration // s-c-f-1141
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static class CompositionReactiveSupplierWithConsumer {
-		private static List results = new ArrayList<>();
+		private static final List RESULTS = new ArrayList<>();
 
 		@Bean
 		public Function<Flux<String>, Flux<String>> functionPrimitive() {
@@ -1683,7 +1682,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 				if (v instanceof Message vMessage) {
 					v = vMessage.getPayload();
 				}
-				results.add(v);
+				RESULTS.add(v);
 			};
 		}
 	}

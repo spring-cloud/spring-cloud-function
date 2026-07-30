@@ -44,7 +44,7 @@ import org.springframework.util.StringUtils;
  */
 public final class FunctionClassUtils {
 
-	private static Log logger = LogFactory.getLog(FunctionClassUtils.class);
+	private static final Log logger = LogFactory.getLog(FunctionClassUtils.class);
 
 	private FunctionClassUtils() {
 

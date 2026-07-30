@@ -38,11 +38,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class RestConfiguration {
 
-	private static Log logger = LogFactory.getLog(RestConfiguration.class);
+	private static final Log logger = LogFactory.getLog(RestConfiguration.class);
 
 	List<String> inputs = new ArrayList<>();
 
-	private Iterator<String> outputs = Arrays.asList("hello", "world").iterator();
+	private final Iterator<String> outputs = Arrays.asList("hello", "world").iterator();
 
 	@GetMapping("/")
 	ResponseEntity<String> home() {

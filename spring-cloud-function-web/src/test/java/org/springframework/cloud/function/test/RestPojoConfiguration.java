@@ -38,11 +38,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class RestPojoConfiguration {
 
-	private static Log logger = LogFactory.getLog(RestPojoConfiguration.class);
+	private static final Log logger = LogFactory.getLog(RestPojoConfiguration.class);
 
 	List<String> inputs = new ArrayList<>();
 
-	private Iterator<String> outputs = Arrays.asList("{\"name\":\"hello\"}").iterator();
+	private final Iterator<String> outputs = Arrays.asList("{\"name\":\"hello\"}").iterator();
 
 	@GetMapping("/")
 	ResponseEntity<String> home() {

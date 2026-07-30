@@ -109,9 +109,9 @@ public class FunctionAutoConfigurationWithRetriesIntegrationTests {
 		@Autowired
 		private SupplierExporter forwarder;
 
-		private static Log logger = LogFactory.getLog(RestConfiguration.class);
+		private static final Log logger = LogFactory.getLog(RestConfiguration.class);
 
-		private List<String> inputs = new ArrayList<>();
+		private final List<String> inputs = new ArrayList<>();
 
 		private int counter;
 

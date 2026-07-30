@@ -104,11 +104,11 @@ public class FunctionAutoConfigurationIntegrationTests {
 	@RestController
 	public static class RestConfiguration {
 
-		private static Log logger = LogFactory.getLog(RestConfiguration.class);
+		private static final Log logger = LogFactory.getLog(RestConfiguration.class);
 
-		private List<String> inputs = new ArrayList<>();
+		private final List<String> inputs = new ArrayList<>();
 
-		private Iterator<String> outputs = Arrays.asList("hello", "world").iterator();
+		private final Iterator<String> outputs = Arrays.asList("hello", "world").iterator();
 
 		@GetMapping("/")
 		ResponseEntity<String> home() {

@@ -287,7 +287,7 @@ public class MvcRestApplicationTests {
 	@Configuration
 	public static class TestConfiguration {
 
-		private List<String> list = new ArrayList<>();
+		private final List<String> list = new ArrayList<>();
 
 		@PostMapping({ "/uppercase", "/transform", "/post/more" })
 		public Flux<?> uppercase(@RequestBody List<String> flux) {

@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class JsonMaskerTests {
 
-	private String event = "{\n"
+	private final String event = "{\n"
 			+ "  \"Records\": [\n"
 			+ "    {\n"
 			+ "      \"eventID\": \"f07f8ca4b0b26cb9c4e5e77e69f274ee\",\n"
@@ -192,7 +192,7 @@ public class JsonMaskerTests {
 			+ "  ]\n"
 			+ "}";
 
-	private List<String> maskedKeys = new ArrayList<>();
+	private final List<String> maskedKeys = new ArrayList<>();
 
 	@Test
 	public void validateMasking() throws Exception {

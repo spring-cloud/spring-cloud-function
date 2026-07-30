@@ -469,7 +469,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 	@Configuration
 	protected static class SimpleConfiguration {
 
-		private List<String> list = new ArrayList<>();
+		private final List<String> list = new ArrayList<>();
 
 		@Bean
 		public Function<String, String> function() {
@@ -522,7 +522,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 	@Component("appendFunction")
 	public static class AppendFunction implements Function<String, String> {
-		private String value;
+		private final String value;
 
 		public AppendFunction(String value) {
 			this.value = value;

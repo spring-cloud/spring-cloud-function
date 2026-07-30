@@ -84,9 +84,9 @@ import org.springframework.util.StringUtils;
  */
 public final class FunctionTypeUtils {
 
-	private static Log logger = LogFactory.getLog(FunctionTypeUtils.class);
+	private static final Log logger = LogFactory.getLog(FunctionTypeUtils.class);
 
-	private static Type ROUTING_FUNCTION_TYPE = discoverFunctionTypeFromClass(RoutingFunction.class);
+	private static final Type ROUTING_FUNCTION_TYPE = discoverFunctionTypeFromClass(RoutingFunction.class);
 
 	private FunctionTypeUtils() {
 

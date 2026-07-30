@@ -42,7 +42,7 @@ import org.springframework.util.CollectionUtils;
  */
 public class AzureFunctionInstanceInjector implements FunctionInstanceInjector {
 
-	private static Log logger = LogFactory.getLog(AzureFunctionInstanceInjector.class);
+	private static final Log logger = LogFactory.getLog(AzureFunctionInstanceInjector.class);
 
 	private static ConfigurableApplicationContext APPLICATION_CONTEXT;
 

@@ -51,7 +51,7 @@ import org.springframework.util.StringUtils;
  */
 public final class FunctionWebRequestProcessingHelper {
 
-	private static Log logger = LogFactory.getLog(FunctionWebRequestProcessingHelper.class);
+	private static final Log logger = LogFactory.getLog(FunctionWebRequestProcessingHelper.class);
 
 	private FunctionWebRequestProcessingHelper() {
 

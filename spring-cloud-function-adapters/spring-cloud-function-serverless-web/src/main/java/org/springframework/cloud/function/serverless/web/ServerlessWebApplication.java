@@ -76,17 +76,17 @@ public class ServerlessWebApplication extends SpringApplication {
 
 	private static final Log LOGGER = LogFactory.getLog(ServerlessWebApplication.class);
 
-	private ApplicationStartup applicationStartup = ApplicationStartup.DEFAULT;
+	private final ApplicationStartup applicationStartup = ApplicationStartup.DEFAULT;
 
-	private ApplicationContextFactory applicationContextFactory = ApplicationContextFactory.DEFAULT;
+	private final ApplicationContextFactory applicationContextFactory = ApplicationContextFactory.DEFAULT;
 
 	private boolean allowCircularReferences;
 
 	private boolean allowBeanDefinitionOverriding;
 
-	private boolean logStartupInfo = true;
+	private final boolean logStartupInfo = true;
 
-	private boolean lazyInitialization = false;
+	private final boolean lazyInitialization = false;
 
 	private WebApplicationType webApplicationType;
 

@@ -25,6 +25,12 @@
 			"type": "java.lang.Boolean",
 			"description": "Enables RoutingFunction which delegates incoming request to a function named via function.name header",
 			"defaultValue": false
+		},
+		{
+			"name": "spring.cloud.function.registry.cache-size",
+			"type": "java.lang.Integer",
+			"description": "Maximum number of wrapped function definitions kept in the registry cache. When the cache exceeds this size, the eldest entries are removed.",
+			"defaultValue": 1000
 		}
 	]
 }

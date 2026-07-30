@@ -55,7 +55,7 @@ import org.springframework.util.StringUtils;
  */
 public class FunctionInvoker implements RequestStreamHandler {
 
-	private static Log logger = LogFactory.getLog(FunctionInvoker.class);
+	private static final Log logger = LogFactory.getLog(FunctionInvoker.class);
 
 	private JsonMapper jsonMapper;
 

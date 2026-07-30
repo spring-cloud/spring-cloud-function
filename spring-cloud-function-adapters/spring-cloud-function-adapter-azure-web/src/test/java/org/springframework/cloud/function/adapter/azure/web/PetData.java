@@ -28,81 +28,81 @@ public final class PetData {
 	private PetData() {
 
 	}
-	private static List<String> breeds = new ArrayList<>();
+	private static final List<String> BREEDS = new ArrayList<>();
 	static {
-		breeds.add("Afghan Hound");
-		breeds.add("Beagle");
-		breeds.add("Bernese Mountain Dog");
-		breeds.add("Bloodhound");
-		breeds.add("Dalmatian");
-		breeds.add("Jack Russell Terrier");
-		breeds.add("Norwegian Elkhound");
+		BREEDS.add("Afghan Hound");
+		BREEDS.add("Beagle");
+		BREEDS.add("Bernese Mountain Dog");
+		BREEDS.add("Bloodhound");
+		BREEDS.add("Dalmatian");
+		BREEDS.add("Jack Russell Terrier");
+		BREEDS.add("Norwegian Elkhound");
 	}
 
-	private static List<String> names = new ArrayList<>();
+	private static final List<String> NAMES = new ArrayList<>();
 	static {
-		names.add("Bailey");
-		names.add("Bella");
-		names.add("Max");
-		names.add("Lucy");
-		names.add("Charlie");
-		names.add("Molly");
-		names.add("Buddy");
-		names.add("Daisy");
-		names.add("Rocky");
-		names.add("Maggie");
-		names.add("Jake");
-		names.add("Sophie");
-		names.add("Jack");
-		names.add("Sadie");
-		names.add("Toby");
-		names.add("Chloe");
-		names.add("Cody");
-		names.add("Bailey");
-		names.add("Buster");
-		names.add("Lola");
-		names.add("Duke");
-		names.add("Zoe");
-		names.add("Cooper");
-		names.add("Abby");
-		names.add("Riley");
-		names.add("Ginger");
-		names.add("Harley");
-		names.add("Roxy");
-		names.add("Bear");
-		names.add("Gracie");
-		names.add("Tucker");
-		names.add("Coco");
-		names.add("Murphy");
-		names.add("Sasha");
-		names.add("Lucky");
-		names.add("Lily");
-		names.add("Oliver");
-		names.add("Angel");
-		names.add("Sam");
-		names.add("Princess");
-		names.add("Oscar");
-		names.add("Emma");
-		names.add("Teddy");
-		names.add("Annie");
-		names.add("Winston");
-		names.add("Rosie");
+		NAMES.add("Bailey");
+		NAMES.add("Bella");
+		NAMES.add("Max");
+		NAMES.add("Lucy");
+		NAMES.add("Charlie");
+		NAMES.add("Molly");
+		NAMES.add("Buddy");
+		NAMES.add("Daisy");
+		NAMES.add("Rocky");
+		NAMES.add("Maggie");
+		NAMES.add("Jake");
+		NAMES.add("Sophie");
+		NAMES.add("Jack");
+		NAMES.add("Sadie");
+		NAMES.add("Toby");
+		NAMES.add("Chloe");
+		NAMES.add("Cody");
+		NAMES.add("Bailey");
+		NAMES.add("Buster");
+		NAMES.add("Lola");
+		NAMES.add("Duke");
+		NAMES.add("Zoe");
+		NAMES.add("Cooper");
+		NAMES.add("Abby");
+		NAMES.add("Riley");
+		NAMES.add("Ginger");
+		NAMES.add("Harley");
+		NAMES.add("Roxy");
+		NAMES.add("Bear");
+		NAMES.add("Gracie");
+		NAMES.add("Tucker");
+		NAMES.add("Coco");
+		NAMES.add("Murphy");
+		NAMES.add("Sasha");
+		NAMES.add("Lucky");
+		NAMES.add("Lily");
+		NAMES.add("Oliver");
+		NAMES.add("Angel");
+		NAMES.add("Sam");
+		NAMES.add("Princess");
+		NAMES.add("Oscar");
+		NAMES.add("Emma");
+		NAMES.add("Teddy");
+		NAMES.add("Annie");
+		NAMES.add("Winston");
+		NAMES.add("Rosie");
 	}
 
 	public static List<String> getBreeds() {
-		return breeds;
+		return BREEDS;
 	}
 
 	public static List<String> getNames() {
-		return names;
+		return NAMES;
 	}
 
 	public static String getRandomBreed() {
-		return breeds.get(ThreadLocalRandom.current().nextInt(0, breeds.size() - 1));
+		return BREEDS.get(ThreadLocalRandom.current().nextInt(0, BREEDS.size() - 1));
 	}
 
 	public static String getRandomName() {
-		return names.get(ThreadLocalRandom.current().nextInt(0, names.size() - 1));
+		return NAMES.get(ThreadLocalRandom.current().nextInt(0, NAMES.size() - 1));
 	}
 
 	public static Date getRandomDoB() {
