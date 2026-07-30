@@ -1,7 +1,10 @@
 name: Deploy Docs
 on:
   push:
-    branches-ignore: [ gh-pages ]
+    branches-ignore:
+      - gh-pages
+      - 'release/**'
+      - '**-internal**'
     tags: '**'
   repository_dispatch:
     types: request-build-reference # legacy
