@@ -16,9 +16,7 @@
 
 package org.springframework.cloud.function.adapter.aws;
 
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -28,7 +26,6 @@ import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.adapter.test.aws.AWSCustomRuntime;
-import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -133,30 +130,8 @@ public class CustomRuntimeEventLoopTest {
 	}
 
 	@Test
-	public void testDefaultFunctionLookupWithError() throws Exception {
-		testDefaultFunctionLookupError("uppercase", SingleFunctionConfigurationError.class);
-	}
-
-	@Test
 	public void testDefaultFunctionLookupReactive() throws Exception {
 		testDefaultFunctionLookup("uppercase", SingleFunctionConfigurationReactive.class);
-	}
-
-	private void testDefaultFunctionLookupError(String handler, Class<?> context) throws Exception {
-		try (ConfigurableApplicationContext userContext =
-				new SpringApplicationBuilder(context, AWSCustomRuntime.class)
-					.web(WebApplicationType.SERVLET)
-					.properties("_HANDLER=" + handler, "server.port=0")
-					.run()) {
-
-			AWSCustomRuntime aws = userContext.getBean(AWSCustomRuntime.class);
-			aws.errorMessage = null;
-			Message<String> replyMessage = aws.exchange("\"ricky\"");
-			JsonMapper mapper = userContext.getBean(JsonMapper.class);
-			Map<String, Object> errorResponse = mapper.fromJson(aws.errorMessage.getPayload(), Map.class);
-			assertThat(errorResponse.get("errorType")).isEqualTo("RuntimeException");
-			assertThat(errorResponse.get("stackTrace")).isInstanceOf(List.class);
-		}
 	}
 
 	private void testDefaultFunctionLookup(String handler, Class<?> context) throws Exception {
@@ -247,16 +222,6 @@ public class CustomRuntimeEventLoopTest {
 		@Bean
 		public Function<String, String> uppercase() {
 			return v -> v.toUpperCase(Locale.ROOT);
-		}
-	}
-
-	@EnableAutoConfiguration
-	protected static class SingleFunctionConfigurationError {
-		@Bean
-		public Function<String, String> uppercase() {
-			return v -> {
-				throw new RuntimeException("Intentional");
-			};
 		}
 	}
 

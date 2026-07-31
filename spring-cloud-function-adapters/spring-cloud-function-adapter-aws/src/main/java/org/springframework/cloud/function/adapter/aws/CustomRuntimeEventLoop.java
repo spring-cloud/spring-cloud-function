@@ -17,13 +17,13 @@
 package org.springframework.cloud.function.adapter.aws;
 
 import java.io.ByteArrayInputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.SocketException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -281,18 +281,16 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 	}
 
 	private void propagateAwsError(String requestId, Exception e, JsonMapper mapper, String runtimeApi, RestTemplate rest) {
-		StackTraceElement[] ste = e.getStackTrace();
-		List<String> stElements = new ArrayList<>();
-		for (int i = 0; i < ste.length; i++) {
-			stElements.add(ste[i].toString());
-		}
-
 		String errorMessage = e.getMessage();
 		String errorType = e.getClass().getSimpleName();
-		Map<String, Object> em = new HashMap<>();
+		StringWriter sw = new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		e.printStackTrace(pw);
+		String stackTrace = sw.toString();
+		Map<String, String> em = new HashMap<>();
 		em.put("errorMessage", errorMessage);
 		em.put("errorType", errorType);
-		em.put("stackTrace", stElements);
+		em.put("stackTrace", stackTrace);
 		byte[] outputBody = mapper.toJson(em);
 		try {
 			String errorUrl = MessageFormat.format(LAMBDA_ERROR_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
