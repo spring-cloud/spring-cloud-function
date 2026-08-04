@@ -8,7 +8,7 @@ apply plugin: 'java'
 apply plugin: "com.microsoft.azure.azurefunctions"
 
 group = 'org.scf.azure'
-version = '5.0.4-INTERNAL-SNAPSHOT'
+version = '5.0.4'
 
 java {
     sourceCompatibility = '17'
