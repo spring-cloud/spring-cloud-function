@@ -358,15 +358,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				}
 				composedFunction = this.enrichInputIfNecessary(composedFunction);
 				composedFunction = this.enrichOutputIfNecessary(composedFunction);
-				if (composedFunction.isSingleton) {
-					synchronized (cacheLock) {
-						this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
-					}
-				}
 			}
 		}
 		if (composedFunction != null && composedFunction.isSingleton) {
-			this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
+			synchronized (cacheLock) {
+				this.wrappedFunctionDefinitions.put(composedFunction.functionDefinition, composedFunction);
+			}
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug("Composed function " + composedFunction);

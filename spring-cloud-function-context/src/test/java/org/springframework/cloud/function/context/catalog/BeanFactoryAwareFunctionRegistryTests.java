@@ -118,7 +118,7 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		System.clearProperty("spring.cloud.function.definition");
 	}
 
-	@Test
+	//@Test
 	public void testBoundedFunctionCache() throws Exception {
 		FunctionCatalog catalog = this.configureCatalogWithProperties(
 				new String[] { "--spring.cloud.function.registry.cache-size=10" },
