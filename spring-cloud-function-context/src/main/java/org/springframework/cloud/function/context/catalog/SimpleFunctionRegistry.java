@@ -58,6 +58,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.PostProcessingFunction;
 import org.springframework.cloud.function.context.config.KotlinLambdaToFunctionAutoConfiguration;
+import org.springframework.cloud.function.context.config.NonRecoverableConversionException;
 import org.springframework.cloud.function.context.config.RoutingFunction;
 import org.springframework.cloud.function.core.FunctionInvocationHelper;
 import org.springframework.cloud.function.json.JsonMapper;
@@ -1406,7 +1407,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					}
 					catch (Exception e) {
 						if (failOnJsonError) {
-							throw e;
+							throw new NonRecoverableConversionException("Failed to convert JSON input to " + inputType, e);
 						}
 						if (logger.isDebugEnabled()) {
 							logger.debug("JSON conversion failed for '" + input + "' to " + inputType
@@ -1594,6 +1595,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 						try {
 							return this.convertInputIfNecessary(v, actualType == null ? type : actualType);
 						}
+						catch (NonRecoverableConversionException e) {
+							throw e;
+						}
 						catch (Exception e) {
 							throw new IllegalStateException("Failed to convert input", e);
 						}
@@ -1601,6 +1605,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					: Flux.from(publisher).map(v -> {
 						try {
 							return this.convertInputIfNecessary(v, actualType == null ? type : actualType);
+						}
+						catch (NonRecoverableConversionException e) {
+							throw e;
 						}
 						catch (Exception e) {
 							throw new IllegalStateException("Failed to convert input", e);

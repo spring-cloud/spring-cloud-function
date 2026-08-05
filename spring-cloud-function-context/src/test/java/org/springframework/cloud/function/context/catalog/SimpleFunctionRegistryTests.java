@@ -59,6 +59,7 @@ import org.springframework.cloud.function.context.FunctionRegistry;
 import org.springframework.cloud.function.context.HybridFunctionalRegistrationTests.UppercaseFunction;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.JsonMessageConverter;
+import org.springframework.cloud.function.context.config.NonRecoverableConversionException;
 import org.springframework.cloud.function.context.config.SmartCompositeMessageConverter;
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
@@ -84,6 +85,7 @@ import org.springframework.util.ReflectionUtils;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author Oleg Zhurakousky
@@ -498,6 +500,29 @@ public class SimpleFunctionRegistryTests {
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
+	public void testReactivePojoFunctionPropagatesNonRecoverableConversionExceptionForMalformedJson() {
+		FunctionRegistration<ReactivePojoFunction> registration = new FunctionRegistration<>(new ReactivePojoFunction(), "reactivePojo")
+			.type(ReactivePojoFunction.class);
+
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+
+		Function lookedUpFunction = catalog.lookup("reactivePojo");
+
+		Flux<List<String>> result = (Flux<List<String>>) lookedUpFunction
+			.apply(Flux.just(MessageBuilder
+				// "name" is a JSON array here instead of a string - structurally mismatched, not just unparsable
+				.withPayload("[{\"name\":[\"not-a-string\"]}]")
+				.setHeader(MessageHeaders.CONTENT_TYPE, "application/json")
+				.build()
+			));
+
+		assertThatThrownBy(result::blockFirst).isInstanceOf(NonRecoverableConversionException.class);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@Test
 	public void testWithCustomMessageConverter() {
 		FunctionCatalog catalog = this.configureCatalog(CustomConverterConfiguration.class);
 		Function function = catalog.lookup("func");
@@ -829,6 +854,25 @@ public class SimpleFunctionRegistryTests {
 		public Flux<List<String>> apply(Flux<Message<List<Person>>> listFlux) {
 			return listFlux
 				.map(Message::getPayload)
+				.map(lst -> lst.stream().map(Person::getName).collect(Collectors.toList()));
+		}
+	}
+
+	/**
+	 * Same shape as {@link ReactiveFunction} but declared over the plain payload type
+	 * rather than {@code Message<List<Person>>} - this is the shape
+	 * {@link org.springframework.cloud.function.context.config.NonRecoverableConversionException}
+	 * is designed for: {@code SimpleFunctionRegistry#convertInputMessageIfNecessary}
+	 * deliberately falls back to the original, unconverted message when the target type
+	 * is itself {@code Message<T>} (to support legitimate no-conversion-needed cases like
+	 * KafkaNull), which means that shape never reaches the JSON-failure signal this type
+	 * introduces. A plain payload type does reach it.
+	 */
+	private static final class ReactivePojoFunction implements Function<Flux<List<Person>>, Flux<List<String>>> {
+
+		@Override
+		public Flux<List<String>> apply(Flux<List<Person>> listFlux) {
+			return listFlux
 				.map(lst -> lst.stream().map(Person::getName).collect(Collectors.toList()));
 		}
 	}
