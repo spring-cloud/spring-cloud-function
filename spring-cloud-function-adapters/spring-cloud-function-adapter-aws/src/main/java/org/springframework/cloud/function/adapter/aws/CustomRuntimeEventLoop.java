@@ -17,16 +17,17 @@
 package org.springframework.cloud.function.adapter.aws;
 
 import java.io.ByteArrayInputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.SocketException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
@@ -72,6 +73,8 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 	private static final String LAMBDA_ERROR_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/error";
 	private static final String LAMBDA_RUNTIME_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/next";
 	private static final String LAMBDA_INVOCATION_URL_TEMPLATE = "http://{0}/{1}/runtime/invocation/{2}/response";
+	private static final String LAMBDA_RUNTIME_FUNCTION_ERROR_TYPE = "Lambda-Runtime-Function-Error-Type";
+
 	private static final String USER_AGENT_VALUE = String.format(
 			"spring-cloud-function/%s-%s",
 			System.getProperty("java.runtime.version"),
@@ -282,12 +285,11 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 	private void propagateAwsError(String requestId, Exception e, JsonMapper mapper, String runtimeApi, RestTemplate rest) {
 		String errorMessage = e.getMessage();
-		String errorType = e.getClass().getSimpleName();
-		StringWriter sw = new StringWriter();
-		PrintWriter pw = new PrintWriter(sw);
-		e.printStackTrace(pw);
-		String stackTrace = sw.toString();
-		Map<String, String> em = new HashMap<>();
+		String errorType = e.getClass().getName();
+		List<String> stackTrace = Arrays.stream(e.getStackTrace())
+				.map(StackTraceElement::toString)
+				.collect(Collectors.toList());
+		Map<String, Object> em = new HashMap<>();
 		em.put("errorMessage", errorMessage);
 		em.put("errorType", errorType);
 		em.put("stackTrace", stackTrace);
@@ -296,6 +298,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 			String errorUrl = MessageFormat.format(LAMBDA_ERROR_URL_TEMPLATE, runtimeApi, LAMBDA_VERSION_DATE, requestId);
 			ResponseEntity<Object> result = rest.exchange(RequestEntity.post(URI.create(errorUrl))
 					.header(USER_AGENT, USER_AGENT_VALUE)
+					.header(LAMBDA_RUNTIME_FUNCTION_ERROR_TYPE, errorType)
 					.body(outputBody), Object.class);
 			if (logger.isInfoEnabled()) {
 				logger.info("Result ERROR status: " + result.getStatusCode());

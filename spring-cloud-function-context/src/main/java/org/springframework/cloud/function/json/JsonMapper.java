@@ -33,6 +33,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
+import org.springframework.util.MimeTypeUtils;
 
 
 /**
@@ -167,5 +168,15 @@ public abstract class JsonMapper {
 			}
 		}
 		return false;
+	}
+
+	public static boolean isJsonContentType(String contentTypeValue) {
+		try {
+			return contentTypeValue != null
+					&& MimeTypeUtils.parseMimeType(contentTypeValue).isCompatibleWith(MimeTypeUtils.APPLICATION_JSON);
+		}
+		catch (Exception e) {
+			return false;
+		}
 	}
 }
