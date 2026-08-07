@@ -125,9 +125,7 @@ public class SupplierExporter implements SmartLifecycle {
 //						return retry;
 //					}
 //					)
-					.doOnComplete(() -> {
-						stop();
-					})
+					.doOnComplete(this::stop)
 					.subscribe();
 
 			this.ok = true;
@@ -168,7 +166,7 @@ public class SupplierExporter implements SmartLifecycle {
 	}
 
 	private Flux<ClientResponse> forward(Supplier<Publisher<Object>> supplier, String name) {
-		Flux o = (Flux) supplier.get();
+		Flux<?> o = (Flux<?>) supplier.get();
 //		o.subscribe(v -> {
 //			System.out.println(v);
 //		});
@@ -183,8 +181,7 @@ public class SupplierExporter implements SmartLifecycle {
 
 	private Mono<ClientResponse> post(URI uri, String destination, Object value) {
 		Object body = value;
-		if (value instanceof Message) {
-			Message<?> message = (Message<?>) value;
+		if (value instanceof Message<?> message) {
 			body = message.getPayload();
 		}
 		if (this.debug) {

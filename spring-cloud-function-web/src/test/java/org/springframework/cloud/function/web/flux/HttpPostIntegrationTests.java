@@ -398,7 +398,7 @@ public class HttpPostIntegrationTests {
 	//@Test
 	@DirtiesContext
 	public void testReactiveFunctionComposdWithImperativeConsumer() throws Exception {
-		RequestEntity entity = RequestEntity.post(new URI("/functionReactive,consumerImperative")).build();
+		RequestEntity<?> entity = RequestEntity.post(new URI("/functionReactive,consumerImperative")).build();
 		this.rest.exchange(entity, String.class);
 		assertThat(ApplicationConfiguration.functionReactiveInvocations).isEqualTo(1);
 	}
@@ -428,9 +428,7 @@ public class HttpPostIntegrationTests {
 
 		@Bean
 		public Consumer<String> consumerImperative() {
-			return value -> {
-				System.out.println(value);
-			};
+			return System.out::println;
 		}
 
 		@Bean({ "uppercase", "transform", "post/more" })
@@ -498,16 +496,12 @@ public class HttpPostIntegrationTests {
 		@Bean
 		@Qualifier("foos")
 		public Function<String, Foo> qualifier() {
-			return value -> {
-				return new Foo("[" + value.trim().toUpperCase(Locale.ROOT) + "]");
-			};
+			return value -> new Foo("[" + value.trim().toUpperCase(Locale.ROOT) + "]");
 		}
 
 		@Bean
 		public Consumer<Flux<String>> updates() {
-			return flux -> flux.subscribe(value -> {
-					this.list.add(value);
-				});
+			return flux -> flux.subscribe(this.list::add);
 		}
 
 		@Bean
@@ -517,16 +511,12 @@ public class HttpPostIntegrationTests {
 
 		@Bean
 		public Consumer<Foo> addFoos() {
-			return value -> {
-				this.list.add(value.getValue());
-			};
+			return value -> this.list.add(value.getValue());
 		}
 
 		@Bean
 		public Consumer<String> bareUpdates() {
-			return value -> {
-				this.list.add(value);
-			};
+			return this.list::add;
 		}
 
 		@Bean("not/a")
@@ -549,7 +539,7 @@ public class HttpPostIntegrationTests {
 
 		@Bean
 		public Function<Flux<List<String>>, Flux<String>> fluxCollectionEcho() {
-			return flux -> flux.flatMap(v -> Flux.fromIterable(v));
+			return flux -> flux.flatMap(Flux::fromIterable);
 		}
 
 	}

@@ -250,34 +250,33 @@ public class JsonMaskerTests {
 		jsonMaskerField.set(masker, null);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void iterate(Object json, List keysToMask) {
-		if (json instanceof Collection arrayValue) {
+	@SuppressWarnings("unchecked")
+	private void iterate(Object json, List<?> keysToMask) {
+		if (json instanceof Collection<?> arrayValue) {
 			for (Object element : arrayValue) {
-				if (element instanceof Map mapElement) {
+				if (element instanceof Map<?, ?> mapElement) {
 					for (Map.Entry<String, Object> entry : ((Map<String, Object>) mapElement).entrySet()) {
 						this.doMask(entry.getKey(), entry, keysToMask);
 					}
 				}
 			}
 		}
-		else if (json instanceof Map mapElement) {
+		else if (json instanceof Map<?, ?> mapElement) {
 			for (Map.Entry<String, Object> entry : ((Map<String, Object>) mapElement).entrySet()) {
 				this.doMask(entry.getKey(), entry, keysToMask);
 			}
 		}
 	}
 
-	@SuppressWarnings("rawtypes")
-	private void doMask(String key, Map.Entry<String, Object> entry, List keysToMask) {
+	private void doMask(String key, Map.Entry<String, Object> entry, List<?> keysToMask) {
 		if (keysToMask.contains(key)) {
 			System.out.println("Masked: " + entry.getKey());
 			maskedKeys.add(key);
 		}
-		else if (entry.getValue() instanceof Map) {
+		else if (entry.getValue() instanceof Map<?, ?>) {
 			this.iterate(entry.getValue(), keysToMask);
 		}
-		else if (entry.getValue() instanceof Collection) {
+		else if (entry.getValue() instanceof Collection<?>) {
 			this.iterate(entry.getValue(), keysToMask);
 		}
 	}

@@ -126,7 +126,7 @@ public class HttpDeleteIntegrationTests {
 		public Consumer<Message<String>> deleteConsumerAsMessage() {
 			return v -> {
 				assertThat(v.getPayload()).isEqualTo("123");
-				assertThat(((Map) v.getHeaders().get("http_request_param")).get("foo")).isEqualTo("bar");
+				assertThat(((Map<String, Object>) v.getHeaders().get("http_request_param")).get("foo")).isEqualTo("bar");
 				System.out.println("Deleting: " + v);
 			};
 		}

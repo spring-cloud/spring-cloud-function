@@ -99,8 +99,7 @@ public class FunctionalSpringApplication
 			System.out.println("======> SOURCE: " + source);
 			Class<?> type = null;
 			Object handler = null;
-			if (source instanceof String) {
-				String name = (String) source;
+			if (source instanceof String name) {
 				if (ClassUtils.isPresent(name, null)) {
 					type = ClassUtils.resolveClassName(name, null);
 				}

@@ -36,6 +36,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
+import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -80,8 +82,8 @@ public class PetStoreSpringAppConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http, SimpleFilter simpleFilter,
 			AnotherFilter anotherFilter) throws Exception {
 		http
-		.csrf(csrf -> csrf.disable())
-		.cors(cors -> cors.disable())
+		.csrf(CsrfConfigurer::disable)
+		.cors(CorsConfigurer::disable)
 		.addFilterBefore(new GenericFilterBean() {
 			@Override
 			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -95,9 +97,7 @@ public class PetStoreSpringAppConfig {
 			}
 		}, SecurityContextHolderFilter.class)
 		.securityMatcher("/foo/deny")
-		.authorizeHttpRequests(auth -> {
-			auth.anyRequest().hasRole("FOO");
-		})
+		.authorizeHttpRequests(auth -> auth.anyRequest().hasRole("FOO"))
 		.addFilterAfter(simpleFilter, LogoutFilter.class)
 		.addFilterAfter(anotherFilter, RequestCacheAwareFilter.class)
 		.exceptionHandling(f -> f.accessDeniedHandler(new MyAccessDeinedHandler()));

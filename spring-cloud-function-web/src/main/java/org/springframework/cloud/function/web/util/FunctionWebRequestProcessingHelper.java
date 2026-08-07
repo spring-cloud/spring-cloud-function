@@ -142,16 +142,14 @@ public final class FunctionWebRequestProcessingHelper {
 		BodyBuilder responseOkBuilder = ResponseEntity.ok().headers(HeaderUtils.sanitize(headers, ignoredHeaders, requestOnlyHeaders));
 
 		Publisher pResult;
-		if (result instanceof Publisher) {
-			pResult = (Publisher) result;
+		if (result instanceof Publisher publisher) {
+			pResult = publisher;
 			if (eventStream) {
 				return Flux.from(pResult);
 			}
 
-			if (pResult instanceof Flux) {
-				pResult = ((Flux) pResult).onErrorContinue((e, v) -> {
-					logger.error("Failed to process value: " + v, (Throwable) e);
-				}).collectList();
+			if (pResult instanceof Flux flux) {
+				pResult = flux.onErrorContinue((e, v) -> logger.error("Failed to process value: " + v, (Throwable) e)).collectList();
 			}
 			pResult = Mono.from(pResult);
 		}
@@ -160,10 +158,10 @@ public final class FunctionWebRequestProcessingHelper {
 		}
 
 		return Mono.from(pResult).map(v -> {
-			if (v instanceof Iterable i) {
-				List aggregatedResult = (List) StreamSupport.stream(i.spliterator(), false).map(m -> {
-					return m instanceof Message ? processMessage(responseOkBuilder, (Message<?>) m, ignoredHeaders) : m;
-				}).collect(Collectors.toList());
+			if (v instanceof Iterable<?> i) {
+				List<?> aggregatedResult = StreamSupport.stream(i.spliterator(), false)
+						.map(m -> m instanceof Message ? processMessage(responseOkBuilder, (Message<?>) m, ignoredHeaders) : m)
+						.collect(Collectors.toList());
 				return responseOkBuilder.header("content-type", "application/json").body(aggregatedResult);
 			}
 			else if (v instanceof Message) {
@@ -228,16 +226,16 @@ public final class FunctionWebRequestProcessingHelper {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static Object postProcessResult(Object result, boolean isMessage) {
-		if (result instanceof Flux) {
-			result = ((Flux) result).map(v -> postProcessResult(v, isMessage));
+		if (result instanceof Flux flux) {
+			result = flux.map(v -> postProcessResult(v, isMessage));
 		}
-		else if (result instanceof Mono) {
-			result = ((Mono) result).map(v -> postProcessResult(v, isMessage));
+		else if (result instanceof Mono mono) {
+			result = mono.map(v -> postProcessResult(v, isMessage));
 		}
 		else if (result instanceof Message messageResult) {
 			if (messageResult.getPayload() instanceof byte[]) {
 				//String str = new String((byte[]) messageResult.getPayload());
-				result = MessageBuilder.withPayload(messageResult.getPayload()).copyHeaders(((Message) result).getHeaders()).build();
+				result = MessageBuilder.withPayload(messageResult.getPayload()).copyHeaders(messageResult.getHeaders()).build();
 			}
 		}
 		else if (result instanceof byte[]) {

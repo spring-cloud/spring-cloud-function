@@ -115,7 +115,7 @@ public class FunctionInvoker implements RequestStreamHandler {
 		if (this.jsonMapper instanceof JacksonMapper) {
 			((JacksonMapper) this.jsonMapper).configureObjectMapper(objectMapper -> {
 				if (!objectMapper.isEnabled(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)) {
-					MapperBuilder builder = objectMapper.rebuild();
+					MapperBuilder<?, ?> builder = objectMapper.rebuild();
 					builder.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
 					objectMapper =  builder.build();
 				}

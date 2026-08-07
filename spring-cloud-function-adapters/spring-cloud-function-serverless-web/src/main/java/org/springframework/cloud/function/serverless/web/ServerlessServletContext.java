@@ -64,7 +64,7 @@ public class ServerlessServletContext implements ServletContext {
 
 	private final Map<String, FilterRegistration> filterRegistrations = new HashMap<>();
 
-	private static final Enumeration<String> EMPTY_ENUM = Collections.enumeration(new ArrayList<String>());
+	private static final Enumeration<String> EMPTY_ENUM = Collections.enumeration(new ArrayList<>());
 
 	@Override
 	public Enumeration<String> getInitParameterNames() {

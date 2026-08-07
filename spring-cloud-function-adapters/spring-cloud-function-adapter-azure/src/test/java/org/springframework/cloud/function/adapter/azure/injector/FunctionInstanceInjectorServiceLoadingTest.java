@@ -64,7 +64,7 @@ public class FunctionInstanceInjectorServiceLoadingTest {
 
 		MyAzureTestFunction functionInstance = injector.getInstance(MyAzureTestFunction.class);
 
-		HttpRequestMessageStub<Optional<String>> request = new HttpRequestMessageStub<Optional<String>>();
+		HttpRequestMessageStub<Optional<String>> request = new HttpRequestMessageStub<>();
 
 		request.setBody(Optional.of("test"));
 

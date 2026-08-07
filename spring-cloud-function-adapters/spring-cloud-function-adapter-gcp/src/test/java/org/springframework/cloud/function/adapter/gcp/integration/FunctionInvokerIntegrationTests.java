@@ -70,7 +70,7 @@ public class FunctionInvokerIntegrationTests {
 
 			HttpHeaders headers = new HttpHeaders();
 			ResponseEntity<String> response = testRestTemplate.postForEntity(
-					"http://localhost:" + serverProcess.getPort(), new HttpEntity<>("test", headers),
+					"http://localhost:" + serverProcess.port(), new HttpEntity<>("test", headers),
 					String.class);
 
 			assertThat(response.getStatusCode().is5xxServerError()).isTrue();

@@ -67,9 +67,7 @@ public final class AzureFunctionUtil {
 					.setHeaderIfAbsent(EXECUTION_CONTEXT, executionContext).build();
 		}
 		else if (input instanceof Iterable) {
-			return Flux.fromIterable((Iterable) input).map(item -> {
-				return constructInputMessageFromItem(item, executionContext);
-			});
+			return Flux.fromIterable((Iterable) input).map(item -> constructInputMessageFromItem(item, executionContext));
 		}
 		return constructInputMessageFromItem(input, executionContext);
 	}
@@ -95,7 +93,7 @@ public final class AzureFunctionUtil {
 	}
 
 	private static <I> MessageHeaders getHeaders(HttpRequestMessage<I> event) {
-		Map<String, Object> headers = new HashMap<String, Object>();
+		Map<String, Object> headers = new HashMap<>();
 
 		if (event.getHeaders() != null) {
 			headers.putAll(event.getHeaders());

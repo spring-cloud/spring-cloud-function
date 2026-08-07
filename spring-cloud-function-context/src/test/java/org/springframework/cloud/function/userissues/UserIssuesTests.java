@@ -65,7 +65,7 @@ public class UserIssuesTests {
 		FunctionCatalog catalog = this.configureCatalog(Issue602Configuration.class);
 		Function<Message<String>, Integer> function = catalog.lookup("consumer");
 		int result = function.apply(
-				new GenericMessage<String>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
+				new GenericMessage<>("[{\"name\":\"julien\"},{\"name\":\"ricky\"},{\"name\":\"bubbles\"}]"));
 		assertThat(result).isEqualTo(3);
 	}
 
@@ -76,13 +76,13 @@ public class UserIssuesTests {
 
 
 		List<Object> list = Arrays.asList(new Product[] {new Product("foo"), new Product("bar")});
-		Event event = new Event(list);
-		EventHolder eventHolder = new EventHolder(event);
+		Event event = new Event<>(list);
+		EventHolder eventHolder = new EventHolder<>(event);
 		ObjectMapper mapper = new ObjectMapper();
 		String message = mapper.writeValueAsString(eventHolder);
 		Function function = catalog.lookup("somethingYouShouldNeverDo");
 		boolean result = (boolean) function.apply(
-				new GenericMessage<String>(message));
+				new GenericMessage<>(message));
 		assertThat(result).isTrue();
 	}
 
@@ -103,7 +103,7 @@ public class UserIssuesTests {
 		p = new Product();
 		p.setName("bubbles");
 		products.add(p);
-		int result = function.apply(new GenericMessage<List<Product>>(products));
+		int result = function.apply(new GenericMessage<>(products));
 		assertThat(result).isEqualTo(3);
 
 	}
@@ -116,7 +116,7 @@ public class UserIssuesTests {
 		products.add("{\"name\":\"julien\"}");
 		products.add("{\"name\":\"ricky\"}");
 		products.add("{\"name\":\"bubbles\"}");
-		int result = function.apply(new GenericMessage<List<String>>(products));
+		int result = function.apply(new GenericMessage<>(products));
 		assertThat(result).isEqualTo(3);
 
 	}
@@ -217,7 +217,7 @@ public class UserIssuesTests {
 
 		@Override
 		public Flux<Integer> apply(Flux<String> s) {
-			return s.map(v -> v.length());
+			return s.map(String::length);
 		}
 	}
 

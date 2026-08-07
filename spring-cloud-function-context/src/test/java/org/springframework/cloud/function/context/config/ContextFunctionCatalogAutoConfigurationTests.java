@@ -498,9 +498,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Consumer<String> consumer() {
-			return value -> {
-				this.list.add(value);
-			};
+			return this.list::add;
 		}
 
 	}
@@ -628,7 +626,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public Function<Map<String, String>, Map<String, String>> function() {
-			return m -> m.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
+			return m -> m.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
 					e -> e.getValue().toString().toUpperCase(Locale.ROOT)));
 		}
 
@@ -723,7 +721,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 		@Bean
 		public Function<Flux<Map<String, String>>, Flux<Map<String, String>>> function() {
 			return flux -> flux.map(m -> m.entrySet().stream().collect(Collectors
-					.toMap(e -> e.getKey(), e -> e.getValue().toString().toUpperCase(Locale.ROOT))));
+					.toMap(Map.Entry::getKey, e -> e.getValue().toString().toUpperCase(Locale.ROOT))));
 		}
 
 	}
@@ -815,7 +813,7 @@ public class ContextFunctionCatalogAutoConfigurationTests {
 
 		@Bean
 		public FunctionRegistration<Function<String, String>> registration() {
-			return new FunctionRegistration<Function<String, String>>(function(),
+			return new FunctionRegistration<>(function(),
 					"other");
 		}
 

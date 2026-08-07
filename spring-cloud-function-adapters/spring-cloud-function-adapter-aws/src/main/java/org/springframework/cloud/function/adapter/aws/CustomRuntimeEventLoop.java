@@ -94,9 +94,7 @@ public final class CustomRuntimeEventLoop implements SmartLifecycle {
 
 	public void run() {
 		this.running = true;
-		this.executor.execute(() -> {
-			eventLoop(this.applicationContext);
-		});
+		this.executor.execute(() -> eventLoop(this.applicationContext));
 	}
 
 	@Override

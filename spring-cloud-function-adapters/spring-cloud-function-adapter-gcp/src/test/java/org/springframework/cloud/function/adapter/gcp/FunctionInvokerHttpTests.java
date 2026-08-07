@@ -249,7 +249,7 @@ public class FunctionInvokerHttpTests {
 		public Function<String, Message<String>> function() {
 
 			String payload = "hello";
-			List<Object> li = new ArrayList<Object>(asList(123, "headerThing"));
+			List<Object> li = new ArrayList<>(asList(123, "headerThing"));
 
 			Message<String> msg = MessageBuilder.withPayload(payload).setHeader("multiValueHeader", li)
 				.build();
@@ -298,11 +298,9 @@ public class FunctionInvokerHttpTests {
 
 		@Bean
 		public Function<IncomingRequest, Message<OutgoingResponse>> function() {
-			return (in) -> {
-				return MessageBuilder
+			return (in) -> MessageBuilder
 						.withPayload(new OutgoingResponse("Thank you for sending the message: " + in.message))
 						.setHeader("foo", "bar").build();
-			};
 		}
 	}
 

@@ -43,8 +43,7 @@ public class LambdaDestinationResolver implements DestinationResolver {
 			logger.debug("Lambda incoming value: " + value);
 		}
 		String destination = "unknown";
-		if (value instanceof Message) {
-			Message<?> message = (Message<?>) value;
+		if (value instanceof Message<?> message) {
 			MessageHeaders headers = message.getHeaders();
 			if (headers.containsKey("lambda-runtime-aws-request-id")) {
 				destination = (String) headers.get("lambda-runtime-aws-request-id");

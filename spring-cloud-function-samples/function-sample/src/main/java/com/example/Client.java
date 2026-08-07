@@ -33,9 +33,7 @@ public class Client {
 			    .header("accept", "text/event-stream")
 			    .retrieve();
 
-		responseSpec.bodyToFlux(String.class).subscribe(v -> {
-			System.out.println(v);
-		});
+		responseSpec.bodyToFlux(String.class).subscribe(System.out::println);
 
 		System.in.read();
 

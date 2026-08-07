@@ -53,6 +53,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<wrapper.version>1.0.31.RELEASE</wrapper.version>
+		<pmd.version>7.26.0</pmd.version>
 		<docs.main>spring-cloud-function</docs.main>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true
@@ -224,6 +225,50 @@
 				<module>spring-cloud-function-context</module>
 				<module>spring-cloud-function-web</module>
 			</modules>
+		</profile>
+		<profile>
+			<id>pmd</id>
+			<!-- Report-only PMD 7 analysis with modern Java syntax rules.
+			     Runs at verify only when the profile is activated. Sample apps
+			     that inherit spring-boot-starter-parent are not covered. -->
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-pmd-plugin</artifactId>
+						<version>3.28.0</version>
+						<dependencies>
+							<dependency>
+								<groupId>net.sourceforge.pmd</groupId>
+								<artifactId>pmd-core</artifactId>
+								<version>${pmd.version}</version>
+							</dependency>
+							<dependency>
+								<groupId>net.sourceforge.pmd</groupId>
+								<artifactId>pmd-java</artifactId>
+								<version>${pmd.version}</version>
+							</dependency>
+						</dependencies>
+						<configuration>
+							<rulesets>
+								<ruleset>${maven.multiModuleProjectDirectory}/src/checkstyle/pmd-modern-java.xml</ruleset>
+							</rulesets>
+							<failOnViolation>false</failOnViolation>
+							<printFailingErrors>true</printFailingErrors>
+							<includeTests>true</includeTests>
+							<targetJdk>17</targetJdk>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>verify</phase>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 		<profile>
 			<id>spring</id>

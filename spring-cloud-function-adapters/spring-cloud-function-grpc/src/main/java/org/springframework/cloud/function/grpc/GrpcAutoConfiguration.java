@@ -65,7 +65,7 @@ public class GrpcAutoConfiguration {
 	@Bean
 	public MessageHandlingHelper grpcMessageHandlingHelper(List<GrpcMessageConverter<?>> grpcConverters,
 			FunctionProperties funcProperties, FunctionCatalog functionCatalog) {
-		return new MessageHandlingHelper(grpcConverters, functionCatalog, funcProperties);
+		return new MessageHandlingHelper<>(grpcConverters, functionCatalog, funcProperties);
 	}
 
 	@Bean

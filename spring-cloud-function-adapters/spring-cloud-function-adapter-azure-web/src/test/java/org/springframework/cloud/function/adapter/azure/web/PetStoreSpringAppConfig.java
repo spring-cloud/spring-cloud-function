@@ -16,13 +16,7 @@
 
 package org.springframework.cloud.function.adapter.azure.web;
 
-import java.io.IOException;
-
 import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -57,13 +51,9 @@ public class PetStoreSpringAppConfig {
 
 	@Bean
 	public Filter filter() {
-		return new Filter() {
-			@Override
-			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-					throws IOException, ServletException {
-				System.out.println("FILTER ===> Hello from: " + request.getLocalAddr());
-				chain.doFilter(request, response);
-			}
+		return (request, response, chain) -> {
+			System.out.println("FILTER ===> Hello from: " + request.getLocalAddr());
+			chain.doFilter(request, response);
 		};
 	}
 

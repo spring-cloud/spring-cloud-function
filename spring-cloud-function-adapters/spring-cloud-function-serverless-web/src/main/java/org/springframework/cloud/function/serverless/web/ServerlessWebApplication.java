@@ -235,13 +235,7 @@ public class ServerlessWebApplication extends SpringApplication {
 		}
 	}
 
-	private static class PropertySourceOrderingBeanFactoryPostProcessor implements BeanFactoryPostProcessor, Ordered {
-
-		private final ConfigurableApplicationContext context;
-
-		PropertySourceOrderingBeanFactoryPostProcessor(ConfigurableApplicationContext context) {
-			this.context = context;
-		}
+	private record PropertySourceOrderingBeanFactoryPostProcessor(ConfigurableApplicationContext context) implements BeanFactoryPostProcessor, Ordered {
 
 		@Override
 		public int getOrder() {
@@ -250,7 +244,7 @@ public class ServerlessWebApplication extends SpringApplication {
 
 		@Override
 		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-			DefaultPropertiesPropertySource.moveToEnd(this.context.getEnvironment());
+			DefaultPropertiesPropertySource.moveToEnd(this.context().getEnvironment());
 		}
 
 	}
@@ -307,21 +301,12 @@ public class ServerlessWebApplication extends SpringApplication {
 		 * Decorator that allows a {@link Banner} to be printed again without needing to
 		 * specify the source class.
 		 */
-		private static class PrintedBanner implements Banner {
-
-			private final Banner banner;
-
-			private final Class<?> sourceClass;
-
-			PrintedBanner(Banner banner, Class<?> sourceClass) {
-				this.banner = banner;
-				this.sourceClass = sourceClass;
-			}
+		private record PrintedBanner(Banner banner, Class<?> sourceClass) implements Banner {
 
 			@Override
 			public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
-				sourceClass = (sourceClass != null) ? sourceClass : this.sourceClass;
-				this.banner.printBanner(environment, sourceClass, out);
+				sourceClass = (sourceClass != null) ? sourceClass : this.sourceClass();
+				this.banner().printBanner(environment, sourceClass, out);
 			}
 
 		}

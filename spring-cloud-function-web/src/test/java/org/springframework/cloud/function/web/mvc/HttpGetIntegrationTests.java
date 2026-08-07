@@ -361,9 +361,7 @@ public class HttpGetIntegrationTests {
 
 		@Bean
 		public Supplier<Flux<String>> timeout() {
-			return () -> Flux.defer(() -> Flux.<String>create(emitter -> {
-				emitter.next("foo");
-			}).timeout(Duration.ofMillis(1000L), Flux.empty()));
+			return () -> Flux.defer(() -> Flux.<String>create(emitter -> emitter.next("foo")).timeout(Duration.ofMillis(1000L), Flux.empty()));
 		}
 
 		@Bean

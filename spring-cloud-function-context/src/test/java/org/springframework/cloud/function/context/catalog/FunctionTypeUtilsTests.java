@@ -120,7 +120,7 @@ public class FunctionTypeUtilsTests {
 	public void testWithComplexGenericsHierarchy() throws Exception {
 		Type functionType = FunctionTypeUtils.discoverFunctionTypeFromFunctionFactoryMethod(FunctionTypeUtilsTests.class, "methodWithGenerics");
 		Type inputType = FunctionTypeUtils.getInputType(functionType);
-		Class typeClass = FunctionTypeUtils.getRawType(inputType);
+		Class<?> typeClass = FunctionTypeUtils.getRawType(inputType);
 		assertThat(typeClass).isAssignableFrom(Message.class);
 		ParameterizedType parameterizedInputType = (ParameterizedType) inputType;
 		Type[] typeArguments = parameterizedInputType.getActualTypeArguments();
@@ -264,7 +264,7 @@ public class FunctionTypeUtilsTests {
 	}
 
 	public static GenericBatchMessageListConsumer<SomeDomainObject> methodWithGenerics() {
-		return new GenericBatchMessageListConsumer<SomeDomainObject>();
+		return new GenericBatchMessageListConsumer<>();
 	}
 
 	//============
@@ -299,7 +299,7 @@ public class FunctionTypeUtilsTests {
 
 		@Override
 		public Flux<Integer> apply(Flux<String> inFlux) {
-			return inFlux.map(v -> Integer.parseInt(v));
+			return inFlux.map(Integer::parseInt);
 		}
 	}
 
