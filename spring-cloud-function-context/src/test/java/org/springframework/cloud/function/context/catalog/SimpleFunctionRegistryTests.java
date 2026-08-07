@@ -135,7 +135,6 @@ public class SimpleFunctionRegistryTests {
 		assertThat(lookedUpFunction.apply(inputMessage)).isEqualTo(stringValue);
 	}
 
-	@SuppressWarnings("rawtypes")
 	@Test
 	public void concurrencyRegistrationTest() throws Exception {
 		Echo function = new Echo();
@@ -145,14 +144,12 @@ public class SimpleFunctionRegistryTests {
 				new JacksonMapper(new ObjectMapper()));
 		ExecutorService executor = Executors.newCachedThreadPool();
 		for (int i = 0; i < 1000; i++) {
-			executor.execute(() -> {
-				catalog.register(registration);
-			});
+			executor.execute(() -> catalog.register(registration));
 		}
 		Thread.sleep(1000);
 		Field frField = ReflectionUtils.findField(catalog.getClass(), "functionRegistrations");
 		frField.setAccessible(true);
-		Collection c = (Collection) frField.get(catalog);
+		Collection<?> c = (Collection<?>) frField.get(catalog);
 		assertThat(c.size()).isEqualTo(1);
 	}
 
@@ -615,13 +612,13 @@ public class SimpleFunctionRegistryTests {
 			new JacksonMapper(new ObjectMapper()));
 
 		Object reactiveFunc = reactiveFluxSupplier();
-		FunctionRegistration functionRegistration = new FunctionRegistration(reactiveFunc, "reactiveFluxSupplier")
+		FunctionRegistration<?> functionRegistration = new FunctionRegistration<>(reactiveFunc, "reactiveFluxSupplier")
 			.type(ResolvableType.forClassWithGenerics(
 				Supplier.class, ResolvableType.forClassWithGenerics(Flux.class, String.class)).getType());
 		catalog.register(functionRegistration);
 
 		reactiveFunc = reactiveFluxConsumer();
-		functionRegistration = new FunctionRegistration(reactiveFunc, "reactiveFluxConsumer")
+		functionRegistration = new FunctionRegistration<>(reactiveFunc, "reactiveFluxConsumer")
 			.type(ResolvableType.forClassWithGenerics(
 				Consumer.class, ResolvableType.forClassWithGenerics(Flux.class, String.class)).getType());
 		catalog.register(functionRegistration);
@@ -659,7 +656,7 @@ public class SimpleFunctionRegistryTests {
 
 
 	public Function<Object, Integer> hash() {
-		return v -> v.hashCode();
+		return Object::hashCode;
 	}
 
 	public Supplier<Integer> supplier() {
@@ -671,9 +668,7 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	public Consumer<Flux<Integer>> reactiveConsumer() {
-		return flux -> flux.subscribe(v -> {
-			System.out.println(v);
-		});
+		return flux -> flux.subscribe(System.out::println);
 	}
 
 	private final AtomicInteger consumerDowncounter = new AtomicInteger(10);
@@ -734,7 +729,7 @@ public class SimpleFunctionRegistryTests {
 
 		@Bean
 		public Function<Person, String> func() {
-			return person -> person.getName();
+			return Person::getName;
 		}
 	}
 

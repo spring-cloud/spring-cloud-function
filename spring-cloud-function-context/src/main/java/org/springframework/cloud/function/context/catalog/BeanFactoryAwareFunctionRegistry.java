@@ -31,7 +31,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
@@ -165,8 +164,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 						if (functionCandidate != null) {
 							Type functionType = null;
 							FunctionRegistration functionRegistration = null;
-							if (functionCandidate instanceof FunctionRegistration) {
-								functionRegistration = (FunctionRegistration) functionCandidate;
+							if (functionCandidate instanceof FunctionRegistration registration) {
+								functionRegistration = registration;
 							}
 							else if (functionCandidate instanceof BiFunction || functionCandidate instanceof BiConsumer) {
 								functionRegistration = this.registerMessagingBiFunction(functionCandidate, functionName);
@@ -223,9 +222,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		Type biFunctionType = FunctionContextUtils.findType(this.applicationContext.getBeanFactory(), functionName);
 		Type inputType1 = Object.class;
 		Type inputType2 = Object.class;
-		if (biFunctionType instanceof ParameterizedType) {
-			inputType1 = ((ParameterizedType) biFunctionType).getActualTypeArguments()[0];
-			inputType2 = ((ParameterizedType) biFunctionType).getActualTypeArguments()[1];
+		if (biFunctionType instanceof ParameterizedType parameterizedType) {
+			inputType1 = parameterizedType.getActualTypeArguments()[0];
+			inputType2 = parameterizedType.getActualTypeArguments()[1];
 		}
 
 		if (!FunctionTypeUtils.isTypeMap(inputType2)) {
@@ -242,8 +241,8 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			if (payload.getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
 				payload = null;
 			}
-			if (userFunction instanceof BiConsumer) {
-				((BiConsumer) userFunction).accept(payload, ((Message) message).getHeaders());
+			if (userFunction instanceof BiConsumer biConsumer) {
+				biConsumer.accept(payload, ((Message) message).getHeaders());
 				return null;
 			}
 			else {
@@ -304,12 +303,7 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		ProxyFactory pf = new ProxyFactory(targetFunction);
 		pf.setProxyTargetClass(true);
 		pf.setInterfaces(Function.class);
-		pf.addAdvice(new MethodInterceptor() {
-			@Override
-			public Object invoke(MethodInvocation invocation) throws Throwable {
-				return actualMethodToCall.invoke(invocation.getThis(), invocation.getArguments());
-			}
-		});
+		pf.addAdvice((MethodInterceptor) invocation -> actualMethodToCall.invoke(invocation.getThis(), invocation.getArguments()));
 		return pf.getProxy();
 	}
 }

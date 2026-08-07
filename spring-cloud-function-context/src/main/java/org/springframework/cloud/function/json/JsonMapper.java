@@ -51,11 +51,10 @@ public abstract class JsonMapper {
 
 	@SuppressWarnings("unchecked")
 	public <T> T fromJson(Object json, Type type) {
-		if (json instanceof Collection<?>) {
+		if (json instanceof Collection<?> inputs) {
 			if (FunctionTypeUtils.isTypeCollection(type)) {
 				return (T) json;
 			}
-			Collection<?> inputs = (Collection<?>) json;
 			Type itemType = FunctionTypeUtils.getImmediateGenericType(type, 0);
 			Collection<?> results = FunctionTypeUtils.getRawType(type).isAssignableFrom(List.class)
 					? new ArrayList<>()
@@ -115,11 +114,11 @@ public abstract class JsonMapper {
 		if (value instanceof byte[]) {
 			value = new String((byte[]) value, StandardCharsets.UTF_8);
 		}
-		if (value instanceof String) {
+		if (value instanceof String s) {
 			try {
-				mapper.readTree((String) value);
+				mapper.readTree(s);
 				try {
-					Integer.parseInt((String) value);
+					Integer.parseInt(s);
 					return false;
 				}
 				catch (Exception e) {

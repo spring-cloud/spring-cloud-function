@@ -46,14 +46,14 @@ public class GsonMapper extends JsonMapper {
 		if (json instanceof byte[]) {
 			convertedValue = this.gson.fromJson(new String(((byte[]) json), StandardCharsets.UTF_8), type);
 		}
-		else if (json instanceof String) {
-			convertedValue = this.gson.fromJson((String) json, type);
+		else if (json instanceof String s) {
+			convertedValue = this.gson.fromJson(s, type);
 		}
-		else if (json instanceof Reader) {
-			convertedValue = this.gson.fromJson((Reader) json, type);
+		else if (json instanceof Reader reader) {
+			convertedValue = this.gson.fromJson(reader, type);
 		}
-		else if (json instanceof JsonElement) {
-			convertedValue = this.gson.fromJson((JsonElement) json, type);
+		else if (json instanceof JsonElement jsonElement) {
+			convertedValue = this.gson.fromJson(jsonElement, type);
 		}
 		return convertedValue;
 	}

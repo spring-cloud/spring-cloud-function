@@ -171,8 +171,8 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			String[] contentTypes = StringUtils.delimitedListToStringArray((String) value, ",");
 			for (String contentType : contentTypes) {
 				if (!MimeType.valueOf(contentType).isConcrete()) {
-					if (converter instanceof AbstractMessageConverter) {
-						List<MimeType> supportedMimeTypes = ((AbstractMessageConverter) converter).getSupportedMimeTypes();
+					if (converter instanceof AbstractMessageConverter abstractMessageConverter) {
+						List<MimeType> supportedMimeTypes = abstractMessageConverter.getSupportedMimeTypes();
 						for (MimeType supportedMimeType : supportedMimeTypes) {
 							if (supportedMimeType.isCompatibleWith(MimeType.valueOf(contentType))) {
 								MessageHeaderAccessor h = new MessageHeaderAccessor();

@@ -179,7 +179,7 @@ public class EventGridHandler {
 
 		// Parse Event Grid format (array of events)
 		List<Map<String, Object>> eventGridEvents = objectMapper.readValue(
-			requestBody, new TypeReference<List<Map<String, Object>>>() {});
+			requestBody, new TypeReference<>() { });
 
 		StringBuilder results = new StringBuilder();
 
