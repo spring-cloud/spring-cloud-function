@@ -74,7 +74,7 @@ final public class LocalServerTestSupport {
 			HttpHeaders headers = new HttpHeaders();
 
 			ResponseEntity<String> response = testRestTemplate.postForEntity(
-					"http://localhost:" + serverProcess.getPort(), new HttpEntity<>(gson.toJson(input), headers),
+					"http://localhost:" + serverProcess.port(), new HttpEntity<>(gson.toJson(input), headers),
 					String.class);
 
 			assertThat(response.getBody()).isEqualTo(gson.toJson(expectedOutput));
@@ -148,28 +148,11 @@ final public class LocalServerTestSupport {
 		throw new RuntimeException("End of input stream and server never became ready");
 	}
 
-	static class ServerProcess implements AutoCloseable {
-
-		private final Process process;
-
-		private final int port;
-
-		ServerProcess(Process process, int port) {
-			this.process = process;
-			this.port = port;
-		}
-
-		Process process() {
-			return process;
-		}
+	record ServerProcess(Process process, int port) implements AutoCloseable {
 
 		@Override
 		public void close() {
 			process().destroy();
-		}
-
-		public int getPort() {
-			return port;
 		}
 
 	}

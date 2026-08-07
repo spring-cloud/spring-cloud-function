@@ -104,16 +104,16 @@ public final class JsonMasker {
 
 	@SuppressWarnings({ "unchecked" })
 	private String iterate(Object json) {
-		if (json instanceof Collection arrayValue) {
+		if (json instanceof Collection<?> arrayValue) {
 			for (Object element : arrayValue) {
-				if (element instanceof Map mapElement) {
+				if (element instanceof Map<?, ?> mapElement) {
 					for (Map.Entry<String, Object> entry : ((Map<String, Object>) mapElement).entrySet()) {
 						this.doMask(entry.getKey(), entry);
 					}
 				}
 			}
 		}
-		else if (json instanceof Map mapElement) {
+		else if (json instanceof Map<?, ?> mapElement) {
 			for (Map.Entry<String, Object> entry : ((Map<String, Object>) mapElement).entrySet()) {
 				this.doMask(entry.getKey(), entry);
 			}

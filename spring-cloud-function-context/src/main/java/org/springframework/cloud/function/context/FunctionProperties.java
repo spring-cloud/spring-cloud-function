@@ -133,12 +133,12 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 		Map<String, Object>  headerMapping = input ? entry.getValue().getInputHeaderMappingExpression()
 				: entry.getValue().getOutputHeaderMappingExpression();
 		if (!CollectionUtils.isEmpty(headerMapping)) {
-			for (Object k : headerMapping.keySet()) {
+			for (String k : headerMapping.keySet()) {
 				if (this.environment.containsProperty(propertyX + k) || this.environment.containsProperty(propertyY + k)) {
-					Map current = input ? entry.getValue().getInputHeaderMappingExpression()
+					Map<String, Object> current = input ? entry.getValue().getInputHeaderMappingExpression()
 									: entry.getValue().getOutputHeaderMappingExpression();
 					if (current.containsKey("0")) {
-						((Map) current.get("0")).put(k, headerMapping.get(k));
+						((Map<String, Object>) current.get("0")).put(k, headerMapping.get(k));
 					}
 					else {
 						if (input) {

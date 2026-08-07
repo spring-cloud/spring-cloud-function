@@ -58,7 +58,7 @@ public class MultipartFileTests {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-		HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<LinkedMultiValueMap<String, Object>>(
+		HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(
 				map, headers);
 		ResponseEntity<String> result = template.exchange(new URI("http://localhost:" + port + "/uppercase"),
 				HttpMethod.POST, requestEntity, String.class);
@@ -79,7 +79,7 @@ public class MultipartFileTests {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-		HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<LinkedMultiValueMap<String, Object>>(
+		HttpEntity<LinkedMultiValueMap<String, Object>> requestEntity = new HttpEntity<>(
 				map, headers);
 		ResponseEntity<String> result = template.exchange(new URI("http://localhost:" + port + "/uppercase"),
 				HttpMethod.POST, requestEntity, String.class);
@@ -93,9 +93,7 @@ public class MultipartFileTests {
 
 		@Bean
 		public Function<MultipartFile, String> uppercase() {
-			return value -> {
-				return value.getOriginalFilename().toUpperCase(Locale.ROOT);
-			};
+			return value -> value.getOriginalFilename().toUpperCase(Locale.ROOT);
 		}
 	}
 }

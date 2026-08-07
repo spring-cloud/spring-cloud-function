@@ -52,8 +52,7 @@ class SimpleRequestBuilder implements RequestBuilder {
 	@Override
 	public HttpHeaders headers(String destination, Object value) {
 		MessageHeaders incoming = new MessageHeaders(Collections.emptyMap());
-		if (value instanceof Message) {
-			Message<?> message = (Message<?>) value;
+		if (value instanceof Message<?> message) {
 			incoming = message.getHeaders();
 		}
 		HttpHeaders result = HeaderUtils.fromMessage(incoming, this.httpProperties.getIgnoredHeaders());

@@ -1109,7 +1109,7 @@ public class FunctionInvokerTests {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		invoker.handleRequest(targetStream, output, null);
 
-		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		Map<String, Object> result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
 	}
 
@@ -1137,7 +1137,7 @@ public class FunctionInvokerTests {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		invoker.handleRequest(targetStream, output, null);
 
-		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		Map<String, Object> result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
 	}
 
@@ -1151,7 +1151,7 @@ public class FunctionInvokerTests {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		invoker.handleRequest(targetStream, output, Mockito.mock(Context.class));
 
-		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		Map<String, Object> result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("\"Hello from ELB\"");
 	}
 
@@ -1171,7 +1171,7 @@ public class FunctionInvokerTests {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		invoker.handleRequest(targetStream, output, new TestContext());
 
-		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		Map<String, Object> result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isEqualTo("Hello from ELB");
 	}
 
@@ -1343,7 +1343,7 @@ public class FunctionInvokerTests {
 		JsonMapper mapper = new JacksonMapper(new ObjectMapper());
 
 		String result = new String(output.toByteArray(), StandardCharsets.UTF_8);
-		Map resultMap = mapper.fromJson(result, Map.class);
+		Map<String, Object> resultMap = mapper.fromJson(result, Map.class);
 		assertThat((boolean) resultMap.get(AWSLambdaUtils.IS_BASE64_ENCODED)).isTrue();
 		assertThat((int) resultMap.get(AWSLambdaUtils.STATUS_CODE)).isEqualTo(201);
 		String body = new String(Base64.getDecoder().decode((String) resultMap.get(AWSLambdaUtils.BODY)), StandardCharsets.UTF_8);
@@ -1476,7 +1476,7 @@ public class FunctionInvokerTests {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		invoker.handleRequest(targetStream, output, null);
 
-		Map result = mapper.readValue(output.toByteArray(), Map.class);
+		Map<String, Object> result = mapper.readValue(output.toByteArray(), Map.class);
 		assertThat(result.get("body")).isNull();
 		assertThat(result.get("principalId")).isNotNull();
 	}
@@ -1563,9 +1563,7 @@ public class FunctionInvokerTests {
 	public static class BasicConfiguration {
 		@Bean
 		public Function<Message<String>, Message<String>> uppercase() {
-			return v -> {
-				return MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT)).build();
-			};
+			return v -> MessageBuilder.withPayload(v.getPayload().toUpperCase(Locale.ROOT)).build();
 		}
 	}
 
@@ -1574,7 +1572,7 @@ public class FunctionInvokerTests {
 	public static class AuthorizerConfiguration {
 		@Bean
 		public Function<APIGatewayCustomAuthorizerEvent, String> acceptAuthorizerEvent() {
-			return v -> v.toString();
+			return Object::toString;
 		}
 	}
 
@@ -1753,9 +1751,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<S3Event, S3Event> outputS3Event() {
-			return v -> {
-				return v;
-			};
+			return v -> v;
 		}
 		@Bean
 		public Function<String, String> echoString() {
@@ -1858,7 +1854,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Consumer<String> consume() {
-			return v -> System.out.println(v);
+			return System.out::println;
 		}
 
 		@Bean
@@ -1873,9 +1869,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<Person, String> uppercasePojo() {
-			return v -> {
-				return v.getName().toUpperCase(Locale.ROOT);
-			};
+			return v -> v.getName().toUpperCase(Locale.ROOT);
 		}
 
 		@Bean
@@ -1898,9 +1892,7 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<APIGatewayProxyRequestEvent, String> inputApiEvent() {
-			return v -> {
-				return v.getBody();
-			};
+			return APIGatewayProxyRequestEvent::getBody;
 		}
 
 		@Bean
@@ -1962,16 +1954,12 @@ public class FunctionInvokerTests {
 
 		@Bean
 		public Function<APIGatewayV2HTTPEvent, String> inputApiV2Event() {
-			return v -> {
-				return v.getBody();
-			};
+			return APIGatewayV2HTTPEvent::getBody;
 		}
 
 		@Bean
 		public Function<Message<APIGatewayProxyRequestEvent>, String> inputApiEventAsMessage() {
-			return v -> {
-				return v.getPayload().getBody();
-			};
+			return v -> v.getPayload().getBody();
 		}
 
 		@Bean
@@ -2006,9 +1994,7 @@ public class FunctionInvokerTests {
 	public static class PrimitiveConfiguration {
 		@Bean
 		public Function<Message<byte[]>, byte[]> returnByteArrayAsMessage() {
-			return v -> {
-				return v.getPayload();
-			};
+			return Message::getPayload;
 		}
 	}
 

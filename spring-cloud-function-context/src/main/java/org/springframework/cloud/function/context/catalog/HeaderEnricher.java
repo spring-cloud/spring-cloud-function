@@ -52,10 +52,10 @@ class HeaderEnricher implements Function<Object, Object> {
 
 	private final StandardEvaluationContext evalContext = new StandardEvaluationContext();
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	HeaderEnricher(Map headerExpressions, @Nullable BeanResolver beanResolver) {
+	@SuppressWarnings("unchecked")
+	HeaderEnricher(Map<String, Object> headerExpressions, @Nullable BeanResolver beanResolver) {
 		Assert.notEmpty(headerExpressions, "'headerExpressions' must not be null or empty");
-		this.headerExpressions = headerExpressions;
+		this.headerExpressions = (Map<String, Map<String, String>>) (Map<?, ?>) headerExpressions;
 		this.evalContext.addPropertyAccessor(new MapAccessor());
 		if (beanResolver != null) {
 			this.evalContext.setBeanResolver(beanResolver);
