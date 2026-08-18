@@ -67,7 +67,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	public Object fromMessage(Message<?> message, Class<?> targetClass) {
 		Collection<MessageConverterHelper> messageConverterHelpers = this.messageConverterHelpersSupplier != null
 				? this.messageConverterHelpersSupplier.get() : Collections.emptyList();
-		for (MessageConverter converter : getConverters()) {
+		for (MessageConverter converter : snapshotConverters()) {
 			if (!(message.getPayload() instanceof byte[]) && targetClass.isInstance(message.getPayload()) && !(message.getPayload() instanceof Collection<?>)) {
 				return message.getPayload();
 			}
@@ -102,13 +102,14 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			Type genericItemType = FunctionTypeUtils.getImmediateGenericType((Type) conversionHint, 0);
 			Class<?> genericItemRawType = FunctionTypeUtils.getRawType(genericItemType);
 			List<Object> resultList = new ArrayList<>();
+			List<MessageConverter> convertersSnapshot = snapshotConverters();
 			for (Object item : iterablePayload) {
 				boolean isConverted = false;
 				if (item.getClass().getName().startsWith("org.springframework.kafka.support.KafkaNull")) {
 					resultList.add(null);
 					isConverted = true;
 				}
-				for (Iterator<MessageConverter> iterator = getConverters().iterator(); iterator.hasNext() && !isConverted;) {
+				for (Iterator<MessageConverter> iterator = convertersSnapshot.iterator(); iterator.hasNext() && !isConverted;) {
 					MessageConverter converter = (MessageConverter) iterator.next();
 					if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO Stream stuff, needs to be removed
 						Message<?> m  = MessageBuilder.withPayload(item).copyHeaders(message.getHeaders()).build(); // TODO Message creating may be expensive
@@ -129,7 +130,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			return resultList;
 		}
 		else {
-			for (MessageConverter converter : getConverters()) {
+			for (MessageConverter converter : snapshotConverters()) {
 				if (!converter.getClass().getName().endsWith("ApplicationJsonMessageMarshallingConverter")) { // TODO Stream stuff, needs to be removed
 					result = (converter instanceof SmartMessageConverter ?
 							((SmartMessageConverter) converter).fromMessage(message, targetClass, conversionHint) :
@@ -162,7 +163,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Override
 	@Nullable
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers) {
-		for (MessageConverter converter : getConverters()) {
+		for (MessageConverter converter : snapshotConverters()) {
 			if (headers.get(MessageHeaders.CONTENT_TYPE) == null) {
 				return null;
 			}
@@ -203,7 +204,7 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 	@Override
 	@Nullable
 	public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
-		for (MessageConverter converter : getConverters()) {
+		for (MessageConverter converter : snapshotConverters()) {
 			Object value = headers.get(MessageHeaders.CONTENT_TYPE).toString();
 			String[] contentTypes = StringUtils.delimitedListToStringArray((String) value, ",");
 			for (String contentType : contentTypes) {
@@ -231,5 +232,9 @@ public class SmartCompositeMessageConverter extends CompositeMessageConverter {
 			}
 		}
 		return null;
+	}
+
+	private List<MessageConverter> snapshotConverters() {
+		return new ArrayList<>(getConverters());
 	}
 }
