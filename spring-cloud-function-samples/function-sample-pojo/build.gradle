@@ -22,7 +22,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'io.spring.sample'
-version = '5.0.4'
+version = '5.0.5-SNAPSHOT'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
