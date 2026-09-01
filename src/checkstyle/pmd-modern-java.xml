@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<ruleset name="Spring Cloud Function Modernization Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+
+	<description>Rules to encourage modern Java 17+ syntax conventions</description>
+
+	<!-- 1. Diamond Operator (Built-in rule) -->
+	<rule ref="category/java/codestyle.xml/UseDiamondOperator">
+		<priority>4</priority>
+	</rule>
+
+	<!-- 1a. Lambda can be Method Reference (Built-in rule) -->
+	<rule ref="category/java/codestyle.xml/LambdaCanBeMethodReference">
+		<priority>4</priority>
+	</rule>
+
+	<!-- 2. Avoid Raw Types for Collections -->
+	<rule name="AvoidRawTypesForCollections"
+	      language="java"
+	      message="Consider using parameterized types instead of raw types for collections (e.g., List&lt;Object&gt;). Suppress with @SuppressWarnings(&quot;PMD.AvoidRawTypesForCollections&quot;) if intentional."
+	      class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+		<description>
+			Encourages the use of generics over raw types for standard collections to ensure type safety.
+			Class literals, nested generic types (e.g., Map.Entry), instanceof checks and casts are excluded
+			as they are not raw type usage in the sense of this rule.
+		</description>
+		<priority>4</priority>
+		<properties>
+			<property name="xpath">
+				<value>
+					<![CDATA[
+					//ClassType[
+						(@SimpleName='List' or @SimpleName='Set' or @SimpleName='Map' or
+						 @SimpleName='ArrayList' or @SimpleName='HashMap' or @SimpleName='HashSet' or
+						 @SimpleName='Queue' or @SimpleName='Collection' or @SimpleName='Optional')
+						and not(TypeArguments)
+						and not(parent::ClassLiteral)
+						and not(parent::ClassType)
+						and not(ancestor::PatternExpression)
+						and not(ancestor::TypeExpression)
+						and not(ancestor::CastExpression)
+					]
+					]]>
+				</value>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- 2a. Pattern Matching for instanceof (Java 16+) -->
+	<rule name="PreferPatternMatchingForInstanceof"
+	      language="java"
+	      message="Consider using Java 16+ pattern matching for 'instanceof' to avoid explicit casting."
+	      class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+		<description>
+			Identifies 'instanceof' checks followed by an explicit cast of the same expression to the same type
+			within the if-block, which can be simplified using pattern matching.
+		</description>
+		<priority>4</priority>
+		<properties>
+			<property name="xpath">
+				<value>
+					<![CDATA[
+					//IfStatement[
+						InfixExpression[@Operator='instanceof']
+					]/Block//CastExpression[
+						VariableAccess/@Name = ancestor::IfStatement[1]/InfixExpression[@Operator='instanceof']/VariableAccess/@Name
+						and ClassType[@SimpleName = ancestor::IfStatement[1]/InfixExpression[@Operator='instanceof']//ClassType/@SimpleName]
+						and not(ClassType/TypeArguments)
+					]
+					]]>
+				</value>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- 3. Simplify Lambda Body -->
+	<rule name="SimplifyLambdaBlock"
+	      language="java"
+	      message="Consider simplifying this single-statement lambda block. Braces and 'return' might be redundant."
+	      class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+		<description>
+			Lambdas with a single statement in their block can often be simplified to expression lambdas or method
+			references.
+		</description>
+		<priority>4</priority>
+		<properties>
+			<property name="xpath">
+				<value>
+					<![CDATA[
+					//LambdaExpression/Block[
+						count(*) = 1 and
+						(*[self::ReturnStatement or self::ExpressionStatement])
+					]
+					]]>
+				</value>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- 4. Simple Classes -> Records (Java 16+) -->
+	<rule name="ConsiderUsingRecord"
+	      language="java"
+	      message="Consider converting this private static class to a Java 16+ Record, as it appears to be an immutable data carrier."
+	      class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
+		<description>
+			Identifies private static classes with only final fields, which are good candidates for Java Records.
+		</description>
+		<priority>5</priority>
+		<properties>
+			<property name="xpath">
+				<value>
+					<![CDATA[
+					//ClassDeclaration[
+						@Interface=false() and
+						@Visibility='private' and
+						@Static=true() and
+						@Abstract=false() and
+						not(ExtendsList)
+					]/ClassBody[
+						count(FieldDeclaration) > 0 and
+						count(FieldDeclaration/VariableDeclarator/VariableId[@Final=false()]) = 0 and
+						count(ConstructorDeclaration) = 0
+					]
+					]]>
+				</value>
+			</property>
+		</properties>
+	</rule>
+
+</ruleset>

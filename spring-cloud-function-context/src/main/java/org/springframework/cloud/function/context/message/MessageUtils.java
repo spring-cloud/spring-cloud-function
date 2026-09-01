@@ -46,13 +46,11 @@ public abstract class MessageUtils {
 	/**
 	 * !!! INTERNAL USE ONLY, MAY CHANGE OR REMOVED WITHOUT NOTICE!!!
 	 */
-	@SuppressWarnings({"rawtypes"})
 	public static class MessageStructureWithCaseInsensitiveHeaderKeys {
 		private final Object payload;
-		private final Map headers;
+		private final Map<String, Object> headers;
 
-		@SuppressWarnings("unchecked")
-		MessageStructureWithCaseInsensitiveHeaderKeys(Message message) {
+		MessageStructureWithCaseInsensitiveHeaderKeys(Message<?> message) {
 			this.payload = message.getPayload();
 			this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 			this.headers.putAll(message.getHeaders());
@@ -61,7 +59,7 @@ public abstract class MessageUtils {
 			return payload;
 		}
 
-		public Map getHeaders() {
+		public Map<String, Object> getHeaders() {
 			return headers;
 		}
 	}

@@ -399,7 +399,7 @@ public final class ServerlessMVC {
 
 		@Override
 		public Enumeration<String> getInitParameterNames() {
-			return Collections.enumeration(new ArrayList<String>());
+			return Collections.enumeration(new ArrayList<>());
 		}
 
 		@Override

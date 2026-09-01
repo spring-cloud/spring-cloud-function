@@ -331,8 +331,8 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		public Function<Flux<Person>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputAsTuplePojoIn() {
 			return flux -> {
 				Flux<Person> pubSubFlux = flux.publish().autoConnect(3);
-				Flux<String> nameFlux = pubSubFlux.map(person -> person.getName());
-				Flux<Integer> idFlux = pubSubFlux.map(person -> person.getId());
+				Flux<String> nameFlux = pubSubFlux.map(Person::getName);
+				Flux<Integer> idFlux = pubSubFlux.map(Person::getId);
 				return Tuples.of(pubSubFlux, nameFlux, idFlux);
 			};
 		}
@@ -340,9 +340,9 @@ public class BeanFactoryAwareFunctionRegistryMultiInOutTests {
 		@Bean
 		public Function<Flux<Message<Person>>, Tuple3<Flux<Person>, Flux<String>, Flux<Integer>>> multiOutputAsTupleMessageIn() {
 			return flux -> {
-				Flux<Person> pubSubFlux = flux.map(message -> message.getPayload()).publish().autoConnect(3);
-				Flux<String> nameFlux = pubSubFlux.map(person -> person.getName());
-				Flux<Integer> idFlux = pubSubFlux.map(person -> person.getId());
+				Flux<Person> pubSubFlux = flux.map(Message::getPayload).publish().autoConnect(3);
+				Flux<String> nameFlux = pubSubFlux.map(Person::getName);
+				Flux<Integer> idFlux = pubSubFlux.map(Person::getId);
 				return Tuples.of(pubSubFlux, nameFlux, idFlux);
 			};
 		}

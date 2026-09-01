@@ -246,7 +246,7 @@ public final class CloudEventMessageUtils {
 	public static Map<String, Object> getAttributes(Message<?> message) {
 		return message.getHeaders().entrySet().stream()
 				.filter(e -> isAttribute(e.getKey()))
-				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 	}
 
 	/**
@@ -483,8 +483,8 @@ public final class CloudEventMessageUtils {
 	private static URI safeGetURI(Map<String, Object> map, String key) {
 		Object uri = map.get(key);
 		if (uri != null) {
-			if (uri instanceof String) {
-				uri = URI.create((String) uri);
+			if (uri instanceof String s) {
+				uri = URI.create(s);
 			}
 			else if (uri instanceof byte[] u) {
 				uri = URI.create(toString(u));

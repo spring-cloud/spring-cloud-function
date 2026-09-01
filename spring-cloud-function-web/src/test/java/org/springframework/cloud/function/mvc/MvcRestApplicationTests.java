@@ -340,7 +340,7 @@ public class MvcRestApplicationTests {
 		@ResponseStatus(HttpStatus.ACCEPTED)
 		public Flux<?> updates(@RequestBody List<String> list) {
 			Flux<String> flux = Flux.fromIterable(list).cache();
-			flux.subscribe(value -> this.list.add(value));
+			flux.subscribe(this.list::add);
 			return flux;
 		}
 
@@ -369,9 +369,7 @@ public class MvcRestApplicationTests {
 
 		@GetMapping("/timeout")
 		public Flux<?> timeout() {
-			return Flux.defer(() -> Flux.<String>create(emitter -> {
-				emitter.next("foo");
-			}).timeout(Duration.ofMillis(100L), Flux.empty()));
+			return Flux.defer(() -> Flux.<String>create(emitter -> emitter.next("foo")).timeout(Duration.ofMillis(100L), Flux.empty()));
 		}
 
 		@GetMapping("/sentences")

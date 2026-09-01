@@ -276,7 +276,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Bean
 		public Consumer<String> consumer() {
-			return value -> this.list.add(value);
+			return this.list::add;
 		}
 	}
 
@@ -351,7 +351,7 @@ public class ContextFunctionCatalogInitializerTests {
 
 		@Override
 		public void initialize(GenericApplicationContext context) {
-			context.registerBean(String.class, () -> value());
+			context.registerBean(String.class, this::value);
 			context.registerBean("foos", FunctionRegistration.class,
 					() -> new FunctionRegistration<>(foos(context.getBean(String.class)))
 							.type(FunctionTypeUtils.functionType(String.class, Foo.class)));

@@ -43,9 +43,7 @@ public class GrpcSpringMessageConverter extends AbstractGrpcMessageConverter<Grp
 	@Override
 	protected GrpcSpringMessage doFromSpringMessage(Message<byte[]> springMessage) {
 		Map<String, String> stringHeaders = new HashMap<>();
-		springMessage.getHeaders().forEach((k, v) -> {
-			stringHeaders.put(k, v.toString());
-		});
+		springMessage.getHeaders().forEach((k, v) -> stringHeaders.put(k, v.toString()));
 		return GrpcSpringMessage.newBuilder()
 				.setPayload(ByteString.copyFrom(springMessage.getPayload()))
 				.putAllHeaders(stringHeaders)

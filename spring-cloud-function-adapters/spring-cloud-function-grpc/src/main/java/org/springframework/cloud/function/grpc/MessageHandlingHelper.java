@@ -108,10 +108,8 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 		Message<byte[]> message = this.toSpringMessage(request);
 		FunctionInvocationWrapper function = this.resolveFunction(message.getHeaders());
 		Publisher<Message<byte[]>> replyStream = (Publisher<Message<byte[]>>) function.apply(message);
-		Flux.from(replyStream).doOnNext(replyMessage -> {
-			responseObserver.onNext(this.toGrpcMessage(replyMessage, (Class<T>) request.getClass()));
-		})
-		.doOnComplete(() -> responseObserver.onCompleted())
+		Flux.from(replyStream).doOnNext(replyMessage -> responseObserver.onNext(this.toGrpcMessage(replyMessage, (Class<T>) request.getClass())))
+		.doOnComplete(responseObserver::onCompleted)
 		.subscribe();
 	}
 
@@ -154,7 +152,7 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 				resultRef.offer(replyMessage);
 			});
 
-			return new StreamObserver<T>() {
+			return new StreamObserver<>() {
 				@Override
 				public void onNext(T inputMessage) {
 					if (logger.isDebugEnabled()) {
@@ -245,7 +243,7 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 			responseObserver.onNext(outputMessage);
 		});
 
-		return new StreamObserver<T>() {
+		return new StreamObserver<>() {
 			@Override
 			public void onNext(T inputMessage) {
 				if (logger.isDebugEnabled()) {
@@ -275,7 +273,7 @@ public class MessageHandlingHelper<T extends GeneratedMessageV3> implements Smar
 	private StreamObserver<T> biStreamImperative(StreamObserver<T> responseObserver,
 			ServerCallStreamObserver<T> serverCallStreamObserver,
 			AtomicBoolean wasReady) {
-		return new StreamObserver<T>() {
+		return new StreamObserver<>() {
 
 			@SuppressWarnings("unchecked")
 			@Override

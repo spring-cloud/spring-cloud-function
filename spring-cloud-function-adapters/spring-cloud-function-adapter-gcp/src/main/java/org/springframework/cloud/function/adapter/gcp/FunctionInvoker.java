@@ -180,7 +180,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 			httpResponse.setContentType(result.getHeaders().get("Content-Type").toString());
 		}
 		else {
-			httpRequest.getContentType().ifPresent(contentType -> httpResponse.setContentType(contentType));
+			httpRequest.getContentType().ifPresent(httpResponse::setContentType);
 		}
 		String content = result.getPayload() instanceof String strPayload ? strPayload
 				: new String((byte[]) result.getPayload(), StandardCharsets.UTF_8);
@@ -188,7 +188,7 @@ public class FunctionInvoker implements HttpFunction, RawBackgroundFunction {
 		for (Entry<String, Object> header : headers.entrySet()) {
 			Object values = header.getValue();
 			if (values instanceof Collection<?>) {
-				String headerValue = ((Collection<?>) values).stream().map(item -> item.toString())
+				String headerValue = ((Collection<?>) values).stream().map(Object::toString)
 						.collect(Collectors.joining(","));
 				httpResponse.appendHeader(header.getKey(), headerValue);
 			}

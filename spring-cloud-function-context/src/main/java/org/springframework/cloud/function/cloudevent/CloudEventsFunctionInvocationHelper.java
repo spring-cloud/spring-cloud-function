@@ -101,7 +101,7 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 		if (input != null) {
 			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders(), true);
 		}
-		else if (result instanceof Message resultMessage) {
+		else if (result instanceof Message<?> resultMessage) {
 			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(resultMessage.getHeaders(), true);
 		}
 
