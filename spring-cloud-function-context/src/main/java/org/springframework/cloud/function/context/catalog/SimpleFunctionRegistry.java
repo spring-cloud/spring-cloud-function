@@ -1214,9 +1214,10 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 						? input
 						: new OriginalMessageHolder(((Message) input).getPayload(), (Message<?>) input);
 			}
-			else if (input instanceof Message messageResult) {
-				input = this.filterOutHeaders(messageResult);
-				if (((Message) input).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
+			else if (input instanceof Message) {
+				input = this.filterOutHeaders((Message) input);
+				if (this.isInputTypeMessage()
+						&& ((Message) input).getPayload().getClass().getName().equals("org.springframework.kafka.support.KafkaNull")) {
 					return input;
 				}
 
