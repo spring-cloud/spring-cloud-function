@@ -287,7 +287,7 @@ public final class CloudEventMessageUtils {
 						.fromMessage(cloudEventMessage, Map.class);
 				canonicalizeHeaders(structuredCloudEvent, true);
 				return buildBinaryMessageFromStructuredMap(structuredCloudEvent,
-						inputMessage.getHeaders());
+						inputMessage.getHeaders(), dataContentType, messageConverter);
 			}
 		}
 		else if (StringUtils.hasText(inputContentType)) {
@@ -461,10 +461,21 @@ public final class CloudEventMessageUtils {
 	}
 
 	private static Message<?> buildBinaryMessageFromStructuredMap(Map<String, Object> structuredCloudEvent,
-			MessageHeaders originalHeaders) {
+			MessageHeaders originalHeaders, String dataContentType, MessageConverter messageConverter) {
 		Object payload = structuredCloudEvent.remove(DATA);
 		if (payload == null) {
 			payload = Collections.emptyMap();
+		}
+		// The structured envelope was fully deserialized, so 'data' is now a Java object (e.g. a Map).
+		// A binary-mode CloudEvent carries its data as serialized bytes, and downstream binary readers
+		// (e.g. the CNCF CloudEventMessageConverter) only read byte[]/String payloads. Re-serialize the
+		// data using the data content-type so the binary-mode message is well-formed.
+		if (!(payload instanceof byte[]) && !(payload instanceof String) && StringUtils.hasText(dataContentType)) {
+			Message<?> serializedData = messageConverter.toMessage(payload,
+					new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, dataContentType)));
+			if (serializedData != null) {
+				payload = serializedData.getPayload();
+			}
 		}
 
 		CloudEventMessageBuilder<?> messageBuilder = CloudEventMessageBuilder
@@ -475,6 +486,12 @@ public final class CloudEventMessageUtils {
 			if (!MessageHeaders.ID.equals(key)) {
 				messageBuilder.setHeader(key, originalHeaders.get(key));
 			}
+		}
+
+		// The message has been transformed from structured-mode to binary-mode, so the content-type
+		// must reflect the data content-type.
+		if (StringUtils.hasText(dataContentType)) {
+			messageBuilder.setHeader(MessageHeaders.CONTENT_TYPE, dataContentType);
 		}
 
 		return messageBuilder.build();
