@@ -69,6 +69,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.kafka.support.KafkaNull;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -155,6 +156,62 @@ public class SimpleFunctionRegistryTests {
 		frField.setAccessible(true);
 		Collection c = (Collection) frField.get(catalog);
 		assertThat(c.size()).isEqualTo(1);
+	}
+
+	@Test
+	public void testKafkaNullWithConcreteConsumerTypeNoLongerReachesFunctionAsRawMessage() {
+		// Regression test for #1448: a Kafka tombstone (KafkaNull payload) bound
+		// to a Consumer<ConcreteType> used to bypass conversion entirely and
+		// reach the function as a raw, unconverted Message, throwing an opaque
+		// "GenericMessage cannot be cast to <Type>" ClassCastException that gave
+		// no hint a Kafka tombstone was involved.
+		//
+		// With the fix, the message now flows through the same conversion path
+		// as any other message. For a plain (non-generic) declared parameter
+		// type such as this one, SmartCompositeMessageConverter's two-argument
+		// fromMessage(Message, Class) overload does not consult a registered
+		// MessageConverterHelper when every converter quietly returns null
+		// (only when a converter throws), so the failure still surfaces as a
+		// ClassCastException here rather than a MessageConversionException --
+		// a pre-existing, orthogonal limitation of that overload, unrelated to
+		// this fix. But the payload is now unwrapped before the cast, so the
+		// exception names the real cause (KafkaNull) instead of the opaque
+		// wrapping Message type -- a genuine diagnostic improvement.
+		CompositeMessageConverter converter = new SmartCompositeMessageConverter(
+				List.of(new ByteArrayMessageConverter()));
+
+		FunctionRegistration<ConsumePerson> registration = new FunctionRegistration<>(
+				new ConsumePerson(), "consumePerson").type(ConsumePerson.class);
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, converter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("consumePerson");
+
+		Message<Object> kafkaNullMessage = MessageBuilder.withPayload((Object) KafkaNull.INSTANCE).build();
+
+		Assertions.assertThatThrownBy(() -> lookedUpFunction.apply(kafkaNullMessage))
+				.isInstanceOf(ClassCastException.class)
+				.hasMessageContaining("KafkaNull")
+				.hasMessageNotContaining("GenericMessage");
+	}
+
+	@Test
+	public void testKafkaNullWithMessageTypedConsumerStillPassesThroughUnconverted() {
+		// A function genuinely declared to accept Message<?>/KafkaNull must keep
+		// working exactly as before -- only the mismatched-type case changes.
+		ConsumeMessage function = new ConsumeMessage();
+		FunctionRegistration<ConsumeMessage> registration = new FunctionRegistration<>(
+				function, "consumeMessage").type(ConsumeMessage.class);
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(registration);
+		FunctionInvocationWrapper lookedUpFunction = catalog.lookup("consumeMessage");
+
+		Message<Object> kafkaNullMessage = MessageBuilder.withPayload((Object) KafkaNull.INSTANCE).build();
+		lookedUpFunction.apply(kafkaNullMessage);
+
+		assertThat(function.received).isNotNull();
+		assertThat(function.received.getPayload()).isSameAs(KafkaNull.INSTANCE);
 	}
 
 	@Test
@@ -820,9 +877,24 @@ public class SimpleFunctionRegistryTests {
 
 	}
 
+	private static final class ConsumePerson implements Consumer<Person> {
+		@Override
+		public void accept(Person person) {
+			fail("function must not be invoked when conversion fails");
+		}
+	}
+
+	private static final class ConsumeMessage implements Consumer<Message<Object>> {
+		private volatile Message<Object> received;
+
+		@Override
+		public void accept(Message<Object> message) {
+			this.received = message;
+		}
+	}
+
 	private static final class UpperCaseMessage
 			implements Function<Message<String>, Message<String>> {
-
 		@Override
 		public Message<String> apply(Message<String> t) {
 			return MessageBuilder.withPayload(t.getPayload().toUpperCase(Locale.ROOT))
