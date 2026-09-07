@@ -1,6 +1,6 @@
 buildscript {
 	ext {
-		springBootVersion = '4.2.0-SNAPSHOT'
+		springBootVersion = '4.2.0-INTERNAL-SNAPSHOT'
 		wrapperVersion = '1.0.13.RELEASE'
 	}
 	repositories {
@@ -22,7 +22,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'io.spring.sample'
-version = '5.1.0-SNAPSHOT'
+version = '5.1.0-INTERNAL-SNAPSHOT'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "5.1.0-SNAPSHOT"
+	springCloudFunctionVersion = "5.1.0-INTERNAL-SNAPSHOT"
 }
 ext['reactor.version'] = "3.1.7.RELEASE"
 
