@@ -33,7 +33,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "4.1.0-SNAPSHOT"
+	springCloudFunctionVersion = "5.1.0-SNAPSHOT"
 }
 
 dependencies {

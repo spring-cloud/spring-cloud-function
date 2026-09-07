@@ -1,6 +1,6 @@
 buildscript {
 	ext {
-		springBootVersion = '2.1.0.BUILD-SNAPSHOT'
+		springBootVersion = '4.2.0-SNAPSHOT'
 		wrapperVersion = '1.0.13.RELEASE'
 	}
 	repositories {
@@ -34,7 +34,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "2.0.0.BUILD-SNAPSHOT"
+	springCloudFunctionVersion = "5.1.0-SNAPSHOT"
 }
 
 dependencyManagement {
