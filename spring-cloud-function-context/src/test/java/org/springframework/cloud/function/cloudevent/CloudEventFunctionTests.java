@@ -20,8 +20,11 @@ import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+
+import io.cloudevents.CloudEvent;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -333,6 +336,56 @@ public class CloudEventFunctionTests {
 		assertThat(CloudEventMessageUtils.getSource(resultMessage)).isEqualTo(URI.create("http://spring.io/"));
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test // see https://github.com/spring-cloud/spring-cloud-function/issues/1455
+	public void testStructuredToCloudEventTypedPayload() throws Exception {
+		String payload = "{\n" +
+				"    \"specversion\" : \"1.0\",\n" +
+				"    \"type\" : \"org.springframework\",\n" +
+				"    \"source\" : \"https://spring.io/\",\n" +
+				"    \"id\" : \"A234-1234-1234\",\n" +
+				"    \"datacontenttype\" : \"application/json\",\n" +
+				"    \"data\" : {\n" +
+				"        \"version\" : \"1.0\",\n" +
+				"        \"releaseName\" : \"Spring Framework\",\n" +
+				"        \"releaseDate\" : \"24-03-2004\"\n" +
+				"    }\n" +
+				"}";
+		Function<Object, Object> function = this.lookup("echoCloudEvent", TestConfiguration.class);
+
+		Message<String> inputMessage = MessageBuilder
+				.withPayload(payload)
+				.setHeader(MessageHeaders.CONTENT_TYPE, CloudEventMessageUtils.APPLICATION_CLOUDEVENTS_VALUE + "+json")
+				.build();
+
+		// structured-mode: attributes live in the body, not the headers
+		assertThat(CloudEventMessageUtils.isCloudEvent(inputMessage)).isFalse();
+
+		Message<CloudEvent> resultMessage = (Message<CloudEvent>) function.apply(inputMessage);
+
+		/*
+		 * When the target type is the CNCF io.cloudevents.CloudEvent, toCanonical converts the
+		 * structured envelope to binary-mode (data as payload, attributes as ce-* headers) and must
+		 * also reset content-type to the datacontenttype. Otherwise the CNCF CloudEventMessageConverter
+		 * re-dispatches on the stale application/cloudevents+json content-type, picks the structured
+		 * reader and fails to read the (now Map) payload as the serialized envelope.
+		 */
+		assertThat(resultMessage).isNotNull();
+		CloudEvent cloudEvent = resultMessage.getPayload();
+		assertThat(cloudEvent).isNotNull();
+		assertThat(cloudEvent.getSpecVersion().toString()).isEqualTo("1.0");
+		assertThat(cloudEvent.getType()).isEqualTo("org.springframework");
+		assertThat(cloudEvent.getSource()).isEqualTo(URI.create("https://spring.io/"));
+		assertThat(cloudEvent.getId()).isEqualTo("A234-1234-1234");
+
+		// the CloudEvent actually delivered to the user function must carry the data
+		CloudEvent received = TestConfiguration.RECEIVED_CLOUD_EVENT.get();
+		assertThat(received).isNotNull();
+		assertThat(received.getType()).isEqualTo("org.springframework");
+		assertThat(received.getData()).isNotNull();
+		assertThat(new String(received.getData().toBytes())).contains("Spring Framework");
+	}
+
 	private Function<Object, Object> lookup(String functionDefinition, Class<?>... configClass) {
 		ApplicationContext context = new SpringApplicationBuilder(configClass).run(
 				"--logging.level.org.springframework.cloud.function=DEBUG", "--spring.main.lazy-initialization=true");
@@ -342,9 +395,21 @@ public class CloudEventFunctionTests {
 	@EnableAutoConfiguration
 	@Configuration
 	public static class TestConfiguration {
+
+		static final AtomicReference<CloudEvent> RECEIVED_CLOUD_EVENT =
+				new AtomicReference<>();
+
 		@Bean
 		Function<Message<Person>, Message<Person>> echo() {
 			return Function.identity();
+		}
+
+		@Bean
+		Function<Message<CloudEvent>, Message<CloudEvent>> echoCloudEvent() {
+			return message -> {
+				RECEIVED_CLOUD_EVENT.set(message.getPayload());
+				return message;
+			};
 		}
 
 		@Bean
