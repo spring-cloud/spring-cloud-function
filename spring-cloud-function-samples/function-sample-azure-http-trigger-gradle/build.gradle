@@ -32,9 +32,13 @@ repositories {
     mavenCentral()
 }
 
+ext {
+	springCloudFunctionVersion = "4.1.0-SNAPSHOT"
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure:4.1.0-SNAPSHOT"
+    implementation "org.springframework.cloud:spring-cloud-function-adapter-azure:${springCloudFunctionVersion}"
 }
 
 tasks.named('test') {
