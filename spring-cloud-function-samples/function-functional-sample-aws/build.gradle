@@ -1,6 +1,6 @@
 buildscript {
 	ext {
-		springBootVersion = '2.2.0.BUILD-SNAPSHOT'
+		springBootVersion = '4.0.9-SNAPSHOT'
 		wrapperVersion = '1.0.17.RELEASE'
 		shadowVersion = '5.1.0'
 	}
@@ -40,7 +40,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "3.0.0.BUILD-SNAPSHOT"
+	springCloudFunctionVersion = "5.0.5-SNAPSHOT"
 	awsLambdaEventsVersion = "3.14.0"
 	awsLambdaCoreVersion = "1.2.3"
 }
