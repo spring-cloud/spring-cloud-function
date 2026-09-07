@@ -64,9 +64,7 @@ public final class GrpcUtils {
 
 	public static GrpcSpringMessage toGrpcSpringMessage(Message<byte[]> message) {
 		Map<String, String> stringHeaders = new HashMap<>();
-		message.getHeaders().forEach((k, v) -> {
-			stringHeaders.put(k, v.toString());
-		});
+		message.getHeaders().forEach((k, v) -> stringHeaders.put(k, v.toString()));
 		return toGrpcSpringMessage(message.getPayload(), stringHeaders);
 	}
 
@@ -201,7 +199,7 @@ public final class GrpcUtils {
 				.usePlaintext().build();
 
 		LinkedBlockingQueue<Message<byte[]>> resultRef = new LinkedBlockingQueue<>(1);
-		StreamObserver<GrpcSpringMessage> responseObserver = new StreamObserver<GrpcSpringMessage>() {
+		StreamObserver<GrpcSpringMessage> responseObserver = new StreamObserver<>() {
 			@Override
 			public void onNext(GrpcSpringMessage result) {
 				if (logger.isDebugEnabled()) {
@@ -237,9 +235,7 @@ public final class GrpcUtils {
 			catch (Exception e) {
 				requestObserver.onError(e);
 			}
-		}).doOnComplete(() -> {
-			requestObserver.onCompleted();
-		}).doOnError(e -> {
+		}).doOnComplete(requestObserver::onCompleted).doOnError(e -> {
 			e.printStackTrace();
 			responseObserver.onError(Status.UNKNOWN.withDescription("Error handling request")
 					.withCause(e).asRuntimeException());
@@ -256,7 +252,7 @@ public final class GrpcUtils {
 	}
 
 	private static ClientResponseObserver<GrpcSpringMessage, GrpcSpringMessage> clientResponseObserver(Flux<Message<byte[]>> inputStream, Many<Message<byte[]>> sink) {
-		return new ClientResponseObserver<GrpcSpringMessage, GrpcSpringMessage>() {
+		return new ClientResponseObserver<>() {
 
 			ClientCallStreamObserver<GrpcSpringMessage> requestStreamObserver;
 
@@ -265,22 +261,15 @@ public final class GrpcUtils {
 				this.requestStreamObserver = requestStreamObserver;
 				requestStreamObserver.disableAutoInboundFlowControl();
 
-				requestStreamObserver.setOnReadyHandler(new Runnable() {
-					@Override
-					public void run() {
-						inputStream
-						.doOnNext(request -> {
-							if (logger.isDebugEnabled()) {
-								logger.debug("Streaming message to function: " + request);
-							}
-							requestStreamObserver.onNext(GrpcUtils.toGrpcSpringMessage(request));
-						})
-						.doOnComplete(() -> {
-							requestStreamObserver.onCompleted();
-						})
-						.subscribe();
-					}
-				});
+				requestStreamObserver.setOnReadyHandler(() -> inputStream
+					.doOnNext(request -> {
+						if (logger.isDebugEnabled()) {
+							logger.debug("Streaming message to function: " + request);
+						}
+						requestStreamObserver.onNext(GrpcUtils.toGrpcSpringMessage(request));
+					})
+						.doOnComplete(requestStreamObserver::onCompleted)
+					.subscribe());
 			}
 
 			@Override

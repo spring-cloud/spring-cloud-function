@@ -55,6 +55,7 @@ public class HeadersToMessageTests {
 	@Autowired
 	private TestRestTemplate rest;
 
+	@SuppressWarnings("PMD.AvoidRawTypesForCollections")
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		// test POJO paylod

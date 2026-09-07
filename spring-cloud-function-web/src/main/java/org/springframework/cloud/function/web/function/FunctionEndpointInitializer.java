@@ -106,7 +106,7 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 	}
 
 	private void registerEndpoint(GenericApplicationContext context) {
-		context.registerBean(FunctionHttpProperties.class, () -> new FunctionHttpProperties());
+		context.registerBean(FunctionHttpProperties.class, FunctionHttpProperties::new);
 		context.registerBean(FunctionEndpointFactory.class,
 				() -> new FunctionEndpointFactory(context.getBean(FunctionProperties.class), context.getBean(FunctionCatalog.class),
 						context.getEnvironment(), context.getBean(FunctionHttpProperties.class)));
@@ -150,7 +150,7 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 				logger.info("No web server classes found so no server to start");
 				return;
 			}
-			Integer port = Integer.valueOf(context.getEnvironment().resolvePlaceholders("${server.port:${PORT:8080}}"));
+			int port = Integer.parseInt(context.getEnvironment().resolvePlaceholders("${server.port:${PORT:8080}}"));
 			String address = context.getEnvironment().resolvePlaceholders("${server.address:0.0.0.0}");
 			if (port >= 0) {
 				HttpHandler handler = context.getBeansOfType(HttpHandler.class).values().iterator().next();
@@ -166,8 +166,8 @@ public class FunctionEndpointInitializer implements ApplicationContextInitialize
 
 		private void callback(DisposableServer server, ApplicationContext context) {
 			logger.info("HTTP server started on port: " + server.port());
-			if (context instanceof ConfigurableApplicationContext) {
-				((ConfigurableApplicationContext) context).getEnvironment().getPropertySources().addFirst(
+			if (context instanceof ConfigurableApplicationContext configurableContext) {
+				configurableContext.getEnvironment().getPropertySources().addFirst(
 					new MapPropertySource("functionalServerProps", Collections.singletonMap("local.server.port", server.port())));
 			}
 			try {

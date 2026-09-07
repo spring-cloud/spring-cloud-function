@@ -175,7 +175,7 @@ public class ContextFunctionCatalogAutoConfiguration {
 								BeanFactory beanFactory, @Nullable MessageRoutingCallback routingCallback,
 								@Nullable DefaultMessageRoutingHandler defaultMessageRoutingHandler) {
 		if (defaultMessageRoutingHandler != null) {
-			FunctionRegistration functionRegistration = new FunctionRegistration(defaultMessageRoutingHandler, RoutingFunction.DEFAULT_ROUTE_HANDLER);
+			FunctionRegistration functionRegistration = new FunctionRegistration<>(defaultMessageRoutingHandler, RoutingFunction.DEFAULT_ROUTE_HANDLER);
 			functionRegistration.type(FunctionTypeUtils.consumerType(ResolvableType.forClassWithGenerics(Message.class, Object.class).getType()));
 			((FunctionRegistry) functionCatalog).register(functionRegistration);
 		}

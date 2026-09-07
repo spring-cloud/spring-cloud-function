@@ -55,6 +55,7 @@ public class HeadersToMessageTests {
 	@Autowired
 	private TestRestTemplate rest;
 
+	@SuppressWarnings("PMD.AvoidRawTypesForCollections")
 	@Test
 	public void testBodyAndCustomHeaderFromMessagePropagation() throws Exception {
 		HttpEntity<Map> postForEntity = this.rest
@@ -68,6 +69,7 @@ public class HeadersToMessageTests {
 		assertThat(postForEntity.getHeaders().get("foo").get(0)).isEqualTo("bar");
 	}
 
+	@SuppressWarnings("PMD.AvoidRawTypesForCollections")
 	@Test
 	public void testHeadersPropagatedByDefault() throws Exception {
 		HttpEntity<Map> postForEntity = this.rest

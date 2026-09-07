@@ -72,8 +72,8 @@ public class FunctionTypeProcessor implements BeanFactoryInitializationAotProces
 			if (!isCoreJavaType(name)) {
 				typeHints.add(FunctionTypeUtils.getRawType(functionParameterType));
 			}
-			if (functionParameterType instanceof ParameterizedType) {
-				this.registerAllGenericTypes((ParameterizedType) functionParameterType, typeHints);
+			if (functionParameterType instanceof ParameterizedType parameterizedType) {
+				this.registerAllGenericTypes(parameterizedType, typeHints);
 			}
 		}
 	}
@@ -88,13 +88,7 @@ public class FunctionTypeProcessor implements BeanFactoryInitializationAotProces
 					|| Supplier.class.isAssignableFrom(beanType);
 	}
 
-	private static final class ReflectiveProcessorBeanFactoryInitializationAotContribution implements BeanFactoryInitializationAotContribution {
-
-		private final Class<?>[] typeHints;
-
-		private ReflectiveProcessorBeanFactoryInitializationAotContribution(Class<?>[] typeHints) {
-			this.typeHints = typeHints;
-		}
+	private record ReflectiveProcessorBeanFactoryInitializationAotContribution(Class<?>[] typeHints) implements BeanFactoryInitializationAotContribution {
 
 		@Override
 		public void applyTo(GenerationContext generationContext, BeanFactoryInitializationCode beanFactoryInitializationCode) {

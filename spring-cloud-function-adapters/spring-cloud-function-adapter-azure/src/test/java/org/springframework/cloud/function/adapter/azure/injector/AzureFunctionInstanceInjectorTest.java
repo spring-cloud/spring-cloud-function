@@ -63,7 +63,7 @@ public class AzureFunctionInstanceInjectorTest {
 
 		Assertions.assertThat(azureFunction).isNotNull();
 
-		HttpRequestMessageStub<Optional<String>> requestStub = new HttpRequestMessageStub<Optional<String>>();
+		HttpRequestMessageStub<Optional<String>> requestStub = new HttpRequestMessageStub<>();
 
 		requestStub.setBody(Optional.of("payload"));
 

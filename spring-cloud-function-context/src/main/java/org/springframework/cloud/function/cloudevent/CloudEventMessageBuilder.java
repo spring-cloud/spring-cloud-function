@@ -55,13 +55,13 @@ public final class CloudEventMessageBuilder<T> {
 	}
 
 	public static <T> CloudEventMessageBuilder<T> withData(T data) {
-		CloudEventMessageBuilder<T> builder = new CloudEventMessageBuilder<T>(null);
+		CloudEventMessageBuilder<T> builder = new CloudEventMessageBuilder<>(null);
 		builder.data = data;
 		return builder;
 	}
 
 	public static <T> CloudEventMessageBuilder<T> fromMessage(Message<T> message) {
-		CloudEventMessageBuilder<T> builder = new CloudEventMessageBuilder<T>(new HashMap<>(message.getHeaders()));
+		CloudEventMessageBuilder<T> builder = new CloudEventMessageBuilder<>(new HashMap<>(message.getHeaders()));
 		builder.data = message.getPayload();
 		return builder;
 	}
@@ -211,7 +211,7 @@ public final class CloudEventMessageBuilder<T> {
 			this.headers.put(prefix + CloudEventMessageUtils._SOURCE, URI.create("https://spring.io/"));
 		}
 		MessageHeaders headers = new MessageHeaders(this.headers);
-		GenericMessage<T> message = new GenericMessage<T>(this.data, headers);
+		GenericMessage<T> message = new GenericMessage<>(this.data, headers);
 		Assert.isTrue(CloudEventMessageUtils.isCloudEvent(message), "The message does not appear to be a valid Cloud Event, "
 				+ "since one of the required attributes (id, specversion, type, source) is missing");
 		return message;

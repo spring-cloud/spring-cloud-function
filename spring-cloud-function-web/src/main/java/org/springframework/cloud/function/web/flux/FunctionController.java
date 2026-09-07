@@ -196,8 +196,7 @@ public class FunctionController {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
 		for (String key : body.keySet()) {
 			for (Part part : body.get(key)) {
-				if (part instanceof FormFieldPart) {
-					FormFieldPart form = (FormFieldPart) part;
+				if (part instanceof FormFieldPart form) {
 					map.add(key, form.value());
 				}
 			}

@@ -37,7 +37,7 @@ public class AzureWebProxyInvokerTests {
 		AzureWebProxyInvoker proxyInvoker = new AzureWebProxyInvoker();
 		AzureWebProxyInvoker instance = proxyInvoker.getInstance(AzureWebProxyInvoker.class);
 
-		HttpRequestMessageStub<Optional<String>> request = new HttpRequestMessageStub<Optional<String>>();
+		HttpRequestMessageStub<Optional<String>> request = new HttpRequestMessageStub<>();
 
 		request.setHttpMethod(HttpMethod.GET);
 

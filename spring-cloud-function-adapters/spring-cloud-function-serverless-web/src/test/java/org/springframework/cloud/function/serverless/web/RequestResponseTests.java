@@ -99,7 +99,7 @@ public class RequestResponseTests {
 		HttpServletRequest request = new ServerlessHttpServletRequest(null, "GET", "/pets");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
-		TypeReference<List<Pet>> tr = new TypeReference<List<Pet>>() {
+		TypeReference<List<Pet>> tr = new TypeReference<>() {
 		};
 		List<Pet> pets = mapper.readValue(response.getContentAsByteArray(), tr);
 		assertThat(pets.size()).isEqualTo(10);
@@ -112,7 +112,7 @@ public class RequestResponseTests {
 		request.setParameter("limit", "5");
 		ServerlessHttpServletResponse response = new ServerlessHttpServletResponse();
 		mvc.service(request, response);
-		TypeReference<List<Pet>> tr = new TypeReference<List<Pet>>() {
+		TypeReference<List<Pet>> tr = new TypeReference<>() {
 		};
 		List<Pet> pets = mapper.readValue(response.getContentAsByteArray(), tr);
 		assertThat(pets.size()).isEqualTo(5);

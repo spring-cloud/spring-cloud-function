@@ -31,10 +31,10 @@ public final class ErrorHandlerRegistrar {
 	}
 
 	protected static DefaultErrorWebExceptionHandler errorHandler(GenericApplicationContext context) {
-		context.registerBean(ErrorAttributes.class, () -> new DefaultErrorAttributes());
-		context.registerBean(ErrorProperties.class, () -> new ErrorProperties());
+		context.registerBean(ErrorAttributes.class, DefaultErrorAttributes::new);
+		context.registerBean(ErrorProperties.class, ErrorProperties::new);
 
-		context.registerBean(Resources.class, () -> new Resources());
+		context.registerBean(Resources.class, Resources::new);
 		DefaultErrorWebExceptionHandler handler = new DefaultErrorWebExceptionHandler(
 				context.getBeansOfType(ErrorAttributes.class).values().iterator().next(),
 				context.getBean(Resources.class), context.getBean(ErrorProperties.class), context);

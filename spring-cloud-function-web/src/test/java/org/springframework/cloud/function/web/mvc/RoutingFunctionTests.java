@@ -219,9 +219,7 @@ public class RoutingFunctionTests {
 
 		@Bean
 		public Consumer<Flux<String>> fluxconsumer() {
-			return flux -> flux.doOnNext(s -> {
-				System.out.println("Received: " + s);
-			}).subscribe();
+			return flux -> flux.doOnNext(s -> System.out.println("Received: " + s)).subscribe();
 		}
 
 		@Bean

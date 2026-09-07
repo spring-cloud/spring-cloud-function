@@ -22,9 +22,7 @@ public class LambdaApplication {
 
 	@Bean
 	public Consumer<String> consume() {
-		return value -> {
-			logger.info("Consuming: " + value);
-		};
+		return value -> logger.info("Consuming: " + value);
 	}
 
 	@Bean

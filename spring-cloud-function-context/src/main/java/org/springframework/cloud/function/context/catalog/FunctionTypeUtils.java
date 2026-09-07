@@ -116,7 +116,7 @@ public final class FunctionTypeUtils {
 	 * @return 'true' if this type represents a {@link Collection}. Otherwise 'false'.
 	 */
 	public static boolean isTypeCollection(Type type) {
-		Class rawClass = getRawType(type);
+		Class<?> rawClass = getRawType(type);
 		if (rawClass == null) {
 			return false;
 		}
@@ -170,8 +170,8 @@ public final class FunctionTypeUtils {
 	 * @return instance of {@link Class} as raw representation of the provided {@link Type}
 	 */
 	public static Class<?> getRawType(Type type) {
-		if (type instanceof WildcardType) {
-			Type[] upperbounds = ((WildcardType) type).getUpperBounds();
+		if (type instanceof WildcardType wildcardType) {
+			Type[] upperbounds = wildcardType.getUpperBounds();
 			/*
 			 * Kotlin may have something like this <? extends Message> which is technically a whildcard yet it has upper/lower types.
 			 * See GH-1260
@@ -443,8 +443,8 @@ public final class FunctionTypeUtils {
 		if (function instanceof RoutingFunction) {
 			return ROUTING_FUNCTION_TYPE;
 		}
-		else if (function instanceof FunctionRegistration) {
-			return ((FunctionRegistration) function).getType();
+		else if (function instanceof FunctionRegistration registration) {
+			return registration.getType();
 		}
 		if (applicationContext.containsBean(functionName + FunctionRegistration.REGISTRATION_NAME_SUFFIX)) { // for Kotlin primarily
 			FunctionRegistration fr = applicationContext
@@ -498,8 +498,8 @@ public final class FunctionTypeUtils {
 		return null;
 	}
 	public static Type getImmediateGenericType(Type type, int index) {
-		if (type instanceof ParameterizedType) {
-			return ((ParameterizedType) type).getActualTypeArguments()[index];
+		if (type instanceof ParameterizedType parameterizedType) {
+			return parameterizedType.getActualTypeArguments()[index];
 		}
 		return null;
 	}
@@ -615,15 +615,15 @@ public final class FunctionTypeUtils {
 		if (type instanceof Class) {
 			return cls.isAssignableFrom((Class<?>) type);
 		}
-		else if (type instanceof ParameterizedType) {
-			return isOfType(((ParameterizedType) type).getRawType(), cls);
+		else if (type instanceof ParameterizedType parameterizedType) {
+			return isOfType(parameterizedType.getRawType(), cls);
 		}
 		return false;
 	}
 
 	private static void assertSupportedTypes(Type type) {
-		if (type instanceof ParameterizedType) {
-			type = ((ParameterizedType) type).getRawType();
+		if (type instanceof ParameterizedType parameterizedType) {
+			type = parameterizedType.getRawType();
 			Assert.isTrue(type instanceof Class<?>, "Must be one of Supplier, Function, Consumer"
 					+ " or FunctionRegistration. Was " + type);
 		}

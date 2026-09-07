@@ -70,8 +70,8 @@ public abstract class FunctionContextUtils {
 		Object source = definition.getSource();
 
 		Type param = null;
-		if (source instanceof MethodMetadata) {
-			param = findBeanType(definition, ((MethodMetadata) source).getDeclaringClassName(), ((MethodMetadata) source).getMethodName());
+		if (source instanceof MethodMetadata methodMetadata) {
+			param = findBeanType(definition, methodMetadata.getDeclaringClassName(), methodMetadata.getMethodName());
 		}
 		else if (source instanceof Resource) {
 			param = registry.getType(actualName);
@@ -89,8 +89,7 @@ public abstract class FunctionContextUtils {
 
 	public static Class<?>[] getParamTypesFromBeanDefinitionFactory(Class<?> factory,
 			AbstractBeanDefinition definition, String methodName) {
-		if (definition instanceof RootBeanDefinition) {
-			RootBeanDefinition root = (RootBeanDefinition) definition;
+		if (definition instanceof RootBeanDefinition root) {
 			for (Method method : getCandidateMethods(factory, root)) {
 				if (method.getName().equals(methodName) && AnnotationUtils.findAnnotation(method, Bean.class) != null) {
 					return method.getParameterTypes();

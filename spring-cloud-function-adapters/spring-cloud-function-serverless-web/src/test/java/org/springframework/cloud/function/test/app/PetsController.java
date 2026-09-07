@@ -45,7 +45,7 @@ public class PetsController {
 
 		Pet dbPet = newPet;
 		dbPet.setId(UUID.randomUUID().toString());
-		DeferredResult<Pet> result = new DeferredResult<Pet>();
+		DeferredResult<Pet> result = new DeferredResult<>();
 		result.setResult(dbPet);
 		return result;
 	}

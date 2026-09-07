@@ -57,14 +57,14 @@ public class JacksonMapper extends JsonMapper {
 		JavaType constructType = TypeFactory.createDefaultInstance().constructType(type);
 
 		try {
-			if (json instanceof String) {
-				convertedValue = this.mapper.readValue((String) json, constructType);
+			if (json instanceof String s) {
+				convertedValue = this.mapper.readValue(s, constructType);
 			}
-			else if (json instanceof byte[]) {
-				convertedValue = this.mapper.readValue((byte[]) json, constructType);
+			else if (json instanceof byte[] bytes) {
+				convertedValue = this.mapper.readValue(bytes, constructType);
 			}
-			else if (json instanceof Reader) {
-				convertedValue = this.mapper.readValue((Reader) json, constructType);
+			else if (json instanceof Reader reader) {
+				convertedValue = this.mapper.readValue(reader, constructType);
 			}
 			else if (json instanceof Map) {
 				convertedValue = this.mapper.convertValue(json, constructType);
