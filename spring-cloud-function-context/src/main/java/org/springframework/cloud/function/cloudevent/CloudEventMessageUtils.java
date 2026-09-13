@@ -22,6 +22,7 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -370,6 +371,10 @@ public final class CloudEventMessageUtils {
 	}
 
 	static String extractTargetProtocol(Map<String, Object> messageHeaders) {
+		String targetProtocol = resolveTargetProtocolHeader(messageHeaders);
+		if (StringUtils.hasText(targetProtocol)) {
+			return targetProtocol;
+		}
 		Iterator<String> keyIterator = messageHeaders.keySet().iterator();
 		for (; keyIterator.hasNext();) {
 			String key = keyIterator.next();
@@ -379,6 +384,22 @@ public final class CloudEventMessageUtils {
 			else if (key.startsWith("amqp")) {
 				return Protocols.AMQP;
 			}
+		}
+		return null;
+	}
+
+	private static String resolveTargetProtocolHeader(Map<String, Object> messageHeaders) {
+		Object targetProtocol = messageHeaders.get(MessageUtils.TARGET_PROTOCOL);
+		if (targetProtocol == null) {
+			for (Map.Entry<String, Object> entry : messageHeaders.entrySet()) {
+				if (MessageUtils.TARGET_PROTOCOL.equalsIgnoreCase(entry.getKey())) {
+					targetProtocol = entry.getValue();
+					break;
+				}
+			}
+		}
+		if (targetProtocol instanceof String protocol && StringUtils.hasText(protocol)) {
+			return protocol.toLowerCase(Locale.ROOT);
 		}
 		return null;
 	}

@@ -17,6 +17,8 @@
 package org.springframework.cloud.function.cloudevent;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
@@ -99,7 +101,8 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 
 		String targetPrefix = CloudEventMessageUtils.DEFAULT_ATTR_PREFIX;
 		if (input != null) {
-			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(input.getHeaders(), true);
+			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(
+					headersForTargetPrefix(input, result), true);
 		}
 		else if (result instanceof Message resultMessage) {
 			targetPrefix = CloudEventMessageUtils.determinePrefixToUse(resultMessage.getHeaders(), true);
@@ -117,6 +120,19 @@ public class CloudEventsFunctionInvocationHelper implements FunctionInvocationHe
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
+	}
+
+
+	private static Map<String, Object> headersForTargetPrefix(Message<?> input, Object result) {
+		Map<String, Object> headers = new HashMap<>(input.getHeaders());
+		if (result instanceof Message<?> resultMessage) {
+			resultMessage.getHeaders().forEach((key, value) -> {
+				if (value != null) {
+					headers.putIfAbsent(key, value);
+				}
+			});
+		}
+		return headers;
 	}
 
 	private Message<?> doPostProcessResult(Object result, String targetPrefix) {
