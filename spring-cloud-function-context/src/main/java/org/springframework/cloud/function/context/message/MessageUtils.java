@@ -32,7 +32,12 @@ public abstract class MessageUtils {
 	 */
 	public static String MESSAGE_TYPE = "message-type";
 	/**
-	 * Value for 'target-protocol' typically use as header key.
+	 * Header key for the target messaging protocol of an outgoing Cloud Event (e.g. kafka, amqp, http).
+	 */
+	public static String TARGET_PROTOCOL = "target-protocol";
+
+	/**
+	 * Value for 'source-type' typically use as header key.
 	 */
 	public static String SOURCE_TYPE = "source-type";
 

@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import org.springframework.cloud.function.context.message.MessageUtils;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -96,6 +97,20 @@ public class CloudEventMessageUtilsAndBuilderTests {
 		assertThat(CloudEventMessageUtils.getType(httpMessage)).isEqualTo("blah");
 		assertThat(httpMessage.getHeaders().get("ce-specversion")).isNotNull();
 		assertThat(CloudEventMessageUtils.getSpecVersion(httpMessage)).isEqualTo("1.0");
+	}
+
+
+	@Test
+	void determinePrefixToUsePrefersTargetProtocolHeaderOverSourceProtocolHeaders() {
+		Message<String> ceMessage = CloudEventMessageBuilder.withData("foo")
+				.build(CloudEventMessageUtils.AMQP_ATTR_PREFIX);
+		ceMessage = MessageBuilder.fromMessage(ceMessage)
+				.setHeader(MessageUtils.TARGET_PROTOCOL, "kafka")
+				.setHeader("amqp_correlationId", "123")
+				.build();
+
+		assertThat(CloudEventMessageUtils.determinePrefixToUse(ceMessage.getHeaders(), true))
+				.isEqualTo(CloudEventMessageUtils.KAFKA_ATTR_PREFIX);
 	}
 
 	@Test
