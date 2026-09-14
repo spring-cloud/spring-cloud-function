@@ -63,16 +63,34 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class GcfJarLauncherTests {
 
+	/**
+	 * Constant for PROTOCOL_ALREADY_REGISTERED.
+	 */
 	public static final String PROTOCOL_ALREADY_REGISTERED = "PROTOCOL_ALREADY_REGISTERED";
 
+	/**
+	 * Constant for PROTOCOL_NOT_REGISTERED.
+	 */
 	public static final String PROTOCOL_NOT_REGISTERED = "PROTOCOL_NOT_REGISTERED";
 
+	/**
+	 * Constant for GCF_JAR_LAUNCHER_SUCCEEDED.
+	 */
 	public static final String GCF_JAR_LAUNCHER_SUCCEEDED = "GCF_JAR_LAUNCHER_SUCCEEDED";
 
+	/**
+	 * Constant for GCF_JAR_LAUNCHER_FAILED.
+	 */
 	public static final String GCF_JAR_LAUNCHER_FAILED = "GCF_JAR_LAUNCHER_FAILED";
 
+	/**
+	 * Constant for PROTOCOL_NOW_REGISTERED.
+	 */
 	public static final String PROTOCOL_NOW_REGISTERED = "PROTOCOL_NOW_REGISTERED";
 
+	/**
+	 * Constant for PROTOCOL_STILL_NOT_REGISTERED.
+	 */
 	public static final String PROTOCOL_STILL_NOT_REGISTERED = "PROTOCOL_STILL_NOT_REGISTERED";
 
 	private static final String GCF_LAUNCHER_CLASS_NAME = "org.springframework.cloud.function.adapter.gcp.GcfJarLauncher";
