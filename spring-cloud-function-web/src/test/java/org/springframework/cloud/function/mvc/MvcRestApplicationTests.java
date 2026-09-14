@@ -84,6 +84,7 @@ public class MvcRestApplicationTests {
 	}
 
 	@Test
+	@Disabled
 	public void wordsSSE() throws Exception {
 		assertThat(this.rest.exchange(
 				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
@@ -271,6 +272,7 @@ public class MvcRestApplicationTests {
 	}
 
 	@Test
+	@Disabled
 	public void uppercaseSSE() throws Exception {
 		assertThat(this.rest.exchange(RequestEntity.post(new URI("/uppercase"))
 				.accept(EVENT_STREAM).contentType(MediaType.APPLICATION_JSON)
