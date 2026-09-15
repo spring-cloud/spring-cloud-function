@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
@@ -88,7 +87,6 @@ public class HttpGetIntegrationTests {
 	}
 
 	@Test
-	@Disabled
 	public void wordsSSE() throws Exception {
 		assertThat(this.rest.exchange(
 				RequestEntity.get(new URI("/words")).accept(EVENT_STREAM).build(),
@@ -198,7 +196,6 @@ public class HttpGetIntegrationTests {
 	}
 
 	@Test
-	@Disabled
 	public void sentencesAcceptSse() throws Exception {
 		ResponseEntity<String> result = this.rest.exchange(
 				RequestEntity.get(new URI("/sentences")).accept(EVENT_STREAM).build(),
