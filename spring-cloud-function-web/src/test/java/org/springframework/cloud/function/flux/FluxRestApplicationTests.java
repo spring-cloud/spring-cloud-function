@@ -290,7 +290,7 @@ public class FluxRestApplicationTests {
 	}
 
 	private String sse(String... values) {
-		return "data:" + StringUtils.arrayToDelimitedString(values, "\n\ndata:") + "\n\n";
+		return "data: " + StringUtils.arrayToDelimitedString(values, "\n\ndata: ") + "\n\n";
 	}
 
 	@EnableAutoConfiguration
