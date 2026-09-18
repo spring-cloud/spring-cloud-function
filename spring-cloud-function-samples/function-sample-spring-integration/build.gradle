@@ -1,6 +1,6 @@
 buildscript {
 	ext {
-		springBootVersion = '4.2.0-INTERNAL-SNAPSHOT'
+		springBootVersion = '4.2.0-M2'
 	}
 	repositories {
 		mavenCentral()
@@ -17,7 +17,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'io.spring.sample'
-version = '5.1.0-INTERNAL-SNAPSHOT'
+version = '5.1.0-M1'
 sourceCompatibility = 1.8
 
 repositories {
@@ -27,7 +27,7 @@ repositories {
 
 
 ext {
-	springCloudFunctionVersion = '5.1.0-INTERNAL-SNAPSHOT'
+	springCloudFunctionVersion = '5.1.0-M1'
 }
 
 dependencies {
