@@ -16,13 +16,12 @@
 
 package org.springframework.cloud.function.context.config;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -68,8 +67,12 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 		try {
 			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/deserializable.types");
 			while (resources.hasMoreElements()) {
-				URI uri = resources.nextElement().toURI();
-				List<String> lines = Files.readAllLines(Path.of(uri));
+				URL url = resources.nextElement();
+				List<String> lines;
+				try (BufferedReader reader = new BufferedReader(
+						new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+					lines = reader.lines().toList();
+				}
 				for (String line : lines) {
 					// need to split in case if delimited
 					String[] keys = line.split(",");
