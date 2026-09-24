@@ -8,7 +8,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '5.1.0-M1'
+version = '5.1.0-SNAPSHOT'
 
 java {
 	sourceCompatibility = '17'
