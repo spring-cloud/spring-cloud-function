@@ -53,7 +53,7 @@
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<wrapper.version>1.0.31.RELEASE</wrapper.version>
-		<pmd.version>7.26.0</pmd.version>
+		<pmd.version>7.28.0</pmd.version>
 		<docs.main>spring-cloud-function</docs.main>
 		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
 		<maven-checkstyle-plugin.failsOnViolation>true
