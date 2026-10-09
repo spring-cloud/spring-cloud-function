@@ -41,7 +41,6 @@ import tools.jackson.datatype.joda.JodaModule;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -101,7 +100,6 @@ import org.springframework.util.StringUtils;
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(FunctionProperties.class)
-@AutoConfigureAfter(name = {"org.springframework.cloud.function.deployer.FunctionDeployerConfiguration"})
 public class ContextFunctionCatalogAutoConfiguration {
 
 

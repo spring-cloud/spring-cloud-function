@@ -5,7 +5,6 @@
 ** xref:spring-cloud-function/programming-model.adoc[]
 ** xref:spring-cloud-function/standalone-web-applications.adoc[]
 ** xref:spring-cloud-function/standalone-streaming-applications.adoc[]
-** xref:spring-cloud-function/deploying-a-packaged.adoc[]
 ** xref:spring-cloud-function/functional-bean-definitions.adoc[]
 ** xref:spring-cloud-function/serverless-platform-adapters.adoc[]
 
@@ -13,6 +12,5 @@
 ** xref:spring-cloud-function/programming-model.adoc[]
 #** xref:spring-cloud-function/standalone-web-applications.adoc[]
 #** xref:spring-cloud-function/standalone-streaming-applications.adoc[]
-#** xref:spring-cloud-function/deploying-a-packaged.adoc[]
 #** xref:spring-cloud-function/functional-bean-definitions.adoc[]
 #** xref:spring-cloud-function/serverless-platform-adapters.adoc[]
