@@ -17,8 +17,11 @@
 package org.springframework.cloud.function.context.config;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,12 +33,24 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.joda.time.DateTimeZone;
 import org.joda.time.tz.UTCProvider;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
 import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.BeanDescription;
+import tools.jackson.databind.DeserializationConfig;
+import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.JacksonModule.SetupContext;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.cfg.MapperBuilder;
+import tools.jackson.databind.deser.ValueDeserializerModifier;
+import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.type.CollectionType;
 import tools.jackson.datatype.joda.JodaModule;
 
 import org.springframework.beans.BeanUtils;
@@ -290,6 +305,8 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 
+			builder.addModule(BeanUtils.instantiateClass(CollectionLimitModule.class));
+
 			ObjectMapper mapper = builder.addModule(new JodaModule())
 					.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
 					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -298,6 +315,42 @@ public class ContextFunctionCatalogAutoConfiguration {
 					.build();
 
 			return new JacksonMapper(mapper);
+		}
+	}
+
+	static class LimitedCollectionDeserializer extends StdDeserializer<Collection<Object>> {
+		private static final int MAX_ITEMS = 1000;
+
+
+		LimitedCollectionDeserializer(CollectionType type) {
+			super(type);
+		}
+
+		@Override
+		public Collection<Object> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+			int count = 0;
+			Collection<Object> c = Set.class.isAssignableFrom(this._valueClass) ? new HashSet<>() : new ArrayList<>();
+
+			while (p.nextToken() != JsonToken.END_ARRAY) {
+				if (++count > MAX_ITEMS) {
+					throw new IllegalStateException("Collection size exceeds limit of " + MAX_ITEMS);
+				}
+
+				c.add(ctxt.readValue(p, this._valueType.getBindings().getBoundType(0)));
+			}
+			return c;
+		}
+	}
+
+	static class CollectionLimitModule extends SimpleModule {
+		@Override
+		public void setupModule(SetupContext context) {
+			context.addDeserializerModifier(new ValueDeserializerModifier() {
+				public ValueDeserializer<?> modifyCollectionDeserializer(DeserializationConfig config,
+						CollectionType type, BeanDescription.Supplier beanDescRef, ValueDeserializer<?> deserializer) {
+					return new LimitedCollectionDeserializer(type);
+				}
+			});
 		}
 	}
 }
