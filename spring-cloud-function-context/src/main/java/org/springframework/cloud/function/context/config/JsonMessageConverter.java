@@ -125,7 +125,7 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 				String type = mimeType != null ? mimeType.getParameter("type") : null;
 				if (StringUtils.hasText(type) && this.deserializableTypes.contains(type)) {
 					try {
-						convertToType = ClassUtils.forName(type, ClassUtils.getDefaultClassLoader());
+						convertToType = this.loadClass(type);
 					}
 					catch (ClassNotFoundException | LinkageError e) {
 						throw new IllegalArgumentException("Failed to load class `" + type + "` specified by the provided content-type: " + mimeType, e);
@@ -170,6 +170,20 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 			return payload;
 		}
 		return jsonMapper.toJson(payload);
+	}
+
+	private Class<?> loadClass(String className) throws ClassNotFoundException {
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		Class<?> clazz = classLoader.loadClass(className);
+		ClassLoader actualClassLoader = clazz.getClassLoader();
+		if (actualClassLoader == null) {
+			throw new IllegalArgumentException(
+					"Loading of Bootstrap class such as '" + className + "' is not allowed.");
+		}
+		else if (actualClassLoader == ClassLoader.getPlatformClassLoader()) {
+			throw new IllegalArgumentException("Loading of Platform class such as '" + className + "' is not allowed.");
+		}
+		return clazz;
 	}
 
 	private Type getResolvedType(Class<?> targetClass, @Nullable Object conversionHint) {
