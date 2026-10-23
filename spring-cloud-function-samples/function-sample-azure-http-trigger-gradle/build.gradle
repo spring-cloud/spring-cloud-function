@@ -8,7 +8,7 @@ apply plugin: 'java'
 apply plugin: "com.microsoft.azure.azurefunctions"
 
 group = 'org.scf.azure'
-version = '5.0.5'
+version = '5.0.6-SNAPSHOT'
 
 java {
     sourceCompatibility = '17'
@@ -33,7 +33,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "5.0.5"
+	springCloudFunctionVersion = "5.0.6-SNAPSHOT"
 }
 
 dependencies {
