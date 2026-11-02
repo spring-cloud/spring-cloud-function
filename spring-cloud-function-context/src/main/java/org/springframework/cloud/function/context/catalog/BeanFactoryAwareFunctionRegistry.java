@@ -16,6 +16,7 @@
 
 package org.springframework.cloud.function.context.catalog;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -47,12 +48,13 @@ import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.cloud.function.utils.KotlinUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -65,7 +67,7 @@ import org.springframework.util.StringUtils;
  */
 public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry implements ApplicationContextAware {
 
-	private GenericApplicationContext applicationContext;
+	private ConfigurableApplicationContext applicationContext;
 
 	private final Object lookupLock = new Object();
 
@@ -82,7 +84,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = (GenericApplicationContext) applicationContext;
+		Assert.isInstanceOf(ConfigurableApplicationContext.class, applicationContext,
+				"'applicationContext' must be an instance of ConfigurableApplicationContext");
+		this.applicationContext = (ConfigurableApplicationContext) applicationContext;
 	}
 
 	/*
@@ -222,9 +226,14 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		Type biFunctionType = FunctionContextUtils.findType(this.applicationContext.getBeanFactory(), functionName);
 		Type inputType1 = Object.class;
 		Type inputType2 = Object.class;
+		Type outputType = null;
 		if (biFunctionType instanceof ParameterizedType parameterizedType) {
-			inputType1 = parameterizedType.getActualTypeArguments()[0];
-			inputType2 = parameterizedType.getActualTypeArguments()[1];
+			Type[] typeArguments = parameterizedType.getActualTypeArguments();
+			inputType1 = typeArguments[0];
+			inputType2 = typeArguments[1];
+			if (userFunction instanceof BiFunction && typeArguments.length > 2) {
+				outputType = typeArguments[2];
+			}
 		}
 
 		if (!FunctionTypeUtils.isTypeMap(inputType2)) {
@@ -234,7 +243,10 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		}
 
 		ResolvableType messageType = ResolvableType.forClassWithGenerics(Message.class, ResolvableType.forType(inputType1));
-		Type biFunctionWrapperType = ResolvableType.forClassWithGenerics(Function.class, messageType, ResolvableType.forType(inputType2)).getType();
+		// For BiFunction the wrapper's output is the BiFunction's output. BiConsumer has no output;
+		// its wrapper is intentionally typed as a Function (see FunctionRegistration#setUserFunction).
+		Type biFunctionWrapperType = ResolvableType.forClassWithGenerics(Function.class, messageType,
+				ResolvableType.forType(outputType != null ? outputType : inputType2)).getType();
 
 		Function wrapperFunction = message -> {
 			Object payload = ((Message) message).getPayload();
@@ -303,7 +315,14 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		ProxyFactory pf = new ProxyFactory(targetFunction);
 		pf.setProxyTargetClass(true);
 		pf.setInterfaces(Function.class);
-		pf.addAdvice((MethodInterceptor) invocation -> actualMethodToCall.invoke(invocation.getThis(), invocation.getArguments()));
+		pf.addAdvice((MethodInterceptor) invocation -> {
+			try {
+				return actualMethodToCall.invoke(invocation.getThis(), invocation.getArguments());
+			}
+			catch (InvocationTargetException ex) {
+				throw ex.getTargetException();
+			}
+		});
 		return pf.getProxy();
 	}
 }

@@ -61,7 +61,7 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.FunctionContextUtils;
 import org.springframework.cloud.function.context.config.RoutingFunction;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.KotlinDetector;
 import org.springframework.core.ResolvableType;
@@ -439,7 +439,7 @@ public final class FunctionTypeUtils {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static Type discoverFunctionType(Object function, String functionName, GenericApplicationContext applicationContext) {
+	public static Type discoverFunctionType(Object function, String functionName, ConfigurableApplicationContext applicationContext) {
 		if (function instanceof RoutingFunction) {
 			return ROUTING_FUNCTION_TYPE;
 		}
@@ -662,7 +662,7 @@ public final class FunctionTypeUtils {
 		return type;
 	}
 
-	private static String discoverDefinitionName(String functionDefinition, GenericApplicationContext applicationContext) {
+	private static String discoverDefinitionName(String functionDefinition, ConfigurableApplicationContext applicationContext) {
 		String[] aliases = applicationContext.getAliases(functionDefinition);
 		for (String alias : aliases) {
 			if (applicationContext.getBeanFactory().containsBeanDefinition(alias)) {
