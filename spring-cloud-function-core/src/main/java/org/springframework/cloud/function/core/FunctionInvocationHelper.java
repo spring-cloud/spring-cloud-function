@@ -17,25 +17,51 @@
 
 package org.springframework.cloud.function.core;
 
+import org.springframework.lang.Nullable;
 
 /**
+ * Strategy hook allowing extensions (e.g., Cloud Events support) to customize how a
+ * function's input and output are processed around an invocation. All methods have
+ * pass-through defaults, so implementations override only what they need.
  *
+ * @param <I> the type of the function input handled by this helper (typically
+ * {@code Message<?>})
  * @author Oleg Zhurakousky
  * @author John Blum
  * @since 3.1
- *
  */
 public interface FunctionInvocationHelper<I> {
 
+	/**
+	 * Determine whether the function output should be retained as a message (as opposed
+	 * to being unwrapped to its payload) for the given input.
+	 * @param input the function input
+	 * @return {@code true} (the default) if the output should be retained as a message
+	 */
 	default boolean isRetainOutputAsMessage(I input) {
 		return true;
 	}
 
+	/**
+	 * Called before the input is passed to the function.
+	 * @param input the function input
+	 * @param inputConverter the message converter used for input conversion; typed as
+	 * {@code Object} since this module does not depend on {@code spring-messaging}
+	 * (at runtime it is a {@code MessageConverter})
+	 * @return the (possibly modified) input; the default returns it unchanged
+	 */
 	default I preProcessInput(I input, Object inputConverter) {
 		return input;
 	}
 
-	default Object postProcessResult(Object result, I input) {
+	/**
+	 * Called after the function has produced a result.
+	 * @param result the function result, may be {@code null}
+	 * @param input the input that produced the result
+	 * @return the (possibly modified) result; the default returns it unchanged
+	 */
+	@Nullable
+	default Object postProcessResult(@Nullable Object result, I input) {
 		return result;
 	}
 }
