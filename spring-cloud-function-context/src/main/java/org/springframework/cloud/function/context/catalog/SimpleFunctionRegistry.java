@@ -135,13 +135,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		this.messageConverter = messageConverter;
 		this.functionInvocationHelper = functionInvocationHelper;
 		this.functionProperties = functionProperties;
-		this.wrappedFunctionDefinitions = new LinkedHashMap<>() {
+		// access-ordered so that eviction is least-recently-used rather than first-in-first-out
+		this.wrappedFunctionDefinitions = new LinkedHashMap<>(16, 0.75f, true) {
 			@Override
 			protected boolean removeEldestEntry(Map.Entry<String, FunctionInvocationWrapper> eldest) {
 				boolean remove = size() > wrappedFunctionDefinitionsCacheSize;
 				if (remove) {
 					if (logger.isDebugEnabled()) {
-						logger.debug("Removing message channel from cache " + eldest.getKey());
+						logger.debug("Evicting wrapped function from cache: " + eldest.getKey());
 					}
 				}
 				return remove;
@@ -662,7 +663,12 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			Object result;
 			if (functionAroundWrapper != null && !this.wrapped) {
 				this.wrapped = true;
-				result = functionAroundWrapper.apply(input, this);
+				try {
+					result = functionAroundWrapper.apply(input, this);
+				}
+				finally {
+					this.wrapped = false;
+				}
 			}
 			else {
 				result = this.doApply(input);

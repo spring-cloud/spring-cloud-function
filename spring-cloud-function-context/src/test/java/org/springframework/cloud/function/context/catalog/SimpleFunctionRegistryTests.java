@@ -80,6 +80,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.ProtobufMessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ReflectionUtils;
 
@@ -108,6 +109,49 @@ public class SimpleFunctionRegistryTests {
 		this.messageConverter = new SmartCompositeMessageConverter(messageConverters);
 
 		this.conversionService = new DefaultConversionService();
+	}
+
+	@Test
+	public void testAroundWrapperAppliedAfterNonMessageInvocation() {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new GsonMapper(new Gson()));
+		AtomicInteger aroundInvocations = new AtomicInteger();
+		ReflectionTestUtils.setField(catalog, "functionAroundWrapper", new FunctionAroundWrapper() {
+			@Override
+			protected Object doApply(Object input, FunctionInvocationWrapper targetFunction) {
+				aroundInvocations.incrementAndGet();
+				return targetFunction.apply(input);
+			}
+		});
+		Function<String, String> uppercase = String::toUpperCase;
+		catalog.register(new FunctionRegistration<>(uppercase, "uppercase")
+				.type(ResolvableType.forClassWithGenerics(Function.class, String.class, String.class).getType()));
+		FunctionInvocationWrapper function = catalog.lookup("uppercase");
+
+		// non-Message input is not advised, but must not leave the wrapper stuck in 'wrapped' state
+		function.apply("a");
+		assertThat(aroundInvocations.get()).isEqualTo(0);
+
+		function.apply(MessageBuilder.withPayload("b").build());
+		assertThat(aroundInvocations.get()).isEqualTo(1);
+		function.apply(MessageBuilder.withPayload("c").build());
+		assertThat(aroundInvocations.get()).isEqualTo(2);
+	}
+
+	@Test
+	public void testWrappedFunctionCacheEvictsLeastRecentlyUsed() {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new GsonMapper(new Gson()), null, null, 2);
+		Type type = ResolvableType.forClassWithGenerics(Function.class, String.class, String.class).getType();
+		for (String name : new String[] {"a", "b", "c"}) {
+			Function<String, String> f = v -> v;
+			catalog.register(new FunctionRegistration<>(f, name).type(type));
+		}
+		Object a = catalog.lookup("a");
+		catalog.lookup("b");
+		assertThat((Object) catalog.lookup("a")).isSameAs(a); // 'a' is now most recently used
+		catalog.lookup("c"); // exceeds cache size; least recently used ('b') must be evicted
+		assertThat((Object) catalog.lookup("a")).isSameAs(a);
 	}
 
 	@ParameterizedTest
