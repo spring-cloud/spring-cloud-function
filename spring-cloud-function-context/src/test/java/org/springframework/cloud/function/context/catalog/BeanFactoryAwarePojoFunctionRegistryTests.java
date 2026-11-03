@@ -22,6 +22,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
@@ -32,6 +34,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  *
@@ -74,6 +77,13 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	public void testBeanWithoutFunctionalMethodIsNotFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 		assertThat((Object) catalog.lookup("notAFunction")).isNull();
+	}
+
+	@Test
+	public void testAmbiguousQualifierIsNotSwallowed() {
+		FunctionCatalog catalog = this.configureCatalog();
+		assertThatThrownBy(() -> catalog.lookup("ambiguous"))
+				.isInstanceOf(NoUniqueBeanDefinitionException.class);
 	}
 
 	@Test
@@ -172,6 +182,18 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		@Bean
 		public NotAFunction notAFunction() {
 			return new NotAFunction();
+		}
+
+		@Bean
+		@Qualifier("ambiguous")
+		public Function<String, String> ambiguousOne() {
+			return v -> v;
+		}
+
+		@Bean
+		@Qualifier("ambiguous")
+		public Function<String, String> ambiguousTwo() {
+			return v -> v;
 		}
 
 		@Bean

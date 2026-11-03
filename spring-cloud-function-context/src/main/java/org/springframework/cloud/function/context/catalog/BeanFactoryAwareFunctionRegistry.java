@@ -36,6 +36,8 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.beans.factory.annotation.BeanFactoryAnnotationUtils;
 import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
@@ -281,7 +283,11 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 			try {
 				functionCandidate = BeanFactoryAnnotationUtils.qualifiedBeanOfType(this.applicationContext.getBeanFactory(), Object.class, functionName);
 			}
-			catch (Exception e) {
+			catch (NoUniqueBeanDefinitionException e) {
+				// ambiguous qualifier is a configuration error, so don't hide it
+				throw e;
+			}
+			catch (NoSuchBeanDefinitionException e) {
 				// ignore since there is no safe isAvailable-kind of method
 			}
 		}
