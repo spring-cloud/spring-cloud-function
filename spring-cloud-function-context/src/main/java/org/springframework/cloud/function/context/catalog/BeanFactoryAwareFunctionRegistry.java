@@ -181,6 +181,11 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 								wrapper.setBeanFactory(this.applicationContext.getBeanFactory());
 								functionRegistration = wrapper.getFunctionRegistration();
 							}
+							else if (this.isFunctionPojo(functionCandidate, functionName)
+									&& FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass()) == null) {
+								this.logNotAFunction(functionName, functionCandidate);
+								continue;
+							}
 							else if (this.isFunctionPojo(functionCandidate, functionName)) {
 								Method functionalMethod = FunctionTypeUtils.discoverFunctionalMethod(functionCandidate.getClass());
 								functionCandidate = this.proxyTarget(functionCandidate, functionalMethod);
@@ -286,6 +291,13 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 	@Override
 	protected boolean containsFunction(String functionName) {
 		return super.containsFunction(functionName) || this.applicationContext.containsBean(functionName);
+	}
+
+	private void logNotAFunction(String functionName, Object candidate) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Bean '" + functionName + "' of type " + candidate.getClass().getName()
+					+ " has no functional method and will not be registered as a function");
+		}
 	}
 
 	private boolean isFunctionPojo(Object functionCandidate, String functionName) {

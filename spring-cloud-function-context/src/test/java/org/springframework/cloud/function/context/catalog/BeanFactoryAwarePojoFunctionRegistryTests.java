@@ -71,6 +71,12 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 	}
 
 	@Test
+	public void testBeanWithoutFunctionalMethodIsNotFunction() {
+		FunctionCatalog catalog = this.configureCatalog();
+		assertThat((Object) catalog.lookup("notAFunction")).isNull();
+	}
+
+	@Test
 	public void testWithPojoFunction() {
 		FunctionCatalog catalog = this.configureCatalog();
 
@@ -164,6 +170,11 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		}
 
 		@Bean
+		public NotAFunction notAFunction() {
+			return new NotAFunction();
+		}
+
+		@Bean
 		public Function<String, String> func() {
 			return v -> v;
 		}
@@ -179,6 +190,10 @@ public class BeanFactoryAwarePojoFunctionRegistryTests {
 		public String apply(String t) {
 			return this.uppercase(t);
 		}
+	}
+
+	// Bean with no methods, so nothing to treat as a function
+	public static class NotAFunction {
 	}
 
 	// POJO Function
