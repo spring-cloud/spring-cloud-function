@@ -86,6 +86,7 @@ import org.springframework.util.ReflectionUtils;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
 /**
@@ -486,13 +487,8 @@ public class SimpleFunctionRegistryTests {
 				new JacksonMapper(new ObjectMapper()));
 		catalog.register(upperCaseRegistration);
 
-		try {
-			catalog.lookup("uppercase|uppercase");
-			fail();
-		}
-		catch (Exception e) {
-			// TODO: handle exception
-		}
+		assertThatThrownBy(() -> catalog.lookup("uppercase|uppercase"))
+				.isInstanceOf(Exception.class);
 	}
 
 	@Test
