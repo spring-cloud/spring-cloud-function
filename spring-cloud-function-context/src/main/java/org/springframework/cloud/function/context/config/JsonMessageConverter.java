@@ -18,7 +18,6 @@ package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -65,11 +64,17 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	public JsonMessageConverter(JsonMapper jsonMapper, MimeType... supportedMimeTypes) {
 		super(supportedMimeTypes);
 		this.jsonMapper = jsonMapper;
+		Enumeration<URL> resources = null;
 		try {
-			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/deserializable.types");
-			while (resources.hasMoreElements()) {
-				URI uri = resources.nextElement().toURI();
-				List<String> lines = Files.readAllLines(Path.of(uri));
+			resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/deserializable.types");
+		}
+		catch (Exception e) {
+			logger.warn("Failed to locate deserializable types resources", e);
+		}
+		while (resources != null && resources.hasMoreElements()) {
+			URL url = resources.nextElement();
+			try {
+				List<String> lines = Files.readAllLines(Path.of(url.toURI()));
 				for (String line : lines) {
 					// need to split in case if delimited
 					String[] keys = line.split(",");
@@ -78,9 +83,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 					}
 				}
 			}
-		}
-		catch (Exception e) {
-			logger.trace("Failed to load deserilazable types", e);
+			catch (Exception e) {
+				logger.warn("Failed to load deserializable types from " + url, e);
+			}
 		}
 	}
 
