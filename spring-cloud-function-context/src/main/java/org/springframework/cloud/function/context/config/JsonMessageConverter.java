@@ -117,7 +117,7 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 		if (convertToType == null || convertToType == Object.class) {
 			if (!CollectionUtils.isEmpty(this.deserializableTypes)) {
 				MimeType mimeType = getMimeType(message.getHeaders());
-				String type = mimeType.getParameter("type");
+				String type = mimeType != null ? mimeType.getParameter("type") : null;
 				if (StringUtils.hasText(type) && this.deserializableTypes.contains(type)) {
 					try {
 						convertToType = Thread.currentThread().getContextClassLoader().loadClass(type);
