@@ -120,9 +120,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 				String type = mimeType != null ? mimeType.getParameter("type") : null;
 				if (StringUtils.hasText(type) && this.deserializableTypes.contains(type)) {
 					try {
-						convertToType = Thread.currentThread().getContextClassLoader().loadClass(type);
+						convertToType = ClassUtils.forName(type, ClassUtils.getDefaultClassLoader());
 					}
-					catch (ClassNotFoundException e) {
+					catch (ClassNotFoundException | LinkageError e) {
 						throw new IllegalArgumentException("Failed to load class `" + type + "` specified by the provided content-type: " + mimeType, e);
 					}
 				}
