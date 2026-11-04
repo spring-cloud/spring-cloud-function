@@ -64,16 +64,18 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 	public JsonMessageConverter(JsonMapper jsonMapper, MimeType... supportedMimeTypes) {
 		super(supportedMimeTypes);
 		this.jsonMapper = jsonMapper;
+		Enumeration<URL> resources = null;
 		try {
-			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/deserializable.types");
-			while (resources.hasMoreElements()) {
-				URL url = resources.nextElement();
-				List<String> lines;
-				try (BufferedReader reader = new BufferedReader(
-						new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
-					lines = reader.lines().toList();
-				}
-				for (String line : lines) {
+			resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/deserializable.types");
+		}
+		catch (Exception e) {
+			logger.warn("Failed to locate deserializable types resources", e);
+		}
+		while (resources != null && resources.hasMoreElements()) {
+			URL url = resources.nextElement();
+			try (BufferedReader reader = new BufferedReader(
+					new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+				for (String line : reader.lines().toList()) {
 					// need to split in case if delimited
 					String[] keys = line.split(",");
 					for (int i = 0; i < keys.length; i++) {
@@ -81,9 +83,9 @@ public class JsonMessageConverter extends AbstractMessageConverter {
 					}
 				}
 			}
-		}
-		catch (Exception e) {
-			logger.trace("Failed to load deserilazable types", e);
+			catch (Exception e) {
+				logger.warn("Failed to load deserializable types from " + url, e);
+			}
 		}
 	}
 
