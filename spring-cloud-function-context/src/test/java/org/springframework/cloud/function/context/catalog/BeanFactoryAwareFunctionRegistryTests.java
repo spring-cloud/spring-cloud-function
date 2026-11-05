@@ -82,6 +82,7 @@ import org.springframework.util.ReflectionUtils;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 /**
@@ -480,13 +481,8 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	public void testReactiveFunctionWithImperativeInputAndOutputFail() {
 		FunctionCatalog catalog = this.configureCatalog();
 		Function<String, String> reverse = catalog.lookup("reverseFlux");
-		try {
-			String result = reverse.apply("reverseFlux");
-			Assertions.fail();
-		}
-		catch (ClassCastException e) {
-			// ignore
-		}
+		assertThatThrownBy(() -> reverse.apply("reverseFlux"))
+				.isInstanceOf(ClassCastException.class);
 	}
 
 	@Test
