@@ -22,7 +22,7 @@ apply plugin: 'spring-boot'
 apply plugin: 'org.springframework.boot.experimental.thin-launcher'
 
 group = 'com.example'
-version = '5.0.6-SNAPSHOT'
+version = '5.0.6-INTERNAL-SNAPSHOT'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 ext {
-	springCloudFunctionVersion = "5.0.6-SNAPSHOT"
+	springCloudFunctionVersion = "5.0.6-INTERNAL-SNAPSHOT"
 }
 
 dependencyManagement {

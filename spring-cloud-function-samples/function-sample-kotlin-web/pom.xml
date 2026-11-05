@@ -15,7 +15,7 @@
 		<relativePath/>
 	</parent>
 	<properties>
-		<spring-cloud-function.version>5.0.6-SNAPSHOT</spring-cloud-function.version>
+		<spring-cloud-function.version>5.0.6-INTERNAL-SNAPSHOT</spring-cloud-function.version>
 	</properties>
 
 	<dependencies>
