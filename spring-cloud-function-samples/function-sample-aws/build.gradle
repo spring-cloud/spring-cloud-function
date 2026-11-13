@@ -8,7 +8,7 @@ plugins {
 }
 
 group = 'com.example'
-version = '5.0.6-INTERNAL-SNAPSHOT'
+version = '5.0.6'
 
 java {
 	sourceCompatibility = '17'
@@ -21,7 +21,7 @@ repositories {
 }
 
 ext {
-	set('springCloudVersion', "2025.1.5-INTERNAL-SNAPSHOT")
+	set('springCloudVersion', "2025.1.5")
 }
 
 assemble.dependsOn = [thinJar, shadowJar]
