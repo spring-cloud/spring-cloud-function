@@ -28,6 +28,9 @@ package org.springframework.kafka.support;
  */
 public final class KafkaNull {
 
+	/**
+	 * The singleton instance.
+	 */
 	public static final KafkaNull INSTANCE = new KafkaNull();
 
 	private KafkaNull() {
