@@ -73,16 +73,13 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 	@Override
 	public Mono<HandlerMethod> getHandlerInternal(ServerWebExchange request) {
 		String path = request.getRequest().getPath().pathWithinApplication().value();
-		if (StringUtils.hasText(this.prefix) && !path.startsWith(this.prefix)) {
-			return Mono.empty();
-		}
-		Mono<HandlerMethod> handler = super.getHandlerInternal(request);
-		if (path == null) {
-			return handler;
-		}
-		if (path.startsWith(this.prefix)) {
+		if (StringUtils.hasText(this.prefix)) {
+			if (!FunctionWebRequestProcessingHelper.isUnderPrefix(path, this.prefix)) {
+				return Mono.empty();
+			}
 			path = path.substring(this.prefix.length());
 		}
+		Mono<HandlerMethod> handler = super.getHandlerInternal(request);
 		Object function = FunctionWebRequestProcessingHelper
 				.findFunction(this.functionProperties, request.getRequest().getMethod(), this.functions, request.getAttributes(), path);
 

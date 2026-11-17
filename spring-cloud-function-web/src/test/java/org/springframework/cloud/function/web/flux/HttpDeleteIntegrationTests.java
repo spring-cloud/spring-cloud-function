@@ -33,6 +33,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.cloud.function.web.RestApplication;
 import org.springframework.cloud.function.web.flux.HttpDeleteIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
@@ -43,7 +44,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Verifies HTTP DELETE handling of consumers on WebFlux. The argument passed to the consumer is
  * deliberately not asserted here.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = "spring.main.web-application-type=reactive")
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
+		"spring.main.web-application-type=reactive",
+		"spring.cloud.function.http.PUT=other" })
 @ContextConfiguration(classes = { RestApplication.class, ApplicationConfiguration.class })
 @AutoConfigureTestRestTemplate
 public class HttpDeleteIntegrationTests {
@@ -66,6 +69,14 @@ public class HttpDeleteIntegrationTests {
 
 		assertThat(result.getStatusCode().is2xxSuccessful()).isTrue();
 		assertThat(this.test.deleted).hasSize(1);
+	}
+
+	@Test
+	public void methodNotListedInExplicitMappingsIsNotAllowed() throws Exception {
+		ResponseEntity<Void> result = this.rest.exchange(
+				RequestEntity.put(new URI("/deleteConsumer")).body("x"), Void.class);
+
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
 	@EnableAutoConfiguration

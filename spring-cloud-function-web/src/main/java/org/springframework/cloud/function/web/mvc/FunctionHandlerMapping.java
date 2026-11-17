@@ -90,10 +90,10 @@ public class FunctionHandlerMapping extends RequestMappingHandlerMapping
 		if (path == null) {
 			return handler;
 		}
-		if (StringUtils.hasText(this.prefix) && !path.startsWith(this.prefix)) {
-			return null;
-		}
-		if (path.startsWith(this.prefix)) {
+		if (StringUtils.hasText(this.prefix)) {
+			if (!FunctionWebRequestProcessingHelper.isUnderPrefix(path, this.prefix)) {
+				return null;
+			}
 			path = path.substring(this.prefix.length());
 		}
 
