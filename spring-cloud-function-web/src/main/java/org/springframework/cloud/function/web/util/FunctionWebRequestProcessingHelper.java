@@ -96,6 +96,21 @@ public final class FunctionWebRequestProcessingHelper {
 		return true;
 	}
 
+	/**
+	 * Verifies that the function wrapped by the provided {@link FunctionWrapper} is allowed to be
+	 * invoked via the provided HTTP method.
+	 * @param httpMethod the HTTP method (GET, POST, PUT or DELETE)
+	 * @param wrapper the wrapper of the function to be invoked
+	 * @param functionHttpProperties the HTTP properties holding the explicit method mappings
+	 * @throws IllegalArgumentException if the function is not eligible for the HTTP method
+	 */
+	public static void assertFunctionValidForMethod(String httpMethod, FunctionWrapper wrapper, FunctionHttpProperties functionHttpProperties) {
+		String functionDefinition = wrapper.getFunction().getFunctionDefinition();
+		if (!isFunctionValidForMethod(httpMethod, functionDefinition, functionHttpProperties)) {
+			throw new IllegalArgumentException(buildBadMappingErrorMessage(httpMethod, functionDefinition));
+		}
+	}
+
 	public static String buildBadMappingErrorMessage(String httpMethod, String functionDefinition) {
 		return "Function '" + functionDefinition + "' is not eligible to be invoked "
 				+ "via  " + httpMethod + "  method. This is due to the fact that explicit mappings for " + httpMethod
@@ -233,12 +248,6 @@ public final class FunctionWebRequestProcessingHelper {
 		}
 		else if (result instanceof Mono) {
 			result = ((Mono) result).map(v -> postProcessResult(v, isMessage));
-		}
-		else if (result instanceof Message messageResult) {
-			if (messageResult.getPayload() instanceof byte[]) {
-				//String str = new String((byte[]) messageResult.getPayload());
-				result = MessageBuilder.withPayload(messageResult.getPayload()).copyHeaders(((Message) result).getHeaders()).build();
-			}
 		}
 		else if (result instanceof byte[]) {
 			result = new String((byte[]) result, StandardCharsets.UTF_8);

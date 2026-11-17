@@ -17,9 +17,13 @@
 package org.springframework.cloud.function.web;
 
 /**
- * @author Dave Syer
+ * Converts a String value to the input type of a function.
  *
+ * @author Dave Syer
+ * @deprecated since it is not used by the framework itself; it is kept only for backward
+ * compatibility and may be removed in a future major release
  */
+@Deprecated
 public interface StringConverter {
 
 	Object convert(Object function, String value);

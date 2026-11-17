@@ -26,7 +26,9 @@ import org.springframework.core.convert.support.DefaultConversionService;
  * Simple implementation of a {@link StringConverter}.
  *
  * @author Dave Syer
+ * @deprecated together with {@link StringConverter}
  */
+@Deprecated
 public class BasicStringConverter implements StringConverter {
 
 	private ConversionService conversionService;
@@ -44,7 +46,6 @@ public class BasicStringConverter implements StringConverter {
 			this.conversionService = conversionService != null ? conversionService
 					: new DefaultConversionService();
 		}
-		//Class<?> type = this.inspector.getInputType(function);
 		Class<?> type = function == null ? Object.class : FunctionTypeUtils.getRawType(FunctionTypeUtils.getGenericType(((FunctionInvocationWrapper) function).getInputType()));
 		return this.conversionService.canConvert(String.class, type)
 				? this.conversionService.convert(value, type) : value;
