@@ -18,9 +18,13 @@ package org.springframework.cloud.function.web.util;
 
 import org.junit.jupiter.api.Test;
 
+import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.FunctionHttpProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for the HTTP method eligibility checks of {@link FunctionWebRequestProcessingHelper}.
@@ -63,6 +67,31 @@ public class FunctionWebRequestProcessingHelperTests {
 		FunctionHttpProperties properties = new FunctionHttpProperties();
 
 		assertThat(FunctionWebRequestProcessingHelper.isFunctionValidForMethod("PATCH", "anyFunction", properties)).isFalse();
+	}
+
+	@Test
+	void assertFunctionValidForMethodAcceptsEligibleFunction() {
+		FunctionHttpProperties properties = new FunctionHttpProperties();
+		properties.setDelete("deleteConsumer");
+
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("DELETE", wrapperOf("deleteConsumer"), properties);
+	}
+
+	@Test
+	void assertFunctionValidForMethodRejectsIneligibleFunctionWithDescriptiveMessage() {
+		FunctionHttpProperties properties = new FunctionHttpProperties();
+		properties.setDelete("deleteConsumer");
+
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> FunctionWebRequestProcessingHelper
+						.assertFunctionValidForMethod("DELETE", wrapperOf("other"), properties))
+				.withMessageContaining("Function 'other' is not eligible to be invoked via  DELETE  method");
+	}
+
+	private static FunctionWrapper wrapperOf(String functionDefinition) {
+		FunctionInvocationWrapper function = mock(FunctionInvocationWrapper.class);
+		when(function.getFunctionDefinition()).thenReturn(functionDefinition);
+		return new FunctionWrapper(function, null);
 	}
 
 }

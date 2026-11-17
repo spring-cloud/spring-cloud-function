@@ -76,30 +76,26 @@ public class FunctionController {
 	@ResponseBody
 	public Object form(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			if (((ServletWebRequest) request).getRequest() instanceof StandardMultipartHttpServletRequest) {
-				MultiValueMap<String, MultipartFile> multiFileMap = ((StandardMultipartHttpServletRequest) ((ServletWebRequest) request)
-															.getRequest()).getMultiFileMap();
-				if (!CollectionUtils.isEmpty(multiFileMap)) {
-					List<Message<MultipartFile>> files = multiFileMap.values().stream().flatMap(Collection::stream)
-							.map(file -> MessageBuilder.withPayload(file).copyHeaders(wrapper.getHeaders().asMultiValueMap()).build())
-							.collect(Collectors.toList());
-					FunctionInvocationWrapper function = wrapper.getFunction();
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("POST", wrapper, this.functionHttpProperties);
+		if (((ServletWebRequest) request).getRequest() instanceof StandardMultipartHttpServletRequest) {
+			MultiValueMap<String, MultipartFile> multiFileMap = ((StandardMultipartHttpServletRequest) ((ServletWebRequest) request)
+														.getRequest()).getMultiFileMap();
+			if (!CollectionUtils.isEmpty(multiFileMap)) {
+				List<Message<MultipartFile>> files = multiFileMap.values().stream().flatMap(Collection::stream)
+						.map(file -> MessageBuilder.withPayload(file).copyHeaders(wrapper.getHeaders().asMultiValueMap()).build())
+						.collect(Collectors.toList());
+				FunctionInvocationWrapper function = wrapper.getFunction();
 
-					Publisher<?> result = (Publisher<?>) function.apply(Flux.fromIterable(files));
-					BodyBuilder builder = ResponseEntity.ok();
-					if (result instanceof Flux) {
-						result = Flux.from(result).map(message -> message instanceof Message ? ((Message<?>) message).getPayload() : message).collectList();
-					}
-					return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
+				Publisher<?> result = (Publisher<?>) function.apply(Flux.fromIterable(files));
+				BodyBuilder builder = ResponseEntity.ok();
+				if (result instanceof Flux) {
+					result = Flux.from(result).map(message -> message instanceof Message ? ((Message<?>) message).getPayload() : message).collectList();
 				}
+				return Mono.from(result).flatMap(body -> Mono.just(builder.body(body)));
 			}
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getParams(), false,
-					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 		}
-		else {
-			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
-		}
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getParams(), false,
+				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -109,81 +105,57 @@ public class FunctionController {
 			@RequestBody(required = false) String body) {
 		String argument = StringUtils.hasText(body) ? body : "";
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, argument, true,
-					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders())).map(response -> ResponseEntity.ok()
-					.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
-		}
-		else {
-			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
-		}
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("POST", wrapper, this.functionHttpProperties);
+		return ((Mono<ResponseEntity<?>>) FunctionWebRequestProcessingHelper.processRequest(wrapper, argument, true,
+				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders())).map(response -> ResponseEntity.ok()
+				.headers(response.getHeaders()).body((Publisher<?>) response.getBody()));
 	}
 
 	@GetMapping(path = "/**", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	@ResponseBody
 	public Publisher<?> getStream(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true,
-					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
-		}
-		else {
-			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("GET", wrapper.getFunction().getFunctionDefinition()));
-		}
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("GET", wrapper, this.functionHttpProperties);
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), true,
+				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
 
 	@PostMapping(path = "/**")
 	@ResponseBody
 	public Object post(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("POST", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			Assert.isTrue(!wrapper.getFunction().isSupplier(), "'POST' can only be mapped to Function or Consumer");
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false,
-					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
-		}
-		else {
-			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("POST", wrapper.getFunction().getFunctionDefinition()));
-		}
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("POST", wrapper, this.functionHttpProperties);
+		Assert.isTrue(!wrapper.getFunction().isSupplier(), "'POST' can only be mapped to Function or Consumer");
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false,
+				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
 
 	@PutMapping(path = "/**")
 	@ResponseBody
 	public Object put(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("PUT", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false,
-					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
-		}
-		else {
-			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("PUT", wrapper.getFunction().getFunctionDefinition()));
-		}
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("PUT", wrapper, this.functionHttpProperties);
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false,
+				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
 
 	@DeleteMapping(path = "/**")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void delete(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("DELETE", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			Assert.isTrue(wrapper.getFunction().isConsumer(), "'DELETE' can only be mapped to Consumer");
-			FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
-					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
-		}
-		else {
-			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("DELETE", wrapper.getFunction().getFunctionDefinition()));
-		}
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("DELETE", wrapper, this.functionHttpProperties);
+		Assert.isTrue(wrapper.getFunction().isConsumer(), "'DELETE' can only be mapped to Consumer");
+		FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
+				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
 
 	@GetMapping(path = "/**")
 	@ResponseBody
 	public Object get(WebRequest request) {
 		FunctionWrapper wrapper = wrapper(request);
-		if (FunctionWebRequestProcessingHelper.isFunctionValidForMethod("GET", wrapper.getFunction().getFunctionDefinition(), this.functionHttpProperties)) {
-			return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
-					functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
-		}
-		else {
-			throw new IllegalArgumentException(FunctionWebRequestProcessingHelper.buildBadMappingErrorMessage("GET", wrapper.getFunction().getFunctionDefinition()));
-		}
+		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("GET", wrapper, this.functionHttpProperties);
+		return FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
+				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
 
 	private FunctionWrapper wrapper(WebRequest request) {

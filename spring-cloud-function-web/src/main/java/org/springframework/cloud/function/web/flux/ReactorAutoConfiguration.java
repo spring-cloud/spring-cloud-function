@@ -52,6 +52,7 @@ public class ReactorAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
+	@SuppressWarnings("deprecation")
 	public StringConverter functionStringConverter(ConfigurableListableBeanFactory beanFactory) {
 		return new BasicStringConverter(beanFactory);
 	}
