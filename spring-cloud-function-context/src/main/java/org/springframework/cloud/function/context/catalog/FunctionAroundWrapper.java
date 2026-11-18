@@ -46,12 +46,7 @@ public abstract class FunctionAroundWrapper {
 				|| Boolean.parseBoolean(functionalTracingEnabledStr);
 		if (functionalTracingEnabled && !(input instanceof Publisher) && input instanceof Message
 				&& !FunctionTypeUtils.isCollectionOfMessage(targetFunction.getOutputType())) {
-			try {
-				return this.doApply(input, targetFunction);
-			}
-			finally {
-				targetFunction.wrapped = false;
-			}
+			return this.doApply(input, targetFunction);
 		}
 		else {
 			return targetFunction.apply(input);
