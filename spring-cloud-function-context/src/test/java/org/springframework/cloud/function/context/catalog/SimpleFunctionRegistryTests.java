@@ -28,8 +28,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -40,6 +43,8 @@ import java.util.stream.IntStream;
 
 import com.google.gson.Gson;
 import com.google.protobuf.StringValue;
+import io.micrometer.observation.tck.TestObservationRegistry;
+import io.micrometer.observation.tck.TestObservationRegistryAssert;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -63,6 +68,7 @@ import org.springframework.cloud.function.context.config.SmartCompositeMessageCo
 import org.springframework.cloud.function.json.GsonMapper;
 import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
+import org.springframework.cloud.function.observability.ObservationFunctionAroundWrapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -79,6 +85,7 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.ProtobufMessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.MimeType;
 import org.springframework.util.ReflectionUtils;
 
@@ -107,6 +114,111 @@ public class SimpleFunctionRegistryTests {
 		this.messageConverter = new SmartCompositeMessageConverter(messageConverters);
 
 		this.conversionService = new DefaultConversionService();
+	}
+
+	@Test
+	public void testAroundWrapperAppliedToConcurrentInvocations() throws Exception {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new GsonMapper(new Gson()));
+		AtomicInteger aroundInvocations = new AtomicInteger();
+		CountDownLatch firstEnteredAround = new CountDownLatch(1);
+		CountDownLatch secondCallCompleted = new CountDownLatch(1);
+		ReflectionTestUtils.setField(catalog, "functionAroundWrapper", new FunctionAroundWrapper() {
+			@Override
+			protected Object doApply(Object input, FunctionInvocationWrapper targetFunction) {
+				if (aroundInvocations.incrementAndGet() == 1) {
+					firstEnteredAround.countDown();
+					try {
+						assertThat(secondCallCompleted.await(5, TimeUnit.SECONDS)).isTrue();
+					}
+					catch (InterruptedException ex) {
+						Thread.currentThread().interrupt();
+						throw new IllegalStateException(ex);
+					}
+				}
+				return targetFunction.apply(input);
+			}
+		});
+		Function<String, String> uppercase = value -> value.toUpperCase(Locale.ROOT);
+		catalog.register(new FunctionRegistration<>(uppercase, "uppercase")
+				.type(ResolvableType.forClassWithGenerics(Function.class, String.class, String.class).getType()));
+		FunctionInvocationWrapper function = catalog.lookup("uppercase");
+
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		try {
+			CompletableFuture<String> firstResult = CompletableFuture.supplyAsync(
+					() -> (String) function.apply(MessageBuilder.withPayload("first").build()), executor);
+
+			assertThat(firstEnteredAround.await(5, TimeUnit.SECONDS)).isTrue();
+
+			String secondResult;
+			try {
+				secondResult = (String) function.apply(MessageBuilder.withPayload("second").build());
+			}
+			finally {
+				secondCallCompleted.countDown();
+			}
+
+			assertThat(secondResult).isEqualTo("SECOND");
+			assertThat(firstResult.get(5, TimeUnit.SECONDS)).isEqualTo("FIRST");
+			assertThat(aroundInvocations.get()).isEqualTo(2);
+
+			String thirdResult = (String) function.apply(MessageBuilder.withPayload("third").build());
+			assertThat(thirdResult).isEqualTo("THIRD");
+			assertThat(aroundInvocations.get()).isEqualTo(3);
+		}
+		finally {
+			executor.shutdownNow();
+		}
+	}
+
+	@Test
+	public void testObservationAroundWrapperAppliedUnderConcurrentLoad() throws Exception {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new GsonMapper(new Gson()));
+		TestObservationRegistry observationRegistry = TestObservationRegistry.create();
+		ReflectionTestUtils.setField(catalog, "functionAroundWrapper",
+				new ObservationFunctionAroundWrapper(observationRegistry, null));
+		Function<String, String> uppercase = value -> {
+			Thread.yield();
+			return value.toUpperCase(Locale.ROOT);
+		};
+		catalog.register(new FunctionRegistration<>(uppercase, "uppercase")
+				.type(ResolvableType.forClassWithGenerics(Function.class, String.class, String.class).getType()));
+		FunctionInvocationWrapper function = catalog.lookup("uppercase");
+
+		int threadCount = 8;
+		int invocationsPerThread = 25;
+		int totalInvocations = threadCount * invocationsPerThread;
+		CountDownLatch startGate = new CountDownLatch(1);
+		ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+		try {
+			List<CompletableFuture<Void>> futures = IntStream.range(0, threadCount)
+					.mapToObj(threadIdx -> CompletableFuture.runAsync(() -> {
+						try {
+							assertThat(startGate.await(5, TimeUnit.SECONDS)).isTrue();
+						}
+						catch (InterruptedException ex) {
+							Thread.currentThread().interrupt();
+							throw new IllegalStateException(ex);
+						}
+						for (int i = 0; i < invocationsPerThread; i++) {
+							String payload = "msg-" + threadIdx + "-" + i;
+							String result = (String) function
+									.apply(MessageBuilder.withPayload(payload).build());
+							assertThat(result).isEqualTo(payload.toUpperCase(Locale.ROOT));
+						}
+					}, executor))
+					.toList();
+			startGate.countDown();
+			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get(15, TimeUnit.SECONDS);
+
+			TestObservationRegistryAssert.assertThat(observationRegistry)
+					.hasNumberOfObservationsWithNameEqualTo("spring.cloud.function", totalInvocations);
+		}
+		finally {
+			executor.shutdownNow();
+		}
 	}
 
 	@ParameterizedTest

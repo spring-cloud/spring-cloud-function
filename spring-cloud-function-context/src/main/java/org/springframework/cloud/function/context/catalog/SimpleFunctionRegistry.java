@@ -464,7 +464,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 
 		private boolean propagateInputHeaders;
 
-		protected boolean wrapped;
+		private final ThreadLocal<Boolean> wrapped = new ThreadLocal<>();
 
 		private final ThreadLocal<Message<Object>> unconvertedResult = new ThreadLocal<>();
 
@@ -660,9 +660,14 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 
 			Object result;
-			if (functionAroundWrapper != null && !this.wrapped) {
-				this.wrapped = true;
-				result = functionAroundWrapper.apply(input, this);
+			if (functionAroundWrapper != null && !Boolean.TRUE.equals(this.wrapped.get())) {
+				this.wrapped.set(Boolean.TRUE);
+				try {
+					result = functionAroundWrapper.apply(input, this);
+				}
+				finally {
+					this.wrapped.remove();
+				}
 			}
 			else {
 				result = this.doApply(input);
