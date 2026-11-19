@@ -273,8 +273,8 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 				? functionDefinition.replaceAll(",", "|")
 				: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
 
-		Set<String> names = this.getNames(null);
-		if (this.isSingleFunctionFallbackEnabled() && !names.contains(functionDefinition)) {
+		if (this.isSingleFunctionFallbackEnabled() && !this.isFunctionDefinitionRegistered(functionDefinition)) {
+			Set<String> names = this.getNames(null);
 			List<String> eligibleFunction = names.stream()
 					.filter(name -> !RoutingFunction.FUNCTION_NAME.equals(name))
 					.filter(name -> !RoutingFunction.DEFAULT_ROUTE_HANDLER.equals(name))
@@ -287,6 +287,28 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 			}
 		}
 		return functionDefinition;
+	}
+
+	private boolean isFunctionDefinitionRegistered(String functionDefinition) {
+		if (!StringUtils.hasText(functionDefinition)) {
+			return false;
+		}
+		synchronized (cacheLock) {
+			if (this.wrappedFunctionDefinitions.containsKey(functionDefinition)) {
+				return true;
+			}
+		}
+		String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition, "|");
+		if (functionNames.length == 0) {
+			return false;
+		}
+		for (String functionName : functionNames) {
+			if (!StringUtils.hasText(functionName)
+					|| this.functionRegistrations.stream().noneMatch(registration -> registration.getNames().contains(functionName))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private boolean isSingleFunctionFallbackEnabled() {
