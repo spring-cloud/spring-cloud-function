@@ -103,6 +103,13 @@ This will only export function composition `foo|bar` and function `baz` regardle
 By default most request `HttpHeaders` are copied into the response `HttpHeaders`. If you require to filter out certain headers you can provide the names of those headers using  
 `spring.cloud.function.http.ignored-headers` delimited by comas. For example, `spring.cloud.function.http.ignored-headers=foo,bar`.
 
+The following request headers are never copied into the response: `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization`, `Proxy-Authenticate`, `Cache-Control`, `Content-Security-Policy`,
+the CORS headers (`Access-Control-*`), `Content-Length`, `Transfer-Encoding`, as well as the request-only headers `Accept`, `Content-Type` and `Host`.
+
+IMPORTANT: All other request headers are copied into the response, including custom headers that may carry credentials or other sensitive values (e.g., `X-Api-Key`).
+Add such headers to `spring.cloud.function.http.ignored-headers` so they are not echoed back to the client.
+Header names in that list must be provided in lower case.
+
 [[crud-rest-with-spring-cloud-function]]
 == CRUD REST with Spring Cloud Function
 
