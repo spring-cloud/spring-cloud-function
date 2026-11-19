@@ -47,6 +47,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -60,6 +61,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.function.context.FunctionCatalog;
+import org.springframework.cloud.function.context.FunctionProperties;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.context.config.RoutingFunction;
@@ -116,6 +118,26 @@ public class BeanFactoryAwareFunctionRegistryTests {
 	@BeforeEach
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
+	}
+
+	@Test
+	public void registeredFunctionLookupDoesNotRescanBeanFactoryNames() {
+		FunctionCatalog functionCatalog = this.configureCatalog(SampleFunctionConfiguration.class);
+		BeanFactoryAwareFunctionRegistry registry = Mockito.spy((BeanFactoryAwareFunctionRegistry) functionCatalog);
+		try {
+			RoutingFunction routingFunction = new RoutingFunction(registry, new FunctionProperties());
+			Message<String> message = MessageBuilder.withPayload("hello")
+					.setHeader(FunctionProperties.FUNCTION_DEFINITION, "uppercase")
+					.build();
+			assertThat(routingFunction.apply(message)).isEqualTo("HELLO");
+			Mockito.clearInvocations(registry);
+
+			assertThat(routingFunction.apply(message)).isEqualTo("HELLO");
+			Mockito.verify(registry, Mockito.never()).getNames(null);
+		}
+		finally {
+			((ConfigurableApplicationContext) this.context).close();
+		}
 	}
 
 	//@Test
