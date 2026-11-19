@@ -123,3 +123,9 @@ spring.cloud.function.http.DELETE=deleteById
 
 As you can see, here we’re mapping functions to various HTTP methods using the same rules as `spring.cloud.function.definition` property where “;” allows us to define several functions and “|” signifies function composition.
 
+IMPORTANT: These mappings are checked against the function that the request URL resolves to. If you list `functionRouter` (the xref:spring-cloud-function/programming-model.adoc#function-routing-and-filtering[routing function]) for a method, the routing instructions supplied by the request itself, that is the `spring.cloud.function.definition` and `spring.cloud.function.routing-expression` HTTP headers, can select any function in the catalog.
+In that case the mappings no longer restrict which functions a client can invoke.
+If `functionRouter` is not listed, requests addressed to it are rejected like requests to any other function that is not listed.
+If clients must not choose the target function, do not list `functionRouter` and secure the endpoint using industry standard web security practices.
+
+
