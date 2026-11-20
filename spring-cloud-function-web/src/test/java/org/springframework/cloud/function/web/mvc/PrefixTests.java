@@ -80,6 +80,13 @@ public class PrefixTests {
 		assertThat(result.getBody()).isEqualTo("[\"foo\",\"bar\"]");
 	}
 
+	@Test
+	public void pathSharingPrefixTextIsNotUnderPrefix() throws Exception {
+		ResponseEntity<String> result = this.rest.exchange(
+				RequestEntity.get(new URI("/functionswords")).build(), String.class);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
 	@EnableAutoConfiguration
 	@org.springframework.boot.test.context.TestConfiguration
 	protected static class TestConfiguration {

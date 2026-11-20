@@ -50,7 +50,7 @@ public class GeneralIntegrationTests {
 		ResponseEntity<Void> result = template.exchange(
 				RequestEntity.delete(new URI("http://localhost:" + port + "/consumer1"))
 				.build(), Void.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 
 		result = template.exchange(
 				RequestEntity.delete(new URI("http://localhost:" + port + "/consumer2"))
@@ -65,7 +65,7 @@ public class GeneralIntegrationTests {
 		result = template.exchange(
 				RequestEntity.delete(new URI("http://localhost:" + port + "/supplier"))
 				.build(), Void.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
 	@Test
@@ -79,7 +79,7 @@ public class GeneralIntegrationTests {
 				.post(new URI("http://localhost:" + port + "/consumer1")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
 
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 
 		result = template.exchange(RequestEntity
 				.post(new URI("http://localhost:" + port + "/consumer2")).contentType(MediaType.APPLICATION_JSON)
@@ -102,7 +102,7 @@ public class GeneralIntegrationTests {
 		result = template.exchange(RequestEntity
 				.post(new URI("http://localhost:" + port + "/supplier")).contentType(MediaType.APPLICATION_JSON)
 				.body("[\"foo\",\"bar\"]"), String.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
 

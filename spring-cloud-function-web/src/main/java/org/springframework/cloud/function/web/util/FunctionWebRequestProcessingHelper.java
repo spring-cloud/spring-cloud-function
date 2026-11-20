@@ -36,12 +36,14 @@ import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.constants.WebRequestConstants;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * !INTERNAL USE ONLY!
@@ -97,17 +99,28 @@ public final class FunctionWebRequestProcessingHelper {
 	}
 
 	/**
+	 * Checks that the path is the prefix itself or lies below it, so that
+	 * {@code /functionsfoo} is not considered to be under {@code /functions}.
+	 * @param path the request path
+	 * @param prefix the configured, non-empty prefix without trailing slash
+	 * @return true if the path is under the prefix
+	 */
+	public static boolean isUnderPrefix(String path, String prefix) {
+		return path.equals(prefix) || path.startsWith(prefix + "/");
+	}
+
+	/**
 	 * Verifies that the function wrapped by the provided {@link FunctionWrapper} is allowed to be
 	 * invoked via the provided HTTP method.
 	 * @param httpMethod the HTTP method (GET, POST, PUT or DELETE)
 	 * @param wrapper the wrapper of the function to be invoked
 	 * @param functionHttpProperties the HTTP properties holding the explicit method mappings
-	 * @throws IllegalArgumentException if the function is not eligible for the HTTP method
+	 * @throws ResponseStatusException (405) if the function is not eligible for the HTTP method
 	 */
 	public static void assertFunctionValidForMethod(String httpMethod, FunctionWrapper wrapper, FunctionHttpProperties functionHttpProperties) {
 		String functionDefinition = wrapper.getFunction().getFunctionDefinition();
 		if (!isFunctionValidForMethod(httpMethod, functionDefinition, functionHttpProperties)) {
-			throw new IllegalArgumentException(buildBadMappingErrorMessage(httpMethod, functionDefinition));
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, buildBadMappingErrorMessage(httpMethod, functionDefinition));
 		}
 	}
 

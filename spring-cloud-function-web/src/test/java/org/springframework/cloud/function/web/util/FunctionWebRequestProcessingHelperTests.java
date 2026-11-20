@@ -20,9 +20,11 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.FunctionHttpProperties;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -82,10 +84,19 @@ public class FunctionWebRequestProcessingHelperTests {
 		FunctionHttpProperties properties = new FunctionHttpProperties();
 		properties.setDelete("deleteConsumer");
 
-		assertThatIllegalArgumentException()
+		assertThatExceptionOfType(ResponseStatusException.class)
 				.isThrownBy(() -> FunctionWebRequestProcessingHelper
 						.assertFunctionValidForMethod("DELETE", wrapperOf("other"), properties))
+				.satisfies(ex -> assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED))
 				.withMessageContaining("Function 'other' is not eligible to be invoked via  DELETE  method");
+	}
+
+	@Test
+	void isUnderPrefixRespectsPathSegmentBoundaries() {
+		assertThat(FunctionWebRequestProcessingHelper.isUnderPrefix("/functions", "/functions")).isTrue();
+		assertThat(FunctionWebRequestProcessingHelper.isUnderPrefix("/functions/foo", "/functions")).isTrue();
+		assertThat(FunctionWebRequestProcessingHelper.isUnderPrefix("/functionsfoo", "/functions")).isFalse();
+		assertThat(FunctionWebRequestProcessingHelper.isUnderPrefix("/foo", "/functions")).isFalse();
 	}
 
 	private static FunctionWrapper wrapperOf(String functionDefinition) {

@@ -90,7 +90,7 @@ public class HttpDeleteIntegrationTests {
 		ResponseEntity<Void> result = this.rest.exchange(
 				RequestEntity.delete(new URI("/deleteFunction"))
 				.build(), Void.class);
-		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
 	@EnableAutoConfiguration

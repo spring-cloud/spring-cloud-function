@@ -40,7 +40,6 @@ import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -55,6 +54,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.support.StandardMultipartHttpServletRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * @author Dave Syer
@@ -125,7 +125,9 @@ public class FunctionController {
 	public Object post(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
 		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("POST", wrapper, this.functionHttpProperties);
-		Assert.isTrue(!wrapper.getFunction().isSupplier(), "'POST' can only be mapped to Function or Consumer");
+		if (wrapper.getFunction().isSupplier()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "'POST' can only be mapped to Function or Consumer");
+		}
 		return FunctionWebRequestProcessingHelper.processRequest(wrapper, body, false,
 				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
@@ -144,7 +146,9 @@ public class FunctionController {
 	public void delete(WebRequest request, @RequestBody(required = false) String body) {
 		FunctionWrapper wrapper = wrapper(request);
 		FunctionWebRequestProcessingHelper.assertFunctionValidForMethod("DELETE", wrapper, this.functionHttpProperties);
-		Assert.isTrue(wrapper.getFunction().isConsumer(), "'DELETE' can only be mapped to Consumer");
+		if (!wrapper.getFunction().isConsumer()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "'DELETE' can only be mapped to Consumer");
+		}
 		FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
 				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
