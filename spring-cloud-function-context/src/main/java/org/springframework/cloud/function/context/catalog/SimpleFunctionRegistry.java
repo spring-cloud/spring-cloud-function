@@ -269,7 +269,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 */
 	String normalizeFunctionDefinition(String functionDefinition) {
 		functionDefinition = StringUtils.hasText(functionDefinition)
-				? functionDefinition.replaceAll(",", "|")
+				? functionDefinition.replace(',', '|')
 				: System.getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
 
 		if (this.isSingleFunctionFallbackEnabled() && !this.isFunctionDefinitionRegistered(functionDefinition)) {
@@ -357,7 +357,7 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	 *
 	 */
 	private FunctionInvocationWrapper compose(Class<?> type, String functionDefinition) {
-		String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replaceAll(",", "|").trim(), "|");
+		String[] functionNames = StringUtils.delimitedListToStringArray(functionDefinition.replace(',', '|').trim(), "|");
 		FunctionInvocationWrapper composedFunction = null;
 
 		for (String functionName : functionNames) {
