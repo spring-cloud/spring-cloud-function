@@ -150,7 +150,7 @@ public class FunctionController {
 		if (!wrapper.getFunction().isConsumer()) {
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "'DELETE' can only be mapped to Consumer");
 		}
-		FunctionWebRequestProcessingHelper.processRequest(wrapper, wrapper.getArgument(), false,
+		FunctionWebRequestProcessingHelper.processRequest(wrapper, body != null ? body : wrapper.getArgument(), false,
 				functionHttpProperties.getIgnoredHeaders(), functionHttpProperties.getRequestOnlyHeaders());
 	}
 

@@ -37,6 +37,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cloud.function.web.mvc.HttpDeleteIntegrationTests.ApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -86,6 +87,15 @@ public class HttpDeleteIntegrationTests {
 	}
 
 	@Test
+	public void testDeleteConsumerWithRequestBody() throws Exception {
+		ResponseEntity<Void> result = this.rest.exchange(
+				RequestEntity.method(HttpMethod.DELETE, new URI("/deleteConsumerWithBody")).body("456"), Void.class);
+
+		assertThat(result.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+		assertThat(this.test.list).containsExactly("456");
+	}
+
+	@Test
 	public void testDeleteWithFunction() throws Exception {
 		ResponseEntity<Void> result = this.rest.exchange(
 				RequestEntity.delete(new URI("/deleteFunction"))
@@ -129,6 +139,11 @@ public class HttpDeleteIntegrationTests {
 				assertThat(((Map) v.getHeaders().get("http_request_param")).get("foo")).isEqualTo("bar");
 				System.out.println("Deleting: " + v);
 			};
+		}
+
+		@Bean
+		public Consumer<String> deleteConsumerWithBody() {
+			return this.list::add;
 		}
 
 	}
