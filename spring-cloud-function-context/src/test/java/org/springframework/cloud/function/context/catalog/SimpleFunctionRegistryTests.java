@@ -145,6 +145,32 @@ public class SimpleFunctionRegistryTests {
 	}
 
 	@Test
+	public void testNamesNotResolvedForAlreadyCachedFunctionDefinition() {
+		AtomicInteger getNamesInvocations = new AtomicInteger();
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new GsonMapper(new Gson())) {
+			@Override
+			public java.util.Set<String> getNames(Class<?> type) {
+				getNamesInvocations.incrementAndGet();
+				return super.getNames(type);
+			}
+		};
+		Type type = ResolvableType.forClassWithGenerics(Function.class, String.class, String.class).getType();
+		Function<String, String> uppercase = String::toUpperCase;
+		Function<String, String> reverse = v -> new StringBuilder(v).reverse().toString();
+		catalog.register(new FunctionRegistration<>(uppercase, "uppercase").type(type));
+		catalog.register(new FunctionRegistration<>(reverse, "reverse").type(type));
+
+		Object first = catalog.lookup("uppercase,reverse");
+		assertThat(first).isNotNull();
+		int afterFirstLookup = getNamesInvocations.get();
+
+		assertThat((Object) catalog.lookup("uppercase,reverse")).isSameAs(first);
+		assertThat((Object) catalog.lookup("uppercase|reverse")).isSameAs(first);
+		assertThat(getNamesInvocations.get()).isEqualTo(afterFirstLookup);
+	}
+
+	@Test
 	public void testAroundWrapperAppliedToConcurrentInvocations() throws Exception {
 		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
 				new GsonMapper(new Gson()));
