@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.function.utils;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +30,6 @@ import tools.jackson.databind.json.JsonMapper;
 
 
 import org.springframework.cloud.function.json.JacksonMapper;
-import org.springframework.util.ReflectionUtils;
 
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -216,10 +214,6 @@ public class JsonMaskerTests {
 		assertThat(maskedKeys.get(3)).isEqualTo("SS");
 		assertThat(maskedKeys.get(4)).isEqualTo("SS");
 		assertThat(maskedKeys.get(5)).isEqualTo("eventSourceARN");
-
-		Field jsonMaskerField = ReflectionUtils.findField(JsonMasker.class, "jsonMasker");
-		jsonMaskerField.setAccessible(true);
-		jsonMaskerField.set(masker, null);
 	}
 
 	@Test
@@ -244,10 +238,6 @@ public class JsonMaskerTests {
 		assertThat(maskedKeys.get(3)).isEqualTo("SS");
 		assertThat(maskedKeys.get(4)).isEqualTo("SS");
 		assertThat(maskedKeys.get(5)).isEqualTo("eventSourceARN");
-
-		Field jsonMaskerField = ReflectionUtils.findField(JsonMasker.class, "jsonMasker");
-		jsonMaskerField.setAccessible(true);
-		jsonMaskerField.set(masker, null);
 	}
 
 	@SuppressWarnings("unchecked")

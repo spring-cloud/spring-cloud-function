@@ -16,18 +16,14 @@
 
 package org.springframework.cloud.function.utils;
 
-import java.net.URI;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,8 +33,6 @@ import org.springframework.cloud.function.json.JacksonMapper;
 import org.springframework.cloud.function.json.JsonMapper;
 import org.springframework.util.ClassUtils;
 
-
-
 /**
  * @author Oleg Zhurakousky
  * @author Omer Celik
@@ -47,104 +41,71 @@ public final class JsonMasker {
 
 	private static final Log logger = LogFactory.getLog(JsonMasker.class);
 
-	private static JsonMasker jsonMasker;
+	private static final String MASK = "*******";
 
-	private final JacksonMapper mapper;
+	private final JacksonMapper mapper = new JacksonMapper(new ObjectMapper());
 
-	private final Set<String> keysToMask;
-
-	private static final ReentrantLock globalLock = new ReentrantLock();
+	private final Set<String> keysToMask = loadKeys(ClassUtils.getDefaultClassLoader());
 
 	private JsonMasker() {
-		this.keysToMask = loadKeys();
-		this.mapper = new JacksonMapper(new ObjectMapper());
-
 	}
 
 	/**
-	 * Double-Checked Locking Optimization was used to avoid unnecessary locking overhead.
+	 * Returns the shared instance, which is created lazily and safely by the class loader.
+	 * @return the shared instance
 	 */
 	public static JsonMasker INSTANCE() {
-		if (jsonMasker == null) {
-			try {
-				globalLock.lock();
-				if (jsonMasker == null) {
-					jsonMasker = new JsonMasker();
-				}
-			}
-			finally {
-				globalLock.unlock();
-			}
-		}
-		return jsonMasker;
+		return Holder.INSTANCE;
 	}
 
 	public static JsonMasker INSTANCE(Set<String> keysToMask) {
-		try {
-			globalLock.lock();
-			INSTANCE().addKeys(keysToMask);
-			return jsonMasker;
-		}
-		finally {
-			globalLock.unlock();
-		}
+		Holder.INSTANCE.keysToMask.addAll(keysToMask);
+		return Holder.INSTANCE;
 	}
 
 	public String[] getKeysToMask() {
-		return keysToMask.toArray(new String[0]);
+		return this.keysToMask.toArray(new String[0]);
 	}
 
 	public String mask(Object json) {
 		if (!JsonMapper.isJsonString(json)) {
-			return (String) json;
+			return json instanceof byte[] bytes ? new String(bytes, StandardCharsets.UTF_8) : (String) json;
 		}
-		Object map = this.mapper.fromJson(json, Object.class);
-		return this.iterate(map);
+		Object tree = this.mapper.fromJson(json, Object.class);
+		this.maskIn(tree);
+		return new String(this.mapper.toJson(tree), StandardCharsets.UTF_8);
 	}
 
-	@SuppressWarnings({ "unchecked" })
-	private String iterate(Object json) {
-		if (json instanceof Collection<?> arrayValue) {
-			for (Object element : arrayValue) {
-				if (element instanceof Map<?, ?> mapElement) {
-					for (Map.Entry<String, Object> entry : ((Map<String, Object>) mapElement).entrySet()) {
-						this.doMask(entry.getKey(), entry);
-					}
+	@SuppressWarnings("unchecked")
+	private void maskIn(Object node) {
+		if (node instanceof Map<?, ?> map) {
+			for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) map).entrySet()) {
+				if (this.keysToMask.contains(entry.getKey())) {
+					entry.setValue(MASK);
+				}
+				else {
+					this.maskIn(entry.getValue());
 				}
 			}
 		}
-		else if (json instanceof Map<?, ?> mapElement) {
-			for (Map.Entry<String, Object> entry : ((Map<String, Object>) mapElement).entrySet()) {
-				this.doMask(entry.getKey(), entry);
-			}
-		}
-		return new String(this.mapper.toJson(json), StandardCharsets.UTF_8);
-	}
-
-	private void doMask(String key, Map.Entry<String, Object> entry) {
-		if (this.keysToMask.contains(key)) {
-			entry.setValue("*******");
-		}
-		else if (entry.getValue() instanceof Map) {
-			this.iterate(entry.getValue());
-		}
-		else if (entry.getValue() instanceof Collection) {
-			this.iterate(entry.getValue());
+		else if (node instanceof Collection<?> collection) {
+			collection.forEach(this::maskIn);
 		}
 	}
 
-	private static Set<String> loadKeys() {
-		Set<String> finalKeysToMask = new TreeSet<>();
+	/**
+	 * Reads the comma and/or line delimited keys of all {@code META-INF/mask.keys} resources, including
+	 * those packaged in jars.
+	 */
+	static Set<String> loadKeys(ClassLoader classLoader) {
+		Set<String> keys = new ConcurrentSkipListSet<>();
 		try {
-			Enumeration<URL> resources = ClassUtils.getDefaultClassLoader().getResources("META-INF/mask.keys");
-			while (resources.hasMoreElements()) {
-				URI uri = resources.nextElement().toURI();
-				List<String> lines = Files.readAllLines(Path.of(uri));
-				for (String line : lines) {
-					// need to split in case if delimited
-					String[] keys = line.split(",");
-					for (int i = 0; i < keys.length; i++) {
-						finalKeysToMask.add(keys[i].trim());
+			for (URL url : Collections.list(classLoader.getResources("META-INF/mask.keys"))) {
+				try (InputStream in = url.openStream()) {
+					for (String key : new String(in.readAllBytes(), StandardCharsets.UTF_8).split("[,\\r\\n]+")) {
+						if (!key.isBlank()) {
+							keys.add(key.trim());
+						}
 					}
 				}
 			}
@@ -152,10 +113,13 @@ public final class JsonMasker {
 		catch (Exception e) {
 			logger.warn("Failed to load keys to mask. No keys will be masked", e);
 		}
-		return finalKeysToMask;
+		return keys;
 	}
 
-	private void addKeys(Set<String> keys) {
-		this.keysToMask.addAll(keys);
+	private static final class Holder {
+
+		private static final JsonMasker INSTANCE = new JsonMasker();
+
 	}
+
 }
