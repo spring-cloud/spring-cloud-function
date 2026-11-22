@@ -140,6 +140,20 @@ public class BeanFactoryAwareFunctionRegistryTests {
 		}
 	}
 
+	@Test
+	public void singleFunctionFallbackDoesNotReplaceKnownFunctionNames() {
+		FunctionCatalog catalog = this.configureCatalog(SingleFunctionConfiguration.class);
+		try {
+			FunctionInvocationWrapper router = catalog.lookup(RoutingFunction.FUNCTION_NAME);
+
+			assertThat(router).isNotNull();
+			assertThat(router.getFunctionDefinition()).isEqualTo(RoutingFunction.FUNCTION_NAME);
+		}
+		finally {
+			((ConfigurableApplicationContext) this.context).close();
+		}
+	}
+
 	//@Test
 	public void testBoundedFunctionCache() throws Exception {
 		FunctionCatalog catalog = this.configureCatalogWithProperties(
@@ -1028,6 +1042,15 @@ public class BeanFactoryAwareFunctionRegistryTests {
 			return v -> {
 				return v.toString();
 			};
+		}
+	}
+
+	@EnableAutoConfiguration
+	public static class SingleFunctionConfiguration {
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return String::toUpperCase;
 		}
 	}
 
