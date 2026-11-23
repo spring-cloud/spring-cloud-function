@@ -278,6 +278,11 @@ Spring Cloud Function does not expose any such endpoints.
 In specific execution environments/models the adapters are responsible to translate and communicate `spring.cloud.function.definition` and/or `spring.cloud.function.routing-expression` via `Message` header.
 For example, when using _spring-cloud-function-web_ you can provide `spring.cloud.function.definition` as an HTTP header and the framework will propagate it, along with other HTTP headers, as Message headers.
 
+IMPORTANT: A routing instruction in a Message header can select any function in the catalog, so whoever controls the headers of the incoming messages (for example the sender of an HTTP request) decides which function is invoked.
+If the headers come from a sender you do not control and you route using application properties or a `MessageRoutingCallback`, set `spring.cloud.function.header-routing-enabled=false`.
+`RoutingFunction` will then ignore the `spring.cloud.function.definition` and `spring.cloud.function.routing-expression` Message headers and use only the `MessageRoutingCallback` and the application properties.
+The property is `true` by default.
+
 *Application Properties*
 
 Routing instructions can also be communicated via `spring.cloud.function.definition` or `spring.cloud.function.routing-expression` as application properties.

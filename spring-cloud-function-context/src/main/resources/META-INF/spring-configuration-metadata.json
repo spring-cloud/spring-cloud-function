@@ -21,6 +21,12 @@
 			"defaultValue": true
 		},
 		{
+			"name": "spring.cloud.function.header-routing-enabled",
+			"type": "java.lang.Boolean",
+			"description": "Whether RoutingFunction uses the 'spring.cloud.function.definition' and 'spring.cloud.function.routing-expression' message headers to select the function to route to.",
+			"defaultValue": true
+		},
+		{
 			"name": "spring.cloud.function.routing.enabled",
 			"type": "java.lang.Boolean",
 			"description": "Enables RoutingFunction which delegates incoming request to a function named via function.name header",

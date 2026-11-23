@@ -194,6 +194,9 @@ public class RoutingFunction implements Function<Object, Object> {
 	}
 
 	private FunctionInvocationWrapper locateFunctionFromDefinitionOrExpression(Message<?> message) {
+		if (!this.functionProperties.isHeaderRoutingEnabled()) {
+			return null;
+		}
 		Map<String, Object> messageHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 		messageHeaders.putAll(message.getHeaders());
 		Object defValue = messageHeaders.get(FunctionProperties.FUNCTION_DEFINITION);

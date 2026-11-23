@@ -57,6 +57,7 @@ public class RoutingFunctionTests {
 	public void before() {
 		System.clearProperty("spring.cloud.function.definition");
 		System.clearProperty("spring.cloud.function.routing-expression");
+		System.clearProperty("spring.cloud.function.header-routing-enabled");
 		if (context != null) {
 			context.close();
 		}
@@ -218,6 +219,54 @@ public class RoutingFunctionTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
+	public void definitionHeaderIsIgnoredWhenHeaderRoutingIsDisabled() {
+		System.setProperty("spring.cloud.function.header-routing-enabled", "false");
+		System.setProperty(FunctionProperties.PREFIX + ".definition", "reverse");
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".definition", "uppercase").build();
+		assertThat(function.apply(message)).isEqualTo("olleh");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void routingExpressionHeaderIsIgnoredWhenHeaderRoutingIsDisabled() {
+		System.setProperty("spring.cloud.function.header-routing-enabled", "false");
+		System.setProperty(FunctionProperties.PREFIX + ".definition", "reverse");
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".routing-expression", "'uppercase'").build();
+		assertThat(function.apply(message)).isEqualTo("olleh");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void headersAreNotUsedAsTheOnlyInstructionWhenHeaderRoutingIsDisabled() {
+		System.setProperty("spring.cloud.function.header-routing-enabled", "false");
+		FunctionCatalog functionCatalog = this.configureCatalog();
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".definition", "uppercase").build();
+		Assertions.assertThatThrownBy(() -> function.apply(message))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessageContaining("Failed to establish route");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void routingCallbackIsStillUsedWhenHeaderRoutingIsDisabled() {
+		System.setProperty("spring.cloud.function.header-routing-enabled", "false");
+		FunctionCatalog functionCatalog = this.configureCatalog(CallbackConfiguration.class);
+		Function function = functionCatalog.lookup(RoutingFunction.FUNCTION_NAME);
+		Message<String> message = MessageBuilder.withPayload("hello")
+				.setHeader(FunctionProperties.PREFIX + ".definition", "uppercase").build();
+		assertThat(function.apply(message)).isEqualTo("olleh");
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
 	public void testInvocationWithMessageAndDefinitionProperty() {
 		System.setProperty(FunctionProperties.PREFIX + ".definition", "reverse");
 		FunctionCatalog functionCatalog = this.configureCatalog();
@@ -346,6 +395,31 @@ public class RoutingFunctionTests {
 		@Bean
 		public Function<Flux<String>, Flux<String>> echoFlux() {
 			return f -> f;
+		}
+	}
+
+	@EnableAutoConfiguration
+	@Configuration
+	protected static class CallbackConfiguration {
+
+		@Bean
+		public Function<String, String> reverse() {
+			return v -> new StringBuilder(v).reverse().toString();
+		}
+
+		@Bean
+		public Function<String, String> uppercase() {
+			return String::toUpperCase;
+		}
+
+		@Bean
+		public MessageRoutingCallback routingCallback() {
+			return new MessageRoutingCallback() {
+				@Override
+				public String routingResult(Message<?> message) {
+					return "reverse";
+				}
+			};
 		}
 	}
 
