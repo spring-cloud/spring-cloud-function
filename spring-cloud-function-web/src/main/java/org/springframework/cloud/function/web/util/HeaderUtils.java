@@ -73,12 +73,21 @@ public final class HeaderUtils {
 		throw new IllegalStateException("Can't instantiate a utility class");
 	}
 
+	private static boolean containsIgnoreCase(List<String> names, String name) {
+		for (String candidate : names) {
+			if (name.equalsIgnoreCase(candidate)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static HttpHeaders fromMessage(MessageHeaders headers, List<String> ignoredHeders) {
 		HttpHeaders result = new HttpHeaders();
 		for (String name : headers.keySet()) {
 			Object value = headers.get(name);
 			name = name.toLowerCase(Locale.ROOT);
-			if (!IGNORED.containsHeader(name) && !ignoredHeders.contains(name)) {
+			if (!IGNORED.containsHeader(name) && !containsIgnoreCase(ignoredHeders, name)) {
 				Collection<?> values = multi(value);
 				for (Object object : values) {
 					result.set(name, object.toString());
@@ -99,7 +108,7 @@ public final class HeaderUtils {
 		for (String name : request.headerNames()) {
 			List<String> value = request.get(name);
 			name = name.toLowerCase(Locale.ROOT);
-			if (!IGNORED.containsHeader(name) && !REQUEST_ONLY.containsHeader(name) && !ignoredHeders.contains(name) && !requestOnlyHeaders.contains(name)) {
+			if (!IGNORED.containsHeader(name) && !REQUEST_ONLY.containsHeader(name) && !containsIgnoreCase(ignoredHeders, name) && !containsIgnoreCase(requestOnlyHeaders, name)) {
 				result.put(name, value);
 			}
 		}
