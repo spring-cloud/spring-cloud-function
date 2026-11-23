@@ -87,6 +87,12 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 	 */
 	private boolean singleFunctionFallbackEnabled = true;
 
+	/**
+	 * Whether RoutingFunction uses the 'spring.cloud.function.definition' and
+	 * 'spring.cloud.function.routing-expression' message headers to select the function to route to.
+	 */
+	private boolean headerRoutingEnabled = true;
+
 	private Map<String, FunctionConfigurationProperties> configuration;
 
 	private String expectedContentType;
@@ -207,6 +213,14 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 
 	public void setSingleFunctionFallbackEnabled(boolean singleFunctionFallbackEnabled) {
 		this.singleFunctionFallbackEnabled = singleFunctionFallbackEnabled;
+	}
+
+	public boolean isHeaderRoutingEnabled() {
+		return this.headerRoutingEnabled;
+	}
+
+	public void setHeaderRoutingEnabled(boolean headerRoutingEnabled) {
+		this.headerRoutingEnabled = headerRoutingEnabled;
 	}
 
 	public static class FunctionConfigurationProperties {
