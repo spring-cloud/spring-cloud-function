@@ -80,23 +80,30 @@ of the actual URL, giving user ability to use it for evaluation and computation.
 [[function-filtering-rules]]
 == Function Filtering rules
 
-In situations where there are more than one function in catalog there may be a need to only export certain functions or function compositions. In that case you can use
-the same `spring.cloud.function.definition` property listing functions you intend to export delimited by `;`.
-Note that in this case nothing will be mapped to the root path and functions that are not listed (including compositions) are not going to be exported.
+In situations where there are more than one function in catalog there may be a need to only export certain functions or function compositions.
+The `spring.cloud.function.definition` property can not be used for that. It does not restrict which functions are exported; every function in the catalog
+is available under its name (e.g., `localhost:8080/foo`) regardless of its value. The property is only used to map a function or a function composition to the root path
+or to a URL that can not be resolved to a function, as described above.
+
+To restrict which functions can be invoked, use the `spring.cloud.function.http.<method-name>` properties described in xref:spring-cloud-function/standalone-web-applications.adoc#crud-rest-with-spring-cloud-function[CRUD REST with Spring Cloud Function].
+For each HTTP method they list, delimited by `;`, the functions and function compositions that may be invoked with that method.
+A request for a function that is not listed for its method is rejected with `405 Method Not Allowed`.
 
 For example,
 
 ----
---spring.cloud.function.definition=foo;bar
+spring.cloud.function.http.GET=foo;bar
+spring.cloud.function.http.POST=foo;bar
 ----
 
-This will only export function `foo` and function `bar` regardless how many functions are available in catalog (e.g., `localhost:8080/foo`).
+This only allows `foo` and `bar` to be invoked with `GET` and `POST` (e.g., `localhost:8080/foo`) regardless of how many functions are available in catalog.
 
 ----
---spring.cloud.function.definition=foo|bar;baz
+spring.cloud.function.http.POST=foo|bar;baz
 ----
 
-This will only export function composition `foo|bar` and function `baz` regardless how many functions are available in catalog (e.g., `localhost:8080/foo,bar`).
+This only allows the function composition `foo|bar` and the function `baz` to be invoked with `POST` (e.g., `localhost:8080/foo,bar`).
+Methods for which no property is provided are not restricted.
 
 == Http Headers propagation
 
