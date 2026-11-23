@@ -82,6 +82,42 @@ public class FunctionEndpointInitializerTests {
 	}
 
 	@Test
+	public void testMethodAllowListIsEnforced() throws Exception {
+		int port = startServerAndWaitForPort(ApplicationConfiguration.class,
+				"--spring.cloud.function.http.POST=uppercase", "--spring.cloud.function.http.GET=reverse");
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isEqualTo("STRESSED");
+		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/reverse"), "stressed", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+		response = testRestTemplate.getForEntity(new URI("http://localhost:" + port + "/reverse/stressed"), String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isEqualTo("desserts");
+		response = testRestTemplate.getForEntity(new URI("http://localhost:" + port + "/uppercase/stressed"), String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+	}
+
+	@Test
+	public void testPrefixIsEnforced() throws Exception {
+		int port = startServerAndWaitForPort(ApplicationConfiguration.class, "--spring.cloud.function.web.path=/api");
+		TestRestTemplate testRestTemplate = new TestRestTemplate();
+		ResponseEntity<String> response = testRestTemplate
+				.postForEntity(new URI("http://localhost:" + port + "/api/uppercase"), "stressed", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		assertThat(response.getBody()).isEqualTo("STRESSED");
+		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/uppercase"), "stressed", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		response = testRestTemplate.postForEntity(new URI("http://localhost:" + port + "/apiuppercase"), "stressed", String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		response = testRestTemplate.getForEntity(new URI("http://localhost:" + port + "/api/reverse/stressed"), String.class);
+		assertThat(response.getBody()).isEqualTo("desserts");
+		response = testRestTemplate.getForEntity(new URI("http://localhost:" + port + "/reverse/stressed"), String.class);
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+	}
+
+	@Test
 	public void testNonExistingFunction() throws Exception {
 		int port = startServerAndWaitForPort(ApplicationConfiguration.class);
 		TestRestTemplate testRestTemplate = new TestRestTemplate();
@@ -138,10 +174,13 @@ public class FunctionEndpointInitializerTests {
 		assertThat(response.getBody()).isEqualTo("Jim Lahey");
 	}
 
-	private int startServerAndWaitForPort(Class<?> primaryAppConfig, boolean functional) throws InterruptedException {
+	private int startServerAndWaitForPort(Class<?> primaryAppConfig, boolean functional, String... args) throws InterruptedException {
+		String[] allArgs = new String[args.length + 1];
+		allArgs[0] = "--server.port=0";
+		System.arraycopy(args, 0, allArgs, 1, args.length);
 		ConfigurableApplicationContext context = functional
-				? FunctionalSpringApplication.run(primaryAppConfig, "--server.port=0")
-						: SpringApplication.run(primaryAppConfig, "--server.port=0");
+				? FunctionalSpringApplication.run(primaryAppConfig, allArgs)
+						: SpringApplication.run(primaryAppConfig, allArgs);
 		await()
 			.pollDelay(Duration.ofMillis(500))
 			.pollInterval(Duration.ofMillis(500))
@@ -153,8 +192,8 @@ public class FunctionEndpointInitializerTests {
 		return Integer.valueOf(context.getEnvironment().getProperty("local.server.port"));
 	}
 
-	private int startServerAndWaitForPort(Class<?> primaryAppConfig) throws InterruptedException {
-		return this.startServerAndWaitForPort(primaryAppConfig, true);
+	private int startServerAndWaitForPort(Class<?> primaryAppConfig, String... args) throws InterruptedException {
+		return this.startServerAndWaitForPort(primaryAppConfig, true, args);
 	}
 
 	@SpringBootConfiguration

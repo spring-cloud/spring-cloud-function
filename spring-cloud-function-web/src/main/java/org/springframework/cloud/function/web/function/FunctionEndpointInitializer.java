@@ -56,6 +56,7 @@ import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.server.HandlerStrategies;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
@@ -200,6 +201,8 @@ class FunctionEndpointFactory {
 
 	private final FunctionHttpProperties functionHttpProperties;
 
+	private final String prefix;
+
 	FunctionEndpointFactory(FunctionProperties functionProperties, FunctionCatalog functionCatalog, Environment environment, FunctionHttpProperties functionHttpProperties) {
 		String handler = environment.resolvePlaceholders("${function.handler}");
 		if (handler.startsWith("$")) {
@@ -209,10 +212,22 @@ class FunctionEndpointFactory {
 		this.handler = handler;
 		this.functionProperties = functionProperties;
 		this.functionHttpProperties = functionHttpProperties;
+		String prefix = environment.getProperty("spring.cloud.function.web.path", "");
+		while (prefix.endsWith("/")) {
+			prefix = prefix.substring(0, prefix.length() - 1);
+		}
+		this.prefix = prefix;
 	}
 
 	private FunctionInvocationWrapper extract(ServerRequest request) {
 		FunctionInvocationWrapper function;
+		String path = request.path();
+		if (StringUtils.hasText(this.prefix)) {
+			if (!FunctionWebRequestProcessingHelper.isUnderPrefix(path, this.prefix)) {
+				return null;
+			}
+			path = path.substring(this.prefix.length());
+		}
 		if (handler != null) {
 			logger.info("Configured function: " + handler);
 			Set<String> names = this.functionCatalog.getNames(Function.class);
@@ -221,7 +236,11 @@ class FunctionEndpointFactory {
 		}
 		else {
 			function = FunctionWebRequestProcessingHelper.findFunction(this.functionProperties, request.method(), functionCatalog, request.attributes(),
-					request.path());
+					path);
+		}
+		if (function != null) {
+			FunctionWebRequestProcessingHelper.assertFunctionValidForMethod(request.method().name(), new FunctionWrapper(function, null),
+					this.functionHttpProperties);
 		}
 		return function;
 	}
@@ -248,6 +267,9 @@ class FunctionEndpointFactory {
 			});
 		}).andRoute(GET("/**"), request -> {
 			FunctionInvocationWrapper funcWrapper = extract(request);
+			if (funcWrapper == null) {
+				return ServerResponse.notFound().build();
+			}
 			Class<?> outputType = FunctionTypeUtils
 					.getRawType(FunctionTypeUtils.getGenericType(funcWrapper.getOutputType()));
 			if (funcWrapper.isSupplier()) {
