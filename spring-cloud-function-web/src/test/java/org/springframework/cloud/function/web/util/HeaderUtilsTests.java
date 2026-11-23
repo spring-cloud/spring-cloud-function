@@ -49,6 +49,32 @@ class HeaderUtilsTests {
 	}
 
 	@Test
+	void fromMessageFiltersCustomHeadersConfiguredInMixedCase() {
+		MessageHeaders messageHeaders = MessageBuilder.withPayload("payload")
+				.setHeader("X-Trace-Id", "trace-123")
+				.setHeader("X-Internal-Token", "secret")
+				.build().getHeaders();
+
+		HttpHeaders result = HeaderUtils.fromMessage(messageHeaders, List.of("X-Internal-Token"));
+
+		assertThat(result.getFirst("x-trace-id")).isEqualTo("trace-123");
+		assertThat(result.headerNames()).doesNotContain("x-internal-token");
+	}
+
+	@Test
+	void sanitizeRemovesCustomHeadersConfiguredInMixedCase() {
+		HttpHeaders request = new HttpHeaders();
+		request.add("X-Trace-Id", "trace-123");
+		request.add("X-Internal-Token", "secret");
+		request.add("X-Request-Only", "request-value");
+
+		HttpHeaders result = HeaderUtils.sanitize(request, List.of("X-Internal-Token"), List.of("X-Request-Only"));
+
+		assertThat(result.getFirst("x-trace-id")).isEqualTo("trace-123");
+		assertThat(result.headerNames()).doesNotContain("x-internal-token", "x-request-only");
+	}
+
+	@Test
 	void fromMessageConvertsValuesAndUsesLastValueForMultiValueHeader() {
 		MessageHeaders messageHeaders = MessageBuilder.withPayload("payload")
 				.setHeader("X-Count", 42)

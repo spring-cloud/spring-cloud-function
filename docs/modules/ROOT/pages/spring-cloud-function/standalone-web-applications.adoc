@@ -115,7 +115,7 @@ the CORS headers (`Access-Control-*`), `Content-Length`, `Transfer-Encoding`, as
 
 IMPORTANT: All other request headers are copied into the response, including custom headers that may carry credentials or other sensitive values (e.g., `X-Api-Key`).
 Add such headers to `spring.cloud.function.http.ignored-headers` so they are not echoed back to the client.
-Header names in that list must be provided in lower case.
+Header names in that list are compared case-insensitively.
 
 [[crud-rest-with-spring-cloud-function]]
 == CRUD REST with Spring Cloud Function
