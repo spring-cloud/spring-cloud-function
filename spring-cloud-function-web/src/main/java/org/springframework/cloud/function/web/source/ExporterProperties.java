@@ -103,7 +103,10 @@ public class ExporterProperties {
 
 		/**
 		 * Include the incoming headers in the outgoing Supplier. If true the supplier
-		 * will be of generic type Message of T equal to the source type.
+		 * will be of generic type Message of T equal to the source type. The headers of
+		 * the source response are forwarded to the sink, except for credentials, cookies
+		 * and the other headers that are never propagated, and those listed in
+		 * 'spring.cloud.function.http.ignored-headers'. Set to false to forward none.
 		 */
 		private boolean includeHeaders = true;
 
