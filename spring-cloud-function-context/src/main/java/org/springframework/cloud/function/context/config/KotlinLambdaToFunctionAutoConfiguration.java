@@ -18,6 +18,7 @@ package org.springframework.cloud.function.context.config;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -40,7 +41,6 @@ import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.catalog.FunctionTypeUtils;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
-import org.springframework.util.ObjectUtils;
 
 /**
  * Configuration class which defines the required infrastructure to bootstrap Kotlin
@@ -80,7 +80,7 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 		@Override
 		public Object apply(Object input) {
-			if (ObjectUtils.isEmpty(input)) {
+			if (input == null) {
 				return this.invoke();
 			}
 			else {
@@ -145,11 +145,15 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 
 		public FunctionRegistration getFunctionRegistration() {
 			String name = this.name.endsWith(FunctionRegistration.REGISTRATION_NAME_SUFFIX)
-				? this.name.replace(FunctionRegistration.REGISTRATION_NAME_SUFFIX, "")
+				? this.name.substring(0, this.name.length() - FunctionRegistration.REGISTRATION_NAME_SUFFIX.length())
 				: this.name;
 			Type functionType = FunctionContextUtils.findType(name, this.beanFactory);
+			if (!(functionType instanceof ParameterizedType parameterizedType)) {
+				throw new IllegalStateException("Failed to determine the generic type of Kotlin function '" + name
+					+ "', discovered type is " + functionType);
+			}
 			FunctionRegistration<?> registration = new FunctionRegistration<>(this, name);
-			Type[] types = ((ParameterizedType) functionType).getActualTypeArguments();
+			Type[] types = parameterizedType.getActualTypeArguments();
 
 			if (isValidKotlinSupplier(functionType)) {
 				functionType = ResolvableType.forClassWithGenerics(Supplier.class, ResolvableType.forType(types[0]))
@@ -233,7 +237,15 @@ public class KotlinLambdaToFunctionAutoConfiguration {
 		}
 
 		private boolean isTypeRepresentedByClass(Type type, Class<?> clazz) {
-			return type.getTypeName().contains(clazz.getName());
+			if (type instanceof WildcardType wildcardType) {
+				Type[] bounds = wildcardType.getLowerBounds().length > 0
+					? wildcardType.getLowerBounds()
+					: wildcardType.getUpperBounds();
+				type = bounds[0];
+			}
+			// compare the raw type rather than the type name so that neither 'Function10' nor a nested
+			// type argument such as 'Function1<Function0<String>, String>' is matched by 'Function1'/'Function0'
+			return ResolvableType.forType(type).toClass() == clazz;
 		}
 
 		public Class<?> getObjectType() {
