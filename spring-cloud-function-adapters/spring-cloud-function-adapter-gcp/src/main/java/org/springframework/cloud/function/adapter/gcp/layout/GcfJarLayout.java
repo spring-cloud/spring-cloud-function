@@ -48,8 +48,11 @@ public class GcfJarLayout extends Layouts.Jar implements CustomLoaderLayout {
 	public void writeLoadedClasses(LoaderClassesWriter writer) throws IOException {
 		writer.writeLoaderClasses();
 
-		String jarName = LAUNCHER_NAME.replaceAll("\\.", "/") + ".class";
-		writer.writeEntry(
-			jarName, GcfJarLauncher.class.getResourceAsStream("/" + jarName));
+		String launcherPath = LAUNCHER_NAME.replace('.', '/');
+		String launcherEntry = launcherPath + ".class";
+		String factoryEntry = launcherPath + "$NestedUrlStreamHandlerFactory.class";
+
+		writer.writeEntry(launcherEntry, GcfJarLauncher.class.getResourceAsStream("/" + launcherEntry));
+		writer.writeEntry(factoryEntry, GcfJarLauncher.class.getResourceAsStream("/" + factoryEntry));
 	}
 }
