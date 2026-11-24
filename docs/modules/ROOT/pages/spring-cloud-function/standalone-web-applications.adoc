@@ -111,7 +111,7 @@ By default most request `HttpHeaders` are copied into the response `HttpHeaders`
 `spring.cloud.function.http.ignored-headers` delimited by comas. For example, `spring.cloud.function.http.ignored-headers=foo,bar`.
 
 The following request headers are never copied into the response: `Authorization`, `Cookie`, `Set-Cookie`, `Proxy-Authorization`, `Proxy-Authenticate`, `Cache-Control`, `Content-Security-Policy`,
-the CORS headers (`Access-Control-*`), `Content-Length`, `Transfer-Encoding`, as well as the request-only headers `Accept`, `Content-Type` and `Host`.
+the CORS headers (`Access-Control-*`), `Content-Length`, `Transfer-Encoding`, as well as the request-only headers `Accept`, `Content-Type`, `Host`, `Content-Encoding`, `Content-Disposition`, `Content-Location`, `Content-Range`, `Location`, `Refresh`, `Link`, `WWW-Authenticate` and the hop-by-hop headers `Connection`, `Keep-Alive`, `Upgrade`, `TE` and `Trailer`.
 
 IMPORTANT: All other request headers are copied into the response, including custom headers that may carry credentials or other sensitive values (e.g., `X-Api-Key`).
 Add such headers to `spring.cloud.function.http.ignored-headers` so they are not echoed back to the client.

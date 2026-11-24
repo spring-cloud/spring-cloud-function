@@ -67,6 +67,24 @@ public final class HeaderUtils {
 		REQUEST_ONLY.add(HttpHeaders.CONTENT_LENGTH, "");
 		REQUEST_ONLY.add(HttpHeaders.CONTENT_TYPE, "");
 		REQUEST_ONLY.add(HttpHeaders.HOST, "");
+
+		// Headers that change how a response is interpreted or processed by the client
+		// and must not be echoed back from a request
+		REQUEST_ONLY.add(HttpHeaders.CONTENT_ENCODING, "");
+		REQUEST_ONLY.add(HttpHeaders.CONTENT_DISPOSITION, "");
+		REQUEST_ONLY.add(HttpHeaders.CONTENT_LOCATION, "");
+		REQUEST_ONLY.add(HttpHeaders.CONTENT_RANGE, "");
+		REQUEST_ONLY.add(HttpHeaders.LOCATION, "");
+		REQUEST_ONLY.add("Refresh", "");
+		REQUEST_ONLY.add(HttpHeaders.LINK, "");
+		REQUEST_ONLY.add(HttpHeaders.WWW_AUTHENTICATE, "");
+
+		// Hop-by-hop headers
+		REQUEST_ONLY.add(HttpHeaders.CONNECTION, "");
+		REQUEST_ONLY.add("Keep-Alive", "");
+		REQUEST_ONLY.add(HttpHeaders.UPGRADE, "");
+		REQUEST_ONLY.add(HttpHeaders.TE, "");
+		REQUEST_ONLY.add(HttpHeaders.TRAILER, "");
 	}
 
 	private HeaderUtils() {
