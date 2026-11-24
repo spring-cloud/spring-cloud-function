@@ -75,6 +75,34 @@ class HeaderUtilsTests {
 	}
 
 	@Test
+	void sanitizeDoesNotEchoHeadersThatChangeResponseInterpretation() {
+		HttpHeaders request = new HttpHeaders();
+		request.add("X-Trace-Id", "trace-123");
+		for (String name : List.of("Content-Encoding", "Content-Disposition", "Content-Location", "Content-Range",
+				"Location", "Refresh", "Link", "WWW-Authenticate", "Connection", "Keep-Alive", "Upgrade", "TE",
+				"Trailer")) {
+			request.add(name, "value");
+		}
+
+		HttpHeaders result = HeaderUtils.sanitize(request);
+
+		assertThat(result.headerNames()).containsExactly("x-trace-id");
+	}
+
+	@Test
+	void fromMessageStillAllowsAFunctionToSetLocationAndContentDisposition() {
+		MessageHeaders messageHeaders = MessageBuilder.withPayload("payload")
+				.setHeader("Location", "/new")
+				.setHeader("Content-Disposition", "attachment")
+				.build().getHeaders();
+
+		HttpHeaders result = HeaderUtils.fromMessage(messageHeaders);
+
+		assertThat(result.getFirst("location")).isEqualTo("/new");
+		assertThat(result.getFirst("content-disposition")).isEqualTo("attachment");
+	}
+
+	@Test
 	void fromMessageConvertsValuesAndUsesLastValueForMultiValueHeader() {
 		MessageHeaders messageHeaders = MessageBuilder.withPayload("payload")
 				.setHeader("X-Count", 42)
