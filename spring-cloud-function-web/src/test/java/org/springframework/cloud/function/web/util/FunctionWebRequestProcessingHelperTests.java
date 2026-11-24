@@ -16,16 +16,22 @@
 
 package org.springframework.cloud.function.web.util;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import org.springframework.cloud.function.context.catalog.SimpleFunctionRegistry.FunctionInvocationWrapper;
 import org.springframework.cloud.function.web.FunctionHttpProperties;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.Message;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -97,6 +103,47 @@ public class FunctionWebRequestProcessingHelperTests {
 		assertThat(FunctionWebRequestProcessingHelper.isUnderPrefix("/functions/foo", "/functions")).isTrue();
 		assertThat(FunctionWebRequestProcessingHelper.isUnderPrefix("/functionsfoo", "/functions")).isFalse();
 		assertThat(FunctionWebRequestProcessingHelper.isUnderPrefix("/foo", "/functions")).isFalse();
+	}
+
+	@Test
+	void clientCannotSupplyOrOverwriteFrameworkHeaders() {
+		FunctionInvocationWrapper function = mock(FunctionInvocationWrapper.class);
+		when(function.apply(org.mockito.ArgumentMatchers.any())).thenReturn("result");
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("http_request_param", "spoofed");
+		headers.add("Scf-Func-Name", "spoofed");
+		headers.add("scf-sink-url", "spoofed");
+		headers.add("lambda-runtime", "spoofed");
+		headers.add("x-custom", "custom");
+		FunctionWrapper wrapper = new FunctionWrapper(function, "POST");
+		wrapper.setHeaders(headers);
+		wrapper.getParams().add("a", "b");
+
+		try {
+			FunctionWebRequestProcessingHelper.processRequest(wrapper, "hello", false, java.util.List.of(),
+					java.util.List.of());
+		}
+		catch (RuntimeException ex) {
+			// only the input message handed to the function matters here
+		}
+
+		ArgumentCaptor<Object> input = ArgumentCaptor.forClass(Object.class);
+		verify(function).apply(input.capture());
+		Message<?> message = (Message<?>) input.getValue();
+		assertThat(message.getHeaders()).containsEntry("x-custom", "custom")
+				.containsEntry("http_request_param", Map.of("a", "b"))
+				.doesNotContainKeys("Scf-Func-Name", "scf-sink-url", "lambda-runtime");
+	}
+
+	@Test
+	void reservedHeaderNamesAreRecognisedIgnoringCase() {
+		assertThat(HeaderUtils.isReservedHeader("http_request_param")).isTrue();
+		assertThat(HeaderUtils.isReservedHeader("HTTP_Request_Param")).isTrue();
+		assertThat(HeaderUtils.isReservedHeader("scf-func-name")).isTrue();
+		assertThat(HeaderUtils.isReservedHeader("SCF-whatever")).isTrue();
+		assertThat(HeaderUtils.isReservedHeader("lambdaRuntime")).isTrue();
+		assertThat(HeaderUtils.isReservedHeader("x-scf")).isFalse();
+		assertThat(HeaderUtils.isReservedHeader("accept")).isFalse();
 	}
 
 	private static FunctionWrapper wrapperOf(String functionDefinition) {
