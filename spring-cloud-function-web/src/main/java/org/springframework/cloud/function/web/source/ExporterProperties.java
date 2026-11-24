@@ -36,9 +36,10 @@ public class ExporterProperties {
 	private boolean autoStartup = true;
 
 	/**
-	 * Flag to indicate that extra logging is required for the supplier.
+	 * Flag to indicate that extra logging is required for the supplier. Note that this
+	 * logs the exported values (payloads), so enable it only when that is acceptable.
 	 */
-	private boolean debug = true;
+	private boolean debug;
 
 	/**
 	 * Properties related to a source of items (via an HTTP GET on startup).
