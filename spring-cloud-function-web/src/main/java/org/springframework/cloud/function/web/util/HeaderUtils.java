@@ -91,6 +91,19 @@ public final class HeaderUtils {
 		throw new IllegalStateException("Can't instantiate a utility class");
 	}
 
+	/**
+	 * Check if the header name is reserved for the framework (the HTTP request parameters
+	 * header, the {@code scf-} headers and the {@code lambda} headers used by the
+	 * adapters), in which case a value received from a client must not be trusted.
+	 * @param name header name
+	 * @return true if the name is reserved
+	 */
+	public static boolean isReservedHeader(String name) {
+		return HTTP_REQUEST_PARAM.equalsIgnoreCase(name)
+				|| name.regionMatches(true, 0, "scf-", 0, 4)
+				|| name.regionMatches(true, 0, "lambda", 0, 6);
+	}
+
 	private static boolean containsIgnoreCase(List<String> names, String name) {
 		for (String candidate : names) {
 			if (name.equalsIgnoreCase(candidate)) {

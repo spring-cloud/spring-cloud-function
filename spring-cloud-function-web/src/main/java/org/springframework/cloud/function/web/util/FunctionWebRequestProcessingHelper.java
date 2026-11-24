@@ -18,6 +18,7 @@ package org.springframework.cloud.function.web.util;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -149,10 +150,14 @@ public final class FunctionWebRequestProcessingHelper {
 
 
 		MessageBuilder builder = MessageBuilder.withPayload(argument);
+		Map<String, Object> clientHeaders = new LinkedHashMap<>(headers.toSingleValueMap());
+		// framework headers must not be supplied (or overwritten) by the client
+		clientHeaders.keySet().removeIf(HeaderUtils::isReservedHeader);
+		builder = builder.copyHeaders(clientHeaders);
 		if (!CollectionUtils.isEmpty(wrapper.getParams())) {
 			builder = builder.setHeader(HeaderUtils.HTTP_REQUEST_PARAM, wrapper.getParams().toSingleValueMap());
 		}
-		inputMessage = builder.copyHeaders(headers.toSingleValueMap()).build();
+		inputMessage = builder.build();
 
 		if (function.isRoutingFunction()) {
 			function.setSkipOutputConversion(true);
