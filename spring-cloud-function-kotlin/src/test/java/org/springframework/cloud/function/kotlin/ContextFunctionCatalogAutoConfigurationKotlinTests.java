@@ -172,6 +172,16 @@ public class ContextFunctionCatalogAutoConfigurationKotlinTests {
 				.isEqualTo("Hello");
 	}
 
+	@Test
+	public void kotlinFunctionWithEmptyInput() {
+		create(new Class[] { KotlinLambdasConfiguration.class,
+				SimpleConfiguration.class });
+
+		FunctionInvocationWrapper function = this.catalog.lookup(Function.class, "kotlinFunction");
+		assertThat(function.apply("")).isEqualTo("");
+		assertThat(function.apply("hello")).isEqualTo("HELLO");
+	}
+
 	private void create(Class<?>[] types, String... props) {
 		this.context = (GenericApplicationContext) new SpringApplicationBuilder(types).properties(props).run();
 		this.catalog = this.context.getBean(FunctionCatalog.class);
