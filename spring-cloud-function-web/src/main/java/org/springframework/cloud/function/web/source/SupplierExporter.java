@@ -67,7 +67,7 @@ public class SupplierExporter implements SmartLifecycle {
 
 	private boolean autoStartup = true;
 
-	private boolean debug = true;
+	private boolean debug;
 
 	private volatile Disposable subscription;
 

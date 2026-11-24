@@ -177,7 +177,8 @@ public final class FunctionWebRequestProcessingHelper {
 			}
 
 			if (pResult instanceof Flux flux) {
-				pResult = flux.onErrorContinue((e, v) -> logger.error("Failed to process value: " + v, (Throwable) e)).collectList();
+				pResult = flux.onErrorContinue((e, v) -> logger.error("Failed to process a value of type "
+						+ (v == null ? null : v.getClass().getName()), (Throwable) e)).collectList();
 			}
 			pResult = Mono.from(pResult);
 		}
