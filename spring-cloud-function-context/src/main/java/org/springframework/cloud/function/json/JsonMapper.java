@@ -112,12 +112,21 @@ public abstract class JsonMapper {
 	 * @return true if and object appears to be a valid JSON string, otherwise false.
 	 */
 	public static boolean isJsonString(Object value) {
+		int first = firstSignificantChar(value);
+		if (first != -1 && !canStartJsonValue(first)) {
+			// can not be valid JSON, so avoid the cost of parsing and of the exception it would throw
+			return false;
+		}
 		if (value instanceof byte[]) {
 			value = new String((byte[]) value, StandardCharsets.UTF_8);
 		}
 		if (value instanceof String) {
 			try {
 				mapper.readTree((String) value);
+				if (first == '{' || first == '[' || first == '"') {
+					// can not be an integer, so avoid the exception thrown by parseInt
+					return true;
+				}
 				try {
 					Integer.parseInt((String) value);
 					return false;
@@ -134,15 +143,51 @@ public abstract class JsonMapper {
 		return false;
 	}
 
+	/**
+	 * Returns the first character that is not JSON whitespace of a String or a byte[]
+	 * (interpreted as UTF-8), or -1 if there is none or the value is of another type.
+	 * For a byte[] only a leading ASCII character is reported, otherwise {@code 0xFFFF}
+	 * is returned, which can not start a JSON value.
+	 */
+	private static int firstSignificantChar(Object value) {
+		if (value instanceof String s) {
+			for (int i = 0; i < s.length(); i++) {
+				char c = s.charAt(i);
+				if (c != ' ' && c != '\t' && c != '\n' && c != '\r') {
+					return c;
+				}
+			}
+		}
+		else if (value instanceof byte[] bytes) {
+			for (byte b : bytes) {
+				if (b != ' ' && b != '\t' && b != '\n' && b != '\r') {
+					return b >= 0 ? b : 0xFFFF;
+				}
+			}
+		}
+		return -1;
+	}
+
+	private static boolean canStartJsonValue(int c) {
+		return c == '{' || c == '[' || c == '"' || c == '-' || (c >= '0' && c <= '9')
+				|| c == 't' || c == 'f' || c == 'n';
+	}
+
 	public static boolean isJsonStringRepresentsCollection(Object value) {
 		if (value instanceof Collection
 				&& !value.getClass().getPackage().getName().startsWith("reactor.util.function")) {
 			return true;
 		}
 		if (value instanceof byte[] byteValue) {
+			if (firstSignificantChar(byteValue) != '[') {
+				return false;
+			}
 			value = new String(byteValue, StandardCharsets.UTF_8);
 		}
 		if (value instanceof String stringValue) {
+			if (firstSignificantChar(stringValue) != '[') {
+				return false;
+			}
 			try {
 				JsonNode node = mapper.readTree(stringValue);
 				return node instanceof ArrayNode;
@@ -156,9 +201,15 @@ public abstract class JsonMapper {
 
 	public static boolean isJsonStringRepresentsMap(Object value) {
 		if (value instanceof byte[] byteValue) {
+			if (firstSignificantChar(byteValue) != '{') {
+				return false;
+			}
 			value = new String(byteValue, StandardCharsets.UTF_8);
 		}
 		if (value instanceof String stringValue) {
+			if (firstSignificantChar(stringValue) != '{') {
+				return false;
+			}
 			try {
 				JsonNode node = mapper.readTree(stringValue);
 				return node instanceof ObjectNode;

@@ -178,7 +178,14 @@ public final class FunctionTypeUtils {
 			 */
 			return ObjectUtils.isEmpty(upperbounds) ? Object.class : getRawType(upperbounds[0]);
 		}
-		return ResolvableType.forType(type).getRawClass() == null ? Object.class : ResolvableType.forType(type).getRawClass();
+		if (type instanceof Class<?> clazz) {
+			return clazz;
+		}
+		if (type instanceof ParameterizedType parameterizedType && parameterizedType.getRawType() instanceof Class<?> raw) {
+			return raw;
+		}
+		Class<?> rawClass = ResolvableType.forType(type).getRawClass();
+		return rawClass == null ? Object.class : rawClass;
 	}
 
 	/**
@@ -567,7 +574,17 @@ public final class FunctionTypeUtils {
 
 	public static boolean isMono(Type type) {
 		type = extractReactiveType(type);
-		return type == null ? false : type.getTypeName().startsWith("reactor.core.publisher.Mono");
+		if (type == null) {
+			return false;
+		}
+		// avoid building the type name of a ParameterizedType, this is called for every invocation
+		if (type instanceof ParameterizedType parameterizedType && parameterizedType.getRawType() instanceof Class<?> raw) {
+			return raw.getName().startsWith("reactor.core.publisher.Mono");
+		}
+		if (type instanceof Class<?> clazz && !clazz.isArray()) {
+			return clazz.getName().startsWith("reactor.core.publisher.Mono");
+		}
+		return type.getTypeName().startsWith("reactor.core.publisher.Mono");
 	}
 
 	public static boolean isMultipleArgumentType(Type type) {

@@ -25,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.type.TypeFactory;
 
 
 /**
@@ -54,7 +53,7 @@ public class JacksonMapper extends JsonMapper {
 	@Override
 	protected <T> T doFromJson(Object json, Type type) {
 		T convertedValue = null;
-		JavaType constructType = TypeFactory.createDefaultInstance().constructType(type);
+		JavaType constructType = this.mapper.constructType(type);
 
 		try {
 			if (json instanceof String) {

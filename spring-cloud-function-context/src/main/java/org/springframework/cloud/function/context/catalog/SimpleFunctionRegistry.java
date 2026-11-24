@@ -1288,6 +1288,9 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		// need a cleaner solution
 		@SuppressWarnings("unchecked")
 		private Message filterOutHeaders(Message message) {
+			if (!message.getHeaders().containsKey("spring.cloud.stream.sendto.destination")) {
+				return message;
+			}
 			return MessageBuilder.fromMessage(message).removeHeader("spring.cloud.stream.sendto.destination").build();
 		}
 
