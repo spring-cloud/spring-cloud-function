@@ -304,11 +304,118 @@ public class SimpleFunctionRegistryTests {
 				new JacksonMapper(new ObjectMapper()));
 		catalog.register(registration);
 
-		FunctionInvocationWrapper instanceA = catalog.lookup("echo", "application/json");
-		FunctionInvocationWrapper instanceb = catalog.lookup("echo", "text/plain");
-		FunctionInvocationWrapper instanceC = catalog.lookup("echo", "foo/bar");
+		FunctionInvocationWrapper json = catalog.lookup("echo", "application/json");
+		FunctionInvocationWrapper text = catalog.lookup("echo", "text/plain");
+		FunctionInvocationWrapper other = catalog.lookup("echo", "foo/bar");
+		FunctionInvocationWrapper cached = catalog.lookup("echo");
 
-		assertThat(instanceA).isSameAs(instanceb).isSameAs(instanceC);
+		assertThat(json).isNotSameAs(text).isNotSameAs(other).isNotSameAs(cached);
+		assertThat(text).isNotSameAs(other);
+		assertThat((String[]) ReflectionTestUtils.getField(json, "expectedOutputContentType"))
+				.containsExactly("application/json");
+		assertThat((String[]) ReflectionTestUtils.getField(text, "expectedOutputContentType"))
+				.containsExactly("text/plain");
+		assertThat((String[]) ReflectionTestUtils.getField(other, "expectedOutputContentType"))
+				.containsExactly("foo/bar");
+		assertThat(ReflectionTestUtils.getField(cached, "expectedOutputContentType")).isNull();
+
+		@SuppressWarnings("unchecked")
+		Map<String, FunctionInvocationWrapper> definitions = (Map<String, FunctionInvocationWrapper>) ReflectionTestUtils
+				.getField(catalog, "wrappedFunctionDefinitions");
+		assertThat(definitions).hasSize(1);
+		assertThat(definitions.get("echo")).isSameAs(cached);
+
+		json.setSkipOutputConversion(true);
+		assertThat(json.isSkipOutputConversion()).isTrue();
+		assertThat(cached.isSkipOutputConversion()).isFalse();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testConcurrentLookupsKeepExpectedOutputContentType() throws Exception {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(new FunctionRegistration<>(new UpperCase(), "uppercase").type(UpperCase.class));
+
+		ExecutorService executor = Executors.newFixedThreadPool(2);
+		CountDownLatch startGate = new CountDownLatch(1);
+		try {
+			CompletableFuture<FunctionInvocationWrapper> jsonLookup = CompletableFuture.supplyAsync(() -> {
+				try {
+					assertThat(startGate.await(5, TimeUnit.SECONDS)).isTrue();
+				}
+				catch (InterruptedException ex) {
+					Thread.currentThread().interrupt();
+					throw new IllegalStateException(ex);
+				}
+				return catalog.lookup("uppercase", "application/json");
+			}, executor);
+			CompletableFuture<FunctionInvocationWrapper> textLookup = CompletableFuture.supplyAsync(() -> {
+				try {
+					assertThat(startGate.await(5, TimeUnit.SECONDS)).isTrue();
+				}
+				catch (InterruptedException ex) {
+					Thread.currentThread().interrupt();
+					throw new IllegalStateException(ex);
+				}
+				return catalog.lookup("uppercase", "text/plain");
+			}, executor);
+			startGate.countDown();
+			FunctionInvocationWrapper json = jsonLookup.get(5, TimeUnit.SECONDS);
+			FunctionInvocationWrapper text = textLookup.get(5, TimeUnit.SECONDS);
+
+			assertThat(json).isNotSameAs(text);
+			assertThat((String[]) ReflectionTestUtils.getField(json, "expectedOutputContentType"))
+					.containsExactly("application/json");
+			assertThat((String[]) ReflectionTestUtils.getField(text, "expectedOutputContentType"))
+					.containsExactly("text/plain");
+
+			Message<String> singleValueMessage = MessageBuilder.withPayload("\"ricky\"").build();
+			Object result = json.apply(singleValueMessage);
+			assertThat(result).isInstanceOf(Message.class);
+			assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("\"RICKY\"".getBytes());
+
+			FunctionInvocationWrapper cached = catalog.lookup("uppercase");
+			assertThat(cached).isNotSameAs(json).isNotSameAs(text);
+			assertThat(ReflectionTestUtils.getField(cached, "expectedOutputContentType")).isNull();
+			Map<String, FunctionInvocationWrapper> definitions = (Map<String, FunctionInvocationWrapper>) ReflectionTestUtils
+					.getField(catalog, "wrappedFunctionDefinitions");
+			assertThat(definitions).hasSize(1);
+			assertThat(definitions.get("uppercase")).isSameAs(cached);
+		}
+		finally {
+			executor.shutdownNow();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testComposedLookupWithMimeTypeKeepsComposition() {
+		SimpleFunctionRegistry catalog = new SimpleFunctionRegistry(this.conversionService, this.messageConverter,
+				new JacksonMapper(new ObjectMapper()));
+		catalog.register(new FunctionRegistration<>(new UpperCase(), "uppercase").type(UpperCase.class));
+		catalog.register(new FunctionRegistration<>(new Reverse(), "reverse").type(Reverse.class));
+
+		FunctionInvocationWrapper composed = catalog.lookup("uppercase|reverse", "application/json");
+		FunctionInvocationWrapper cached = catalog.lookup("uppercase|reverse");
+
+		assertThat(composed.isComposed()).isTrue();
+		assertThat(composed).isNotSameAs(cached);
+		assertThat(composed.getTarget()).isSameAs(cached.getTarget());
+		assertThat((String[]) ReflectionTestUtils.getField(composed, "expectedOutputContentType"))
+				.containsExactly("application/json");
+		assertThat(ReflectionTestUtils.getField(cached, "expectedOutputContentType")).isNull();
+
+		Object result = composed.apply("ab");
+		assertThat(result).isInstanceOf(Message.class);
+		assertThat(((Message<byte[]>) result).getPayload()).isEqualTo("\"BA\"".getBytes());
+
+		assertThat((Object) catalog.lookup("not-a-function", "application/json")).isNull();
+		Map<String, FunctionInvocationWrapper> definitions = (Map<String, FunctionInvocationWrapper>) ReflectionTestUtils
+				.getField(catalog, "wrappedFunctionDefinitions");
+		assertThat(definitions).hasSize(1);
+		assertThat(definitions).doesNotContainKey("not-a-function");
+		assertThat(definitions.get("uppercase|reverse")).isSameAs(cached);
 	}
 
 	@Test

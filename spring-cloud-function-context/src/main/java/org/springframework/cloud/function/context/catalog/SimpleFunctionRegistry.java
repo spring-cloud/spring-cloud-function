@@ -250,7 +250,13 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 		}
 		if (function != null) {
 			if (!ObjectUtils.isEmpty(expectedOutputMimeTypes)) {
-				function.expectedOutputContentType = expectedOutputMimeTypes;
+				// GH-1534: a cached singleton is shared, so this lookup gets its own view.
+				if (function.isSingleton) {
+					function = new FunctionInvocationWrapper(function, expectedOutputMimeTypes);
+				}
+				else {
+					function.expectedOutputContentType = expectedOutputMimeTypes;
+				}
 			}
 		}
 		else if (logger.isDebugEnabled()) {
@@ -533,6 +539,26 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 					}
 				}
 			}
+		}
+
+		/*
+		 * Per-lookup view of a cached singleton. Thread-locals and {@code message} come from
+		 * the constructor above so this view does not share them with the cached wrapper.
+		 */
+		private FunctionInvocationWrapper(FunctionInvocationWrapper source, String[] expectedOutputMimeTypes) {
+			this(source.functionDefinition, source.target, source.inputType, source.outputType);
+			this.inputType = source.inputType;
+			this.composed = source.composed;
+			this.postProcessor = source.postProcessor;
+			this.skipInputConversion = source.skipInputConversion;
+			this.skipOutputConversion = source.skipOutputConversion;
+			this.skipInputConversionCallback = source.skipInputConversionCallback;
+			this.enhancer = source.enhancer;
+			this.propagateInputHeaders = source.propagateInputHeaders;
+			this.isSingleton = source.isSingleton;
+			this.wrappedBiConsumer = source.wrappedBiConsumer;
+			this.isPojoFunction = source.isPojoFunction;
+			this.expectedOutputContentType = expectedOutputMimeTypes;
 		}
 
 		public int hashCode() {
