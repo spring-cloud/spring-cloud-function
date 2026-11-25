@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.springframework.cloud.function.web.FunctionHttpProperties;
 import org.springframework.cloud.function.web.util.HeaderUtils;
@@ -35,6 +36,8 @@ import org.springframework.messaging.MessageHeaders;
  *
  */
 class SimpleRequestBuilder implements RequestBuilder {
+
+	private static final String DESTINATION_PLACEHOLDER = "${destination}";
 
 	private String baseUrl = "http://${destination}";
 
@@ -58,11 +61,27 @@ class SimpleRequestBuilder implements RequestBuilder {
 		HttpHeaders result = HeaderUtils.fromMessage(incoming, this.httpProperties.getIgnoredHeaders());
 		for (String key : this.headers.keySet()) {
 			String header = this.headers.get(key);
-			header = header.replace("${destination}", destination);
-			header = this.environment.resolvePlaceholders(header);
-			result.set(key, header);
+			result.set(key, resolve(header, destination));
 		}
 		return result;
+	}
+
+	/*
+	 * Resolves the placeholders of a header value from the environment and replaces
+	 * ${destination} with the destination. The destination is substituted last and is
+	 * never resolved itself, otherwise a destination that contains a placeholder would
+	 * expose the values of the environment.
+	 */
+	private String resolve(String header, String destination) {
+		String[] parts = header.split(Pattern.quote(DESTINATION_PLACEHOLDER), -1);
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < parts.length; i++) {
+			if (i > 0) {
+				result.append(destination);
+			}
+			result.append(this.environment.resolvePlaceholders(parts[i]));
+		}
+		return result.toString();
 	}
 
 	@Override
