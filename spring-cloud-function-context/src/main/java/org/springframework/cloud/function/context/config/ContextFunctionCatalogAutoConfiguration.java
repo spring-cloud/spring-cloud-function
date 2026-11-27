@@ -17,11 +17,8 @@
 package org.springframework.cloud.function.context.config;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -36,8 +33,12 @@ import org.joda.time.tz.UTCProvider;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
+import tools.jackson.core.SerializableString;
 import tools.jackson.core.StreamReadFeature;
+import tools.jackson.core.sym.PropertyNameMatcher;
+import tools.jackson.core.util.JsonParserDelegate;
 import tools.jackson.databind.BeanDescription;
+import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.DeserializationConfig;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.DeserializationFeature;
@@ -48,7 +49,7 @@ import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.cfg.MapperBuilder;
 import tools.jackson.databind.deser.ValueDeserializerModifier;
-import tools.jackson.databind.deser.std.StdDeserializer;
+import tools.jackson.databind.deser.std.DelegatingDeserializer;
 import tools.jackson.databind.module.SimpleModule;
 import tools.jackson.databind.type.CollectionType;
 import tools.jackson.datatype.joda.JodaModule;
@@ -118,6 +119,14 @@ import org.springframework.util.StringUtils;
 @EnableConfigurationProperties(FunctionProperties.class)
 @AutoConfigureAfter(name = {"org.springframework.cloud.function.deployer.FunctionDeployerConfiguration"})
 public class ContextFunctionCatalogAutoConfiguration {
+
+	/**
+	 * Name of the property that sets the maximum number of elements of a JSON array that the
+	 * default Jackson mapper deserializes into a collection (a value of zero or less disables the limit).
+	 */
+	static final String MAX_COLLECTION_SIZE_PROPERTY = FunctionProperties.PREFIX + ".json.max-collection-size";
+
+	static final int DEFAULT_MAX_COLLECTION_SIZE = 1000;
 
 
 	/**
@@ -307,7 +316,9 @@ public class ContextFunctionCatalogAutoConfiguration {
 				}
 			}
 
-			builder.addModule(BeanUtils.instantiateClass(CollectionLimitModule.class));
+			int maxCollectionSize = context.getEnvironment().getProperty(MAX_COLLECTION_SIZE_PROPERTY, Integer.class,
+					DEFAULT_MAX_COLLECTION_SIZE);
+			builder.addModule(new CollectionLimitModule(maxCollectionSize));
 
 			ObjectMapper mapper = builder.addModule(new JodaModule())
 					.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
@@ -320,39 +331,140 @@ public class ContextFunctionCatalogAutoConfiguration {
 		}
 	}
 
-	static class LimitedCollectionDeserializer extends StdDeserializer<Collection<Object>> {
-		private static final int MAX_ITEMS = 1000;
+	/**
+	 * Wraps the deserializer that Jackson selected for a collection type (so the requested
+	 * collection type and any custom deserializer are preserved) and rejects JSON arrays with more
+	 * elements than the configured maximum.
+	 */
+	static class LimitedCollectionDeserializer extends DelegatingDeserializer {
 
+		private final int maxItems;
 
-		LimitedCollectionDeserializer(CollectionType type) {
-			super(type);
+		LimitedCollectionDeserializer(ValueDeserializer<?> delegate, int maxItems) {
+			super(delegate);
+			this.maxItems = maxItems;
 		}
 
 		@Override
-		public Collection<Object> deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
-			int count = 0;
-			Collection<Object> c = Set.class.isAssignableFrom(this._valueClass) ? new HashSet<>() : new ArrayList<>();
-
-			while (p.nextToken() != JsonToken.END_ARRAY) {
-				if (++count > MAX_ITEMS) {
-					throw new IllegalStateException("Collection size exceeds limit of " + MAX_ITEMS);
-				}
-
-				c.add(ctxt.readValue(p, this._valueType.getBindings().getBoundType(0)));
-			}
-			return c;
+		protected ValueDeserializer<?> newDelegatingInstance(ValueDeserializer<?> newDelegatee) {
+			return new LimitedCollectionDeserializer(newDelegatee, this.maxItems);
 		}
+
+		@Override
+		public Object deserialize(JsonParser p, DeserializationContext ctxt) throws JacksonException {
+			return getDelegatee().deserialize(limited(p), ctxt);
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public Object deserialize(JsonParser p, DeserializationContext ctxt, Object intoValue)
+				throws JacksonException {
+			return ((ValueDeserializer<Object>) getDelegatee()).deserialize(limited(p), ctxt, intoValue);
+		}
+
+		private JsonParser limited(JsonParser p) {
+			return this.maxItems > 0 && p.currentToken() == JsonToken.START_ARRAY
+					? new ItemCountingParser(p, this.maxItems) : p;
+		}
+
+	}
+
+	/**
+	 * Counts the elements of the array the parser is positioned at, without buffering them.
+	 */
+	private static final class ItemCountingParser extends JsonParserDelegate {
+
+		private final int maxItems;
+
+		private int depth = 1;
+
+		private int count;
+
+		ItemCountingParser(JsonParser delegate, int maxItems) {
+			super(delegate);
+			this.maxItems = maxItems;
+		}
+
+		@Override
+		public JsonToken nextToken() {
+			return track(super.nextToken());
+		}
+
+		@Override
+		public JsonToken nextValue() {
+			return track(super.nextValue());
+		}
+
+		@Override
+		public String nextName() {
+			String name = super.nextName();
+			track(currentToken());
+			return name;
+		}
+
+		@Override
+		public boolean nextName(SerializableString str) {
+			boolean matched = super.nextName(str);
+			track(currentToken());
+			return matched;
+		}
+
+		@Override
+		public int nextNameMatch(PropertyNameMatcher matcher) {
+			int match = super.nextNameMatch(matcher);
+			track(currentToken());
+			return match;
+		}
+
+		@Override
+		public JsonParser skipChildren() {
+			if (currentToken() != null && currentToken().isStructStart()) {
+				super.skipChildren();
+				this.depth--;
+			}
+			return this;
+		}
+
+		private JsonToken track(JsonToken token) {
+			if (token == null || token == JsonToken.PROPERTY_NAME) {
+				return token;
+			}
+			if (token.isStructEnd()) {
+				this.depth--;
+				return token;
+			}
+			if (this.depth == 1 && ++this.count > this.maxItems) {
+				throw DatabindException.from(delegate(),
+						"Collection size exceeds the limit of " + this.maxItems + " elements (configurable with '"
+								+ MAX_COLLECTION_SIZE_PROPERTY + "')");
+			}
+			if (token.isStructStart()) {
+				this.depth++;
+			}
+			return token;
+		}
+
 	}
 
 	static class CollectionLimitModule extends SimpleModule {
+
+		private final int maxItems;
+
+		CollectionLimitModule(int maxItems) {
+			this.maxItems = maxItems;
+		}
+
 		@Override
 		public void setupModule(SetupContext context) {
+			super.setupModule(context);
 			context.addDeserializerModifier(new ValueDeserializerModifier() {
+				@Override
 				public ValueDeserializer<?> modifyCollectionDeserializer(DeserializationConfig config,
 						CollectionType type, BeanDescription.Supplier beanDescRef, ValueDeserializer<?> deserializer) {
-					return new LimitedCollectionDeserializer(type);
+					return new LimitedCollectionDeserializer(deserializer, CollectionLimitModule.this.maxItems);
 				}
 			});
 		}
+
 	}
 }

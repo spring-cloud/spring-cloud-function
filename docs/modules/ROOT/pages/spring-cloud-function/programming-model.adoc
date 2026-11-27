@@ -730,6 +730,11 @@ The default rules are as follows:
 That said, the type conversion is usually transparent to the developer.
 However, given that `org.springframework.cloud.function.json.JsonMapper` is also registered as a bean you can easily inject it into your code if needed.
 
+When Jackson is used, the default mapper rejects a JSON array with more than 1000 elements when it is deserialized into a collection, and fails with a Jackson exception.
+Each collection is limited on its own, so elements nested in other collections or objects are not counted against the outer one.
+You can change the limit with the `spring.cloud.function.json.max-collection-size` property (a value of zero or less disables it).
+The requested collection type (`Set`, `LinkedHashSet`, `LinkedList` and so on) and any custom deserializer registered on your `ObjectMapper` are preserved.
+
 [[kotlin-lambda-support]]
 == Kotlin Lambda support
 
