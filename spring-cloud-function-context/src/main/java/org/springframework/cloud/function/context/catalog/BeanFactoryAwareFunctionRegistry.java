@@ -123,7 +123,23 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		else {
 			registeredNames.addAll(Arrays.asList(this.applicationContext.getBeanNamesForType(type)));
 		}
+		// Filter before default-function selection, not just during registration.
+		registeredNames.removeIf(name -> !isFunctionDefinitionEligible(name));
 		return registeredNames;
+	}
+
+	@Override
+	boolean isFunctionDefinitionEligible(String functionDefinition) {
+		if (!super.isFunctionDefinitionEligible(functionDefinition)) {
+			return false;
+		}
+		for (String name : StringUtils.tokenizeToStringArray(functionDefinition, ",|")) {
+			if (this.applicationContext.containsBean(name)
+					&& !isFunctionTypeEligible(this.applicationContext.getBeanFactory().getType(name, false))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -132,6 +148,9 @@ public class BeanFactoryAwareFunctionRegistry extends SimpleFunctionRegistry imp
 		functionDefinition = StringUtils.hasText(functionDefinition)
 				? functionDefinition
 						: this.applicationContext.getEnvironment().getProperty(FunctionProperties.FUNCTION_DEFINITION, "");
+		if (!isFunctionDefinitionEligible(functionDefinition)) {
+			return null;
+		}
 		if (!this.applicationContext.containsBean(functionDefinition) || !KotlinUtils.isKotlinType(this.applicationContext.getBean(functionDefinition))) {
 			functionDefinition = this.normalizeFunctionDefinition(functionDefinition);
 		}

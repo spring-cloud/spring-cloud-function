@@ -63,8 +63,8 @@ In summary, Spring Cloud Function instruments Java functions with additional fea
 While the previous example shows you how to lookup a function in `FunctionCatalog` programmatically, in a typical integration case where Spring Cloud Function is used as the programming model by another framework (e.g. https://spring.io/projects/spring-cloud-stream[Spring Cloud Stream]), you can declare which functions to use via the `spring.cloud.function.definition` property.
 It is important to know and understand the default behaviour when it comes to discovering functions in `FunctionCatalog`.
 
-For instance, if you only have one Functional bean in your `ApplicationContext`, the `spring.cloud.function.definition` property typically will not be required since a single function in `FunctionCatalog` 
-can be looked up by an empty name, or any name.
+For instance, if you only have one eligible Functional bean in your `ApplicationContext`, the `spring.cloud.function.definition` property typically will not be required since a single function in `FunctionCatalog`
+can be looked up by an empty name, or any name that is not explicitly excluded.
 For example, assuming that `uppercase` is the only function in your catalog, it can be looked up as `catalog.lookup(null)`, `catalog.lookup(“”)`, `catalog.lookup(“foo”)`.
 
 That said, for cases where you are using a framework such as Spring Cloud Stream, which uses `spring.cloud.function.definition`, it is recommended to always use the `spring.cloud.function.definition` property.
@@ -86,6 +86,10 @@ A typical `ApplicationContext` may include beans that are valid Java functions, 
 Such beans could be auto-configurations from other projects or any other bean that qualifies as a Java function.
 
 The framework provides default filtering of known beans that should not be candidates for registration with `FunctionCatalog`.
+For example, Spring WebFlux's `ForwardedHeaderTransformer` is excluded by type, regardless of its bean name.
+Excluded beans are filtered before auto-discovery selects a default function, so they do not prevent a single eligible function from being discovered.
+These exclusions only affect the function catalog; the beans remain available in the `ApplicationContext` for their intended use, such as HTTP forwarded-header processing.
+
 You can also add additional beans to this list by providing a comma-delimited list of bean definition names using the `spring.cloud.function.ineligible-definitions` property.
 
 For example,
@@ -94,6 +98,8 @@ For example,
 ----
 spring.cloud.function.ineligible-definitions=foo,bar
 ----
+
+Looking up an explicitly excluded function name returns no function, rather than falling back to the single eligible function.
 
 [[supplier]]
 === Supplier

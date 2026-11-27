@@ -197,10 +197,18 @@ public class SimpleFunctionRegistry implements FunctionRegistry {
 	private boolean isRegistrationEligible(FunctionRegistration registration) {
 		if (this.functionProperties != null) {
 			for (String definition : this.functionProperties.getIneligibleDefinitions()) {
-				if (registration.getTarget().getClass().getName().equals(definition)) {
+				if (registration.getNames().contains(definition)) {
 					return false;
 				}
-				else if (registration.getNames().contains(definition) || registration.getTarget().getClass().getName().contains(definition)) {
+			}
+		}
+		return isFunctionTypeEligible(registration.getTarget().getClass());
+	}
+
+	boolean isFunctionTypeEligible(@Nullable Class<?> functionType) {
+		if (this.functionProperties != null && functionType != null) {
+			for (String definition : this.functionProperties.getIneligibleDefinitions()) {
+				if (functionType.getName().contains(definition)) {
 					return false;
 				}
 			}

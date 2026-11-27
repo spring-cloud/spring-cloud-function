@@ -105,6 +105,7 @@ public class FunctionProperties implements EnvironmentAware, ApplicationContextA
 		ineligibleDefinitions = new ArrayList<>();
 		String[] definitions = new String[] {
 				"org.springframework.boot",
+				"org.springframework.web.server.adapter.ForwardedHeaderTransformer",
 				"org.springframework.cloud.function.cloudevent.CloudEventsFunctionExtensionConfiguration",
 				"org.springframework.cloud.function.context.config.FunctionsEndpointAutoConfiguration",
 				"classLoaderMetrics",
