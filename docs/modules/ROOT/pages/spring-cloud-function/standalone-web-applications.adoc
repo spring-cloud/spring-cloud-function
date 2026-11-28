@@ -5,11 +5,11 @@ Functions could be automatically exported as HTTP endpoints.
 
 The `spring-cloud-function-web` module has autoconfiguration that
 activates when it is included in a Spring Boot web application (with
-MVC support). There is also a `spring-cloud-starter-function-web` to
+MVC or WebFlux support). There is also a `spring-cloud-starter-function-web` to
 collect all the optional dependencies in case you just want a simple
 getting started experience.
 
-With the web configurations activated your app will have an MVC
+With the web configurations activated your app will have an HTTP
 endpoint (on "/" by default, but configurable with
 `spring.cloud.function.web.path`) that can be used to access the
 functions in the application context where function name becomes part of the URL path. The supported content types are
@@ -40,6 +40,36 @@ The _payload_ of the Message will be a `body` or empty string if there is no `bo
 When POSTing text the response format might be different with Spring Boot 2.0 and older versions, depending on the content negotiation (provide content type and accept headers for the best results).
 
 See <<Testing Functional Applications>> to see the details and example on how to test such application.
+
+[[securing-function-endpoints]]
+== Securing Function Endpoints
+
+Spring Cloud Function is a framework for building applications, and applications built on it are responsible for their own security.
+The web support does not authenticate or authorize requests to function endpoints.
+Secure these endpoints in the application, for example with https://spring.io/projects/spring-security[Spring Security], or at a gateway or network layer.
+
+With `spring-cloud-function-web` (MVC or WebFlux), the first path segment after the configured web path is used as a function name and looked up in `FunctionCatalog`.
+By default, anything the catalog can resolve by that name is invocable over HTTP using the supported methods described above.
+This includes beans that do not implement `Function`, `Supplier`, or `Consumer` but are discovered as POJO functions during catalog lookup.
+Do not assume that only beans explicitly declared with these functional interfaces are reachable.
+
+Use `spring.cloud.function.definition` to select the function or function composition the application intends to use as its default.
+As explained in <<function-filtering-rules>>, this property is not an HTTP allowlist: other functions remain reachable by name.
+Use `spring.cloud.function.ineligible-definitions` to exclude bean names from catalog lookup, including beans that could otherwise be discovered as POJO functions.
+
+For example, in `application.properties`:
+
+[source,properties]
+----
+spring.cloud.function.definition=uppercase
+spring.cloud.function.ineligible-definitions=internalHelper,administrativeTask
+----
+
+This selects `uppercase` as the default and makes `internalHelper` and `administrativeTask` ineligible for catalog lookup.
+It does not prevent access to other eligible functions, and neither property replaces authentication or authorization.
+For additional HTTP method restrictions, see <<function-filtering-rules>>.
+
+IMPORTANT: Before exposing Spring Cloud Function web endpoints on an untrusted network, secure them and review the beans present in the application context, including beans supplied by dependencies and auto-configuration.
 
 [[http-request-parameters]]
 == HTTP Request Parameters
